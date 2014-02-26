@@ -26,29 +26,29 @@ public:
   /**
    * constant for seconds per day
    */
-  static constexpr sb4 SECONDS_PER_DAY = 86400;
+  static const sb4 SECONDS_PER_DAY;
 
   /**
    * constant for seconds per day
    */
-  static constexpr sb4 SECONDS_PER_HOUR = 3600;
+  static const sb4 SECONDS_PER_HOUR;
 
   /**
    * Number of bits used to represent a timezone in LTY_TIMESTAMPTZ.
    * We use 14 bits, enough to represent 16384 values.
    * See https://snowflakecomputing.atlassian.net/wiki/display/EN/Timestamp+Data+Type
    */
-  static constexpr sb1 BITS_FOR_TIMEZONE = 14;
+  static const sb1 BITS_FOR_TIMEZONE = 14;
 
   /**
    * Mask used to extract the timezone from LTY_TIMESTAMPTZ
    */
-  static constexpr sb4 MASK_OF_TIMEZONE = (1 << BITS_FOR_TIMEZONE) - 1;
+  static const sb4 MASK_OF_TIMEZONE = (1 << BITS_FOR_TIMEZONE) - 1;
 
   /**
    * Maximum one-directional range of offset-based timezones (24 hours)
    */
-  static constexpr sb4 TIMEZONE_OFFSET_RANGE = 24 * 60;
+  static const sb4 TIMEZONE_OFFSET_RANGE = 24 * 60;
 
   /**
    * Constructor
@@ -171,6 +171,8 @@ public:
     m_secondsSinceEpoch = static_cast<sb8>(daysSinceEpoch) * SECONDS_PER_DAY;
   }
 
+#if defined(WIN32) || defined(_WIN64)
+#else
   /**
    * Our version of mktime that uses timezone offset.
    * Glibc version of mktime uses time zone environment variable. It is not
@@ -197,7 +199,7 @@ public:
 
     return totalSecondsSinceEpoch;
   }
-
+#endif
   /**
    * For a given logical type, defines if during parsing/conversion the time
    * should be converted into UTC.
@@ -206,6 +208,8 @@ public:
    */
   static bool needsUTCAdjustment(LogicalType_t type);
 
+#if defined(WIN32) || defined(_WIN64)
+#else
   /**
    * Converts TM to seconds, with UTC-local adjustment depending on ltype.
    */
@@ -214,7 +218,7 @@ public:
     return convertTMToSecondsSinceEpoch(tmV,
 	                                needsUTCAdjustment(ltype));
   }
-
+#endif
   /**
    * Converts a given timestamp into a TM representation.
    * Depending on the timestamp type, UTC or local time is used.
@@ -225,16 +229,26 @@ public:
     {
       case LTY_TIMESTAMP_NTZ:
       case LTY_DATE:
-	// Do localtime-oblivious conversion
-	gmtime_r(&m_secondsSinceEpoch, tmP);
-	break;
+		// Do localtime-oblivious conversion
+#if defined(WIN32) || defined(_WIN64)
+		gmtime_s(tmP, &m_secondsSinceEpoch);
+#else
+	    gmtime_r(&m_secondsSinceEpoch, tmP);
+#endif
+		break;
       default:
-	// Do conversion to the localtime
-	localtime_r(&m_secondsSinceEpoch, tmP);
-	break;
+		// Do conversion to the localtime
+#if defined(WIN32) || defined(_WIN64)
+		localtime_s(tmP, &m_secondsSinceEpoch);
+#else
+	    localtime_r(&m_secondsSinceEpoch, tmP);
+#endif
+		break;
     }
   }
 
+#if defined(WIN32) || defined(_WIN64)
+#else
   /**
    * Our version of localtime that uses timezone offset.
    * Glibc version of localtime uses time zone environment variable. It is not
@@ -254,7 +268,7 @@ public:
     // local time zone
     tmP->tm_gmtoff = GMToffset;
   }
-
+#endif
   /**
    * Set the time to epoch time
    * @param tmV
