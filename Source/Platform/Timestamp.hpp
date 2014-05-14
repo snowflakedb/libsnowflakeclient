@@ -13,6 +13,7 @@
 #include "BasicTypes.hpp"
 #include "pow10.hpp"
 #include "DataTypeDefs.hpp"
+#include "Logger.hpp"
 
 namespace sf
 {
@@ -129,9 +130,15 @@ public:
     }
     else if (scale > m_fractionalScale)
     {
-      // requested scale more than existing scale
-      return (m_fractionalSeconds *
+      sb4 scaledFractionalSecs = (m_fractionalSeconds *
           power10_ub4[scale - m_fractionalScale]);
+
+       SF_TRACE_LOG("sf", "Timestamp", "convertFractionalSeconds",
+               "scale=%d, scaled fractional part=%d", scale,
+               scaledFractionalSecs);
+
+      // requested scale more than existing scale
+      return scaledFractionalSecs;
     }
     else
     {
