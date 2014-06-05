@@ -44,7 +44,8 @@ public:
   /**
    * Mask used to extract the timezone from LTY_TIMESTAMPTZ
    */
-  static const sb4 MASK_OF_TIMEZONE = (1 << BITS_FOR_TIMEZONE) - 1;
+  static const sb4 MASK_OF_TIMEZONE;
+
 
   /**
    * Maximum one-directional range of offset-based timezones (24 hours)
@@ -240,7 +241,7 @@ public:
 #if defined(WIN32) || defined(_WIN64)
 		gmtime_s(tmP, &m_secondsSinceEpoch);
 #else
-	    gmtime_r(&m_secondsSinceEpoch, tmP);
+	    gmtime_r( (time_t *) (&m_secondsSinceEpoch), tmP);
 #endif
 		break;
       default:
@@ -248,7 +249,7 @@ public:
 #if defined(WIN32) || defined(_WIN64)
 		localtime_s(tmP, &m_secondsSinceEpoch);
 #else
-	    localtime_r(&m_secondsSinceEpoch, tmP);
+	    localtime_r( (time_t *) (&m_secondsSinceEpoch), tmP);
 #endif
 		break;
     }
@@ -269,7 +270,7 @@ public:
     secondsSinceUTC += GMToffset;
 
     // get the calendar time in UTC timezone
-    gmtime_r(&secondsSinceUTC, tmP);
+    gmtime_r( (time_t *) (&secondsSinceUTC), tmP);
 
     // Change the timezone offset of the calendar time to the offset of the
     // local time zone
