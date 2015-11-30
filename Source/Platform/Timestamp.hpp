@@ -57,6 +57,11 @@ public:
    */
   explicit Timestamp(LogicalType_t logicalType);
 
+  inline LogicalType_t getLogicalType()
+  {
+    return m_logicalType;
+  }
+
   inline ub1 getFractionalScale() const
   {
     return m_fractionalScale;
@@ -167,6 +172,17 @@ public:
    *   scale of fractional seconds
    */
   void fromFractionalSecondsSinceEpoch(sb16 fracSeconds, sb1 scale);
+
+    /**
+   * Convert the fractional seconds since epoch to timestamp
+   * @param fracSeconds
+   *   number of fractional seconds
+   * @param scale
+   *   scale of fractional seconds
+   * @param tzIndex
+     * time zone index
+   */
+  void fromFractionalSecondsSinceEpoch(sb16 fracSeconds, sb1 scale, sb4 tzIndex);
 
   /**
    * Convert the number of day since epoch to timestamp
