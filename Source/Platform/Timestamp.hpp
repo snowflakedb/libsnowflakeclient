@@ -27,12 +27,12 @@ public:
   /**
    * constant for seconds per day
    */
-  static const sb4 SECONDS_PER_DAY;
+  static const sb4 SECONDS_PER_DAY_CONST;
 
   /**
    * constant for seconds per day
    */
-  static const sb4 SECONDS_PER_HOUR;
+  static const sb4 SECONDS_PER_HOUR_CONST;
 
   /**
    * Number of bits used to represent a timezone in LTY_TIMESTAMPTZ.
@@ -192,7 +192,7 @@ public:
   {
     m_fractionalScale = 0;
     m_fractionalSeconds = 0;
-    m_secondsSinceEpoch = static_cast<sb8>(daysSinceEpoch) * SECONDS_PER_DAY;
+    m_secondsSinceEpoch = static_cast<sb8>(daysSinceEpoch) * SECONDS_PER_DAY_CONST;
   }
 
 #if defined(WIN32) || defined(_WIN64)
@@ -306,7 +306,7 @@ public:
    */
   inline sb16 toDaysSinceEpoch() const
   {
-    return m_secondsSinceEpoch / SECONDS_PER_DAY;
+    return m_secondsSinceEpoch / SECONDS_PER_DAY_CONST;
   }
 
 private:
