@@ -139,10 +139,6 @@ public:
       sb4 scaledFractionalSecs = (m_fractionalSeconds *
           power10_ub4[scale - m_fractionalScale]);
 
-       SF_TRACE_LOG("sf", "Timestamp", "convertFractionalSeconds",
-               "scale=%d, scaled fractional part=%d", scale,
-               scaledFractionalSecs);
-
       // requested scale more than existing scale
       return scaledFractionalSecs;
     }
