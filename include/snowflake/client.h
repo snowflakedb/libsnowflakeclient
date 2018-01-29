@@ -269,9 +269,6 @@ typedef struct sf_snowflake_connection {
     pthread_mutex_t mutex_sequence_counter;
     char request_id[SF_UUID4_LEN];
 
-    sf_bool is_xp;
-    char *query_url;
-    char * re
     // Error
     SF_ERROR error;
 } SF_CONNECT;
