@@ -7,6 +7,8 @@ install:
   - sudo apt-get install lcov valgrind
 script:
   - ./scripts/run_travis.sh
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 matrix:
   include:
   - os: linux
