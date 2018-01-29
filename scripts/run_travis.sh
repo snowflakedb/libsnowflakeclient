@@ -53,10 +53,17 @@ if [[ -n "$TRAVIS_JOB_ID" ]]; then
 fi
 travis_fold_end
 
+# enabling code coverage
+export BUILD_WITH_GCOV_OPTION=true
+
 travis_fold_start build_pdo_snowflake "Build C/C++ library"
 $DIR/build_libsnowflakeclient.sh
 travis_fold_end
 
 travis_fold_start ctests "Tests C Library"
 $DIR/run_tests.sh
+travis_fold_end
+
+travis_fold_start ctests "Generate gcov files"
+$DIR/gen_gcov.sh
 travis_fold_end

@@ -14,6 +14,11 @@ if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
 endif()
 
+if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
+endif()
+
 set(SOURCE_FILES
         include
         lib/client.c
