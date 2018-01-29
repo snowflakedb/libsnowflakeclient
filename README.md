@@ -1,2 +1,0 @@
-# libsnowflakeclient
-C API

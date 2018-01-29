@@ -573,13 +573,6 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     return SF_STATUS_SUCCESS;
 }
 
-
-SF_STATUS STDCALL snowflake_connect_from_xp(SF_CONNECT *sf, char *parent_query_id) {
-    sf->token = parent_query_id;
-    sf->master_token = NULL;
-    sf->
-}
-
 SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
@@ -1420,12 +1413,7 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
 
-    if (sfstmt->connection->is_xp) {
-        url = "...";
-    } else {
-        url = QUERY_URL'
-    }
-        if (request(sfstmt->connection, &resp, url, url_params,
+    if (request(sfstmt->connection, &resp, QUERY_URL, url_params,
                 sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error)) {
         s_resp = cJSON_Print(resp);
