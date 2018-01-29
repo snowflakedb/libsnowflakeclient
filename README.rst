@@ -5,7 +5,7 @@ Snowflake Connector for C/C++
 .. image:: https://travis-ci.org/snowflakedb/libsnowflakeclient.svg?branch=master
     :target: https://travis-ci.org/snowflakedb/libsnowflakeclient
 
-.. image:: https://codecov.io/gh/snowflakedb/libsnowflakeclient.svg
+.. image:: https://codecov.io/gh/snowflakedb/libsnowflakeclient/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/snowflakedb/libsnowflakeclient
 
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
