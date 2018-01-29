@@ -1,9 +1,20 @@
 ********************************************************************************
-Snowflake Connector for C
+Snowflake Connector for C/C++
 ********************************************************************************
 
-Snowflake Connector for C provides the API for C language.
+.. image:: https://travis-ci.org/snowflakedb/libsnowflakeclient.svg?branch=master
+    :target: https://travis-ci.org/snowflakedb/libsnowflakeclient
 
+.. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
+    :target: http://www.apache.org/licenses/LICENSE-2.0.txt
+
+*Under development. No functionality works. Suggestion is welcome at any time.*
+
+Build and Tests
+================================================================================
+
+Basic Usage
+----------------------------------------------------------------------
 Ensure you have cmake 2.8 or later version.
 
 .. code-block:: bash
