@@ -16,7 +16,7 @@ Snowflake Connector for C/C++
 Build and Tests
 ================================================================================
 
-Basic Usage
+Build
 ----------------------------------------------------------------------
 Ensure you have cmake 2.8 or later version.
 
@@ -26,3 +26,40 @@ Ensure you have cmake 2.8 or later version.
     cd cmake-build
     cmake .. -G"Unix Makefiles"
     make
+
+Test
+----------------------------------------------------------------------
+
+Set the environment variables and run the test script.
+
+.. code-block:: bash
+
+    eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' ./parameters.json)
+    ./scripts/run_tests.sh
+
+Profile
+----------------------------------------------------------------------
+
+If you want to use ``gprof``, add ``-p`` option to the build script, run a test program followed by ``gprof``, for example:
+
+.. code-block:: bash
+
+    ./scripts/build_libsnowflakeclient.sh -p
+    ./cmake-build/examples/ex_connect
+    gprof ./cmake-build/examples/ex_connect gmon.out
+
+Check memory leak by Valgrind
+----------------------------------------------------------------------
+
+Use ``valgrind`` to check memory leak.
+
+.. code-block:: bash
+
+    ./scripts/build_libsnowflakeclient.sh
+    valgrind --leak-check=full ./cmake-build/examples/ex_connect
+
+and verify no error in the output:
+
+.. code-block:: bash
+
+     ERROR SUMMARY: 0 errors from 0 contexts ...
