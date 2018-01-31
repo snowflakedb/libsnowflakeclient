@@ -8,8 +8,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export LIB_SNOWFLAKE_CLIENT_DIR=$( cd "$DIR/.." && pwd)
 export SNOWFLAKE_TEST_CA_BUNDLE_FILE=$LIB_SNOWFLAKE_CLIENT_DIR/cacert.pem
 
-export PYVENV_HOME=$HOME/testsetup
-
 function travis_fold_start() {
     local name=$1
     local message=$2
@@ -32,13 +30,6 @@ function finish {
 }
 
 travis_fold_start pythonvenv "Set up Python Virtualenv (pyenv)"
-pyenv versions
-pyenv local 3.6
-pyenv versions
-pip install -U pip
-pip install -U virtualenv
-virtualenv $PYVENV_HOME
-source $PYVENV_HOME/bin/activate
 pip install -U snowflake-connector-python
 travis_fold_end
 
