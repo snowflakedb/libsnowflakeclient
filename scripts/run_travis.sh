@@ -61,7 +61,11 @@ $DIR/build_libsnowflakeclient.sh
 travis_fold_end
 
 travis_fold_start ctests "Tests C Library"
-$DIR/run_tests.sh
+RUN_TESTS_OPTS=()
+if [[ -n "$USE_VALGRIND" ]]; then
+    RUN_TESTS_OPTS+=("--enable-pdo_snowflake")
+fi
+$DIR/run_tests.sh "${RUN_TESTS_OPTS[@]}"
 travis_fold_end
 
 travis_fold_start ctests "Generate gcov files"
