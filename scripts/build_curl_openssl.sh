@@ -14,6 +14,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPS_DIR=$(cd $DIR/../deps && pwd)
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.0f/
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.54.1/
+PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
 target=Release
 while getopts ":ht:s:" opt; do
@@ -32,7 +33,7 @@ echo "Options:"
 echo "  target       = $target"
 echo "PATH="$PATH
 
-DEPENDENCY_LINUX=$DIR/../deps-build/linux
+DEPENDENCY_LINUX=$DIR/../deps-build/$PLATFORM
 rm -rf $DEPENDENCY_LINUX
 mkdir -p $DEPENDENCY_LINUX
 

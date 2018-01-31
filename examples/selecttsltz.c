@@ -145,8 +145,8 @@ int main() {
             printf("result: %s, '%s'(%s)\n", (char *) c1.value,
                    (char *) c2.value,
                    c2.is_null ? "NULL" : "NOT NULL");
-            if (v.c2out != NULL && strcmp(v.c2out, c2.value) != 0 ||
-                v.c2out == NULL && !c2.is_null) {
+            if ((v.c2out != NULL && strcmp(v.c2out, c2.value) != 0) ||
+                    (v.c2out == NULL && !c2.is_null)) {
                 fprintf(stderr, "ERROR: testcase: %s, expected: %s, got %s\n",
                         (char *) c1.value, v.c2out, (char *) c2.value);
             }

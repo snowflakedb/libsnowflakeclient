@@ -25,7 +25,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -50,7 +50,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -75,7 +75,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -96,7 +96,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -117,7 +117,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -138,7 +138,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
@@ -159,7 +159,7 @@ int main() {
         ret = SF_STATUS_ERROR_GENERAL;
     } else {
         SF_ERROR *sferr = snowflake_error(sf);
-        if (!sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS) {
+        if (!(sferr->error_code == SF_STATUS_ERROR_BAD_CONNECTION_PARAMS)) {
             fprintf(stderr, "Failed. Wrong error code: %d\n",
                     sferr->error_code);
             ret = SF_STATUS_ERROR_GENERAL;
