@@ -47,10 +47,6 @@ source $DIR/env.sh
 
 travis_fold_start create_schema "Create test schema"
 python $DIR/create_schema.py 
-if [[ -n "$TRAVIS_JOB_ID" ]]; then
-    echo "==> Set the test schema to TRAVIS_JOB_${TRAVIS_JOB_ID}"
-    export SNOWFLAKE_TEST_SCHEMA=TRAVIS_JOB_${TRAVIS_JOB_ID}
-fi
 travis_fold_end
 
 # enabling code coverage
