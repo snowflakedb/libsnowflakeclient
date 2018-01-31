@@ -1,6 +1,7 @@
 sudo: required
 language: cpp
 before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
 install:
   - sudo apt-get update
@@ -15,6 +16,8 @@ matrix:
   - os: linux
     env:
       - USE_VALGRIND=true
+  - os: osx
+
 env:
   global:
     secure: LC6gqcPZLnfj2cLMy7h4jjGmY3MyomTLPEg+MNq315cKadO5IgMYOmjBJtJJ3FJZQjxsxnwjM612xQXtCy2wVKizKlKLT9BXZBOE9P7gL7EfQYourwM0rpwVbf58xQTajt1QR/4jGE+l7mfjY/d4zoMOAo5VH/D8C76YpCDGFfKgdVFDj+ROjXpyt0VzdrO1WbjZ27M/4BDvKsoqfGt6aL0S00+hVgLZEJZED35hCAYVtO8VS/hk+x74GvjeLihPitpXBxeadyQnYdma7/bF1RnqKxaPv9n+fhroeIrupS+nkcGwKWS5VYOj5Ofag6vYBZ9m1VaRfV3pcsliN1xzTdBpyGKzV4RZAlxybRqQeO2g2yo+bvqWMvI2ZeSnp5x/l4/wecuNlbQag6XqE0nx21ywfqdALbiwmWhtKOGLuVBP8iBdAr2D2Jvc51cFEIR9LBWjTu0O9ZDJYRktvBHO3AUSLmg5pT8y7x3VwUM3TqseKefRT1BjiIENt3VJSrhAO9XoUZouvUgKspXhHay46uq+QjGNzSr66iDULpd+f0FGvwaA/Shvpkhjd0zJOd90ZeeGXlvnzC1a42v4fMWw1Hr75LDBgGHkQCIho9SUk1XIcjyEb9SwzjmLTcXoqcQykp544aAczSGznxBIubnqky6uhhg15lk1Z/t82327cq0=
