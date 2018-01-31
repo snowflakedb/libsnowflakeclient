@@ -63,7 +63,7 @@ travis_fold_end
 travis_fold_start ctests "Tests C Library"
 RUN_TESTS_OPTS=()
 if [[ -n "$USE_VALGRIND" ]]; then
-    RUN_TESTS_OPTS+=("--enable-pdo_snowflake")
+    RUN_TESTS_OPTS+=("-m")
 fi
 $DIR/run_tests.sh "${RUN_TESTS_OPTS[@]}"
 travis_fold_end
