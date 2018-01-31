@@ -11,14 +11,17 @@ function usage() {
 set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/env.sh
 
 VALGRIND_CMD=(
     "valgrind"
     "--tool=memcheck"
     "--leak-check=full"
     "--error-exitcode=1"
-    "--run-libc-freeres=no"
 )
+
+# removed to suppress false alarm
+# "--run-libc-freeres=no"
 
 use_valgrind=()
 while getopts "hm" opt; do

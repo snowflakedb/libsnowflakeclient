@@ -30,11 +30,10 @@ Ensure you have cmake 2.8 or later version.
 Test
 ----------------------------------------------------------------------
 
-Set the environment variables and run the test script.
+Run the tests. The test parameter environment variables will be set automatically.
 
 .. code-block:: bash
 
-    eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' ./parameters.json)
     ./scripts/run_tests.sh
 
 Profile
