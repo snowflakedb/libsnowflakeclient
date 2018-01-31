@@ -30,8 +30,9 @@ matrix:
       - source env/bin/activate
   - os: osx
     before_install:
+      - sw_vers
       - brew update
-      - brew install python3
+      - brew install python3 jq
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
       - virtualenv env -p python3
       - source env/bin/activate
