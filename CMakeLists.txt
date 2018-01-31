@@ -57,11 +57,6 @@ link_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/linux/openssl/lib"
 )
 
-target_link_libraries(snowflakeclient
-        rt dl z
-        ${CURL_LIB}
-        ${SSL_LIB}
-        ${CRYPTO_LIB}
-        dl)
+target_link_libraries(snowflakeclient rt dl z)
 
 add_subdirectory(examples)
