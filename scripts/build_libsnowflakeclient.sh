@@ -25,5 +25,5 @@ cd $DIR/..
 rm -rf cmake-build
 mkdir cmake-build
 cd cmake-build
-cmake ..  -G"Unix Makefiles"
+cmake ..
 make

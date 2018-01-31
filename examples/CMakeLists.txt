@@ -34,6 +34,7 @@ SET(EXAMPLES
 set(SOURCE_UTILS
         example_setup.c)
 
+if (LINUX)
 FOREACH(EX ${EXAMPLES})
     add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
     target_link_libraries(
@@ -42,3 +43,16 @@ FOREACH(EX ${EXAMPLES})
             -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive
     )
 ENDFOREACH()
+endif()
+if (APPLE)
+    FOREACH(EX ${EXAMPLES})
+        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
+        target_link_libraries(
+                ex_${EX}
+                z m
+                "-framework CoreFoundation"
+                snowflakeclient
+                -all_load curl ssl crypto
+        )
+    ENDFOREACH()
+endif()

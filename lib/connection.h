@@ -335,7 +335,7 @@ SF_JSON_ERROR STDCALL json_detach_object_from_array(cJSON **dest, cJSON *data, i
  * @param item A cJSON object that will not be altered in the function.
  * @return An arraylist containing all the keys in the object. This arraylist must be freed by the caller at some point.
  */
-ARRAY_LIST *json_get_object_keys(const cJSON const *item);
+ARRAY_LIST *json_get_object_keys(const cJSON *item);
 
 /**
  * A write callback function to use to write the response text received from the cURL response. The raw JSON buffer
