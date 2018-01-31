@@ -18,6 +18,7 @@ VALGRIND_CMD=(
     "--tool=memcheck"
     "--leak-check=full"
     "--error-exitcode=1"
+    "--gen-suppressions=all"
 )
 
 # removed to suppress false alarm
