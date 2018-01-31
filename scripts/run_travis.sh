@@ -32,6 +32,7 @@ function finish {
 }
 
 travis_fold_start pythonvenv "Set up Python Virtualenv (pyenv)"
+pyenv versions
 pyenv local 3.6
 pyenv versions
 pip install -U pip
