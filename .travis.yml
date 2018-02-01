@@ -2,8 +2,6 @@ sudo: required
 language: cpp
 script:
   - ./scripts/run_travis.sh
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
 matrix:
   include:
   - os: linux
@@ -16,6 +14,8 @@ matrix:
       - pip install -U virtualenv
       - virtualenv env
       - source env/bin/activate
+    after_succss:
+      - bash <(curl -s https://codecov.io/bash)
   - os: linux
     env:
       - USE_VALGRIND=true
