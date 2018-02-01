@@ -41,8 +41,10 @@ travis_fold_start create_schema "Create test schema"
 python $DIR/create_schema.py 
 travis_fold_end
 
-# enabling code coverage
-export BUILD_WITH_GCOV_OPTION=true
+if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    # enabling code coverage
+    export BUILD_WITH_GCOV_OPTION=true
+fi
 
 travis_fold_start build_pdo_snowflake "Build C/C++ library"
 $DIR/build_libsnowflakeclient.sh
@@ -56,6 +58,8 @@ fi
 $DIR/run_tests.sh "${RUN_TESTS_OPTS[@]}"
 travis_fold_end
 
-travis_fold_start ctests "Generate gcov files"
-$DIR/gen_gcov.sh
-travis_fold_end
+if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    travis_fold_start ctests "Generate gcov files"
+    $DIR/gen_gcov.sh
+    travis_fold_end
+fi
