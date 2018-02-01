@@ -16,19 +16,42 @@ Snowflake Connector for C/C++
 Build and Tests
 ================================================================================
 
-Build
+Build (Linux and OSX)
 ----------------------------------------------------------------------
+
 Ensure you have cmake 2.8 or later version.
 
 .. code-block:: bash
 
     mkdir cmake-build
     cd cmake-build
-    cmake .. -G"Unix Makefiles"
+    cmake ..
     make
 
-Test
+or
+
+.. code-block:: bash
+
+    ./scripts/build_libsnowflakeclient.sh
+
+Test (Linux and OSX)
 ----------------------------------------------------------------------
+
+Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
+
+.. code-block:: json
+
+    {
+        "testconnection": {
+            "SNOWFLAKE_TEST_USER":      "<your_user>",
+            "SNOWFLAKE_TEST_PASSWORD":  "<your_password>",
+            "SNOWFLAKE_TEST_ACCOUNT":   "<your_account>",
+            "SNOWFLAKE_TEST_WAREHOUSE": "<your_warehouse>",
+            "SNOWFLAKE_TEST_DATABASE":  "<your_database>",
+            "SNOWFLAKE_TEST_SCHEMA":    "<your_schema>",
+            "SNOWFLAKE_TEST_ROLE":      "<your_role>"
+        }
+    }
 
 Run the tests. The test parameter environment variables will be set automatically.
 
@@ -36,7 +59,7 @@ Run the tests. The test parameter environment variables will be set automaticall
 
     ./scripts/run_tests.sh
 
-Profile
+Profiling (Linux and OSX)
 ----------------------------------------------------------------------
 
 If you want to use ``gprof``, add ``-p`` option to the build script, run a test program followed by ``gprof``, for example:
