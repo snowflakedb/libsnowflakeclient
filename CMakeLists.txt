@@ -127,3 +127,4 @@ if(WIN32)
 endif()
 
 add_subdirectory(examples)
+add_subdirectory(cpp)
