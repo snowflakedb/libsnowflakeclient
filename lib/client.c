@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <pthread.h>
+#include <direct.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -32,10 +32,13 @@ sf_bool DEBUG;
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
-static pthread_mutex_t log_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t gmlocaltime_lock = PTHREAD_MUTEX_INITIALIZER;
+static SF_MUTEX_HANDLE log_lock = NULL;
+static SF_MUTEX_HANDLE gmlocaltime_lock = NULL;
 
-SF_STATUS _snowflake_internal_query(SF_CONNECT *sf, const char *sql);
+static SF_STATUS STDCALL _snowflake_internal_query(SF_CONNECT *sf, const char *sql);
+static SF_STATUS STDCALL _set_parameters_session_info(SF_CONNECT *sf, cJSON *data);
+static void STDCALL _set_current_objects(SF_STMT* sfstmt, cJSON* data);
+static SF_STATUS STDCALL _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters, cJSON *session_info, sf_bool do_validate);
 
 #define _SF_STMT_TYPE_DML 0x3000
 #define _SF_STMT_TYPE_INSERT (_SF_STMT_TYPE_DML + 0x100)
@@ -116,13 +119,13 @@ static void alloc_buffer_and_copy(char **var, const char *str) {
  * @param mode mode
  * @return 0 if success otherwise -1
  */
-static int mkpath(char *file_path, mode_t mode) {
+static int mkpath(char *file_path) {
     assert(file_path && *file_path);
     char *p;
     for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
         *p = '\0';
-        if (mkdir(file_path, mode) == -1) {
-            if (errno != EEXIST) {
+        if (_mkdir(file_path) == -1) {
+                if (errno != EEXIST) {
                 *p = '/';
                 return -1;
             }
@@ -139,9 +142,9 @@ static int mkpath(char *file_path, mode_t mode) {
  */
 static void log_lock_func(void *udata, int lock) {
     if (lock) {
-        pthread_mutex_lock(&log_lock);
+        _mutex_lock(&log_lock);
     } else {
-        pthread_mutex_unlock(&log_lock);
+        _mutex_unlock(&log_lock);
     }
 }
 
@@ -192,7 +195,7 @@ static sf_bool _extract_timestamp(
 
     if (sftype == SF_TYPE_TIMESTAMP_TZ) {
         /* make up Timezone name from the tzoffset */
-        ldiv_t dm = ldiv(tzoffset, 60L);
+        ldiv_t dm = ldiv((long)tzoffset, 60L);
         sprintf(tzname, "UTC%c%02ld:%02ld",
                 dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
         tzptr = tzname;
@@ -201,25 +204,25 @@ static sf_bool _extract_timestamp(
     /* replace a dot character with NULL */
     if (sftype == SF_TYPE_TIMESTAMP_NTZ ||
         sftype == SF_TYPE_TIME) {
-        tm_ptr = gmtime_r(&sec, &tm_obj);
+        tm_ptr = sf_gmtime(&sec, &tm_obj);
     } else if (sftype == SF_TYPE_TIMESTAMP_LTZ ||
                sftype == SF_TYPE_TIMESTAMP_TZ) {
         /* set the environment variable TZ to the session timezone
          * so that localtime_tz honors it.
          */
-        pthread_mutex_lock(&gmlocaltime_lock);
-        const char *prev_tz_ptr = getenv("TZ");
-        setenv("TZ", tzptr, 1);
-        tzset();
+        _mutex_lock(&gmlocaltime_lock);
+        const char *prev_tz_ptr = sf_getenv("TZ");
+        sf_setenv("TZ", tzptr);
+        sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
-        tm_ptr = localtime_r(&sec, &tm_obj);
+        tm_ptr = sf_localtime(&sec, &tm_obj);
         if (prev_tz_ptr != NULL) {
-            setenv("TZ", prev_tz_ptr, 1); /* cannot set to NULL */
+            sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
         } else {
-            unsetenv("TZ");
+            sf_unsetenv("TZ");
         }
-        tzset();
-        pthread_mutex_unlock(&gmlocaltime_lock);
+        sf_tzset();
+        _mutex_unlock(&gmlocaltime_lock);
     }
     if (tm_ptr == NULL) {
         result->len = 0;
@@ -244,7 +247,7 @@ static sf_bool _extract_timestamp(
     }
     if (sftype == SF_TYPE_TIMESTAMP_TZ) {
         /* Timezone info */
-        ldiv_t dm = ldiv(tzoffset, 60L);
+        ldiv_t dm = ldiv((long)tzoffset, 60L);
         result->len += snprintf(
           &((char *) result->value)[result->len],
           result->max_length - result->len,
@@ -341,6 +344,9 @@ cleanup:
  * Initializes logging file
  */
 static sf_bool STDCALL log_init(const char *log_path) {
+    _mutex_init(&log_lock);
+    _mutex_init(&gmlocaltime_lock);
+
     sf_bool ret = SF_BOOLEAN_FALSE;
     time_t current_time;
     struct tm *time_info;
@@ -354,7 +360,7 @@ static sf_bool STDCALL log_init(const char *log_path) {
     if (log_path) {
         sf_log_path = log_path;
     } else {
-        sf_log_path = getenv("SNOWFLAKE_LOG_PATH");
+        sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH");
     }
     // Set logging level
     if (DEBUG) {
@@ -378,7 +384,7 @@ static sf_bool STDCALL log_init(const char *log_path) {
     }
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
-        if (mkpath(LOG_PATH, 0755) == -1) {
+        if (mkpath(LOG_PATH) == -1) {
             fprintf(stderr, "Error creating log directory. Error code: %s\n",
                     strerror(errno));
             goto cleanup;
@@ -416,6 +422,8 @@ static void STDCALL log_term() {
         fclose(LOG_FP);
         log_set_fp(NULL);
     }
+    _mutex_term(&gmlocaltime_lock);
+    _mutex_term(&log_lock);
 }
 
 SF_STATUS STDCALL snowflake_global_init(const char *log_path) {
@@ -427,6 +435,8 @@ SF_STATUS STDCALL snowflake_global_init(const char *log_path) {
     SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
     DEBUG = SF_BOOLEAN_FALSE;
 
+    sf_memory_init();
+    sf_error_init();
     if (!log_init(log_path)) {
         // no way to log error because log_init failed.
         fprintf(stderr, "Error during log initialization");
@@ -446,13 +456,15 @@ cleanup:
 }
 
 SF_STATUS STDCALL snowflake_global_term() {
-    log_term();
     curl_global_cleanup();
 
     // Cleanup Constants
     SF_FREE(CA_BUNDLE_FILE);
 
+    log_term();
     sf_alloc_map_to_log(SF_BOOLEAN_TRUE);
+    sf_error_term();
+    sf_memory_term();
     return SF_STATUS_SUCCESS;
 }
 
@@ -507,14 +519,14 @@ SF_CONNECT *STDCALL snowflake_init() {
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
 
-        pthread_mutex_init(&sf->mutex_parameters, NULL);
+        _mutex_init(&sf->mutex_parameters);
 
         sf->token = NULL;
         sf->master_token = NULL;
         sf->login_timeout = 120;
         sf->network_timeout = 0;
         sf->sequence_counter = 0;
-        pthread_mutex_init(&sf->mutex_sequence_counter, NULL);
+        _mutex_init(&sf->mutex_sequence_counter);
         sf->request_id[0] = '\0';
         clear_snowflake_error(&sf->error);
     }
@@ -549,8 +561,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         SF_FREE(s_resp);
     }
 
-    pthread_mutex_destroy(&sf->mutex_sequence_counter);
-    pthread_mutex_destroy(&sf->mutex_parameters);
+    _mutex_term(&sf->mutex_sequence_counter);
+    _mutex_term(&sf->mutex_parameters);
     SF_FREE(sf->host);
     SF_FREE(sf->port);
     SF_FREE(sf->user);
@@ -698,12 +710,9 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             goto cleanup;
         }
 
-        pthread_mutex_lock(&sf->mutex_parameters);
-        ret = _reset_connection_parameters(
-          sf,
-          cJSON_GetObjectItem(data, "parameters"),
-          cJSON_GetObjectItem(data, "sessionInfo"), SF_BOOLEAN_TRUE);
-        pthread_mutex_unlock(&sf->mutex_parameters);
+        _mutex_lock(&sf->mutex_parameters);
+        _set_parameters_session_info(sf, data);
+        _mutex_unlock(&sf->mutex_parameters);
         if (ret > 0) {
             goto cleanup;
         }
@@ -736,6 +745,34 @@ cleanup:
     SF_FREE(s_resp);
 
     return ret;
+}
+
+static SF_STATUS STDCALL _set_parameters_session_info(
+  SF_CONNECT *sf, cJSON *data) {
+    SF_STATUS ret = _reset_connection_parameters(
+      sf,
+      cJSON_GetObjectItem(data, "parameters"),
+      cJSON_GetObjectItem(data, "sessionInfo"), SF_BOOLEAN_TRUE);
+    return ret;
+}
+
+static void STDCALL _set_current_objects(SF_STMT* sfstmt, cJSON* data) {
+  if (json_copy_string(&sfstmt->connection->database, data,
+    "finalDatabaseName")) {
+    log_warn("No valid database found in response");
+  }
+  if (json_copy_string(&sfstmt->connection->schema, data,
+    "finalSchemaName")) {
+    log_warn("No valid schema found in response");
+  }
+  if (json_copy_string(&sfstmt->connection->warehouse, data,
+    "finalWarehouseName")) {
+    log_warn("No valid warehouse found in response");
+  }
+  if (json_copy_string(&sfstmt->connection->role, data,
+    "finalRoleName")) {
+    log_warn("No valid role found in response");
+  }
 }
 
 SF_STATUS STDCALL snowflake_set_attribute(
@@ -1009,7 +1046,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (sfstmt->chunk_rowcount == 0) {
         if (sfstmt->chunk_downloader) {
             log_debug("Fetching next chunk from chunk downloader.");
-            pthread_mutex_lock(&sfstmt->chunk_downloader->queue_lock);
+            _critical_section_lock(&sfstmt->chunk_downloader->queue_lock);
             do {
                 if (sfstmt->chunk_downloader->consumer_head >=
                     sfstmt->chunk_downloader->queue_size) {
@@ -1026,7 +1063,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                       sfstmt->chunk_downloader->queue[index].chunk == NULL &&
                       !get_shutdown_or_error(
                         sfstmt->chunk_downloader)) {
-                        pthread_cond_wait(
+                        _cond_wait(
                           &sfstmt->chunk_downloader->consumer_cond,
                           &sfstmt->chunk_downloader->queue_lock);
                     }
@@ -1049,7 +1086,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                     sfstmt->chunk_rowcount = sfstmt->chunk_downloader->queue[index].row_count;
                     log_debug("Acquired chunk %llu from chunk downloader",
                               index);
-                    if (pthread_cond_signal(
+                    if (_cond_signal(
                       &sfstmt->chunk_downloader->producer_cond)) {
                         SET_SNOWFLAKE_ERROR(&sfstmt->error,
                                             SF_STATUS_ERROR_PTHREAD,
@@ -1061,7 +1098,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                 }
             }
             while (0);
-            pthread_mutex_unlock(&sfstmt->chunk_downloader->queue_lock);
+            _critical_section_unlock(&sfstmt->chunk_downloader->queue_lock);
         } else {
             // If there is no chunk downloader set, then we've truly reached the end of the results and should set EOL
             log_debug("No chunk downloader set, end of results.");
@@ -1109,7 +1146,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         struct tm *tm_ptr;
         memset(&tm_obj, 0, sizeof(tm_obj));
 
-        raw_result = cJSON_GetArrayItem(row, i);
+        raw_result = cJSON_GetArrayItem(row, (int)i);
         if (raw_result->valuestring == NULL) {
             log_info("setting value and len = NULL");
             ((char *) result->value)[0] = '\0'; // empty string
@@ -1174,9 +1211,9 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         sec =
                           (time_t) strtol(raw_result->valuestring, NULL, 10) *
                           86400L;
-                        pthread_mutex_lock(&gmlocaltime_lock);
-                        tm_ptr = gmtime_r(&sec, &tm_obj);
-                        pthread_mutex_unlock(&gmlocaltime_lock);
+                        _mutex_lock(&gmlocaltime_lock);
+                        tm_ptr = sf_gmtime(&sec, &tm_obj);
+                        _mutex_unlock(&gmlocaltime_lock);
                         if (tm_ptr == NULL) {
                             /* TODO: error handling */
                             result->len = 0;
@@ -1230,7 +1267,7 @@ cleanup:
     return ret;
 }
 
-SF_STATUS _snowflake_internal_query(SF_CONNECT *sf, const char *sql) {
+static SF_STATUS STDCALL _snowflake_internal_query(SF_CONNECT *sf, const char *sql) {
     if (!sf) {
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
@@ -1292,8 +1329,8 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
     if (sfstmt->is_dml) {
         row = cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
         ret = 0;
-        for (i = 0; i < sfstmt->total_fieldcount; ++i) {
-            raw_row_result = cJSON_GetArrayItem(row, i);
+        for (i = 0; i < (size_t)sfstmt->total_fieldcount; ++i) {
+            raw_row_result = cJSON_GetArrayItem(row, (int)i);
             ret += (int64) strtoll(raw_row_result->valuestring, NULL, 10);
         }
         cJSON_Delete(row);
@@ -1362,9 +1399,9 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
     const char *type;
     char *value;
 
-    pthread_mutex_lock(&sfstmt->connection->mutex_sequence_counter);
+    _mutex_lock(&sfstmt->connection->mutex_sequence_counter);
     sfstmt->sequence_counter = ++sfstmt->connection->sequence_counter;
-    pthread_mutex_unlock(&sfstmt->connection->mutex_sequence_counter);
+    _mutex_unlock(&sfstmt->connection->mutex_sequence_counter);
 
     // TODO Do error handing and checking and stuff
     ARRAY_LIST *p = (ARRAY_LIST *) sfstmt->params;
@@ -1382,7 +1419,7 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
             value = value_to_string(input->value, input->len, input->c_type);
             binding = cJSON_CreateObject();
             char idxbuf[20];
-            sprintf(idxbuf, "%ld", i + 1);
+            sprintf(idxbuf, "%lu", (unsigned long)(i + 1));
             cJSON_AddStringToObject(binding, "type", type);
             cJSON_AddStringToObject(binding, "value", value);
             cJSON_AddItemToObject(bindings, idxbuf, binding);
@@ -1426,30 +1463,11 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
         if ((json_error = json_copy_bool(&success, resp, "success")) ==
             SF_JSON_ERROR_NONE && success) {
             // Set Database info
-            pthread_mutex_lock(&sfstmt->connection->mutex_parameters);
-            if (json_copy_string(&sfstmt->connection->database, data,
-                                 "finalDatabaseName")) {
-                log_warn("No valid database found in response");
-            }
-            if (json_copy_string(&sfstmt->connection->schema, data,
-                                 "finalSchemaName")) {
-                log_warn("No valid schema found in response");
-            }
-            if (json_copy_string(&sfstmt->connection->warehouse, data,
-                                 "finalWarehouseName")) {
-                log_warn("No valid warehouse found in response");
-            }
-            if (json_copy_string(&sfstmt->connection->role, data,
-                                 "finalRoleName")) {
-                log_warn("No valid role found in response");
-            }
+            _mutex_lock(&sfstmt->connection->mutex_parameters);
             /* Set other parameters. Ignore the status */
-            _reset_connection_parameters(
-              sfstmt->connection,
-              cJSON_GetObjectItem(data, "parameters"),
-              cJSON_GetObjectItem(data, "sessionInfo"), SF_BOOLEAN_FALSE);
-            pthread_mutex_unlock(&sfstmt->connection->mutex_parameters);
-
+            _set_current_objects(sfstmt, data);
+            _set_parameters_session_info(sfstmt->connection, data);
+            _mutex_unlock(&sfstmt->connection->mutex_parameters);
             int64 stmt_type_id;
             if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
                 /* failed to get statement type id */
@@ -1548,14 +1566,14 @@ cleanup:
     return ret;
 }
 
-SF_ERROR *STDCALL snowflake_error(SF_CONNECT *sf) {
+SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf) {
     if (!sf) {
         return NULL;
     }
     return &sf->error;
 }
 
-SF_ERROR *STDCALL snowflake_stmt_error(SF_STMT *sfstmt) {
+SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return NULL;
     }
@@ -1640,7 +1658,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
         /* if already error is set */
         SF_FREE(sf->error.msg);
     }
-    memcpy(&sf->error, &sfstmt->error, sizeof(SF_ERROR));
+    memcpy(&sf->error, &sfstmt->error, sizeof(SF_ERROR_STRUCT));
     if (sfstmt->error.error_code) {
         /* any error */
         size_t len = strlen(sfstmt->error.msg);

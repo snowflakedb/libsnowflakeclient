@@ -2,15 +2,15 @@
  * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "memory.h"
 #include <snowflake/logger.h>
-#include <pthread.h>
+#include "memory.h"
+#include "platform.h"
 
 // Basic hashing function. Works well for memory addresses
 #define sf_ptr_hash(p, t) (((unsigned long) (p) >> 3) & (sizeof (t)/sizeof ((t)[0]) - 1))
 #define SF_ALLOC_MAP_SIZE 2048
 
-pthread_mutex_t allocation_lock = PTHREAD_MUTEX_INITIALIZER;
+static SF_MUTEX_HANDLE allocation_lock = NULL;
 
 static struct allocation {
     struct allocation *link;
@@ -30,7 +30,7 @@ static struct allocation *alloc_find(const void *ptr) {
     return alloc;
 }
 
-void alloc_insert(const void *ptr, size_t size, const char *file, int line) {
+static void alloc_insert(const void *ptr, size_t size, const char *file, int line) {
     struct allocation *alloc = malloc(sizeof(struct allocation));
     alloc->ptr = ptr;
     alloc->size = size;
@@ -42,7 +42,7 @@ void alloc_insert(const void *ptr, size_t size, const char *file, int line) {
     alloc_map[index] = alloc;
 }
 
-void alloc_remove(const void *ptr) {
+static void alloc_remove(const void *ptr) {
     uint32 index = sf_ptr_hash(ptr, alloc_map);
     struct allocation *prev = NULL;
     struct allocation *alloc = alloc_map[index];
@@ -67,6 +67,14 @@ void alloc_remove(const void *ptr) {
     }
 }
 
+void sf_memory_init() {
+    _mutex_init(&allocation_lock);
+}
+
+void sf_memory_term() {
+    _mutex_term(&allocation_lock);
+}
+
 void *sf_malloc(size_t size, const char *file, int line) {
     // If size is 0, we should return a NULL pointer instead of exiting.
     if (size == 0) {
@@ -79,9 +87,9 @@ void *sf_malloc(size_t size, const char *file, int line) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_mutex_lock(&allocation_lock);
+    _mutex_lock(&allocation_lock);
     alloc_insert(data, size, file, line);
-    pthread_mutex_unlock(&allocation_lock);
+    _mutex_unlock(&allocation_lock);
 
     return data;
 }
@@ -98,9 +106,9 @@ void *sf_calloc(size_t num, size_t size, const char *file, int line) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_mutex_lock(&allocation_lock);
+    _mutex_lock(&allocation_lock);
     alloc_insert(data, num * size, file, line);
-    pthread_mutex_unlock(&allocation_lock);
+    _mutex_unlock(&allocation_lock);
 
     return data;
 }
@@ -115,7 +123,7 @@ void *sf_realloc(void *ptr, size_t size, const char *file, int line) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_mutex_lock(&allocation_lock);
+    _mutex_lock(&allocation_lock);
     alloc = alloc_find(ptr);
     // If we don't find old entry then create new one
     if (alloc) {
@@ -132,17 +140,17 @@ void *sf_realloc(void *ptr, size_t size, const char *file, int line) {
     } else {
         alloc_insert(data, size, file, line);
     }
-    pthread_mutex_unlock(&allocation_lock);
+    _mutex_unlock(&allocation_lock);
 
     return data;
 }
 
 void sf_free(void *ptr, const char *file, int line) {
     if (ptr) {
-        pthread_mutex_lock(&allocation_lock);
+        _mutex_lock(&allocation_lock);
         free(ptr);
         alloc_remove(ptr);
-        pthread_mutex_unlock(&allocation_lock);
+        _mutex_unlock(&allocation_lock);
     }
 }
 
@@ -150,7 +158,7 @@ void sf_alloc_map_to_log(sf_bool cleanup) {
     int i;
     struct allocation *alloc;
     struct allocation *link;
-    pthread_mutex_lock(&allocation_lock);
+    _mutex_lock(&allocation_lock);
     for (i = 0; i < SF_ALLOC_MAP_SIZE; i++) {
         if (alloc_map[i]) {
             alloc = alloc_map[i];
@@ -166,5 +174,5 @@ void sf_alloc_map_to_log(sf_bool cleanup) {
             }
         }
     }
-    pthread_mutex_unlock(&allocation_lock);
+    _mutex_unlock(&allocation_lock);
 }

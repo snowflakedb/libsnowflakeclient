@@ -9,13 +9,8 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
-
 #include <snowflake/basic_types.h>
+#include "platform.h"
 
 extern sf_bool DISABLE_VERIFY_PEER;
 extern char *CA_BUNDLE_FILE;

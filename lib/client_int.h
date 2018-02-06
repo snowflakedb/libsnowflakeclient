@@ -7,6 +7,7 @@
 
 #include "cJSON.h"
 #include "arraylist.h"
+#include "platform.h"
 
 #define HEADER_SNOWFLAKE_TOKEN_FORMAT "Authorization: Snowflake Token=\"%s\""
 #define HEADER_CONTENT_TYPE_APPLICATION_JSON "Content-Type: application/json"

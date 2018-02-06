@@ -9,13 +9,8 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
-
 #include <snowflake/client.h>
+#include "platform.h"
 #include "cJSON.h"
 
 SF_TYPE string_to_snowflake_type(const char *string);

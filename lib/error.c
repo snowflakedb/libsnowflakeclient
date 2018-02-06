@@ -9,10 +9,18 @@
 /*
  * Shared message buffer for emergency use.
  */
-pthread_mutex_t mutex_shared_msg = PTHREAD_MUTEX_INITIALIZER;
+static SF_THREAD_HANDLE mutex_shared_msg = NULL;
 static char _shared_msg[8192];
 
-void STDCALL set_snowflake_error(SF_ERROR *error,
+void STDCALL sf_error_init() {
+    _mutex_init(&mutex_shared_msg);
+}
+
+void STDCALL sf_error_term() {
+    _mutex_term(&mutex_shared_msg);
+}
+
+void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
                                  SF_STATUS error_code,
                                  const char *msg,
                                  const char *sqlstate,
@@ -51,13 +59,13 @@ void STDCALL set_snowflake_error(SF_ERROR *error,
         error->is_shared_msg = SF_BOOLEAN_FALSE;
     } else {
         /* if failed to allocate a memory to store error */
-        pthread_mutex_lock(&mutex_shared_msg);
+        _mutex_lock(&mutex_shared_msg);
         size_t len =
           msglen > sizeof(_shared_msg) ? sizeof(_shared_msg) : msglen;
         memset(_shared_msg, 0, sizeof(_shared_msg));
         strncpy(_shared_msg, msg, len);
         _shared_msg[sizeof(_shared_msg) - 1] = '\0';
-        pthread_mutex_unlock(&mutex_shared_msg);
+        _mutex_unlock(&mutex_shared_msg);
 
         error->is_shared_msg = SF_BOOLEAN_TRUE;
         error->msg = _shared_msg;
@@ -67,10 +75,10 @@ void STDCALL set_snowflake_error(SF_ERROR *error,
     error->line = line;
 }
 
-void STDCALL clear_snowflake_error(SF_ERROR *error) {
-    pthread_mutex_lock(&mutex_shared_msg);
+void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error) {
+    _mutex_lock(&mutex_shared_msg);
     memset(_shared_msg, 0, sizeof(_shared_msg));
-    pthread_mutex_unlock(&mutex_shared_msg);
+    _mutex_unlock(&mutex_shared_msg);
     if (strncmp(error->sqlstate, SF_SQLSTATE_NO_ERROR,
                 sizeof(SF_SQLSTATE_NO_ERROR)) && !error->is_shared_msg) {
         /* Error already set and msg is not on shared mem */
@@ -85,7 +93,7 @@ void STDCALL clear_snowflake_error(SF_ERROR *error) {
     memset(error->sfqid, 0, SF_UUID4_LEN);
 }
 
-void STDCALL copy_snowflake_error(SF_ERROR *dst, SF_ERROR *src) {
+void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src) {
     if (!dst || !src) {
         return;
     }

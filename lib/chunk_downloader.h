@@ -9,32 +9,27 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
-
-#include <pthread.h>
 #include <curl/curl.h>
 #include <snowflake/client.h>
+#include "platform.h"
 #include "cJSON.h"
 
-typedef struct sf_queue_item {
+typedef struct SF_QUEUE_ITEM {
     char *url;
     int64 row_count;
     cJSON *chunk;
 } SF_QUEUE_ITEM;
 
-struct sf_chunk_downloader {
-    // Threads
-    pthread_t *threads;
+struct SF_CHUNK_DOWNLOADER {
     uint64 thread_count;
 
-    // "Queue" locks
-    pthread_mutex_t queue_lock;
-    pthread_cond_t producer_cond;
-    pthread_cond_t consumer_cond;
+    // Threads
+    SF_THREAD_HANDLE *threads;
+
+    // Queue
+    SF_CRITICAL_SECTION_HANDLE queue_lock;
+    SF_CONDITION_HANDLE producer_cond;
+    SF_CONDITION_HANDLE consumer_cond;
 
     // A "queue" that is actually just a locked array
     SF_QUEUE_ITEM* queue;
@@ -54,10 +49,10 @@ struct sf_chunk_downloader {
 
     // Chunk downloader attribute read-write lock. If you need to acquire both the queue_lock and attr_lock,
     // ALWAYS acquire the queue_lock first, otherwise we can deadlock
-    pthread_rwlock_t attr_lock;
+    SF_RWLOCK_HANDLE attr_lock;
 
     // Snowflake statement error
-    SF_ERROR *sf_error;
+    SF_ERROR_STRUCT *sf_error;
 };
 
 SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
@@ -65,14 +60,11 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    cJSON *chunks,
                                                    uint64 thread_count,
                                                    uint64 fetch_slots,
-                                                   SF_ERROR *sf_error);
+                                                   SF_ERROR_STRUCT *sf_error);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
-void set_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader, sf_bool value);
 sf_bool get_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
-void set_error(SF_CHUNK_DOWNLOADER *chunk_downloader, sf_bool value);
-
 
 #ifdef __cplusplus
 }

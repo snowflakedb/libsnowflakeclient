@@ -9,23 +9,18 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <snowflake/client.h>
+#include "platform.h"
 #include "cJSON.h"
 #include "arraylist.h"
 
 /**
  * Request type
  */
-typedef enum sf_request_type {
+typedef enum SF_REQUEST_TYPE {
             /** not handling any request right now */
             NONE_REQUEST_TYPE,
 
@@ -45,7 +40,7 @@ typedef enum sf_request_type {
 /**
  * Error types returned by cJSON convenience functions.
  */
-typedef enum sf_json_errors {
+typedef enum SF_JSON_ERROR {
     /** No error */
     SF_JSON_ERROR_NONE,
 
@@ -65,7 +60,7 @@ typedef enum sf_json_errors {
 /**
  * Dynamically growing char buffer to hold retrieved in cURL call.
  */
-typedef struct sf_raw_json_buffer {
+typedef struct RAW_JSON_BUFFER {
     // Char buffer
     char *buffer;
     // Number of characters in char buffer
@@ -75,7 +70,7 @@ typedef struct sf_raw_json_buffer {
 /**
  * URL Parameter struct used to construct an encoded URL.
  */
-typedef struct sf_url_key_value {
+typedef struct URL_KEY_VALUE {
     // URL param key
     const char *key;
     // URL param value
@@ -93,7 +88,7 @@ typedef struct sf_url_key_value {
 /**
  * Used to keep track of min and max backoff time for a connection retry
  */
-typedef struct sf_decorrelate_jitter_backoff {
+typedef struct DECORRELATE_JITTER_BACKOFF {
     // Minimum backoff time
     uint32 base;
     // Maximum backoff time
@@ -103,7 +98,7 @@ typedef struct sf_decorrelate_jitter_backoff {
 /**
  * Connection retry struct to keep track of retry status
  */
-typedef struct sf_retry_context {
+typedef struct RETRY_CONTEXT {
     // Number of retries
     uint64 retry_count;
     // Retry timeout in number of seconds.
@@ -196,7 +191,7 @@ struct curl_slist * STDCALL create_header_token(const char *header_token);
  * @return Success/failure status of post call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, struct curl_slist *header, char *body,
-                               cJSON **json, SF_ERROR *error);
+                               cJSON **json, SF_ERROR_STRUCT *error);
 
 /**
  * Used to issue a cURL GET call to Snowflake. Includes support for renew session. If the request was successful,
@@ -211,7 +206,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, struct cur
  * @return Success/failure status of get call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json,
-                              SF_ERROR *error);
+                              SF_ERROR_STRUCT *error);
 
 /**
  * Used to determine the sleep time during the next backoff caused by request failure.
@@ -237,7 +232,7 @@ uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sle
  * @return Returns a pointer to a string which is the the encoded URL.
  */
 char * STDCALL encode_url(CURL *curl, const char *protocol, const char *account, const char *host, const char *port,
-                          const char *url, URL_KEY_VALUE* vars, int num_args, SF_ERROR *error);
+                          const char *url, URL_KEY_VALUE* vars, int num_args, SF_ERROR_STRUCT *error);
 
 /**
  * Determines if a string is empty by checking if the passed in string is NULL or contains a null terminator as its
@@ -367,7 +362,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, struct curl_slist *header,
-                             char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader, SF_ERROR *error);
+                             char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader, SF_ERROR_STRUCT *error);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -385,7 +380,7 @@ sf_bool STDCALL is_retryable_http_code(int32 code);
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @return Success/failure status of session renewal. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR *error);
+sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error);
 
 /**
  * Runs a request to Snowflake. Encodes the URL and creates the cURL object that is used for the request.
@@ -402,7 +397,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR *error);
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
-                        char *body, struct curl_slist *header, SF_REQUEST_TYPE request_type, SF_ERROR *error);
+                        char *body, struct curl_slist *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error);
 
 /**
  * Resets curl instance.
@@ -430,7 +425,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx);
  * @return Success/failure of key setting. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL set_tokens(SF_CONNECT *sf, cJSON *data, const char *session_token_str, const char *master_token_str,
-                           SF_ERROR *error);
+                           SF_ERROR_STRUCT *error);
 
 #ifdef __cplusplus
 }
