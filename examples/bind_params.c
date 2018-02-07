@@ -13,7 +13,6 @@
 int main() {
     /* init */
     SF_STATUS status;
-    int i;
     SF_BIND_INPUT input_array[INPUT_ARRAY_SIZE];
     int64 input1;
     char input2[1000];
