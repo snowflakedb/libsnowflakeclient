@@ -8,7 +8,13 @@ call .\scripts\env.bat
 echo %SNOWFLAKE_TEST_ACCOUNT%
 set SNOWFLAKE_TEST_CA_BUNDLE_FILE=%cd%\cacert.pem
 
-for /r ".\cmake-build\examples\Release" %%a in (*.exe) do (
-    echo ==> %%~fa
-    %%~fa
-)
+echo ==> ex_connect
+.\cmake-build\examples\Release\ex_connect
+
+echo ==> ex_large_result_set
+.\cmake-build\examples\Release\ex_large_result_set
+
+::for /r ".\cmake-build\examples\Release" %%a in (*.exe) do (
+::    echo ==> %%~fa
+::    %%~fa
+::)

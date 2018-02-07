@@ -34,4 +34,8 @@ build_script:
   - .\scripts\build_libsnowflakeclient.bat
 
 test_script:
+  - echo ==> ex_connect
+  - .\cmake-build\examples\Release\ex_connect
+  - echo ==> ex_large_result_set
+  - .\cmake-build\examples\Release\ex_large_result_set
   - .\scripts\run_tests.bat
