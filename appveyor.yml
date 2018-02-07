@@ -41,3 +41,7 @@ build_script:
 test_script:
     - call p.bat
     - echo %SNOWFLAKE_TEST_ACCOUNT%
+
+environment:
+    my_secret:
+        secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
