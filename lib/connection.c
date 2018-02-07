@@ -679,7 +679,7 @@ json_detach_object_from_array(cJSON **dest, cJSON *data, int index) {
             cJSON_Delete(*dest);
         }
         *dest = blob;
-        log_debug("Found object item at index: %s", index);
+        log_debug("Found object item at index: %d", index);
     }
 
     return SF_JSON_ERROR_NONE;
