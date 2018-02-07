@@ -43,4 +43,5 @@ build_script:
 test_script:
   - call p.bat
   - echo %SNOWFLAKE_TEST_ACCOUNT%
+  - set SNOWFLAKE_TEST_CA_BUNDLE_FILE="%cd%\cacert.pem"
   - for /r ".\cmake-build\examples\Release" %%a in (*.exe) do %%~fa
