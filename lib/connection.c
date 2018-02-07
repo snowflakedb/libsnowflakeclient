@@ -862,10 +862,18 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-            log_error("curl_easy_perform() failed: %s",
-                      curl_easy_strerror(res));
+            char msg[1024];
+            if (res == CURLE_SSL_CACERT_BADFILE) {
+                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s, cacert=%s",
+                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "None");
+            }
+            else {
+                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            }
+            msg[sizeof(msg)-1] = (char)0;
+            log_error(msg);
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                "Failed during easy perform",
+                                msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=

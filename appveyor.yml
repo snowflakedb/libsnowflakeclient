@@ -35,14 +35,11 @@ before_build:
   - mkdir cmake-build
 
 build_script:
-  - cd cmake-build
-  - cmake -G "Visual Studio 14 2015" -A x64 ..
-  - cmake --build . --config Release
-  - cd ..
+  - scripts\build_libsnowflakeclient.bat
 
 test_script:
   - call p.bat
   - echo %SNOWFLAKE_TEST_ACCOUNT%
-  - set SNOWFLAKE_TEST_CA_BUNDLE_FILE="%cd%\cacert.pem"
+  - set SNOWFLAKE_TEST_CA_BUNDLE_FILE=%cd%\cacert.pem
   - .\cmake-build\examples\Release\ex_connect.exe
   - .\cmake-build\examples\Release\ex_large_result_set.exe

@@ -723,9 +723,11 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         }
     } else {
         log_error("No response");
-        SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
+        if (sf->error.error_code == SF_STATUS_SUCCESS) {
+            SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
                             "No valid JSON response",
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
+        }
         goto cleanup;
     }
 
