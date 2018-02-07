@@ -4,6 +4,7 @@
 include_directories(
         "../include"
         "utils"
+        "../cpp"
 )
 
 SET(EXAMPLES

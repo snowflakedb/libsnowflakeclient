@@ -6,10 +6,10 @@
 
 char* Snowflake::Client::EncryptionProvider::encrypt()
 {
-  return "";
+  return (char *)"";
 }
 
 char* Snowflake::Client::EncryptionProvider::decrypt()
 {
-  return "";
+  return (char *)"";
 }
