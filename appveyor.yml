@@ -1,5 +1,5 @@
 platform:
-  - x64
+  - amd64
 
 environment:
   fast_finish: true
@@ -17,10 +17,8 @@ before_build:
   - ps: >-
         If ($env:Platform -Match "x86") {
             $env:VCVARS_PLATFORM="x86"
-            $env:TARGET="VC-WIN32 no-asm"
         } Else {
-            $env:VCVARS_PLATFORM="amd64"
-            $env:TARGET="VC-WIN64A-masm"
+            $env:VCVARS_PLATFORM="x64"
         }
   - ps: >-
         If ($env:Configuration -Match "shared") {
