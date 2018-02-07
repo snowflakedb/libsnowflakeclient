@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "Ws2_32.lib")
+
+#define CURL_STATICLIB 
 #include <stdio.h>
 #include <stdlib.h>
 #include <curl/curl.h>

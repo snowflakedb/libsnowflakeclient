@@ -1,7 +1,8 @@
 ::
 :: Build zlib for Windows
 ::
-cd deps\zlib-1.2.11
+ZLIB_DIR=zlib-1.2.11
+cd deps\%ZLIB_DIR%
 rmdir /S /Q cmake-build
 mkdir cmake-build
 cd cmake-build

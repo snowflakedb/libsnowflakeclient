@@ -35,24 +35,34 @@ set(SOURCE_UTILS
         example_setup.c)
 
 if (LINUX)
-FOREACH(EX ${EXAMPLES})
-    add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
-    target_link_libraries(
+    FOREACH(EX ${EXAMPLES})
+        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
+        target_link_libraries(
             ex_${EX}
             snowflakeclient
             -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive
-    )
-ENDFOREACH()
+        )
+    ENDFOREACH()
 endif()
 if (APPLE)
     FOREACH(EX ${EXAMPLES})
         add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
         target_link_libraries(
-                ex_${EX}
-                z m
-                "-framework CoreFoundation"
-                snowflakeclient
-                -all_load curl ssl crypto
+            ex_${EX}
+            z m
+            "-framework CoreFoundation"
+            snowflakeclient
+            -all_load curl ssl crypto
         )
+    ENDFOREACH()
+endif()
+if (WIN32)
+    FOREACH(EX ${EXAMPLES})
+        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
+        target_link_libraries(
+            ex_${EX}
+            snowflakeclient
+            libcurl_a libssl_a libcrypto_a zlib_a
+		)
     ENDFOREACH()
 endif()

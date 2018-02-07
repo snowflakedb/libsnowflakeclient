@@ -56,6 +56,7 @@ set(SOURCE_FILES
         include/snowflake/client.h
         include/snowflake/logger.h
         include/snowflake/version.h
+        include/snowflake/platform.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -70,7 +71,6 @@ set(SOURCE_FILES
         lib/constants.h
         lib/results.h
         lib/results.c
-        include/snowflake/platform.h
         lib/platform.c
         lib/uuid4.c
         lib/basic_types.c
@@ -123,7 +123,7 @@ if(APPLE)
     target_link_libraries(snowflakeclient dl z)
 endif()
 if(WIN32)
-    target_link_libraries(snowflakeclient zlib)
+    target_link_libraries(snowflakeclient zlib_a)
 endif()
 
 add_subdirectory(examples)
