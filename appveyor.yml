@@ -12,8 +12,6 @@ install:
   - nuget install secure-file -ExcludeVersion
   - choco install jq
   - secure-file\tools\secure-file -decrypt parameters.appveyor.json.enc -secret %my_secret% -out parameters.appveyor.json
-  - echo @echo off>p.bat
-  - jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.appveyor.json >> p.bat
 
 before_build:
   - ps: >-
@@ -35,11 +33,7 @@ before_build:
   - mkdir cmake-build
 
 build_script:
-  - scripts\build_libsnowflakeclient.bat
+  - .\scripts\build_libsnowflakeclient.bat
 
 test_script:
-  - call p.bat
-  - echo %SNOWFLAKE_TEST_ACCOUNT%
-  - set SNOWFLAKE_TEST_CA_BUNDLE_FILE=%cd%\cacert.pem
-  - .\cmake-build\examples\Release\ex_connect.exe
-  - .\cmake-build\examples\Release\ex_large_result_set.exe
+  - .\scripts\run_tests.bat

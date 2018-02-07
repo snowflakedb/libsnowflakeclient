@@ -864,8 +864,8 @@ sf_bool STDCALL http_perform(CURL *curl,
         if (res != CURLE_OK) {
             char msg[1024];
             if (res == CURLE_SSL_CACERT_BADFILE) {
-                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s, cacert=%s",
-                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "None");
+                snprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
             }
             else {
                 snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
