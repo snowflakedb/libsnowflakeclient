@@ -5,6 +5,10 @@
 #ifndef SNOWFLAKECLIENT_STAGEINFO_HPP
 #define SNOWFLAKECLIENT_STAGEINFO_HPP
 
+#include "string"
+#include <unordered_map>
+#include <snowflake/client.h>
+
 namespace Snowflake
 {
   namespace Client
@@ -12,25 +16,26 @@ namespace Snowflake
     enum StageType
     {
       S3,
-      AZURE
+      AZURE,
+      LOCAL_FS
     };
 
     class StageInfo
     {
     public:
-      StageInfo(StageType * stageType);
+      StageInfo(SF_STAGE_INFO *stage_info);
 
     private:
-      StageType* m_stageType;
+      StageType m_stageType;
 
-      std::string * m_location;
+      char* m_location;
 
-      std::string * m_path;
+      char* m_path;
 
       // required by s3 client
-      std::string * m_region;
+      char* m_region;
 
-      std::unordered_map<std::string, std::string> *credentials;
+      std::unordered_map<std::string, char *> credentials;
 
     };
   }

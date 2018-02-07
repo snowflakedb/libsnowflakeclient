@@ -4,7 +4,8 @@
 
 #include "StorageClientFactory.hpp"
 
-IStorageClient* Snowflake::Client::StorageClientFactory::createClient()
+Snowflake::Client::IStorageClient*
+Snowflake::Client::StorageClientFactory::createClient()
 {
-  return NULL;
+  return nullptr;
 }

@@ -4,6 +4,7 @@
 include_directories(
         "../include"
         "utils"
+        "../cpp"
 )
 
 SET(EXAMPLES
@@ -31,6 +32,9 @@ SET(EXAMPLES
         bind_params
         bind_results)
 
+set(EXAMPLES_CPP
+        simple_put_get)
+
 set(SOURCE_UTILS
         example_setup.c)
 
@@ -41,6 +45,15 @@ if (LINUX)
             ex_${EX}
             snowflakeclient
             -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive
+        )
+    ENDFOREACH()
+
+    FOREACH(EX ${EXAMPLES_CPP})
+        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.cpp)
+        target_link_libraries(
+                ex_${EX}
+                snowflakeclient
+                -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive
         )
     ENDFOREACH()
 endif()

@@ -5,32 +5,54 @@
 #ifndef SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP
 #define SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP
 
+#include "string"
+#include "EncryptionMaterial.hpp"
+#include "StageInfo.hpp"
+#include <vector>
+#include "snowflake/client.h"
+
+using namespace Snowflake::Client;
+
 namespace Snowflake
 {
   namespace Client
   {
     class PutGetParseResponse
     {
-    private:
-      UploadInfo * m_uploadInfo;
+    public:
+      PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response);
 
-      std::vector<std::string> * m_srcLocations;
+      ~PutGetParseResponse();
+
+      inline std::string *getCommand()
+      {
+        return &m_command;
+      }
+
+      inline std::string *getSourceCompression()
+      {
+        return &m_sourceCompression;
+      }
+
+    private:
 
       int m_parallel;
 
-      bool autoCompress;
+      bool m_autoCompress;
 
-      bool overwrite;
-
-      std::string *m_sourceCompression;
+      bool m_overwrite;
 
       bool m_clientShowEncryptionParameter;
 
-      EncryptionMaterial * encryptionMaterial;
+      std::string m_sourceCompression;
 
-      StageInfo * stageInfo;
+      std::string m_command;
 
-      std::string command;
+      std::vector<char *> *m_srcLocations;
+
+      EncryptionMaterial * m_encryptionMaterial;
+
+      StageInfo * m_stageInfo;
     };
   }
 }

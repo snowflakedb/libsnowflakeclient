@@ -5,43 +5,43 @@
 #ifndef SNOWFLAKECLIENT_REMOTESTOREFILEENCRYPTIONMATERIAL_HPP
 #define SNOWFLAKECLIENT_REMOTESTOREFILEENCRYPTIONMATERIAL_HPP
 
-#include "string"
+#include <string>
 
 namespace Snowflake
 {
   namespace Client
   {
-    class RemoteStoreFileEncryptionMaterial
+    class EncryptionMaterial
     {
     public:
-      RemoteStoreFileEncryptionMaterial(std::string *queryStageMasterKey,
-                                        std::string *queryId,
-                                        long *smkId) :
+      EncryptionMaterial(char *queryStageMasterKey,
+                         char *queryId,
+                         long smkId) :
         m_queryStageMasterKey(queryStageMasterKey),
         m_queryId(queryId),
         m_smkId(smkId)
       {
       };
 
-      inline std::string* getQueryStageMasterKey()
+      inline char* getQueryStageMasterKey()
       {
         return m_queryStageMasterKey;
       }
 
-      inline std::string* getQueryId()
+      inline char* getQueryId()
       {
         return m_queryId;
       }
 
-      inline long* getSmkId()
+      inline long getSmkId()
       {
         return m_smkId;
       }
 
     private:
-      std::string *m_queryStageMasterKey;
-      std::string *m_queryId;
-      long *m_smkId;
+      char *m_queryStageMasterKey;
+      char *m_queryId;
+      long m_smkId;
     };
   }
 }
