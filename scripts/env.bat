@@ -2,7 +2,7 @@
 :: Set the environment variables for tests
 ::
 
-if not exist parameter.bat (
+if not exist parameters.appveyor.json (
     echo "parameters.appveyor.json doesn't exist"
     exit /b 2
 )
