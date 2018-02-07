@@ -8,7 +8,6 @@
 
 int main() {
     /* init */
-    SF_STATUS status;
     initialize_snowflake_example(SF_BOOLEAN_FALSE);
 
     SF_CONNECT *sf = NULL;
