@@ -1,22 +1,22 @@
 platform:
-    - x64
+  - x64
 
 environment:
-    fast_finish: true
-    matrix:
-        - VSVER: 14
-    my_secret:
+  fast_finish: true
+  matrix:
+    - VSVER: 14
+    - my_secret:
         secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
 
 install:
-    - nuget install secure-file -ExcludeVersion
-    - choco install jq
-    - secure-file\tools\secure-file -decrypt parameters.appveyor.json.enc -secret %my_secret%
-    - echo @echo off>p.bat
-    - jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.appveyor.json >> p.bat
+  - nuget install secure-file -ExcludeVersion
+  - choco install jq
+  - secure-file\tools\secure-file -decrypt parameters.appveyor.json.enc -secret %my_secret% -out parameters.appveyor.json
+  - echo @echo off>p.bat
+  - jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.appveyor.json >> p.bat
 
 before_build:
-    - ps: >-
+  - ps: >-
         If ($env:Platform -Match "x86") {
             $env:VCVARS_PLATFORM="x86"
             $env:TARGET="VC-WIN32 no-asm"
@@ -24,22 +24,22 @@ before_build:
             $env:VCVARS_PLATFORM="amd64"
             $env:TARGET="VC-WIN64A-masm"
         }
-    - ps: >-
+  - ps: >-
         If ($env:Configuration -Match "shared") {
             $env:SHARED=""
         } Else {
             $env:SHARED="no-shared"
         }
-    - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
-    - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
-    - mkdir cmake-build
+  - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
+  - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
+  - mkdir cmake-build
 
 build_script:
-    - cd cmake-build
-    - cmake -G "Visual Studio 14 2015" -A x64 ..
-    - cmake --build . --config Release
-    - cd ..
+  - cd cmake-build
+  - cmake -G "Visual Studio 14 2015" -A x64 ..
+  - cmake --build . --config Release
+  - cd ..
 
 test_script:
-    - call p.bat
-    - echo %SNOWFLAKE_TEST_ACCOUNT%
+  - call p.bat
+  - echo %SNOWFLAKE_TEST_ACCOUNT%
