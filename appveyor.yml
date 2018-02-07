@@ -6,6 +6,13 @@ environment:
     matrix:
         - VSVER: 14
 
+install:
+    - nuget install secure-file -ExcludeVersion
+    - choco install jq
+    - secure-file\tools\secure-file -decrypt parameters.appveyor.json.enc -secret %my_secret%
+    - echo @echo off>p.bat
+    - jq -r ".testconnection | to_entries | map(\"set \(.key)=\(.value)\") | .[]" parameters.appveyor.json >> p.bat
+
 before_build:
     - ps: >-
         If ($env:Platform -Match "x86") {
@@ -32,4 +39,5 @@ build_script:
     - cd ..
 
 test_script:
-    - echo TODO
+    - call p.bat
+    - echo %SNOWFLAKE_TEST_ACCOUNT%
