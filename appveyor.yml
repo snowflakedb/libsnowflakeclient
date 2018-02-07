@@ -2,12 +2,11 @@ platform:
     - x64
 
 environment:
+    fast_finish: true
+    matrix:
+        - VSVER: 14
     my_secret:
         secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
-
-matrix:
-    fast_finish: true
-    - VSVER: 14
 
 install:
     - nuget install secure-file -ExcludeVersion
