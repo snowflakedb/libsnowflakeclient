@@ -2,9 +2,12 @@ platform:
     - x64
 
 environment:
+    my_secret:
+        secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
+
+matrix:
     fast_finish: true
-    matrix:
-        - VSVER: 14
+    - VSVER: 14
 
 install:
     - nuget install secure-file -ExcludeVersion
@@ -41,7 +44,3 @@ build_script:
 test_script:
     - call p.bat
     - echo %SNOWFLAKE_TEST_ACCOUNT%
-
-environment:
-    my_secret:
-        secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
