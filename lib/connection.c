@@ -3,9 +3,9 @@
  */
 
 #include <string.h>
-#include <sys/utsname.h>
 #include "connection.h"
 #include <snowflake/logger.h>
+#include "snowflake/platform.h"
 #include "memory.h"
 #include "client_int.h"
 #include "constants.h"
@@ -137,6 +137,10 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     //Create Client Environment JSON blob
     client_env = cJSON_CreateObject();
     cJSON_AddStringToObject(client_env, "APPLICATION", application);
+#if defined(_WIN32)
+    cJSON_AddStringToObject(client_env, "OS_VERSION", "Windows");
+#else
+    // Linux and OSX
     struct utsname u;
     if (uname(&u) >= 0) {
         char buf[1024];
@@ -149,20 +153,15 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         strcat(buf, u.machine);
         cJSON_AddStringToObject(client_env, "OS_VERSION", buf);
     } else {
-#if defined(linux)
+#  if defined(linux)
         cJSON_AddStringToObject(client_env, "OS_VERSION", "Linux");
-#else
-#  if defined(_WIN32)
-        cJSON_AddStringToObject(client_env, "OS_VERSION", "Windows");
-#  else
-#    if defined(__APPLE__)
+#  elif defined(__APPLE__)
         cJSON_AddStringToObject(client_env, "OS_VERSION", "MacOS");
-#    else
+#  else
         cJSON_AddStringToObject(client_env, "OS_VERSION", "Unknown");
-#    endif
 #  endif
-#endif
     }
+#endif
 
     session_parameters = cJSON_CreateObject();
     cJSON_AddStringToObject(
@@ -200,7 +199,7 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id) {
     body = cJSON_CreateObject();
     cJSON_AddStringToObject(body, "sqlText", sql_text);
     cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
-    cJSON_AddNumberToObject(body, "sequenceId", sequence_id);
+    cJSON_AddNumberToObject(body, "sequenceId", (double)sequence_id);
 
     return body;
 }
@@ -240,7 +239,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                struct curl_slist *header,
                                char *body,
                                cJSON **json,
-                               SF_ERROR *error) {
+                               SF_ERROR_STRUCT *error) {
     const char *error_msg;
     SF_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
@@ -361,7 +360,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               char *url,
                               struct curl_slist *header,
                               cJSON **json,
-                              SF_ERROR *error) {
+                              SF_ERROR_STRUCT *error) {
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
@@ -460,7 +459,7 @@ char *encode_url(CURL *curl,
                  const char *url,
                  URL_KEY_VALUE *vars,
                  int num_args,
-                 SF_ERROR *error) {
+                 SF_ERROR_STRUCT *error) {
     int i;
     sf_bool host_empty = is_string_empty(host);
     sf_bool port_empty = is_string_empty(port);
@@ -680,13 +679,13 @@ json_detach_object_from_array(cJSON **dest, cJSON *data, int index) {
             cJSON_Delete(*dest);
         }
         *dest = blob;
-        log_debug("Found object item at index: %s", index);
+        log_debug("Found object item at index: %d", index);
     }
 
     return SF_JSON_ERROR_NONE;
 }
 
-ARRAY_LIST *json_get_object_keys(const cJSON *const item) {
+ARRAY_LIST *json_get_object_keys(const cJSON *item) {
     if (!item || !cJSON_IsObject(item)) {
         return NULL;
     }
@@ -730,7 +729,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              cJSON **json,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
-                             SF_ERROR *error) {
+                             SF_ERROR_STRUCT *error) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -863,10 +862,18 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-            log_error("curl_easy_perform() failed: %s",
-                      curl_easy_strerror(res));
+            char msg[1024];
+            if (res == CURLE_SSL_CACERT_BADFILE) {
+                snprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
+            }
+            else {
+                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            }
+            msg[sizeof(msg)-1] = (char)0;
+            log_error(msg);
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                "Failed during easy perform",
+                                msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
@@ -935,7 +942,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         char *body,
                         struct curl_slist *header,
                         SF_REQUEST_TYPE request_type,
-                        SF_ERROR *error) {
+                        SF_ERROR_STRUCT *error) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     char *encoded_url = NULL;
@@ -1002,7 +1009,7 @@ cleanup:
     return ret;
 }
 
-sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR *error) {
+sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     const char *error_msg = NULL;
@@ -1138,7 +1145,7 @@ sf_bool STDCALL set_tokens(SF_CONNECT *sf,
                            cJSON *data,
                            const char *session_token_str,
                            const char *master_token_str,
-                           SF_ERROR *error) {
+                           SF_ERROR_STRUCT *error) {
     // Get token
     if (json_copy_string(&sf->token, data, session_token_str)) {
         log_error("No valid token found in response");

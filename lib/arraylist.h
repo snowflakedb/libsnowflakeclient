@@ -9,13 +9,8 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
-
 #include <stdlib.h>
+#include "snowflake/platform.h"
 
 typedef struct sf_array_list {
     void **data;

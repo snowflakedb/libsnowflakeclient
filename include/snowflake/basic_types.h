@@ -9,11 +9,7 @@
 extern "C" {
 #endif
 
-#if !defined(_WIN32)
-#define STDCALL
-#else
-#define STDCALL __stdcall
-#endif
+#include "platform.h"
 
 typedef char int8;
 typedef unsigned char uint8;
