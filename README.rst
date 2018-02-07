@@ -11,6 +11,9 @@ Snowflake Connector for C/C++
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
 
+.. image:: https://ci.appveyor.com/api/projects/status/i1rkda42xeg2bodv/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/smtakeda/libsnowflakeclient/branch/master
+
 *Under development. No functionality works. Suggestion is welcome at any time.*
 
 Build and Tests
