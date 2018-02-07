@@ -11,6 +11,8 @@ namespace Snowflake
 {
   namespace Client
   {
+    class IStorageClient;
+
     /**
      * Factory class used to create client. Currently only s3 is supported.
      * Later, Azure support will be added.

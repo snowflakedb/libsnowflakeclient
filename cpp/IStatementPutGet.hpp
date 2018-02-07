@@ -5,6 +5,8 @@
 #ifndef SNOWFLAKECLIENT_ISTATEMENT_HPP
 #define SNOWFLAKECLIENT_ISTATEMENT_HPP
 
+#include "PutGetParseResponse.hpp"
+
 namespace Snowflake
 {
   namespace Client
@@ -13,11 +15,14 @@ namespace Snowflake
      * Interface that should be implemented by external component to interact
      * with server to get metadata/credentials about put/get command
      */
-    class IStatement
+    class IStatementPutGet
     {
     public:
       /**
-       * Send put or get command to gs and get all data back
+       * Send put or get command to gs and get all data back.
+       * This command will allocate a PutGetParseResponse object on heap,
+       * Caller of this method is responsible for deallocating the memory
+       *
        * @param sql put or get command
        */
       virtual PutGetParseResponse* parsePutGetCommand(std::string *sql) = 0;

@@ -555,7 +555,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         };
         if (request(sf, &resp, DELETE_SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), NULL, NULL,
-                    POST_REQUEST_TYPE, &sf->error)) {
+                    POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
             s_resp = cJSON_Print(resp);
             log_trace("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
@@ -678,7 +678,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     // Send request and get data
     if (request(sf, &resp, SESSION_URL, url_params,
                 sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
-                POST_REQUEST_TYPE, &sf->error)) {
+                POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         if ((json_error = json_copy_bool(&success, resp, "success")) !=
@@ -934,7 +934,55 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     // Destroy chunk downloader
     chunk_downloader_term(sfstmt->chunk_downloader);
     sfstmt->chunk_downloader = NULL;
+
+    if (sfstmt->put_get_response)
+    {
+        // clean up put get response data
+        sf_put_get_response_deallocate(sfstmt->put_get_response);
+        sfstmt->put_get_response = NULL;
+    }
 }
+
+SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate()
+{
+    SF_PUT_GET_RESPONSE *sf_put_get_response = (SF_PUT_GET_RESPONSE *)
+      SF_CALLOC(1, sizeof(SF_PUT_GET_RESPONSE));
+
+    SF_STAGE_CRED *sf_stage_cred = (SF_STAGE_CRED *) SF_CALLOC(1,
+      sizeof(SF_STAGE_CRED));
+
+    SF_STAGE_INFO *sf_stage_info = (SF_STAGE_INFO *) SF_CALLOC(1,
+      sizeof(SF_STAGE_INFO));
+
+    SF_ENC_MAT *sf_enc_mat = (SF_ENC_MAT *) SF_CALLOC(1,
+      sizeof(SF_ENC_MAT));
+
+    sf_stage_info->stage_cred = sf_stage_cred;
+    sf_put_get_response->stage_info = sf_stage_info;
+    sf_put_get_response->enc_mat = sf_enc_mat;
+
+    return sf_put_get_response;
+}
+
+void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE * put_get_response)
+{
+    SF_FREE(put_get_response->stage_info->stage_cred->aws_key_id);
+    SF_FREE(put_get_response->stage_info->stage_cred->aws_secret_key);
+    SF_FREE(put_get_response->stage_info->stage_cred->aws_token);
+    SF_FREE(put_get_response->stage_info->stage_cred);
+    SF_FREE(put_get_response->stage_info->location_type);
+    SF_FREE(put_get_response->stage_info->location);
+    SF_FREE(put_get_response->stage_info->path);
+    SF_FREE(put_get_response->stage_info->region);
+    SF_FREE(put_get_response->stage_info);
+    SF_FREE(put_get_response->enc_mat->query_stage_master_key);
+    SF_FREE(put_get_response->enc_mat);
+
+    cJSON_Delete((cJSON *)put_get_response->src_list);
+
+    SF_FREE(put_get_response);
+}
+
 
 SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
     if (!sf) {
@@ -1026,7 +1074,7 @@ SF_STATUS STDCALL snowflake_query(
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    ret = snowflake_execute(sfstmt);
+    ret = snowflake_execute(sfstmt, SF_BOOLEAN_FALSE);
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
@@ -1386,7 +1434,8 @@ cleanup:
     return ret;
 }
 
-SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
+SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt,
+                                    sf_bool is_put_get_command) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1467,70 +1516,120 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
 
     if (request(sfstmt->connection, &resp, QUERY_URL, url_params,
                 sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
-                POST_REQUEST_TYPE, &sfstmt->error)) {
+                POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
         if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId",
-                                      SF_UUID4_LEN)) {
+                                      SF_UUID4_LEN) && !is_put_get_command) {
             log_debug("No valid sfqid found in response");
         }
         if ((json_error = json_copy_bool(&success, resp, "success")) ==
             SF_JSON_ERROR_NONE && success) {
-            // Set Database info
-            _mutex_lock(&sfstmt->connection->mutex_parameters);
-            /* Set other parameters. Ignore the status */
-            _set_current_objects(sfstmt, data);
-            _set_parameters_session_info(sfstmt->connection, data);
-            _mutex_unlock(&sfstmt->connection->mutex_parameters);
-            int64 stmt_type_id;
-            if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
-                /* failed to get statement type id */
-                sfstmt->is_dml = SF_BOOLEAN_FALSE;
-            } else {
-                sfstmt->is_dml = detect_stmt_type(stmt_type_id);
-            }
-            rowtype = cJSON_GetObjectItem(data, "rowtype");
-            if (cJSON_IsArray(rowtype)) {
-                sfstmt->total_fieldcount = cJSON_GetArraySize(rowtype);
-                _snowflake_stmt_desc_reset(sfstmt);
-                sfstmt->desc = set_description(rowtype);
-            }
-            // Set results array
-            if (json_detach_array_from_object((cJSON **) (&sfstmt->raw_results),
-                                              data, "rowset")) {
-                log_error("No valid rowset found in response");
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                         SF_STATUS_ERROR_BAD_JSON,
-                                         "Missing rowset from response. No results found.",
-                                         SF_SQLSTATE_APP_REJECT_CONNECTION,
-                                         sfstmt->sfqid);
-                goto cleanup;
-            }
-            if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-                log_warn(
-                  "No total count found in response. Reverting to using array size of results");
-                sfstmt->total_rowcount = cJSON_GetArraySize(
-                  sfstmt->raw_results);
-            }
-            // Get number of rows in this chunk
-            sfstmt->chunk_rowcount = cJSON_GetArraySize(sfstmt->raw_results);
+            if (is_put_get_command) {
+                sfstmt->put_get_response = sf_put_get_response_allocate();
 
-            // Set large result set if one exists
-            if ((chunks = cJSON_GetObjectItem(data, "chunks")) != NULL) {
-                // We don't care if there is no qrmk, so ignore return code
-                json_copy_string(&qrmk, data, "qrmk");
-                chunk_headers = cJSON_GetObjectItem(data, "chunkHeaders");
-                sfstmt->chunk_downloader = chunk_downloader_init(
-                  qrmk,
-                  chunk_headers,
-                  chunks,
-                  2, // thread count
-                  4, // fetch slot
-                  &sfstmt->error);
-                if (!sfstmt->chunk_downloader) {
-                    // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                json_detach_array_from_object((cJSON **)(&sfstmt->put_get_response->src_list),
+                                              data, "src_location");
+                json_copy_string_no_alloc(sfstmt->put_get_response->command,
+                                          data, "command", SF_COMMAND_LEN);
+                json_copy_int(&sfstmt->put_get_response->parallel, data, "parallel");
+                json_copy_bool(&sfstmt->put_get_response->auto_compress, data, "autoCompress");
+                json_copy_bool(&sfstmt->put_get_response->overwrite, data, "overwrite");
+                json_copy_string_no_alloc(sfstmt->put_get_response->source_compression,
+                                          data, "sourceCompression",
+                                          SF_SOURCE_COMPRESSION_TYPE_LEN);
+                json_copy_bool(&sfstmt->put_get_response->client_show_encryption_param,
+                               data, "clientShowEncryptionParameter");
+
+                cJSON *enc_mat = cJSON_GetObjectItem(data, "encryptionMaterial");
+                json_copy_string(&sfstmt->put_get_response->enc_mat->query_stage_master_key,
+                                 enc_mat, "queryStageMasterKey");
+                json_copy_string_no_alloc(sfstmt->put_get_response->enc_mat->query_id,
+                                          enc_mat, "queryId", SF_UUID4_LEN);
+                json_copy_int(&sfstmt->put_get_response->enc_mat->smk_id, enc_mat, "smkId");
+
+                cJSON *stage_info = cJSON_GetObjectItem(data, "stageInfo");
+                cJSON *stage_cred = cJSON_GetObjectItem(stage_info, "creds");
+
+                json_copy_string(&sfstmt->put_get_response->stage_info->location_type,
+                                 stage_info, "locationType");
+                json_copy_string(&sfstmt->put_get_response->stage_info->location,
+                                 stage_info, "location");
+                json_copy_string(&sfstmt->put_get_response->stage_info->path,
+                                 stage_info, "path");
+                json_copy_string(&sfstmt->put_get_response->stage_info->region,
+                                 stage_info, "region");
+                json_copy_string(&sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
+                                 stage_cred, "AWS_SECRET_KEY");
+                json_copy_string(&sfstmt->put_get_response->stage_info->stage_cred->aws_key_id,
+                                 stage_cred, "AWS_KEY_ID");
+                json_copy_string(&sfstmt->put_get_response->stage_info->stage_cred->aws_token,
+                                 stage_cred, "AWS_TOKEN");
+            } else {
+                // Set Database info
+                _mutex_lock(&sfstmt->connection->mutex_parameters);
+                /* Set other parameters. Ignore the status */
+                _set_current_objects(sfstmt, data);
+                _set_parameters_session_info(sfstmt->connection, data);
+                _mutex_unlock(&sfstmt->connection->mutex_parameters);
+                int64 stmt_type_id;
+                if (json_copy_int(&stmt_type_id, data, "statementTypeId"))
+                {
+                    /* failed to get statement type id */
+                    sfstmt->is_dml = SF_BOOLEAN_FALSE;
+                } else {
+                    sfstmt->is_dml = detect_stmt_type(stmt_type_id);
+                }
+                rowtype = cJSON_GetObjectItem(data, "rowtype");
+                if (cJSON_IsArray(rowtype))
+                {
+                    sfstmt->total_fieldcount = cJSON_GetArraySize(rowtype);
+                    _snowflake_stmt_desc_reset(sfstmt);
+                    sfstmt->desc = set_description(rowtype);
+                }
+                // Set results array
+                if (json_detach_array_from_object(
+                  (cJSON **) (&sfstmt->raw_results),
+                  data, "rowset"))
+                {
+                    log_error("No valid rowset found in response");
+                    SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                                             SF_STATUS_ERROR_BAD_JSON,
+                                             "Missing rowset from response. No results found.",
+                                             SF_SQLSTATE_APP_REJECT_CONNECTION,
+                                             sfstmt->sfqid);
                     goto cleanup;
+                }
+                if (json_copy_int(&sfstmt->total_rowcount, data, "total"))
+                {
+                    log_warn(
+                      "No total count found in response. Reverting to using array size of results");
+                    sfstmt->total_rowcount = cJSON_GetArraySize(
+                      sfstmt->raw_results);
+                }
+                // Get number of rows in this chunk
+                sfstmt->chunk_rowcount = cJSON_GetArraySize(
+                  sfstmt->raw_results);
+
+                // Set large result set if one exists
+                if ((chunks = cJSON_GetObjectItem(data, "chunks")) != NULL)
+                {
+                    // We don't care if there is no qrmk, so ignore return code
+                    json_copy_string(&qrmk, data, "qrmk");
+                    chunk_headers = cJSON_GetObjectItem(data, "chunkHeaders");
+                    sfstmt->chunk_downloader = chunk_downloader_init(
+                      qrmk,
+                      chunk_headers,
+                      chunks,
+                      2, // thread count
+                      4, // fetch slot
+                      &sfstmt->error);
+                    if (!sfstmt->chunk_downloader)
+                    {
+                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                        goto cleanup;
+                    }
                 }
             }
         } else if (json_error != SF_JSON_ERROR_NONE) {

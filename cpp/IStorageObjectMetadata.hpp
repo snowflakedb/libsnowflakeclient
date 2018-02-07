@@ -5,6 +5,8 @@
 #ifndef SNOWFLAKECLIENT_ISTORAGEOBJECTMETADATA_HPP
 #define SNOWFLAKECLIENT_ISTORAGEOBJECTMETADATA_HPP
 
+#include "string"
+
 namespace Snowflake
 {
   namespace Client

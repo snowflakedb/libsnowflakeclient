@@ -12,6 +12,7 @@
 #define HEADER_SNOWFLAKE_TOKEN_FORMAT "Authorization: Snowflake Token=\"%s\""
 #define HEADER_CONTENT_TYPE_APPLICATION_JSON "Content-Type: application/json"
 #define HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE "accept: application/snowflake"
+#define HEADER_ACCEPT_TYPE_APPLICATION_JSON "accept: application/json"
 #define HEADER_C_API_USER_AGENT "User-Agent: c_api/0.1"
 
 #define DEFAULT_SNOWFLAKE_BASE_URL "snowflakecomputing.com"

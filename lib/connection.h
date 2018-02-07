@@ -171,7 +171,7 @@ cJSON *STDCALL create_renew_session_json_body(const char *old_token);
  *
  * @return cURL header list.
  */
-struct curl_slist * STDCALL create_header_no_token();
+struct curl_slist * STDCALL create_header_no_token(sf_bool use_application_json_accept_type);
 
 /**
  * Creates a header to give to cURL to issue commands to Snowflake once a connection has been established. Must be
@@ -180,7 +180,8 @@ struct curl_slist * STDCALL create_header_no_token();
  * @param header_token
  * @return cURL header list
  */
-struct curl_slist * STDCALL create_header_token(const char *header_token);
+struct curl_slist * STDCALL create_header_token(const char *header_token,
+                                                sf_bool use_application_json_accept_type);
 
 /**
  * Used to issue a cURL POST call to Snowflake. Includes support for ping-pong and renew session. If the request was
@@ -399,10 +400,12 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  * @param header Header to use in the request.
  * @param request_type Type of request.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
+ * @param use_application_json_accept_type true for put/get command, default is false
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
-                        char *body, struct curl_slist *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error);
+                        char *body, struct curl_slist *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
+                        sf_bool use_application_json_accept_type);
 
 /**
  * Resets curl instance.

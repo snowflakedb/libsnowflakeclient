@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_FILETRANSFERAGENT_HPP
 #define SNOWFLAKECLIENT_FILETRANSFERAGENT_HPP
 
-#include "IStatement.hpp"
+#include "IStatementPutGet.hpp"
 #include "FileTransferResult.hpp"
 #include "string"
 
@@ -21,7 +21,7 @@ namespace Snowflake
     class FileTransferAgent
     {
     public:
-      FileTransferAgent(IStatement * statement);
+      FileTransferAgent(IStatementPutGet * statement);
 
       /**
        * Called by external component to execute put/get command
@@ -35,6 +35,8 @@ namespace Snowflake
       void upload();
 
       void download();
+
+      IStatementPutGet * m_stmtPutGet;
     };
   }
 }

@@ -41,6 +41,16 @@ extern "C" {
 #define SF_UUID4_LEN 37
 
 /**
+ * Source compression value length returned by server
+ */
+#define SF_SOURCE_COMPRESSION_TYPE_LEN 15
+
+/**
+ * Download/upload length
+ */
+#define SF_COMMAND_LEN 10
+
+/**
  * The maximum object size
  */
 #define SF_MAX_OBJECT_SIZE 16777216
@@ -276,6 +286,44 @@ typedef struct SF_COLUMN_DESC {
 } SF_COLUMN_DESC;
 
 /**
+ * Encryption material
+ */
+typedef struct sf_encryption_material {
+    char *query_stage_master_key;
+    char query_id[SF_UUID4_LEN];
+    int64 smk_id;
+} SF_ENC_MAT;
+
+typedef struct sf_stage_cred {
+    char *aws_key_id;
+    char *aws_secret_key;
+    char *aws_token;
+} SF_STAGE_CRED;
+
+typedef struct sf_stage_info {
+    char *location_type;
+    char *location;
+    char *path;
+    char *region;
+    SF_STAGE_CRED * stage_cred;
+} SF_STAGE_INFO;
+
+/**
+ * Put/Get command parse response
+ */
+typedef struct sf_put_get_response {
+    void *src_list;
+    int64 parallel;
+    sf_bool auto_compress;
+    sf_bool overwrite;
+    char source_compression[SF_SOURCE_COMPRESSION_TYPE_LEN];
+    sf_bool client_show_encryption_param;
+    char command[SF_COMMAND_LEN];
+    SF_ENC_MAT *enc_mat;
+    SF_STAGE_INFO *stage_info;
+} SF_PUT_GET_RESPONSE;
+
+/**
  * Chunk downloader context
  */
 typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
@@ -302,6 +350,7 @@ typedef struct SF_STMT {
     void *stmt_attrs;
     sf_bool is_dml;
     SF_CHUNK_DOWNLOADER *chunk_downloader;
+    SF_PUT_GET_RESPONSE *put_get_response;
 } SF_STMT;
 
 /**
@@ -559,10 +608,11 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void *value);
 /**
  * Executes a statement.
  * @param sfstmt SNOWFLAKE_STMT context.
+ * @param is_put_get_command true this is a put/get command
  *
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt, sf_bool is_put_get_command);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer
@@ -645,6 +695,10 @@ const char *STDCALL snowflake_type_to_string(SF_TYPE type);
  * @return a string representation of Snowflake C Type
  */
 const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
+
+void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response);
+
+SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
 
 #ifdef  __cplusplus
 }

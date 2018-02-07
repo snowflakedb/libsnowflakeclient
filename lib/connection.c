@@ -214,20 +214,25 @@ cJSON *STDCALL create_renew_session_json_body(const char *old_token) {
     return body;
 }
 
-struct curl_slist *STDCALL create_header_no_token() {
+struct curl_slist *STDCALL create_header_no_token(sf_bool use_application_json_accept_type) {
     struct curl_slist *header = NULL;
     header = curl_slist_append(header, HEADER_CONTENT_TYPE_APPLICATION_JSON);
     header = curl_slist_append(header,
+                               use_application_json_accept_type ?
+                               HEADER_ACCEPT_TYPE_APPLICATION_JSON :
                                HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
     header = curl_slist_append(header, HEADER_C_API_USER_AGENT);
     return header;
 }
 
-struct curl_slist *STDCALL create_header_token(const char *header_token) {
+struct curl_slist *STDCALL create_header_token(const char *header_token,
+                                               sf_bool use_application_json_accept_type){
     struct curl_slist *header = NULL;
     header = curl_slist_append(header, header_token);
     header = curl_slist_append(header, HEADER_CONTENT_TYPE_APPLICATION_JSON);
     header = curl_slist_append(header,
+                               use_application_json_accept_type ?
+                               HEADER_ACCEPT_TYPE_APPLICATION_JSON :
                                HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
     header = curl_slist_append(header, HEADER_C_API_USER_AGENT);
     return header;
@@ -295,7 +300,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 }
                 snprintf(header_token, header_token_size,
                          HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                new_header = create_header_token(header_token);
+                new_header = create_header_token(header_token, SF_BOOLEAN_FALSE);
                 if (!curl_post_call(sf, curl, url, new_header, body, json,
                                     error)) {
                     // Error is set in curl call
@@ -321,7 +326,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
             log_debug("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
-                         GET_REQUEST_TYPE, error)) {
+                         GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE)) {
                 // Error came from request up, just break
                 stop = SF_BOOLEAN_TRUE;
                 break;
@@ -414,7 +419,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 }
                 snprintf(header_token, header_token_size,
                          HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                new_header = create_header_token(header_token);
+                new_header = create_header_token(header_token, SF_BOOLEAN_FALSE);
                 if (!curl_get_call(sf, curl, url, new_header, json, error)) {
                     // Error is set in curl call
                     break;
@@ -942,7 +947,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         char *body,
                         struct curl_slist *header,
                         SF_REQUEST_TYPE request_type,
-                        SF_ERROR_STRUCT *error) {
+                        SF_ERROR_STRUCT *error,
+                        sf_bool use_application_json_accept_type) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     char *encoded_url = NULL;
@@ -969,9 +975,9 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                 }
                 snprintf(header_token, header_token_size,
                          HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                my_header = create_header_token(header_token);
+                my_header = create_header_token(header_token, use_application_json_accept_type);
             } else {
-                my_header = create_header_no_token();
+                my_header = create_header_no_token(use_application_json_accept_type);
             }
             log_debug("Created header");
         }
@@ -1050,7 +1056,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     }
     snprintf(header_token, header_token_size, HEADER_SNOWFLAKE_TOKEN_FORMAT,
              sf->master_token);
-    header = create_header_token(header_token);
+    header = create_header_token(header_token, SF_BOOLEAN_FALSE);
 
     // Create body and convert to string
     body = create_renew_session_json_body(sf->token);
