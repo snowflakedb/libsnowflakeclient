@@ -89,7 +89,7 @@ int main() {
 
         status = snowflake_execute(sfstmt);
         if (status != SF_STATUS_SUCCESS) {
-            SF_ERROR *error = snowflake_stmt_error(sfstmt);
+            SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
             if (v.error_code != error->error_code) {
                 goto error_stmt;
             }
@@ -154,7 +154,7 @@ int main() {
 
 error_stmt:
     {
-        SF_ERROR *error = snowflake_stmt_error(sfstmt);
+        SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
         fprintf(stderr, "Error: %d: %s\nIn File, %s, Line, %d\n",
                 error->error_code,
                 error->msg, error->file, error->line);
@@ -162,7 +162,7 @@ error_stmt:
     }
 error_conn:
     {
-        SF_ERROR *error = snowflake_error(sf);
+        SF_ERROR_STRUCT *error = snowflake_error(sf);
         fprintf(stderr, "Error: %d: %s\nIn File, %s, Line, %d\n",
                 error->error_code,
                 error->msg, error->file, error->line);

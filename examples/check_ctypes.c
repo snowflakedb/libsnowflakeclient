@@ -17,7 +17,7 @@ int main() {
     status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         fprintf(stderr, "Connecting to snowflake failed, exiting...\n");
-        SF_ERROR *error = snowflake_error(sf);
+        SF_ERROR_STRUCT *error = snowflake_error(sf);
         fprintf(stderr, "Error message: %s\nIn File, %s, Line, %d\n",
                 error->msg, error->file, error->line);
         goto cleanup;
@@ -30,7 +30,7 @@ int main() {
                              "select seq4(), randstr(1000,random()), as_double(10.01) from table(generator(rowcount=>1));",
                              0);
     if (status != SF_STATUS_SUCCESS) {
-        SF_ERROR *error = snowflake_stmt_error(sfstmt);
+        SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
         fprintf(stderr, "Error message: %s\nIn File, %s, Line, %d\n",
                 error->msg, error->file, error->line);
         goto cleanup;

@@ -1,0 +1,37 @@
+platform:
+  - amd64
+
+environment:
+  fast_finish: true
+  matrix:
+    - VSVER: 14
+      my_secret:
+        secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
+
+install:
+  - nuget install secure-file -ExcludeVersion
+  - choco install jq
+  - secure-file\tools\secure-file -decrypt parameters.appveyor.json.enc -secret %my_secret% -out parameters.appveyor.json
+
+before_build:
+  - ps: >-
+        If ($env:Platform -Match "x86") {
+            $env:VCVARS_PLATFORM="x86"
+        } Else {
+            $env:VCVARS_PLATFORM="x64"
+        }
+  - ps: >-
+        If ($env:Configuration -Match "shared") {
+            $env:SHARED=""
+        } Else {
+            $env:SHARED="no-shared"
+        }
+  - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
+  - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
+  - mkdir cmake-build
+
+build_script:
+  - .\scripts\build_libsnowflakeclient.bat
+
+test_script:
+  - .\scripts\run_tests.bat

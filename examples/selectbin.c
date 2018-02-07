@@ -142,7 +142,7 @@ int main() {
 
 error_stmt:
     {
-        SF_ERROR *error = snowflake_stmt_error(sfstmt);
+        SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
         fprintf(stderr, "Error: %d: %s\nIn File, %s, Line, %d\n",
                 error->error_code,
                 error->msg, error->file, error->line);
@@ -150,7 +150,7 @@ error_stmt:
     }
 error_conn:
     {
-        SF_ERROR *error = snowflake_error(sf);
+        SF_ERROR_STRUCT *error = snowflake_error(sf);
         fprintf(stderr, "Error: %d: %s\nIn File, %s, Line, %d\n",
                 error->error_code,
                 error->msg, error->file, error->line);
