@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
+#include "basic_types.h"
 #include "platform.h"
-#include "snowflake/basic_types.h"
 #include "version.h"
 
 /**

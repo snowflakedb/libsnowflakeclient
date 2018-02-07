@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #include <snowflake/basic_types.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 
 extern sf_bool DISABLE_VERIFY_PEER;
 extern char *CA_BUNDLE_FILE;

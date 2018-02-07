@@ -5,7 +5,7 @@
 #include <string.h>
 #include "connection.h"
 #include <snowflake/logger.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 #include "memory.h"
 #include "client_int.h"
 #include "constants.h"

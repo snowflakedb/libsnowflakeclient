@@ -345,7 +345,7 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
 
         if (_cond_broadcast(&chunk_downloader->consumer_cond) ||
             _cond_broadcast(&chunk_downloader->producer_cond) ||
-                (_critical_section_lock(&chunk_downloader->queue_lock))) {
+                (_critical_section_unlock(&chunk_downloader->queue_lock))) {
             // Something went wrong with either notifying the producer/consumer or releasing the queue lock
             // Set and error and then try to continue with cleanup
             _rwlock_wrlock(&chunk_downloader->attr_lock);

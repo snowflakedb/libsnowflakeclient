@@ -16,7 +16,7 @@ int main() {
     status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         fprintf(stderr, "Connecting to snowflake failed, exiting...\n");
-        SF_ERROR *error = snowflake_error(sf);
+        SF_ERROR_STRUCT *error = snowflake_error(sf);
         fprintf(stderr, "Error message: %s\nIn File, %s, Line, %d\n",
                 error->msg, error->file, error->line);
         goto cleanup;
@@ -42,7 +42,7 @@ int main() {
     if (status == SF_STATUS_EOF) {
         status = SF_STATUS_SUCCESS;
     } else if (status > 0) {
-        SF_ERROR *error = snowflake_stmt_error(sfstmt);
+        SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
         fprintf(stderr, "Error message: %s\nIn File, %s, Line, %d\n",
                 error->msg, error->file, error->line);
     }

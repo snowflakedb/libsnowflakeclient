@@ -11,7 +11,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <snowflake/basic_types.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 
 #define SF_MALLOC(s) sf_malloc(s, __FILE__, __LINE__)
 #define SF_CALLOC(n, s) sf_calloc(n, s, __FILE__, __LINE__)

@@ -13,7 +13,7 @@ extern "C" {
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <snowflake/client.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 #include "cJSON.h"
 #include "arraylist.h"
 

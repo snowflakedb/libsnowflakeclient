@@ -70,7 +70,7 @@ set(SOURCE_FILES
         lib/constants.h
         lib/results.h
         lib/results.c
-        lib/platform.h
+        include/snowflake/platform.h
         lib/platform.c
         lib/uuid4.c
         lib/basic_types.c

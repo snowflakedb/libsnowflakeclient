@@ -6,9 +6,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <direct.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -32,13 +30,20 @@ sf_bool DEBUG;
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
-static SF_MUTEX_HANDLE log_lock = NULL;
-static SF_MUTEX_HANDLE gmlocaltime_lock = NULL;
+static SF_MUTEX_HANDLE log_lock;
+static SF_MUTEX_HANDLE gmlocaltime_lock;
 
-static SF_STATUS STDCALL _snowflake_internal_query(SF_CONNECT *sf, const char *sql);
-static SF_STATUS STDCALL _set_parameters_session_info(SF_CONNECT *sf, cJSON *data);
-static void STDCALL _set_current_objects(SF_STMT* sfstmt, cJSON* data);
-static SF_STATUS STDCALL _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters, cJSON *session_info, sf_bool do_validate);
+static SF_STATUS STDCALL
+_snowflake_internal_query(SF_CONNECT *sf, const char *sql);
+
+static SF_STATUS STDCALL
+_set_parameters_session_info(SF_CONNECT *sf, cJSON *data);
+
+static void STDCALL _set_current_objects(SF_STMT *sfstmt, cJSON *data);
+
+static SF_STATUS STDCALL
+_reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
+                             cJSON *session_info, sf_bool do_validate);
 
 #define _SF_STMT_TYPE_DML 0x3000
 #define _SF_STMT_TYPE_INSERT (_SF_STMT_TYPE_DML + 0x100)
@@ -124,8 +129,8 @@ static int mkpath(char *file_path) {
     char *p;
     for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
         *p = '\0';
-        if (_mkdir(file_path) == -1) {
-                if (errno != EEXIST) {
+        if (sf_mkdir(file_path) == -1) {
+            if (errno != EEXIST) {
                 *p = '/';
                 return -1;
             }
@@ -195,7 +200,7 @@ static sf_bool _extract_timestamp(
 
     if (sftype == SF_TYPE_TIMESTAMP_TZ) {
         /* make up Timezone name from the tzoffset */
-        ldiv_t dm = ldiv((long)tzoffset, 60L);
+        ldiv_t dm = ldiv((long) tzoffset, 60L);
         sprintf(tzname, "UTC%c%02ld:%02ld",
                 dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
         tzptr = tzname;
@@ -247,7 +252,7 @@ static sf_bool _extract_timestamp(
     }
     if (sftype == SF_TYPE_TIMESTAMP_TZ) {
         /* Timezone info */
-        ldiv_t dm = ldiv((long)tzoffset, 60L);
+        ldiv_t dm = ldiv((long) tzoffset, 60L);
         result->len += snprintf(
           &((char *) result->value)[result->len],
           result->max_length - result->len,
@@ -283,7 +288,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
         char msg[1024];
         // database
         cJSON *db = cJSON_GetObjectItem(session_info, "databaseName");
-        if (do_validate && sf->database && sf->database[0] != (char)0 &&
+        if (do_validate && sf->database && sf->database[0] != (char) 0 &&
             db->valuestring == NULL) {
             sprintf(msg, "Specified database doesn't exists: [%s]",
                     sf->database);
@@ -299,7 +304,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
 
         // schema
         cJSON *schema = cJSON_GetObjectItem(session_info, "schemaName");
-        if (do_validate && sf->schema && sf->schema[0] != (char)0 &&
+        if (do_validate && sf->schema && sf->schema[0] != (char) 0 &&
             schema->valuestring == NULL) {
             sprintf(msg, "Specified schema doesn't exists: [%s]",
                     sf->schema);
@@ -316,7 +321,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
 
         // warehouse
         cJSON *warehouse = cJSON_GetObjectItem(session_info, "warehouseName");
-        if (do_validate && sf->warehouse && sf->warehouse[0] != (char)0 &&
+        if (do_validate && sf->warehouse && sf->warehouse[0] != (char) 0 &&
             warehouse->valuestring == NULL) {
             sprintf(msg, "Specified warehouse doesn't exists: [%s]",
                     sf->warehouse);
@@ -711,7 +716,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         }
 
         _mutex_lock(&sf->mutex_parameters);
-        _set_parameters_session_info(sf, data);
+        ret = _set_parameters_session_info(sf, data);
         _mutex_unlock(&sf->mutex_parameters);
         if (ret > 0) {
             goto cleanup;
@@ -756,23 +761,23 @@ static SF_STATUS STDCALL _set_parameters_session_info(
     return ret;
 }
 
-static void STDCALL _set_current_objects(SF_STMT* sfstmt, cJSON* data) {
-  if (json_copy_string(&sfstmt->connection->database, data,
-    "finalDatabaseName")) {
-    log_warn("No valid database found in response");
-  }
-  if (json_copy_string(&sfstmt->connection->schema, data,
-    "finalSchemaName")) {
-    log_warn("No valid schema found in response");
-  }
-  if (json_copy_string(&sfstmt->connection->warehouse, data,
-    "finalWarehouseName")) {
-    log_warn("No valid warehouse found in response");
-  }
-  if (json_copy_string(&sfstmt->connection->role, data,
-    "finalRoleName")) {
-    log_warn("No valid role found in response");
-  }
+static void STDCALL _set_current_objects(SF_STMT *sfstmt, cJSON *data) {
+    if (json_copy_string(&sfstmt->connection->database, data,
+                         "finalDatabaseName")) {
+        log_warn("No valid database found in response");
+    }
+    if (json_copy_string(&sfstmt->connection->schema, data,
+                         "finalSchemaName")) {
+        log_warn("No valid schema found in response");
+    }
+    if (json_copy_string(&sfstmt->connection->warehouse, data,
+                         "finalWarehouseName")) {
+        log_warn("No valid warehouse found in response");
+    }
+    if (json_copy_string(&sfstmt->connection->role, data,
+                         "finalRoleName")) {
+        log_warn("No valid role found in response");
+    }
 }
 
 SF_STATUS STDCALL snowflake_set_attribute(
@@ -973,7 +978,8 @@ SF_STATUS snowflake_bind_param_array(
         sfstmt->params = sf_array_list_init();
     }
     for (i = 0; i < size; i++) {
-        sf_array_list_set(sfstmt->params, &sfbind_array[i], sfbind_array[i].idx);
+        sf_array_list_set(sfstmt->params, &sfbind_array[i],
+                          sfbind_array[i].idx);
     }
     return SF_STATUS_SUCCESS;
 }
@@ -1002,7 +1008,8 @@ SF_STATUS snowflake_bind_result_array(
         sfstmt->results = sf_array_list_init();
     }
     for (i = 0; i < size; i++) {
-        sf_array_list_set(sfstmt->results, &sfbind_array[i], sfbind_array[i].idx);
+        sf_array_list_set(sfstmt->results, &sfbind_array[i],
+                          sfbind_array[i].idx);
     }
     return SF_STATUS_SUCCESS;
 }
@@ -1146,7 +1153,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         struct tm *tm_ptr;
         memset(&tm_obj, 0, sizeof(tm_obj));
 
-        raw_result = cJSON_GetArrayItem(row, (int)i);
+        raw_result = cJSON_GetArrayItem(row, (int) i);
         if (raw_result->valuestring == NULL) {
             log_info("setting value and len = NULL");
             ((char *) result->value)[0] = '\0'; // empty string
@@ -1267,7 +1274,8 @@ cleanup:
     return ret;
 }
 
-static SF_STATUS STDCALL _snowflake_internal_query(SF_CONNECT *sf, const char *sql) {
+static SF_STATUS STDCALL
+_snowflake_internal_query(SF_CONNECT *sf, const char *sql) {
     if (!sf) {
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
@@ -1329,8 +1337,8 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
     if (sfstmt->is_dml) {
         row = cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
         ret = 0;
-        for (i = 0; i < (size_t)sfstmt->total_fieldcount; ++i) {
-            raw_row_result = cJSON_GetArrayItem(row, (int)i);
+        for (i = 0; i < (size_t) sfstmt->total_fieldcount; ++i) {
+            raw_row_result = cJSON_GetArrayItem(row, (int) i);
             ret += (int64) strtoll(raw_row_result->valuestring, NULL, 10);
         }
         cJSON_Delete(row);
@@ -1419,7 +1427,7 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
             value = value_to_string(input->value, input->len, input->c_type);
             binding = cJSON_CreateObject();
             char idxbuf[20];
-            sprintf(idxbuf, "%lu", (unsigned long)(i + 1));
+            sprintf(idxbuf, "%lu", (unsigned long) (i + 1));
             cJSON_AddStringToObject(binding, "type", type);
             cJSON_AddStringToObject(binding, "value", value);
             cJSON_AddItemToObject(bindings, idxbuf, binding);

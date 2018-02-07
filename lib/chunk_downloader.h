@@ -11,7 +11,7 @@ extern "C" {
 
 #include <curl/curl.h>
 #include <snowflake/client.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 #include "cJSON.h"
 
 typedef struct SF_QUEUE_ITEM {

@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 
 typedef struct sf_array_list {
     void **data;

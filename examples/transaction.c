@@ -10,7 +10,7 @@
 
 
 int main() {
-    SF_ERROR *error;
+    SF_ERROR_STRUCT *error;
     SF_STATUS status;
     initialize_snowflake_example(SF_BOOLEAN_FALSE);
     SF_CONNECT *sf = setup_snowflake_connection_with_autocommit(
@@ -159,7 +159,7 @@ int main() {
     goto end;
 
 err_stmt: /* error */
-    /* SF_ERROR structure is included in a SF_STMT, so you don't
+    /* SF_ERROR_STRUCT structure is included in a SF_STMT, so you don't
      * need to free the memory. */
     error = snowflake_stmt_error(sfstmt);
     printf("Error. Query ID: %s, Message: %s\n", error->sfqid, error->msg);

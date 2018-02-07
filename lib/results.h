@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #include <snowflake/client.h>
-#include "platform.h"
+#include "snowflake/platform.h"
 #include "cJSON.h"
 
 SF_TYPE string_to_snowflake_type(const char *string);

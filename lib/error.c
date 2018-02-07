@@ -9,7 +9,7 @@
 /*
  * Shared message buffer for emergency use.
  */
-static SF_THREAD_HANDLE mutex_shared_msg = NULL;
+static SF_MUTEX_HANDLE mutex_shared_msg;
 static char _shared_msg[8192];
 
 void STDCALL sf_error_init() {

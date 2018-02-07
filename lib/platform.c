@@ -2,8 +2,7 @@
 * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
 */
 
-#include "platform.h"
-#include "time.h"
+#include "snowflake/platform.h"
 
 struct tm* STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
@@ -58,6 +57,14 @@ int STDCALL sf_unsetenv(const char *name) {
     return _putenv_s(name, "");
 #else
     return unsetenv(name);
+#endif
+}
+
+int STDCALL sf_mkdir(const char *path) {
+#ifdef _WIN32
+    return _mkdir(path);
+#else
+    return mkdir(path, 0755);
 #endif
 }
 
@@ -181,7 +188,7 @@ int STDCALL _rwlock_init(SF_RWLOCK_HANDLE * lock) {
     InitializeSRWLock(lock);
     return 0;
 #else
-    return pthread_rwlock_init(lock, NULL)
+    return pthread_rwlock_init(lock, NULL);
 #endif
 }
 
