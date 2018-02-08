@@ -3,7 +3,7 @@
 //
 
 #include "FileTransferAgent.hpp"
-#include "iostream";
+#include "iostream"
 
 using namespace Snowflake::Client;
 

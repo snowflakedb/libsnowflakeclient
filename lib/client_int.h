@@ -8,6 +8,7 @@
 #include "cJSON.h"
 #include "arraylist.h"
 #include "snowflake/platform.h"
+#include "snowflake/client.h"
 
 #define HEADER_SNOWFLAKE_TOKEN_FORMAT "Authorization: Snowflake Token=\"%s\""
 #define HEADER_CONTENT_TYPE_APPLICATION_JSON "Content-Type: application/json"
@@ -32,5 +33,69 @@
 #define REQUEST_TYPE_ISSUE "ISSUE"
 
 int uuid4_generate(char *dst);
+
+/**
+ * Encryption material
+ */
+typedef struct SF_ENC_MAT {
+  char *query_stage_master_key;
+  char query_id[SF_UUID4_LEN];
+  int64 smk_id;
+} SF_ENC_MAT;
+
+typedef struct SF_STAGE_CRED {
+  char *aws_key_id;
+  char *aws_secret_key;
+  char *aws_token;
+} SF_STAGE_CRED;
+
+typedef struct SF_STAGE_INFO {
+  char *location_type;
+  char *location;
+  char *path;
+  char *region;
+  SF_STAGE_CRED * stage_cred;
+} SF_STAGE_INFO;
+
+/**
+ * Put/Get command parse response
+ */
+struct SF_PUT_GET_RESPONSE {
+  void *src_list;
+  int64 parallel;
+  sf_bool auto_compress;
+  sf_bool overwrite;
+  char source_compression[SF_SOURCE_COMPRESSION_TYPE_LEN];
+  sf_bool client_show_encryption_param;
+  char command[SF_COMMAND_LEN];
+  SF_ENC_MAT *enc_mat;
+  SF_STAGE_INFO *stage_info;
+};
+
+/**
+ * Allocate memory for put get response struct
+ */
+void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response);
+
+
+/**
+ * Deallocate memory for put get response struct
+ */
+SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
+
+/**
+ * Executes a statement.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param sf_use_application_json_accept type true if this is a put/get command
+ *
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
+                                        sf_bool use_application_json_accept_type);
+
+/**
+ * @return true if this is a put/get command, otherwise false
+ */
+sf_bool STDCALL _is_put_get_command(char* sql_text);
 
 #endif //SNOWFLAKE_CLIENT_INT_H
