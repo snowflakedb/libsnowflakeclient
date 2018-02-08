@@ -17,6 +17,7 @@
 #include "results.h"
 #include "error.h"
 #include "chunk_downloader.h"
+#include "regex.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
@@ -1074,7 +1075,7 @@ SF_STATUS STDCALL snowflake_query(
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    ret = snowflake_execute(sfstmt, SF_BOOLEAN_FALSE);
+    ret = snowflake_execute(sfstmt);
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
@@ -1434,8 +1435,28 @@ cleanup:
     return ret;
 }
 
-SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt,
-                                    sf_bool is_put_get_command) {
+SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt)
+{
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text));
+}
+
+sf_bool STDCALL _is_put_get_command(char* sql_text)
+{
+    regex_t put_get_regex;
+    regcomp(&put_get_regex, "^(\\s*\\/*.*\\/*\\s*)*(put|get)\\s+",
+            REG_ICASE | REG_EXTENDED);
+
+    int res;
+    res = regexec(&put_get_regex, sql_text, 0, NULL, 0);
+
+    regfree(&put_get_regex);
+
+    return res == 0 ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+}
+
+
+SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
+                                        sf_bool is_put_get_command) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
