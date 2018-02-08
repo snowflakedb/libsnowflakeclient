@@ -5,9 +5,9 @@
 #ifndef SNOWFLAKECLIENT_STAGEINFO_HPP
 #define SNOWFLAKECLIENT_STAGEINFO_HPP
 
-#include "string"
+#include <string>
 #include <unordered_map>
-#include <snowflake/client.h>
+#include <client_int.h>
 
 namespace Snowflake
 {
@@ -35,7 +35,7 @@ namespace Snowflake
       // required by s3 client
       char* m_region;
 
-      std::unordered_map<std::string, char *> credentials;
+      std::unordered_map<std::string, char *> m_credentials;
 
     };
   }

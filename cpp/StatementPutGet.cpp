@@ -2,6 +2,7 @@
 // Created by hyu on 2/7/18.
 //
 
+#include <iostream>
 #include "StatementPutGet.hpp"
 
 using namespace Snowflake::Client;
@@ -13,7 +14,6 @@ StatementPutGet::StatementPutGet(SF_STMT *stmt) :
 
 PutGetParseResponse* StatementPutGet::parsePutGetCommand(std::string *sql)
 {
-  snowflake_prepare(m_stmt, sql->c_str(), 0);
-  snowflake_execute(m_stmt, SF_BOOLEAN_TRUE);
+  snowflake_query(m_stmt, sql->c_str(), 0);
   return new PutGetParseResponse(m_stmt->put_get_response);
 }

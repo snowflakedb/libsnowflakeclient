@@ -54,7 +54,7 @@ if (LINUX)
                 ex_${EX}
                 snowflakeclient
                 -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive
-        )
+                -Wl,--as-needed -static-libgcc -static-libstdc++)
     ENDFOREACH()
 endif()
 if (APPLE)

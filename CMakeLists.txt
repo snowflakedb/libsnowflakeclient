@@ -36,10 +36,8 @@ endif()
 if(LINUX)
 	# Linux
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror -pthread")
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++14 -fpermissive -Wall -Wextra -lpthread")
-set(CMAKE_CXX_COMPILER g++52)
 
 if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
 	# Profiler option
