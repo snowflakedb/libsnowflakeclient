@@ -16,6 +16,8 @@ Snowflake Connector for C/C++
 
 *Under development. No functionality works. Suggestion is welcome at any time.*
 
+THIS IS PR TEST. WILL NOT BE MERGED.
+
 Build and Tests
 ======================================================================
 
