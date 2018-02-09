@@ -7,7 +7,7 @@
 #include <memory.h>
 #include <snowflake/client.h>
 #include <example_setup.h>
-
+#include "string.h"
 
 int main() {
     /* init */
