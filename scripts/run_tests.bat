@@ -13,11 +13,11 @@ set curdir=%cd%
 call %scriptdir%\env.bat
 
 if defined APPVEYOR_BUILD_ID (
-	:: use the job specific schema
+	REM use the job specific schema
     set SNOWFLAKE_TEST_SCHEMA=APPVEYOR_BUILD_%APPVEYOR_BUILD_ID%
 )
-:: NOTE: don't combine the previous if statement and the following if statement.
-::       It is required to use the updated SNOWFLAKE_TEST_SCHEMA.
+REM NOTE: don't combine the previous if statement and the following if statement.
+REM       It is required to use the updated SNOWFLAKE_TEST_SCHEMA.
 if defined APPVEYOR_BUILD_ID (
     echo === creating test schema: %SNOWFLAKE_TEST_SCHEMA%
     python .\scripts\create_schema.py
