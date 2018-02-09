@@ -69,7 +69,7 @@ int STDCALL sf_mkdir(const char *path) {
 }
 
 
-int STDCALL _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void*), void *arg) {
+int STDCALL _thread_init(SF_THREAD_HANDLE *thread, void* (*proc)(void*), void *arg) {
 #ifdef _WIN32
     *thread = CreateThread(
       NULL,                         // default security attributes

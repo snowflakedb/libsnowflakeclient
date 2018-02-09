@@ -1,5 +1,6 @@
 platform:
   - amd64
+  - x86
 
 environment:
   fast_finish: true
@@ -20,18 +21,14 @@ before_build:
         } Else {
             $env:VCVARS_PLATFORM="x64"
         }
-  - ps: >-
-        If ($env:Configuration -Match "shared") {
-            $env:SHARED=""
-        } Else {
-            $env:SHARED="no-shared"
-        }
   - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
   - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
-  - mkdir cmake-build
 
 build_script:
-  - .\scripts\build_libsnowflakeclient.bat
+  - .\scripts\build_libsnowflakeclient.bat %VCVARS_PLATFORM% Release
 
 test_script:
-  - .\scripts\run_tests.bat
+  - C:\Python36-x64\python -m venv env
+  - call env\Scripts\activate
+  - pip install -U snowflake-connector-python
+  - .\scripts\run_tests.bat %VCVARS_PLATFORM% Release

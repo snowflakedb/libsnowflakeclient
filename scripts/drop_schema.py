@@ -7,11 +7,15 @@ import sys
 import snowflake.connector
 
 travis_job_id = os.getenv('TRAVIS_JOB_ID')
-if not travis_job_id:
-    print("[WARN] The environment variable TRAVIS_JOB_ID is not set. No test schema will be created.")
-    sys.exit(0)
+appveyor_job_id = os.getenv('APPVEYOR_BUILD_ID')
+if not travis_job_id and not appveyor_job_id:
+    print("[WARN] The environment variable TRAVIS_JOB_ID or APPVEYOR_BUILD_ID is not set. No test schema will be created.")
+    sys.exit(1)
 
-test_schema = 'TRAVIS_JOB_{0}'.format(travis_job_id)
+if travis_job_id:
+  test_schema = 'TRAVIS_JOB_{0}'.format(travis_job_id)
+else:
+  test_schema = 'APPVEYOR_BUILD_{0}'.format(appveyor_job_id)
 
 params = {
     'account': os.getenv("SNOWFLAKE_TEST_ACCOUNT"),
@@ -32,3 +36,5 @@ if protocol:
 
 con = snowflake.connector.connect(**params)
 con.cursor().execute("drop schema if exists {0}".format(test_schema))
+
+sys.exit(0)

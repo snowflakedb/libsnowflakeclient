@@ -5,7 +5,7 @@
 #include "arraylist.h"
 #include "memory.h"
 
-ARRAY_LIST *sf_array_list_init() {
+ARRAY_LIST* STDCALL sf_array_list_init() {
     ARRAY_LIST *al = (ARRAY_LIST *) calloc(1, sizeof(ARRAY_LIST));
     // No spots are used yet
     al->used = 0;
@@ -16,14 +16,14 @@ ARRAY_LIST *sf_array_list_init() {
     return al;
 }
 
-void sf_array_list_deallocate(ARRAY_LIST *al) {
+void STDCALL sf_array_list_deallocate(ARRAY_LIST *al) {
     if (al != NULL) {
         SF_FREE(al->data);
     }
     SF_FREE(al);
 }
 
-void sf_array_list_grow(ARRAY_LIST *al, size_t min_size) {
+void STDCALL sf_array_list_grow(ARRAY_LIST *al, size_t min_size) {
     size_t i;
     size_t new_size = al->size;
     while (new_size < min_size) {
@@ -37,7 +37,7 @@ void sf_array_list_grow(ARRAY_LIST *al, size_t min_size) {
     al->size = new_size;
 }
 
-void sf_array_list_set(ARRAY_LIST *al, void *item, size_t index) {
+void STDCALL sf_array_list_set(ARRAY_LIST *al, void *item, size_t index) {
     if (al->size < index) {
         sf_array_list_grow(al, index);
     }
@@ -53,6 +53,6 @@ void sf_array_list_set(ARRAY_LIST *al, void *item, size_t index) {
     al->data[index] = item;
 }
 
-void *sf_array_list_get(ARRAY_LIST *al, size_t index) {
+void* STDCALL sf_array_list_get(ARRAY_LIST *al, size_t index) {
     return al->data[index];
 }

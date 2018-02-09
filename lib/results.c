@@ -65,7 +65,7 @@ SF_TYPE string_to_snowflake_type(const char *string) {
     }
 }
 
-const char *snowflake_type_to_string(SF_TYPE type) {
+const char *STDCALL snowflake_type_to_string(SF_TYPE type) {
     switch (type) {
         case SF_TYPE_FIXED:
             return "FIXED";
@@ -98,7 +98,7 @@ const char *snowflake_type_to_string(SF_TYPE type) {
     }
 }
 
-const char *snowflake_c_type_to_string(SF_C_TYPE type) {
+const char * STDCALL snowflake_c_type_to_string(SF_C_TYPE type) {
     switch (type) {
         case SF_C_TYPE_STRING:
             return "SF_C_TYPE_STRING";

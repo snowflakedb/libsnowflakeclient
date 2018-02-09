@@ -67,9 +67,9 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
-sf_bool get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
-sf_bool get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
-sf_bool get_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 
 #ifdef __cplusplus
 }

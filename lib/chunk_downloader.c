@@ -10,7 +10,7 @@
 #include "error.h"
 #include "client_int.h"
 
-static void* STDCALL chunk_downloader_thread(void *downloader);
+static void* chunk_downloader_thread(void *downloader);
 static void STDCALL set_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader, sf_bool value);
 static void STDCALL set_error(SF_CHUNK_DOWNLOADER *chunk_downloader, sf_bool value);
 
@@ -274,7 +274,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
 
     // Initialize queue and thread memory
     chunk_count = cJSON_GetArraySize(chunks);
-    chunk_downloader->threads = (SF_THREAD_HANDLE *)SF_CALLOC(thread_count, sizeof(SF_THREAD_HANDLE));
+    chunk_downloader->threads = (SF_THREAD_HANDLE *)SF_CALLOC((int)thread_count, sizeof(SF_THREAD_HANDLE));
     chunk_downloader->queue = (SF_QUEUE_ITEM *) SF_CALLOC(chunk_count, sizeof(SF_QUEUE_ITEM));
     if (!chunk_downloader->threads || !chunk_downloader->queue) {
         goto cleanup;
@@ -393,7 +393,7 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
     return SF_BOOLEAN_TRUE;
 }
 
-static void *chunk_downloader_thread(void *downloader) {
+static void * chunk_downloader_thread(void *downloader) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = (SF_CHUNK_DOWNLOADER *) downloader;
     cJSON *chunk = NULL;
     uint64 index;
