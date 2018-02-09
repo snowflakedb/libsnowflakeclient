@@ -36,25 +36,26 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -std=gnu++0x")
-endif ()
-if (LINUX)
-    # Linux. MacOS doesn't require pthread option
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+if(LINUX)
+	# Linux
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-endif ()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pthread")
+endif()
 
-if (LINUX)
-    # Profiler for Linux
-    if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-    endif ()
+if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
+	# Profiler option
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+endif()
 
-    # Code coverage for Linux
-    if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
-    endif ()
-endif ()
+if(UNIX)
+	# Linux and OSX
+	if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
+	endif()
+endif()
 
 set(SOURCE_FILES
         include/snowflake/basic_types.h

@@ -17,7 +17,7 @@ StageInfo::StageInfo(SF_STAGE_INFO *stage_info) :
     {"AWS_TOKEN", stage_info->stage_cred->aws_token}
   }
 {
-  if (!(stage_info->location_type, "s3") == 0)
+  if (strcmp(stage_info->location_type, "s3") == 0)
   {
     m_stageType = S3;
   }
