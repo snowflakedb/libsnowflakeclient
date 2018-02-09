@@ -68,6 +68,17 @@ if (APPLE)
             -all_load curl ssl crypto
         )
     ENDFOREACH()
+
+    FOREACH(EX ${EXAMPLES_CPP})
+        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.cpp)
+        target_link_libraries(
+                ex_${EX}
+                z m
+                "-framework CoreFoundation"
+                snowflakeclient
+                -all_load curl ssl crypto
+        )
+    ENDFOREACH()
 endif()
 if (WIN32)
     FOREACH(EX ${EXAMPLES})
