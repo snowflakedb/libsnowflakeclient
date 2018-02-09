@@ -5,7 +5,21 @@
 #include "utils/test_setup.h"
 
 
+<<<<<<< HEAD:tests/test_variant.c
 void test_variant(void **unused) {
+=======
+#include <stdio.h>
+#include <memory.h>
+#include <snowflake/client.h>
+#include <example_setup.h>
+#include "string.h"
+
+
+int main() {
+    /* init */
+    SF_STATUS status;
+    initialize_snowflake_example(SF_BOOLEAN_FALSE);
+>>>>>>> Add header:examples/selectvar.c
     SF_CONNECT *sf = setup_snowflake_connection();
 
     SF_STATUS status = snowflake_connect(sf);
