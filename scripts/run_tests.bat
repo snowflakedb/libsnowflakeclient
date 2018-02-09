@@ -31,10 +31,6 @@ echo === running tests
 for /r ".\cmake-build-%arcdir%\examples\Release" %%a in (*.exe) do (
     echo === %%~fa
     %%~fa
-    ::if %ERRORLEVEL% NEQ 0 (
-    ::    echo Failed to run test: %%~fa
-    ::    goto :error
-    ::)
 )
 
 if defined APPVEYOR_BUILD_ID (
