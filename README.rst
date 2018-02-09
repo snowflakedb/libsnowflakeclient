@@ -17,27 +17,36 @@ Snowflake Connector for C/C++
 *Under development. No functionality works. Suggestion is welcome at any time.*
 
 Build and Tests
-================================================================================
+======================================================================
 
-Build (Linux and OSX)
+Build
 ----------------------------------------------------------------------
 
 Ensure you have cmake 2.8 or later version.
 
-.. code-block:: bash
-
-    mkdir cmake-build
-    cd cmake-build
-    cmake ..
-    make
-
-or
+Linux and OSX
+^^^^^^^^^^^^^
 
 .. code-block:: bash
 
     ./scripts/build_libsnowflakeclient.sh
 
-Test (Linux and OSX)
+Windows
+^^^^^^^^^^
+
+Add x64 or x86 for 64 bit or 32 bit Windows:
+
+.. code-block:: bash
+
+    ./scripts/build_libsnowflakeclient.bat x64 Release
+
+or
+
+.. code-block:: bash
+
+    ./scripts/build_libsnowflakeclient.bat x86 Release
+
+Prepare for Test
 ----------------------------------------------------------------------
 
 Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
@@ -56,12 +65,34 @@ Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
         }
     }
 
+Run Tests
+----------------------------------------------------------------------
+
 Run the tests. The test parameter environment variables will be set automatically.
+
+Linux and OSX
+^^^^^^^^^^^^^
 
 .. code-block:: bash
 
     ./scripts/run_tests.sh
 
+Windows
+^^^^^^^^^^
+
+Add x64 or x86 for 64 bit or 32 bit Windows:
+
+.. code-block:: bash
+
+    ./scripts/run_tests.bat x64 Release
+
+or
+
+.. code-block:: bash
+
+    ./scripts/run_tests.bat x86 Release
+
+	
 Profiling (Linux and OSX)
 ----------------------------------------------------------------------
 
@@ -73,7 +104,7 @@ If you want to use ``gprof``, add ``-p`` option to the build script, run a test 
     ./cmake-build/examples/ex_connect
     gprof ./cmake-build/examples/ex_connect gmon.out
 
-Check memory leak by Valgrind
+Check memory leak by Valgrind (Linux)
 ----------------------------------------------------------------------
 
 Use ``valgrind`` to check memory leak.

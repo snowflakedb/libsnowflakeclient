@@ -451,7 +451,7 @@ decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
     return uimin(djb->cap, uimax(djb->base, (uint32) (rand() % (sleep * 3))));
 }
 
-char *encode_url(CURL *curl,
+char * STDCALL encode_url(CURL *curl,
                  const char *protocol,
                  const char *account,
                  const char *host,
