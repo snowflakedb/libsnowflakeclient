@@ -7,7 +7,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <client_int.h>
+#include "client_int.h"
 
 namespace Snowflake
 {
