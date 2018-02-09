@@ -6,6 +6,7 @@
 #include <snowflake/client.h>
 #include <example_setup.h>
 #include <memory.h>
+#include <string.h>
 
 int fetch_data(SF_STMT *stmt, int64 expected_sum) {
     int ret = -1;

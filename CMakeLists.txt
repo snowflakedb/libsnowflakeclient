@@ -32,10 +32,12 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if(UNIX)
 	# Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 if(LINUX)
 	# Linux
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pthread")
 endif()
 
 if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
@@ -79,7 +81,25 @@ set(SOURCE_FILES
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
-		)
+        cpp/EncryptionMaterial.hpp
+        cpp/EncryptionProvider.cpp
+        cpp/FileTransferAgent.hpp
+        cpp/FileTransferAgent.cpp
+        cpp/FileTransferResult.hpp
+        cpp/IStatementPutGet.hpp
+        cpp/IStorageClient.hpp
+        cpp/IStorageObjectMetadata.hpp
+        cpp/PutGetParseResponse.hpp
+        cpp/PutGetParseResponse.cpp
+        cpp/SnowflakeS3Client.hpp
+        cpp/SnowflakeS3Client.cpp
+        cpp/StageInfo.hpp
+        cpp/StageInfo.cpp
+        cpp/StatementPutGet.hpp
+        cpp/StatementPutGet.cpp
+        cpp/StorageClientFactory.hpp
+        cpp/StorageClientFactory.cpp
+                )
 
 if (UNIX)
 	# Linux and OSX
@@ -100,7 +120,8 @@ include_directories(
         deps-build/${PLATFORM}/curl/include
         deps-build/${PLATFORM}/openssl/include
         deps-build/${PLATFORM}/zlib/include
-        include)
+        include
+        lib)
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
