@@ -12,7 +12,7 @@ void test_variant(void **unused) {
 #include <memory.h>
 #include <snowflake/client.h>
 #include <example_setup.h>
-#include "string.h"
+#include <string.h>
 
 
 int main() {

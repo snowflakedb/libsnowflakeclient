@@ -17,7 +17,7 @@
 #include "results.h"
 #include "error.h"
 #include "chunk_downloader.h"
-#include "regex.h"
+#include <regex.h>
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
@@ -1442,9 +1442,11 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt)
 
 sf_bool STDCALL _is_put_get_command(char* sql_text)
 {
+    //TODO better handle regex for detecting put and get command
     regex_t put_get_regex;
-    regcomp(&put_get_regex, "^(\\s*\\/*.*\\/*\\s*)*(put|get)\\s+",
-            REG_ICASE | REG_EXTENDED);
+    // On MacOS seems \s to match white space character did not work. Change to '[ ]' for now
+    //TODO maybe regex compilation should be moved to static variable so that no recompilation needed
+    regcomp(&put_get_regex, "^([ ]*\\/*.*\\/*[ ]*)*(put|get)[ ]+", REG_ICASE | REG_EXTENDED);
 
     int res;
     res = regexec(&put_get_regex, sql_text, 0, NULL, 0);
