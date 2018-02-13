@@ -26,7 +26,6 @@ char *CA_BUNDLE_FILE;
 int32 SSL_VERSION;
 sf_bool DEBUG;
 
-
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
@@ -348,7 +347,7 @@ cleanup:
 /*
  * Initializes logging file
  */
-static sf_bool STDCALL log_init(const char *log_path) {
+static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     _mutex_init(&log_lock);
     _mutex_init(&gmlocaltime_lock);
 
@@ -373,7 +372,7 @@ static sf_bool STDCALL log_init(const char *log_path) {
     } else {
         log_set_quiet(SF_BOOLEAN_TRUE);
     }
-    log_set_level(SF_LOG_TRACE); /* TODO: move to the parameter */
+    log_set_level(log_level);
     log_set_lock(&log_lock_func);
     // If log path is specified, use absolute path. Otherwise set logging dir to be relative to current directory
     if (sf_log_path) {
@@ -431,7 +430,8 @@ static void STDCALL log_term() {
     _mutex_term(&log_lock);
 }
 
-SF_STATUS STDCALL snowflake_global_init(const char *log_path) {
+SF_STATUS STDCALL snowflake_global_init(
+        const char *log_path, SF_LOG_LEVEL log_level) {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
 
     // Initialize constants
@@ -442,7 +442,7 @@ SF_STATUS STDCALL snowflake_global_init(const char *log_path) {
 
     sf_memory_init();
     sf_error_init();
-    if (!log_init(log_path)) {
+    if (!log_init(log_path, log_level)) {
         // no way to log error because log_init failed.
         fprintf(stderr, "Error during log initialization");
         goto cleanup;
@@ -1122,7 +1122,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
 
     // Check that we can write to the provided result bindings
     for (i = 0; i < sfstmt->total_fieldcount; i++) {
-        result = sf_array_list_get(sfstmt->results, i + 1);
+        result = sf_array_list_get(sfstmt->results, (size_t)i + 1);
         if (result == NULL) {
             continue;
         } else {
@@ -1139,9 +1139,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     sfstmt->chunk_rowcount--;
 
     // Write to results
-    // TODO error checking for conversions during fetch
     for (i = 0; i < sfstmt->total_fieldcount; i++) {
-        result = sf_array_list_get(sfstmt->results, i + 1);
+        result = sf_array_list_get(sfstmt->results, (size_t)i + 1);
         log_info("snowflake type: %s, C type: %s",
                  snowflake_type_to_string(sfstmt->desc[i].type),
                  result != NULL ?
@@ -1224,7 +1223,10 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         tm_ptr = sf_gmtime(&sec, &tm_obj);
                         _mutex_unlock(&gmlocaltime_lock);
                         if (tm_ptr == NULL) {
-                            /* TODO: error handling */
+                            SET_SNOWFLAKE_ERROR(&sfstmt->error,
+                                SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                "Failed to convert a date value to a string.",
+                                SF_SQLSTATE_GENERAL_ERROR);
                             result->len = 0;
                             goto cleanup;
                         }
@@ -1242,7 +1244,10 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                           raw_result->valuestring,
                           sfstmt->connection->timezone,
                           sfstmt->desc[i].scale)) {
-                            /* TODO: error handling */
+                            SET_SNOWFLAKE_ERROR(&sfstmt->error,
+                                SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                "Failed to convert a timestamp value to a string.",
+                                SF_SQLSTATE_GENERAL_ERROR);
                             result->len = 0;
                             goto cleanup;
                         }

@@ -2,9 +2,9 @@
 * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
 */
 
-#include "snowflake/platform.h"
+#include <snowflake/platform.h>
 
-struct tm* STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
+struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
     errno_t err = gmtime_s(result, timep);
     if (err) {
@@ -16,7 +16,7 @@ struct tm* STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #endif
 }
 
-struct tm* STDCALL sf_localtime(const time_t *timep, struct tm *result) {
+struct tm *STDCALL sf_localtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
     errno_t err = localtime_s(result, timep);
     if (err) {
@@ -44,7 +44,7 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 #endif
 }
 
-char* STDCALL sf_getenv(const char *name) {
+char *STDCALL sf_getenv(const char *name) {
 #ifdef _WIN32
     return getenv(name);
 #else
@@ -69,7 +69,7 @@ int STDCALL sf_mkdir(const char *path) {
 }
 
 
-int STDCALL _thread_init(SF_THREAD_HANDLE *thread, void* (*proc)(void*), void *arg) {
+int STDCALL _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg) {
 #ifdef _WIN32
     *thread = CreateThread(
       NULL,                         // default security attributes
@@ -111,7 +111,7 @@ int STDCALL _cond_init(SF_CONDITION_HANDLE *cond) {
 #endif
 }
 
-int STDCALL _cond_broadcast(SF_CONDITION_HANDLE* cond) {
+int STDCALL _cond_broadcast(SF_CONDITION_HANDLE *cond) {
 #ifdef _WIN32
     WakeAllConditionVariable(cond);
     return 0;
@@ -120,7 +120,7 @@ int STDCALL _cond_broadcast(SF_CONDITION_HANDLE* cond) {
 #endif
 }
 
-int STDCALL _cond_signal(SF_CONDITION_HANDLE* cond) {
+int STDCALL _cond_signal(SF_CONDITION_HANDLE *cond) {
 #ifdef _WIN32
     WakeConditionVariable(cond);
     return 0;
@@ -129,7 +129,7 @@ int STDCALL _cond_signal(SF_CONDITION_HANDLE* cond) {
 #endif
 }
 
-int STDCALL _cond_wait(SF_CONDITION_HANDLE* cond, SF_CRITICAL_SECTION_HANDLE* crit) {
+int STDCALL _cond_wait(SF_CONDITION_HANDLE *cond, SF_CRITICAL_SECTION_HANDLE *crit) {
 #ifdef _WIN32
     BOOL ret = SleepConditionVariableCS(cond, crit, INFINITE);
     return ret ? 0 : 1;
@@ -138,7 +138,7 @@ int STDCALL _cond_wait(SF_CONDITION_HANDLE* cond, SF_CRITICAL_SECTION_HANDLE* cr
 #endif
 }
 
-int STDCALL _cond_term(SF_CONDITION_HANDLE* cond) {
+int STDCALL _cond_term(SF_CONDITION_HANDLE *cond) {
 #ifdef _WIN32
     // nop
     return 0;
@@ -183,7 +183,7 @@ int STDCALL _critical_section_term(SF_CRITICAL_SECTION_HANDLE *crit) {
 #endif
 }
 
-int STDCALL _rwlock_init(SF_RWLOCK_HANDLE * lock) {
+int STDCALL _rwlock_init(SF_RWLOCK_HANDLE *lock) {
 #ifdef _WIN32
     InitializeSRWLock(lock);
     return 0;
@@ -237,7 +237,7 @@ int STDCALL _rwlock_term(SF_RWLOCK_HANDLE *lock) {
 #endif
 }
 
-int STDCALL _mutex_init(SF_MUTEX_HANDLE* lock) {
+int STDCALL _mutex_init(SF_MUTEX_HANDLE *lock) {
 #ifdef _WIN32
     *lock = CreateMutex(
         NULL,  // default security attribute
@@ -250,7 +250,7 @@ int STDCALL _mutex_init(SF_MUTEX_HANDLE* lock) {
 #endif
 }
 
-int STDCALL _mutex_lock(SF_MUTEX_HANDLE* lock) {
+int STDCALL _mutex_lock(SF_MUTEX_HANDLE *lock) {
 #ifdef _WIN32
     DWORD ret = WaitForSingleObject(*lock, INFINITE);
     return ret == WAIT_OBJECT_0 ? 0 : 1;
@@ -259,7 +259,7 @@ int STDCALL _mutex_lock(SF_MUTEX_HANDLE* lock) {
 #endif
 }
 
-int STDCALL _mutex_unlock(SF_MUTEX_HANDLE* lock) {
+int STDCALL _mutex_unlock(SF_MUTEX_HANDLE *lock) {
 #ifdef _WIN32
     ReleaseMutex(*lock);
     return 0;
@@ -268,7 +268,7 @@ int STDCALL _mutex_unlock(SF_MUTEX_HANDLE* lock) {
 #endif
 }
 
-int STDCALL _mutex_term(SF_MUTEX_HANDLE* lock) {
+int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock) {
 #ifdef _WIN32
     CloseHandle(*lock);
     return 0;

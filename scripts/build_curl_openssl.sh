@@ -33,12 +33,12 @@ echo "Options:"
 echo "  target       = $target"
 echo "PATH="$PATH
 
-DEPENDENCY_LINUX=$DIR/../deps-build/$PLATFORM
-rm -rf $DEPENDENCY_LINUX
-mkdir -p $DEPENDENCY_LINUX
+DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM
+rm -rf $DEPENDENCY_DIR
+mkdir -p $DEPENDENCY_DIR
 
 # build openssl
-OPENSSL_BUILD_DIR=$DEPENDENCY_LINUX/openssl
+OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
 openssl_config_opts=()
 openssl_config_opts+=(
     "no-shared"
@@ -59,7 +59,7 @@ curl_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     curl_configure_opts+=("--enable-debug")
 fi
-LIBCURL_BUILD_DIR=$DEPENDENCY_LINUX/curl
+LIBCURL_BUILD_DIR=$DEPENDENCY_DIR/curl
 curl_configure_opts+=(
     "--with-ssl=$OPENSSL_BUILD_DIR"
     "--without-nss"

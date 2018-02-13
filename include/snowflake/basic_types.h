@@ -11,6 +11,9 @@ extern "C" {
 
 #include "platform.h"
 
+/**
+ * Supported data types
+ */
 typedef char int8;
 typedef unsigned char uint8;
 typedef unsigned long int uint32;
