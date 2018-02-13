@@ -13,29 +13,23 @@ set -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/env.sh
 
-VALGRIND_CMD=(
-    "valgrind"
-    "--tool=memcheck"
-    "--leak-check=full"
-    "--error-exitcode=1"
-    "--suppressions=$DIR/valgrind_suppressions.txt"
-)
-
-# removed to suppress false alarm
-# "--run-libc-freeres=no"
-
-use_valgrind=()
+use_valgrind=false
 while getopts "hm" opt; do
   case $opt in
-    m) use_valgrind=("${VALGRIND_CMD[@]}") ;;
+    m) use_valgrind=true ;;
     h) usage;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument." >&2; exit 1 ;;
   esac
 done
 
-for f in $(ls $DIR/../cmake-build/examples/ex_*); do
-    echo -e "\n==> $f"
-    echo "${use_valgrind[@]}" $f
-    "${use_valgrind[@]}" $f
-done
+
+cd "./cmake-build"
+if [[ "$use_valgrind" == "true" ]]; then
+    # run valgrind tests
+    ctest -V -R "valgrind.*"
+else
+    # run non-valgrind tests
+    ctest -V -E "valgrind.*"
+fi
+cd ..

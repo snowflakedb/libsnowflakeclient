@@ -38,13 +38,13 @@ Add x64 or x86 for 64 bit or 32 bit Windows:
 
 .. code-block:: bash
 
-    ./scripts/build_libsnowflakeclient.bat x64 Release
+    .\scripts\build_libsnowflakeclient.bat x64 Release
 
 or
 
 .. code-block:: bash
 
-    ./scripts/build_libsnowflakeclient.bat x86 Release
+    .\scripts\build_libsnowflakeclient.bat x86 Release
 
 Prepare for Test
 ----------------------------------------------------------------------

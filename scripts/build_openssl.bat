@@ -10,7 +10,7 @@ set platform=%1
 set build_type=%2
 
 set scriptdir=%~dp0
-call %scriptdir%\_init.bat %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
