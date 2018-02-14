@@ -36,6 +36,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -std=gnu++0x")
 endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option
@@ -90,6 +91,8 @@ if (UNIX)
     find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
+    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
 endif ()
 
 if (WIN32)
@@ -105,20 +108,25 @@ include_directories(
         deps-build/${PLATFORM}/curl/include
         deps-build/${PLATFORM}/openssl/include
         deps-build/${PLATFORM}/zlib/include
+        deps-build/${PLATFORM}/aws/include
         include)
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
+message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
+message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 
 add_library(snowflakeclient STATIC ${SOURCE_FILES})
 
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
+#set (CMAKE_CXX_STANDARD 11)
 
 link_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
+        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
 )
 
 if (LINUX)
