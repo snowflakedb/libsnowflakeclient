@@ -27,6 +27,9 @@ fi
 if [[ "$(which gcc49)" ]]; then
     GCC="$(which gcc49)"
     GXX="$(which g++49)"
+elif [[ "$(which gcc-4.9)" ]]; then
+    GCC="$(which gcc-4.9)"
+    GXX="$(which g++-4.9)"
 elif [[ "$(which gcc52)" ]]; then
     GCC="$(which gcc52)"
     GXX="$(which g++52)"
