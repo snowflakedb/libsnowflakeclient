@@ -147,3 +147,4 @@ mkdir $AWS_CMAKE_BUILD_DIR
 
 cd $AWS_CMAKE_BUILD_DIR
 $CMAKE ${aws_configure_opts[@]} ../
+make; make install
