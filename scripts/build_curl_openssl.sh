@@ -12,7 +12,7 @@ set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPS_DIR=$(cd $DIR/../deps && pwd)
-OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.0f/
+OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.0g/
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.54.1/
 AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-1.3.50/
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
