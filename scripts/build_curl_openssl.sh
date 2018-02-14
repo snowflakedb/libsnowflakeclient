@@ -14,6 +14,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPS_DIR=$(cd $DIR/../deps && pwd)
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.0f/
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.54.1/
+AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-1.3.50/
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
 target=Release
@@ -91,3 +92,31 @@ PKG_CONFIG_PATH="$OPENSSL_BUILD_DIR/lib/pkgconfig" LIBS="-ldl" ./configure ${cur
 echo "Building and Installing Curl"
 make 2>&1 > /dev/null
 make install 2>&1 > /dev/null
+
+# build aws-cpp-sdk
+AWS_BUILD_DIR=$DEPENDENCY_LINUX/aws
+AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build
+aws_configure_opts=()
+if [[ "$target" != "Release" ]]; then
+    aws_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
+else
+    aws_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
+fi
+aws_configure_opts+=(
+    "-DCMAKE_C_COMPILER=/usr/local/bin/gcc52"
+    "-DCMAKE_CXX_COMPILER=/usr/local/bin/g++52"
+    "-DBUILD_ONLY=\"s3\""
+    "-DCMAKE_INSTALL_PREFIX=$AWS_BUILD_DIR"
+    "-DBUILD_SHARED_LIBS=OFF"
+    "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
+    "-DENABLE_TESTING=OFF"
+)
+
+rm -rf $AWS_BUILD_DIR
+rm -rf $AWS_CMAKE_BUILD_DIR
+mkdir $AWS_BUILD_DIR
+mkdir $AWS_CMAKE_BUILD_DIR
+
+cd $AWS_CMAKE_BUILD_DIR
+cmake3 ${aws_configure_opts[@]} ../
+

@@ -14,7 +14,10 @@ set(SOURCE_UTILS
         utils/example_setup.h)
 
 if (LINUX)
-    FOREACH (EX ${EXAMPLES})
+    add_executable(ex_include_aws ${SOURCE_UTILS} include_aws.cpp)
+    target_link_libraries(ex_include_aws snowflakeclient
+            -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
+    FOREACH(EX ${EXAMPLES})
         add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
         target_link_libraries(
                 ex_${EX}
