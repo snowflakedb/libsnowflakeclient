@@ -17,6 +17,31 @@ LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.54.1/
 AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-1.3.50/
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
+# Find cmake, gcc and g++ on target machine. Need cmake 3.0+, gcc/g++ 4.9+
+if [[ "$(which cmake3)" ]]; then
+    CMAKE="$(which cmake3)"
+else
+    CMAKE="$(which cmake)"
+fi
+
+if [[ "$(which gcc49)" ]]; then
+    GCC="$(which gcc49)"
+    GXX="$(which g++49)"
+elif [[ "$(which gcc52)" ]]; then
+    GCC="$(which gcc52)"
+    GXX="$(which g++52)"
+elif [[ "$(which gcc62)" ]]; then
+    GCC="$(which gcc62)"
+    GXX="$(which g++62)"
+elif [[ "$(which gcc72)" ]]; then
+    GCC="$(which gcc72)"
+    GXX="$(which g++72)"
+else
+    # Default to system
+    GCC="$(which gcc)"
+    GXX="$(which g++)"
+fi
+
 target=Release
 while getopts ":ht:s:" opt; do
   case $opt in
@@ -103,8 +128,8 @@ else
     aws_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
 fi
 aws_configure_opts+=(
-    "-DCMAKE_C_COMPILER=/usr/local/bin/gcc52"
-    "-DCMAKE_CXX_COMPILER=/usr/local/bin/g++52"
+    "-DCMAKE_C_COMPILER=$GCC"
+    "-DCMAKE_CXX_COMPILER=$GXX"
     "-DBUILD_ONLY=\"s3\""
     "-DCMAKE_INSTALL_PREFIX=$AWS_BUILD_DIR"
     "-DBUILD_SHARED_LIBS=OFF"
@@ -118,5 +143,4 @@ mkdir $AWS_BUILD_DIR
 mkdir $AWS_CMAKE_BUILD_DIR
 
 cd $AWS_CMAKE_BUILD_DIR
-cmake3 ${aws_configure_opts[@]} ../
-
+$CMAKE ${aws_configure_opts[@]} ../
