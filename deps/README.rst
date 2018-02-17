@@ -22,7 +22,7 @@ Linux and OSX
 
 .. code-block:: bash
 
-    ./scripts/build_curl_openssl.sh
+    ./scripts/build_dependencies.sh -t Release
 
 Windows
 ^^^^^^^^^^

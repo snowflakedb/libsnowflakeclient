@@ -4,26 +4,16 @@
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
-    echo "Builds cmocka" 
+    echo "Build cmocka" 
     echo "-t <Release/Debug> : Release or Debug builds"
     exit 2
 }
 
 set -o pipefail
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DEPS_DIR=$(cd $DIR/../deps && pwd)
-SOURCE_DIR=$DEPS_DIR/cmocka-1.1.1
-PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
-target=Release
-while getopts ":ht:s:" opt; do
-  case $opt in
-    t) target=$OPTARG ;;
-    h) usage;;
-    \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
-    :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
-  esac
-done
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/_init.sh
+SOURCE_DIR=$DEPS_DIR/cmocka-1.1.1
 
 INSTALL_DIR=/tmp/cmocka
 rm -rf $INSTALL_DIR
@@ -39,7 +29,7 @@ rm -rf cmake-build
 mkdir cmake-build
 cd cmake-build
 echo cmake ${config_opts[@]} ..
-cmake ${config_opts[@]} ..
+$CMAKE ${config_opts[@]} ..
 make
 make test
 make install
