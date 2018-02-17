@@ -24,10 +24,10 @@ Makefile
 /apps/tsget
 /apps/tsget.pl
 /apps/md4.c
+/apps/progs.h
 
 # Auto generated headers
 /crypto/buildinf.h
-/apps/progs.h
 /crypto/include/internal/*_conf.h
 /openssl/include/opensslconf.h
 /util/domd
@@ -54,6 +54,12 @@ Makefile
 
 # Certain files that get created by tests on the fly
 /test/test-runs
+/test/*.ss
+/test/*.srl
+/test/.rnd
+/test/test*.pem
+/test/newkey.pem
+/test/*.log
 /test/buildtest_*
 
 # Fuzz stuff.
@@ -172,5 +178,4 @@ pod2htmd.tmp
 
 # Windows manifest files
 *.manifest
-
 _install
