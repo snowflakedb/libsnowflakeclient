@@ -198,7 +198,9 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_LOGIN_TIMEOUT,
     SF_CON_NETWORK_TIMEOUT,
     SF_CON_TIMEZONE,
-    SF_CON_AUTOCOMMIT
+    SF_CON_AUTOCOMMIT,
+    SF_XPR_DIR_QUERY_URL,
+    SF_XPR_DIR_QUERY_PARAM
 } SF_ATTRIBUTE;
 
 /**
@@ -273,6 +275,10 @@ typedef struct SF_CONNECT {
     int64 sequence_counter;
     SF_MUTEX_HANDLE mutex_sequence_counter;
     char request_id[SF_UUID4_LEN];
+
+    char *XPR_directURL;
+
+    char *XPR_direct_param;
 
     // Error
     SF_ERROR_STRUCT error;
