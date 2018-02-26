@@ -36,11 +36,12 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -std=gnu++0x")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC -Werror -std=c++0x -std=gnu++0x")
 endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif ()
 
 if (LINUX)
@@ -109,7 +110,8 @@ include_directories(
         deps-build/${PLATFORM}/openssl/include
         deps-build/${PLATFORM}/zlib/include
         deps-build/${PLATFORM}/aws/include
-        include)
+        include
+        cpp/include)
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
@@ -142,5 +144,6 @@ if (WIN32)
     target_link_libraries(snowflakeclient)
 endif ()
 
+add_subdirectory(cpp)
 add_subdirectory(examples)
 add_subdirectory(tests)
