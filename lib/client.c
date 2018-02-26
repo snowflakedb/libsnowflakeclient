@@ -658,6 +658,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_sequence_counter);
         sf->request_id[0] = '\0';
         clear_snowflake_error(&sf->error);
+
+        sf->XPR_direct_param = NULL;
+        sf->XPR_directURL = NULL;
     }
 
     return sf;
@@ -954,6 +957,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_TIMEZONE:
             alloc_buffer_and_copy(&sf->timezone, value);
             break;
+        case SF_XPR_DIR_QUERY_URL:
+            alloc_buffer_and_copy(&sf->XPR_directURL, value);
+        break;
+        case SF_XPR_DIR_QUERY_PARAM:
+            alloc_buffer_and_copy(&sf->XPR_direct_param, value);
+        break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1614,8 +1623,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         }
     }
 
-    if (is_string_empty(sfstmt->connection->master_token) ||
-        is_string_empty(sfstmt->connection->token)) {
+    if (is_string_empty(sfstmt->connection->XPR_directURL) &&
+        (is_string_empty(sfstmt->connection->master_token) ||
+         is_string_empty(sfstmt->connection->token))) {
         log_error(
             "Missing session token or Master token. Are you sure that snowflake_connect was successful?");
         SET_SNOWFLAKE_ERROR(&sfstmt->error,
@@ -1626,7 +1636,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     }
 
     // Create Body
-    body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter);
+    body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
+                                  is_string_empty(sfstmt->connection->XPR_directURL) ?
+                                  NULL : sfstmt->request_id);
     if (bindings != NULL) {
         /* binding parameters if exists */
         cJSON_AddItemToObject(body, "bindings", bindings);
@@ -1634,7 +1646,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     s_body = cJSON_Print(body);
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
-
+    
     if (request(sfstmt->connection, &resp, QUERY_URL, url_params,
                 sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
