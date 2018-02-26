@@ -41,6 +41,7 @@ endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif ()
 
 if (LINUX)
@@ -150,7 +151,8 @@ include_directories(
         deps-build/${PLATFORM}/zlib/include
         deps-build/${PLATFORM}/aws/include
         include
-        lib)
+        lib
+        cpp/include)
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
@@ -187,5 +189,6 @@ if (WIN32)
     target_link_libraries(snowflakeclient)
 endif ()
 
+add_subdirectory(cpp)
 add_subdirectory(examples)
 add_subdirectory(tests)
