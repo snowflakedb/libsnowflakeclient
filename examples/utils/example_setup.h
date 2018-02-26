@@ -2,8 +2,8 @@
  * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
  */
 
-#ifndef PDO_SNOWFLAKE_SETUP_H
-#define PDO_SNOWFLAKE_SETUP_H
+#ifndef SNOWFLAKE_EXAMPLE_H
+#define SNOWFLAKE_EXAMPLE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,4 +25,4 @@ SF_CONNECT *setup_snowflake_connection_with_autocommit(
 }
 #endif
 
-#endif //PDO_SNOWFLAKE_SETUP_H
+#endif //SNOWFLAKE_EXAMPLE_H

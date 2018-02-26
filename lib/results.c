@@ -248,7 +248,7 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
         return desc;
     }
     desc = (SF_COLUMN_DESC *) SF_CALLOC(array_size, sizeof(SF_COLUMN_DESC));
-    for (i = 0; i < array_size; i++) {
+    for (i = 0; i < (int)array_size; i++) {
         column = cJSON_GetArrayItem(rowtype, i);
         if(json_copy_string(&desc[i].name, column, "name")) {
             desc[i].name = NULL;

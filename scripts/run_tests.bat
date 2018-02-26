@@ -6,11 +6,11 @@ set platform=%1
 set build_type=%2
 
 set scriptdir=%~dp0
-call %scriptdir%\_init.bat %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-call %scriptdir%\env.bat
+call "%scriptdir%\env.bat"
 
 if defined APPVEYOR_BUILD_ID (
 	REM use the job specific schema
@@ -28,10 +28,13 @@ if defined APPVEYOR_BUILD_ID (
 )
 
 echo === running tests
-for /r ".\cmake-build-%arcdir%\examples\Release" %%a in (*.exe) do (
-    echo === %%~fa
-    %%~fa
+cd .\cmake-build-%arcdir%
+ctest -V -E "valgrind.*"
+if %ERRORLEVEL% NEQ 0 (
+    echo failed to run tests.
+    goto :error
 )
+cd ..
 
 if defined APPVEYOR_BUILD_ID (
     echo === dropping test schema: %SNOWFLAKE_TEST_SCHEMA%

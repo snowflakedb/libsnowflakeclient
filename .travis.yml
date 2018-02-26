@@ -5,7 +5,16 @@ script:
 matrix:
   include:
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-4.9
+    env:
+      - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
+      - eval "${MATRIX_EVAL}"
       - sudo apt-get update
       - sudo apt-get install lcov
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
@@ -17,9 +26,17 @@ matrix:
     after_succss:
       - bash <(curl -s https://codecov.io/bash)
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-4.9
     env:
       - USE_VALGRIND=true
+      - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
+      - eval "${MATRIX_EVAL}"
       - sudo apt-get update
       - sudo apt-get install lcov valgrind
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
