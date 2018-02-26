@@ -13,6 +13,7 @@
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
+#define URL_PARAM_DELIM "&"
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
@@ -193,14 +194,17 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     return body;
 }
 
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id) {
+cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id) {
     cJSON *body;
     // Create body
     body = cJSON_CreateObject();
     cJSON_AddStringToObject(body, "sqlText", sql_text);
     cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     cJSON_AddNumberToObject(body, "sequenceId", (double)sequence_id);
-
+    if (request_id)
+    {
+        cJSON_AddStringToObject(body, "requestId", request_id);
+    }
     return body;
 }
 
@@ -459,7 +463,8 @@ char * STDCALL encode_url(CURL *curl,
                  const char *url,
                  URL_KEY_VALUE *vars,
                  int num_args,
-                 SF_ERROR_STRUCT *error) {
+                 SF_ERROR_STRUCT *error,
+                 char *extraUrlParams) {
     int i;
     sf_bool host_empty = is_string_empty(host);
     sf_bool port_empty = is_string_empty(port);
@@ -514,6 +519,8 @@ char * STDCALL encode_url(CURL *curl,
         encoded_url_size += vars[i].key_size + vars[i].value_size;
     }
 
+    encoded_url_size += extraUrlParams ? strlen(extraUrlParams) : 0;
+
     encoded_url = (char *) SF_CALLOC(1, encoded_url_size);
     if (!encoded_url) {
         SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
@@ -525,9 +532,26 @@ char * STDCALL encode_url(CURL *curl,
              url);
 
     // Add encoded URL parameters to encoded_url buffer
+    sf_bool first = SF_BOOLEAN_TRUE;
     for (i = 0; i < num_args; i++) {
+        if (first == SF_BOOLEAN_FALSE && vars[i].key_size > 0)
+        {
+            strncat(encoded_url, URL_PARAM_DELIM, 1);
+        }
         strncat(encoded_url, vars[i].formatted_key, vars[i].key_size);
         strncat(encoded_url, vars[i].formatted_value, vars[i].value_size);
+        first = SF_BOOLEAN_FALSE;
+    }
+
+    // Adding the extra url param (setter of extraUrlParams is responsible to make
+    // sure extraUrlParams is correct)
+    if (extraUrlParams && !is_string_empty(extraUrlParams))
+    {
+        if (first == SF_BOOLEAN_FALSE)
+        {
+            strncat(encoded_url, URL_PARAM_DELIM, 1);
+        }
+        strncat(encoded_url, extraUrlParams, strlen(extraUrlParams));
     }
 
     log_debug("Here is constructed url: %s", encoded_url);
@@ -978,7 +1002,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
 
         encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
                                  sf->port, url, url_params, num_url_params,
-                                 error);
+                                 error, sf->XPR_direct_param);
         if (encoded_url == NULL) {
             goto cleanup;
         }
@@ -1010,6 +1034,10 @@ cleanup:
 }
 
 sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error) {
+    if (!is_string_empty(sf->XPR_directURL))
+    {
+      return SF_BOOLEAN_TRUE;
+    }
     sf_bool ret = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     const char *error_msg = NULL;
@@ -1060,7 +1088,8 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     uuid4_generate(request_id);
     url_params[0].value = request_id;
     encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
-                             sf->port, RENEW_SESSION_URL, url_params, 1, error);
+                             sf->port, RENEW_SESSION_URL, url_params, 1, error,
+                             sf->XPR_direct_param);
     if (!encoded_url) {
         goto cleanup;
     }

@@ -153,9 +153,10 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf, const char *application, co
  *
  * @param sql_text The sql query to send to Snowflake
  * @param sequence_id Sequence ID from the Snowflake Connection object.
+ * @param request_id  requestId to be passed as a part of body instead of header.
  * @return Query cJSON Body.
  */
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id);
+cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id);
 
 /**
  * Creates a cJSON blob that is used to renew a session with Snowflake. cJSON blob must be freed by the caller using
@@ -234,10 +235,12 @@ uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sle
  * @param vars URL parameters to add to the encoded URL.
  * @param num_args Number of URL parameters.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
+ * @param extraUrlParams an extra set of url parameters (used in case of direct connection
+ * to XP resources)
  * @return Returns a pointer to a string which is the the encoded URL.
  */
 char * STDCALL encode_url(CURL *curl, const char *protocol, const char *account, const char *host, const char *port,
-                          const char *url, URL_KEY_VALUE* vars, int num_args, SF_ERROR_STRUCT *error);
+                          const char *url, URL_KEY_VALUE* vars, int num_args, SF_ERROR_STRUCT *error, char *extraUrlParams);
 
 /**
  * Determines if a string is empty by checking if the passed in string is NULL or contains a null terminator as its
