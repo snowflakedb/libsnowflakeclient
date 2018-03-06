@@ -52,7 +52,7 @@ matrix:
       - brew install jq
       - brew upgrade python
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
-      - virtualenv env -p python3
+      - python3 -m venv env
       - source env/bin/activate
 
 env:
