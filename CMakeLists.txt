@@ -36,26 +36,25 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-endif()
-if(LINUX)
-	# Linux
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -std=gnu++0x")
+endif ()
+if (LINUX)
+    # Linux. MacOS doesn't require pthread option
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -pthread")
-endif()
+endif ()
 
-if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
-	# Profiler option
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-endif()
+if (LINUX)
+    # Profiler for Linux
+    if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+    endif ()
 
-if(UNIX)
-	# Linux and OSX
-	if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
-	endif()
-endif()
+    # Code coverage for Linux
+    if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
+    endif ()
+endif ()
 
 set(SOURCE_FILES
         include/snowflake/basic_types.h
@@ -105,7 +104,14 @@ set(SOURCE_FILES
         cpp/StorageClientFactory.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/util/Base64.hpp
-        cpp/util/Base64.cpp cpp/crypto/Cryptor.hpp cpp/crypto/CipherContext.hpp cpp/crypto/CipherContext.cpp cpp/crypto/Cryptor.cpp cpp/util/SnowflakeCommon.hpp cpp/crypto/CipherStream.cpp cpp/crypto/CipherStream.hpp)
+        cpp/util/Base64.cpp
+        cpp/crypto/Cryptor.hpp
+        cpp/crypto/CipherContext.hpp
+        cpp/crypto/CipherContext.cpp
+        cpp/crypto/Cryptor.cpp
+        cpp/util/SnowflakeCommon.hpp
+        cpp/crypto/CipherStream.cpp
+        cpp/crypto/CipherStream.hpp)
 
 if (UNIX)
     # Linux and OSX
@@ -130,7 +136,8 @@ include_directories(
         deps-build/${PLATFORM}/openssl/include
         deps-build/${PLATFORM}/zlib/include
         deps-build/${PLATFORM}/aws/include
-        include)
+        include
+        lib)
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
