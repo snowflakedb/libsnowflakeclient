@@ -34,6 +34,11 @@ namespace Snowflake
         return &m_sourceCompression;
       }
 
+      inline EncryptionMaterial *getEncryptionMaterial()
+      {
+        return m_encryptionMaterial;
+      }
+
     private:
 
       int m_parallel;

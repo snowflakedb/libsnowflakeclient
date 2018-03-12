@@ -36,7 +36,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
 endif()
 if(LINUX)
 	# Linux
@@ -103,7 +103,9 @@ set(SOURCE_FILES
         cpp/StatementPutGet.cpp
         cpp/StorageClientFactory.hpp
         cpp/StorageClientFactory.cpp
-                )
+        cpp/crypto/CryptoTypes.hpp
+        cpp/util/Base64.hpp
+        cpp/util/Base64.cpp cpp/crypto/Cryptor.hpp cpp/crypto/CipherContext.hpp cpp/crypto/CipherContext.cpp cpp/crypto/Cryptor.cpp cpp/util/SnowflakeCommon.hpp cpp/crypto/CipherStream.cpp cpp/crypto/CipherStream.hpp)
 
 if (UNIX)
     # Linux and OSX
