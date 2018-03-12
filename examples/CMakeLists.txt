@@ -7,31 +7,6 @@ include_directories(
         "../cpp"
 )
 
-SET(EXAMPLES
-        connect
-        connect_negative
-        change_current
-        select1
-        transaction
-        ping_pong
-        stmt_with_bad_connect
-        crud
-        error_handling
-        large_result_set
-        selectvar
-        selectnum
-        selectbool
-        selectbin
-        timezone
-        selectnull
-        selecttsntz
-        selecttsltz
-        selecttstz
-        selecttime
-        check_ctypes
-        bind_params
-        bind_results)
-
 set(EXAMPLES_CPP
         simple_put_get
         cipher_stream)
