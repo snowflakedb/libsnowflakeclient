@@ -5,25 +5,25 @@
 #ifndef SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP
 
-#include <SnowflakeInclude.hpp>
+#include <snowflakecpp/Include.hpp>
 #include <string>
-#include "SnowflakeConnection.hpp"
+#include "Connection.hpp"
 
 namespace Snowflake {
     namespace Client {
-        class SnowflakeStatement {
-            friend class SnowflakeConnection;
+        class Statement {
+            friend class Connection;
         public:
 
-            SnowflakeStatement(SnowflakeConnection &connection_);
+            Statement(Connection &connection_);
 
-            SnowflakeStatement(Snowflake::CAPI::SF_STMT &sf_stmt_);
+            Statement(Snowflake::CAPI::SF_STMT &sf_stmt_);
 
-            ~SnowflakeStatement(void);
+            ~Statement(void);
 
             //TODO error structs or exceptions?
 
-            Snowflake::CAPI::SF_STATUS query(const std::string &command_);
+            void query(const std::string &command_);
 
             Snowflake::CAPI::int64 affectedRows();
 
@@ -35,28 +35,28 @@ namespace Snowflake {
 
             Snowflake::CAPI::SF_COLUMN_DESC *desc();
 
-            Snowflake::CAPI::SF_STATUS prepare(const std::string &command_);
+            void prepare(const std::string &command_);
 
-            Snowflake::CAPI::SF_STATUS setAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
+            void setAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
                                                     const void *value);
 
-            Snowflake::CAPI::SF_STATUS getAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
+            void getAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
                                                     void **value);
 
-            Snowflake::CAPI::SF_STATUS execute();
+            void execute();
 
             Snowflake::CAPI::SF_STATUS fetch();
 
             Snowflake::CAPI::uint64 numParams();
 
-            Snowflake::CAPI::SF_STATUS bindParam(Snowflake::CAPI::SF_BIND_INPUT &sfbind_);
+            void bindParam(Snowflake::CAPI::SF_BIND_INPUT &sfbind_);
 
-            Snowflake::CAPI::SF_STATUS bindParamArray(Snowflake::CAPI::SF_BIND_INPUT &sfbind_array_,
+            void bindParamArray(Snowflake::CAPI::SF_BIND_INPUT sfbind_array_[],
                                                       size_t size_);
 
-            Snowflake::CAPI::SF_STATUS bindResult(Snowflake::CAPI::SF_BIND_OUTPUT &sfbind_);
+            void bindResult(Snowflake::CAPI::SF_BIND_OUTPUT &sfbind_);
 
-            Snowflake::CAPI::SF_STATUS bindResultArray(Snowflake::CAPI::SF_BIND_OUTPUT &sfbind_array_,
+            void bindResultArray(Snowflake::CAPI::SF_BIND_OUTPUT sfbind_array_[],
                                                        size_t size_);
 
             const char *sfqid();
@@ -66,7 +66,7 @@ namespace Snowflake {
             Snowflake::CAPI::SF_STMT m_stmt;
             // Pointer to the connection object that the statement struct will to
             // connect to Snowflake.
-            SnowflakeConnection *m_connection;
+            Connection *m_connection;
         };
     }
 }

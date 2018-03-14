@@ -5,44 +5,49 @@
 #ifndef SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP
 
-#include "SnowflakeInclude.hpp"
+#include <string>
+#include "Include.hpp"
 
 namespace Snowflake {
     namespace Client {
-        class SnowflakeConnection {
+        class Connection {
         public:
 
             /* Construct a blank Snowflake Connection */
-            SnowflakeConnection(void);
+            Connection(void);
 
             /*
              * Construct with a connection pointer. Copies connection info from
              * passed in connection
              */
-            SnowflakeConnection(Snowflake::CAPI::SF_CONNECT &connection_);
+            Connection(Snowflake::CAPI::SF_CONNECT &connection_);
 
-            ~SnowflakeConnection(void);
+            ~Connection(void);
 
-            Snowflake::CAPI::SF_STATUS connect();
+            void connect();
 
-            Snowflake::CAPI::SF_STATUS setAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
+            void setAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
                                                     const void *value_);
 
-            Snowflake::CAPI::SF_STATUS getAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
+            void getAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
                                                     void **value_);
 
-            Snowflake::CAPI::SF_STATUS beginTransaction();
+            void beginTransaction();
 
-            Snowflake::CAPI::SF_STATUS commitTransaction();
+            void commitTransaction();
 
-            Snowflake::CAPI::SF_STATUS rollbackTransaction();
+            void rollbackTransaction();
 
             //TODO Instead of returning error struct, translate error codes into exceptions
 
-
+            /*
+             * Get error message from error struct. Error message is set when there is an exception
+             */
+            const std::string err_msg();
 
         private:
             Snowflake::CAPI::SF_CONNECT *m_connection;
+            // Whether the class created the connection or it was passed by reference to us
             bool m_connection_created = 0;
         };
     }

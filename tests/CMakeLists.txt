@@ -33,11 +33,12 @@ SET(TESTS_C
         )
 
 SET(TESTS_CXX
-        test_include_aws)
+        test_include_aws
+        )
 
 set(SOURCE_UTILS
         utils/test_setup.c
-        utils/test_setup.h)
+        utils/test_setup.h utils/TestSetup.cpp utils/TestSetup.hpp)
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
@@ -53,7 +54,7 @@ message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
+    set(TESTLIB_OPTS_CXX snowflakeclientcpp snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl ssl crypto)

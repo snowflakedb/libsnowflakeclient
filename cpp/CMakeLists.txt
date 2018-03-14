@@ -4,16 +4,16 @@
 #
 
 set(SOURCE_FILES_CXX
-        include/snowflake++/SnowflakeInclude.hpp
-        include/snowflake++/SnowflakeConnection.hpp
-        include/snowflake++/SnowflakeStatement.hpp
-        lib/SnowflakeConnection.cpp
-        lib/SnowflakeStatement.cpp)
+        include/snowflakecpp/Include.hpp
+        include/snowflakecpp/Connection.hpp
+        include/snowflakecpp/Statement.hpp
+        lib/Connection.cpp
+        lib/Statement.cpp include/snowflakecpp/Exceptions.hpp lib/Exceptions.cpp)
 
 set(TESTLIB_OPTS_CXX snowflakeclient -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 
-add_library(snowflakeclient++ STATIC ${SOURCE_FILES_CXX})
+add_library(snowflakeclientcpp STATIC ${SOURCE_FILES_CXX})
 
-set_target_properties(snowflakeclient++ PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(snowflakeclientcpp PROPERTIES LINKER_LANGUAGE CXX)
 
-target_link_libraries(snowflakeclient++ ${TESTLIB_OPTS_CXX})
+target_link_libraries(snowflakeclientcpp ${TESTLIB_OPTS_CXX})
