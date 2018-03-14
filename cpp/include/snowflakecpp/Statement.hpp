@@ -8,67 +8,65 @@
 #include <snowflakecpp/Include.hpp>
 #include <string>
 #include "Connection.hpp"
-#include "Column.hpp"
-#include "Param.hpp"
 
 namespace Snowflake {
     namespace Client {
         class Statement {
+            friend class Connection;
         public:
 
             Statement(Connection &connection_);
 
+            Statement(Snowflake::CAPI::SF_STMT &sf_stmt_);
+
             ~Statement(void);
+
+            //TODO error structs or exceptions?
 
             void query(const std::string &command_);
 
-            int64 affectedRows();
+            Snowflake::CAPI::int64 affectedRows();
 
-            uint64 numRows();
+            Snowflake::CAPI::uint64 numRows();
 
-            uint64 numFields();
+            Snowflake::CAPI::uint64 numFields();
 
             const char *sqlState();
 
-            SF_COLUMN_DESC *desc();
+            Snowflake::CAPI::SF_COLUMN_DESC *desc();
 
             void prepare(const std::string &command_);
 
-            void setAttribute(SF_STMT_ATTRIBUTE type_,
+            void setAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
                                                     const void *value);
 
-            void getAttribute(SF_STMT_ATTRIBUTE type_,
+            void getAttribute(Snowflake::CAPI::SF_STMT_ATTRIBUTE type_,
                                                     void **value);
 
             void execute();
 
-            SF_STATUS fetch();
+            Snowflake::CAPI::SF_STATUS fetch();
 
-            uint64 numParams();
+            Snowflake::CAPI::uint64 numParams();
 
-            Param& param(size_t i);
+            void bindParam(Snowflake::CAPI::SF_BIND_INPUT &sfbind_);
 
-            // TODO add method parameters to create a SF_BIND_INPUT
-            Param& createParam();
+            void bindParamArray(Snowflake::CAPI::SF_BIND_INPUT sfbind_array_[],
+                                                      size_t size_);
 
-            void destroyParams();
+            void bindResult(Snowflake::CAPI::SF_BIND_OUTPUT &sfbind_);
 
-            Column& column(size_t i);
+            void bindResultArray(Snowflake::CAPI::SF_BIND_OUTPUT sfbind_array_[],
+                                                       size_t size_);
 
             const char *sfqid();
 
-            const std::string err_msg();
-
         private:
             // C API struct to operate on
-            SF_STMT *m_stmt;
+            Snowflake::CAPI::SF_STMT m_stmt;
             // Pointer to the connection object that the statement struct will to
             // connect to Snowflake.
             Connection *m_connection;
-            // Array of pointers to created columns
-            Column **m_columns;
-            // Array of pointers to created parameters
-            Param **m_params;
         };
     }
 }

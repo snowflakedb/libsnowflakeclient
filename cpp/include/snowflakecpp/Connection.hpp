@@ -11,20 +11,25 @@
 namespace Snowflake {
     namespace Client {
         class Connection {
-            friend class Statement;
         public:
 
             /* Construct a blank Snowflake Connection */
             Connection(void);
 
+            /*
+             * Construct with a connection pointer. Copies connection info from
+             * passed in connection
+             */
+            Connection(Snowflake::CAPI::SF_CONNECT &connection_);
+
             ~Connection(void);
 
             void connect();
 
-            void setAttribute(SF_ATTRIBUTE type_,
+            void setAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
                                                     const void *value_);
 
-            void getAttribute(SF_ATTRIBUTE type_,
+            void getAttribute(Snowflake::CAPI::SF_ATTRIBUTE type_,
                                                     void **value_);
 
             void beginTransaction();
@@ -41,7 +46,9 @@ namespace Snowflake {
             const std::string err_msg();
 
         private:
-            SF_CONNECT *m_connection;
+            Snowflake::CAPI::SF_CONNECT *m_connection;
+            // Whether the class created the connection or it was passed by reference to us
+            bool m_connection_created = 0;
         };
     }
 }

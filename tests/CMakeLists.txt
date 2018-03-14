@@ -49,7 +49,7 @@ SET(TESTS_CXX
 
 set(SOURCE_UTILS
         utils/test_setup.c
-        utils/test_setup.h)
+        utils/test_setup.h utils/TestSetup.cpp utils/TestSetup.hpp)
 
 set(SOURCE_UTILS_CPP
         utils/TestSetup.cpp
