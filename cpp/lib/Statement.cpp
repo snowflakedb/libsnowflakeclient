@@ -5,7 +5,7 @@
 #include <snowflakecpp/Statement.hpp>
 
 Snowflake::Client::Statement::Statement(Connection &connection_) {
-    // TODO implement this
+    this->m_connection = &connection_;
 }
 
 Snowflake::Client::Statement::~Statement() {
