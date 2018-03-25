@@ -5,13 +5,7 @@
 #ifndef SNOWFLAKECLIENT_SNOWFLAKEINCLUDE_H
 #define SNOWFLAKECLIENT_SNOWFLAKEINCLUDE_H
 
-namespace Snowflake {
-    namespace CAPI {
 #include <snowflake/client.h>
-#undef inline
-#undef class
-    }
-}
 
 //namespace Snowflake {
 //    namespace Client {
