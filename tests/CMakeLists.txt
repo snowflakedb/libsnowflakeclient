@@ -34,6 +34,7 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_include_aws
+        test_select1
         )
 
 set(SOURCE_UTILS
@@ -83,20 +84,20 @@ ENDFOREACH ()
 
 if (LINUX)
     FOREACH(T ${TESTS_CXX})
-        add_executable(${T} ${SOURCE_UTILS} ${T}.cpp)
+        add_executable(${T}_cpp ${SOURCE_UTILS} ${T}.cpp)
         target_include_directories(
-                ${T} PUBLIC
+                ${T}_cpp PUBLIC
                 ../deps-build/${PLATFORM}/cmocka/include
         )
-        target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
-        add_test(${T} ${T})
+        target_link_libraries(${T}_cpp ${TESTLIB_OPTS_CXX})
+        add_test(${T}_cpp ${T}_cpp)
         # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
+        add_test(valgrind_${T}_cpp
                 valgrind
                 --tool=memcheck
                 --leak-check=full
                 --error-exitcode=1
                 --suppressions=${VALGRIND_SUPPRESSION}
-                ./${T})
+                ./${T}_cpp)
     ENDFOREACH()
 endif()

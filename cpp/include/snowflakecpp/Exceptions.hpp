@@ -10,11 +10,11 @@
 
 class SnowflakeException: public std::exception {
 public:
-    SnowflakeException(Snowflake::CAPI::SF_ERROR_STRUCT *error);
+    SnowflakeException(SF_ERROR_STRUCT *error);
 
     const char * what() const throw();
 
-    Snowflake::CAPI::SF_STATUS code();
+    SF_STATUS code();
 
     const char *sqlstate();
 
@@ -27,14 +27,12 @@ public:
     int line();
 
 protected:
-    Snowflake::CAPI::SF_ERROR_STRUCT *error;
+    SF_ERROR_STRUCT *error;
 };
 
 class GeneralException: public SnowflakeException {
 public:
-    GeneralException(Snowflake::CAPI::SF_ERROR_STRUCT *error) : SnowflakeException(error) {};
+    GeneralException(SF_ERROR_STRUCT *error) : SnowflakeException(error) {};
 };
-
-class
 
 #endif //SNOWFLAKECLIENT_EXCEPTIONS_HPP

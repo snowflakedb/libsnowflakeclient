@@ -11,9 +11,9 @@
 
 class TestSetup {
 public:
-    Snowflake::Client::Connection *connectionFactory();
+    static Snowflake::Client::Connection *connectionFactory();
 
-    Snowflake::Client::Connection *connectionWithAutocommitFactory(const std::string timezone,
+    static Snowflake::Client::Connection *connectionWithAutocommitFactory(const std::string timezone,
                                                                    bool autocommit);
 
 private:
