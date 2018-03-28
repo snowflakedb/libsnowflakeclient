@@ -39,7 +39,11 @@ SET(TESTS_CXX
 
 set(SOURCE_UTILS
         utils/test_setup.c
-        utils/test_setup.h utils/TestSetup.cpp utils/TestSetup.hpp)
+        utils/test_setup.h)
+
+set(SOURCE_UTILS_CPP
+        utils/TestSetup.cpp
+        utils/TestSetup.hpp)
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
@@ -84,7 +88,7 @@ ENDFOREACH ()
 
 if (LINUX)
     FOREACH(T ${TESTS_CXX})
-        add_executable(${T}_cpp ${SOURCE_UTILS} ${T}.cpp)
+        add_executable(${T}_cpp ${SOURCE_UTILS} ${SOURCE_UTILS_CPP} ${T}.cpp)
         target_include_directories(
                 ${T}_cpp PUBLIC
                 ../deps-build/${PLATFORM}/cmocka/include
