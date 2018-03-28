@@ -1553,7 +1553,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 sfstmt->put_get_response = sf_put_get_response_allocate();
 
                 json_detach_array_from_object((cJSON **)(&sfstmt->put_get_response->src_list),
-                                              data, "src_location");
+                                              data, "src_locations");
                 json_copy_string_no_alloc(sfstmt->put_get_response->command,
                                           data, "command", SF_COMMAND_LEN);
                 json_copy_int(&sfstmt->put_get_response->parallel, data, "parallel");

@@ -12,8 +12,10 @@ StatementPutGet::StatementPutGet(SF_STMT *stmt) :
 {
 }
 
-PutGetParseResponse* StatementPutGet::parsePutGetCommand(std::string *sql)
+bool StatementPutGet::parsePutGetCommand(std::string *sql,
+                                         PutGetParseResponse *putGetParseResponse)
 {
   snowflake_query(m_stmt, sql->c_str(), 0);
-  return new PutGetParseResponse(m_stmt->put_get_response);
+  putGetParseResponse->updateWith(m_stmt->put_get_response);
+  return true;
 }

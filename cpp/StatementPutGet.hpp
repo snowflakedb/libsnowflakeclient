@@ -11,19 +11,25 @@
 
 namespace Snowflake
 {
-  namespace Client
-  {
-    class StatementPutGet : public Snowflake::Client::IStatementPutGet
-    {
-    public:
-      StatementPutGet(SF_STMT *stmt);
+namespace Client
+{
 
-      virtual PutGetParseResponse* parsePutGetCommand(std::string *sql);
+/**
+ * C API implementation of IStatementPutGet.
+ * Communicate with server to parse statement
+ */
+class StatementPutGet : public Snowflake::Client::IStatementPutGet
+{
+public:
+  StatementPutGet(SF_STMT *stmt);
 
-    private:
-      SF_STMT * m_stmt;
-    };
-  }
+  virtual bool parsePutGetCommand(std::string *sql,
+                                  PutGetParseResponse *putGetParseResponse);
+
+private:
+  SF_STMT *m_stmt;
+};
+}
 }
 
 

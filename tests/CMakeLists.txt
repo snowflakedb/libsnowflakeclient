@@ -4,6 +4,7 @@
 include_directories(
         "../include"
         "utils"
+        "../cpp"
 )
 
 SET(TESTS_C
@@ -33,7 +34,8 @@ SET(TESTS_C
         )
 
 SET(TESTS_CXX
-        test_include_aws)
+        test_include_aws
+        test_simple_put)
 
 set(SOURCE_UTILS
         utils/test_setup.c

@@ -6,44 +6,43 @@
 #define SNOWFLAKECLIENT_REMOTESTOREFILEENCRYPTIONMATERIAL_HPP
 
 #include <string>
+#include "crypto/CryptoTypes.hpp"
 
 namespace Snowflake
 {
-  namespace Client
-  {
-    class EncryptionMaterial
-    {
-    public:
-      EncryptionMaterial(char *queryStageMasterKey,
-                         char *queryId,
-                         long smkId) :
-        m_queryStageMasterKey(queryStageMasterKey),
-        m_queryId(queryId),
-        m_smkId(smkId)
-      {
-      };
+namespace Client
+{
+struct EncryptionMaterial
+{
+  /// master key to encrypt file key
+  std::string queryStageMasterKey;
 
-      inline char* getQueryStageMasterKey()
-      {
-        return m_queryStageMasterKey;
-      }
+  ///  query id
+  std::string queryId;
 
-      inline char* getQueryId()
-      {
-        return m_queryId;
-      }
+  /// smk id
+  long smkId;
+};
 
-      inline long getSmkId()
-      {
-        return m_smkId;
-      }
+struct EncryptionMetadata
+{
+  /// File encryption/decryption key
+  Snowflake::Client::Crypto::CryptoIV iv;
 
-    private:
-      char *m_queryStageMasterKey;
-      char *m_queryId;
-      long m_smkId;
-    };
-  }
+  /// File key
+  Snowflake::Client::Crypto::CryptoKey fileKey;
+
+  /// base 64 encoded of encrypted file key
+  std::string enKekEncoded;
+
+  /// Encryption material descriptor
+  std::string matDesc;
+
+  /// encrypted stream size, used for content length
+  long long int cipherStreamSize;
+};
+
+}
 }
 
 #endif //SNOWFLAKECLIENT_REMOTESTOREFILEENCRYPTIONMATERIAL_HPP
