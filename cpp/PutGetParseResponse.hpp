@@ -15,51 +15,84 @@ using namespace Snowflake::Client;
 
 namespace Snowflake
 {
-  namespace Client
+namespace Client
+{
+enum CommandType
+{
+  UPLOAD, DOWNLOAD, UNKNOWN
+};
+
+enum CompressionType
+{
+  AUTO_DETECT, NONE, GZIP, NOT_SUPPORTED
+};
+
+/**
+ * PUT/GET command response from server.
+ */
+class PutGetParseResponse
+{
+public:
+  PutGetParseResponse() {};
+
+  PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response);
+
+  void updateWith(SF_PUT_GET_RESPONSE *put_get_response);
+
+  ~PutGetParseResponse() {};
+
+  inline CommandType getCommand()
   {
-    class PutGetParseResponse
-    {
-    public:
-      PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response);
-
-      ~PutGetParseResponse();
-
-      inline std::string *getCommand()
-      {
-        return &m_command;
-      }
-
-      inline std::string *getSourceCompression()
-      {
-        return &m_sourceCompression;
-      }
-
-      inline EncryptionMaterial *getEncryptionMaterial()
-      {
-        return m_encryptionMaterial;
-      }
-
-    private:
-
-      int m_parallel;
-
-      bool m_autoCompress;
-
-      bool m_overwrite;
-
-      bool m_clientShowEncryptionParameter;
-
-      std::string m_sourceCompression;
-
-      std::string m_command;
-
-      std::vector<char *> *m_srcLocations;
-
-      EncryptionMaterial * m_encryptionMaterial;
-
-      StageInfo * m_stageInfo;
-    };
+    return m_command;
   }
+
+  inline CompressionType getSourceCompression()
+  {
+    return m_sourceCompression;
+  }
+
+  inline EncryptionMaterial *getEncryptionMaterial()
+  {
+    return &m_encryptionMaterial;
+  }
+
+  inline std::vector<std::string> *getSourceLocations()
+  {
+    return &m_srcLocations;
+  }
+
+  inline StageInfo *getStageInfo()
+  {
+    return &m_stageInfo;
+  }
+
+  inline bool getAutoCompress()
+  {
+    return m_autoCompress;
+  }
+
+private:
+
+  int m_parallel;
+
+  bool m_autoCompress;
+
+  bool m_overwrite;
+
+  bool m_clientShowEncryptionParameter;
+
+  CompressionType m_sourceCompression;
+
+  CommandType m_command;
+
+  std::vector<std::string> m_srcLocations;
+
+  EncryptionMaterial m_encryptionMaterial;
+
+  StageInfo m_stageInfo;
+};
+
+}
 }
 
 

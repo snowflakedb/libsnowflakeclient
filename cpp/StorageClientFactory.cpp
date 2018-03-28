@@ -3,9 +3,25 @@
 //
 
 #include "StorageClientFactory.hpp"
+#include "StageInfo.hpp"
+#include "SnowflakeS3Client.hpp"
 
-Snowflake::Client::IStorageClient*
-Snowflake::Client::StorageClientFactory::createClient()
+namespace Snowflake
 {
-  return nullptr;
+namespace Client
+{
+
+IStorageClient *StorageClientFactory::getClient(StageInfo *stageInfo)
+{
+  switch (stageInfo->getStageType())
+  {
+    case StageType::S3:
+      return new SnowflakeS3Client(stageInfo);
+    default:
+      // invalid stage type
+      throw;
+  }
+}
+
+}
 }

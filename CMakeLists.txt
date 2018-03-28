@@ -86,12 +86,13 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         cpp/EncryptionMaterial.hpp
         cpp/EncryptionProvider.cpp
+        cpp/FileMetadata.hpp
         cpp/FileTransferAgent.hpp
         cpp/FileTransferAgent.cpp
-        cpp/FileTransferResult.hpp
+        cpp/FileTransferExecutionResult.cpp
+        cpp/FileTransferExecutionResult.hpp
         cpp/IStatementPutGet.hpp
         cpp/IStorageClient.hpp
-        cpp/IStorageObjectMetadata.hpp
         cpp/PutGetParseResponse.hpp
         cpp/PutGetParseResponse.cpp
         cpp/SnowflakeS3Client.hpp
@@ -102,16 +103,23 @@ set(SOURCE_FILES
         cpp/StatementPutGet.cpp
         cpp/StorageClientFactory.hpp
         cpp/StorageClientFactory.cpp
+        cpp/TransferOutcome.hpp
         cpp/crypto/CryptoTypes.hpp
         cpp/util/Base64.hpp
         cpp/util/Base64.cpp
+        cpp/util/CompressionUtil.cpp
+        cpp/util/CompressionUtil.hpp
+        cpp/util/ThreadPool.cpp
+        cpp/util/ThreadPool.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
         cpp/crypto/CipherContext.cpp
         cpp/crypto/Cryptor.cpp
         cpp/util/SnowflakeCommon.hpp
         cpp/crypto/CipherStream.cpp
-        cpp/crypto/CipherStream.hpp)
+        cpp/crypto/CipherStream.hpp
+        cpp/crypto/HashContext.cpp
+        cpp/crypto/HashContext.hpp)
 
 if (UNIX)
     # Linux and OSX

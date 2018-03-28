@@ -11,34 +11,59 @@
 
 namespace Snowflake
 {
-  namespace Client
+namespace Client
+{
+enum StageType
+{
+  S3,
+  AZURE,
+  LOCAL_FS
+};
+
+/**
+ * Remote storage info. (Region, Stage credentials etc)
+ */
+class StageInfo
+{
+public:
+  StageInfo() {}
+
+  StageInfo(SF_STAGE_INFO *stage_info);
+
+  inline StageType getStageType()
   {
-    enum StageType
-    {
-      S3,
-      AZURE,
-      LOCAL_FS
-    };
-
-    class StageInfo
-    {
-    public:
-      StageInfo(SF_STAGE_INFO *stage_info);
-
-    private:
-      StageType m_stageType;
-
-      char* m_location;
-
-      char* m_path;
-
-      // required by s3 client
-      char* m_region;
-
-      std::unordered_map<std::string, char *> m_credentials;
-
-    };
+    return m_stageType;
   }
+
+  inline std::string *getRegion()
+  {
+    return &m_region;
+  }
+
+  inline std::unordered_map<std::string, char *> *getCredentials()
+  {
+    return &m_credentials;
+  }
+
+  inline std::string *getLocation()
+  {
+    return &m_location;
+  }
+
+private:
+  StageType m_stageType;
+
+  std::string m_location;
+
+  std::string m_path;
+
+  // required by s3 client
+  std::string m_region;
+
+  std::unordered_map<std::string, char *> m_credentials;
+
+};
+}
 }
 
 #endif //SNOWFLAKECLIENT_STAGEINFO_HPP
