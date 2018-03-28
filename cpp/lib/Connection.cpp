@@ -22,5 +22,11 @@ void Snowflake::Client::Connection::connect() {
 }
 
 void Snowflake::Client::Connection::setAttribute(SF_ATTRIBUTE type_, const void *value_) {
-    // TODO implement this
+    SF_STATUS status = snowflake_set_attribute(this->m_connection, type_, value_);
+
+    switch (status) {
+        // TODO implement exception throwing based on return status
+    }
 }
+
+
