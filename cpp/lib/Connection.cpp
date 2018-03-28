@@ -24,3 +24,5 @@ void Snowflake::Client::Connection::connect() {
 void Snowflake::Client::Connection::setAttribute(SF_ATTRIBUTE type_, const void *value_) {
     // TODO implement this
 }
+
+
