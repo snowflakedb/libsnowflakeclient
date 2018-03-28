@@ -9,6 +9,7 @@
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
+#include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <iostream>
 
 #define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
@@ -28,11 +29,14 @@ namespace Client
 
 SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo)
 {
-  Aws::Utils::Logging::InitializeAWSLogging(
+  /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));
+      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));*/
+  Aws::Utils::Logging::InitializeAWSLogging(
+    Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
+      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));
 
-  options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
+  //options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
   Aws::InitAPI(options);
   clientConfiguration.region = *stageInfo->getRegion();
 
