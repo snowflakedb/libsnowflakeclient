@@ -136,6 +136,7 @@ static int teardown(void **unused)
 }
 
 int main(void) {
+  initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_setup_teardown(test_simple_put, NULL, teardown),
   };
