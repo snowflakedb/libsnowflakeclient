@@ -5,9 +5,7 @@
 #include <snowflake/platform.h>
 #include <snowflake/basic_types.h>
 
-#ifdef _WIN32
-#include <regex>
-#else
+#ifndef _WIN32
 #include <regex.h>
 #endif
 
