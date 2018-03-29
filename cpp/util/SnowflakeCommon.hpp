@@ -1,6 +1,6 @@
-//
-// Created by Haowei Yu on 3/7/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP

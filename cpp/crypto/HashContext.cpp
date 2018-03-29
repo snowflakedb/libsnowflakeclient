@@ -1,6 +1,6 @@
-//
-// Created by hyu on 3/23/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "HashContext.hpp"
 #include <openssl/evp.h>

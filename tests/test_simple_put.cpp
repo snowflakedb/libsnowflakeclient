@@ -1,6 +1,6 @@
-//
-// Created by hyu on 3/20/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include <aws/core/Aws.h>
 #include <snowflake/client.h>

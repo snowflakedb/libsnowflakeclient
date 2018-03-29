@@ -3,6 +3,13 @@
 */
 
 #include <snowflake/platform.h>
+#include <snowflake/basic_types.h>
+
+#ifdef _WIN32
+#include <regex>
+#else
+#include <regex.h>
+#endif
 
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
@@ -276,3 +283,24 @@ int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock) {
     return pthread_mutex_destroy(lock);
 #endif
 }
+
+sf_bool STDCALL _is_put_get_command(char* sql_text)
+{
+#ifdef _WIN32
+    return SF_BOOLEAN_FALSE;
+#else
+    //TODO better handle regex for detecting put and get command
+    regex_t put_get_regex;
+    // On MacOS seems \s to match white space character did not work. Change to '[ ]' for now
+    //TODO maybe regex compilation should be moved to static variable so that no recompilation needed
+    regcomp(&put_get_regex, "^([ ]*\\/*.*\\/*[ ]*)*(put|get)[ ]+", REG_ICASE | REG_EXTENDED);
+
+    int res;
+    res = regexec(&put_get_regex, sql_text, 0, NULL, 0);
+
+    regfree(&put_get_regex);
+
+    return res == 0 ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+#endif
+}
+

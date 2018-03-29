@@ -1,6 +1,6 @@
-//
-// Created by hyu on 3/26/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "CompressionUtil.hpp"
 #include <zlib.h>

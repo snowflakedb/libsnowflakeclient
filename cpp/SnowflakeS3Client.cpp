@@ -1,6 +1,6 @@
-//
-// Created by hyu on 2/5/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "SnowflakeS3Client.hpp"
 #include "snowflake/client.h"

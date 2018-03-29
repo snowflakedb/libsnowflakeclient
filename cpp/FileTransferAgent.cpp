@@ -1,6 +1,6 @@
-//
-// Created by hyu on 2/5/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include <memory>
 #include <fstream>

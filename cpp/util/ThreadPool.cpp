@@ -1,6 +1,6 @@
-//
-// Created by hyu on 3/19/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "ThreadPool.hpp"
 

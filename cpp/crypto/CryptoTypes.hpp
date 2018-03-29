@@ -1,6 +1,6 @@
-//
-// Created by Haowei Yu on 3/2/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_CRYPTOTYPES_HPP
 #define SNOWFLAKECLIENT_CRYPTOTYPES_HPP
