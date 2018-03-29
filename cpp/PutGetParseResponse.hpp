@@ -1,6 +1,6 @@
-//
-// Created by hyu on 2/5/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP
 #define SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP

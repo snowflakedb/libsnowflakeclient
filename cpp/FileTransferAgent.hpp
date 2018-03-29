@@ -1,6 +1,6 @@
-//
-// Created by hyu on 2/2/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_FILETRANSFERAGENT_HPP
 #define SNOWFLAKECLIENT_FILETRANSFERAGENT_HPP

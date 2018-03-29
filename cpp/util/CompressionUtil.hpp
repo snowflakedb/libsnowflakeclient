@@ -1,6 +1,6 @@
-//
-// Created by hyu on 3/26/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_COMPRESSIONUTIL_HPP
 #define SNOWFLAKECLIENT_COMPRESSIONUTIL_HPP

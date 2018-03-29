@@ -1,6 +1,6 @@
-//
-// Created by Haowei Yu on 3/6/18.
-//
+/*
+ * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_CIPHERCONTEXT_HPP
 #define SNOWFLAKECLIENT_CIPHERCONTEXT_HPP
