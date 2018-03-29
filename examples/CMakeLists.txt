@@ -3,13 +3,7 @@
 # include public headers and test utils
 include_directories(
         "../include"
-        "utils"
-        "../cpp"
-)
-
-set(EXAMPLES_CPP
-        simple_put_get
-        cipher_stream)
+        "utils")
 
 set(SOURCE_UTILS
         utils/example_setup.c
@@ -28,17 +22,6 @@ endif ()
 if (APPLE)
     FOREACH (EX ${EXAMPLES})
         add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.c)
-        target_link_libraries(
-                ex_${EX}
-                z m
-                "-framework CoreFoundation"
-                snowflakeclient
-                -all_load curl ssl crypto
-        )
-    ENDFOREACH()
-
-    FOREACH(EX ${EXAMPLES_CPP})
-        add_executable(ex_${EX} ${SOURCE_UTILS} ${EX}.cpp)
         target_link_libraries(
                 ex_${EX}
                 z m

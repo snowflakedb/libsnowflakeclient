@@ -83,7 +83,9 @@ set(SOURCE_FILES
         lib/error.c
         lib/client_int.h
         lib/chunk_downloader.h
-        lib/chunk_downloader.c
+        lib/chunk_downloader.c)
+
+set (SOURCE_FILES_PUT_GET
         cpp/EncryptionMaterial.hpp
         cpp/EncryptionProvider.cpp
         cpp/FileMetadata.hpp
@@ -153,7 +155,11 @@ message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 
-add_library(snowflakeclient STATIC ${SOURCE_FILES})
+if (LINUX)
+    add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET})
+else()
+    add_library(snowflakeclient STATIC ${SOURCE_FILES})
+endif()
 
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 #set (CMAKE_CXX_STANDARD 11)
