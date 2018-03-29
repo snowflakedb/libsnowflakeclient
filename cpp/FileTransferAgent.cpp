@@ -79,7 +79,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(
     struct stat fileStatus;
     if (stat(fileName.c_str(), &fileStatus) == 0)
     {
-      FileMetadata fileMetadata;
+      FileMetadata fileMetadata = {};
       fileMetadata.srcFileName = string(fileName);
       fileMetadata.srcFileSize = (long) fileStatus.st_size;
       fileMetadata.encMat = putGetParseResponse->getEncryptionMaterial();

@@ -40,6 +40,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo)
   char caBundleFile[200] = {0};
   snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
 
+  //TODO move this to global init
   Aws::InitAPI(options);
   clientConfiguration.region = *stageInfo->getRegion();
   clientConfiguration.caFile = Aws::String(caBundleFile);
@@ -55,6 +56,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo)
 SnowflakeS3Client::~SnowflakeS3Client()
 {
   delete s3Client;
+  //TODO move this to global shutdown
   //Aws::ShutdownAPI(options);
 }
 

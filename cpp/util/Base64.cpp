@@ -25,7 +25,7 @@ size_t Base64::decodedLength(const void *const vsrc,
   {
     // Non-empty string. Check for padding bytes.
     const char *const src = static_cast<const char *>(vsrc);
-    size_t padBytes;
+    size_t padBytes(0);
     if (src[srcLength - 2] == '=')
       padBytes = 2;
     else if (src[srcLength - 1] == '=')
