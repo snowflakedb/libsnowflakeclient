@@ -34,7 +34,6 @@ void test_simple_put(void** unused)
   }
 
   SF_STMT *sfstmt = NULL;
-  //Snowflake::Client::IStatementPutGet *stmtPutGet = NULL;
   SF_STATUS ret;
 
   /* query */
@@ -48,7 +47,7 @@ void test_simple_put(void** unused)
   std::string dataDir;
   getDataDirectory(dataDir);
   std::string file = dataDir + "small_file.csv";
-  std::string putCommand = "put file://" + file + " @~";
+  std::string putCommand = "put file://" + file + " @%test_small_put";
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
@@ -63,7 +62,7 @@ void test_simple_put(void** unused)
 
   assert_string_equal("SUCCEED", result->status.c_str());
 
-  std::string copyCommand = "copy into test_small_put from @~";
+  std::string copyCommand = "copy into test_small_put from @%test_small_put";
   ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
@@ -126,7 +125,7 @@ static int teardown(void **unused)
   snowflake_connect(sf);
 
   SF_STMT *sfstmt = snowflake_stmt(sf);
-  std::string rm = "rm @~";
+  std::string rm = "rm @%test_small_put";
   snowflake_query(sfstmt, rm.c_str(), rm.size());
 
   snowflake_stmt_term(sfstmt);

@@ -3,6 +3,7 @@
 //
 
 #include "SnowflakeS3Client.hpp"
+#include "snowflake/client.h"
 #include "util/Base64.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/HeadObjectRequest.h>
@@ -32,13 +33,16 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo)
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
       "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));*/
-  Aws::Utils::Logging::InitializeAWSLogging(
+  /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));
+      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));*/
 
-  //options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
+  char caBundleFile[200] = {0};
+  snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+
   Aws::InitAPI(options);
   clientConfiguration.region = *stageInfo->getRegion();
+  clientConfiguration.caFile = Aws::String(caBundleFile);
 
   Aws::Auth::AWSCredentials credentials(
     Aws::String(stageInfo->getCredentials()->at(AWS_KEY_ID)),

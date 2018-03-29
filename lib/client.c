@@ -500,6 +500,24 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
     return SF_STATUS_SUCCESS;
 }
 
+SF_STATUS STDCALL
+snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value) {
+    switch (type) {
+        case SF_GLOBAL_DISABLE_VERIFY_PEER:
+            *((sf_bool *)value) = DISABLE_VERIFY_PEER;
+        break;
+        case SF_GLOBAL_CA_BUNDLE_FILE:
+            if (CA_BUNDLE_FILE)
+            {
+                strncpy(value, CA_BUNDLE_FILE, strlen(CA_BUNDLE_FILE) + 1);
+            }
+        break;
+        default:
+            break;
+    }
+    return SF_STATUS_SUCCESS;
+}
+
 SF_CONNECT *STDCALL snowflake_init() {
     SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
