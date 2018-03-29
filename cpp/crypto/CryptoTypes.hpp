@@ -92,6 +92,8 @@ struct CryptoKey final
 */
 struct CryptoIV final
 {
+  inline CryptoIV(){}
+
   char data[SF_CRYPTO_IV_NBITS / 8];
 };
 

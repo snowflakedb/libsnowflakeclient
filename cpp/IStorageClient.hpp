@@ -20,6 +20,8 @@ namespace Client
 class IStorageClient
 {
 public:
+  virtual ~IStorageClient() {};
+
   //virtual void shutDown() = 0;
 
   //virtual void download() = 0;
