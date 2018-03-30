@@ -22,7 +22,7 @@ before_build:
             $env:VCVARS_PLATFORM="x64"
         }
   - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
-  - ps: Invoke-WebRequest -OutFile get-pip.py http://superuser.co://bootstrap.pypa.io/get-pip.py
+  - ps: Invoke-WebRequest -OutFile get-pip.py https://bootstrap.pypa.io/get-pip.py
   - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
 
 build_script:
