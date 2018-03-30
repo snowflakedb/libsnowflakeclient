@@ -19,7 +19,9 @@ matrix:
       - sudo apt-get install lcov
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
       - pyenv local 3.6
-      - pip install -U pip
+      - curl -O https://bootstrap.pypa.io/get-pip.py
+      - python get-pip.py
+      - pip --version
       - pip install -U virtualenv
       - virtualenv env
       - source env/bin/activate
@@ -41,7 +43,9 @@ matrix:
       - sudo apt-get install lcov valgrind
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
       - pyenv local 3.6
-      - pip install -U pip
+      - curl -O https://bootstrap.pypa.io/get-pip.py
+      - python get-pip.py
+      - pip --version
       - pip install -U virtualenv
       - virtualenv env
       - source env/bin/activate
