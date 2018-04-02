@@ -138,8 +138,8 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
     int idx = 0, last = 0;
     for (idx = 0, last = (int) SF_LOG_FATAL; idx <= last; ++idx) {
-        if (strncasecmp(level_names[idx], level_in_str,
-                        sizeof(level_names[idx])) == 0) {
+        size_t len = strlen(level_names[idx]);
+        if (strncasecmp(level_names[idx], level_in_str, len) == 0) {
             return (SF_LOG_LEVEL) idx;
         }
     }
