@@ -627,6 +627,13 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     // Reset error context
     clear_snowflake_error(&sf->error);
 
+    char os_version[128];
+    sf_os_version(os_version);
+
+    log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
+             SF_API_VERSION,
+             sf_os_name(),
+             os_version);
     cJSON *body = NULL;
     cJSON *data = NULL;
     cJSON *resp = NULL;

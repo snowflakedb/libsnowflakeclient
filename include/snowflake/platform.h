@@ -98,6 +98,9 @@ int STDCALL _mutex_unlock(SF_MUTEX_HANDLE *lock);
 
 int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock);
 
+const char *STDCALL sf_os_name();
+
+void STDCALL sf_os_version(char *ret);
 
 #ifdef __cplusplus
 }

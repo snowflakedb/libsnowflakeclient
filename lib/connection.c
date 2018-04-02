@@ -133,35 +133,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     cJSON *data;
     cJSON *client_env;
     cJSON *session_parameters;
+    char os_version[128];
 
     //Create Client Environment JSON blob
     client_env = cJSON_CreateObject();
     cJSON_AddStringToObject(client_env, "APPLICATION", application);
-#if defined(_WIN32)
-    cJSON_AddStringToObject(client_env, "OS_VERSION", "Windows");
-#else
-    // Linux and OSX
-    struct utsname u;
-    if (uname(&u) >= 0) {
-        char buf[1024];
-        strcpy(buf, u.sysname);
-        strcat(buf, "-");
-        strcat(buf, u.release);
-        strcat(buf, "-");
-        strcat(buf, u.version);
-        strcat(buf, "-");
-        strcat(buf, u.machine);
-        cJSON_AddStringToObject(client_env, "OS_VERSION", buf);
-    } else {
-#  if defined(linux)
-        cJSON_AddStringToObject(client_env, "OS_VERSION", "Linux");
-#  elif defined(__APPLE__)
-        cJSON_AddStringToObject(client_env, "OS_VERSION", "MacOS");
-#  else
-        cJSON_AddStringToObject(client_env, "OS_VERSION", "Unknown");
-#  endif
-    }
-#endif
+    cJSON_AddStringToObject(client_env, "OS", sf_os_name());
+    sf_os_version(os_version);
+    cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
     session_parameters = cJSON_CreateObject();
     cJSON_AddStringToObject(
@@ -715,7 +694,7 @@ ARRAY_LIST *json_get_object_keys(const cJSON *item) {
 size_t
 json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     size_t data_size = size * nmemb;
-    log_debug("Curl response size: %zu\n", data_size);
+    log_debug("Curl response size: %zu", data_size);
     raw_json->buffer = (char *) SF_REALLOC(raw_json->buffer,
                                            raw_json->size + data_size + 1);
     // Start copying where last null terminator existed

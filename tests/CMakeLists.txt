@@ -31,6 +31,7 @@ SET(TESTS_C
         test_timestamp_ltz
         test_timestamp_tz
         test_timezone
+        test_logger
         )
 
 SET(TESTS_CXX
