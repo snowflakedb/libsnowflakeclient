@@ -5,6 +5,10 @@
 #include <snowflake/platform.h>
 #include <snowflake/basic_types.h>
 
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
+
 #ifndef _WIN32
 
 #include <regex.h>
