@@ -6,7 +6,10 @@
 #include <snowflake/basic_types.h>
 
 #ifndef _WIN32
+
 #include <regex.h>
+#include <string.h>
+
 #endif
 
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
@@ -74,7 +77,8 @@ int STDCALL sf_mkdir(const char *path) {
 }
 
 
-int STDCALL _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg) {
+int STDCALL
+_thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg) {
 #ifdef _WIN32
     *thread = CreateThread(
       NULL,                         // default security attributes
@@ -134,7 +138,8 @@ int STDCALL _cond_signal(SF_CONDITION_HANDLE *cond) {
 #endif
 }
 
-int STDCALL _cond_wait(SF_CONDITION_HANDLE *cond, SF_CRITICAL_SECTION_HANDLE *crit) {
+int STDCALL
+_cond_wait(SF_CONDITION_HANDLE *cond, SF_CRITICAL_SECTION_HANDLE *crit) {
 #ifdef _WIN32
     BOOL ret = SleepConditionVariableCS(cond, crit, INFINITE);
     return ret ? 0 : 1;
@@ -282,8 +287,7 @@ int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock) {
 #endif
 }
 
-sf_bool STDCALL _is_put_get_command(char* sql_text)
-{
+sf_bool STDCALL _is_put_get_command(char *sql_text) {
 #ifdef _WIN32
     return SF_BOOLEAN_FALSE;
 #else
@@ -291,7 +295,8 @@ sf_bool STDCALL _is_put_get_command(char* sql_text)
     regex_t put_get_regex;
     // On MacOS seems \s to match white space character did not work. Change to '[ ]' for now
     //TODO maybe regex compilation should be moved to static variable so that no recompilation needed
-    regcomp(&put_get_regex, "^([ ]*\\/*.*\\/*[ ]*)*(put|get)[ ]+", REG_ICASE | REG_EXTENDED);
+    regcomp(&put_get_regex, "^([ ]*\\/*.*\\/*[ ]*)*(put|get)[ ]+",
+            REG_ICASE | REG_EXTENDED);
 
     int res;
     res = regexec(&put_get_regex, sql_text, 0, NULL, 0);
@@ -302,3 +307,61 @@ sf_bool STDCALL _is_put_get_command(char* sql_text)
 #endif
 }
 
+/**
+ * Get Operating System name
+ */
+const char *STDCALL sf_os_name() {
+#ifdef __APPLE__
+    return "Darwin";
+#elif __linux__
+    return "Linux";
+#elif _WIN32
+    // for both x64 and x86
+    return "Windows";
+#else
+    return "Unknown";
+#endif
+}
+
+/**
+ * Get Operating System version
+ */
+void STDCALL sf_os_version(char *ret) {
+    strcpy(ret, "0.0.0"); /* unknown version */
+#ifdef __APPLE__
+    // Version  OS Name
+    //  17.x.x  macOS 10.13.x High Sierra
+    //  16.x.x  macOS 10.12.x Sierra
+    //  15.x.x  OS X  10.11.x El Capitan
+    size_t len = 64; /* hard coded */
+    sysctlbyname("kern.osrelease", ret, &len, NULL, 0);
+#elif __linux__
+    // Kernel version
+    struct utsname envbuf;
+    if (uname(&envbuf) == 0) {
+        strcpy(ret, envbuf.release);
+    }
+#elif _WIN32
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
+    // Version  Actual Windows Version
+    //    10.0  Windows 10.0/Server 2016
+    //     6.3  Windows  8.1/Server 2012 R2
+    //     6.2  Windows  8.0/Server 2012 R1
+    //     6.1  Windows  7.0/Server 2008 R2
+    //     6.0  Windows  Vist/Server 2008 R1 (Not supported)
+    OSVERSIONINFOEX info;
+    ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx((LPOSVERSIONINFO)&info);
+
+    sprintf(ret, "%d.%d-%s",
+        (int)info.dwMajorVersion,
+        (int)info.dwMinorVersion,
+#if _WIN64
+        "x86_64"
+#else
+        "x86"
+#endif // _WIN64
+    );
+#endif // Unknown Platform
+}
