@@ -27,24 +27,28 @@ public:
    *
    * Also, corresponding FileMetadata.EncryptionMetadata will be updated
    */
-  static void updateEncryptionMetadata(FileMetadata *fileMetadata);
+  static void updateEncryptionMetadata(FileMetadata *fileMetadata,
+                                       EncryptionMaterial *encryptionMaterial);
 
 private:
   /**
    * Generate file key and iv
    */
-  static void populateFileKeyAndIV(FileMetadata *fileMetadata);
+  static void populateFileKeyAndIV(FileMetadata *fileMetadata,
+                                   EncryptionMaterial *encryptionMaterial);
 
   /**
    * Encrypt file key with query stage master key using AES EBC mode
    */
-  static void encryptFileKey(FileMetadata *fileMetadata);
+  static void encryptFileKey(FileMetadata *fileMetadata,
+                             EncryptionMaterial *encryptionMaterial);
 
   /**
    * Serialize Encryption Material descriptor to json string
    * And update encryption metadata
    */
-  static void serializeEncMatDecriptor(FileMetadata *fileMetadata);
+  static void serializeEncMatDecriptor(FileMetadata *fileMetadata,
+                                       EncryptionMaterial *encryptionMaterial);
 
 };
 }

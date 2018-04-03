@@ -16,7 +16,9 @@ void getDataDirectory(std::string& dataDir)
   dataDir = testsDir + "/data/";
 }
 
-void test_simple_put(void** unused)
+void test_simple_put_core(const char * fileName,
+                          const char * sourceCompression,
+                          bool autoCompress)
 {
   /* init */
   SF_STATUS status;
@@ -46,8 +48,15 @@ void test_simple_put(void** unused)
 
   std::string dataDir;
   getDataDirectory(dataDir);
-  std::string file = dataDir + "small_file.csv";
+  std::string file = dataDir + fileName;
   std::string putCommand = "put file://" + file + " @%test_small_put";
+  if (!autoCompress)
+  {
+    putCommand += " auto_compress=false";
+  }
+
+  putCommand += " source_compression=";
+  putCommand += sourceCompression;
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
@@ -128,17 +137,44 @@ static int teardown(void **unused)
   std::string rm = "rm @%test_small_put";
   snowflake_query(sfstmt, rm.c_str(), rm.size());
 
+  std::string truncate = "truncate table test_small_put";
+  snowflake_query(sfstmt, truncate.c_str(), truncate.size());
+
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+  return 0;
+}
+
+void test_simple_put_auto_compress(void **unused)
+{
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true // auto compress
+  );
+}
+
+void test_simple_put_auto_detect_gzip(void ** unused)
+{
+  test_simple_put_core("small_file.csv.gz", "auto", true);
+}
+
+static int gr_setup(void **unused)
+{
+  initialize_test(SF_BOOLEAN_FALSE);
+  return 0;
+}
+
+static int gr_teardown(void **unused)
+{
   snowflake_global_term();
   return 0;
 }
 
 int main(void) {
-  initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_setup_teardown(test_simple_put, NULL, teardown),
+    cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
+    cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
   };
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
+  int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }

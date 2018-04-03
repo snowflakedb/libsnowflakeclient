@@ -13,7 +13,8 @@ PutGetParseResponse::PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response)
   m_autoCompress((bool) put_get_response->auto_compress),
   m_overwrite((bool) put_get_response->overwrite),
   m_clientShowEncryptionParameter(
-    (bool) put_get_response->client_show_encryption_param)
+    (bool) put_get_response->client_show_encryption_param),
+  m_sourceCompression(put_get_response->source_compression)
 {
 
   cJSON *src = (cJSON *) put_get_response->src_list;
@@ -43,22 +44,6 @@ PutGetParseResponse::PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response)
   {
     m_command = CommandType::UNKNOWN;
   }
-
-  char *sourceCompression = put_get_response->source_compression;
-  if (!strncasecmp(sourceCompression, "AUTO_DETECT", 11))
-  {
-    m_sourceCompression = CompressionType::AUTO_DETECT;
-  } else if (!strncasecmp(sourceCompression, "GZIP", 4))
-  {
-    m_sourceCompression = CompressionType::GZIP;
-  } else if (!strncasecmp(sourceCompression, "NONE", 4))
-  {
-    m_sourceCompression = CompressionType::NONE;
-  } else
-  {
-    m_sourceCompression = CompressionType::NOT_SUPPORTED;
-  }
-
 }
 
 void PutGetParseResponse::updateWith(SF_PUT_GET_RESPONSE *put_get_response)

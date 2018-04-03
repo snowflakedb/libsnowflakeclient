@@ -9,6 +9,7 @@
 #include "EncryptionMaterial.hpp"
 #include "StageInfo.hpp"
 #include "PutGetParseResponse.hpp"
+#include "FileCompressionType.hpp"
 
 namespace Snowflake
 {
@@ -40,19 +41,17 @@ struct FileMetadata
   /// true if require gzip compression
   bool requireCompress;
 
-  /// encryption material
-  EncryptionMaterial *encMat;
-
-  StageInfo *stageInfo;
-
-  /// encryption metdata
+  /// encryption metadata
   EncryptionMetadata encryptionMetadata;
 
   /// file message digest (after compression if required)
   std::string sha256Digest;
 
-  /// source compression
-  CompressionType sourceCompression;
+  /// source compression 
+  const FileCompressionType * sourceCompression;
+  
+  /// target compression
+  const FileCompressionType * targetCompression;
 };
 }
 }
