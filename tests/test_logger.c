@@ -18,6 +18,7 @@ void test_log_str_to_level(void **unused) {
 
     /* negative */
     assert_int_equal(log_from_str_to_level("hahahaha"), SF_LOG_FATAL);
+    assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
 }
 
 int main(void) {
