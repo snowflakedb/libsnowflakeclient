@@ -137,6 +137,9 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 }
 
 SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
+    if (level_in_str == NULL) {
+        return SF_LOG_FATAL;
+    }
     int idx = 0, last = 0;
     for (idx = 0, last = (int) SF_LOG_FATAL; idx <= last; ++idx) {
         size_t len = strlen(level_names[idx]);
