@@ -41,7 +41,6 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   clearResults();
 
   // first parse command
-  PutGetParseResponse response;
   if (!m_stmtPutGet->parsePutGetCommand(command, &response))
   {
     //TODO finalize exception;
@@ -49,7 +48,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   }
 
   // init file metadata
-  initFileMetadata(&response);
+  initFileMetadata();
 
   switch (response.getCommand())
   {
@@ -68,10 +67,9 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   return nullptr;
 }
 
-void Snowflake::Client::FileTransferAgent::initFileMetadata(
-  PutGetParseResponse *putGetParseResponse)
+void Snowflake::Client::FileTransferAgent::initFileMetadata()
 {
-  vector<string> *sourceLocations = putGetParseResponse->getSourceLocations();
+  vector<string> *sourceLocations = response.getSourceLocations();
 
   for (size_t i = 0; i < sourceLocations->size(); i++)
   {
@@ -82,11 +80,8 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(
       FileMetadata fileMetadata = {};
       fileMetadata.srcFileName = string(fileName);
       fileMetadata.srcFileSize = (long) fileStatus.st_size;
-      fileMetadata.encMat = putGetParseResponse->getEncryptionMaterial();
-      fileMetadata.stageInfo = putGetParseResponse->getStageInfo();
       fileMetadata.destFileName = fileName.substr(
         fileName.find_last_of('/') + 1);
-      fileMetadata.sourceCompression = putGetParseResponse->getSourceCompression();
 
       // process compression type
       processCompressionType(&fileMetadata);
@@ -157,7 +152,8 @@ Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
                                     ::std::ios_base::binary);
 
   // encrypt file stream
-  EncryptionProvider::updateEncryptionMetadata(fileMetadata);
+  EncryptionProvider::updateEncryptionMetadata(fileMetadata,
+                                               response.getEncryptionMaterial());
   Crypto::CipherStream encryptedStream(originalFileStream,
                                        Crypto::CryptoOperation::ENCRYPT,
                                        fileMetadata->encryptionMetadata.fileKey,
@@ -192,8 +188,52 @@ Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
 void Snowflake::Client::FileTransferAgent::processCompressionType(
   FileMetadata *fileMetadata)
 {
-  //TODO Support auto detect For now just support auto compress by gzip
-  fileMetadata->requireCompress = true;
+  if(!strncasecmp(response.getSourceCompression(), "AUTO_DETECT", 11) ||
+    !strncasecmp(response.getSourceCompression(), "AUTO", 4))
+  {
+    // guess
+    fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
+      fileMetadata->srcFileName);
+  }
+  else if (!strncasecmp(response.getSourceCompression(), "NONE", 4))
+  {
+    fileMetadata->sourceCompression = &FileCompressionType::NONE;
+  }
+  else
+  {
+    // look up
+    fileMetadata->sourceCompression = FileCompressionType::lookUpBySubMime(
+      response.getSourceCompression());
+    
+    if (!fileMetadata->sourceCompression)
+    {
+      // no compression found
+      throw;
+    }
+      
+  }
+
+  if (fileMetadata->sourceCompression == &FileCompressionType::NONE)
+  {
+    fileMetadata->targetCompression = &FileCompressionType::GZIP;
+    fileMetadata->requireCompress = response.getAutoCompress();
+    fileMetadata->destFileName = response.getAutoCompress() ?
+      fileMetadata->destFileName + fileMetadata->targetCompression->
+        getFileExtension() :
+      fileMetadata->destFileName;
+  }
+  else
+  {
+    if (!fileMetadata->sourceCompression->getIsSupported()) 
+    {
+      throw;
+    }
+    
+    fileMetadata->requireCompress = false;
+    fileMetadata->targetCompression = fileMetadata->sourceCompression;
+  }
+
+
 }
 
 void Snowflake::Client::FileTransferAgent::updateFileDigest(
@@ -233,8 +273,6 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 void Snowflake::Client::FileTransferAgent::compressSourceFile(
   FileMetadata *fileMetadata)
 {
-  fileMetadata->destFileName += ".gz";
-
   //TODO Better handle tmp directory
   fileMetadata->srcFileToUpload = "/tmp/" + fileMetadata->destFileName;
 

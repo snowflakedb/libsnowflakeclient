@@ -88,6 +88,8 @@ set(SOURCE_FILES
 set (SOURCE_FILES_PUT_GET
         cpp/EncryptionMaterial.hpp
         cpp/EncryptionProvider.cpp
+        cpp/FileCompressionType.cpp
+        cpp/FileCompressionType.hpp
         cpp/FileMetadata.hpp
         cpp/FileTransferAgent.hpp
         cpp/FileTransferAgent.cpp

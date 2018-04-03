@@ -48,10 +48,11 @@ public:
 
 private:
   /**
-   * Populate file metadata.
-   * @param putGetParseResponse
+   * Populate file metadata, (Get source file name)
+   * Process compression metadata
+   * Divide files to large and small ones
    */
-  void initFileMetadata(PutGetParseResponse *putGetParseResponse);
+  void initFileMetadata();
 
   /**
    * Upload large files in sequence, upload small files in parallel in
@@ -108,7 +109,7 @@ private:
   std::vector<FileTransferExecutionResult *> executionResults;
 
   /// parallel thread for upload/download small files
-  int parallel;
+  PutGetParseResponse response;
 };
 }
 }

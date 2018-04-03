@@ -47,10 +47,10 @@ struct FileTransferExecutionResult
   long targetSize;
 
   /// source compression
-  CompressionType souceCompression;
+  const FileCompressionType * souceCompression;
 
   /// target compression
-  CompressionType targetCompression;
+  const FileCompressionType * targetCompression;
 
   /************************
    *  GET specific field  *

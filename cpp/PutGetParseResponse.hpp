@@ -22,11 +22,6 @@ enum CommandType
   UPLOAD, DOWNLOAD, UNKNOWN
 };
 
-enum CompressionType
-{
-  AUTO_DETECT, NONE, GZIP, NOT_SUPPORTED
-};
-
 /**
  * PUT/GET command response from server.
  */
@@ -46,7 +41,7 @@ public:
     return m_command;
   }
 
-  inline CompressionType getSourceCompression()
+  inline char * getSourceCompression()
   {
     return m_sourceCompression;
   }
@@ -71,6 +66,11 @@ public:
     return m_autoCompress;
   }
 
+  inline int getParallel()
+  {
+    return m_parallel;
+  }
+
 private:
 
   int m_parallel;
@@ -81,7 +81,7 @@ private:
 
   bool m_clientShowEncryptionParameter;
 
-  CompressionType m_sourceCompression;
+  char* m_sourceCompression;
 
   CommandType m_command;
 

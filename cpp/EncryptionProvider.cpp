@@ -9,17 +9,17 @@
 #include "util/Base64.hpp"
 
 void Snowflake::Client::EncryptionProvider::updateEncryptionMetadata(
-  FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {
-  populateFileKeyAndIV(fileMetadata);
-  encryptFileKey(fileMetadata);
-  serializeEncMatDecriptor(fileMetadata);
+  populateFileKeyAndIV(fileMetadata, encryptionMaterial);
+  encryptFileKey(fileMetadata, encryptionMaterial);
+  serializeEncMatDecriptor(fileMetadata, encryptionMaterial);
 
   // update encrypted stream size
   size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
     Crypto::CryptoAlgo::AES);
 
-  fileMetadata->encryptionMetadata.cipherStreamSize =
+  fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     (fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
     encryptionBlockSize * encryptionBlockSize;
 
@@ -27,14 +27,14 @@ void Snowflake::Client::EncryptionProvider::updateEncryptionMetadata(
 
 
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
-  FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {
   char encryptedFileKey[32];
   Crypto::CryptoIV iv;
   Crypto::CryptoKey queryStageMasterKey;
   Crypto::Cryptor::generateIV(iv, Crypto::CryptoRandomDevice::DEV_RANDOM);
 
-  ::std::string &qsmkEncoded = fileMetadata->encMat->queryStageMasterKey;
+  ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
 
   Util::Base64::decode(qsmkEncoded.data(), qsmkEncoded.size(),
                        queryStageMasterKey.data);
@@ -67,7 +67,7 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
 }
 
 void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
-  FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {
   // populate iv
   Crypto::Cryptor::getInstance().generateIV(fileMetadata->encryptionMetadata.iv,
@@ -76,8 +76,8 @@ void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
   // populate file key
   fileMetadata->encryptionMetadata.fileKey.nbBits =
     Util::Base64::decodedLength(
-      fileMetadata->encMat->queryStageMasterKey.data(),
-      fileMetadata->encMat->queryStageMasterKey.size()) * 8;
+      encryptionMaterial->queryStageMasterKey.data(),
+      encryptionMaterial->queryStageMasterKey.size()) * 8;
 
   Crypto::Cryptor::getInstance().generateKey(
     fileMetadata->encryptionMetadata.fileKey,
@@ -86,11 +86,11 @@ void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
 }
 
 void Snowflake::Client::EncryptionProvider::serializeEncMatDecriptor(
-  FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {
   ::std::stringstream ss;
-  ss << "{\"queryId\":\"" << fileMetadata->encMat->queryId << "\", "
-     << "\"smkId\":\"" << fileMetadata->encMat->smkId << "\", "
+  ss << "{\"queryId\":\"" << encryptionMaterial->queryId << "\", "
+     << "\"smkId\":\"" << encryptionMaterial->smkId << "\", "
      << "\"keySize\":\"" << fileMetadata->encryptionMetadata.fileKey.nbBits
      << "\"}";
   fileMetadata->encryptionMetadata.matDesc = ss.str();

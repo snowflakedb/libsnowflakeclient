@@ -28,7 +28,8 @@ namespace Snowflake
 namespace Client
 {
 
-SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo)
+SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo):
+  m_stageInfo(stageInfo)
 {
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
@@ -149,10 +150,9 @@ void SnowflakeS3Client::extractBucketAndKey(FileMetadata *fileMetadata,
                                             std::string &bucket,
                                             std::string &key)
 {
-  size_t sepIndex = fileMetadata->stageInfo->getLocation()->find_first_of(
-    '/');
-  bucket = fileMetadata->stageInfo->getLocation()->substr(0, sepIndex);
-  key = fileMetadata->stageInfo->getLocation()->substr(sepIndex + 1)
+  size_t sepIndex = m_stageInfo->getLocation()->find_first_of('/');
+  bucket = m_stageInfo->getLocation()->substr(0, sepIndex);
+  key = m_stageInfo->getLocation()->substr(sepIndex + 1)
         + fileMetadata->destFileName;
 }
 

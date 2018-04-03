@@ -43,6 +43,8 @@ private:
 
   Aws::S3::S3Client *s3Client;
 
+  StageInfo * m_stageInfo;
+
   /**
    * Add snowflake specific metadata to the put object metadata.
    * This includes encryption metadata and source file
