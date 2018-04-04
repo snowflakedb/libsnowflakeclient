@@ -35,7 +35,8 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_include_aws
-        test_simple_put)
+        test_simple_put
+        test_unit_file_type_detect)
 
 set(SOURCE_UTILS
         utils/test_setup.c

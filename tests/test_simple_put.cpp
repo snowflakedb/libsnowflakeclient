@@ -18,22 +18,14 @@ void getDataDirectory(std::string& dataDir)
 
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
-                          bool autoCompress)
+                          bool autoCompress,
+                          bool copyUploadFile=true)
 {
   /* init */
   SF_STATUS status;
   SF_CONNECT *sf = setup_snowflake_connection();
   status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
-    fprintf(stderr, "Connecting to snowflake failed, exiting...\n");
-    SF_ERROR_STRUCT *error = snowflake_error(sf);
-    fprintf(stderr, "Error message: %s\nIn File, %s, Line, %d\n",
-            error->msg, error->file, error->line);
-
-    snowflake_term(sf); // purge snowflake context
-    snowflake_global_term();
-    exit (1);
-  }
+  assert_int_equal(SF_STATUS_SUCCESS, status);
 
   SF_STMT *sfstmt = NULL;
   SF_STATUS ret;
@@ -71,56 +63,59 @@ void test_simple_put_core(const char * fileName,
 
   assert_string_equal("SUCCEED", result->status.c_str());
 
-  std::string copyCommand = "copy into test_small_put from @%test_small_put";
-  ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
+  if (copyUploadFile)
+  {
+    std::string copyCommand = "copy into test_small_put from @%test_small_put";
+    ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  std::string selectCommand = "select * from test_small_put";
-  ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
+    std::string selectCommand = "select * from test_small_put";
+    ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  char out_c1[5];
-  SF_BIND_OUTPUT c1;
-  c1.idx = 1;
-  c1.c_type = SF_C_TYPE_STRING;
-  c1.max_length = sizeof(out_c1);
-  c1.value = (void *) out_c1;
-  c1.len = sizeof(out_c1);
+    char out_c1[5];
+    SF_BIND_OUTPUT c1;
+    c1.idx = 1;
+    c1.c_type = SF_C_TYPE_STRING;
+    c1.max_length = sizeof(out_c1);
+    c1.value = (void *) out_c1;
+    c1.len = sizeof(out_c1);
 
-  char out_c2[5];
-  SF_BIND_OUTPUT c2;
-  c2.idx = 2;
-  c2.c_type = SF_C_TYPE_STRING;
-  c2.max_length = sizeof(out_c2);
-  c2.value = (void *) out_c2;
-  c2.len = sizeof(out_c2);
+    char out_c2[5];
+    SF_BIND_OUTPUT c2;
+    c2.idx = 2;
+    c2.c_type = SF_C_TYPE_STRING;
+    c2.max_length = sizeof(out_c2);
+    c2.value = (void *) out_c2;
+    c2.len = sizeof(out_c2);
 
-  char out_c3[20];
-  SF_BIND_OUTPUT c3;
-  c3.idx = 3;
-  c3.c_type = SF_C_TYPE_STRING;
-  c3.max_length = sizeof(out_c3);
-  c3.value = (void *) out_c3;
-  c3.len = sizeof(out_c3);
+    char out_c3[20];
+    SF_BIND_OUTPUT c3;
+    c3.idx = 3;
+    c3.c_type = SF_C_TYPE_STRING;
+    c3.max_length = sizeof(out_c3);
+    c3.value = (void *) out_c3;
+    c3.len = sizeof(out_c3);
 
-  ret = snowflake_bind_result(sfstmt, &c1);
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
-  ret = snowflake_bind_result(sfstmt, &c2);
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
-  ret = snowflake_bind_result(sfstmt, &c3);
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
+    ret = snowflake_bind_result(sfstmt, &c1);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    ret = snowflake_bind_result(sfstmt, &c2);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    ret = snowflake_bind_result(sfstmt, &c3);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-  ret = snowflake_fetch(sfstmt);
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  assert_string_equal((char *)c1.value, "1");
-  assert_string_equal((char *)c2.value, "2");
-  assert_string_equal((char *)c3.value, "test_string");
+    assert_string_equal((char *) c1.value, "1");
+    assert_string_equal((char *) c2.value, "2");
+    assert_string_equal((char *) c3.value, "test_string");
 
-  ret = snowflake_fetch(sfstmt);
-  assert_int_equal(SF_STATUS_EOF, ret);
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_EOF, ret);
+  }
 
   snowflake_stmt_term(sfstmt);
 
@@ -168,14 +163,14 @@ void test_simple_put_gzip(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", true);
 }
 
-void test_simple_put_auto_detect_bz2(void **unused)
+void test_simple_put_zero_byte(void **unused)
 {
-  test_simple_put_core("small_file.csv.bz2", "auto", true);
+  test_simple_put_core("zero_byte.csv", "auto", true, false);
 }
 
-void test_simple_put_auto_detect_zst(void **unused)
+void test_simple_put_one_byte(void **unused)
 {
-  test_simple_put_core("small_file.csv.zst", "auto", true);
+  test_simple_put_core("one_byte.csv", "auto", true, false);
 }
 
 static int gr_setup(void **unused)
@@ -196,8 +191,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
-    cmocka_unit_test_teardown(test_simple_put_auto_detect_bz2, teardown),
-    cmocka_unit_test_teardown(test_simple_put_auto_detect_zst, teardown),
+    cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
+    cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
