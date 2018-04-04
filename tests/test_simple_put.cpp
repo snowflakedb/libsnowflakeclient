@@ -158,6 +158,16 @@ void test_simple_put_auto_detect_gzip(void ** unused)
   test_simple_put_core("small_file.csv.gz", "auto", true);
 }
 
+void test_simple_put_no_compress(void **unused)
+{
+  test_simple_put_core("small_file.csv", "none", false);
+}
+
+void test_simple_put_gzip(void **unused)
+{
+  test_simple_put_core("small_file.csv.gz", "gzip", true);
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -174,6 +184,8 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
+    cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
+    cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
