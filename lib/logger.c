@@ -28,6 +28,7 @@
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
 #include <string.h>
+#include <sys/time.h>
 
 static struct {
     void *udata;
@@ -88,29 +89,42 @@ void log_set_quiet(int enable) {
 }
 
 
-void log_log(int level, const char *file, int line, const char *fmt, ...) {
+void log_log(int level, const char *file, int line, const char *ns, const char *fmt, ...) {
     if (level < L.level) {
         return;
     }
 
+    /* Get current time */
+    struct timeval tmnow;
+    gettimeofday(&tmnow, NULL);
+    struct tm *lt = localtime(&tmnow.tv_sec);
+    char tsbuf[50];    /* timestamp buffer*/
+    char msec[10];    /* Microsecond buffer */
+
+    char* basename = sf_filename_from_path(file);
+
+    snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
+
+    /* Timestamp */
+    tsbuf[strftime(tsbuf, sizeof(tsbuf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
+    strcat(tsbuf, ".");
+    strcat(tsbuf, msec);
+
     /* Acquire lock */
     lock();
-
-    /* Get current time */
-    time_t t = time(NULL);
-    struct tm *lt = localtime(&t);
 
     /* Log to stderr */
     if (!L.quiet) {
         va_list args;
-        char buf[16];
-        buf[strftime(buf, sizeof(buf), "%H:%M:%S", lt)] = '\0';
 #ifdef LOG_USE_COLOR
         fprintf(
-            stderr, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-            buf, level_colors[level], level_names[level], file, line);
+            stderr, "%s %s%-5s\x1b[0m \x1b[90m%-5s %-16s %4d:\x1b[0m ",
+            tsbuf, level_colors[level], level_names[level], ns, basename,
+            line);
 #else
-        fprintf(stderr, "%s %-5s %s:%d: ", buf, level_names[level], file, line);
+        fprintf(
+            stderr, "%s %-5s %-5 %-16s %4d: ",
+             buf, level_names[level], namespace, basename, line);
 #endif
         va_start(args, fmt);
         vfprintf(stderr, fmt, args);
@@ -122,9 +136,9 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
     /* Log to file */
     if (L.fp) {
         va_list args;
-        char buf[32];
-        buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
-        fprintf(L.fp, "%s %-5s %s:%d: ", buf, level_names[level], file, line);
+        fprintf(
+            L.fp, "%s %-5s %-5s %-16s %4d: ",
+            tsbuf, level_names[level], ns, basename, line);
         va_start(args, fmt);
         vfprintf(L.fp, fmt, args);
         va_end(args);
@@ -149,3 +163,4 @@ SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
     }
     return SF_LOG_FATAL;
 }
+

@@ -303,7 +303,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_debug("ping pong starting...");
+            log_trace("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE)) {
                 // Error came from request up, just break
@@ -514,7 +514,7 @@ char * STDCALL encode_url(CURL *curl,
         strncat(encoded_url, vars[i].formatted_value, vars[i].value_size);
     }
 
-    log_debug("Here is constructed url: %s", encoded_url);
+    log_debug("URL: %s", encoded_url);
 
 cleanup:
     // Free created memory
@@ -547,7 +547,7 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
             return SF_JSON_ERROR_OOM;
         }
         strncpy(*dest, blob->valuestring, blob_size);
-        log_debug("Found item and value; %s: %s", item, *dest);
+        log_debug("Item and Value; %s: %s", item, *dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -569,7 +569,7 @@ json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
         if (dest[dest_size - 1] != '\0') {
             dest[dest_size - 1] = '\0';
         }
-        log_debug("Found item and value; %s: %s", item, dest);
+        log_debug("Item and Value; %s: %s", item, dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -586,7 +586,7 @@ json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         *dest = cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-        log_debug("Found item and value; %s: %i", item, *dest);
+        log_debug("Item and Value; %s: %i", item, *dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -603,7 +603,7 @@ json_copy_int(int64 *dest, cJSON *data, const char *item) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         *dest = (int64) blob->valuedouble;
-        log_debug("Found item and value; %s: %i", item, *dest);
+        log_debug("Item and Value; %s: %i", item, *dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -623,7 +623,7 @@ json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
             cJSON_Delete(*dest);
         }
         *dest = blob;
-        log_debug("Found array item: %s", item);
+        log_debug("Array: %s", item);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -643,7 +643,7 @@ json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
             cJSON_Delete(*dest);
         }
         *dest = blob;
-        log_debug("Found array item at index: %s", index);
+        log_debug("Array at Index: %s", index);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -663,7 +663,7 @@ json_detach_object_from_array(cJSON **dest, cJSON *data, int index) {
             cJSON_Delete(*dest);
         }
         *dest = blob;
-        log_debug("Found object item at index: %d", index);
+        log_debug("Object at index: %d", index);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -842,7 +842,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Be optimistic
         retry = SF_BOOLEAN_FALSE;
 
-        log_debug("Running curl call");
+        log_trace("Running curl call");
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
@@ -958,7 +958,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
             } else {
                 my_header = create_header_no_token(use_application_json_accept_type);
             }
-            log_debug("Created header");
+            log_trace("Created header");
         }
 
         encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
@@ -1022,7 +1022,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return ret;
     }
-    log_debug("Updating session. Master token: %s", sf->master_token);
+    log_debug("Updating session. Master token: *****");
     // Create header
     header_token_size =
       strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 + strlen(sf->master_token) + 1;

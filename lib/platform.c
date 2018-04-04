@@ -371,6 +371,13 @@ void STDCALL sf_os_version(char *ret) {
 #endif // Unknown Platform
 }
 
+/**
+ * Compare strings case-insensitively
+ * @param s1 source string
+ * @param s2 target string
+ * @param n number of maximum bytes to compare
+ * @return 0 if identical otherwise different
+ */
 int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n) {
     if (n == 0) {
         return 0;
@@ -384,4 +391,29 @@ int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n) {
     }
 
     return tolower(*(unsigned char *) s1) - tolower(*(unsigned char *) s2);
+}
+
+
+/**
+ * filename from the path.
+ *
+ * NOTE: no multibyte character set is supported. This is mainly used
+ * for logging.
+ *
+ * @param path the full path
+ * @return the pointer to the file name.
+ */
+char *STDCALL sf_filename_from_path(const char *path) {
+    char *ret = strrchr(
+        path,
+#if defined(__linux__) || defined(__APPLE__)
+        (int) '/'
+#else
+        (int)'\\',
+#endif
+    );
+    if (ret != NULL) {
+        return ret + 1;
+    }
+    return (char*)path;
 }

@@ -104,6 +104,8 @@ void STDCALL sf_os_version(char *ret);
 
 int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n);
 
+char *STDCALL sf_filename_from_path(const char *path);
+
 #ifdef __cplusplus
 }
 #endif
