@@ -95,7 +95,7 @@ log_log(int level, const char *file, int line, const char *ns, const char *fmt,
     }
 
     char tsbuf[50];    /* timestamp buffer*/
-    sf_log_timestamp(tsbuf);
+    sf_log_timestamp(tsbuf, sizeof(tsbuf));
 
     char *basename = sf_filename_from_path(file);
 
