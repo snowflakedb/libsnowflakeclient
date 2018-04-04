@@ -9,7 +9,6 @@
 #include <errno.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
-#include <snowflake/logger.h>
 #include "constants.h"
 #include "client_int.h"
 #include "connection.h"
@@ -361,10 +360,11 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     const char *sf_log_path;
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
-    if (log_path) {
+
+    /* The environment variables takes precedence over the specified path */
+    sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH");
+    if (sf_log_path == NULL && log_path) {
         sf_log_path = log_path;
-    } else {
-        sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH");
     }
     // Set logging level
     if (DEBUG) {
@@ -374,17 +374,17 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     }
     log_set_level(log_level);
     log_set_lock(&log_lock_func);
+
     // If log path is specified, use absolute path. Otherwise set logging dir to be relative to current directory
+    log_path_size += 30; // Size of static format characters
     if (sf_log_path) {
         log_path_size += strlen(sf_log_path);
-        log_path_size += 16; // Size of static format characters
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
-        snprintf(LOG_PATH, log_path_size, "%s/.capi/logs/%s.txt", sf_log_path,
+        snprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
     } else {
-        log_path_size += 9; // Size of static format characters
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
-        snprintf(LOG_PATH, log_path_size, "logs/%s.txt", (char *) time_str);
+        snprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt", (char *) time_str);
     }
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
@@ -693,11 +693,11 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
       sf->application_version,
       sf->timezone,
       sf->autocommit);
-    log_debug("Created body");
+    log_trace("Created body");
     s_body = cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
-        log_trace("Here is constructed body:\n%s", s_body);
+        log_trace("body:\n%s", s_body);
     }
 
     // Send request and get data
