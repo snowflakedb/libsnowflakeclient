@@ -141,8 +141,8 @@ bool Snowflake::Client::FileCompressionType::matchMagicNumber(char *header) cons
   {
     for (size_t i = 0; i < m_magicNumbers->size(); i++)
     {
-      if (!memcmp(header, m_magicNumbers->at(i), m_magicBytes) &&
-          strlen(header) >= m_magicBytes)
+      if (strlen(header) >= m_magicBytes &&
+        !memcmp(header, m_magicNumbers->at(i), m_magicBytes))
       {
         return true;
       }
@@ -165,10 +165,11 @@ const char * FileCompressionType::getFileExtension() const
 const FileCompressionType *FileCompressionType::
   guessCompressionType(std::string &fileFullPath)
 {
-  char header[MAX_MAGIC_BYTES] = {0};
+  char header[MAX_MAGIC_BYTES + 1];
+  memset(header, 0, sizeof(header));
   std::ifstream srcFile(fileFullPath.c_str(), std::fstream::in | std::ios::binary);
   // read first 4 bytes to determine compression type
-  srcFile.read(header, sizeof(header));
+  srcFile.read(header, MAX_MAGIC_BYTES);
   srcFile.close();
 
   for (size_t i=0; i< types.size(); i++)
