@@ -202,7 +202,7 @@ void Snowflake::Client::FileTransferAgent::processCompressionType(
   else
   {
     // look up
-    fileMetadata->sourceCompression = FileCompressionType::lookUpBySubMime(
+    fileMetadata->sourceCompression = FileCompressionType::lookUpByName(
       response.getSourceCompression());
     
     if (!fileMetadata->sourceCompression)

@@ -62,7 +62,7 @@ public:
   /**
    * @return Compression type by looking up submime type;
    */
-  static const FileCompressionType * lookUpBySubMime(const char * subMime);
+  static const FileCompressionType * lookUpByName(const char * name);
 
 
   /**
@@ -81,20 +81,17 @@ private:
    */
   bool matchMagicNumber(char * header) const;
 
-  /**
-   * @return true if match one of the sub mime types othewise false
-   */
-  bool matchSubMimeType(const char * subMime) const;
-
   /// private constructor to protect external initialization
   FileCompressionType(){}
 
   /// constrcut enum value
   FileCompressionType(const char * fileExtension,
+                      const char * name,
                       bool isSupported);
 
   /// constrcut enum value
   FileCompressionType(const char * fileExtension,
+                      const char * name,
                       std::vector<const char *> *magicNumbers,
                       short magicBytes,
                       bool isSupported);
@@ -110,8 +107,8 @@ private:
   short m_magicBytes;
   //const char ** m_magicNumbers;
 
-  /// sub mime type
-  std::vector<const char *> m_subMimeTypes;
+  /// string name of compression type
+  const char * m_name;
 
   /// whether compression type is supported or not
   bool m_isSupported;
