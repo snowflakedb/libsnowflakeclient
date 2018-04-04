@@ -2,8 +2,18 @@
 * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
 */
 
+#include <string.h>
+#include <time.h>
+#include <stdio.h>
 #include <snowflake/platform.h>
 #include <snowflake/basic_types.h>
+
+#if defined(__linux__) || defined(__APPLE__)
+
+#include <sys/time.h>
+
+#endif
+
 
 #ifdef __APPLE__
 #include <sys/sysctl.h>
@@ -12,7 +22,6 @@
 #ifndef _WIN32
 
 #include <regex.h>
-#include <string.h>
 #include <ctype.h>
 
 #endif
@@ -395,7 +404,7 @@ int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n) {
 
 
 /**
- * filename from the path.
+ * Filename from the path.
  *
  * NOTE: no multibyte character set is supported. This is mainly used
  * for logging.
@@ -415,5 +424,28 @@ char *STDCALL sf_filename_from_path(const char *path) {
     if (ret != NULL) {
         return ret + 1;
     }
-    return (char*)path;
+    return (char *) path;
+}
+
+/**
+ * Timestamp string for log
+ *
+ * @param tsbuf output timestamp string buffer
+ */
+void STDCALL sf_log_timestamp(char *tsbuf) {
+#if defined(__linux__) || defined(__APPLE__)
+    /* Get current time */
+    struct timeval tmnow;
+    gettimeofday(&tmnow, NULL);
+    struct tm *lt = localtime(&tmnow.tv_sec);
+    char msec[10];    /* Microsecond buffer */
+
+    snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
+
+    /* Timestamp */
+    tsbuf[strftime(tsbuf, sizeof(tsbuf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
+    strcat(tsbuf, ".");
+    strcat(tsbuf, msec);
+#else /* Windows */
+#endif
 }

@@ -23,15 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <time.h>
 
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
 #include <string.h>
-
-#if defined(__linux__) || defined(__APPLE__)
-#include <sys/time.h>
-#endif
 
 static struct {
     void *udata;
@@ -92,26 +87,17 @@ void log_set_quiet(int enable) {
 }
 
 
-void log_log(int level, const char *file, int line, const char *ns, const char *fmt, ...) {
+void
+log_log(int level, const char *file, int line, const char *ns, const char *fmt,
+        ...) {
     if (level < L.level) {
         return;
     }
 
-    /* Get current time */
-    struct timeval tmnow;
-    gettimeofday(&tmnow, NULL);
-    struct tm *lt = localtime(&tmnow.tv_sec);
     char tsbuf[50];    /* timestamp buffer*/
-    char msec[10];    /* Microsecond buffer */
+    sf_log_timestamp(tsbuf);
 
-    char* basename = sf_filename_from_path(file);
-
-    snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
-
-    /* Timestamp */
-    tsbuf[strftime(tsbuf, sizeof(tsbuf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
-    strcat(tsbuf, ".");
-    strcat(tsbuf, msec);
+    char *basename = sf_filename_from_path(file);
 
     /* Acquire lock */
     lock();
