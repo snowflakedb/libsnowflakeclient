@@ -168,6 +168,16 @@ void test_simple_put_gzip(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", true);
 }
 
+void test_simple_put_auto_detect_bz2(void **unused)
+{
+  test_simple_put_core("small_file.csv.bz2", "auto", true);
+}
+
+void test_simple_put_auto_detect_zst(void **unused)
+{
+  test_simple_put_core("small_file.csv.zst", "auto", true);
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -186,6 +196,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
+    cmocka_unit_test_teardown(test_simple_put_auto_detect_bz2, teardown),
+    cmocka_unit_test_teardown(test_simple_put_auto_detect_zst, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
