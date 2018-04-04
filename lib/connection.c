@@ -547,7 +547,12 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
             return SF_JSON_ERROR_OOM;
         }
         strncpy(*dest, blob->valuestring, blob_size);
-        log_debug("Item and Value; %s: %s", item, *dest);
+
+        if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0) {
+            log_debug("Item and Value; %s: ******", item);
+        } else {
+            log_debug("Item and Value; %s: %s", item, *dest);
+        }
     }
 
     return SF_JSON_ERROR_NONE;
