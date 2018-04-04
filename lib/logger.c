@@ -107,12 +107,12 @@ log_log(int level, const char *file, int line, const char *ns, const char *fmt,
         va_list args;
 #ifdef LOG_USE_COLOR
         fprintf(
-            stderr, "%s %s%-5s\x1b[0m \x1b[90m%-5s %-16s %4d:\x1b[0m ",
+            stderr, SF_LOG_TIMESTAMP_FORMAT_COLOR,
             tsbuf, level_colors[level], level_names[level], ns, basename,
             line);
 #else
         fprintf(
-            stderr, "%s %-5s %-5 %-16s %4d: ",
+            stderr, SF_LOG_TIMESTAMP_FORMAT,
              buf, level_names[level], namespace, basename, line);
 #endif
         va_start(args, fmt);
@@ -126,7 +126,7 @@ log_log(int level, const char *file, int line, const char *ns, const char *fmt,
     if (L.fp) {
         va_list args;
         fprintf(
-            L.fp, "%s %-5s %-5s %-16s %4d: ",
+            L.fp, SF_LOG_TIMESTAMP_FORMAT,
             tsbuf, level_names[level], ns, basename, line);
         va_start(args, fmt);
         vfprintf(L.fp, fmt, args);
