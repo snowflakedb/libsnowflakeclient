@@ -28,7 +28,10 @@
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
 #include <string.h>
+
+#if defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
+#endif
 
 static struct {
     void *udata;
