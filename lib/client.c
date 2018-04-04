@@ -358,21 +358,30 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     time_info = localtime(&current_time);
     strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", time_info);
     const char *sf_log_path;
+    const char *sf_log_level_str;
+    SF_LOG_LEVEL sf_log_level = log_level;
+
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
 
-    /* The environment variables takes precedence over the specified path */
+    /* The environment variables takes precedence over the specified parameters */
     sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH");
     if (sf_log_path == NULL && log_path) {
         sf_log_path = log_path;
     }
+
+    sf_log_level_str = sf_getenv("SNOWFLAKE_LOG_LEVEL");
+    if (sf_log_level_str != NULL) {
+        sf_log_level = log_from_str_to_level(sf_log_level_str);
+    }
+
     // Set logging level
     if (DEBUG) {
         log_set_quiet(SF_BOOLEAN_FALSE);
     } else {
         log_set_quiet(SF_BOOLEAN_TRUE);
     }
-    log_set_level(log_level);
+    log_set_level(sf_log_level);
     log_set_lock(&log_lock_func);
 
     // If log path is specified, use absolute path. Otherwise set logging dir to be relative to current directory
