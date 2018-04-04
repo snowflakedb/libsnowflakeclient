@@ -409,7 +409,7 @@ char *STDCALL sf_filename_from_path(const char *path) {
 #if defined(__linux__) || defined(__APPLE__)
         (int) '/'
 #else
-        (int)'\\',
+        (int)'\\'
 #endif
     );
     if (ret != NULL) {
