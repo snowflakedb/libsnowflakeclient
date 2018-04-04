@@ -447,5 +447,10 @@ void STDCALL sf_log_timestamp(char *tsbuf) {
     strcat(tsbuf, ".");
     strcat(tsbuf, msec);
 #else /* Windows */
+    SYSTEMTIME t;
+    GetLocalTime(&t);
+    sprintf(tsbuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+        t.wYear, t.wMonth, t.wDay,
+        t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
 #endif
 }
