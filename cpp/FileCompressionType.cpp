@@ -141,17 +141,15 @@ bool Snowflake::Client::FileCompressionType::matchMagicNumber(char *header) cons
   {
     for (size_t i = 0; i < m_magicNumbers->size(); i++)
     {
-      if (!memcmp(header, m_magicNumbers->at(i), m_magicBytes))
+      if (!memcmp(header, m_magicNumbers->at(i), m_magicBytes) &&
+          strlen(header) >= m_magicBytes)
       {
         return true;
       }
     }
-    return false;
   }
-  else
-  {
-    return false;
-  }
+
+  return false;
 }
 
 bool FileCompressionType::getIsSupported() const
@@ -178,6 +176,19 @@ const FileCompressionType *FileCompressionType::
     if (types.at(i)->matchMagicNumber(header))
     {
       return types.at(i);
+    }
+
+    // For brotli type, add fallback logic that detection will depend on file
+    // extension. This is because standard magic number is introduced in v3
+    // format of brotli.
+    // https://github.com/madler/brotli/blob/master/br-format-v3.txt
+    if (types.at(i) == &FileCompressionType::BROTLI)
+    {
+      std::string file_ext = fileFullPath.substr(fileFullPath.find_last_of('.'));
+      if (!strcmp(file_ext.c_str(), types.at(i)->getFileExtension()))
+      {
+        return types.at(i);
+      }
     }
   }
 
