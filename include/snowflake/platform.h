@@ -106,6 +106,8 @@ int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n);
 
 char *STDCALL sf_filename_from_path(const char *path);
 
+void STDCALL sf_log_timestamp(char* tsbuf);
+
 #ifdef __cplusplus
 }
 #endif
