@@ -8,6 +8,8 @@ include_directories(
 )
 
 SET(TESTS_C
+        test_unit_connect_parameters
+        test_unit_logger
         test_connect
         test_connect_negative
         test_bind_params
@@ -31,7 +33,6 @@ SET(TESTS_C
         test_timestamp_ltz
         test_timestamp_tz
         test_timezone
-        test_logger
         )
 
 SET(TESTS_CXX
