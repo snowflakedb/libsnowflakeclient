@@ -36,7 +36,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -std=gnu++0x -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=gnu++11 -fPIC")
 endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option
@@ -91,6 +91,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/FileCompressionType.cpp
         cpp/FileCompressionType.hpp
         cpp/FileMetadata.hpp
+        cpp/FilePatternInterpreter.cpp
+        cpp/FilePatternInterpreter.hpp
         cpp/FileTransferAgent.hpp
         cpp/FileTransferAgent.cpp
         cpp/FileTransferExecutionResult.cpp
