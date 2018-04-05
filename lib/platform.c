@@ -432,7 +432,7 @@ char *STDCALL sf_filename_from_path(const char *path) {
  *
  * @param tsbuf output timestamp string buffer
  */
-void STDCALL sf_log_timestamp(char *tsbuf) {
+void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
 #if defined(__linux__) || defined(__APPLE__)
     /* Get current time */
     struct timeval tmnow;
@@ -443,7 +443,7 @@ void STDCALL sf_log_timestamp(char *tsbuf) {
     snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
 
     /* Timestamp */
-    tsbuf[strftime(tsbuf, sizeof(tsbuf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
+    strftime(tsbuf, tsbufsize, "%Y-%m-%d %H:%M:%S", lt);
     strcat(tsbuf, ".");
     strcat(tsbuf, msec);
 #else /* Windows */
