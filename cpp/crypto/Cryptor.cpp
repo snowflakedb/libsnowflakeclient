@@ -63,16 +63,21 @@ static void getRandomBytesFromFile(char *const out,
   ::std::random_device rd(token);
 
   // Generate required number of random values.
-  T *outT = reinterpret_cast<T *>(out);
+  char *outT = out;
   for (size_t i = 0; i < steps; ++i)
+  {
+    const T rdv = rd();
+    memcpy(outT, &rdv, STEP);
+    outT += STEP;
+  }
 
-    // Generate and truncate one extra value if number of output types is not
-    // an exact multiple of the random value type.
-    if (rem)
-    {
-      const T remVal = rd();
-      memcpy(outT, &remVal, rem);
-    }
+  // Generate and truncate one extra value if number of output types is not
+  // an exact multiple of the random value type.
+  if (rem)
+  {
+    const T remVal = rd();
+    memcpy(outT, &remVal, rem);
+  }
 }
 
 /**

@@ -15,43 +15,31 @@ namespace Client
 
 FileTransferExecutionResult::FileTransferExecutionResult(
   FileMetadata *fileMetadata,
-  CommandType commandType,
-  TransferOutcome outcome)
+  CommandType commandType) :
+  fileMetadata(fileMetadata),
+  commandType(commandType)
 {
-  switch (commandType)
+  outcome = TransferOutcome::FAILED;
+}
+
+const char* FileTransferExecutionResult::getStatus()
+{
+  switch(outcome)
   {
-    case UPLOAD:
-      switch (outcome)
-      {
-        case SUCCESS:
-        case SKIPPED:
-          source = fileMetadata->srcFileName.substr(
-            fileMetadata->srcFileName.find_last_of('/') + 1);
-          target = fileMetadata->destFileName;
-
-          sourceSize = fileMetadata->srcFileSize;
-          targetSize =
-            outcome == SUCCESS ? fileMetadata->srcFileToUploadSize : 0;
-          status = outcome == SUCCESS ? STATUS_SUCCEED : STATUS_SKIPPED;
-          message = outcome == SUCCESS ? "" : MESSAGE_SKIPPED;
-
-          //TODO update compression result
-          break;
-
-        default:
-          throw;
-      }
-
-      break;
-
-    case DOWNLOAD:
-      break;
-
+    case SUCCESS:
+      return STATUS_SUCCEED;
+    case SKIPPED:
+      return STATUS_SKIPPED;
     default:
-      throw;
-
+      return "ERROR";
   }
 }
+
+std::string& FileTransferExecutionResult::getSource()
+{
+  return fileMetadata->srcFileName;
+}
+
 
 }
 }

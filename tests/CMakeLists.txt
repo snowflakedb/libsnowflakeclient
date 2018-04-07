@@ -36,8 +36,11 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_include_aws
+        test_parallel_upload
         test_simple_put
-        test_unit_file_type_detect)
+        test_unit_file_metadata_init
+        test_unit_file_type_detect
+        test_unit_thread_pool)
 
 set(SOURCE_UTILS
         utils/test_setup.c

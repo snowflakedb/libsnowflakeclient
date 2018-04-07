@@ -8,24 +8,6 @@
 #include "crypto/Cryptor.hpp"
 #include "util/Base64.hpp"
 
-void Snowflake::Client::EncryptionProvider::updateEncryptionMetadata(
-  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
-{
-  populateFileKeyAndIV(fileMetadata, encryptionMaterial);
-  encryptFileKey(fileMetadata, encryptionMaterial);
-  serializeEncMatDecriptor(fileMetadata, encryptionMaterial);
-
-  // update encrypted stream size
-  size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
-    Crypto::CryptoAlgo::AES);
-
-  fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
-    (fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
-    encryptionBlockSize * encryptionBlockSize;
-
-}
-
-
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {
