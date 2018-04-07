@@ -11,7 +11,7 @@ namespace Client
 {
 namespace Util
 {
-
+/*
 ThreadPool::ThreadPool() : m_pool_size(2)
 {
 }
@@ -34,10 +34,6 @@ ThreadPool::~ThreadPool()
   pthread_cond_destroy(&m_task_cond_var);
 }
 
-// We can't pass a member function to pthread_create.
-// So created the wrapper function that calls the member function
-// we want to run in the thread.
-extern "C"
 void *start_thread(void *arg)
 {
   ThreadPool *tp = (ThreadPool *) arg;
@@ -148,19 +144,11 @@ Task::~Task()
 {
 }
 
-void Task::operator()()
+template<class R>
+R Task::operator()()
 {
-  (*m_fn_ptr)(m_arg);
-  if (m_arg != NULL)
-  {
-    delete m_arg;
-  }
-}
-
-void Task::run()
-{
-  (*m_fn_ptr)(m_arg);
-}
+  return (*m_fn_ptr)(m_arg);
+}*/
 
 }
 }

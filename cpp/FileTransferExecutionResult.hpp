@@ -21,15 +21,28 @@ enum TransferOutcome;
  *
  * External component needs build a result set wrapper on top of this class
  */
-struct FileTransferExecutionResult
+class FileTransferExecutionResult
 {
+public:
   FileTransferExecutionResult(FileMetadata *fileMetadata,
-                              CommandType commandType,
-                              TransferOutcome outcome);
+                              CommandType commandType);
 
+  void SetTransferOutCome(TransferOutcome outcome)
+  {
+    this->outcome = outcome;
+  }
 
+  const char * getStatus();
+
+  std::string & getSource();
+
+private:
   /// enum to indicate command type
   CommandType commandType;
+
+  TransferOutcome outcome;
+
+  FileMetadata *fileMetadata;
 
   /************************
    *  PUT specific field  *

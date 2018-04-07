@@ -150,21 +150,6 @@ inline void HashContext::swap(HashContext &other) noexcept
 }
 
 } // namespace sf
-
-namespace std
-{
-
-/**
- * Overload of std::swap for HashContexts.
- */
-inline void swap(Snowflake::Client::Crypto::HashContext &left,
-                 Snowflake::Client::Crypto::HashContext &right) noexcept
-{
-  left.swap(right);
-}
-
-
-}
 }
 }
 

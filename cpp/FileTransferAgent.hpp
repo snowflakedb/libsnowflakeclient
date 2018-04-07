@@ -10,6 +10,7 @@
 #include "IStatementPutGet.hpp"
 #include "FileTransferExecutionResult.hpp"
 #include "FileMetadata.hpp"
+#include "FileMetadataInitializer.hpp"
 
 namespace Snowflake
 {
@@ -41,7 +42,7 @@ public:
    */
   FileTransferExecutionResult *execute(std::string *command);
 
-  std::vector<FileTransferExecutionResult *> *getResult()
+  std::vector<FileTransferExecutionResult> *getResult()
   {
     return &executionResults;
   }
@@ -64,16 +65,9 @@ private:
   /**
    * Upload single file.
    */
-  FileTransferExecutionResult *uploadSingleFile(
-    IStorageClient *client,
-    FileMetadata *fileMetadata);
-
-  /**
-   * If non source compression, then compressed with gzip.
-   * Otherwise determine compression type.
-   * Also update FileMetadata.destFileName
-   */
-  void processCompressionType(FileMetadata *fileMetadata);
+  void uploadSingleFile(IStorageClient *client,
+    FileMetadata *fileMetadata,
+    FileTransferExecutionResult *result);
 
   /**
    * Given file name, calculate sha256 message digest. The digest is
@@ -86,11 +80,6 @@ private:
   void download();
 
   /**
-   * clean up results
-   */
-  void clearResults();
-
-  /**
    * compress source file into a temporary file if required by
    * user.
    * @param fileMetadata
@@ -100,16 +89,19 @@ private:
   IStatementPutGet *m_stmtPutGet;
 
   /// Files that will be uploaded in sequence
-  std::map<std::string, FileMetadata> m_largeFilesMeta;
+  std::vector<FileMetadata> m_largeFilesMeta;
 
   /// Files that will be uploaded in parallel
-  std::map<std::string, FileMetadata> m_smallFilesMeta;
+  std::vector<FileMetadata> m_smallFilesMeta;
 
   /// vectors to store newly created execution result
-  std::vector<FileTransferExecutionResult *> executionResults;
+  std::vector<FileTransferExecutionResult> executionResults;
 
   /// parallel thread for upload/download small files
   PutGetParseResponse response;
+
+  /// used to initialize file metadata
+  FileMetadataInitializer m_FileMetadataInitializer;
 };
 }
 }

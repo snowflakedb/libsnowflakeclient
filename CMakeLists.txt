@@ -91,8 +91,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/FileCompressionType.cpp
         cpp/FileCompressionType.hpp
         cpp/FileMetadata.hpp
-        cpp/FilePatternInterpreter.cpp
-        cpp/FilePatternInterpreter.hpp
+        cpp/FileMetadataInitializer.cpp
+        cpp/FileMetadataInitializer.hpp
         cpp/FileTransferAgent.hpp
         cpp/FileTransferAgent.cpp
         cpp/FileTransferExecutionResult.cpp

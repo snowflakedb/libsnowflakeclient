@@ -5,41 +5,33 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
 #include <vector>
 #include "FileTransferAgent.hpp"
 #include "util/Base64.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
-#include "EncryptionProvider.hpp"
 #include "crypto/CipherStream.hpp"
 #include "crypto/Cryptor.hpp"
 #include "util/CompressionUtil.hpp"
-
-// used to decide whether to upload in sequence or in parallel
-#define DATA_SIZE_THRESHOLD 5242880
+#include "util/ThreadPool.hpp"
 
 using ::std::string;
 using ::std::vector;
 
-
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement) :
-  m_stmtPutGet(statement)
+  m_stmtPutGet(statement),
+  m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta)
 {
 }
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
 {
-  clearResults();
 }
 
 FileTransferExecutionResult *
 Snowflake::Client::FileTransferAgent::execute(string *command)
 {
-  // clear results if any
-  clearResults();
-
   // first parse command
   if (!m_stmtPutGet->parsePutGetCommand(command, &response))
   {
@@ -69,40 +61,15 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
 void Snowflake::Client::FileTransferAgent::initFileMetadata()
 {
-  vector<string> *sourceLocations = response.getSourceLocations();
+  m_FileMetadataInitializer.setAutoCompress(response.getAutoCompress());
+  m_FileMetadataInitializer.setSourceCompression(response.getSourceCompression());
+  m_FileMetadataInitializer.setEncryptionMaterial(
+    response.getEncryptionMaterial());
 
+  vector<string> *sourceLocations = response.getSourceLocations();
   for (size_t i = 0; i < sourceLocations->size(); i++)
   {
-    string &fileName = sourceLocations->at(i);
-    struct stat fileStatus;
-    if (stat(fileName.c_str(), &fileStatus) == 0)
-    {
-      FileMetadata fileMetadata = {};
-      fileMetadata.srcFileName = string(fileName);
-      fileMetadata.srcFileSize = (long) fileStatus.st_size;
-      fileMetadata.destFileName = fileName.substr(
-        fileName.find_last_of('/') + 1);
-
-      // process compression type
-      processCompressionType(&fileMetadata);
-
-      //TODO for now always upload in sequence, will add support to upload in
-      //TODO parallel later
-      m_largeFilesMeta[string(fileName)] = fileMetadata;
-
-      /*if (fileMetadata.srcFileSize > DATA_SIZE_THRESHOLD)
-      {
-        m_largeFilesMeta[string(fileName)] = fileMetadata;
-      }
-      else
-      {
-        m_smallFilesMeta[string(fileName)] = fileMetadata;
-      }*/
-    } else
-    {
-      // TODO throw exception
-      throw;
-    }
+    m_FileMetadataInitializer.populateSrcLocMetadata(sourceLocations->at(i));
   }
 }
 
@@ -115,26 +82,37 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
   {
     for (auto it = m_largeFilesMeta.begin(); it != m_largeFilesMeta.end(); it++)
     {
-      FileTransferExecutionResult *result =
-        uploadSingleFile(storageClient, &it->second);
-
-      executionResults.push_back(result);
+      executionResults.emplace_back(&(*it), CommandType::UPLOAD);
+      uploadSingleFile(storageClient, &(*it), &executionResults.back());
     }
   }
 
   if (m_smallFilesMeta.size() > 0)
   {
-    //TODO create thread pool to do upload
+    Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
+    for (auto it = m_smallFilesMeta.begin(); it != m_smallFilesMeta.end(); it++)
+    {
+      executionResults.emplace_back(&(*it), CommandType::UPLOAD);
+      FileTransferExecutionResult * result = &(executionResults.back());
+      tp.AddJob([storageClient, it, result, this]()->void {
+        uploadSingleFile(storageClient, &(*it), result);
+      });
+      //uploadSingleFile(storageClient, &(*it), &executionResults.back());
+      
+      // wait till all jobs have been finished
+      tp.WaitAll();
+    }
   }
 
   // cleanup
   delete storageClient;
 }
 
-FileTransferExecutionResult *
-Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
-                                                       FileMetadata *fileMetadata)
+void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
+  FileMetadata *fileMetadata,
+  FileTransferExecutionResult *result)
 {
+  // compress if required
   if (fileMetadata->requireCompress)
   {
     compressSourceFile(fileMetadata);
@@ -151,9 +129,7 @@ Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
                                     ::std::ios_base::in |
                                     ::std::ios_base::binary);
 
-  // encrypt file stream
-  EncryptionProvider::updateEncryptionMetadata(fileMetadata,
-                                               response.getEncryptionMaterial());
+  m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
   Crypto::CipherStream encryptedStream(originalFileStream,
                                        Crypto::CryptoOperation::ENCRYPT,
                                        fileMetadata->encryptionMetadata.fileKey,
@@ -173,9 +149,7 @@ Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
         // clean up compressed tmp file
         remove(fileMetadata->srcFileToUpload.c_str());
       }
-
-      return new FileTransferExecutionResult(fileMetadata,
-                                             CommandType::UPLOAD, outcome);
+      result->SetTransferOutCome(outcome);
 
     case TOKEN_RENEW:
       //TODO handle token_renew
@@ -183,57 +157,6 @@ Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
     default:
       throw;
   }
-}
-
-void Snowflake::Client::FileTransferAgent::processCompressionType(
-  FileMetadata *fileMetadata)
-{
-  if(!strncasecmp(response.getSourceCompression(), "AUTO_DETECT", 11) ||
-    !strncasecmp(response.getSourceCompression(), "AUTO", 4))
-  {
-    // guess
-    fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
-      fileMetadata->srcFileName);
-  }
-  else if (!strncasecmp(response.getSourceCompression(), "NONE", 4))
-  {
-    fileMetadata->sourceCompression = &FileCompressionType::NONE;
-  }
-  else
-  {
-    // look up
-    fileMetadata->sourceCompression = FileCompressionType::lookUpByName(
-      response.getSourceCompression());
-    
-    if (!fileMetadata->sourceCompression)
-    {
-      // no compression found
-      throw;
-    }
-      
-  }
-
-  if (fileMetadata->sourceCompression == &FileCompressionType::NONE)
-  {
-    fileMetadata->targetCompression = &FileCompressionType::GZIP;
-    fileMetadata->requireCompress = response.getAutoCompress();
-    fileMetadata->destFileName = response.getAutoCompress() ?
-      fileMetadata->destFileName + fileMetadata->targetCompression->
-        getFileExtension() :
-      fileMetadata->destFileName;
-  }
-  else
-  {
-    if (!fileMetadata->sourceCompression->getIsSupported()) 
-    {
-      throw;
-    }
-    
-    fileMetadata->requireCompress = false;
-    fileMetadata->targetCompression = fileMetadata->sourceCompression;
-  }
-
-
 }
 
 void Snowflake::Client::FileTransferAgent::updateFileDigest(
@@ -284,12 +207,4 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 
   fclose(sourceFile);
   fclose(destFile);
-}
-
-void Snowflake::Client::FileTransferAgent::clearResults()
-{
-  for (auto it = executionResults.begin(); it != executionResults.end(); it++)
-  {
-    delete *it;
-  }
 }
