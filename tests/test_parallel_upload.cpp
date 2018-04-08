@@ -119,6 +119,12 @@ static int teardown(void **unused)
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+
+  std::string dataDir;
+  getDataDirectory(dataDir);
+  std::string testDir = dataDir + "test_parallel_upload/";
+  std::string rmCmd = "rm -rf " + testDir;
+  system(rmCmd.c_str());
   return 0;
 }
 

@@ -14,7 +14,8 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> * smallFileMetadata,
   std::vector<FileMetadata> * largeFileMetadata) :
   m_smallFileMetadata(smallFileMetadata),
-  m_largeFileMetadata(largeFileMetadata)
+  m_largeFileMetadata(largeFileMetadata),
+  m_autoCompress(true)
 {
 }
 
@@ -30,8 +31,6 @@ void Snowflake::Client::FileMetadataInitializer::initFileMetadata(
       std::vector<FileMetadata> *metaListToPush =
         fileStatus.st_size > DATA_SIZE_THRESHOLD ?
         m_largeFileMetadata : m_smallFileMetadata;
-      /*std::vector<FileMetadata> *metaListToPush =
-        m_largeFileMetadata;*/
 
       metaListToPush->emplace_back();
       metaListToPush->back().srcFileName = srcFileName;
@@ -66,6 +65,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocMetadata(
         initFileMetadata(dirPath, dir_entry->d_name);
       }
     }
+    closedir(dir);
   }
   else
   {
