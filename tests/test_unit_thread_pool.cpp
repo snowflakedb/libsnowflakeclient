@@ -9,15 +9,25 @@
 void test_thread_pool(void **unused)
 {
   Snowflake::Client::Util::ThreadPool tp(4);
+  const int threads = 10;
 
-  for (int i=0; i<10; i++)
+  int test_values[threads] = {0};
+  int * it = test_values;
+  for (int i=0; i<threads; i++)
   {
     tp.AddJob([=]{
       std::this_thread::sleep_for(std::chrono::seconds(4));
+      *(it + i) = i;
     });
   }
 
   tp.WaitAll();
+
+  for (int j=0; j<threads; j++)
+  {
+    assert_int_equal(j, test_values[j]);
+  }
+
 }
 
 int main(void) {
