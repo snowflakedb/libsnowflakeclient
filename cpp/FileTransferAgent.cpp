@@ -97,7 +97,6 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
       tp.AddJob([storageClient, it, result, this]()->void {
         uploadSingleFile(storageClient, &(*it), result);
       });
-      //uploadSingleFile(storageClient, &(*it), &executionResults.back());
       
       // wait till all jobs have been finished
       tp.WaitAll();

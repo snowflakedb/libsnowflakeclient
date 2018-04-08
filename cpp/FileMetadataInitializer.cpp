@@ -10,6 +10,10 @@
 // used to decide whether to upload in sequence or in parallel
 #define DATA_SIZE_THRESHOLD 5242880
 
+#define COMPRESSION_AUTO "AUTO"
+#define COMPRESSION_AUTO_DETECT "AUTO_DETECT"
+#define COMPRESSION_NONE "NONE"
+
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> * smallFileMetadata,
   std::vector<FileMetadata> * largeFileMetadata) :
@@ -77,14 +81,17 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocMetadata(
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   FileMetadata *fileMetadata)
 {
-  if(!strncasecmp(m_sourceCompression, "AUTO_DETECT", 11) ||
-     !strncasecmp(m_sourceCompression, "AUTO", 4))
+  if(!strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
+                  sizeof(COMPRESSION_AUTO_DETECT)) ||
+     !strncasecmp(m_sourceCompression, COMPRESSION_AUTO, 
+                  sizeof(COMPRESSION_AUTO)))
   {
     // guess
     fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
       fileMetadata->srcFileName);
   }
-  else if (!strncasecmp(m_sourceCompression, "NONE", 4))
+  else if (!strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
+                        sizeof(COMPRESSION_NONE)))
   {
     fileMetadata->sourceCompression = &FileCompressionType::NONE;
   }
@@ -103,12 +110,13 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 
   if (fileMetadata->sourceCompression == &FileCompressionType::NONE)
   {
-    fileMetadata->targetCompression = &FileCompressionType::GZIP;
+    fileMetadata->targetCompression = m_autoCompress ?
+      &FileCompressionType::GZIP : &FileCompressionType::NONE;
     fileMetadata->requireCompress = m_autoCompress;
     fileMetadata->destFileName = m_autoCompress ?
-                                 fileMetadata->destFileName + fileMetadata->targetCompression->
-                                   getFileExtension() :
-                                 fileMetadata->destFileName;
+      fileMetadata->destFileName + fileMetadata->targetCompression->
+        getFileExtension() :
+      fileMetadata->destFileName;
   }
   else
   {
