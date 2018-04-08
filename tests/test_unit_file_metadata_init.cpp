@@ -41,7 +41,7 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
   initializer.populateSrcLocMetadata(fullFilePattern);
 
   std::unordered_set<std::string> actualFiles;
-  for (auto i = largeFileMetadata.begin(); i != largeFileMetadata.end(); i++)
+  for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++)
   {
     actualFiles.insert(i->srcFileName);
   }

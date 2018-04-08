@@ -20,21 +20,38 @@ namespace Util
 {
 
 /**
- * A naive implementation of thread pool  
+ * A naive implementation of thread pool
  */
 class ThreadPool {
 private:
+
+  /// thread count
   unsigned int threadCount;
 
+  /// threads vector
   std::vector<SF_THREAD_HANDLE > threads;
+
+  /// task queue
   std::deque<std::function<void(void)>> queue;
 
+  /// threads not sleeping (initialize to thread count)
   unsigned int busyThreads;
+
+  /// true if thread pool is going to be shutdown
   bool finished;
+
+  /// condition variable that threads wait on task queue
   SF_CONDITION_HANDLE job_available_var;
+
+  /// cv that main threads wait on all worker to finish task queue
   SF_CONDITION_HANDLE wait_var;
+
+  /// queue mutex
   SF_MUTEX_HANDLE queue_mutex;
 
+  /**
+   * Wrapper class that is passed to thread
+   */
   static void *TaskWrapper(void *arg)
   {
     reinterpret_cast<ThreadPool *>(arg)->execute_thread();
@@ -51,7 +68,8 @@ private:
       _mutex_lock(&queue_mutex);
 
       busyThreads --;
-      _cond_signal(&wait_var);
+      if (busyThreads == 0)
+        _cond_signal(&wait_var);
 
       // Wait for a job if we don't have any.
       while (queue.empty() && !finished)
@@ -92,7 +110,6 @@ public:
       _thread_init(&tid, TaskWrapper, (void *)this);
       threads.push_back(tid);
     }
-    //threads[ i ] = std::thread( [this]{ this->Task(); } );
   }
 
   /**

@@ -115,7 +115,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/Base64.cpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
-        cpp/util/ThreadPool.cpp
         cpp/util/ThreadPool.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
