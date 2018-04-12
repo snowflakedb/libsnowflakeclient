@@ -32,7 +32,7 @@ namespace Snowflake
 namespace Client
 {
 
-struct MultiUploadCtx
+/*struct MultiUploadCtx
 {
   MultiUploadCtx(Aws::S3::S3Client * s3Client,
                  Util::StreamSplitter *splitter,
@@ -48,7 +48,7 @@ struct MultiUploadCtx
   Util::StreamSplitter * m_splitter;
 
   TransferOutcome m_outcome;
-};
+};*/
 
 SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo):
   m_stageInfo(stageInfo),
@@ -133,7 +133,8 @@ TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
     return TransferOutcome::FAILED;
   }
 }
-void *Snowflake::Client::SnowflakeS3Client::uploadParts(FileMetadata *fileMetadata)
+void *Snowflake::Client::SnowflakeS3Client::uploadParts(FileMetadata *fileMetadata,
+                                                        Util::ByteArrayStreamBuf *buf)
 {
   Aws::S3::Model::UploadPartRequest uploadPartRequest;
 
@@ -145,11 +146,16 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(FileMetadata *fileMetada
   extractBucketAndKey(fileMetadata, bucket, key);
 
   uploadPartRequest.WithBucket(bucket)
-                   .WithKey(key)
-                   .Wi
+                   .WithKey(key);
 
+  uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
+  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", buf));
 
+  Aws::S3::Model::UploadPartOutcome outcome = s3Client->UploadPart(uploadPartRequest);
 
+  if (outcome.IsSuccess())
+  {
+  }
 }
 
 TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
