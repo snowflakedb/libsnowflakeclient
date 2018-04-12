@@ -9,6 +9,9 @@
 #include <vector>
 #include "FileMetadata.hpp"
 
+// used to decide whether to upload in sequence or in parallel
+#define DATA_SIZE_THRESHOLD 5242880
+
 namespace Snowflake
 {
 namespace Client

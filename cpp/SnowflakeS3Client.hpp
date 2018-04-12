@@ -11,6 +11,7 @@
 #include "IStorageClient.hpp"
 #include "StageInfo.hpp"
 #include "FileMetadata.hpp"
+#include "util/ThreadPool.hpp"
 
 namespace Snowflake
 {
@@ -45,6 +46,14 @@ private:
 
   StageInfo * m_stageInfo;
 
+  Util::ThreadPool * m_threadPool;
+
+  std::string m_bucket;
+
+  std::string m_key;
+
+  std::map<std::string, std::string> m_metadata;
+
   /**
    * Add snowflake specific metadata to the put object metadata.
    * This includes encryption metadata and source file
@@ -71,6 +80,13 @@ private:
   void extractBucketAndKey(FileMetadata *fileMetadata, std::string &bucket,
                            std::string &key);
 
+  TransferOutcome doSingleUpload(FileMetadata * fileMetadata,
+                                 std::basic_iostream<char> *dataStream);
+
+  TransferOutcome doMultiPartUpload(FileMetadata * fileMetadata,
+                                    std::basic_iostream<char> *dataStream);
+
+  void *uploadParts(FileMetadata * fileMetadata);
 };
 }
 }

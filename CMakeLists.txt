@@ -99,6 +99,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/FileTransferExecutionResult.hpp
         cpp/IStatementPutGet.hpp
         cpp/IStorageClient.hpp
+        cpp/MultiPartUploader.cpp
+        cpp/MultiPartUploader.hpp
         cpp/PutGetParseResponse.hpp
         cpp/PutGetParseResponse.cpp
         cpp/SnowflakeS3Client.hpp
@@ -115,6 +117,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/Base64.cpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
+        cpp/util/StreamSplitter.cpp
+        cpp/util/StreamSplitter.hpp
         cpp/util/ThreadPool.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp

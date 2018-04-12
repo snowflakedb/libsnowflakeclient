@@ -3,11 +3,15 @@
  */
 
 #include "SnowflakeS3Client.hpp"
+#include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
+#include "util/StreamSplitter.hpp"
 #include <aws/core/Aws.h>
+#include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3/model/UploadPartRequest.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
@@ -28,8 +32,27 @@ namespace Snowflake
 namespace Client
 {
 
+struct MultiUploadCtx
+{
+  MultiUploadCtx(Aws::S3::S3Client * s3Client,
+                 Util::StreamSplitter *splitter,
+                 Thread)
+  {
+    m_s3Client = s3Client;
+    m_splitter = splitter;
+    m_outcome = TransferOutcome::FAILED;
+  }
+
+  Aws::S3::S3Client * m_s3Client;
+
+  Util::StreamSplitter * m_splitter;
+
+  TransferOutcome m_outcome;
+};
+
 SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo):
-  m_stageInfo(stageInfo)
+  m_stageInfo(stageInfo),
+  m_threadPool(nullptr)
 {
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
@@ -59,6 +82,10 @@ SnowflakeS3Client::~SnowflakeS3Client()
   delete s3Client;
   //TODO move this to global shutdown
   //Aws::ShutdownAPI(options);
+  if (m_threadPool != nullptr)
+  {
+    delete m_threadPool;
+  }
 }
 
 TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
@@ -69,6 +96,15 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
     return TransferOutcome::SKIPPED;
   }
 
+  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+    return doMultiPartUpload(fileMetadata, dataStream);
+  else
+    return doSingleUpload(fileMetadata, dataStream);
+}
+
+TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
+  std::basic_iostream<char> *dataStream)
+{
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
   std::map<std::string, std::string> userMetadata;
@@ -95,6 +131,78 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
   } else
   {
     return TransferOutcome::FAILED;
+  }
+}
+void *Snowflake::Client::SnowflakeS3Client::uploadParts(FileMetadata *fileMetadata)
+{
+  Aws::S3::Model::UploadPartRequest uploadPartRequest;
+
+  std::map<std::string, std::string> userMetadata;
+  addUserMetadata(&userMetadata, fileMetadata);
+
+  // figure out bucket and path
+  std::string bucket, key;
+  extractBucketAndKey(fileMetadata, bucket, key);
+
+  uploadPartRequest.WithBucket(bucket)
+                   .WithKey(key)
+                   .Wi
+
+
+
+}
+
+TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
+  std::basic_iostream<char> *dataStream)
+{
+  std::map<std::string, std::string> userMetadata;
+  addUserMetadata(&userMetadata, fileMetadata);
+
+  std::string bucket, key;
+  extractBucketAndKey(fileMetadata, bucket, key);
+
+  Aws::S3::Model::CreateMultipartUploadRequest request;
+  request.WithBucket(bucket)
+    .WithKey(key)
+    .WithContentType(CONTENT_TYPE_OCTET_STREAM)
+    .WithMetadata(userMetadata) ;
+
+  auto createMultiPartResp = s3Client->CreateMultipartUpload(request);
+  if (createMultiPartResp.IsSuccess())
+  {
+    createMultiPartResp.GetResult().GetUploadId();
+
+    Util::StreamSplitter splitter;
+
+    /*std::vector<SF_THREAD_HANDLE> multiUploadThreads;
+    std::vector<MultiUploadCtx> multiUploadCtxList;
+    for (size_t i=0; i<4; i++)
+    {
+      multiUploadCtxList.emplace_back(s3Client, &splitter);
+      multiUploadThreads.emplace_back();
+      _thread_init(&(multiUploadThreads.back()),
+                   uploadParts, (void *)&(multiUploadCtxList.back()));
+    }
+
+    for (auto &x : multiUploadThreads)
+      _thread_join(x);
+    }*/
+    unsigned int totalParts = splitter.getTotalParts(
+      fileMetadata->encryptionMetadata.cipherStreamSize);
+
+    for (unsigned int i = 0; i < totalParts; i++)
+    {
+      m_threadPool->AddJob([&]
+                           {
+                             Util::ByteArrayStreamBuf * buf = splitter.getNextSplitPart();
+                             this->uploadParts();
+
+                             splitter.markBufDone(buf);
+
+                           });
+    }
+
+    m_threadPool->WaitAll();
   }
 }
 

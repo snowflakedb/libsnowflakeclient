@@ -7,9 +7,6 @@
 #include <dirent.h>
 #include <fnmatch.h>
 
-// used to decide whether to upload in sequence or in parallel
-#define DATA_SIZE_THRESHOLD 5242880
-
 #define COMPRESSION_AUTO "AUTO"
 #define COMPRESSION_AUTO_DETECT "AUTO_DETECT"
 #define COMPRESSION_NONE "NONE"
