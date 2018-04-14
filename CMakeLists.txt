@@ -99,8 +99,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/FileTransferExecutionResult.hpp
         cpp/IStatementPutGet.hpp
         cpp/IStorageClient.hpp
-        cpp/MultiPartUploader.cpp
-        cpp/MultiPartUploader.hpp
         cpp/PutGetParseResponse.hpp
         cpp/PutGetParseResponse.cpp
         cpp/SnowflakeS3Client.hpp
@@ -125,8 +123,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/CipherContext.cpp
         cpp/crypto/Cryptor.cpp
         cpp/util/SnowflakeCommon.hpp
-        cpp/crypto/CipherStream.cpp
-        cpp/crypto/CipherStream.hpp
+        cpp/crypto/CipherStreamBuf.cpp
+        cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp)
 
