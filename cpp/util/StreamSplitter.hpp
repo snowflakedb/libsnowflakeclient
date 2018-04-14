@@ -18,6 +18,9 @@ namespace Client
 namespace Util
 {
 
+/**
+ * Simple in memory byte array buffer
+ */
 class ByteArrayStreamBuf : public std::basic_streambuf<char>
 {
 public:
@@ -35,36 +38,61 @@ public:
     return m_dataBuffer;
   }
 
+  inline void * updateSize(long updatedSize)
+  {
+    this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
+    this->size = updatedSize;
+  }
+
+  inline long getSize()
+  {
+    return size;
+  }
+
 
 private:
   const unsigned int m_capacity;
+
+  long size;
 
   char * m_dataBuffer;
 
   virtual int underflow();
 };
 
+/**
+ * Split stream into parts. Manage in memory buffer to be reused.
+ */
 class StreamSplitter
 {
 public:
   StreamSplitter(std::basic_iostream<char> * inputStream,
-                 unsigned int numOfParts,
+                 unsigned int numOfBuffer,
                  unsigned int partMaxSize);
 
   ~StreamSplitter();
 
-  void addSplitPartToQueue();
+  ByteArrayStreamBuf* getNextSplitPart();
 
-  std::basic_iostream<char>* getNextSplitPart();
-
-  void popFrontSplitPart();
+  void markDone(ByteArrayStreamBuf * buf);
 
   unsigned int getTotalParts(long long int streamSize);
 
 private:
-  std::vector<ByteArrayStreamBuf *> streamBuffers;
+  /// list of in memory buffer to store data
+  std::vector<ByteArrayStreamBuf *> m_streamBuffers;
+
+  /// status for whether buffer is used by a upload thread
+  std::vector<bool> m_bufferInUse;
 
   SF_MUTEX_HANDLE streamMutex;
+
+  /// input stream to be splitted.
+  std::basic_iostream<char> * m_inputStream;
+
+  int checkBufferNotInUseIdx();
+
+  unsigned int m_partMaxSize;
 };
 
 }

@@ -10,7 +10,7 @@
 #include "util/Base64.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
-#include "crypto/CipherStream.hpp"
+#include "crypto/CipherStreamBuf.hpp"
 #include "crypto/Cryptor.hpp"
 #include "util/CompressionUtil.hpp"
 #include "util/ThreadPool.hpp"
@@ -75,36 +75,34 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata()
 
 void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
 {
-  IStorageClient *storageClient = StorageClientFactory
-  ::getClient(stageInfo);
+  std::shared_ptr<IStorageClient> storageClient = StorageClientFactory
+  ::getClient(stageInfo, response.getParallel());
 
   if (m_largeFilesMeta.size() > 0)
   {
     for (auto it = m_largeFilesMeta.begin(); it != m_largeFilesMeta.end(); it++)
     {
       executionResults.emplace_back(&(*it), CommandType::UPLOAD);
-      uploadSingleFile(storageClient, &(*it), &executionResults.back());
+      uploadSingleFile(storageClient.get(), &(*it), &executionResults.back());
     }
   }
 
   if (m_smallFilesMeta.size() > 0)
   {
     Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
-    for (auto it = m_smallFilesMeta.begin(); it != m_smallFilesMeta.end(); it++)
+    for (size_t i=0; i<m_smallFilesMeta.size(); i++)
     {
-      executionResults.emplace_back(&(*it), CommandType::UPLOAD);
-      FileTransferExecutionResult * result = &(executionResults.back());
-      tp.AddJob([storageClient, it, result, this]()->void {
-        uploadSingleFile(storageClient, &(*it), result);
+      FileMetadata * metadata = &m_smallFilesMeta[i];
+      executionResults.emplace_back(metadata, CommandType::UPLOAD);
+      tp.AddJob([storageClient, metadata, i, this]()->void {
+        FileTransferExecutionResult * result = &executionResults[i];
+        uploadSingleFile(storageClient.get(), metadata, result);
       });
-      
-      // wait till all jobs have been finished
-      tp.WaitAll();
     }
-  }
 
-  // cleanup
-  delete storageClient;
+    // wait till all jobs have been finished
+    tp.WaitAll();
+  }
 }
 
 void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
@@ -129,13 +127,15 @@ void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *clie
                                     ::std::ios_base::binary);
 
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
-  Crypto::CipherStream encryptedStream(originalFileStream,
-                                       Crypto::CryptoOperation::ENCRYPT,
-                                       fileMetadata->encryptionMetadata.fileKey,
-                                       fileMetadata->encryptionMetadata.iv);
+  Crypto::CipherStreamBuf streamBuf(originalFileStream.rdbuf(),
+                                    Crypto::CryptoOperation::ENCRYPT,
+                                    fileMetadata->encryptionMetadata.fileKey,
+                                    fileMetadata->encryptionMetadata.iv,
+                                    128);
+  std::basic_iostream<char> dataStream(&streamBuf);
 
   // upload stream
-  TransferOutcome outcome = client->upload(fileMetadata, &encryptedStream);
+  TransferOutcome outcome = client->upload(fileMetadata, &dataStream);
   originalFileStream.close();
 
   // wrap execution result and return
@@ -149,7 +149,7 @@ void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *clie
         remove(fileMetadata->srcFileToUpload.c_str());
       }
       result->SetTransferOutCome(outcome);
-
+      break;
     case TOKEN_RENEW:
       //TODO handle token_renew
       break;

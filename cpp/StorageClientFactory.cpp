@@ -11,12 +11,13 @@ namespace Snowflake
 namespace Client
 {
 
-IStorageClient *StorageClientFactory::getClient(StageInfo *stageInfo)
+std::shared_ptr<IStorageClient> StorageClientFactory::getClient(
+  StageInfo *stageInfo, unsigned int parallel)
 {
   switch (stageInfo->getStageType())
   {
     case StageType::S3:
-      return new SnowflakeS3Client(stageInfo);
+      return std::make_shared<SnowflakeS3Client>(stageInfo, parallel);
     default:
       // invalid stage type
       throw;

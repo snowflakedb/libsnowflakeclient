@@ -5,6 +5,7 @@
 #ifndef SNOWFLAKECLIENT_STORAGECLIENTFACTORY_HPP
 #define SNOWFLAKECLIENT_STORAGECLIENTFACTORY_HPP
 
+#include <memory>
 #include "IStorageClient.hpp"
 #include "StageInfo.hpp"
 
@@ -27,7 +28,8 @@ public:
    * @param stageInfo
    * @return
    */
-  static IStorageClient *getClient(StageInfo *stageInfo);
+  static std::shared_ptr<IStorageClient> getClient(StageInfo *stageInfo,
+                                                   unsigned int parallel);
 };
 }
 }
