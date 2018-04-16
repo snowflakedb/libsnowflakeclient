@@ -11,6 +11,7 @@
 #include "FileTransferExecutionResult.hpp"
 #include "FileMetadata.hpp"
 #include "FileMetadataInitializer.hpp"
+#include "snowflake/platform.h"
 
 namespace Snowflake
 {
@@ -96,6 +97,9 @@ private:
 
   /// vectors to store newly created execution result
   std::vector<FileTransferExecutionResult> executionResults;
+
+  /// used in small file upload
+  SF_MUTEX_HANDLE m_resultMutex;
 
   /// parallel thread for upload/download small files
   PutGetParseResponse response;
