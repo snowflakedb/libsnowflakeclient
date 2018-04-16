@@ -23,10 +23,12 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_stmtPutGet(statement),
   m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta)
 {
+  _mutex_init(&m_resultMutex);
 }
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
 {
+  _mutex_term(&m_resultMutex);
 }
 
 FileTransferExecutionResult *
@@ -93,10 +95,12 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
     for (size_t i=0; i<m_smallFilesMeta.size(); i++)
     {
       FileMetadata * metadata = &m_smallFilesMeta[i];
-      executionResults.emplace_back(metadata, CommandType::UPLOAD);
       tp.AddJob([storageClient, metadata, i, this]()->void {
-        FileTransferExecutionResult * result = &executionResults[i];
-        uploadSingleFile(storageClient.get(), metadata, result);
+        FileTransferExecutionResult result(metadata, CommandType::UPLOAD);
+        uploadSingleFile(storageClient.get(), metadata, &result);
+        _mutex_lock(&m_resultMutex);
+        executionResults.push_back(result);
+        _mutex_unlock(&m_resultMutex);
       });
     }
 

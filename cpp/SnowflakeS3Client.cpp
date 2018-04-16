@@ -174,15 +174,16 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
 
-    std::vector<MultiUploadCtx> uploadParts;
+    //std::vector<MultiUploadCtx> uploadParts;
+    MultiUploadCtx ** uploadParts = new MultiUploadCtx*[totalParts];
 
     for (unsigned int i = 0; i < totalParts; i++)
     {
-      uploadParts.emplace_back(uploadId, i+1, &bucket, &key);
+      uploadParts[i] = new MultiUploadCtx(uploadId, i+1, &bucket, &key);
       m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
                            {
                              Util::ByteArrayStreamBuf * buf = splitter.getNextSplitPart();
-                             MultiUploadCtx * ctx = &uploadParts[i];
+                             MultiUploadCtx * ctx = uploadParts[i];
                              ctx->buf = buf;
                              this->uploadParts(ctx);
                              splitter.markDone(buf);
@@ -192,13 +193,13 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     m_threadPool->WaitAll();
 
     Aws::S3::Model::CompletedMultipartUpload completedMultipartUpload;
-    for (auto & part: uploadParts )
+    for (unsigned int i=0; i< totalParts; i++)
     {
-      if (part.m_outcome == TransferOutcome::SUCCESS)
+      if (uploadParts[i]->m_outcome == TransferOutcome::SUCCESS)
       {
         Aws::S3::Model::CompletedPart completedPart;
-        completedPart.WithETag(part.m_etag)
-          .WithPartNumber(part.m_partNumber);
+        completedPart.WithETag(uploadParts[i]->m_etag)
+          .WithPartNumber(uploadParts[i]->m_partNumber);
 
         completedMultipartUpload.AddParts(completedPart);
       }
