@@ -85,13 +85,12 @@ void test_parallel_upload_core(int fileNumber)
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  agent.execute(&putCommand);
-  std::vector<FileTransferExecutionResult> * results = agent.getResult();
-  assert_int_equal(fileNumber, results->size());
+  FileTransferExecutionResult *result = agent.execute(&putCommand);
+  assert_int_equal(fileNumber, result->getResultSize());
 
-  for (auto i=results->begin(); i!=results->end(); i++)
+  while(result->next())
   {
-    assert_string_equal("SUCCEED", i->getStatus());
+    assert_string_equal("SUCCEED", result->getStatus());
   }
 
   std::string copyCommand = "copy into test_parallel_upload";

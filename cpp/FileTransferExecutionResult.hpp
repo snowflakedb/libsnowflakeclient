@@ -24,66 +24,38 @@ enum TransferOutcome;
 class FileTransferExecutionResult
 {
 public:
-  FileTransferExecutionResult(FileMetadata *fileMetadata,
-                              CommandType commandType);
+  FileTransferExecutionResult(CommandType commandType,
+                              unsigned int resultEntryNum);
 
-  void SetTransferOutCome(TransferOutcome outcome)
+  ~FileTransferExecutionResult();
+
+  void SetTransferOutCome(TransferOutcome outcome, unsigned int index)
   {
-    this->outcome = outcome;
+    m_outcomes[index] = outcome;
   }
+
+  void SetFileMetadata(FileMetadata *fileMetadata, unsigned int index)
+  {
+    m_fileMetadatas[index] = fileMetadata;
+  }
+
+  bool next();
 
   const char * getStatus();
 
-  std::string & getSource();
+  unsigned int getResultSize();
 
 private:
   /// enum to indicate command type
-  CommandType commandType;
+  CommandType m_commandType;
 
-  TransferOutcome outcome;
+  FileMetadata ** m_fileMetadatas;
 
-  FileMetadata *fileMetadata;
+  TransferOutcome * m_outcomes;
 
-  /************************
-   *  PUT specific field  *
-   ************************/
-  /// source file name
-  std::string source;
+  unsigned int m_resultEntryNum;
 
-  /// target file name
-  std::string target;
-
-  /// source file size
-  long sourceSize;
-
-  /// target file size
-  long targetSize;
-
-  /// source compression
-  const FileCompressionType * souceCompression;
-
-  /// target compression
-  const FileCompressionType * targetCompression;
-
-  /************************
-   *  GET specific field  *
-   ************************/
-  /// file name
-  std::string file;
-
-  /// file size
-  long size;
-
-  /************************
-   *    common field      *
-   ************************/
-
-  /// status (succeed or failed or skipped)
-  std::string status;
-
-  /// additional message related to status
-  std::string message;
-
+  unsigned int m_currentIndex;
 };
 }
 }
