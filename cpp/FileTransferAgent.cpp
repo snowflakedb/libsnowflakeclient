@@ -21,14 +21,17 @@ using ::std::vector;
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement) :
   m_stmtPutGet(statement),
-  m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta)
+  m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta),
+  m_executionResults(nullptr)
 {
-  _mutex_init(&m_resultMutex);
 }
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
 {
-  _mutex_term(&m_resultMutex);
+  if (m_executionResults != nullptr)
+  {
+    delete m_executionResults;
+  }
 }
 
 FileTransferExecutionResult *
@@ -58,7 +61,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
       throw;
   }
 
-  return nullptr;
+  return m_executionResults;
 }
 
 void Snowflake::Client::FileTransferAgent::initFileMetadata()
@@ -80,12 +83,15 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
   std::shared_ptr<IStorageClient> storageClient = StorageClientFactory
   ::getClient(stageInfo, response.getParallel());
 
+  m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD,
+    m_largeFilesMeta.size() + m_smallFilesMeta.size());
+
   if (m_largeFilesMeta.size() > 0)
   {
-    for (auto it = m_largeFilesMeta.begin(); it != m_largeFilesMeta.end(); it++)
+    for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
-      executionResults.emplace_back(&(*it), CommandType::UPLOAD);
-      uploadSingleFile(storageClient.get(), &(*it), &executionResults.back());
+      m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
+      uploadSingleFile(storageClient.get(), &m_largeFilesMeta[i], i);
     }
   }
 
@@ -94,13 +100,13 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
     Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
     for (size_t i=0; i<m_smallFilesMeta.size(); i++)
     {
+      unsigned int resultIndex = i + m_largeFilesMeta.size();
+
       FileMetadata * metadata = &m_smallFilesMeta[i];
-      tp.AddJob([storageClient, metadata, i, this]()->void {
-        FileTransferExecutionResult result(metadata, CommandType::UPLOAD);
-        uploadSingleFile(storageClient.get(), metadata, &result);
-        _mutex_lock(&m_resultMutex);
-        executionResults.push_back(result);
-        _mutex_unlock(&m_resultMutex);
+      m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
+      tp.AddJob([storageClient, metadata, resultIndex, this]()->void {
+        (metadata, CommandType::UPLOAD);
+        uploadSingleFile(storageClient.get(), metadata, resultIndex);
       });
     }
 
@@ -111,7 +117,7 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
 
 void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
   FileMetadata *fileMetadata,
-  FileTransferExecutionResult *result)
+  unsigned int resultIndex)
 {
   // compress if required
   if (fileMetadata->requireCompress)
@@ -152,7 +158,7 @@ void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *clie
         // clean up compressed tmp file
         remove(fileMetadata->srcFileToUpload.c_str());
       }
-      result->SetTransferOutCome(outcome);
+      m_executionResults->SetTransferOutCome(outcome, resultIndex);
       break;
     case TOKEN_RENEW:
       //TODO handle token_renew

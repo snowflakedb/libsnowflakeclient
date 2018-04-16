@@ -24,28 +24,17 @@ namespace Client
  */
 struct MultiUploadCtx
 {
-  MultiUploadCtx(Aws::String& uploadId,
-                 unsigned int partNumber,
-                 std::string *bucket,
-                 std::string *key):
-    m_uploadId(uploadId),
-    m_partNumber(partNumber),
-    m_bucket(bucket),
-    m_key(key)
-  {
-  }
-
   /// in memory buffer used to store current part data
   Util::ByteArrayStreamBuf *buf;
 
   /// s3 key
-  std::string * m_key;
+  std::string m_key;
 
   /// s3 bucket
-  std::string * m_bucket;
+  std::string m_bucket;
 
   /// upload id
-  Aws::String & m_uploadId;
+  Aws::String m_uploadId;
 
   /// part etag returned by s3
   Aws::String m_etag;

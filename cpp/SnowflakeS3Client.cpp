@@ -123,8 +123,8 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
 {
   Aws::S3::Model::UploadPartRequest uploadPartRequest;
 
-  uploadPartRequest.WithBucket(*uploadCtx->m_bucket)
-                   .WithKey(*uploadCtx->m_key);
+  uploadPartRequest.WithBucket(uploadCtx->m_bucket)
+                   .WithKey(uploadCtx->m_key);
 
   uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
   uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
@@ -174,18 +174,20 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
 
-    //std::vector<MultiUploadCtx> uploadParts;
-    MultiUploadCtx ** uploadParts = new MultiUploadCtx*[totalParts];
+    MultiUploadCtx uploadParts[totalParts];
 
     for (unsigned int i = 0; i < totalParts; i++)
     {
-      uploadParts[i] = new MultiUploadCtx(uploadId, i+1, &bucket, &key);
+      uploadParts[i].m_uploadId = uploadId;
+      uploadParts[i].m_partNumber = i+1;
+      uploadParts[i].m_bucket = bucket;
+      uploadParts[i].m_key = key;
+
       m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
                            {
                              Util::ByteArrayStreamBuf * buf = splitter.getNextSplitPart();
-                             MultiUploadCtx * ctx = uploadParts[i];
-                             ctx->buf = buf;
-                             this->uploadParts(ctx);
+                             uploadParts[i].buf = buf;
+                             this->uploadParts(&uploadParts[i]);
                              splitter.markDone(buf);
                            });
     }
@@ -195,11 +197,11 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     Aws::S3::Model::CompletedMultipartUpload completedMultipartUpload;
     for (unsigned int i=0; i< totalParts; i++)
     {
-      if (uploadParts[i]->m_outcome == TransferOutcome::SUCCESS)
+      if (uploadParts[i].m_outcome == TransferOutcome::SUCCESS)
       {
         Aws::S3::Model::CompletedPart completedPart;
-        completedPart.WithETag(uploadParts[i]->m_etag)
-          .WithPartNumber(uploadParts[i]->m_partNumber);
+        completedPart.WithETag(uploadParts[i].m_etag)
+          .WithPartNumber(uploadParts[i].m_partNumber);
 
         completedMultipartUpload.AddParts(completedPart);
       }
