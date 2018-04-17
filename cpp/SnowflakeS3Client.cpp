@@ -53,6 +53,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   Aws::InitAPI(options);
   clientConfiguration.region = *stageInfo->getRegion();
   clientConfiguration.caFile = Aws::String(caBundleFile);
+  clientConfiguration.requestTimeoutMs = 40000;
+  clientConfiguration.connectTimeoutMs = 30000;
 
   Aws::Auth::AWSCredentials credentials(
     Aws::String(stageInfo->getCredentials()->at(AWS_KEY_ID)),
@@ -141,6 +143,7 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
   }
   else
   {
+    fprintf(stderr, "Upload request: %s\n", outcome.GetError().GetMessage().c_str());
     uploadCtx->m_outcome = TransferOutcome::FAILED;
   }
 }
@@ -227,11 +230,13 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     }
     else
     {
+      fprintf(stderr, "Complete request: %s\n", outcome.GetError().GetMessage().c_str());
       return TransferOutcome::FAILED;
     }
   }
   else
   {
+    fprintf(stderr, " Init request: %s\n", createMultiPartResp.GetError().GetMessage().c_str());
     return TransferOutcome::FAILED;
   }
 }
