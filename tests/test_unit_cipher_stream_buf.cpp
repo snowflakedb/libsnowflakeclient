@@ -15,6 +15,7 @@ using Snowflake::Client::Crypto::CipherStreamBuf;
 
 void test_cipher_stream_core(int blockSize, const char * testData, int dataSize)
 {
+  fprintf(stderr, "-------------Start test---------\n");
   std::stringstream ss(testData);
 
   CryptoIV iv;
@@ -25,14 +26,7 @@ void test_cipher_stream_core(int blockSize, const char * testData, int dataSize)
   CipherStreamBuf encryptBuf(ss.rdbuf(),
                              CryptoOperation::ENCRYPT, key, iv, blockSize);
 
-  std::basic_iostream<char> encryptStream(&encryptBuf);
-  char en[100] = {0};
-  encryptStream.read(en, 100);
-  en[encryptStream.gcount()] = '\0';
-
-  std::string encryptedString(en);
-  std::stringstream encryptedStream(encryptedString);
-  CipherStreamBuf decryptBuf(encryptedStream.rdbuf(),
+  CipherStreamBuf decryptBuf(&encryptBuf,
                              CryptoOperation::DECRYPT, key, iv, blockSize);
 
   std::basic_iostream<char> decryptStream(&decryptBuf);
