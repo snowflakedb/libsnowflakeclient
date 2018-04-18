@@ -14,17 +14,31 @@ namespace Client
 {
 
 FileTransferExecutionResult::FileTransferExecutionResult(
-  FileMetadata *fileMetadata,
-  CommandType commandType) :
-  fileMetadata(fileMetadata),
-  commandType(commandType)
+  CommandType commandType,
+  unsigned int resultEntryNum) :
+  m_commandType(commandType),
+  m_resultEntryNum(resultEntryNum),
+  m_currentIndex(-1)
 {
-  outcome = TransferOutcome::FAILED;
+  m_fileMetadatas = new FileMetadata*[resultEntryNum];
+  m_outcomes = new TransferOutcome[resultEntryNum];
+}
+
+FileTransferExecutionResult::~FileTransferExecutionResult()
+{
+  delete[] m_fileMetadatas;
+  delete[] m_outcomes;
+}
+
+bool FileTransferExecutionResult::next()
+{
+  m_currentIndex ++;
+  return m_currentIndex < m_resultEntryNum;
 }
 
 const char* FileTransferExecutionResult::getStatus()
 {
-  switch(outcome)
+  switch(m_outcomes[m_currentIndex])
   {
     case SUCCESS:
       return STATUS_SUCCEED;
@@ -35,11 +49,10 @@ const char* FileTransferExecutionResult::getStatus()
   }
 }
 
-std::string& FileTransferExecutionResult::getSource()
+unsigned int FileTransferExecutionResult::getResultSize()
 {
-  return fileMetadata->srcFileName;
+  return m_resultEntryNum;
 }
-
 
 }
 }

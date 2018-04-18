@@ -19,16 +19,16 @@ namespace Crypto
 /**
  * Underlying stream buf object for a CipherStream class
  */
-class CipherBuf : public std::basic_streambuf<char>
+class CipherStreamBuf : public std::basic_streambuf<char>
 {
 public:
-  CipherBuf(std::basic_streambuf<char> *streambuf,
+  CipherStreamBuf(std::basic_streambuf<char> *streambuf,
             CryptoOperation op,
             CryptoKey &key,
             CryptoIV &iv,
             size_t block_size);
 
-  ~CipherBuf();
+  ~CipherStreamBuf();
 
 private:
   /// underlying stream buf
@@ -50,27 +50,12 @@ private:
   /// true if reads from src streambuf has reached the end
   bool m_readReachEnds;
 
+  bool m_finalized;
+
   virtual int underflow();
 
 };
 
-
-class CipherStream : public std::basic_iostream<char>
-{
-public:
-  CipherStream(std::basic_iostream<char> &stream,
-               CryptoOperation op,
-               CryptoKey &key,
-               CryptoIV &iv) :
-    std::basic_iostream<char>(
-      new CipherBuf(stream.rdbuf(), op, key, iv, 16)) {}
-
-  virtual ~CipherStream()
-  {
-    delete rdbuf();
-  }
-
-};
 }
 }
 }

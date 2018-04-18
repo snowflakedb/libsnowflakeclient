@@ -11,18 +11,48 @@
 #include "IStorageClient.hpp"
 #include "StageInfo.hpp"
 #include "FileMetadata.hpp"
+#include "util/ThreadPool.hpp"
+#include "util/StreamSplitter.hpp"
 
 namespace Snowflake
 {
 namespace Client
 {
+
+/**
+ * Context passed to upload thread
+ */
+struct MultiUploadCtx
+{
+  /// in memory buffer used to store current part data
+  Util::ByteArrayStreamBuf *buf;
+
+  /// s3 key
+  std::string m_key;
+
+  /// s3 bucket
+  std::string m_bucket;
+
+  /// upload id
+  Aws::String m_uploadId;
+
+  /// part etag returned by s3
+  Aws::String m_etag;
+
+  /// part number
+  unsigned int m_partNumber;
+
+  /// upload outcome
+  TransferOutcome m_outcome;
+};
+
 /**
  * Wrapper over Amazon s3 client
  */
 class SnowflakeS3Client : public Snowflake::Client::IStorageClient
 {
 public:
-  SnowflakeS3Client(StageInfo *stageInfo);
+  SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel);
 
   ~SnowflakeS3Client();
 
@@ -44,6 +74,10 @@ private:
   Aws::S3::S3Client *s3Client;
 
   StageInfo * m_stageInfo;
+
+  Util::ThreadPool * m_threadPool;
+
+  unsigned int m_parallel;
 
   /**
    * Add snowflake specific metadata to the put object metadata.
@@ -71,6 +105,13 @@ private:
   void extractBucketAndKey(FileMetadata *fileMetadata, std::string &bucket,
                            std::string &key);
 
+  TransferOutcome doSingleUpload(FileMetadata * fileMetadata,
+                                 std::basic_iostream<char> *dataStream);
+
+  TransferOutcome doMultiPartUpload(FileMetadata * fileMetadata,
+                                    std::basic_iostream<char> *dataStream);
+
+  void *uploadParts(MultiUploadCtx * uploadCtx);
 };
 }
 }

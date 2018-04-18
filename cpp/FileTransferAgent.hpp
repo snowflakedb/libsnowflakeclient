@@ -11,6 +11,7 @@
 #include "FileTransferExecutionResult.hpp"
 #include "FileMetadata.hpp"
 #include "FileMetadataInitializer.hpp"
+#include "snowflake/platform.h"
 
 namespace Snowflake
 {
@@ -42,11 +43,6 @@ public:
    */
   FileTransferExecutionResult *execute(std::string *command);
 
-  std::vector<FileTransferExecutionResult> *getResult()
-  {
-    return &executionResults;
-  }
-
 private:
   /**
    * Populate file metadata, (Get source file name)
@@ -66,8 +62,7 @@ private:
    * Upload single file.
    */
   void uploadSingleFile(IStorageClient *client,
-    FileMetadata *fileMetadata,
-    FileTransferExecutionResult *result);
+    FileMetadata *fileMetadata, unsigned int resultIndex);
 
   /**
    * Given file name, calculate sha256 message digest. The digest is
@@ -95,7 +90,7 @@ private:
   std::vector<FileMetadata> m_smallFilesMeta;
 
   /// vectors to store newly created execution result
-  std::vector<FileTransferExecutionResult> executionResults;
+  FileTransferExecutionResult *m_executionResults;
 
   /// parallel thread for upload/download small files
   PutGetParseResponse response;
