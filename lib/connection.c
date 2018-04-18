@@ -790,8 +790,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &json_resp_cb);
+        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&json_resp_cb);
         if (res != CURLE_OK) {
             log_error("Failed to set writer [%s]", curl_easy_strerror(res));
             break;

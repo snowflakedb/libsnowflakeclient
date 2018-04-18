@@ -37,10 +37,12 @@ else
     GXX="$(which g++)"
 fi
 
+export BUILD_WITH_PROFILE_OPTION=
 target=Release
-while getopts ":ht:" opt; do
+while getopts ":hpt:" opt; do
   case $opt in
     t) target=$OPTARG ;;
+    p) export BUILD_WITH_PROFILE_OPTION=true ;;
     h) usage;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
