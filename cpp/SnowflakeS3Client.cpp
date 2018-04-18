@@ -3,11 +3,16 @@
  */
 
 #include "SnowflakeS3Client.hpp"
+#include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
+#include "util/StreamSplitter.hpp"
 #include <aws/core/Aws.h>
+#include <aws/s3/model/CreateMultipartUploadRequest.h>
+#include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3/model/UploadPartRequest.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
@@ -28,8 +33,11 @@ namespace Snowflake
 namespace Client
 {
 
-SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo):
-  m_stageInfo(stageInfo)
+
+SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel):
+  m_stageInfo(stageInfo),
+  m_threadPool(nullptr),
+  m_parallel(parallel)
 {
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
@@ -45,6 +53,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo):
   Aws::InitAPI(options);
   clientConfiguration.region = *stageInfo->getRegion();
   clientConfiguration.caFile = Aws::String(caBundleFile);
+  clientConfiguration.requestTimeoutMs = 40000;
+  clientConfiguration.connectTimeoutMs = 30000;
 
   Aws::Auth::AWSCredentials credentials(
     Aws::String(stageInfo->getCredentials()->at(AWS_KEY_ID)),
@@ -59,6 +69,10 @@ SnowflakeS3Client::~SnowflakeS3Client()
   delete s3Client;
   //TODO move this to global shutdown
   //Aws::ShutdownAPI(options);
+  if (m_threadPool != nullptr)
+  {
+    delete m_threadPool;
+  }
 }
 
 TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
@@ -69,6 +83,15 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
     return TransferOutcome::SKIPPED;
   }
 
+  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+    return doMultiPartUpload(fileMetadata, dataStream);
+  else
+    return doSingleUpload(fileMetadata, dataStream);
+}
+
+TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
+  std::basic_iostream<char> *dataStream)
+{
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
   std::map<std::string, std::string> userMetadata;
@@ -94,6 +117,126 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
     return TransferOutcome::SUCCESS;
   } else
   {
+    return TransferOutcome::FAILED;
+  }
+}
+
+void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCtx)
+{
+  Aws::S3::Model::UploadPartRequest uploadPartRequest;
+
+  uploadPartRequest.WithBucket(uploadCtx->m_bucket)
+                   .WithKey(uploadCtx->m_key);
+
+  uploadPartRequest.SetContentType(CONTENT_TYPE_OCTET_STREAM);
+  uploadPartRequest.SetContentLength(uploadCtx->buf->getSize());
+  uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
+  uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
+  uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
+
+  Aws::S3::Model::UploadPartOutcome outcome = s3Client->UploadPart(uploadPartRequest);
+
+  if (outcome.IsSuccess())
+  {
+    uploadCtx->m_outcome = TransferOutcome::SUCCESS;
+    uploadCtx->m_etag = outcome.GetResult().GetETag();
+  }
+  else
+  {
+    fprintf(stderr, "Upload request: %s\n", outcome.GetError().GetMessage().c_str());
+    uploadCtx->m_outcome = TransferOutcome::FAILED;
+  }
+}
+
+TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
+  std::basic_iostream<char> *dataStream)
+{
+  if (m_threadPool == nullptr)
+  {
+    m_threadPool = new Util::ThreadPool(m_parallel);
+  }
+
+  std::map<std::string, std::string> userMetadata;
+  addUserMetadata(&userMetadata, fileMetadata);
+
+  std::string bucket, key;
+  extractBucketAndKey(fileMetadata, bucket, key);
+
+  Aws::S3::Model::CreateMultipartUploadRequest request;
+  request.WithBucket(bucket)
+    .WithKey(key)
+    .WithContentType(CONTENT_TYPE_OCTET_STREAM)
+    .WithMetadata(userMetadata) ;
+
+  auto createMultiPartResp = s3Client->CreateMultipartUpload(request);
+  if (createMultiPartResp.IsSuccess())
+  {
+    Aws::String uploadId = createMultiPartResp.GetResult().GetUploadId();
+
+    Util::StreamSplitter splitter(dataStream, m_parallel, DATA_SIZE_THRESHOLD);
+    unsigned int totalParts = splitter.getTotalParts(
+      fileMetadata->encryptionMetadata.cipherStreamSize);
+
+    MultiUploadCtx uploadParts[totalParts];
+
+    for (unsigned int i = 0; i < totalParts; i++)
+    {
+      uploadParts[i].m_uploadId = uploadId;
+      uploadParts[i].m_partNumber = i+1;
+      uploadParts[i].m_bucket = bucket;
+      uploadParts[i].m_key = key;
+
+      m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
+                           {
+                             Util::ByteArrayStreamBuf * buf = splitter.getNextSplitPart();
+                             uploadParts[i].buf = buf;
+                             this->uploadParts(&uploadParts[i]);
+                             splitter.markDone(buf);
+                           });
+    }
+
+    m_threadPool->WaitAll();
+
+    Aws::S3::Model::CompletedMultipartUpload completedMultipartUpload;
+    for (unsigned int i=0; i< totalParts; i++)
+    {
+      if (uploadParts[i].m_outcome == TransferOutcome::SUCCESS)
+      {
+        Aws::S3::Model::CompletedPart completedPart;
+        completedPart.WithETag(uploadParts[i].m_etag)
+          .WithPartNumber(uploadParts[i].m_partNumber);
+
+        completedMultipartUpload.AddParts(completedPart);
+      }
+      else
+      {
+        //TOOD abort already uploaded parts
+        return TransferOutcome::FAILED;
+      }
+    }
+
+    Aws::S3::Model::CompleteMultipartUploadRequest completeRequest;
+    completeRequest.WithBucket(bucket)
+                   .WithKey(key)
+                   .WithUploadId(uploadId)
+                   .WithMultipartUpload(completedMultipartUpload);
+
+    Aws::S3::Model::CompleteMultipartUploadOutcome outcome =
+      s3Client->CompleteMultipartUpload(completeRequest);
+
+    if (outcome.IsSuccess())
+    {
+      return TransferOutcome::SUCCESS;
+    }
+    else
+    {
+      fprintf(stderr, "Complete request: %s\n", outcome.GetError().GetMessage().c_str());
+      return TransferOutcome::FAILED;
+    }
+  }
+  else
+  {
+    fprintf(stderr, " Init request: %s\n", createMultiPartResp.GetError().GetMessage().c_str());
     return TransferOutcome::FAILED;
   }
 }

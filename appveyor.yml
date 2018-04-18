@@ -22,7 +22,6 @@ before_build:
             $env:VCVARS_PLATFORM="x64"
         }
   - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
-  - ps: Invoke-WebRequest -OutFile get-pip.py https://bootstrap.pypa.io/get-pip.py
   - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
 
 build_script:
@@ -31,7 +30,7 @@ build_script:
 test_script:
   - C:\Python36-x64\python -m venv env
   - call env\Scripts\activate
-  - python get-pip.py
+  - python -m pip install --upgrade pip
   - pip --version
   - pip install -U snowflake-connector-python
   - .\scripts\run_tests.bat %VCVARS_PLATFORM% Release

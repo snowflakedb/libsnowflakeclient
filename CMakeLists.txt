@@ -116,14 +116,16 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/Base64.cpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
+        cpp/util/StreamSplitter.cpp
+        cpp/util/StreamSplitter.hpp
         cpp/util/ThreadPool.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
         cpp/crypto/CipherContext.cpp
         cpp/crypto/Cryptor.cpp
         cpp/util/SnowflakeCommon.hpp
-        cpp/crypto/CipherStream.cpp
-        cpp/crypto/CipherStream.hpp
+        cpp/crypto/CipherStreamBuf.cpp
+        cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp)
 

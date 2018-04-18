@@ -54,12 +54,11 @@ void test_simple_put_core(const char * fileName,
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  agent.execute(&putCommand);
-  std::vector<FileTransferExecutionResult> * results = agent.getResult();
-  assert_int_equal(1, results->size());
+  FileTransferExecutionResult * results = agent.execute(&putCommand);
+  assert_int_equal(1, results->getResultSize());
 
-  FileTransferExecutionResult &result = results->at(0);
-  assert_string_equal("SUCCEED", result.getStatus());
+  results->next();
+  assert_string_equal("SUCCEED", results->getStatus());
 
   if (copyUploadFile)
   {

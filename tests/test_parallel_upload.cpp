@@ -10,7 +10,8 @@
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 
-#define FILE_NUMBER 10
+#define SMALL_FILE_PREFIX "test_small_file_"
+#define LARGE_FILE_NAME "test_large_file.csv"
 
 void getDataDirectory(std::string& dataDir)
 {
@@ -25,18 +26,34 @@ void populateDataInTestDir(std::string &testDir, int numberOfFiles)
   int ret = system(mkdirCmd.c_str());
   assert_int_equal(0, ret);
 
-  for (int i=0; i<numberOfFiles;i ++)
+  if (numberOfFiles == 1)
   {
-    std::string fullFileName = testDir + "parallel_upload_" +
-      std::to_string(i) + ".csv";
+    std::string fullFileName = testDir + LARGE_FILE_NAME;
     std::ofstream ofs(fullFileName);
     assert_true(ofs.is_open());
-    ofs << "1,2,test_string" << std::endl;
+
+    for (int i=0; i<500000; i++)
+    {
+      ofs << "test_string11111,test_string222222,test_string333333" << std::endl;
+    }
     ofs.close();
+  }
+  else
+  {
+    for (int i=0; i<numberOfFiles;i ++)
+    {
+      std::string fullFileName = testDir + SMALL_FILE_PREFIX +
+                                 std::to_string(i) + ".csv";
+      std::ofstream ofs(fullFileName);
+      assert_true(ofs.is_open());
+      ofs << "1,2,test_string" << std::endl;
+      ofs.close();
+    }
+
   }
 }
 
-void test_parallel_upload_core()
+void test_parallel_upload_core(int fileNumber)
 {
   /* init */
   SF_STATUS status;
@@ -50,8 +67,8 @@ void test_parallel_upload_core()
   /* query */
   sfstmt = snowflake_stmt(sf);
 
-  std::string create_table("create or replace table test_parallel_upload(c1 number"
-                             ", c2 number, c3 string)");
+  std::string create_table("create or replace table test_parallel_upload(c1 string"
+                             ", c2 string, c3 string)");
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
@@ -59,22 +76,21 @@ void test_parallel_upload_core()
   getDataDirectory(dataDir);
   std::string testDir = dataDir + "test_parallel_upload/";
 
-  populateDataInTestDir(testDir, FILE_NUMBER);
+  populateDataInTestDir(testDir, fileNumber);
 
   std::string files = testDir + "*";
-  std::string putCommand = "put file://" + files + " @%test_parallel_upload";
+  std::string putCommand = "put file://" + files + " @%test_parallel_upload auto_compress=false";
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  agent.execute(&putCommand);
-  std::vector<FileTransferExecutionResult> * results = agent.getResult();
-  assert_int_equal(FILE_NUMBER, results->size());
+  FileTransferExecutionResult *result = agent.execute(&putCommand);
+  assert_int_equal(fileNumber, result->getResultSize());
 
-  for (auto i=results->begin(); i!=results->end(); i++)
+  while(result->next())
   {
-    assert_string_equal("SUCCEED", i->getStatus());
+    assert_string_equal("SUCCEED", result->getStatus());
   }
 
   std::string copyCommand = "copy into test_parallel_upload";
@@ -92,7 +108,7 @@ void test_parallel_upload_core()
   ret = snowflake_bind_result(sfstmt, &c2);
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  assert_int_equal(snowflake_num_rows(sfstmt), FILE_NUMBER);
+  assert_int_equal(snowflake_num_rows(sfstmt), fileNumber);
 
   while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
     // printf("output: %lld, %s\n", out, c2buf);
@@ -114,7 +130,7 @@ static int teardown(void **unused)
   std::string rm = "rm @%test_parallel_upload";
   snowflake_query(sfstmt, rm.c_str(), rm.size());
 
-  std::string truncate = "truncate table test_parallel_upload";
+  std::string truncate = "drop table if exists test_parallel_upload";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
 
   snowflake_stmt_term(sfstmt);
@@ -128,9 +144,14 @@ static int teardown(void **unused)
   return 0;
 }
 
-void test_parallel_upload(void **unused)
+void test_small_file_concurrent_upload(void **unused)
 {
-  test_parallel_upload_core();
+  test_parallel_upload_core(10);
+}
+
+void test_large_file_multipart_upload(void **unused)
+{
+  test_parallel_upload_core(1);
 }
 
 static int gr_setup(void **unused)
@@ -147,7 +168,8 @@ static int gr_teardown(void **unused)
 
 int main(void) {
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_parallel_upload, teardown),
+    cmocka_unit_test_teardown(test_small_file_concurrent_upload, teardown),
+    cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
