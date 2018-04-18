@@ -22,7 +22,7 @@ void Snowflake::Client::Statement::query(const std::string &command_) {
 }
 
 SF_STATUS Snowflake::Client::Statement::fetch() {
-    // TODO implement this
+    return SF_STATUS_SUCCESS;
 }
 
 
