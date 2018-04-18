@@ -512,6 +512,26 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         alloc_buffer_and_copy(&sf->port, "443");
     }
 
+    log_debug("application name: %s", sf->application_name);
+    log_debug("application version: %s", sf->application_version);
+    log_debug("authenticator: %s", sf->authenticator);
+    log_debug("user: %s", sf->user);
+    log_debug("password: %s", sf->password ? "****" : sf->password);
+    log_debug("host: %s", sf->host);
+    log_debug("port: %s", sf->port);
+    log_debug("account: %s", sf->account);
+    log_debug("region: %s", sf->region);
+    log_debug("database: %s", sf->database);
+    log_debug("schema: %s", sf->schema);
+    log_debug("warehouse: %s", sf->warehouse);
+    log_debug("role: %s", sf->role);
+    log_debug("protocol: %s", sf->protocol);
+    log_debug("autocommit: %s", sf->autocommit ? "true": "false");
+    log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
+    log_debug("timezone: %s", sf->timezone);
+    log_debug("login_timeout: %d", sf->login_timeout);
+    log_debug("network_timeout: %d", sf->network_timeout);
+
     return SF_STATUS_SUCCESS;
 }
 
@@ -622,7 +642,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
-        sf->autocommit = SF_BOOLEAN_FALSE;
+        sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
@@ -754,7 +774,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     s_body = cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
-        log_trace("body:\n%s", s_body);
+        log_debug("body:\n%s", s_body);
     }
 
     // Send request and get data
@@ -920,16 +940,16 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
         case SF_CON_INSECURE_MODE:
-            sf->insecure_mode = *((sf_bool *) value);
+            sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_LOGIN_TIMEOUT:
-            sf->login_timeout = *((int64 *) value);
+            sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
         case SF_CON_NETWORK_TIMEOUT:
-            sf->network_timeout = *((int64 *) value);
+            sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
         case SF_CON_AUTOCOMMIT:
-            sf->autocommit = *((sf_bool *) value);
+            sf->autocommit = value ? *((sf_bool *) value) : SF_BOOLEAN_TRUE;
             break;
         case SF_CON_TIMEZONE:
             alloc_buffer_and_copy(&sf->timezone, value);
