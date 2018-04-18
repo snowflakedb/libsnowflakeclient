@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP
 
-#include <string>
+//#include <string>
 #include "Include.hpp"
 
 namespace Snowflake {
@@ -43,7 +43,7 @@ namespace Snowflake {
             /*
              * Get error message from error struct. Error message is set when there is an exception
              */
-            const std::string err_msg();
+            const char * err_msg();
 
         private:
             SF_CONNECT *m_connection;
