@@ -32,7 +32,7 @@ static size_t _bin2hex(
     return dlen;
 }
 
-SF_TYPE string_to_snowflake_type(const char *string) {
+SF_DB_TYPE string_to_snowflake_type(const char *string) {
     if (strcmp(string, "fixed") == 0) {
         return SF_TYPE_FIXED;
     } else if (strcmp(string, "real") == 0) {
@@ -65,7 +65,7 @@ SF_TYPE string_to_snowflake_type(const char *string) {
     }
 }
 
-const char *STDCALL snowflake_type_to_string(SF_TYPE type) {
+const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type) {
     switch (type) {
         case SF_TYPE_FIXED:
             return "FIXED";
@@ -124,7 +124,7 @@ const char * STDCALL snowflake_c_type_to_string(SF_C_TYPE type) {
 }
 
 
-SF_C_TYPE snowflake_to_c_type(SF_TYPE type, int64 precision, int64 scale) {
+SF_C_TYPE snowflake_to_c_type(SF_DB_TYPE type, int64 precision, int64 scale) {
     if (type == SF_TYPE_FIXED) {
         if (scale > 0 || precision >= 19) {
             return SF_C_TYPE_FLOAT64;
@@ -152,7 +152,7 @@ SF_C_TYPE snowflake_to_c_type(SF_TYPE type, int64 precision, int64 scale) {
     }
 }
 
-SF_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_TYPE tsmode) {
+SF_DB_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_DB_TYPE tsmode) {
     switch (c_type) {
         case SF_C_TYPE_INT8:
             return SF_TYPE_FIXED;

@@ -163,7 +163,7 @@ static void log_lock_func(void *udata, int lock) {
  * @return SF_BOOLEAN_TRUE if success otherwise SF_BOOLEAN_FALSE
  */
 static sf_bool _extract_timestamp(
-    SF_BIND_OUTPUT *result, SF_TYPE sftype,
+    SF_BIND_OUTPUT *result, SF_DB_TYPE sftype,
     const char *src, const char *timezone, int64 scale) {
     time_t nsec = 0L;
     time_t sec = 0L;

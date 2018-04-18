@@ -65,7 +65,7 @@ extern "C" {
  *
  * Use snowflake_type_to_string to get the string representation.
  */
-typedef enum SF_TYPE {
+typedef enum SF_DB_TYPE {
     SF_TYPE_FIXED,
     SF_TYPE_REAL,
     SF_TYPE_TEXT,
@@ -79,7 +79,7 @@ typedef enum SF_TYPE {
     SF_TYPE_BINARY,
     SF_TYPE_TIME,
     SF_TYPE_BOOLEAN
-} SF_TYPE;
+} SF_DB_TYPE;
 
 /**
  * C data types
@@ -283,7 +283,7 @@ typedef struct SF_CONNECT {
  */
 typedef struct SF_COLUMN_DESC {
     char *name;
-    SF_TYPE type;
+    SF_DB_TYPE type;
     SF_C_TYPE c_type;
     int64 byte_size;
     int64 internal_size;
@@ -334,7 +334,7 @@ typedef struct {
     SF_C_TYPE c_type; /* input data type in C */
     void *value; /* input value */
     size_t len; /* input value length. valid only for SF_C_TYPE_STRING */
-    SF_TYPE type; /* (optional) target Snowflake data type */
+    SF_DB_TYPE type; /* (optional) target Snowflake data type */
 } SF_BIND_INPUT;
 
 /**
@@ -660,7 +660,7 @@ const char *STDCALL snowflake_sfqid(SF_STMT *sfstmt);
  * @param type SF_TYPE enum
  * @return a string representation of Snowflake Type
  */
-const char *STDCALL snowflake_type_to_string(SF_TYPE type);
+const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type);
 
 /**
  * Converts Snowflake C Type enum value to a string representation
