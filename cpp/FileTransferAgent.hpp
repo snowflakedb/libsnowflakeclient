@@ -56,12 +56,12 @@ private:
    * a thread pool object
    * @param stageInfo
    */
-  void upload(StageInfo *stageInfo);
+  void upload(std::string *command);
 
   /**
    * Upload single file.
    */
-  void uploadSingleFile(IStorageClient *client,
+  TransferOutcome uploadSingleFile(IStorageClient *client,
     FileMetadata *fileMetadata, unsigned int resultIndex);
 
   /**
@@ -72,6 +72,14 @@ private:
    */
   void updateFileDigest(FileMetadata *fileMetadata);
 
+  /**
+   * Renew aws expired token by re-submitting put/get command to server
+   * @param client the new client object using the new token
+   */
+  void renewToken(std::string * command);
+
+  void uploadFilesInParallel(std::string *command);
+
   void download();
 
   /**
@@ -81,7 +89,11 @@ private:
    */
   void compressSourceFile(FileMetadata *fileMetadata);
 
+  /// interface to communicate with server
   IStatementPutGet *m_stmtPutGet;
+
+  /// interface to communicate with remote storage
+  IStorageClient * m_storageClient;
 
   /// Files that will be uploaded in sequence
   std::vector<FileMetadata> m_largeFilesMeta;

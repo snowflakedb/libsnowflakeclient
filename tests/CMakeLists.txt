@@ -40,6 +40,7 @@ SET(TESTS_CXX
         test_parallel_upload
         test_simple_put
         test_unit_cipher_stream_buf
+        test_unit_cred_renew
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter

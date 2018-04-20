@@ -22,7 +22,8 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement) :
   m_stmtPutGet(statement),
   m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta),
-  m_executionResults(nullptr)
+  m_executionResults(nullptr),
+  m_storageClient(nullptr)
 {
 }
 
@@ -31,6 +32,11 @@ Snowflake::Client::FileTransferAgent::~FileTransferAgent()
   if (m_executionResults != nullptr)
   {
     delete m_executionResults;
+  }
+
+  if (m_storageClient != nullptr)
+  {
+    delete m_storageClient;
   }
 }
 
@@ -47,10 +53,10 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   // init file metadata
   initFileMetadata();
 
-  switch (response.getCommand())
+  switch (response.getCommandType())
   {
     case CommandType::UPLOAD:
-      upload(response.getStageInfo());
+      upload(command);
       break;
 
     case CommandType::DOWNLOAD:
@@ -78,10 +84,10 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata()
   }
 }
 
-void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
+void Snowflake::Client::FileTransferAgent::upload(string *command)
 {
-  std::shared_ptr<IStorageClient> storageClient = StorageClientFactory
-  ::getClient(stageInfo, response.getParallel());
+  m_storageClient = StorageClientFactory
+  ::getClient(response.getStageInfo(), (unsigned int)response.getParallel());
 
   m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD,
     m_largeFilesMeta.size() + m_smallFilesMeta.size());
@@ -91,31 +97,68 @@ void Snowflake::Client::FileTransferAgent::upload(StageInfo *stageInfo)
     for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
-      uploadSingleFile(storageClient.get(), &m_largeFilesMeta[i], i);
+      TransferOutcome outcome = uploadSingleFile(m_storageClient,
+                                                 &m_largeFilesMeta[i], i);
+
+      if (outcome == TransferOutcome::TOKEN_EXPIRED)
+      {
+        renewToken(command);
+        i--;
+      }
     }
   }
 
   if (m_smallFilesMeta.size() > 0)
   {
-    Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
-    for (size_t i=0; i<m_smallFilesMeta.size(); i++)
-    {
-      unsigned int resultIndex = i + m_largeFilesMeta.size();
-
-      FileMetadata * metadata = &m_smallFilesMeta[i];
-      m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
-      tp.AddJob([storageClient, metadata, resultIndex, this]()->void {
-        (metadata, CommandType::UPLOAD);
-        uploadSingleFile(storageClient.get(), metadata, resultIndex);
-      });
-    }
-
-    // wait till all jobs have been finished
-    tp.WaitAll();
+    uploadFilesInParallel(command);
   }
 }
 
-void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *client,
+void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *command)
+{
+  SF_MUTEX_HANDLE tokenRenewMutex;
+  _mutex_init(&tokenRenewMutex);
+
+  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
+  for (size_t i=0; i<m_smallFilesMeta.size(); i++)
+  {
+    unsigned int resultIndex = i + m_largeFilesMeta.size();
+    FileMetadata * metadata = &m_smallFilesMeta[i];
+    m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
+    tp.AddJob([metadata, resultIndex, &tokenRenewMutex, command, this]()->void {
+        do
+        {
+          TransferOutcome outcome = uploadSingleFile(m_storageClient, metadata,
+                                                     resultIndex);
+          if (outcome == TransferOutcome::TOKEN_EXPIRED)
+          {
+            _mutex_lock(&tokenRenewMutex);
+            this->renewToken(command);
+            _mutex_unlock(&tokenRenewMutex);
+          }
+          else
+          {
+            break;
+          }
+        } while (true);
+    });
+  }
+
+  // wait till all jobs have been finished
+  tp.WaitAll();
+
+  _mutex_term(&tokenRenewMutex);
+}
+
+void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
+{
+  m_stmtPutGet->parsePutGetCommand(command, &response);
+  m_storageClient = StorageClientFactory::getClient(response.getStageInfo(),
+                                           (unsigned int)response.getParallel());
+}
+
+TransferOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
+  IStorageClient *client,
   FileMetadata *fileMetadata,
   unsigned int resultIndex)
 {
@@ -148,24 +191,13 @@ void Snowflake::Client::FileTransferAgent::uploadSingleFile(IStorageClient *clie
   TransferOutcome outcome = client->upload(fileMetadata, &dataStream);
   originalFileStream.close();
 
-  // wrap execution result and return
-  switch (outcome)
+  if (fileMetadata->requireCompress)
   {
-    case SUCCESS:
-    case SKIPPED:
-      if (outcome == SUCCESS && fileMetadata->requireCompress)
-      {
-        // clean up compressed tmp file
-        remove(fileMetadata->srcFileToUpload.c_str());
-      }
-      m_executionResults->SetTransferOutCome(outcome, resultIndex);
-      break;
-    case TOKEN_RENEW:
-      //TODO handle token_renew
-      break;
-    default:
-      throw;
+    remove(fileMetadata->srcFileToUpload.c_str());
   }
+
+  m_executionResults->SetTransferOutCome(outcome, resultIndex);
+  return outcome;
 }
 
 void Snowflake::Client::FileTransferAgent::updateFileDigest(
