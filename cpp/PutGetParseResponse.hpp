@@ -36,9 +36,14 @@ public:
 
   ~PutGetParseResponse() {};
 
-  inline CommandType getCommand()
+  inline CommandType getCommandType()
   {
     return m_command;
+  }
+
+  inline void SetCommandType(CommandType commandType)
+  {
+    m_command = commandType;
   }
 
   inline char * getSourceCompression()
@@ -46,9 +51,19 @@ public:
     return m_sourceCompression;
   }
 
+  inline void SetSourceCompression(char * sourceCompression)
+  {
+    m_sourceCompression = sourceCompression;
+  }
+
   inline EncryptionMaterial *getEncryptionMaterial()
   {
     return &m_encryptionMaterial;
+  }
+
+  inline void SetEncryptionMaterial(EncryptionMaterial &encMat)
+  {
+    m_encryptionMaterial = encMat;
   }
 
   inline std::vector<std::string> *getSourceLocations()
@@ -56,9 +71,19 @@ public:
     return &m_srcLocations;
   }
 
+  inline void SetSourceLocations(std::vector<std::string> &sourceLocations)
+  {
+    m_srcLocations = sourceLocations;
+  }
+
   inline StageInfo *getStageInfo()
   {
     return &m_stageInfo;
+  }
+
+  inline void SetStageInfo(StageInfo &stageInfo)
+  {
+    m_stageInfo = stageInfo;
   }
 
   inline bool getAutoCompress()
@@ -66,9 +91,19 @@ public:
     return m_autoCompress;
   }
 
+  inline void SetAutoCompress(bool autoCompress)
+  {
+    m_autoCompress = autoCompress;
+  }
+
   inline int getParallel()
   {
     return m_parallel;
+  }
+
+  inline void SetParallel(int parallel)
+  {
+    m_parallel = parallel;
   }
 
 private:

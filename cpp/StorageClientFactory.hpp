@@ -28,8 +28,17 @@ public:
    * @param stageInfo
    * @return
    */
-  static std::shared_ptr<IStorageClient> getClient(StageInfo *stageInfo,
-                                                   unsigned int parallel);
+  static IStorageClient *getClient(StageInfo *stageInfo,
+                                   unsigned int parallel);
+
+  /**
+   * Testing method. Used to inject a mocked remote storage client.
+   */
+  static void injectMockedClient(IStorageClient *client);
+
+private:
+
+  static IStorageClient * injectedClient;
 };
 }
 }

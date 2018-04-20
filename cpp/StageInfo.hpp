@@ -17,7 +17,10 @@ enum StageType
 {
   S3,
   AZURE,
-  LOCAL_FS
+  LOCAL_FS,
+
+  /// This is used to create MOCKED storage client and is for testing purpose
+  MOCKED_STAGE_TYPE,
 };
 
 /**
@@ -48,6 +51,11 @@ public:
   inline std::string *getLocation()
   {
     return &m_location;
+  }
+
+  inline void SetStageType(StageType stageType)
+  {
+    m_stageType = stageType;
   }
 
 private:
