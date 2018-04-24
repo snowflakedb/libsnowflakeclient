@@ -102,7 +102,8 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
   }
   else
   {
-    sf_log_warn(CXX_LOG_NS, "Listing file metadata failed: %d", outcome.GetError().GetMessage());
+    sf_log_warn(CXX_LOG_NS, "Listing file metadata failed: %s",
+                outcome.GetError().GetMessage().c_str());
   }
 
   if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
@@ -114,7 +115,7 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
 TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
-  sf_log_debug(CXX_LOG_NS, "Start single part upload for file %s", 
+  sf_log_debug(CXX_LOG_NS, "Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
 
   Aws::S3::Model::PutObjectRequest putObjectRequest;
@@ -175,7 +176,7 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
 TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
-  sf_log_debug(CXX_LOG_NS, "Start multi part upload for file %s", 
+  sf_log_debug(CXX_LOG_NS, "Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
 
   if (m_threadPool == nullptr)
@@ -308,7 +309,7 @@ TransferOutcome SnowflakeS3Client::handleError(
   else
   {
     sf_log_error(CXX_LOG_NS, "S3 request failed failed: %s",
-                 error.GetMessage());
+                 error.GetMessage().c_str());
     return TransferOutcome::FAILED;
   }
 }
