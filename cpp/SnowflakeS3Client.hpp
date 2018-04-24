@@ -90,13 +90,6 @@ private:
                        FileMetadata *fileMetadata);
 
   /**
-   * Check if file with same name and digest exists or not.
-   * @param fileMetadata
-   * @return true if file exists otherwise return false
-   */
-  bool fileExist(FileMetadata *fileMetadata);
-
-  /**
    * Compose bucket and key value used for s3 request.
    * @param fileMetadata
    * @param bucket
@@ -112,6 +105,8 @@ private:
                                     std::basic_iostream<char> *dataStream);
 
   void *uploadParts(MultiUploadCtx * uploadCtx);
+
+  TransferOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
 };
 }
 }

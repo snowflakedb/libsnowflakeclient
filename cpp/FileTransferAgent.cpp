@@ -49,6 +49,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
     //TODO finalize exception;
     throw;
   }
+  sf_log_info(CXX_LOG_NS, "Parse response succeed.");
 
   // init file metadata
   initFileMetadata();
