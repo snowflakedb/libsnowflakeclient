@@ -33,6 +33,8 @@ public:
     getDataDirectory(dataDir);
     m_srcLocations.push_back(dataDir + fileName);
     m_encryptionMaterial.queryStageMasterKey = "3dOoaBhkB1wSw4hyfA5DJw==";
+    m_encryptionMaterial.queryId="1234";
+    m_encryptionMaterial.smkId=1234;
     numParseCalled = 0;
   }
 
@@ -110,12 +112,9 @@ void test_token_renew_core(std::string fileName)
 
   std::string cmd = "fake put command";
 
-  MockedStatementPutGet * mockedStatementPutGet = new MockedStatementPutGet(fileName);
+  MockedStatementPutGet  mockedStatementPutGet(fileName);
 
-  std::unique_ptr<IStatementPutGet> stmt = std::unique_ptr<MockedStatementPutGet>(
-    mockedStatementPutGet);
-
-  Snowflake::Client::FileTransferAgent agent(stmt.get());
+  Snowflake::Client::FileTransferAgent agent(&mockedStatementPutGet);
 
   FileTransferExecutionResult * result = agent.execute(&cmd);
 
@@ -125,7 +124,7 @@ void test_token_renew_core(std::string fileName)
   }
 
   // original parse command call + renew call
-  assert_int_equal(2, mockedStatementPutGet->getNumParseCalled());
+  assert_int_equal(2, mockedStatementPutGet.getNumParseCalled());
 }
 
 void test_token_renew_small_files(void ** unused)
@@ -161,12 +160,17 @@ static int large_file_removal(void **unused)
   return 0;
 }
 
+static int gr_setup(void **unused)
+{
+  initialize_test(SF_BOOLEAN_FALSE);
+  return 0;
+}
 
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_token_renew_small_files),
     cmocka_unit_test_teardown(test_token_renew_large_file, large_file_removal),
   };
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
+  int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
 }
