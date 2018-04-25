@@ -16,7 +16,7 @@ namespace Client
  */
 enum TransferOutcome
 {
-  SUCCESS, FAILED, TOKEN_RENEW, SKIPPED
+  SUCCESS, FAILED, TOKEN_EXPIRED, SKIPPED
 };
 
 }

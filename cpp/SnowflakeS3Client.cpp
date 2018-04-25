@@ -78,9 +78,32 @@ SnowflakeS3Client::~SnowflakeS3Client()
 TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
-  if (fileExist(fileMetadata))
+  // first call metadata request to deduplicate files
+  Aws::S3::Model::HeadObjectRequest headObjectRequest;
+
+  std::string bucket, key;
+  extractBucketAndKey(fileMetadata, bucket, key);
+  headObjectRequest.SetBucket(bucket);
+  headObjectRequest.SetKey(key);
+
+  Aws::S3::Model::HeadObjectOutcome outcome =
+    s3Client->HeadObject(headObjectRequest);
+
+  if (outcome.IsSuccess())
   {
-    return TransferOutcome::SKIPPED;
+    std::string sfcDigest = outcome.GetResult().GetMetadata().at(
+      SFC_DIGEST);
+    if (sfcDigest == fileMetadata->sha256Digest)
+    {
+      sf_log_info(CXX_LOG_NS, "File %s with same name and sha256 existed. Skipped.",
+               fileMetadata->srcFileToUpload.c_str());
+      return TransferOutcome::SKIPPED;
+    }
+  }
+  else
+  {
+    sf_log_warn(CXX_LOG_NS, "Listing file metadata failed: %s",
+                outcome.GetError().GetMessage().c_str());
   }
 
   if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
@@ -92,6 +115,9 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
 TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
+  sf_log_debug(CXX_LOG_NS, "Start single part upload for file %s",
+               fileMetadata->srcFileToUpload.c_str());
+
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
   std::map<std::string, std::string> userMetadata;
@@ -117,7 +143,7 @@ TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
     return TransferOutcome::SUCCESS;
   } else
   {
-    return TransferOutcome::FAILED;
+    return handleError(outcome.GetError());
   }
 }
 
@@ -143,14 +169,16 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
   }
   else
   {
-    fprintf(stderr, "Upload request: %s\n", outcome.GetError().GetMessage().c_str());
-    uploadCtx->m_outcome = TransferOutcome::FAILED;
+    uploadCtx->m_outcome = handleError(outcome.GetError());
   }
 }
 
 TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
+  sf_log_debug(CXX_LOG_NS, "Start multi part upload for file %s",
+               fileMetadata->srcFileToUpload.c_str());
+
   if (m_threadPool == nullptr)
   {
     m_threadPool = new Util::ThreadPool(m_parallel);
@@ -210,8 +238,7 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
       }
       else
       {
-        //TOOD abort already uploaded parts
-        return TransferOutcome::FAILED;
+        return uploadParts[i].m_outcome;
       }
     }
 
@@ -230,14 +257,12 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     }
     else
     {
-      fprintf(stderr, "Complete request: %s\n", outcome.GetError().GetMessage().c_str());
-      return TransferOutcome::FAILED;
+      return handleError(outcome.GetError());
     }
   }
   else
   {
-    fprintf(stderr, " Init request: %s\n", createMultiPartResp.GetError().GetMessage().c_str());
-    return TransferOutcome::FAILED;
+    return handleError(createMultiPartResp.GetError());
   }
 }
 
@@ -263,32 +288,6 @@ void SnowflakeS3Client::addUserMetadata(
   userMetadata->insert({SFC_DIGEST, fileMetadata->sha256Digest});
 }
 
-bool SnowflakeS3Client::fileExist(FileMetadata *fileMetadata)
-{
-  Aws::S3::Model::HeadObjectRequest headObjectRequest;
-
-  std::string bucket, key;
-  extractBucketAndKey(fileMetadata, bucket, key);
-  headObjectRequest.SetBucket(bucket);
-  headObjectRequest.SetKey(key);
-
-  Aws::S3::Model::HeadObjectOutcome outcome =
-    s3Client->HeadObject(headObjectRequest);
-
-  if (outcome.IsSuccess())
-  {
-    std::string sfcDigest = outcome.GetResult().GetMetadata().at(
-      SFC_DIGEST);
-    return sfcDigest == fileMetadata->sha256Digest;
-  } else
-  {
-    //TODO Handle token renew
-  }
-
-  return false;
-}
-
-
 void SnowflakeS3Client::extractBucketAndKey(FileMetadata *fileMetadata,
                                             std::string &bucket,
                                             std::string &key)
@@ -297,6 +296,22 @@ void SnowflakeS3Client::extractBucketAndKey(FileMetadata *fileMetadata,
   bucket = m_stageInfo->getLocation()->substr(0, sepIndex);
   key = m_stageInfo->getLocation()->substr(sepIndex + 1)
         + fileMetadata->destFileName;
+}
+
+TransferOutcome SnowflakeS3Client::handleError(
+  const Aws::Client::AWSError<Aws::S3::S3Errors> & error)
+{
+  if (error.GetExceptionName() == "ExpiredToken")
+  {
+    sf_log_warn(CXX_LOG_NS, "Token expired.");
+    return TransferOutcome::TOKEN_EXPIRED;
+  }
+  else
+  {
+    sf_log_error(CXX_LOG_NS, "S3 request failed failed: %s",
+                 error.GetMessage().c_str());
+    return TransferOutcome::FAILED;
+  }
 }
 
 }

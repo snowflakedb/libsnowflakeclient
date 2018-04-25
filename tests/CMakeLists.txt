@@ -40,6 +40,7 @@ SET(TESTS_CXX
         test_parallel_upload
         test_simple_put
         test_unit_cipher_stream_buf
+        test_unit_cred_renew
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter
@@ -62,8 +63,10 @@ message("libcmocka is located at " ${CMOCKA_LIB})
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto -Wl,--no-whole-archive pthread)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto
+            -Wl,--no-whole-archive pthread)
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl
+            ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl ssl crypto)
