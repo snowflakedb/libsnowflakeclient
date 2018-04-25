@@ -32,66 +32,66 @@ static size_t _bin2hex(
     return dlen;
 }
 
-SF_TYPE string_to_snowflake_type(const char *string) {
+SF_DB_TYPE string_to_snowflake_type(const char *string) {
     if (strcmp(string, "fixed") == 0) {
-        return SF_TYPE_FIXED;
+        return SF_DB_TYPE_FIXED;
     } else if (strcmp(string, "real") == 0) {
-        return SF_TYPE_REAL;
+        return SF_DB_TYPE_REAL;
     } else if (strcmp(string, "text") == 0) {
-        return SF_TYPE_TEXT;
+        return SF_DB_TYPE_TEXT;
     } else if (strcmp(string, "date") == 0) {
-        return SF_TYPE_DATE;
+        return SF_DB_TYPE_DATE;
     } else if (strcmp(string, "timestamp_ltz") == 0) {
-        return SF_TYPE_TIMESTAMP_LTZ;
+        return SF_DB_TYPE_TIMESTAMP_LTZ;
     } else if (strcmp(string, "timestamp_ntz") == 0) {
-        return SF_TYPE_TIMESTAMP_NTZ;
+        return SF_DB_TYPE_TIMESTAMP_NTZ;
     } else if (strcmp(string, "timestamp_tz") == 0) {
-        return SF_TYPE_TIMESTAMP_TZ;
+        return SF_DB_TYPE_TIMESTAMP_TZ;
     } else if (strcmp(string, "variant") == 0) {
-        return SF_TYPE_VARIANT;
+        return SF_DB_TYPE_VARIANT;
     } else if (strcmp(string, "object") == 0) {
-        return SF_TYPE_OBJECT;
+        return SF_DB_TYPE_OBJECT;
     } else if (strcmp(string, "array") == 0) {
-        return SF_TYPE_ARRAY;
+        return SF_DB_TYPE_ARRAY;
     } else if (strcmp(string, "binary") == 0) {
-        return SF_TYPE_BINARY;
+        return SF_DB_TYPE_BINARY;
     } else if (strcmp(string, "time") == 0) {
-        return SF_TYPE_TIME;
+        return SF_DB_TYPE_TIME;
     } else if (strcmp(string, "boolean") == 0) {
-        return SF_TYPE_BOOLEAN;
+        return SF_DB_TYPE_BOOLEAN;
     } else {
         // Everybody loves a string, so lets return it by default
-        return SF_TYPE_TEXT;
+        return SF_DB_TYPE_TEXT;
     }
 }
 
-const char *STDCALL snowflake_type_to_string(SF_TYPE type) {
+const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type) {
     switch (type) {
-        case SF_TYPE_FIXED:
+        case SF_DB_TYPE_FIXED:
             return "FIXED";
-        case SF_TYPE_REAL:
+        case SF_DB_TYPE_REAL:
             return "REAL";
-        case SF_TYPE_TEXT:
+        case SF_DB_TYPE_TEXT:
             return "TEXT";
-        case SF_TYPE_DATE:
+        case SF_DB_TYPE_DATE:
             return "DATE";
-        case SF_TYPE_TIMESTAMP_LTZ:
+        case SF_DB_TYPE_TIMESTAMP_LTZ:
             return "TIMESTAMP_LTZ";
-        case SF_TYPE_TIMESTAMP_NTZ:
+        case SF_DB_TYPE_TIMESTAMP_NTZ:
             return "TIMESTAMP_NTZ";
-        case SF_TYPE_TIMESTAMP_TZ:
+        case SF_DB_TYPE_TIMESTAMP_TZ:
             return "TIMESTAMP_TZ";
-        case SF_TYPE_VARIANT:
+        case SF_DB_TYPE_VARIANT:
             return "VARIANT";
-        case SF_TYPE_OBJECT:
+        case SF_DB_TYPE_OBJECT:
             return "OBJECT";
-        case SF_TYPE_ARRAY:
+        case SF_DB_TYPE_ARRAY:
             return "ARRAY";
-        case SF_TYPE_BINARY:
+        case SF_DB_TYPE_BINARY:
             return "BINARY";
-        case SF_TYPE_TIME:
+        case SF_DB_TYPE_TIME:
             return "TIME";
-        case SF_TYPE_BOOLEAN:
+        case SF_DB_TYPE_BOOLEAN:
             return "BOOLEAN";
         default:
             return "TEXT";
@@ -124,27 +124,27 @@ const char * STDCALL snowflake_c_type_to_string(SF_C_TYPE type) {
 }
 
 
-SF_C_TYPE snowflake_to_c_type(SF_TYPE type, int64 precision, int64 scale) {
-    if (type == SF_TYPE_FIXED) {
+SF_C_TYPE snowflake_to_c_type(SF_DB_TYPE type, int64 precision, int64 scale) {
+    if (type == SF_DB_TYPE_FIXED) {
         if (scale > 0 || precision >= 19) {
             return SF_C_TYPE_FLOAT64;
         } else {
             return SF_C_TYPE_INT64;
         }
-    } else if (type == SF_TYPE_REAL) {
+    } else if (type == SF_DB_TYPE_REAL) {
         return SF_C_TYPE_FLOAT64;
-    } else if (type == SF_TYPE_TIMESTAMP_LTZ ||
-            type == SF_TYPE_TIMESTAMP_NTZ ||
-            type == SF_TYPE_TIMESTAMP_TZ) {
+    } else if (type == SF_DB_TYPE_TIMESTAMP_LTZ ||
+            type == SF_DB_TYPE_TIMESTAMP_NTZ ||
+            type == SF_DB_TYPE_TIMESTAMP_TZ) {
         return SF_C_TYPE_TIMESTAMP;
-    } else if (type == SF_TYPE_BOOLEAN) {
+    } else if (type == SF_DB_TYPE_BOOLEAN) {
         return SF_C_TYPE_BOOLEAN;
-    } else if (type == SF_TYPE_TEXT ||
-            type == SF_TYPE_VARIANT ||
-            type == SF_TYPE_OBJECT ||
-            type == SF_TYPE_ARRAY) {
+    } else if (type == SF_DB_TYPE_TEXT ||
+            type == SF_DB_TYPE_VARIANT ||
+            type == SF_DB_TYPE_OBJECT ||
+            type == SF_DB_TYPE_ARRAY) {
         return SF_C_TYPE_STRING;
-    } else if (type == SF_TYPE_BINARY) {
+    } else if (type == SF_DB_TYPE_BINARY) {
         return SF_C_TYPE_BINARY;
     } else {
         // by default return string, since we can do everything with a string
@@ -152,28 +152,28 @@ SF_C_TYPE snowflake_to_c_type(SF_TYPE type, int64 precision, int64 scale) {
     }
 }
 
-SF_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_TYPE tsmode) {
+SF_DB_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_DB_TYPE tsmode) {
     switch (c_type) {
         case SF_C_TYPE_INT8:
-            return SF_TYPE_FIXED;
+            return SF_DB_TYPE_FIXED;
         case SF_C_TYPE_UINT8:
-            return SF_TYPE_FIXED;
+            return SF_DB_TYPE_FIXED;
         case SF_C_TYPE_INT64:
-            return SF_TYPE_FIXED;
+            return SF_DB_TYPE_FIXED;
         case SF_C_TYPE_UINT64:
-            return SF_TYPE_FIXED;
+            return SF_DB_TYPE_FIXED;
         case SF_C_TYPE_FLOAT64:
-            return SF_TYPE_REAL;
+            return SF_DB_TYPE_REAL;
         case SF_C_TYPE_STRING:
-            return SF_TYPE_TEXT;
+            return SF_DB_TYPE_TEXT;
         case SF_C_TYPE_TIMESTAMP:
             return tsmode;
         case SF_C_TYPE_BOOLEAN:
-            return SF_TYPE_BOOLEAN;
+            return SF_DB_TYPE_BOOLEAN;
         case SF_C_TYPE_BINARY:
-            return SF_TYPE_BINARY;
+            return SF_DB_TYPE_BINARY;
         default:
-            return SF_TYPE_TEXT;
+            return SF_DB_TYPE_TEXT;
     }
 }
 
@@ -274,7 +274,7 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
             desc[i].type = string_to_snowflake_type(blob->valuestring);
         } else {
             // TODO Replace with default type
-            desc[i].type = SF_TYPE_FIXED;
+            desc[i].type = SF_DB_TYPE_FIXED;
         }
         desc[i].c_type = snowflake_to_c_type(desc[i].type, desc[i].precision, desc[i].scale);
         log_debug("Found type and ctype; %i: %i", desc[i].type, desc[i].c_type);
