@@ -8,20 +8,17 @@
 #include <snowflakecpp/Include.hpp>
 #include <string>
 #include "Connection.hpp"
+#include "Column.hpp"
+#include "Param.hpp"
 
 namespace Snowflake {
     namespace Client {
         class Statement {
-            friend class Connection;
         public:
 
             Statement(Connection &connection_);
 
-            Statement(SF_STMT &sf_stmt_);
-
             ~Statement(void);
-
-            //TODO error structs or exceptions?
 
             void query(const std::string &command_);
 
@@ -49,24 +46,29 @@ namespace Snowflake {
 
             uint64 numParams();
 
-            void bindParam(SF_BIND_INPUT &sfbind_);
+            Param& param(size_t i);
 
-            void bindParamArray(SF_BIND_INPUT sfbind_array_[],
-                                                      size_t size_);
+            // TODO add method parameters to create a SF_BIND_INPUT
+            Param& createParam();
 
-            void bindResult(SF_BIND_OUTPUT &sfbind_);
+            void destroyParams();
 
-            void bindResultArray(SF_BIND_OUTPUT sfbind_array_[],
-                                                       size_t size_);
+            Column& column(size_t i);
 
             const char *sfqid();
 
+            const std::string err_msg();
+
         private:
             // C API struct to operate on
-            SF_STMT m_stmt;
+            SF_STMT *m_stmt;
             // Pointer to the connection object that the statement struct will to
             // connect to Snowflake.
             Connection *m_connection;
+            // Array of pointers to created columns
+            Column **m_columns;
+            // Array of pointers to created parameters
+            Param **m_params;
         };
     }
 }

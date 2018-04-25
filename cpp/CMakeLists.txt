@@ -8,7 +8,7 @@ set(SOURCE_FILES_CXX
         include/snowflakecpp/Connection.hpp
         include/snowflakecpp/Statement.hpp
         lib/Connection.cpp
-        lib/Statement.cpp include/snowflakecpp/Exceptions.hpp lib/Exceptions.cpp)
+        lib/Statement.cpp include/snowflakecpp/Exceptions.hpp lib/Exceptions.cpp include/snowflakecpp/Column.hpp include/snowflakecpp/Param.hpp lib/Column.cpp)
 
 set(TESTLIB_OPTS_CXX snowflakeclient -Wl,--whole-archive curl ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 

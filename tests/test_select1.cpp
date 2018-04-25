@@ -15,20 +15,9 @@ void test_select1_cpp(void **unused) {
         std::string command("select 1;");
         stmt->query(command);
 
-        int64 out = 0;
-        SF_BIND_OUTPUT c1 = {
-          idx : 1,
-          c_type : SF_C_TYPE_INT64,
-          max_length : 0,
-          value : (void *) &out,
-          len : sizeof(out),
-          is_null : 0
-        };
-        stmt->bindResult(c1);
-
         int counter = 0;
         while ((status = stmt->fetch()) == SF_STATUS_SUCCESS) {
-            assert_int_equal(*(int64 *) c1.value, 1);
+            assert_int_equal(stmt->column(1).asInt32(), 1);
             ++counter;
         }
         //assert_int_equal(status, SF_STATUS_EOF);

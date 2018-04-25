@@ -13,7 +13,7 @@ Snowflake::Client::Statement::~Statement() {
     // TODO implement this
 }
 
-void Snowflake::Client::Statement::bindResult(SF_BIND_OUTPUT &sfbind_) {
+Snowflake::Client::Column& Snowflake::Client::Statement::column(size_t i) {
     // TODO implement this
 }
 

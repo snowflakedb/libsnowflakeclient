@@ -196,7 +196,7 @@ static sf_bool _extract_timestamp(
     }
     log_info("sec: %lld, nsec: %lld", sec, nsec);
 
-    if (sftype == SF_TYPE_TIMESTAMP_TZ) {
+    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
         /* make up Timezone name from the tzoffset */
         ldiv_t dm = ldiv((long) tzoffset, 60L);
         sprintf(tzname, "UTC%c%02ld:%02ld",
@@ -205,11 +205,11 @@ static sf_bool _extract_timestamp(
     }
 
     /* replace a dot character with NULL */
-    if (sftype == SF_TYPE_TIMESTAMP_NTZ ||
-        sftype == SF_TYPE_TIME) {
+    if (sftype == SF_DB_TYPE_TIMESTAMP_NTZ ||
+        sftype == SF_DB_TYPE_TIME) {
         tm_ptr = sf_gmtime(&sec, &tm_obj);
-    } else if (sftype == SF_TYPE_TIMESTAMP_LTZ ||
-               sftype == SF_TYPE_TIMESTAMP_TZ) {
+    } else if (sftype == SF_DB_TYPE_TIMESTAMP_LTZ ||
+               sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
         /* set the environment variable TZ to the session timezone
          * so that localtime_tz honors it.
          */
@@ -232,7 +232,7 @@ static sf_bool _extract_timestamp(
         return SF_BOOLEAN_FALSE;
     }
     const char *fmt0;
-    if (sftype != SF_TYPE_TIME) {
+    if (sftype != SF_DB_TYPE_TIME) {
         fmt0 = "%Y-%m-%d %H:%M:%S";
     } else {
         fmt0 = "%H:%M:%S";
@@ -248,7 +248,7 @@ static sf_bool _extract_timestamp(
             result->max_length - result->len, fmt,
             nsec);
     }
-    if (sftype == SF_TYPE_TIMESTAMP_TZ) {
+    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
         /* Timezone info */
         ldiv_t dm = ldiv((long) tzoffset, 60L);
         result->len += snprintf(
@@ -1298,7 +1298,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         switch (result->c_type) {
             case SF_C_TYPE_INT8:
                 switch (sfstmt->desc[i].type) {
-                    case SF_TYPE_BOOLEAN:
+                    case SF_DB_TYPE_BOOLEAN:
                         *(int8 *) result->value = cJSON_IsTrue(raw_result)
                                                   ? SF_BOOLEAN_TRUE
                                                   : SF_BOOLEAN_FALSE;
@@ -1331,7 +1331,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                 break;
             case SF_C_TYPE_STRING:
                 switch (sfstmt->desc[i].type) {
-                    case SF_TYPE_BOOLEAN:
+                    case SF_DB_TYPE_BOOLEAN:
                         log_info("value: %p, max_length: %lld, len: %lld",
                                  result->value, result->max_length,
                                  result->len);
@@ -1347,7 +1347,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                             result->len = sizeof(SF_BOOLEAN_TRUE_STR) - 1;
                         }
                         break;
-                    case SF_TYPE_DATE:
+                    case SF_DB_TYPE_DATE:
                         sec =
                             (time_t) strtol(raw_result->valuestring, NULL, 10) *
                             86400L;
@@ -1366,10 +1366,10 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                             result->value, result->max_length,
                             "%Y-%m-%d", &tm_obj);
                         break;
-                    case SF_TYPE_TIME:
-                    case SF_TYPE_TIMESTAMP_NTZ:
-                    case SF_TYPE_TIMESTAMP_LTZ:
-                    case SF_TYPE_TIMESTAMP_TZ:
+                    case SF_DB_TYPE_TIME:
+                    case SF_DB_TYPE_TIMESTAMP_NTZ:
+                    case SF_DB_TYPE_TIMESTAMP_LTZ:
+                    case SF_DB_TYPE_TIMESTAMP_TZ:
                         if (!_extract_timestamp(
                             result,
                             sfstmt->desc[i].type,
@@ -1567,7 +1567,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             }
             // TODO check if input is null and either set error or write msg to log
             type = snowflake_type_to_string(
-                c_type_to_snowflake(input->c_type, SF_TYPE_TIMESTAMP_NTZ));
+                c_type_to_snowflake(input->c_type, SF_DB_TYPE_TIMESTAMP_NTZ));
             value = value_to_string(input->value, input->len, input->c_type);
             binding = cJSON_CreateObject();
             char idxbuf[20];

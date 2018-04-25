@@ -11,16 +11,11 @@
 namespace Snowflake {
     namespace Client {
         class Connection {
+            friend class Statement;
         public:
 
             /* Construct a blank Snowflake Connection */
             Connection(void);
-
-            /*
-             * Construct with a connection pointer. Copies connection info from
-             * passed in connection
-             */
-            Connection(SF_CONNECT &connection_);
 
             ~Connection(void);
 
@@ -47,8 +42,6 @@ namespace Snowflake {
 
         private:
             SF_CONNECT *m_connection;
-            // Whether the class created the connection or it was passed by reference to us
-            bool m_connection_created = false;
         };
     }
 }
