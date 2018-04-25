@@ -6,7 +6,6 @@
 
 Snowflake::Client::Connection::Connection() {
     this->m_connection = snowflake_init();
-    this->m_connection_created = false;
 }
 
 Snowflake::Client::Connection::~Connection() {
