@@ -129,6 +129,18 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp)
 
+set(SOURCE_FILES_CPP_WRAPPER
+        cpp/include/snowflakecpp/Include.hpp
+        cpp/include/snowflakecpp/Connection.hpp
+        cpp/include/snowflakecpp/Statement.hpp
+        cpp/include/snowflakecpp/Column.hpp
+        cpp/include/snowflakecpp/Param.hpp
+        cpp/include/snowflakecpp/Exceptions.hpp
+        cpp/lib/Exceptions.cpp
+        cpp/lib/Connection.cpp
+        cpp/lib/Statement.cpp
+        cpp/lib/Column.cpp)
+
 if (UNIX)
     # Linux and OSX
     find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
@@ -163,11 +175,12 @@ message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 
 if (LINUX)
-    add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET})
+    add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
 else()
     add_library(snowflakeclient STATIC ${SOURCE_FILES})
 endif()
 
+set_target_properties(snowflakeclient PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 #set (CMAKE_CXX_STANDARD 11)
 
@@ -191,6 +204,5 @@ if (WIN32)
     target_link_libraries(snowflakeclient)
 endif ()
 
-add_subdirectory(cpp)
 add_subdirectory(examples)
 add_subdirectory(tests)

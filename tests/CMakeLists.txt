@@ -54,10 +54,6 @@ set(SOURCE_UTILS
         utils/TestSetup.cpp
         utils/TestSetup.hpp)
 
-set(SOURCE_UTILS_CPP
-        utils/TestSetup.cpp
-        utils/TestSetup.hpp)
-
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
