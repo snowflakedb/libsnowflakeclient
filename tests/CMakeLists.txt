@@ -50,7 +50,9 @@ SET(TESTS_CXX
 
 set(SOURCE_UTILS
         utils/test_setup.c
-        utils/test_setup.h
+        utils/test_setup.h)
+
+set(SOURCE_UTILS_CXX
         utils/TestSetup.cpp
         utils/TestSetup.hpp)
 
@@ -99,7 +101,7 @@ ENDFOREACH ()
 
 if (LINUX)
     FOREACH(T ${TESTS_CXX})
-        add_executable(${T}_cpp ${SOURCE_UTILS} ${T}.cpp)
+        add_executable(${T}_cpp ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
         target_include_directories(
                 ${T}_cpp PUBLIC
                 ../deps-build/${PLATFORM}/cmocka/include
