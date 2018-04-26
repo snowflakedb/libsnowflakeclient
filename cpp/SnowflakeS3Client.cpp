@@ -166,6 +166,8 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
   {
     uploadCtx->m_outcome = TransferOutcome::SUCCESS;
     uploadCtx->m_etag = outcome.GetResult().GetETag();
+    sf_log_info(CXX_LOG_NS, "Upload parts request succeed. part number %d, etag %s",
+                uploadCtx->m_partNumber, uploadCtx->m_etag.c_str());
   }
   else
   {
@@ -200,10 +202,14 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
   if (createMultiPartResp.IsSuccess())
   {
     Aws::String uploadId = createMultiPartResp.GetResult().GetUploadId();
+    sf_log_debug(CXX_LOG_NS, "Create multi part upload request succeed, uploadId: %s",
+                  uploadId.c_str());
 
     Util::StreamSplitter splitter(dataStream, m_parallel, DATA_SIZE_THRESHOLD);
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
+    sf_log_info(CXX_LOG_NS, "Total file size: %d, split into %d parts.",
+                fileMetadata->encryptionMetadata.cipherStreamSize, totalParts);
 
     MultiUploadCtx uploadParts[totalParts];
 
@@ -216,10 +222,9 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
 
       m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
                            {
-                             Util::ByteArrayStreamBuf * buf = splitter.getNextSplitPart();
-                             uploadParts[i].buf = buf;
+                             int tid = m_threadPool->GetThreadIdx();
+                             uploadParts[i].buf = splitter.FillAndGetBuf(tid);
                              this->uploadParts(&uploadParts[i]);
-                             splitter.markDone(buf);
                            });
     }
 
@@ -253,6 +258,7 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
 
     if (outcome.IsSuccess())
     {
+      sf_log_debug(CXX_LOG_NS, "Complete multi part upload request succeed.");
       return TransferOutcome::SUCCESS;
     }
     else

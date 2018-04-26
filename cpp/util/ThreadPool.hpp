@@ -10,7 +10,9 @@
 #include <deque>
 #include <functional>
 #include <atomic>
+#include <cstring>
 #include "snowflake/platform.h"
+#include "StreamSplitter.hpp"
 
 namespace Snowflake
 {
@@ -26,7 +28,7 @@ class ThreadPool {
 private:
 
   /// thread count
-  unsigned int threadCount;
+  const unsigned int threadCount;
 
   /// threads vector
   std::vector<SF_THREAD_HANDLE > threads;
@@ -49,12 +51,25 @@ private:
   /// queue mutex
   SF_MUTEX_HANDLE queue_mutex;
 
+  /// key to get thread local object
+  pthread_key_t key;
+
+  struct ThreadCtx
+  {
+    ThreadPool *tp;
+    pthread_key_t * key;
+    int threadIdx;
+  };
+
   /**
    * Wrapper class that is passed to thread
    */
   static void *TaskWrapper(void *arg)
   {
-    reinterpret_cast<ThreadPool *>(arg)->execute_thread();
+    ThreadCtx* ctx = reinterpret_cast<ThreadCtx *>(arg);
+    pthread_setspecific(*ctx->key, &ctx->threadIdx);
+    ctx->tp->execute_thread();
+    delete ctx;
   }
 
   /**
@@ -103,13 +118,24 @@ public:
     _mutex_init(&queue_mutex);
     _cond_init(&job_available_var);
     _cond_init(&wait_var);
+    pthread_key_create(&key, NULL);
 
     for( unsigned i = 0; i < threadCount; ++i )
     {
       SF_THREAD_HANDLE tid;
-      _thread_init(&tid, TaskWrapper, (void *)this);
+      ThreadCtx * threadCtx = new ThreadCtx;
+      threadCtx->key = &key;
+      threadCtx->tp = this;
+      threadCtx->threadIdx = i;
+
+      _thread_init(&tid, TaskWrapper, (void *)threadCtx);
       threads.push_back(tid);
     }
+  }
+
+  int GetThreadIdx()
+  {
+    return *(int *)pthread_getspecific(key);
   }
 
   /**

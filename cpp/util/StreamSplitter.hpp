@@ -72,27 +72,19 @@ public:
 
   ~StreamSplitter();
 
-  ByteArrayStreamBuf* getNextSplitPart();
-
-  void markDone(ByteArrayStreamBuf * buf);
+  ByteArrayStreamBuf * FillAndGetBuf(int bufIndex);
 
   unsigned int getTotalParts(long long int streamSize);
 
 private:
-  /// list of in memory buffer to store data
-  std::vector<ByteArrayStreamBuf *> m_streamBuffers;
-
-  /// status for whether buffer is used by a upload thread
-  std::vector<bool> m_bufferInUse;
-
   SF_MUTEX_HANDLE streamMutex;
 
   /// input stream to be splitted.
   std::basic_iostream<char> * m_inputStream;
 
-  int checkBufferNotInUseIdx();
-
   unsigned int m_partMaxSize;
+
+  std::vector<ByteArrayStreamBuf *> buffers;
 };
 
 }

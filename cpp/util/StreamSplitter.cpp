@@ -27,57 +27,32 @@ Snowflake::Client::Util::StreamSplitter::StreamSplitter(
   std::basic_iostream<char> *inputStream,
   unsigned int numOfBuffer,
   unsigned int partMaxSize) :
-  m_streamBuffers(numOfBuffer, nullptr),
-  m_bufferInUse(numOfBuffer, false),
   m_inputStream(inputStream),
   m_partMaxSize(partMaxSize)
 {
   _mutex_init(&streamMutex);
+  for (int i=0; i<numOfBuffer; i++)
+  {
+    buffers.push_back(new ByteArrayStreamBuf(partMaxSize));
+  }
 }
 
-Snowflake::Client::Util::ByteArrayStreamBuf *
-Snowflake::Client::Util::StreamSplitter::getNextSplitPart()
+Snowflake::Client::Util::ByteArrayStreamBuf*
+Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(int bufIndex)
 {
   _mutex_lock(&streamMutex);
-  int idx = checkBufferNotInUseIdx();
-  m_bufferInUse[idx] = true;
-
-  if (m_streamBuffers[idx] == nullptr)
-  {
-    m_streamBuffers[idx] = new ByteArrayStreamBuf(m_partMaxSize);
-  }
-
-  ByteArrayStreamBuf * returnVal = nullptr;
-  m_inputStream->read(
-    m_streamBuffers[idx]->getDataBuffer(), m_partMaxSize);
-  m_streamBuffers[idx]->updateSize(m_inputStream->gcount());
-  returnVal = m_streamBuffers[idx];
+  m_inputStream->read(buffers[bufIndex]->getDataBuffer(), m_partMaxSize);
+  buffers[bufIndex]->updateSize(m_inputStream->gcount());
   _mutex_unlock(&streamMutex);
-
-  return returnVal;
+  return buffers[bufIndex];
 }
 
 Snowflake::Client::Util::StreamSplitter::~StreamSplitter()
 {
-  for (auto it = m_streamBuffers.begin(); it != m_streamBuffers.end(); it++)
-  {
-    if ((*it) != nullptr)
-    {
-      delete *it;
-    }
-  }
-
   _mutex_term(&streamMutex);
-}
-
-int Snowflake::Client::Util::StreamSplitter::checkBufferNotInUseIdx()
-{
-  for (int i=0; i<m_bufferInUse.size(); i++)
+  for (unsigned int i=0; i<buffers.size(); i++)
   {
-    if (!m_bufferInUse.at(i))
-    {
-      return i;
-    }
+    delete buffers[i];
   }
 }
 
@@ -86,18 +61,3 @@ unsigned int Snowflake::Client::Util::StreamSplitter::getTotalParts(
 {
   return streamSize/m_partMaxSize + 1;
 }
-
-void Snowflake::Client::Util::StreamSplitter::markDone(
-  Snowflake::Client::Util::ByteArrayStreamBuf * buf)
-{
-  _mutex_lock(&streamMutex);
-  for (size_t i=0; i<m_streamBuffers.size(); i++)
-  {
-    if (m_streamBuffers.at(i) == buf)
-    {
-      m_bufferInUse[i] = false;
-    }
-  }
-  _mutex_unlock(&streamMutex);
-}
-

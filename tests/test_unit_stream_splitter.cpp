@@ -28,22 +28,20 @@ void test_stream_splitter(void **unused)
 {
   const int splitParts = 3;
   const int partSize = 4;
+  const int threadNum = 4;
 
   std::stringstream ss("012345678901");
-  Snowflake::Client::Util::StreamSplitter splitter(&ss, splitParts, partSize);
-  Snowflake::Client::Util::ThreadPool tp(4);
+  Snowflake::Client::Util::StreamSplitter splitter(&ss, threadNum, partSize);
+  Snowflake::Client::Util::ThreadPool tp(threadNum);
 
   char result[splitParts][partSize];
   for (int i=0; i<splitParts; i++)
   {
     tp.AddJob([&, i]
               {
-                  Snowflake::Client::Util::ByteArrayStreamBuf *buf =
-                    splitter.getNextSplitPart();
-
-                  std::basic_iostream<char> byteStreamArray(buf);
+                  int threadIdx = tp.GetThreadIdx();
+                  std::basic_iostream<char> byteStreamArray(splitter.FillAndGetBuf(threadIdx));
                   byteStreamArray.read(result[i], partSize);
-                  splitter.markDone(buf);
               });
   }
 

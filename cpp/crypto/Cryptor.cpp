@@ -19,6 +19,7 @@
 #include <openssl/err.h>
 
 #include "CipherContext.hpp"
+#include "snowflake/platform.h"
 
 namespace Snowflake
 {
@@ -28,9 +29,9 @@ namespace Crypto
 {
 
 // Static vector of mutexes for use by OpenSSL.
-typedef ::std::pair<pthread_mutex_t, bool> MutexSlot;
-typedef ::std::vector<MutexSlot> MutexVector;
-static MutexVector *s_mutexes = nullptr;
+//typedef ::std::pair<SF_MUTEX_HANDLE, bool> MutexSlot;
+//typedef ::std::vector<MutexSlot> MutexVector;
+//static MutexVector *s_mutexes = nullptr;
 
 /**
  * Get some random bytes from the file system.
@@ -100,7 +101,7 @@ static void getRandomBytes(char *const out,
 /**
  * Callback for locking/unlocking one of static mutexes.
  */
-static void lock(const int mode,
+/*static void lock(const int mode,
                  const int type,
                  const char *const file,
                  const int line) noexcept
@@ -111,19 +112,19 @@ static void lock(const int mode,
   int failure = 0;
   if (!slot.second)
   {
-    failure = pthread_mutex_init(&slot.first, nullptr);
+    failure = _mutex_init(&slot.first);
     assert(!failure);
     slot.second = true;
   }
 
   // Lock or unlock the mutex.
   if (mode & CRYPTO_LOCK)
-    failure = pthread_mutex_lock(&slot.first);
+    failure = _mutex_lock(&slot.first);
   else if (mode & CRYPTO_UNLOCK)
-    failure = pthread_mutex_unlock(&slot.first);
+    failure = _mutex_unlock(&slot.first);
   assert(!failure);
   (void) failure;
-}
+}*/
 
 /**
  * Callback for getting the calling thread's id.
@@ -141,12 +142,11 @@ static void getThreadId(CRYPTO_THREADID *const threadId) noexcept
  * Callback for dynamically creating a mutex.
  */
 //TODO figure out whether locking is required for openssl
-/*            static CRYPTO_dynlock_value *dynlockCreate(const char *const file,
+/*static CRYPTO_dynlock_value *dynlockCreate(const char *const file,
                                            const int line) noexcept {
-    pthread_mutex_t *const mutex = new (std::nothrow)
-    pthread_mutex_t;
+    SF_MUTEX_HANDLE *const mutex = new SF_MUTEX_HANDLE;
     assert(mutex);
-    const int failure = pthread_mutex_init(mutex, nullptr);
+    const int failure = _mutex_init(mutex);
     assert(!failure);
     (void) failure;
     return reinterpret_cast<CRYPTO_dynlock_value *>(mutex);
@@ -256,12 +256,12 @@ const EVP_CIPHER *getCipher(const CryptoAlgo algo,
 Cryptor::Cryptor()
 {
   // Initialize static mutexes for use by OpenSSL.
-  s_mutexes = new MutexVector(CRYPTO_num_locks());
+  /*s_mutexes = new MutexVector(CRYPTO_num_locks());
   for (MutexSlot &slot : *s_mutexes)
     slot.second = false;
 
   // Set threading callbacks for OpenSSL.
-  /*CRYPTO_set_locking_callback(lock);
+  CRYPTO_set_locking_callback(lock);
   CRYPTO_set_id_callback(pthread_self);
   CRYPTO_THREADID_set_callback(getThreadId);
   CRYPTO_set_dynlock_create_callback(dynlockCreate);
@@ -290,11 +290,11 @@ Cryptor::~Cryptor()
   ERR_free_strings();
 
   // Release static mutexes.
-  for (MutexSlot &slot : *s_mutexes)
+  /*for (MutexSlot &slot : *s_mutexes)
     if (slot.second)
-      pthread_mutex_destroy(&slot.first);
+      _mutex_term(&slot.first);
   delete s_mutexes;
-  s_mutexes = nullptr;
+  s_mutexes = nullptr;*/
 }
 
 void Cryptor::generateKey(CryptoKey &key,
