@@ -34,14 +34,16 @@ void test_stream_splitter(void **unused)
   Snowflake::Client::Util::StreamSplitter splitter(&ss, threadNum, partSize);
   Snowflake::Client::Util::ThreadPool tp(threadNum);
 
-  char result[splitParts][partSize];
+  char result[splitParts][partSize + 1] = {0};
   for (int i=0; i<splitParts; i++)
   {
     tp.AddJob([&, i]
               {
                   int threadIdx = tp.GetThreadIdx();
-                  std::basic_iostream<char> byteStreamArray(splitter.FillAndGetBuf(threadIdx));
-                  byteStreamArray.read(result[i], partSize);
+                  int partId;
+                  std::basic_iostream<char> byteStreamArray(
+                    splitter.FillAndGetBuf(threadIdx, partId));
+                  byteStreamArray.read(result[partId], partSize);
               });
   }
 
