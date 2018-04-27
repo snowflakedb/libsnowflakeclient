@@ -219,12 +219,17 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
       uploadParts[i].m_partNumber = i+1;
       uploadParts[i].m_bucket = bucket;
       uploadParts[i].m_key = key;
+    }
 
-      m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
+    for (unsigned int i = 0; i < totalParts; i++)
+    {
+      m_threadPool->AddJob([&splitter, this, &uploadParts]()->void
                            {
                              int tid = m_threadPool->GetThreadIdx();
-                             uploadParts[i].buf = splitter.FillAndGetBuf(tid);
-                             this->uploadParts(&uploadParts[i]);
+                             int partId;
+                             Util::ByteArrayStreamBuf * buf = splitter.FillAndGetBuf(tid, partId);
+                             uploadParts[partId].buf = buf;
+                             this->uploadParts(&uploadParts[partId]);
                            });
     }
 

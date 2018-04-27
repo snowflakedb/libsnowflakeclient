@@ -3,12 +3,14 @@
  */
 
 #include "StreamSplitter.hpp"
+#include <cstring>
 
 Snowflake::Client::Util::ByteArrayStreamBuf::ByteArrayStreamBuf(
   unsigned int capacity) :
   m_capacity(capacity)
 {
   m_dataBuffer = new char[capacity];
+  memset(m_dataBuffer, 0, capacity);
   setg(m_dataBuffer, m_dataBuffer, m_dataBuffer+capacity);
 }
 
@@ -17,10 +19,11 @@ Snowflake::Client::Util::ByteArrayStreamBuf::~ByteArrayStreamBuf()
   delete[] m_dataBuffer;
 }
 
-int Snowflake::Client::Util::ByteArrayStreamBuf::underflow()
+void * Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
+  long updatedSize)
 {
-  return this->gptr() == this->egptr() ? std::char_traits<char>::eof() :
-    ::std::char_traits<char>::to_int_type(*this->gptr());
+  this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
+  this->size = updatedSize;
 }
 
 Snowflake::Client::Util::StreamSplitter::StreamSplitter(
@@ -28,7 +31,8 @@ Snowflake::Client::Util::StreamSplitter::StreamSplitter(
   unsigned int numOfBuffer,
   unsigned int partMaxSize) :
   m_inputStream(inputStream),
-  m_partMaxSize(partMaxSize)
+  m_partMaxSize(partMaxSize),
+  m_currentPartIndex(-1)
 {
   _mutex_init(&streamMutex);
   for (int i=0; i<numOfBuffer; i++)
@@ -38,13 +42,18 @@ Snowflake::Client::Util::StreamSplitter::StreamSplitter(
 }
 
 Snowflake::Client::Util::ByteArrayStreamBuf*
-Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(int bufIndex)
+Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(
+  int bufIndex, int &partIndex)
 {
   _mutex_lock(&streamMutex);
-  m_inputStream->read(buffers[bufIndex]->getDataBuffer(), m_partMaxSize);
-  buffers[bufIndex]->updateSize(m_inputStream->gcount());
+  ByteArrayStreamBuf * buf = buffers[bufIndex];
+  memset(buf->getDataBuffer(), 0, m_partMaxSize);
+  m_inputStream->read(buf->getDataBuffer(), m_partMaxSize);
+  buf->updateSize(m_inputStream->gcount());
+  m_currentPartIndex ++;
+  partIndex = m_currentPartIndex;
   _mutex_unlock(&streamMutex);
-  return buffers[bufIndex];
+  return buf;
 }
 
 Snowflake::Client::Util::StreamSplitter::~StreamSplitter()

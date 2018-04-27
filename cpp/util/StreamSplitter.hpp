@@ -38,11 +38,7 @@ public:
     return m_dataBuffer;
   }
 
-  inline void * updateSize(long updatedSize)
-  {
-    this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
-    this->size = updatedSize;
-  }
+  void * updateSize(long updatedSize);
 
   inline long getSize()
   {
@@ -56,8 +52,6 @@ private:
   long size;
 
   char * m_dataBuffer;
-
-  virtual int underflow();
 };
 
 /**
@@ -72,7 +66,7 @@ public:
 
   ~StreamSplitter();
 
-  ByteArrayStreamBuf * FillAndGetBuf(int bufIndex);
+  ByteArrayStreamBuf * FillAndGetBuf(int bufIndex, int &partIndex);
 
   unsigned int getTotalParts(long long int streamSize);
 
@@ -83,6 +77,8 @@ private:
   std::basic_iostream<char> * m_inputStream;
 
   unsigned int m_partMaxSize;
+
+  int m_currentPartIndex;
 
   std::vector<ByteArrayStreamBuf *> buffers;
 };
