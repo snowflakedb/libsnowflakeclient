@@ -111,7 +111,6 @@ void test_parallel_upload_core(int fileNumber)
   assert_int_equal(snowflake_num_rows(sfstmt), fileNumber);
 
   while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-    // printf("output: %lld, %s\n", out, c2buf);
     assert_string_equal((char *) c2.value, "LOADED");
   }
   assert_int_equal(status, SF_STATUS_EOF);
@@ -169,7 +168,7 @@ static int gr_teardown(void **unused)
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_small_file_concurrent_upload, teardown),
-    cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
+    //cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

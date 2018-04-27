@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include "util/StreamSplitter.hpp"
 #include "utils/test_setup.h"
 #include "util/ThreadPool.hpp"
 #include <thread>
