@@ -44,7 +44,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
         switch (i) {
             case 0:
                 assert_string_equal(descs[i].name, "C1");
-                assert_int_equal(descs[i].type, SF_TYPE_FIXED);
+                assert_int_equal(descs[i].type, SF_DB_TYPE_FIXED);
                 assert_int_equal(descs[i].c_type, SF_C_TYPE_INT64);
                 assert_int_equal(descs[i].byte_size, 0);
                 assert_int_equal(descs[i].internal_size, 0);
@@ -54,7 +54,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
                 break;
             case 1:
                 assert_string_equal(descs[i].name, "C2");
-                assert_int_equal(descs[i].type, SF_TYPE_TEXT);
+                assert_int_equal(descs[i].type, SF_DB_TYPE_TEXT);
                 assert_int_equal(descs[i].c_type, SF_C_TYPE_STRING);
                 assert_int_equal(descs[i].byte_size, 16777216);
                 assert_int_equal(descs[i].internal_size, 16777216);
