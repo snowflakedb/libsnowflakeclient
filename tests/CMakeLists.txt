@@ -45,11 +45,15 @@ SET(TESTS_CXX
         test_unit_file_type_detect
         test_unit_stream_splitter
         test_unit_thread_pool
-        )
+        test_cpp_select1)
 
 set(SOURCE_UTILS
         utils/test_setup.c
         utils/test_setup.h)
+
+set(SOURCE_UTILS_CXX
+        utils/TestSetup.cpp
+        utils/TestSetup.hpp)
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
