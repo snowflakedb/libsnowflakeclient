@@ -1407,10 +1407,9 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         break;
                     default:
                         slen = strlen(raw_result->valuestring);
-                        log_debug("slen: %llu, buflen: %llu:%llu, realloc: %p",
-                                     (unsigned long)slen,
+                        log_debug("slen: %llu, maxbuflen: %llu, realloc func: %p",
+                                     slen,
                                      result->max_length,
-                                     result->len,
                                      (void*)sfstmt->user_realloc_func);
                         result->len = slen;
                         if (sfstmt->user_realloc_func != NULL &&
