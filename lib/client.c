@@ -1304,6 +1304,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         time_t sec = 0L;
         struct tm tm_obj;
         struct tm *tm_ptr;
+        size_t slen = (size_t)0;
         memset(&tm_obj, 0, sizeof(tm_obj));
 
         raw_result = cJSON_GetArrayItem(row, (int) i);
@@ -1405,10 +1406,23 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         }
                         break;
                     default:
-                        /* copy original data as is except Date/Time/Timestamp/Binary type */
+                        slen = strlen(raw_result->valuestring);
+                        log_debug("slen: %llu, buflen: %llu:%llu, realloc: %p",
+                                     (unsigned long)slen,
+                                     result->max_length,
+                                     result->len,
+                                     (void*)sfstmt->user_realloc_func);
+                        result->len = slen;
+                        if (sfstmt->user_realloc_func != NULL &&
+                            slen > result->max_length) {
+                            // reallocate the result buffer if the output
+                            // buffer size is not large enough.
+                            result->value = sfstmt->user_realloc_func(
+                                result->value, slen + 1);
+                            result->max_length = slen + 1;
+                        }
                         strncpy(result->value, raw_result->valuestring,
                                 result->max_length);
-                        result->len = strlen(raw_result->valuestring);
                         break;
                 }
                 break;
@@ -1860,11 +1874,22 @@ SF_COLUMN_DESC *STDCALL snowflake_desc(SF_STMT *sfstmt) {
 }
 
 SF_STATUS STDCALL snowflake_stmt_get_attr(
-    SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void *value) {
+    SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
-    // TODO: get the value from SF_STMT.
+    clear_snowflake_error(&sfstmt->error);
+    switch(type) {
+        case SF_STMT_USER_REALLOC_FUNC:
+            *value = sfstmt->user_realloc_func;
+            break;
+        default:
+            SET_SNOWFLAKE_ERROR(
+                &sfstmt->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
+                "Invalid attribute type",
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_APPLICATION_ERROR;
+    }
     return SF_STATUS_SUCCESS;
 }
 
@@ -1874,7 +1899,17 @@ SF_STATUS STDCALL snowflake_stmt_set_attr(
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
     clear_snowflake_error(&sfstmt->error);
-    /* TODO: need extra member in SF_STMT */
+    switch(type) {
+        case SF_STMT_USER_REALLOC_FUNC:
+            sfstmt->user_realloc_func = value;
+            break;
+        default:
+            SET_SNOWFLAKE_ERROR(
+                &sfstmt->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
+                "Invalid attribute type",
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_APPLICATION_ERROR;
+    }
     return SF_STATUS_SUCCESS;
 }
 
