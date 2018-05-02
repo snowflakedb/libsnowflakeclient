@@ -57,7 +57,7 @@ namespace Snowflake {
 
             const char *sfqid();
 
-            const std::string err_msg();
+            const std::string errMsg();
 
         private:
             // C API struct to operate on

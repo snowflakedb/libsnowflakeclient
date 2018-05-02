@@ -15,21 +15,21 @@ namespace Snowflake {
 
             ~Param();
 
-            size_t len();
+            size_t length();
 
-            void set_len(size_t len_);
+            void setLength(size_t len_);
 
             SF_DB_TYPE dbDataType();
 
-            void set_dbDataType(SF_DB_TYPE type_);
+            void setDbDataType(SF_DB_TYPE type_);
 
             SF_C_TYPE cDataType();
 
-            void set_cDataType(SF_C_TYPE type_);
+            void setCDataType(SF_C_TYPE type_);
 
             void* value();
             
-            void set_value(void *value_, SF_C_TYPE type_);
+            void setValue(void *value_, SF_C_TYPE type_);
 
         private:
             SF_BIND_INPUT m_param;
