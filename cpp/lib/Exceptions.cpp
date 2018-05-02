@@ -1,4 +1,4 @@
-//
-// Created by vagrant on 2/27/18.
-//
+/*
+ * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
