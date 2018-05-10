@@ -744,6 +744,17 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
              SF_API_VERSION,
              sf_os_name(),
              os_version);
+
+    if (!is_string_empty(sf->XPR_directURL))
+    {
+        return SF_STATUS_SUCCESS;
+    }
+
+    if (!is_string_empty(sf->XPR_direct_param))
+    {
+        return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
+    }
+
     cJSON *body = NULL;
     cJSON *data = NULL;
     cJSON *resp = NULL;
@@ -1646,9 +1657,13 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     s_body = cJSON_Print(body);
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
-    
-    if (request(sfstmt->connection, &resp, QUERY_URL, url_params,
-                sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
+
+    char* queryURL = is_string_empty(sfstmt->connection->XPR_directURL) ?
+                     QUERY_URL : sfstmt->connection->XPR_directURL;
+    int url_paramSize = is_string_empty(sfstmt->connection->XPR_directURL) ?
+                        sizeof(url_params) / sizeof(URL_KEY_VALUE) : 0;
+    if (request(sfstmt->connection, &resp, queryURL, url_params,
+                url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);

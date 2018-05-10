@@ -13,7 +13,6 @@
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
-#define URL_PARAM_DELIM "&"
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
@@ -503,7 +502,9 @@ char * STDCALL encode_url(CURL *curl,
         encoded_url_size += vars[i].key_size + vars[i].value_size;
     }
 
-    encoded_url_size += extraUrlParams ? strlen(extraUrlParams) : 0;
+    encoded_url_size += extraUrlParams ?
+                        num_args > 0 ? strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : strlen(extraUrlParams)
+                                       : 0;
 
     encoded_url = (char *) SF_CALLOC(1, encoded_url_size);
     if (!encoded_url) {
@@ -514,6 +515,9 @@ char * STDCALL encode_url(CURL *curl,
     }
     snprintf(encoded_url, base_url_size, format, protocol, account, host, port,
              url);
+
+    // Initially add the query delimiter "?"
+    strncat(encoded_url, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
 
     // Add encoded URL parameters to encoded_url buffer
     sf_bool first = SF_BOOLEAN_TRUE;
