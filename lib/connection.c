@@ -520,22 +520,16 @@ char * STDCALL encode_url(CURL *curl,
     strncat(encoded_url, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
 
     // Add encoded URL parameters to encoded_url buffer
-    sf_bool first = SF_BOOLEAN_TRUE;
     for (i = 0; i < num_args; i++) {
-        if (first == SF_BOOLEAN_FALSE && vars[i].key_size > 0)
-        {
-            strncat(encoded_url, URL_PARAM_DELIM, 1);
-        }
         strncat(encoded_url, vars[i].formatted_key, vars[i].key_size);
         strncat(encoded_url, vars[i].formatted_value, vars[i].value_size);
-        first = SF_BOOLEAN_FALSE;
     }
 
     // Adding the extra url param (setter of extraUrlParams is responsible to make
     // sure extraUrlParams is correct)
     if (extraUrlParams && !is_string_empty(extraUrlParams))
     {
-        if (first == SF_BOOLEAN_FALSE)
+        if (num_args)
         {
             strncat(encoded_url, URL_PARAM_DELIM, 1);
         }
