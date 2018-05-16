@@ -485,7 +485,7 @@ char * STDCALL encode_url(CURL *curl,
     }
     base_url_size +=
       strlen(protocol) + strlen(account) + strlen(host) + strlen(port) +
-      strlen(url);
+      strlen(url) + strlen(URL_QUERY_DELIMITER);
 
     encoded_url_size = base_url_size;
     // Encode URL parameters and set size info
