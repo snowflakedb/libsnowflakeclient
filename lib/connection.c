@@ -1021,11 +1021,14 @@ cleanup:
 }
 
 sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error) {
+    sf_bool ret = SF_BOOLEAN_FALSE;
     if (!is_string_empty(sf->XPR_directURL))
     {
-      return SF_BOOLEAN_TRUE;
+      SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
+                          "Attempt to renew session with XPR direct URL",
+                          SF_SQLSTATE_GENERAL_ERROR);
+        return ret;
     }
-    sf_bool ret = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     const char *error_msg = NULL;
     char request_id[SF_UUID4_LEN];
