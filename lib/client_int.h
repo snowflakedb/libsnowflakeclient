@@ -73,6 +73,7 @@ struct SF_PUT_GET_RESPONSE {
   char command[SF_COMMAND_LEN];
   SF_ENC_MAT *enc_mat;
   SF_STAGE_INFO *stage_info;
+  char *localLocation;
 };
 
 /**

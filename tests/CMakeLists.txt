@@ -38,7 +38,7 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_include_aws
-        test_parallel_upload
+        test_parallel_upload_download
         test_simple_put
         test_unit_cipher_stream_buf
         test_unit_cred_renew

@@ -30,6 +30,11 @@ public:
    */
   static void encryptFileKey(FileMetadata *fileMetadata,
                              EncryptionMaterial *encryptionMaterial);
+  /**
+   * Encrypt file key with query stage master key using AES EBC mode
+   */
+  static void decryptFileKey(FileMetadata *fileMetadata,
+                             EncryptionMaterial *encryptionMaterial);
 
   /**
    * Serialize Encryption Material descriptor to json string

@@ -109,14 +109,14 @@ set (SOURCE_FILES_PUT_GET
         cpp/StatementPutGet.cpp
         cpp/StorageClientFactory.hpp
         cpp/StorageClientFactory.cpp
-        cpp/TransferOutcome.hpp
+        cpp/RemoteStorageRequestOutcome.hpp
         cpp/crypto/CryptoTypes.hpp
         cpp/util/Base64.hpp
         cpp/util/Base64.cpp
+        cpp/util/ByteArrayStreamBuf.cpp
+        cpp/util/ByteArrayStreamBuf.hpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
-        cpp/util/StreamSplitter.cpp
-        cpp/util/StreamSplitter.hpp
         cpp/util/ThreadPool.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp

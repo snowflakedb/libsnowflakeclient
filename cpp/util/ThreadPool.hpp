@@ -12,7 +12,7 @@
 #include <atomic>
 #include <cstring>
 #include "snowflake/platform.h"
-#include "StreamSplitter.hpp"
+#include "ByteArrayStreamBuf.hpp"
 
 namespace Snowflake
 {

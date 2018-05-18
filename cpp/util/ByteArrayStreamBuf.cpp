@@ -2,7 +2,8 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "StreamSplitter.hpp"
+#include "snowflake/logger.h"
+#include "ByteArrayStreamBuf.hpp"
 #include <cstring>
 
 Snowflake::Client::Util::ByteArrayStreamBuf::ByteArrayStreamBuf(
@@ -12,6 +13,7 @@ Snowflake::Client::Util::ByteArrayStreamBuf::ByteArrayStreamBuf(
   m_dataBuffer = new char[capacity];
   memset(m_dataBuffer, 0, capacity);
   setg(m_dataBuffer, m_dataBuffer, m_dataBuffer+capacity);
+  setp(m_dataBuffer, m_dataBuffer + capacity);
 }
 
 Snowflake::Client::Util::ByteArrayStreamBuf::~ByteArrayStreamBuf()
@@ -23,6 +25,7 @@ void * Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
   long updatedSize)
 {
   this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
+  this->setp(m_dataBuffer, m_dataBuffer + updatedSize);
   this->size = updatedSize;
 }
 
@@ -69,4 +72,68 @@ unsigned int Snowflake::Client::Util::StreamSplitter::getTotalParts(
   long long int streamSize)
 {
   return streamSize/m_partMaxSize + 1;
+}
+
+Snowflake::Client::Util::StreamAppender::StreamAppender(
+  std::basic_iostream<char> *outputStream, int totalPartNum, int parallel,
+  int partSize)
+  : m_outputStream(outputStream),
+    m_totalPartNum(totalPartNum),
+    m_parallel(parallel),
+    m_partSize(partSize),
+    m_currentPartIndex(0)
+{
+  m_buffers = new ByteArrayStreamBuf*[parallel];
+  for (int i = 0; i < m_parallel; i++)
+  {
+    m_buffers[i] = nullptr;
+  }
+
+  _mutex_init(&m_streamMutex);
+  _cond_init(&m_streamCv);
+}
+
+Snowflake::Client::Util::StreamAppender::~StreamAppender()
+{
+  for (int i = 0; i < m_parallel; i++)
+  {
+    if (m_buffers[i] != nullptr)
+    {
+      delete m_buffers[i];
+    }
+  }
+
+  delete[] m_buffers;
+}
+
+Snowflake::Client::Util::ByteArrayStreamBuf * Snowflake::Client::Util::
+StreamAppender::GetBuffer(
+  int threadId)
+{
+  if (m_buffers[threadId] == nullptr)
+  {
+    m_buffers[threadId] = new ByteArrayStreamBuf(m_partSize);
+  }
+  return m_buffers[threadId];
+}
+
+void Snowflake::Client::Util::StreamAppender::WritePartToOutputStream(
+  int threadId, int partIndex)
+{
+  _mutex_lock(&m_streamMutex);
+  while(partIndex > m_currentPartIndex)
+  {
+    _cond_wait(&m_streamCv, &m_streamMutex);
+  }
+  m_outputStream->write(m_buffers[threadId]->getDataBuffer(),
+                        m_buffers[threadId]->getSize());
+
+  m_currentPartIndex ++;
+
+  if (partIndex == m_totalPartNum - 1)
+  {
+    m_outputStream->flush();
+  }
+  _cond_broadcast(&m_streamCv);
+  _mutex_unlock(&m_streamMutex);
 }

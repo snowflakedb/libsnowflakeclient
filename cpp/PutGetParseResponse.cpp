@@ -44,6 +44,8 @@ PutGetParseResponse::PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response)
   {
     m_command = CommandType::UNKNOWN;
   }
+
+  m_localLocation = put_get_response->localLocation;
 }
 
 void PutGetParseResponse::updateWith(SF_PUT_GET_RESPONSE *put_get_response)

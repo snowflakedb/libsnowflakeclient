@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 #include <sstream>
+#include <fstream>
 #include <crypto/Cryptor.hpp>
 #include "utils/test_setup.h"
 #include "crypto/CipherStreamBuf.hpp"
@@ -12,6 +13,7 @@ using Snowflake::Client::Crypto::CryptoRandomDevice;
 using Snowflake::Client::Crypto::CryptoOperation;
 using Snowflake::Client::Crypto::CryptoKey;
 using Snowflake::Client::Crypto::CipherStreamBuf;
+using Snowflake::Client::Crypto::CipherIOStream;
 
 void test_cipher_stream_core(int blockSize, const char * testData, int dataSize)
 {
@@ -22,18 +24,21 @@ void test_cipher_stream_core(int blockSize, const char * testData, int dataSize)
   CryptoKey key;
   Cryptor::generateKey(key, 256, CryptoRandomDevice::DEV_RANDOM);
 
-  CipherStreamBuf encryptBuf(ss.rdbuf(),
-                             CryptoOperation::ENCRYPT, key, iv, blockSize);
+  CipherIOStream encryptedInputStream(ss, CryptoOperation::ENCRYPT, key, iv, blockSize);
 
-  CipherStreamBuf decryptBuf(&encryptBuf,
-                             CryptoOperation::DECRYPT, key, iv, blockSize);
+  char encryptedResult[100];
+  encryptedInputStream.read(encryptedResult, sizeof(encryptedResult));
+  size_t resultSize = encryptedInputStream.gcount();
 
-  std::basic_iostream<char> decryptStream(&decryptBuf);
+  std::stringstream outputString;
 
-  char result[dataSize];
-  decryptStream.read(result, dataSize);
+  CipherIOStream decryptedOutputStream(outputString, CryptoOperation::DECRYPT,
+                                       key, iv, blockSize);
 
-  assert_memory_equal(testData, result, dataSize);
+  decryptedOutputStream.write(encryptedResult, resultSize);
+  decryptedOutputStream.flush();
+
+  assert_memory_equal(testData, outputString.str().c_str(), dataSize);
 }
 
 void test_cipher_stream_buf_zero(void **unused)

@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_ISTORAGECLIENT_HPP
 #define SNOWFLAKECLIENT_ISTORAGECLIENT_HPP
 
-#include "TransferOutcome.hpp"
+#include "RemoteStorageRequestOutcome.hpp"
 #include "FileMetadata.hpp"
 
 namespace Snowflake
@@ -22,14 +22,23 @@ class IStorageClient
 public:
   virtual ~IStorageClient() {};
 
-  //virtual void shutDown() = 0;
+  virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
+    std::basic_iostream<char>* dataStream) = 0;
 
-  //virtual void download() = 0;
-
-  virtual TransferOutcome upload(FileMetadata *fileMetadata,
+  /**
+   * Upload file stream data to remote storage
+   * @param fileMetadata
+   * @param dataStream
+   * @return
+   */
+  virtual RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
                                  std::basic_iostream<char> *dataStream) = 0;
 
-  //virtual void renewToken() = 0;
+  /**
+   * Get size of a remote file and encryption metadata
+   */
+  virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
+    std::string * filePathFull, FileMetadata *fileMetadata) = 0;
 };
 }
 }

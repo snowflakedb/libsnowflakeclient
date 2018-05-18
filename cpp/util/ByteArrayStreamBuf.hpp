@@ -66,21 +66,79 @@ public:
 
   ~StreamSplitter();
 
+  /**
+   * Read data from input stream into in memory buffer
+   */
   ByteArrayStreamBuf * FillAndGetBuf(int bufIndex, int &partIndex);
 
+  /// return total parts given total input stream size
   unsigned int getTotalParts(long long int streamSize);
 
 private:
+  /// mutex for threads to read data
   SF_MUTEX_HANDLE streamMutex;
 
   /// input stream to be splitted.
   std::basic_iostream<char> * m_inputStream;
 
+  /// part size
   unsigned int m_partMaxSize;
 
+  /// current parts have been read
   int m_currentPartIndex;
 
+  /// array of in memory buffer
   std::vector<ByteArrayStreamBuf *> buffers;
+};
+
+/**
+ * Append part stream into single final output file stream
+ */
+class StreamAppender
+{
+public:
+  StreamAppender(std::basic_iostream<char> * outputStream,
+                 int totalPartNum, int parallel, int partSize);
+
+  ~StreamAppender();
+
+  /**
+   * Write single part into output stream. Will wait for other thread to
+   * write first so that output file is in order
+   */
+  void WritePartToOutputStream(int threadId, int partIndex);
+
+  /**
+   * Get in memory buffer to store the data downloaded before writing to
+   * output stream
+   */
+  ByteArrayStreamBuf * GetBuffer(int threadId);
+
+private:
+
+  /// output stream to append to
+  std::basic_iostream<char> * m_outputStream;
+
+  /// mutex for multiple thread write into one outputstream
+  SF_MUTEX_HANDLE m_streamMutex;
+
+  /// appended stream cv
+  SF_CONDITION_HANDLE m_streamCv;
+
+  /// number of buffer
+  int m_parallel;
+
+  /// total part number
+  int m_totalPartNum;
+
+  /// part size
+  int m_partSize;
+
+  /// arrays of memory buffer
+  ByteArrayStreamBuf** m_buffers;
+
+  /// index of part that will be written to target ouput stream
+  int m_currentPartIndex;
 };
 
 }

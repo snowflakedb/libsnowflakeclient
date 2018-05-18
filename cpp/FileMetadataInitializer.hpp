@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "FileMetadata.hpp"
+#include "IStorageClient.hpp"
 
 // used to decide whether to upload in sequence or in parallel
 #define DATA_SIZE_THRESHOLD 5242880
@@ -29,7 +30,15 @@ public:
    * Given a source locations, find all files that match the location pattern,
    * init file metadata, and divide them into different vector according to size
    */
-  void populateSrcLocMetadata(std::string &sourceLocation);
+  void populateSrcLocUploadMetadata(std::string &sourceLocation);
+
+  /**
+   * Given a source location, find out file size to determine use parallel
+   * download or not.
+   */
+  RemoteStorageRequestOutcome populateSrcLocDownloadMetadata(
+    std::string &sourceLocation, std::string *remoteLocations,
+    IStorageClient *storageClient);
 
   /**
    * Init encryption metadata in file metadata

@@ -14,6 +14,7 @@
 #include "crypto/Cryptor.hpp"
 #include "util/CompressionUtil.hpp"
 #include "util/ThreadPool.hpp"
+#include "EncryptionProvider.hpp"
 
 using ::std::string;
 using ::std::vector;
@@ -29,6 +30,11 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
 {
+  reset();
+}
+
+void Snowflake::Client::FileTransferAgent::reset()
+{
   if (m_executionResults != nullptr)
   {
     delete m_executionResults;
@@ -38,11 +44,16 @@ Snowflake::Client::FileTransferAgent::~FileTransferAgent()
   {
     delete m_storageClient;
   }
+
+  m_largeFilesMeta.clear();
+  m_smallFilesMeta.clear();
 }
 
 FileTransferExecutionResult *
 Snowflake::Client::FileTransferAgent::execute(string *command)
 {
+  reset();
+
   // first parse command
   if (!m_stmtPutGet->parsePutGetCommand(command, &response))
   {
@@ -50,6 +61,10 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
     throw;
   }
   sf_log_info(CXX_LOG_NS, "Parse response succeed.");
+
+  // init storage client
+  m_storageClient = StorageClientFactory
+  ::getClient(response.getStageInfo(), (unsigned int)response.getParallel());
 
   // init file metadata
   initFileMetadata();
@@ -61,7 +76,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
       break;
 
     case CommandType::DOWNLOAD:
-      //download();
+      download(command);
       break;
 
     default:
@@ -81,15 +96,26 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata()
   vector<string> *sourceLocations = response.getSourceLocations();
   for (size_t i = 0; i < sourceLocations->size(); i++)
   {
-    m_FileMetadataInitializer.populateSrcLocMetadata(sourceLocations->at(i));
+    switch (response.getCommandType())
+    {
+      case CommandType::UPLOAD:
+        m_FileMetadataInitializer.populateSrcLocUploadMetadata(
+          sourceLocations->at(i));
+        break;
+      case CommandType::DOWNLOAD:
+        //TODO handle token renew
+        m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
+          sourceLocations->at(i), response.getStageInfo()->getLocation(),
+          m_storageClient);
+        break;
+      default:
+        sf_log_error(CXX_LOG_NS, "Invalid command type");
+    }
   }
 }
 
 void Snowflake::Client::FileTransferAgent::upload(string *command)
 {
-  m_storageClient = StorageClientFactory
-  ::getClient(response.getStageInfo(), (unsigned int)response.getParallel());
-
   m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD,
     m_largeFilesMeta.size() + m_smallFilesMeta.size());
 
@@ -98,10 +124,10 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
     for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
-      TransferOutcome outcome = uploadSingleFile(m_storageClient,
+      RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
 
-      if (outcome == TransferOutcome::TOKEN_EXPIRED)
+      if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
       {
         renewToken(command);
         i--;
@@ -129,9 +155,9 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     tp.AddJob([metadata, resultIndex, &tokenRenewMutex, command, this]()->void {
         do
         {
-          TransferOutcome outcome = uploadSingleFile(m_storageClient, metadata,
+          RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
                                                      resultIndex);
-          if (outcome == TransferOutcome::TOKEN_EXPIRED)
+          if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
           {
             _mutex_lock(&tokenRenewMutex);
             this->renewToken(command);
@@ -158,7 +184,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
                                            (unsigned int)response.getParallel());
 }
 
-TransferOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
+RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
   IStorageClient *client,
   FileMetadata *fileMetadata,
   unsigned int resultIndex)
@@ -181,15 +207,16 @@ TransferOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
                                     ::std::ios_base::binary);
 
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
-  Crypto::CipherStreamBuf streamBuf(originalFileStream.rdbuf(),
-                                    Crypto::CryptoOperation::ENCRYPT,
-                                    fileMetadata->encryptionMetadata.fileKey,
-                                    fileMetadata->encryptionMetadata.iv,
-                                    128);
-  std::basic_iostream<char> dataStream(&streamBuf);
+
+  Crypto::CipherIOStream inputEncryptStream(originalFileStream,
+    Crypto::CryptoOperation::ENCRYPT,
+    fileMetadata->encryptionMetadata.fileKey,
+    fileMetadata->encryptionMetadata.iv,
+    128);
 
   // upload stream
-  TransferOutcome outcome = client->upload(fileMetadata, &dataStream);
+  RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
+                                                       &inputEncryptStream);
   originalFileStream.close();
 
   if (fileMetadata->requireCompress)
@@ -249,4 +276,102 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 
   fclose(sourceFile);
   fclose(destFile);
+}
+
+void Snowflake::Client::FileTransferAgent::download(string *command)
+{
+  m_executionResults = new FileTransferExecutionResult(CommandType::DOWNLOAD,
+    m_largeFilesMeta.size() + m_smallFilesMeta.size());
+
+  std::string createDirIfNotExist = "mkdir -p " +
+    std::string(response.GetLocalLocation());
+  const int err = system(createDirIfNotExist.c_str());
+  if (err != 0)
+  {
+    throw;
+  }
+
+  if (m_largeFilesMeta.size() > 0)
+  {
+    for (size_t i=0; i<m_largeFilesMeta.size(); i++)
+    {
+      m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
+      RemoteStorageRequestOutcome outcome = downloadSingleFile(m_storageClient,
+                                                               &m_largeFilesMeta[i], i);
+
+      if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+      {
+        renewToken(command);
+        i--;
+      }
+    }
+  }
+
+  if (m_smallFilesMeta.size() > 0)
+  {
+    downloadFilesInParallel(command);
+  }
+}
+
+void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *command)
+{
+  SF_MUTEX_HANDLE tokenRenewMutex;
+  _mutex_init(&tokenRenewMutex);
+
+  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
+  for (size_t i=0; i<m_smallFilesMeta.size(); i++)
+  {
+    unsigned int resultIndex = i + m_largeFilesMeta.size();
+    FileMetadata * metadata = &m_smallFilesMeta[i];
+    m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
+    tp.AddJob([metadata, resultIndex, &tokenRenewMutex, command, this]()->void {
+        do
+        {
+          RemoteStorageRequestOutcome outcome = downloadSingleFile(m_storageClient, metadata,
+                                                                 resultIndex);
+          if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+          {
+            _mutex_lock(&tokenRenewMutex);
+            this->renewToken(command);
+            _mutex_unlock(&tokenRenewMutex);
+          }
+          else
+          {
+            break;
+          }
+        } while (true);
+    });
+  }
+
+  // wait till all jobs have been finished
+  tp.WaitAll();
+
+  _mutex_term(&tokenRenewMutex);
+}
+
+RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingleFile(
+  IStorageClient *client,
+  FileMetadata *fileMetadata,
+  unsigned int resultIndex)
+{
+  EncryptionProvider::decryptFileKey(fileMetadata, response.getEncryptionMaterial());
+  std::string dstNameFull = std::string(response.GetLocalLocation()) + "/" +
+    fileMetadata->destFileName;
+
+  std::basic_fstream<char> dstFile(dstNameFull.c_str(),
+                                std::ios_base::out | std::ios_base::binary);
+
+  Crypto::CipherIOStream decryptOutputStream(
+                               dstFile,
+                               Crypto::CryptoOperation::DECRYPT,
+                               fileMetadata->encryptionMetadata.fileKey,
+                               fileMetadata->encryptionMetadata.iv, 128);
+
+  RemoteStorageRequestOutcome outcome = client->download(fileMetadata,
+                                                         &decryptOutputStream);
+
+  dstFile.close();
+
+  m_executionResults->SetTransferOutCome(outcome, resultIndex);
+  return outcome;
 }

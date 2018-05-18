@@ -54,14 +54,13 @@ private:
   /**
    * Upload large files in sequence, upload small files in parallel in
    * a thread pool object
-   * @param stageInfo
    */
   void upload(std::string *command);
 
   /**
    * Upload single file.
    */
-  TransferOutcome uploadSingleFile(IStorageClient *client,
+  RemoteStorageRequestOutcome uploadSingleFile(IStorageClient *client,
     FileMetadata *fileMetadata, unsigned int resultIndex);
 
   /**
@@ -80,7 +79,19 @@ private:
 
   void uploadFilesInParallel(std::string *command);
 
-  void download();
+  /**
+   * Download large files in sequence, download small files in parallel in
+   * a thread pool object
+   */
+  void download(std::string *command);
+
+  void downloadFilesInParallel(std::string *command);
+
+  /**
+   * Download single file.
+   */
+  RemoteStorageRequestOutcome downloadSingleFile(IStorageClient *client,
+                                                 FileMetadata *fileMetadata, unsigned int resultIndex);
 
   /**
    * compress source file into a temporary file if required by
@@ -88,6 +99,11 @@ private:
    * @param fileMetadata
    */
   void compressSourceFile(FileMetadata *fileMetadata);
+
+  /**
+   * Reset private members between two consecutive put/get command
+   */
+  void reset();
 
   /// interface to communicate with server
   IStatementPutGet *m_stmtPutGet;
