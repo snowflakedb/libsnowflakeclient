@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include "snowflake/logger.h"
 #include "CipherStreamBuf.hpp"
 #include "Cryptor.hpp"
 #include <iostream>
@@ -39,6 +40,7 @@ CipherStreamBuf::CipherStreamBuf(::std::basic_streambuf<char> *streambuf,
 
   char *end = m_resultBuffer + resultLen;
   this->setg(m_resultBuffer, end, end);
+  this->setp(m_srcBuffer, m_srcBuffer + block_size);
 }
 
 CipherStreamBuf::~CipherStreamBuf()
@@ -73,6 +75,43 @@ int CipherStreamBuf::underflow()
   return this->gptr() == this->egptr() ? ::std::char_traits<char>::eof() :
     ::std::char_traits<char>::to_int_type(*this->gptr());
 
+}
+
+int CipherStreamBuf::overflow(int_type ch)
+{
+  if (pptr() - pbase() > 0)
+  {
+    size_t nextSize = m_cipherCtx.next(m_resultBuffer, m_srcBuffer,
+                                       pptr() - pbase());
+
+    size_t finalSize = traits_type::eq_int_type(ch, traits_type::eof()) ?
+      m_cipherCtx.finalize(m_resultBuffer + nextSize) : 0;
+
+    std::streamsize written = m_streambuf->sputn(m_resultBuffer,
+                                                 nextSize + finalSize);
+    if (written < nextSize)
+    {
+      return traits_type::eof();
+    }
+
+    setp(m_srcBuffer, m_srcBuffer + m_blockSize);
+
+    if (!traits_type::eq_int_type(ch, traits_type::eof()))
+      sputc(ch);
+
+    return traits_type::not_eof(ch);
+  }
+  else
+  {
+    return traits_type::eof();
+  }
+}
+
+int CipherStreamBuf::sync()
+{
+  std::basic_streambuf<char>::int_type result = this->overflow(traits_type::eof());
+  m_streambuf->pubsync();
+  return traits_type::eq_int_type(result, traits_type::eof()) ? -1 : 0;
 }
 
 }

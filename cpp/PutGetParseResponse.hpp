@@ -106,6 +106,11 @@ public:
     m_parallel = parallel;
   }
 
+  inline char * GetLocalLocation()
+  {
+    return m_localLocation;
+  }
+
 private:
 
   int m_parallel;
@@ -117,6 +122,8 @@ private:
   bool m_clientShowEncryptionParameter;
 
   char* m_sourceCompression;
+
+  char *m_localLocation;
 
   CommandType m_command;
 

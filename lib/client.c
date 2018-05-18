@@ -1101,6 +1101,7 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
     SF_FREE(put_get_response->stage_info);
     SF_FREE(put_get_response->enc_mat->query_stage_master_key);
     SF_FREE(put_get_response->enc_mat);
+    SF_FREE(put_get_response->localLocation);
 
     cJSON_Delete((cJSON *) put_get_response->src_list);
 
@@ -1698,6 +1699,15 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
                 cJSON *enc_mat = cJSON_GetObjectItem(data,
                                                      "encryptionMaterial");
+
+                // In put command response, value of encryptionMaterial is an
+                // object, which in get command response, value is an array of
+                // object. So for now just check if a node is array or not, if yes,
+                // get first item.
+                if (cJSON_IsArray(enc_mat))
+                {
+                    enc_mat = cJSON_GetArrayItem(enc_mat, 0);
+                }
                 json_copy_string(
                     &sfstmt->put_get_response->enc_mat->query_stage_master_key,
                     enc_mat, "queryStageMasterKey");
@@ -1729,6 +1739,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_token,
                     stage_cred, "AWS_TOKEN");
+                json_copy_string(
+                    &sfstmt->put_get_response->localLocation, data,
+                    "localLocation");
+
             } else {
                 // Set Database info
                 _mutex_lock(&sfstmt->connection->mutex_parameters);

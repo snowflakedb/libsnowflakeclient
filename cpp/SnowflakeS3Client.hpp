@@ -8,11 +8,12 @@
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
+#include <aws/s3/model/GetObjectRequest.h>
 #include "IStorageClient.hpp"
 #include "StageInfo.hpp"
 #include "FileMetadata.hpp"
 #include "util/ThreadPool.hpp"
-#include "util/StreamSplitter.hpp"
+#include "util/ByteArrayStreamBuf.hpp"
 
 namespace Snowflake
 {
@@ -43,7 +44,22 @@ struct MultiUploadCtx
   unsigned int m_partNumber;
 
   /// upload outcome
-  TransferOutcome m_outcome;
+  RemoteStorageRequestOutcome m_outcome;
+};
+
+struct MultiDownloadCtx
+{
+  /// in memory buffer used to store current part data
+  Util::ByteArrayStreamBuf *buf;
+
+  ///
+  Aws::S3::Model::GetObjectRequest getObjectRequest;
+
+  /// part number
+  unsigned int m_partNumber;
+
+  /// upload outcome
+  RemoteStorageRequestOutcome m_outcome;
 };
 
 /**
@@ -63,8 +79,20 @@ public:
    * @param dataStream
    * @return
    */
-  TransferOutcome upload(FileMetadata *fileMetadata,
+  RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
                          std::basic_iostream<char> *dataStream);
+
+  RemoteStorageRequestOutcome download(FileMetadata *fileMetadata,
+    std::basic_iostream<char>* dataStream);
+
+  RemoteStorageRequestOutcome doSingleDownload(FileMetadata *fileMetadata,
+    std::basic_iostream<char>* dataStream);
+
+  RemoteStorageRequestOutcome doMultiPartDownload(FileMetadata * fileMetadata,
+    std::basic_iostream<char> *dataStream);
+
+  RemoteStorageRequestOutcome GetRemoteFileMetadata(
+    std::string * filePathFull, FileMetadata *fileMetadata);
 
 private:
   Aws::SDKOptions options;
@@ -95,18 +123,18 @@ private:
    * @param bucket
    * @param key
    */
-  void extractBucketAndKey(FileMetadata *fileMetadata, std::string &bucket,
+  void extractBucketAndKey(std::string *fileFullPath, std::string &bucket,
                            std::string &key);
 
-  TransferOutcome doSingleUpload(FileMetadata * fileMetadata,
+  RemoteStorageRequestOutcome doSingleUpload(FileMetadata * fileMetadata,
                                  std::basic_iostream<char> *dataStream);
 
-  TransferOutcome doMultiPartUpload(FileMetadata * fileMetadata,
+  RemoteStorageRequestOutcome doMultiPartUpload(FileMetadata * fileMetadata,
                                     std::basic_iostream<char> *dataStream);
 
   void *uploadParts(MultiUploadCtx * uploadCtx);
 
-  TransferOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
+  RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
 };
 }
 }

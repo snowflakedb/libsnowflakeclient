@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_IRESULTSET_HPP
 #define SNOWFLAKECLIENT_IRESULTSET_HPP
 
-#include "TransferOutcome.hpp"
+#include "RemoteStorageRequestOutcome.hpp"
 #include "FileMetadata.hpp"
 #include "PutGetParseResponse.hpp"
 
@@ -13,7 +13,7 @@ namespace Snowflake
 {
 namespace Client
 {
-enum TransferOutcome;
+enum RemoteStorageRequestOutcome;
 
 /**
  * Class wrapped up the information about file transfer information
@@ -29,7 +29,7 @@ public:
 
   ~FileTransferExecutionResult();
 
-  void SetTransferOutCome(TransferOutcome outcome, unsigned int index)
+  void SetTransferOutCome(RemoteStorageRequestOutcome outcome, unsigned int index)
   {
     m_outcomes[index] = outcome;
   }
@@ -51,7 +51,7 @@ private:
 
   FileMetadata ** m_fileMetadatas;
 
-  TransferOutcome * m_outcomes;
+  RemoteStorageRequestOutcome * m_outcomes;
 
   unsigned int m_resultEntryNum;
 

@@ -54,8 +54,28 @@ private:
 
   virtual int underflow();
 
+  virtual int overflow(int_type ch);
+
+  virtual int sync();
 };
 
+class CipherIOStream: public std::basic_iostream<char>
+{
+public:
+  CipherIOStream(std::basic_iostream<char> &stream,
+                     CryptoOperation op,
+                     CryptoKey &key,
+                     CryptoIV &iv,
+                     size_t blockSize) :
+    std::basic_iostream<char>(
+      new CipherStreamBuf(stream.rdbuf(), op, key, iv, blockSize)) {}
+  
+  virtual ~CipherIOStream()
+  {
+    delete rdbuf();
+  }
+  
+};
 }
 }
 }

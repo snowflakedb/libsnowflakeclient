@@ -21,7 +21,7 @@ FileTransferExecutionResult::FileTransferExecutionResult(
   m_currentIndex(-1)
 {
   m_fileMetadatas = new FileMetadata*[resultEntryNum];
-  m_outcomes = new TransferOutcome[resultEntryNum];
+  m_outcomes = new RemoteStorageRequestOutcome[resultEntryNum];
 }
 
 FileTransferExecutionResult::~FileTransferExecutionResult()
@@ -42,7 +42,7 @@ const char* FileTransferExecutionResult::getStatus()
   {
     case SUCCESS:
       return STATUS_SUCCEED;
-    case SKIPPED:
+    case SKIP_UPLOAD_FILE:
       return STATUS_SKIPPED;
     default:
       return "ERROR";

@@ -48,7 +48,7 @@ void Snowflake::Client::FileMetadataInitializer::initFileMetadata(
   }
 }
 
-void Snowflake::Client::FileMetadataInitializer::populateSrcLocMetadata(
+void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
   std::string &sourceLocation)
 {
   unsigned long dirSep = sourceLocation.find_last_of('/');
@@ -143,6 +143,31 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
     encryptionBlockSize * encryptionBlockSize);
 }
 
+RemoteStorageRequestOutcome Snowflake::Client::FileMetadataInitializer::
+populateSrcLocDownloadMetadata(std::string &sourceLocation,
+                               std::string *remoteLocation,
+                               IStorageClient *storageClient)
+{
+  std::string fullPath = *remoteLocation + sourceLocation;
+  unsigned long dirSep = fullPath.find_last_of('/');
+  std::string dstFileName = fullPath.substr(dirSep + 1);
 
+  FileMetadata fileMetadata;
+  RemoteStorageRequestOutcome outcome = storageClient->GetRemoteFileMetadata(
+    &fullPath, &fileMetadata);
+
+  if (outcome == RemoteStorageRequestOutcome::SUCCESS)
+  {
+    std::vector<FileMetadata> *metaListToPush =
+      fileMetadata.srcFileSize > DATA_SIZE_THRESHOLD ?
+      m_largeFileMetadata : m_smallFileMetadata;
+
+    metaListToPush->push_back(fileMetadata);
+    metaListToPush->back().srcFileName = fullPath;
+    metaListToPush->back().destFileName = dstFileName;
+  }
+
+  return outcome;
+}
 
 

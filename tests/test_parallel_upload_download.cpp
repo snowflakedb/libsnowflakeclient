@@ -53,7 +53,7 @@ void populateDataInTestDir(std::string &testDir, int numberOfFiles)
   }
 }
 
-void test_parallel_upload_core(int fileNumber)
+void test_parallel_upload_download_core(int fileNumber)
 {
   /* init */
   SF_STATUS status;
@@ -67,7 +67,7 @@ void test_parallel_upload_core(int fileNumber)
   /* query */
   sfstmt = snowflake_stmt(sf);
 
-  std::string create_table("create or replace table test_parallel_upload(c1 string"
+  std::string create_table("create or replace table test_parallel_upload_download(c1 string"
                              ", c2 string, c3 string)");
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
@@ -79,7 +79,7 @@ void test_parallel_upload_core(int fileNumber)
   populateDataInTestDir(testDir, fileNumber);
 
   std::string files = testDir + "*";
-  std::string putCommand = "put file://" + files + " @%test_parallel_upload auto_compress=false";
+  std::string putCommand = "put file://" + files + " @%test_parallel_upload_download auto_compress=false";
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
@@ -93,7 +93,7 @@ void test_parallel_upload_core(int fileNumber)
     assert_string_equal("SUCCEED", result->getStatus());
   }
 
-  std::string copyCommand = "copy into test_parallel_upload";
+  std::string copyCommand = "copy into test_parallel_upload_download";
   ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
@@ -115,6 +115,18 @@ void test_parallel_upload_core(int fileNumber)
   }
   assert_int_equal(status, SF_STATUS_EOF);
 
+  std::string getCommand = "get @%test_parallel_upload_download file://" + dataDir + "test_parallel_download";
+  result = agent.execute(&getCommand);
+  assert_int_equal(fileNumber, result->getResultSize());
+
+  while(result->next())
+  {
+    assert_string_equal("SUCCEED", result->getStatus());
+  }
+
+  std::string compCmd = "diff " + dataDir + "test_parallel_upload/ " + dataDir + "test_parallel_download/";
+  int res = system(compCmd.c_str());
+  assert_int_equal(0, res);
 
   snowflake_stmt_term(sfstmt);
 
@@ -128,7 +140,7 @@ static int teardown(void **unused)
   snowflake_connect(sf);
 
   SF_STMT *sfstmt = snowflake_stmt(sf);
-  std::string rm = "rm @%test_parallel_upload";
+  std::string rm = "rm @%test_parallel_upload_download";
   snowflake_query(sfstmt, rm.c_str(), rm.size());
 
   std::string truncate = "drop table if exists test_parallel_upload";
@@ -139,25 +151,25 @@ static int teardown(void **unused)
 
   std::string dataDir;
   getDataDirectory(dataDir);
-  std::string testDir = dataDir + "test_parallel_upload/";
+  std::string testDir = dataDir + "test_parallel_*load/";
   std::string rmCmd = "rm -rf " + testDir;
   system(rmCmd.c_str());
   return 0;
 }
 
-void test_small_file_concurrent_upload(void **unused)
+void test_small_file_concurrent_upload_download(void **unused)
 {
-  test_parallel_upload_core(10);
+  test_parallel_upload_download_core(10);
 }
 
 void test_large_file_multipart_upload(void **unused)
 {
-  test_parallel_upload_core(1);
+  test_parallel_upload_download_core(1);
 }
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 
@@ -169,7 +181,7 @@ static int gr_teardown(void **unused)
 
 int main(void) {
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_small_file_concurrent_upload, teardown),
+    cmocka_unit_test_teardown(test_small_file_concurrent_upload_download, teardown),
     cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);

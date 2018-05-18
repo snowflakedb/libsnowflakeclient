@@ -6,10 +6,12 @@
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
-#include "util/StreamSplitter.hpp"
+#include "util/ByteArrayStreamBuf.hpp"
+#include "crypto/CipherStreamBuf.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
+#include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
@@ -17,6 +19,7 @@
 #include <aws/core/utils/logging/DefaultLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
 #include <iostream>
+#include <fstream>
 
 #define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
 #define AMZ_KEY "x-amz-key"
@@ -37,11 +40,11 @@ namespace Client
 SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel):
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
-  m_parallel(parallel)
+  m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
-  /*Aws::Utils::Logging::InitializeAWSLogging(
+  Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));*/
+      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
       "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));*/
@@ -75,14 +78,16 @@ SnowflakeS3Client::~SnowflakeS3Client()
   }
 }
 
-TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
+RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
   // first call metadata request to deduplicate files
   Aws::S3::Model::HeadObjectRequest headObjectRequest;
 
   std::string bucket, key;
-  extractBucketAndKey(fileMetadata, bucket, key);
+  std::string filePathFull = *m_stageInfo->getLocation()
+                             + fileMetadata->destFileName;
+  extractBucketAndKey(&filePathFull, bucket, key);
   headObjectRequest.SetBucket(bucket);
   headObjectRequest.SetKey(key);
 
@@ -97,7 +102,7 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
     {
       sf_log_info(CXX_LOG_NS, "File %s with same name and sha256 existed. Skipped.",
                fileMetadata->srcFileToUpload.c_str());
-      return TransferOutcome::SKIPPED;
+      return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
     }
   }
   else
@@ -112,7 +117,7 @@ TransferOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
     return doSingleUpload(fileMetadata, dataStream);
 }
 
-TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
+RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
   sf_log_debug(CXX_LOG_NS, "Start single part upload for file %s",
@@ -126,7 +131,8 @@ TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
 
   // figure out bucket and path
   std::string bucket, key;
-  extractBucketAndKey(fileMetadata, bucket, key);
+  std::string filePathFull = *m_stageInfo->getLocation() + fileMetadata->destFileName;
+  extractBucketAndKey(&filePathFull, bucket, key);
   putObjectRequest.SetBucket(bucket);
   putObjectRequest.SetKey(key);
 
@@ -140,7 +146,7 @@ TransferOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *fileMetadata,
     putObjectRequest);
   if (outcome.IsSuccess())
   {
-    return TransferOutcome::SUCCESS;
+    return RemoteStorageRequestOutcome::SUCCESS;
   } else
   {
     return handleError(outcome.GetError());
@@ -164,7 +170,7 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
 
   if (outcome.IsSuccess())
   {
-    uploadCtx->m_outcome = TransferOutcome::SUCCESS;
+    uploadCtx->m_outcome = RemoteStorageRequestOutcome::SUCCESS;
     uploadCtx->m_etag = outcome.GetResult().GetETag();
     sf_log_info(CXX_LOG_NS, "Upload parts request succeed. part number %d, etag %s",
                 uploadCtx->m_partNumber, uploadCtx->m_etag.c_str());
@@ -175,7 +181,7 @@ void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadC
   }
 }
 
-TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
+RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
   std::basic_iostream<char> *dataStream)
 {
   sf_log_debug(CXX_LOG_NS, "Start multi part upload for file %s",
@@ -190,7 +196,9 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
   addUserMetadata(&userMetadata, fileMetadata);
 
   std::string bucket, key;
-  extractBucketAndKey(fileMetadata, bucket, key);
+  std::string fileFullPath = *m_stageInfo->getLocation()
+                             + fileMetadata->destFileName;
+  extractBucketAndKey(&fileFullPath, bucket, key);
 
   Aws::S3::Model::CreateMultipartUploadRequest request;
   request.WithBucket(bucket)
@@ -238,7 +246,7 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     Aws::S3::Model::CompletedMultipartUpload completedMultipartUpload;
     for (unsigned int i=0; i< totalParts; i++)
     {
-      if (uploadParts[i].m_outcome == TransferOutcome::SUCCESS)
+      if (uploadParts[i].m_outcome == RemoteStorageRequestOutcome::SUCCESS)
       {
         Aws::S3::Model::CompletedPart completedPart;
         completedPart.WithETag(uploadParts[i].m_etag)
@@ -248,6 +256,7 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
       }
       else
       {
+        //TODO abort existing upload
         return uploadParts[i].m_outcome;
       }
     }
@@ -264,7 +273,7 @@ TransferOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *fileMetadata,
     if (outcome.IsSuccess())
     {
       sf_log_debug(CXX_LOG_NS, "Complete multi part upload request succeed.");
-      return TransferOutcome::SUCCESS;
+      return RemoteStorageRequestOutcome::SUCCESS;
     }
     else
     {
@@ -299,29 +308,193 @@ void SnowflakeS3Client::addUserMetadata(
   userMetadata->insert({SFC_DIGEST, fileMetadata->sha256Digest});
 }
 
-void SnowflakeS3Client::extractBucketAndKey(FileMetadata *fileMetadata,
+void SnowflakeS3Client::extractBucketAndKey(std::string *fileFullPath,
                                             std::string &bucket,
                                             std::string &key)
 {
-  size_t sepIndex = m_stageInfo->getLocation()->find_first_of('/');
-  bucket = m_stageInfo->getLocation()->substr(0, sepIndex);
-  key = m_stageInfo->getLocation()->substr(sepIndex + 1)
-        + fileMetadata->destFileName;
+  size_t sepIndex = fileFullPath->find_first_of('/');
+  bucket = fileFullPath->substr(0, sepIndex);
+  key = fileFullPath->substr(sepIndex + 1);
 }
 
-TransferOutcome SnowflakeS3Client::handleError(
+RemoteStorageRequestOutcome SnowflakeS3Client::handleError(
   const Aws::Client::AWSError<Aws::S3::S3Errors> & error)
 {
   if (error.GetExceptionName() == "ExpiredToken")
   {
     sf_log_warn(CXX_LOG_NS, "Token expired.");
-    return TransferOutcome::TOKEN_EXPIRED;
+    return RemoteStorageRequestOutcome::TOKEN_EXPIRED;
   }
   else
   {
     sf_log_error(CXX_LOG_NS, "S3 request failed failed: %s",
                  error.GetMessage().c_str());
-    return TransferOutcome::FAILED;
+    return RemoteStorageRequestOutcome::FAILED;
+  }
+}
+
+RemoteStorageRequestOutcome SnowflakeS3Client::download(
+  FileMetadata *fileMetadata,
+  std::basic_iostream<char>* dataStream)
+{
+  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+    return doMultiPartDownload(fileMetadata, dataStream);
+  else
+    return doSingleDownload(fileMetadata, dataStream);
+}
+
+RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
+  FileMetadata *fileMetadata,
+  std::basic_iostream<char> * dataStream)
+{
+  sf_log_debug(CXX_LOG_NS, "Start multi part download for file %s, parallel: %d",
+               fileMetadata->srcFileName.c_str(), m_parallel);
+
+  if (m_threadPool == nullptr)
+  {
+    m_threadPool = new Util::ThreadPool(m_parallel);
+  }
+
+  std::string bucket, key;
+  extractBucketAndKey(&fileMetadata->srcFileName, bucket, key);
+  int partNum = (int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
+  sf_log_debug(CXX_LOG_NS, "Construct get object request: bucket: %s, key: %s, ",
+               bucket.c_str(), key.c_str());
+
+  Util::StreamAppender appender(dataStream, partNum, m_parallel, DATA_SIZE_THRESHOLD);
+  std::vector<MultiDownloadCtx> downloadParts;
+  for (unsigned int i = 0; i < partNum; i++)
+  {
+    std::stringstream rangeStream;
+    rangeStream << "bytes=" << i * DATA_SIZE_THRESHOLD << '-' <<
+      ((i == partNum - 1) ? fileMetadata->srcFileSize - 1
+                          : ((i+1)*DATA_SIZE_THRESHOLD-1));
+
+    downloadParts.emplace_back();
+    downloadParts.back().m_partNumber = i;
+    downloadParts.back().getObjectRequest
+      .WithBucket(bucket)
+      .WithKey(key)
+      .WithRange(rangeStream.str());
+  }
+
+  for (int i = 0; i < downloadParts.size(); i++)
+  {
+    MultiDownloadCtx &ctx = downloadParts[i];
+
+    m_threadPool->AddJob([&]()-> void {
+      int partSize = ctx.m_partNumber == partNum - 1 ?
+                     (int)(fileMetadata->srcFileSize - ctx.m_partNumber
+                                                       * DATA_SIZE_THRESHOLD)
+                     : DATA_SIZE_THRESHOLD;
+      std::basic_iostream<char> * buf = appender.GetBuffer(
+        m_threadPool->GetThreadIdx());
+
+      sf_log_debug(CXX_LOG_NS, "Start downloading part %d, range: %s, part size: %d",
+                   ctx.m_partNumber, ctx.getObjectRequest.GetRange().c_str(),
+                   partSize);
+      ctx.getObjectRequest.SetResponseStreamFactory([&buf]()-> Aws::IOStream *
+                                                    { return buf; });
+
+      Aws::S3::Model::GetObjectOutcome outcome = s3Client->GetObject(
+        ctx.getObjectRequest);
+
+      static_cast<Util::ByteArrayStreamBuf *>(buf->rdbuf())->updateSize(partSize);
+      if (outcome.IsSuccess())
+      {
+        sf_log_debug(CXX_LOG_NS, "Download part %d succeed, download size: %d",
+                     ctx.m_partNumber, partSize);
+        ctx.m_outcome = RemoteStorageRequestOutcome::SUCCESS;
+        appender.WritePartToOutputStream(m_threadPool->GetThreadIdx(),
+          ctx.m_partNumber);
+      }
+      else
+      {
+        ctx.m_outcome = handleError(outcome.GetError());
+      }
+    });
+  }
+
+  m_threadPool->WaitAll();
+  for (unsigned int i = 0; i < partNum; i++)
+  {
+    if (downloadParts[i].m_outcome != RemoteStorageRequestOutcome::SUCCESS)
+    {
+      return downloadParts[i].m_outcome;
+    }
+  }
+
+  return RemoteStorageRequestOutcome::SUCCESS;
+}
+
+RemoteStorageRequestOutcome SnowflakeS3Client::doSingleDownload(
+  FileMetadata *fileMetadata,
+  std::basic_iostream<char> * dataStream)
+{
+  sf_log_debug(CXX_LOG_NS, "Start single part download for file %s",
+               fileMetadata->srcFileName.c_str());
+
+  std::string bucket, key;
+  extractBucketAndKey(&fileMetadata->srcFileName, bucket, key);
+
+  Aws::S3::Model::GetObjectRequest getObjectRequest;
+  getObjectRequest.WithKey(key)
+    .WithBucket(bucket);
+
+
+  std::function<Aws::IOStream *(void)> responseStreamCb = [&]() ->
+    Aws::IOStream * {
+      return dataStream;
+  };
+
+  getObjectRequest.SetResponseStreamFactory(responseStreamCb);
+
+  Aws::S3::Model::GetObjectOutcome outcome = s3Client->GetObject(
+    getObjectRequest);
+
+  if (outcome.IsSuccess())
+  {
+    sf_log_debug(CXX_LOG_NS, "Single part download for file %s succeed",
+                 fileMetadata->srcFileName.c_str());
+    return RemoteStorageRequestOutcome::SUCCESS;
+  }
+  else
+  {
+    return handleError(outcome.GetError());
+  }
+}
+
+RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
+  std::string *filePathFull, FileMetadata *fileMetadata)
+{
+  std::string key, bucket;
+  extractBucketAndKey(filePathFull, bucket, key);
+
+  Aws::S3::Model::HeadObjectRequest headObjectRequest;
+  headObjectRequest.SetBucket(bucket);
+  headObjectRequest.SetKey(key);
+
+  Aws::S3::Model::HeadObjectOutcome outcome =
+    s3Client->HeadObject(headObjectRequest);
+
+  if (outcome.IsSuccess())
+  {
+    fileMetadata->srcFileSize = outcome.GetResult().GetContentLength();
+    sf_log_info(CXX_LOG_NS, "Remote file %s content length: %ld.",
+                  key.c_str(), fileMetadata->srcFileSize);
+
+    std::string iv = outcome.GetResult().GetMetadata().at(AMZ_IV);
+
+    Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
+      encryptionMetadata.iv.data);
+    fileMetadata->encryptionMetadata.enKekEncoded = outcome.GetResult()
+      .GetMetadata().at(AMZ_KEY);
+
+    return RemoteStorageRequestOutcome::SUCCESS;
+  }
+  else
+  {
+    return handleError(outcome.GetError());
   }
 }
 

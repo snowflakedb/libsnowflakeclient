@@ -48,6 +48,48 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
     ::std::string(encryptedFileKeyEncoded, encryptedFileKeyEncodedSize);
 }
 
+void Snowflake::Client::EncryptionProvider::decryptFileKey(
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
+{
+  const char *encryptedFileKeyEncoded = fileMetadata
+    ->encryptionMetadata.enKekEncoded.c_str();
+  size_t encryptedFileKeyEncodedSize = fileMetadata
+    ->encryptionMetadata.enKekEncoded.size();
+
+  char encryptedFileKey[128];
+  Util::Base64::decode(encryptedFileKeyEncoded, encryptedFileKeyEncodedSize,
+                       encryptedFileKey);
+  size_t encryptedFileKeySize = Util::Base64::decodedLength(
+    encryptedFileKeyEncoded,
+    encryptedFileKeyEncodedSize);
+
+  Crypto::CryptoIV iv;
+  Crypto::CryptoKey queryStageMasterKey;
+  Crypto::CryptoKey &fileKey = fileMetadata->encryptionMetadata.fileKey;
+  Crypto::Cryptor::generateIV(iv, Crypto::CryptoRandomDevice::DEV_RANDOM);
+
+  ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
+
+  Util::Base64::decode(qsmkEncoded.data(), qsmkEncoded.size(),
+                       queryStageMasterKey.data);
+  queryStageMasterKey.nbBits = Util::Base64::decodedLength(
+    qsmkEncoded.data(), qsmkEncoded.size()) * 8;
+
+  Crypto::CipherContext context =
+    Crypto::Cryptor::getInstance().createCipherContext(Crypto::CryptoAlgo::AES,
+                                                       Crypto::CryptoMode::ECB,
+                                                       Crypto::CryptoPadding::NONE,
+                                                       queryStageMasterKey,
+                                                       iv);
+
+
+  context.initialize(Crypto::CryptoOperation::DECRYPT);
+  size_t nextSize = context.next(fileKey.data, encryptedFileKey,
+                                 encryptedFileKeySize);
+  size_t finalizeSize = context.finalize(fileKey.data + nextSize);
+  fileKey.nbBits = (nextSize + finalizeSize) *8;
+}
+
 void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
 {

@@ -83,7 +83,7 @@ public:
     _mutex_term(&numRenewMutex);
   }
 
-  virtual TransferOutcome upload(FileMetadata *fileMetadata,
+  virtual RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
                                  std::basic_iostream<char> *dataStream)
   {
     bool shouldReturnExpire = false;
@@ -98,6 +98,14 @@ public:
 
     return shouldReturnExpire ? TOKEN_EXPIRED : SUCCESS;
   }
+
+  virtual RemoteStorageRequestOutcome GetRemoteFileSize(
+    std::string * filePathFull, int * fileSize)
+  {
+    * fileSize = 1;
+    return SUCCESS;
+  }
+
 
 private:
   SF_MUTEX_HANDLE numRenewMutex;

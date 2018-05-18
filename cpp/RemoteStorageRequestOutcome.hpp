@@ -14,9 +14,9 @@ namespace Client
 /**
  * File Transfer result from remote storage client.
  */
-enum TransferOutcome
+enum RemoteStorageRequestOutcome
 {
-  SUCCESS, FAILED, TOKEN_EXPIRED, SKIPPED
+  SUCCESS, FAILED, TOKEN_EXPIRED, SKIP_UPLOAD_FILE
 };
 
 }
