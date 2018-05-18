@@ -99,10 +99,15 @@ public:
     return shouldReturnExpire ? TOKEN_EXPIRED : SUCCESS;
   }
 
-  virtual RemoteStorageRequestOutcome GetRemoteFileSize(
-    std::string * filePathFull, int * fileSize)
+  virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
+    std::string * filePathFull, FileMetadata *fileMetadata)
   {
-    * fileSize = 1;
+    return SUCCESS;
+  }
+
+  virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
+                                               std::basic_iostream<char>* dataStream)
+  {
     return SUCCESS;
   }
 
