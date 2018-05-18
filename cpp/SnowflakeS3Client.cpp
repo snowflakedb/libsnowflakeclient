@@ -416,6 +416,9 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
   }
 
   m_threadPool->WaitAll();
+
+  delete dataStream;
+
   for (unsigned int i = 0; i < partNum; i++)
   {
     if (downloadParts[i].m_outcome != RemoteStorageRequestOutcome::SUCCESS)
