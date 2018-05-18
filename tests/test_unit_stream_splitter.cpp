@@ -55,7 +55,7 @@ void test_stream_splitter_appender(void **unused)
 
   const int partSize = 4;
   const int threadNum = 4;
-  const int splitParts = (int)inputStr.size() / partSize + 1;
+  const int splitParts = 8;
 
   CryptoIV iv;
   Cryptor::generateIV(iv, CryptoRandomDevice::DEV_RANDOM);
@@ -70,7 +70,7 @@ void test_stream_splitter_appender(void **unused)
   Snowflake::Client::Util::StreamAppender appender(&decryptOutputStream, splitParts,
                                                    threadNum, partSize);
 
-  ByteArrayStreamBuf * encryptedParts[splitParts];
+  char encryptedParts[splitParts][partSize];
 
   Snowflake::Client::Util::ThreadPool tp(threadNum);
   for (int i=0; i<splitParts; i++)
@@ -81,29 +81,30 @@ void test_stream_splitter_appender(void **unused)
                   int partId;
                   Snowflake::Client::Util::ByteArrayStreamBuf * srcBuf =
                     splitter.FillAndGetBuf(threadIdx, partId);
-                  encryptedParts[partId] = srcBuf;
+
+                  memcpy(encryptedParts[partId], srcBuf->getDataBuffer(),
+                         srcBuf->getSize());
               });
   }
   tp.WaitAll();
 
   for (int i=0; i<splitParts; i++)
   {
-    ByteArrayStreamBuf * encryptedPart = encryptedParts[i];
-
     tp.AddJob([&, i] ()
               {
                   int threadIdx = tp.GetThreadIdx();
-                  std::basic_iostream<char> *dstStream = appender.GetBuffer(threadIdx);
+                  ByteArrayStreamBuf * dstBuf = appender.GetBuffer(threadIdx);
 
-                  dstStream->write(encryptedPart->getDataBuffer(),
-                                   encryptedPart->getSize());
+                  memcpy(dstBuf->getDataBuffer(), encryptedParts[i],
+                    sizeof(encryptedParts[i]));
+                  dstBuf->updateSize(sizeof(encryptedParts[i]));
 
                   appender.WritePartToOutputStream(threadIdx, i);
               });
   }
   tp.WaitAll();
 
-  std::cout << outputStream.str();
+  assert_string_equal(inputStr.c_str(), outputStream.str().c_str());
 }
 
 int main(void) {

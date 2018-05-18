@@ -106,14 +106,15 @@ Snowflake::Client::Util::StreamAppender::~StreamAppender()
   delete[] m_buffers;
 }
 
-std::basic_iostream<char> * Snowflake::Client::Util::StreamAppender::GetBuffer(
+Snowflake::Client::Util::ByteArrayStreamBuf * Snowflake::Client::Util::
+StreamAppender::GetBuffer(
   int threadId)
 {
   if (m_buffers[threadId] == nullptr)
   {
     m_buffers[threadId] = new ByteArrayStreamBuf(m_partSize);
   }
-  return new std::basic_iostream<char>(m_buffers[threadId]);
+  return m_buffers[threadId];
 }
 
 void Snowflake::Client::Util::StreamAppender::WritePartToOutputStream(

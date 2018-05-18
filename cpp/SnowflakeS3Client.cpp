@@ -42,9 +42,9 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   m_threadPool(nullptr),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
-  Aws::Utils::Logging::InitializeAWSLogging(
+  /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));
+      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));*/
   /*Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
       "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));*/
@@ -384,22 +384,22 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
 
     m_threadPool->AddJob([&]()-> void {
       int partSize = ctx.m_partNumber == partNum - 1 ?
-                     (int)(fileMetadata->srcFileSize - ctx.m_partNumber
-                                                       * DATA_SIZE_THRESHOLD)
+                     (int)(fileMetadata->srcFileSize -
+                       ctx.m_partNumber * DATA_SIZE_THRESHOLD)
                      : DATA_SIZE_THRESHOLD;
-      std::basic_iostream<char> * buf = appender.GetBuffer(
+      Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
         m_threadPool->GetThreadIdx());
 
       sf_log_debug(CXX_LOG_NS, "Start downloading part %d, range: %s, part size: %d",
                    ctx.m_partNumber, ctx.getObjectRequest.GetRange().c_str(),
                    partSize);
       ctx.getObjectRequest.SetResponseStreamFactory([&buf]()-> Aws::IOStream *
-                                                    { return buf; });
+        { return Aws::New<Aws::IOStream>("SF_MULTI_PART_DOWNLOAD", buf); });
 
       Aws::S3::Model::GetObjectOutcome outcome = s3Client->GetObject(
         ctx.getObjectRequest);
 
-      static_cast<Util::ByteArrayStreamBuf *>(buf->rdbuf())->updateSize(partSize);
+      buf->updateSize(partSize);
       if (outcome.IsSuccess())
       {
         sf_log_debug(CXX_LOG_NS, "Download part %d succeed, download size: %d",
@@ -416,8 +416,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
   }
 
   m_threadPool->WaitAll();
-
-  delete dataStream;
 
   for (unsigned int i = 0; i < partNum; i++)
   {
@@ -444,10 +442,9 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleDownload(
   getObjectRequest.WithKey(key)
     .WithBucket(bucket);
 
-
   std::function<Aws::IOStream *(void)> responseStreamCb = [&]() ->
     Aws::IOStream * {
-      return dataStream;
+      return Aws::New<Aws::IOStream>("SF_SINGLE_PART_DOWNLOAD", dataStream->rdbuf());
   };
 
   getObjectRequest.SetResponseStreamFactory(responseStreamCb);

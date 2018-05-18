@@ -112,7 +112,7 @@ public:
    * Get in memory buffer to store the data downloaded before writing to
    * output stream
    */
-  std::basic_iostream<char> * GetBuffer(int threadId);
+  ByteArrayStreamBuf * GetBuffer(int threadId);
 
 private:
 

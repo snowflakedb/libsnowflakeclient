@@ -361,14 +361,14 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   std::basic_fstream<char> dstFile(dstNameFull.c_str(),
                                 std::ios_base::out | std::ios_base::binary);
 
-  Crypto::CipherIOStream * decryptOutputStream = new Crypto::CipherIOStream(
+  Crypto::CipherIOStream decryptOutputStream(
                                dstFile,
                                Crypto::CryptoOperation::DECRYPT,
                                fileMetadata->encryptionMetadata.fileKey,
                                fileMetadata->encryptionMetadata.iv, 128);
 
   RemoteStorageRequestOutcome outcome = client->download(fileMetadata,
-                                                         decryptOutputStream);
+                                                         &decryptOutputStream);
 
   dstFile.close();
 
