@@ -8,6 +8,7 @@
 #include "util/Base64.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
 #include "crypto/CipherStreamBuf.hpp"
+#include "logger/SFAwsLogger.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
@@ -42,12 +43,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   m_threadPool(nullptr),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
-  /*Aws::Utils::Logging::InitializeAWSLogging(
-    Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));*/
-  /*Aws::Utils::Logging::InitializeAWSLogging(
-    Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-      "RunUnitTests", Aws::Utils::Logging::LogLevel::Trace));*/
+  Aws::Utils::Logging::InitializeAWSLogging(
+    Aws::MakeShared<Snowflake::Client::Logger::SFAwsLogger>(""));
 
   char caBundleFile[200] = {0};
   snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);

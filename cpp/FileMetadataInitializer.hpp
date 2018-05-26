@@ -38,7 +38,7 @@ public:
    */
   RemoteStorageRequestOutcome populateSrcLocDownloadMetadata(
     std::string &sourceLocation, std::string *remoteLocations,
-    IStorageClient *storageClient);
+    IStorageClient *storageClient, EncryptionMaterial *encMat);
 
   /**
    * Init encryption metadata in file metadata
@@ -55,7 +55,7 @@ public:
     m_sourceCompression = sourceCompression;
   }
 
-  inline void setEncryptionMaterial(EncryptionMaterial *encMat)
+  inline void setEncryptionMaterials(std::vector<EncryptionMaterial> *encMat)
   {
     m_encMat = encMat;
   }
@@ -85,7 +85,7 @@ private:
   char *m_sourceCompression;
 
   /// encryption material
-  EncryptionMaterial * m_encMat;
+  std::vector<EncryptionMaterial> * m_encMat;
 };
 }
 }

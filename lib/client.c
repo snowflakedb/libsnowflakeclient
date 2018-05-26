@@ -1083,7 +1083,7 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate() {
 
     sf_stage_info->stage_cred = sf_stage_cred;
     sf_put_get_response->stage_info = sf_stage_info;
-    sf_put_get_response->enc_mat = sf_enc_mat;
+    sf_put_get_response->enc_mat_put = sf_enc_mat;
 
     return sf_put_get_response;
 }
@@ -1099,11 +1099,12 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
     SF_FREE(put_get_response->stage_info->path);
     SF_FREE(put_get_response->stage_info->region);
     SF_FREE(put_get_response->stage_info);
-    SF_FREE(put_get_response->enc_mat->query_stage_master_key);
-    SF_FREE(put_get_response->enc_mat);
+    SF_FREE(put_get_response->enc_mat_put->query_stage_master_key);
+    SF_FREE(put_get_response->enc_mat_put);
     SF_FREE(put_get_response->localLocation);
 
     cJSON_Delete((cJSON *) put_get_response->src_list);
+    cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
 
     SF_FREE(put_get_response);
 }
@@ -1702,20 +1703,25 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
                 // In put command response, value of encryptionMaterial is an
                 // object, which in get command response, value is an array of
-                // object. So for now just check if a node is array or not, if yes,
-                // get first item.
+                // object since different remote files might have different
+                // encryption material
                 if (cJSON_IsArray(enc_mat))
                 {
-                    enc_mat = cJSON_GetArrayItem(enc_mat, 0);
+                    json_detach_array_from_object(
+                      (cJSON **) (&sfstmt->put_get_response->enc_mat_get),
+                      data, "encryptionMaterial");
                 }
-                json_copy_string(
-                    &sfstmt->put_get_response->enc_mat->query_stage_master_key,
-                    enc_mat, "queryStageMasterKey");
-                json_copy_string_no_alloc(
-                    sfstmt->put_get_response->enc_mat->query_id,
-                    enc_mat, "queryId", SF_UUID4_LEN);
-                json_copy_int(&sfstmt->put_get_response->enc_mat->smk_id,
-                              enc_mat, "smkId");
+                else
+                {
+                    json_copy_string(
+                      &sfstmt->put_get_response->enc_mat_put->query_stage_master_key,
+                      enc_mat, "queryStageMasterKey");
+                    json_copy_string_no_alloc(
+                      sfstmt->put_get_response->enc_mat_put->query_id,
+                      enc_mat, "queryId", SF_UUID4_LEN);
+                    json_copy_int(&sfstmt->put_get_response->enc_mat_put->smk_id,
+                                  enc_mat, "smkId");
+                }
 
                 cJSON *stage_info = cJSON_GetObjectItem(data, "stageInfo");
                 cJSON *stage_cred = cJSON_GetObjectItem(stage_info, "creds");

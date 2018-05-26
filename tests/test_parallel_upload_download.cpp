@@ -6,7 +6,7 @@
 #include <snowflake/client.h>
 #include <fstream>
 #include "utils/test_setup.h"
-#include "IStatementPutGet.hpp"
+#include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 
@@ -85,7 +85,7 @@ void test_parallel_upload_download_core(int fileNumber)
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  FileTransferExecutionResult *result = agent.execute(&putCommand);
+  ITransferResult *result = agent.execute(&putCommand);
   assert_int_equal(fileNumber, result->getResultSize());
 
   while(result->next())
@@ -169,7 +169,7 @@ void test_large_file_multipart_upload(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 

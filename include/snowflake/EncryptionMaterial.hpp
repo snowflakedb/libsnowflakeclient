@@ -6,7 +6,6 @@
 #define SNOWFLAKECLIENT_REMOTESTOREFILEENCRYPTIONMATERIAL_HPP
 
 #include <string>
-#include "crypto/CryptoTypes.hpp"
 
 namespace Snowflake
 {
@@ -24,23 +23,6 @@ struct EncryptionMaterial
   long smkId;
 };
 
-struct EncryptionMetadata
-{
-  /// File encryption/decryption key
-  Snowflake::Client::Crypto::CryptoIV iv;
-
-  /// File key
-  Snowflake::Client::Crypto::CryptoKey fileKey;
-
-  /// base 64 encoded of encrypted file key
-  std::string enKekEncoded;
-
-  /// Encryption material descriptor
-  std::string matDesc;
-
-  /// encrypted stream size, used for content length
-  long long int cipherStreamSize;
-};
 
 }
 }

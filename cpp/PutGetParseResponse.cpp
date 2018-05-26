@@ -2,7 +2,8 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "PutGetParseResponse.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
+#include "snowflake/platform.h"
 #include "cJSON.h"
 
 using namespace Snowflake::Client;
@@ -22,28 +23,41 @@ PutGetParseResponse::PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response)
   for (int i = 0; i < cJSON_GetArraySize(src); i++)
   {
     cJSON *val = cJSON_GetArrayItem(src, i);
-    m_srcLocations.push_back(std::string(val->valuestring));
+    m_srcLocations.emplace_back(val->valuestring);
   }
 
-  m_encryptionMaterial.queryStageMasterKey = std::string(
-    put_get_response->enc_mat->query_stage_master_key);
-  m_encryptionMaterial.queryId = std::string(
-    put_get_response->enc_mat->query_id);
-  m_encryptionMaterial.smkId = put_get_response->enc_mat->smk_id;
-
-  m_stageInfo = StageInfo(put_get_response->stage_info);
-
   char *commandStr = put_get_response->command;
-  if (strncasecmp(commandStr, "UPLOAD", 6) == 0)
+  if (sf_strncasecmp(commandStr, "UPLOAD", 6) == 0)
   {
     m_command = CommandType::UPLOAD;
-  } else if (strncasecmp(commandStr, "DOWNLOAD", 8) == 0)
+
+    m_encryptionMaterials.emplace_back();
+    m_encryptionMaterials.back().queryStageMasterKey = std::string(
+      put_get_response->enc_mat_put->query_stage_master_key);
+    m_encryptionMaterials.back().queryId = std::string(
+      put_get_response->enc_mat_put->query_id);
+    m_encryptionMaterials.back().smkId = put_get_response->enc_mat_put->smk_id;
+  } else if (sf_strncasecmp(commandStr, "DOWNLOAD", 8) == 0)
   {
     m_command = CommandType::DOWNLOAD;
+    cJSON *enc_mat_array_get = (cJSON *) put_get_response->enc_mat_get;
+    for (int i=0; i<cJSON_GetArraySize(enc_mat_array_get); i++)
+    {
+      cJSON * enc_mat = cJSON_GetArrayItem(enc_mat_array_get, i);
+      m_encryptionMaterials.emplace_back();
+      m_encryptionMaterials.back().queryStageMasterKey = std::string(
+        cJSON_GetObjectItem(enc_mat, "queryStageMasterKey")->valuestring);
+      m_encryptionMaterials.back().queryId = std::string(
+        cJSON_GetObjectItem(enc_mat, "queryId")->valuestring);
+      m_encryptionMaterials.back().smkId = cJSON_GetObjectItem(enc_mat, "smkId")->valueint;
+    }
   } else
   {
     m_command = CommandType::UNKNOWN;
   }
+
+  m_stageInfo = StageInfo(put_get_response->stage_info);
+
 
   m_localLocation = put_get_response->localLocation;
 }

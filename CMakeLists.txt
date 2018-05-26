@@ -86,24 +86,21 @@ set(SOURCE_FILES
         lib/chunk_downloader.c)
 
 set (SOURCE_FILES_PUT_GET
-        cpp/EncryptionMaterial.hpp
         cpp/EncryptionProvider.cpp
         cpp/FileCompressionType.cpp
         cpp/FileCompressionType.hpp
         cpp/FileMetadata.hpp
         cpp/FileMetadataInitializer.cpp
         cpp/FileMetadataInitializer.hpp
-        cpp/FileTransferAgent.hpp
         cpp/FileTransferAgent.cpp
+        cpp/FileTransferAgent.hpp
         cpp/FileTransferExecutionResult.cpp
         cpp/FileTransferExecutionResult.hpp
-        cpp/IStatementPutGet.hpp
+        cpp/IFileTransferAgent.cpp
         cpp/IStorageClient.hpp
-        cpp/PutGetParseResponse.hpp
         cpp/PutGetParseResponse.cpp
         cpp/SnowflakeS3Client.hpp
         cpp/SnowflakeS3Client.cpp
-        cpp/StageInfo.hpp
         cpp/StageInfo.cpp
         cpp/StatementPutGet.hpp
         cpp/StatementPutGet.cpp
@@ -126,7 +123,16 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/CipherStreamBuf.cpp
         cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
-        cpp/crypto/HashContext.hpp)
+        cpp/crypto/HashContext.hpp
+        cpp/logger/SFAwsLogger.cpp
+        cpp/logger/SFAwsLogger.hpp
+        include/snowflake/EncryptionMaterial.hpp
+        include/snowflake/IFileTransferAgent.hpp
+        include/snowflake/IStatementPutGet.hpp
+        include/snowflake/ITransferResult.hpp
+        include/snowflake/PutGetParseResponse.hpp
+        include/snowflake/StageInfo.hpp
+        )
 
 set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Connection.hpp

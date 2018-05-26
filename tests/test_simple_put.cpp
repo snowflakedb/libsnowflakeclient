@@ -5,7 +5,7 @@
 #include <aws/core/Aws.h>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
-#include "IStatementPutGet.hpp"
+#include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 
@@ -54,7 +54,7 @@ void test_simple_put_core(const char * fileName,
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  FileTransferExecutionResult * results = agent.execute(&putCommand);
+  ITransferResult * results = agent.execute(&putCommand);
   assert_int_equal(1, results->getResultSize());
 
   results->next();
@@ -172,7 +172,7 @@ void test_simple_put_one_byte(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 

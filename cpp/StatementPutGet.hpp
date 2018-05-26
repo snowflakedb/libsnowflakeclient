@@ -5,8 +5,8 @@
 #ifndef SNOWFLAKECLIENT_STATEMENTPUTGET_HPP
 #define SNOWFLAKECLIENT_STATEMENTPUTGET_HPP
 
-#include "IStatementPutGet.hpp"
-#include "PutGetParseResponse.hpp"
+#include "snowflake/IStatementPutGet.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
 #include "snowflake/client.h"
 
 namespace Snowflake

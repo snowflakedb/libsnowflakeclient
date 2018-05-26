@@ -3,7 +3,6 @@
  */
 
 #include "StorageClientFactory.hpp"
-#include "StageInfo.hpp"
 #include "SnowflakeS3Client.hpp"
 
 namespace Snowflake
