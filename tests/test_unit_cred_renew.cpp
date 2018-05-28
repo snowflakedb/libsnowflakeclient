@@ -27,17 +27,19 @@ void getDataDirectory(std::string& dataDir)
 class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
 public:
-  MockedStatementGet(std::string localLocation)
+  MockedStatementGet()
     : IStatementPutGet()
   {
+    m_stageLoc = "fake s3 location";
     m_stageInfo.SetStageType(StageType::MOCKED_STAGE_TYPE);
+    m_stageInfo.SetLocation(m_stageLoc);
     m_srcLocations.push_back("fake s3 location");
     m_encryptionMaterial.emplace_back();
     m_encryptionMaterial.back().queryStageMasterKey = "dvkZi0dkBfrcHr6YxXLRFg==";
     m_encryptionMaterial.back().queryId="1234";
     m_encryptionMaterial.back().smkId=1234;
     numParseCalled = 0;
-    m_localLocation = localLocation.c_str();
+    m_localLocation = "/tmp";
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
@@ -64,6 +66,8 @@ public:
 
 private:
   StageInfo m_stageInfo;
+
+  std::string m_stageLoc;
 
   std::vector<EncryptionMaterial> m_encryptionMaterial;
 
@@ -170,6 +174,7 @@ public:
       Snowflake::Client::Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
         encryptionMetadata.iv.data);
       fileMetadata->encryptionMetadata.enKekEncoded = "rgANWKrHN14aKoHRxoIh9GtjXYScNdjseX4kmLZRnEc=";
+      fileMetadata->srcFileSize = DATA_SIZE_THRESHOLD + 1;
     }
 
     return shouldReturnExpire ? TOKEN_EXPIRED : SUCCESS;
@@ -256,7 +261,7 @@ void test_token_renew_get_remote_meta(void **unused)
 
   std::string cmd = "fake get command";
 
-  MockedStatementGet mockedStatementGet("/tmp");
+  MockedStatementGet mockedStatementGet;
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementGet);
 

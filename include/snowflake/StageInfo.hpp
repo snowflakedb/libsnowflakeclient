@@ -58,6 +58,16 @@ public:
     m_stageType = stageType;
   }
 
+  inline void SetRegion(std::string &region)
+  {
+    m_region = region;
+  }
+
+  inline void SetLocation(std::string &location)
+  {
+    m_location = location;
+  }
+
 private:
   StageType m_stageType;
 

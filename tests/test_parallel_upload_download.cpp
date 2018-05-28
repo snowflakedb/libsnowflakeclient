@@ -169,7 +169,7 @@ void test_large_file_multipart_upload(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
   return 0;
 }
 
