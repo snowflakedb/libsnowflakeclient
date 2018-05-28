@@ -68,6 +68,16 @@ public:
     m_location = location;
   }
 
+  inline void SetPath(std::string &path)
+  {
+    m_path =  path;
+  }
+
+  inline void SetCredentials(std::unordered_map<std::string, char *> &credentials)
+  {
+    m_credentials = credentials;
+  }
+
 private:
   StageType m_stageType;
 
