@@ -10,7 +10,7 @@
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include "IStorageClient.hpp"
-#include "StageInfo.hpp"
+#include "snowflake/StageInfo.hpp"
 #include "FileMetadata.hpp"
 #include "util/ThreadPool.hpp"
 #include "util/ByteArrayStreamBuf.hpp"

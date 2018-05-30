@@ -58,6 +58,26 @@ public:
     m_stageType = stageType;
   }
 
+  inline void SetRegion(std::string &region)
+  {
+    m_region = region;
+  }
+
+  inline void SetLocation(std::string &location)
+  {
+    m_location = location;
+  }
+
+  inline void SetPath(std::string &path)
+  {
+    m_path =  path;
+  }
+
+  inline void SetCredentials(std::unordered_map<std::string, char *> &credentials)
+  {
+    m_credentials = credentials;
+  }
+
 private:
   StageType m_stageType;
 

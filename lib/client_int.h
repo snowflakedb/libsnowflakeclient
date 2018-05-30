@@ -71,7 +71,10 @@ struct SF_PUT_GET_RESPONSE {
   char source_compression[SF_SOURCE_COMPRESSION_TYPE_LEN];
   sf_bool client_show_encryption_param;
   char command[SF_COMMAND_LEN];
-  SF_ENC_MAT *enc_mat;
+  // for put command, encMat is a single object while for get, it is a list of
+  // enc_mat
+  SF_ENC_MAT *enc_mat_put;
+  void * enc_mat_get;
   SF_STAGE_INFO *stage_info;
   char *localLocation;
 };

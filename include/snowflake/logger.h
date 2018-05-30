@@ -76,6 +76,8 @@ void log_set_lock(log_LockFn fn);
 
 void log_set_fp(FILE *fp);
 
+int log_get_level();
+
 void log_set_level(int level);
 
 void log_set_quiet(int enable);
@@ -83,6 +85,10 @@ void log_set_quiet(int enable);
 void
 log_log(int level, const char *file, int line, const char *ns, const char *fmt,
         ...);
+
+void
+log_log_va_list(int level, const char *file, int line, const char *ns, 
+                const char *fmt, va_list args);
 
 SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str);
 

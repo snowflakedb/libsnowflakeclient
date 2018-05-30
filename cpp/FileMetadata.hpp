@@ -6,15 +6,35 @@
 #define SNOWFLAKECLIENT_FILEMETADATA_HPP
 
 #include <string>
-#include "EncryptionMaterial.hpp"
-#include "StageInfo.hpp"
-#include "PutGetParseResponse.hpp"
+#include "snowflake/EncryptionMaterial.hpp"
+#include "snowflake/StageInfo.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
+#include "crypto/CryptoTypes.hpp"
 #include "FileCompressionType.hpp"
 
 namespace Snowflake
 {
 namespace Client
 {
+
+struct EncryptionMetadata
+{
+  /// File encryption/decryption key
+  Snowflake::Client::Crypto::CryptoIV iv;
+
+  /// File key
+  Snowflake::Client::Crypto::CryptoKey fileKey;
+
+  /// base 64 encoded of encrypted file key
+  std::string enKekEncoded;
+
+  /// Encryption material descriptor
+  std::string matDesc;
+
+  /// encrypted stream size, used for content length
+  long long int cipherStreamSize;
+};
+
 /**
  * File metadata used when doing upload/download
  */
@@ -53,6 +73,7 @@ struct FileMetadata
   /// target compression
   const FileCompressionType * targetCompression;
 };
+
 }
 }
 #endif //SNOWFLAKECLIENT_FILEMETADATA_HPP

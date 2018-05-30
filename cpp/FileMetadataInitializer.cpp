@@ -130,9 +130,9 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   FileMetadata *fileMetadata)
 {
-  EncryptionProvider::populateFileKeyAndIV(fileMetadata, m_encMat);
-  EncryptionProvider::encryptFileKey(fileMetadata, m_encMat);
-  EncryptionProvider::serializeEncMatDecriptor(fileMetadata, m_encMat);
+  EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)));
+  EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)));
+  EncryptionProvider::serializeEncMatDecriptor(fileMetadata, &(m_encMat->at(0)));
 
   // update encrypted stream size
   size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
@@ -146,7 +146,8 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
 RemoteStorageRequestOutcome Snowflake::Client::FileMetadataInitializer::
 populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                std::string *remoteLocation,
-                               IStorageClient *storageClient)
+                               IStorageClient *storageClient,
+                               EncryptionMaterial *encMat)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
   unsigned long dirSep = fullPath.find_last_of('/');
@@ -165,6 +166,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush->push_back(fileMetadata);
     metaListToPush->back().srcFileName = fullPath;
     metaListToPush->back().destFileName = dstFileName;
+    EncryptionProvider::decryptFileKey(&(metaListToPush->back()), encMat);
   }
 
   return outcome;

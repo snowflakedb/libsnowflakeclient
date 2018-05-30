@@ -56,14 +56,14 @@ public:
     m_sourceCompression = sourceCompression;
   }
 
-  inline EncryptionMaterial *getEncryptionMaterial()
+  inline std::vector<EncryptionMaterial> *getEncryptionMaterial()
   {
-    return &m_encryptionMaterial;
+    return &m_encryptionMaterials;
   }
 
-  inline void SetEncryptionMaterial(EncryptionMaterial &encMat)
+  inline void SetEncryptionMaterial(std::vector<EncryptionMaterial> &encMat)
   {
-    m_encryptionMaterial = encMat;
+    m_encryptionMaterials = encMat;
   }
 
   inline std::vector<std::string> *getSourceLocations()
@@ -111,6 +111,11 @@ public:
     return m_localLocation;
   }
 
+  inline void SetLocalLocation(char * localLocation)
+  {
+    m_localLocation = localLocation;
+  }
+
 private:
 
   int m_parallel;
@@ -129,7 +134,9 @@ private:
 
   std::vector<std::string> m_srcLocations;
 
-  EncryptionMaterial m_encryptionMaterial;
+  /// for put command, size is always 1, while for get,
+  /// encryption mat can be a list
+  std::vector<EncryptionMaterial> m_encryptionMaterials;
 
   StageInfo m_stageInfo;
 };

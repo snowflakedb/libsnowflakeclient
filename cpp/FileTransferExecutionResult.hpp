@@ -7,7 +7,8 @@
 
 #include "RemoteStorageRequestOutcome.hpp"
 #include "FileMetadata.hpp"
-#include "PutGetParseResponse.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
+#include "snowflake/ITransferResult.hpp"
 
 namespace Snowflake
 {
@@ -21,7 +22,7 @@ enum RemoteStorageRequestOutcome;
  *
  * External component needs build a result set wrapper on top of this class
  */
-class FileTransferExecutionResult
+class FileTransferExecutionResult : public ITransferResult
 {
 public:
   FileTransferExecutionResult(CommandType commandType,
@@ -43,7 +44,7 @@ public:
 
   const char * getStatus();
 
-  unsigned int getResultSize();
+  int getResultSize();
 
 private:
   /// enum to indicate command type
@@ -55,7 +56,7 @@ private:
 
   unsigned int m_resultEntryNum;
 
-  unsigned int m_currentIndex;
+  int m_currentIndex;
 };
 }
 }

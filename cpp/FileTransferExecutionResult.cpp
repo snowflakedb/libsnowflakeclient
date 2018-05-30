@@ -49,7 +49,7 @@ const char* FileTransferExecutionResult::getStatus()
   }
 }
 
-unsigned int FileTransferExecutionResult::getResultSize()
+int FileTransferExecutionResult::getResultSize()
 {
   return m_resultEntryNum;
 }

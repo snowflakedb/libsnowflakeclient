@@ -76,6 +76,10 @@ void log_set_fp(FILE *fp) {
     L.fp = fp;
 }
 
+int log_get_level()
+{
+    return L.level;
+}
 
 void log_set_level(int level) {
     L.level = level;
@@ -86,10 +90,19 @@ void log_set_quiet(int enable) {
     L.quiet = enable ? 1 : 0;
 }
 
+void log_log(int level, const char *file, int line, const char *ns,
+             const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    log_log_va_list(level, file, line, ns, fmt, args);
+    va_end(args);
+}
+
 
 void
-log_log(int level, const char *file, int line, const char *ns, const char *fmt,
-        ...) {
+log_log_va_list(int level, const char *file, int line, const char *ns,
+                const char *fmt, va_list args) {
     if (level < L.level) {
         return;
     }
@@ -104,7 +117,6 @@ log_log(int level, const char *file, int line, const char *ns, const char *fmt,
 
     /* Log to stderr */
     if (!L.quiet) {
-        va_list args;
 #ifdef LOG_USE_COLOR
         fprintf(
             stderr, SF_LOG_TIMESTAMP_FORMAT_COLOR,
@@ -115,22 +127,22 @@ log_log(int level, const char *file, int line, const char *ns, const char *fmt,
             stderr, SF_LOG_TIMESTAMP_FORMAT,
              buf, level_names[level], namespace, basename, line);
 #endif
-        va_start(args, fmt);
-        vfprintf(stderr, fmt, args);
-        va_end(args);
+        // va_list can only be consumed once. Make a copy here in case both
+        // console and file logging are turned on.
+        va_list copy;
+        va_copy(copy, args);
+        vfprintf(stderr, fmt, copy);
+        va_end(copy);
         fprintf(stderr, "\n");
         fflush(stderr);
     }
 
     /* Log to file */
     if (L.fp) {
-        va_list args;
         fprintf(
             L.fp, SF_LOG_TIMESTAMP_FORMAT,
             tsbuf, level_names[level], ns, basename, line);
-        va_start(args, fmt);
         vfprintf(L.fp, fmt, args);
-        va_end(args);
         fprintf(L.fp, "\n");
         fflush(L.fp);
     }

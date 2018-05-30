@@ -7,7 +7,10 @@
 
 #include <map>
 #include <string>
-#include "IStatementPutGet.hpp"
+#include <snowflake/IFileTransferAgent.hpp>
+#include "snowflake/IStatementPutGet.hpp"
+#include "snowflake/IFileTransferAgent.hpp"
+#include "snowflake/ITransferResult.hpp"
 #include "FileTransferExecutionResult.hpp"
 #include "FileMetadata.hpp"
 #include "FileMetadataInitializer.hpp"
@@ -17,19 +20,17 @@ namespace Snowflake
 {
 namespace Client
 {
-class StorageObjectMetadata;
 
 class IStorageClient;
 
 struct FileTransferExecutionResult;
-
 
 /**
  * This is the main class to external component (c api or ODBC)
  * External component should implement IStatement interface to submit put
  * or get command to server to do parsing.
  */
-class FileTransferAgent
+class FileTransferAgent : public IFileTransferAgent
 {
 public:
   FileTransferAgent(IStatementPutGet *statement);
@@ -41,7 +42,7 @@ public:
    * @param command put/get command
    * @return a fixed view result set representing upload/download result
    */
-  FileTransferExecutionResult *execute(std::string *command);
+  virtual ITransferResult *execute(std::string *command);
 
 private:
   /**
@@ -49,7 +50,7 @@ private:
    * Process compression metadata
    * Divide files to large and small ones
    */
-  void initFileMetadata();
+  void initFileMetadata(std::string* command);
 
   /**
    * Upload large files in sequence, upload small files in parallel in
@@ -125,6 +126,12 @@ private:
 
   /// used to initialize file metadata
   FileMetadataInitializer m_FileMetadataInitializer;
+
+  /// mutex to prevent from multiple thread renewing token same time
+  SF_MUTEX_HANDLE m_parallelTokRenewMutex;
+
+  /// seconds in unix time for last time token is refreshed
+  long m_lastRefreshTokenSec;
 };
 }
 }
