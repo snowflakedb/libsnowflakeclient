@@ -13,9 +13,6 @@ namespace Snowflake
 {
 namespace Client
 {
-namespace Logger
-{
-
 class SFAwsLogger : public Aws::Utils::Logging::LogSystemInterface
 {
 public:
@@ -45,7 +42,6 @@ private:
   int toSFLogeLevel(LogLevel logLevel);
 
 };
-}
 }
 }
 

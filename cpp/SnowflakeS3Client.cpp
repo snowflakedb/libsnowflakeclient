@@ -44,7 +44,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   Aws::Utils::Logging::InitializeAWSLogging(
-    Aws::MakeShared<Snowflake::Client::Logger::SFAwsLogger>(""));
+    Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
 
   char caBundleFile[200] = {0};
   snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);

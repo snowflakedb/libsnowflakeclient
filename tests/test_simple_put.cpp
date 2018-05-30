@@ -172,7 +172,7 @@ void test_simple_put_one_byte(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
   return 0;
 }
 

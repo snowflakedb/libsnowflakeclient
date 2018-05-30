@@ -9,15 +9,15 @@
 #define AWS_NS "AwsSdk"
 #define AWS_LINE 0
 
-Snowflake::Client::Logger::SFAwsLogger::SFAwsLogger()
+Snowflake::Client::SFAwsLogger::SFAwsLogger()
 {}
 
-LogLevel Snowflake::Client::Logger::SFAwsLogger::GetLogLevel() const
+LogLevel Snowflake::Client::SFAwsLogger::GetLogLevel() const
 {
   return (LogLevel)(6 - log_get_level());
 }
 
-void Snowflake::Client::Logger::SFAwsLogger::Log(LogLevel logLevel,
+void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
                                                  const char *tag,
                                                  const char *formatStr, ...)
 {
@@ -30,7 +30,7 @@ void Snowflake::Client::Logger::SFAwsLogger::Log(LogLevel logLevel,
   }
 }
 
-void Snowflake::Client::Logger::SFAwsLogger::LogStream(LogLevel logLevel,
+void Snowflake::Client::SFAwsLogger::LogStream(LogLevel logLevel,
                                                        const char *tag,
                                                        const Aws::OStringStream &messageStream)
 {
@@ -41,7 +41,7 @@ void Snowflake::Client::Logger::SFAwsLogger::LogStream(LogLevel logLevel,
   }
 }
 
-int Snowflake::Client::Logger::SFAwsLogger::toSFLogeLevel(LogLevel logLevel)
+int Snowflake::Client::SFAwsLogger::toSFLogeLevel(LogLevel logLevel)
 {
   return 6 - (int)logLevel;
 }
