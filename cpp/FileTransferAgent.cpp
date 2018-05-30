@@ -21,6 +21,7 @@
 
 using ::std::string;
 using ::std::vector;
+using ::Snowflake::Client::RemoteStorageRequestOutcome;
 
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement) :
@@ -55,7 +56,7 @@ void Snowflake::Client::FileTransferAgent::reset()
   m_smallFilesMeta.clear();
 }
 
-ITransferResult *
+Snowflake::Client::ITransferResult *
 Snowflake::Client::FileTransferAgent::execute(string *command)
 {
   reset();
@@ -70,12 +71,12 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   // init storage client
   m_storageClient = StorageClientFactory
-  ::getClient(response.getStageInfo(), (unsigned int)response.getParallel());
+  ::getClient(&response.stageInfo, (unsigned int)response.parallel);
 
   // init file metadata
   initFileMetadata(command);
 
-  switch (response.getCommandType())
+  switch (response.command)
   {
     case CommandType::UPLOAD:
       upload(command);
@@ -94,15 +95,14 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
 void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command)
 {
-  m_FileMetadataInitializer.setAutoCompress(response.getAutoCompress());
-  m_FileMetadataInitializer.setSourceCompression(response.getSourceCompression());
-  m_FileMetadataInitializer.setEncryptionMaterials(
-    response.getEncryptionMaterial());
+  m_FileMetadataInitializer.setAutoCompress(response.autoCompress);
+  m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
+  m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
 
-  vector<string> *sourceLocations = response.getSourceLocations();
+  vector<string> *sourceLocations = &response.srcLocations;
   for (size_t i = 0; i < sourceLocations->size(); i++)
   {
-    switch (response.getCommandType())
+    switch (response.command)
     {
       case CommandType::UPLOAD:
         m_FileMetadataInitializer.populateSrcLocUploadMetadata(
@@ -112,8 +112,8 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
         {
           RemoteStorageRequestOutcome outcome =
             m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
-              sourceLocations->at(i), response.getStageInfo()->getLocation(),
-              m_storageClient, &response.getEncryptionMaterial()->at(i));
+              sourceLocations->at(i), &response.stageInfo.location,
+              m_storageClient, &response.encryptionMaterials.at(i));
 
           if (outcome == TOKEN_EXPIRED)
           {
@@ -160,7 +160,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
 
 void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *command)
 {
-  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
+  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
   for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
     unsigned int resultIndex = i + m_largeFilesMeta.size();
@@ -204,8 +204,8 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
   if (now - m_lastRefreshTokenSec > 10 * 60)
   {
     m_stmtPutGet->parsePutGetCommand(command, &response);
-    m_storageClient = StorageClientFactory::getClient(response.getStageInfo(),
-      (unsigned int) response.getParallel());
+    m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
+      (unsigned int) response.parallel);
     m_lastRefreshTokenSec = now;
   }
 }
@@ -310,7 +310,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
     m_largeFilesMeta.size() + m_smallFilesMeta.size());
 
   std::string createDirIfNotExist = "mkdir -p " +
-    std::string(response.GetLocalLocation());
+    std::string(response.localLocation);
   const int err = system(createDirIfNotExist.c_str());
   if (err != 0)
   {
@@ -341,7 +341,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
 
 void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *command)
 {
-  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.getParallel());
+  Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
   for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
     unsigned int resultIndex = i + m_largeFilesMeta.size();
@@ -375,7 +375,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   FileMetadata *fileMetadata,
   unsigned int resultIndex)
 {
-  std::string dstNameFull = std::string(response.GetLocalLocation()) + "/" +
+  std::string dstNameFull = std::string(response.localLocation) + "/" +
     fileMetadata->destFileName;
 
   std::basic_fstream<char> dstFile(dstNameFull.c_str(),

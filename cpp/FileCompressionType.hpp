@@ -75,6 +75,11 @@ public:
    */
   const char * getFileExtension() const;
 
+  /**
+   * @return string representation of compression type
+   */
+  const char * getName() const;
+
 private:
   /**
    * @return true if match magic number otherwise false

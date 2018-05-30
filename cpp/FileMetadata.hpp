@@ -6,8 +6,6 @@
 #define SNOWFLAKECLIENT_FILEMETADATA_HPP
 
 #include <string>
-#include "snowflake/EncryptionMaterial.hpp"
-#include "snowflake/StageInfo.hpp"
 #include "snowflake/PutGetParseResponse.hpp"
 #include "crypto/CryptoTypes.hpp"
 #include "FileCompressionType.hpp"

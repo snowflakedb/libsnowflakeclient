@@ -141,9 +141,11 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
     encryptionBlockSize * encryptionBlockSize);
+  fileMetadata->destFileSize = fileMetadata->encryptionMetadata.cipherStreamSize;
 }
 
-RemoteStorageRequestOutcome Snowflake::Client::FileMetadataInitializer::
+Snowflake::Client::RemoteStorageRequestOutcome
+Snowflake::Client::FileMetadataInitializer::
 populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                std::string *remoteLocation,
                                IStorageClient *storageClient,

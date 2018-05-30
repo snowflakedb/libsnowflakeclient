@@ -51,15 +51,15 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
 
   //TODO move this to global init
   Aws::InitAPI(options);
-  clientConfiguration.region = *stageInfo->getRegion();
+  clientConfiguration.region = stageInfo->region;
   clientConfiguration.caFile = Aws::String(caBundleFile);
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
 
   Aws::Auth::AWSCredentials credentials(
-    Aws::String(stageInfo->getCredentials()->at(AWS_KEY_ID)),
-    Aws::String(stageInfo->getCredentials()->at(AWS_SECRET_KEY)),
-    Aws::String(stageInfo->getCredentials()->at(AWS_TOKEN)));
+    Aws::String(stageInfo->credentials.at(AWS_KEY_ID)),
+    Aws::String(stageInfo->credentials.at(AWS_SECRET_KEY)),
+    Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
   s3Client = new Aws::S3::S3Client(credentials, clientConfiguration);
 }
@@ -82,7 +82,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
   Aws::S3::Model::HeadObjectRequest headObjectRequest;
 
   std::string bucket, key;
-  std::string filePathFull = *m_stageInfo->getLocation()
+  std::string filePathFull = m_stageInfo->location
                              + fileMetadata->destFileName;
   extractBucketAndKey(&filePathFull, bucket, key);
   headObjectRequest.SetBucket(bucket);
@@ -128,7 +128,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 
   // figure out bucket and path
   std::string bucket, key;
-  std::string filePathFull = *m_stageInfo->getLocation() + fileMetadata->destFileName;
+  std::string filePathFull = m_stageInfo->location + fileMetadata->destFileName;
   extractBucketAndKey(&filePathFull, bucket, key);
   putObjectRequest.SetBucket(bucket);
   putObjectRequest.SetKey(key);
@@ -193,8 +193,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
   addUserMetadata(&userMetadata, fileMetadata);
 
   std::string bucket, key;
-  std::string fileFullPath = *m_stageInfo->getLocation()
-                             + fileMetadata->destFileName;
+  std::string fileFullPath = m_stageInfo->location + fileMetadata->destFileName;
   extractBucketAndKey(&fileFullPath, bucket, key);
 
   Aws::S3::Model::CreateMultipartUploadRequest request;

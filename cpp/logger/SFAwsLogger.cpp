@@ -18,8 +18,8 @@ LogLevel Snowflake::Client::SFAwsLogger::GetLogLevel() const
 }
 
 void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
-                                                 const char *tag,
-                                                 const char *formatStr, ...)
+                                         const char *tag,
+                                         const char *formatStr, ...)
 {
   if (logLevel != LogLevel::Off)
   {
@@ -31,13 +31,13 @@ void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
 }
 
 void Snowflake::Client::SFAwsLogger::LogStream(LogLevel logLevel,
-                                                       const char *tag,
-                                                       const Aws::OStringStream &messageStream)
+                                               const char *tag,
+                                               const Aws::OStringStream &messageStream)
 {
   if (logLevel != LogLevel::Off)
   {
     log_log(toSFLogeLevel(logLevel), tag, AWS_LINE, AWS_NS,
-            messageStream.rdbuf()->str().c_str());
+            "%s", messageStream.rdbuf()->str().c_str());
   }
 }
 

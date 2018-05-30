@@ -98,10 +98,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/FileTransferExecutionResult.hpp
         cpp/IFileTransferAgent.cpp
         cpp/IStorageClient.hpp
-        cpp/PutGetParseResponse.cpp
         cpp/SnowflakeS3Client.hpp
         cpp/SnowflakeS3Client.cpp
-        cpp/StageInfo.cpp
         cpp/StatementPutGet.hpp
         cpp/StatementPutGet.cpp
         cpp/StorageClientFactory.hpp
@@ -126,12 +124,10 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/HashContext.hpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
-        include/snowflake/EncryptionMaterial.hpp
         include/snowflake/IFileTransferAgent.hpp
         include/snowflake/IStatementPutGet.hpp
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
-        include/snowflake/StageInfo.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER

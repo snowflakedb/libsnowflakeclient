@@ -209,3 +209,8 @@ const FileCompressionType *FileCompressionType::lookUpByName(const char *name)
 
   return nullptr;
 }
+
+const char * FileCompressionType::getName() const
+{
+  return m_name;
+}

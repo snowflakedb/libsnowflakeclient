@@ -7,7 +7,7 @@
 
 #include <memory>
 #include "IStorageClient.hpp"
-#include "snowflake/StageInfo.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
 
 namespace Snowflake
 {

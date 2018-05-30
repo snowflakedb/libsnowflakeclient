@@ -9,6 +9,8 @@
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 
+using namespace ::Snowflake::Client;
+
 void getDataDirectory(std::string& dataDir)
 {
   const std::string current_file = __FILE__;
@@ -58,7 +60,8 @@ void test_simple_put_core(const char * fileName,
   assert_int_equal(1, results->getResultSize());
 
   results->next();
-  assert_string_equal("SUCCEED", results->getStatus());
+  assert_string_equal("UPLOADED", results->getColumnAsString(
+    results->findColumnByName("STATUS", 6)));
 
   if (copyUploadFile)
   {

@@ -5,18 +5,62 @@
 #ifndef SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP
 #define SNOWFLAKECLIENT_PUTGETPARSERESPONSE_HPP
 
-#include "string"
-#include "EncryptionMaterial.hpp"
-#include "StageInfo.hpp"
 #include <vector>
+#include <string>
+#include <unordered_map>
 #include "snowflake/client.h"
-
-using namespace Snowflake::Client;
 
 namespace Snowflake
 {
 namespace Client
 {
+
+struct EncryptionMaterial
+{
+  EncryptionMaterial(char * queryStageMasterKey,
+                     char * queryId,
+                     long smkId)
+  {
+    this->queryStageMasterKey = std::string(queryStageMasterKey);
+    this->queryId = std::string(queryId);
+    this->smkId = smkId;
+  }
+
+  /// master key to encrypt file key
+  std::string queryStageMasterKey;
+
+  ///  query id
+  std::string queryId;
+
+  /// smk id
+  long smkId;
+};
+
+enum StageType
+{
+  S3,
+  AZURE,
+  LOCAL_FS,
+
+  /// This is used to create MOCKED storage client and is for testing purpose
+  MOCKED_STAGE_TYPE,
+};
+
+struct StageInfo
+{
+  StageType stageType;
+
+  std::string location;
+
+  std::string path;
+
+  // required by s3 client
+  std::string region;
+
+  std::unordered_map<std::string, char *> credentials;
+};
+
+
 enum CommandType
 {
   UPLOAD, DOWNLOAD, UNKNOWN
@@ -25,120 +69,29 @@ enum CommandType
 /**
  * PUT/GET command response from server.
  */
-class PutGetParseResponse
+struct PutGetParseResponse
 {
-public:
-  PutGetParseResponse() {};
+  int parallel;
 
-  PutGetParseResponse(SF_PUT_GET_RESPONSE *put_get_response);
+  bool autoCompress;
 
-  void updateWith(SF_PUT_GET_RESPONSE *put_get_response);
+  bool overwrite;
 
-  ~PutGetParseResponse() {};
+  bool clientShowEncryptionParameter;
 
-  inline CommandType getCommandType()
-  {
-    return m_command;
-  }
+  char* sourceCompression;
 
-  inline void SetCommandType(CommandType commandType)
-  {
-    m_command = commandType;
-  }
+  char* localLocation;
 
-  inline char * getSourceCompression()
-  {
-    return m_sourceCompression;
-  }
+  CommandType command;
 
-  inline void SetSourceCompression(char * sourceCompression)
-  {
-    m_sourceCompression = sourceCompression;
-  }
-
-  inline std::vector<EncryptionMaterial> *getEncryptionMaterial()
-  {
-    return &m_encryptionMaterials;
-  }
-
-  inline void SetEncryptionMaterial(std::vector<EncryptionMaterial> &encMat)
-  {
-    m_encryptionMaterials = encMat;
-  }
-
-  inline std::vector<std::string> *getSourceLocations()
-  {
-    return &m_srcLocations;
-  }
-
-  inline void SetSourceLocations(std::vector<std::string> &sourceLocations)
-  {
-    m_srcLocations = sourceLocations;
-  }
-
-  inline StageInfo *getStageInfo()
-  {
-    return &m_stageInfo;
-  }
-
-  inline void SetStageInfo(StageInfo &stageInfo)
-  {
-    m_stageInfo = stageInfo;
-  }
-
-  inline bool getAutoCompress()
-  {
-    return m_autoCompress;
-  }
-
-  inline void SetAutoCompress(bool autoCompress)
-  {
-    m_autoCompress = autoCompress;
-  }
-
-  inline int getParallel()
-  {
-    return m_parallel;
-  }
-
-  inline void SetParallel(int parallel)
-  {
-    m_parallel = parallel;
-  }
-
-  inline char * GetLocalLocation()
-  {
-    return m_localLocation;
-  }
-
-  inline void SetLocalLocation(char * localLocation)
-  {
-    m_localLocation = localLocation;
-  }
-
-private:
-
-  int m_parallel;
-
-  bool m_autoCompress;
-
-  bool m_overwrite;
-
-  bool m_clientShowEncryptionParameter;
-
-  char* m_sourceCompression;
-
-  char *m_localLocation;
-
-  CommandType m_command;
-
-  std::vector<std::string> m_srcLocations;
+  std::vector<std::string> srcLocations;
 
   /// for put command, size is always 1, while for get,
   /// encryption mat can be a list
-  std::vector<EncryptionMaterial> m_encryptionMaterials;
+  std::vector<EncryptionMaterial> encryptionMaterials;
 
-  StageInfo m_stageInfo;
+  StageInfo stageInfo;
 };
 
 }

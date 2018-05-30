@@ -9,6 +9,7 @@
  */
 
 #include "snowflake/IStatementPutGet.hpp"
+#include "snowflake/PutGetParseResponse.hpp"
 #include <fstream>
 #include <memory>
 #include "util/Base64.hpp"
@@ -16,6 +17,8 @@
 #include "FileTransferAgent.hpp"
 #include "StorageClientFactory.hpp"
 #include "utils/test_setup.h"
+
+using namespace ::Snowflake::Client;
 
 void getDataDirectory(std::string& dataDir)
 {
@@ -28,31 +31,30 @@ class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementGet()
-    : IStatementPutGet()
+    : Snowflake::Client::IStatementPutGet()
   {
-    m_stageLoc = "fake s3 location";
-    m_stageInfo.SetStageType(StageType::MOCKED_STAGE_TYPE);
-    m_stageInfo.SetLocation(m_stageLoc);
-    m_srcLocations.push_back("fake s3 location");
-    m_encryptionMaterial.emplace_back();
-    m_encryptionMaterial.back().queryStageMasterKey = "dvkZi0dkBfrcHr6YxXLRFg==";
-    m_encryptionMaterial.back().queryId="1234";
-    m_encryptionMaterial.back().smkId=1234;
+    m_stageInfo.stageType = Snowflake::Client::StageType::MOCKED_STAGE_TYPE;
+    m_stageInfo.location = "fake s3 location";
+    m_encryptionMaterial.emplace_back(
+      (char *)"dvkZi0dkBfrcHr6YxXLRFg==\0",
+      (char *)"1234\0",
+      1234
+    );
     numParseCalled = 0;
-    m_localLocation = "/tmp";
+    m_srcLocations.push_back("fake s3 location");
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
                                   PutGetParseResponse *putGetParseResponse)
   {
-    putGetParseResponse->SetStageInfo(m_stageInfo);
-    putGetParseResponse->SetCommandType(CommandType::DOWNLOAD);
-    putGetParseResponse->SetSourceCompression((char *)"NONE");
-    putGetParseResponse->SetSourceLocations(m_srcLocations);
-    putGetParseResponse->SetAutoCompress(false);
-    putGetParseResponse->SetParallel(4);
-    putGetParseResponse->SetEncryptionMaterial(m_encryptionMaterial);
-    putGetParseResponse->SetLocalLocation((char *)m_localLocation);
+    putGetParseResponse->stageInfo = m_stageInfo;
+    putGetParseResponse->command = CommandType::DOWNLOAD;
+    putGetParseResponse->sourceCompression = (char *)"NONE";
+    putGetParseResponse->srcLocations = m_srcLocations;
+    putGetParseResponse->autoCompress = false;
+    putGetParseResponse->parallel = 4;
+    putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
+    putGetParseResponse->localLocation = (char *)"/tmp\0";
 
     numParseCalled ++;
 
@@ -67,15 +69,11 @@ public:
 private:
   StageInfo m_stageInfo;
 
-  std::string m_stageLoc;
-
   std::vector<EncryptionMaterial> m_encryptionMaterial;
-
-  std::vector<std::string> m_srcLocations;
 
   unsigned int numParseCalled;
 
-  const char * m_localLocation;
+  std::vector<std::string> m_srcLocations;
 };
 
 class MockedStatementPut : public Snowflake::Client::IStatementPutGet
@@ -84,27 +82,27 @@ public:
   MockedStatementPut(std::string fileName)
     : IStatementPutGet()
   {
-    m_stageInfo.SetStageType(StageType::MOCKED_STAGE_TYPE);
+    m_stageInfo.stageType = StageType::MOCKED_STAGE_TYPE;
     std::string dataDir;
     getDataDirectory(dataDir);
     m_srcLocations.push_back(dataDir + fileName);
-    m_encryptionMaterial.emplace_back();
-    m_encryptionMaterial.back().queryStageMasterKey = "3dOoaBhkB1wSw4hyfA5DJw==";
-    m_encryptionMaterial.back().queryId="1234";
-    m_encryptionMaterial.back().smkId=1234;
+    m_encryptionMaterial.emplace_back(
+      (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
+      (char *)"1234\0",
+      1234);
     numParseCalled = 0;
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
                                   PutGetParseResponse *putGetParseResponse)
   {
-    putGetParseResponse->SetStageInfo(m_stageInfo);
-    putGetParseResponse->SetCommandType(CommandType::UPLOAD);
-    putGetParseResponse->SetSourceCompression((char *)"NONE");
-    putGetParseResponse->SetSourceLocations(m_srcLocations);
-    putGetParseResponse->SetAutoCompress(false);
-    putGetParseResponse->SetParallel(4);
-    putGetParseResponse->SetEncryptionMaterial(m_encryptionMaterial);
+    putGetParseResponse->stageInfo = m_stageInfo;
+    putGetParseResponse->command = CommandType::UPLOAD;
+    putGetParseResponse->sourceCompression = (char *)"NONE";
+    putGetParseResponse->srcLocations = m_srcLocations;
+    putGetParseResponse->autoCompress = false;
+    putGetParseResponse->parallel = 4;
+    putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
 
     numParseCalled ++;
 
@@ -225,7 +223,8 @@ void test_token_renew_core(std::string fileName)
 
   while(result->next())
   {
-    assert_string_equal("SUCCEED", result->getStatus());
+    assert_string_equal("UPLOADED", result->getColumnAsString(
+      result->findColumnByName("STATUS", 6)));
   }
 
   // original parse command call + renew call
@@ -269,7 +268,8 @@ void test_token_renew_get_remote_meta(void **unused)
 
   while(result->next())
   {
-    assert_string_equal("SUCCEED", result->getStatus());
+    assert_string_equal("DOWNLOADED", result->getColumnAsString(
+      result->findColumnByName("STATUS", 6)));
   }
 
   // original parse call + token renew call

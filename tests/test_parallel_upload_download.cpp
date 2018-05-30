@@ -13,6 +13,8 @@
 #define SMALL_FILE_PREFIX "test_small_file_"
 #define LARGE_FILE_NAME "test_large_file.csv"
 
+using namespace ::Snowflake::Client;
+
 void getDataDirectory(std::string& dataDir)
 {
   const std::string current_file = __FILE__;
@@ -90,7 +92,8 @@ void test_parallel_upload_download_core(int fileNumber)
 
   while(result->next())
   {
-    assert_string_equal("SUCCEED", result->getStatus());
+    assert_string_equal("UPLOADED", result->getColumnAsString(
+      result->findColumnByName("STATUS", 6)));
   }
 
   std::string copyCommand = "copy into test_parallel_upload_download";
@@ -121,7 +124,8 @@ void test_parallel_upload_download_core(int fileNumber)
 
   while(result->next())
   {
-    assert_string_equal("SUCCEED", result->getStatus());
+    assert_string_equal("DOWNLOADED", result->getColumnAsString(
+      result->findColumnByName("STATUS", 6)));
   }
 
   std::string compCmd = "diff " + dataDir + "test_parallel_upload/ " + dataDir + "test_parallel_download/";
