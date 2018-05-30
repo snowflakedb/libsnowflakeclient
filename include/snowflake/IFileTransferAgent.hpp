@@ -26,6 +26,7 @@ public:
 
   /**
    * Static method to instantiate a IFileTransferAgent class
+   * @return a newly allocated IFileTransferAgent, caller need to delete instance
    */
   static IFileTransferAgent *getTransferAgent(
     IStatementPutGet * statementPutGet);

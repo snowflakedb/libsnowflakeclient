@@ -16,6 +16,8 @@
 
 typedef ::Snowflake::Client::FileCompressionType FileCompressionType;
 
+using namespace ::Snowflake::Client;
+
 void getDataDirectory(std::string& dataDir)
 {
   const std::string current_file = __FILE__;

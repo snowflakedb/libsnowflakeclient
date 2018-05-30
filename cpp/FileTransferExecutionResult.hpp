@@ -42,21 +42,35 @@ public:
 
   bool next();
 
-  const char * getStatus();
-
   int getResultSize();
+
+  unsigned int getColumnSize();
+
+  const char * getColumnName(int columnIndex);
+
+  const char * getColumnAsString(int columnIndex);
+
+  CommandType getCommandType();
+
+  int findColumnByName(const char * columnName, int columnNameSize);
 
 private:
   /// enum to indicate command type
   CommandType m_commandType;
 
+  /// arrays of result file metadata
   FileMetadata ** m_fileMetadatas;
 
+  /// arrays of upload outcome
   RemoteStorageRequestOutcome * m_outcomes;
 
+  /// result size
   unsigned int m_resultEntryNum;
 
+  /// current index already consumed
   int m_currentIndex;
+
+  const char * fromOutcomeToStr(RemoteStorageRequestOutcome outcome);
 };
 }
 }

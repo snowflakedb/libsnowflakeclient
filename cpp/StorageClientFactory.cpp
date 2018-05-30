@@ -15,7 +15,7 @@ IStorageClient * StorageClientFactory::injectedClient = nullptr;
 IStorageClient * StorageClientFactory::getClient(
   StageInfo *stageInfo, unsigned int parallel)
 {
-  switch (stageInfo->getStageType())
+  switch (stageInfo->stageType)
   {
     case StageType::S3:
       return new SnowflakeS3Client(stageInfo, parallel);

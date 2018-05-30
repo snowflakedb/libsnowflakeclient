@@ -5,7 +5,8 @@
 #include "snowflake/IFileTransferAgent.hpp"
 #include "FileTransferAgent.hpp"
 
-IFileTransferAgent * Snowflake::Client::IFileTransferAgent::getTransferAgent(
+Snowflake::Client::IFileTransferAgent *
+Snowflake::Client::IFileTransferAgent::getTransferAgent(
   IStatementPutGet *statementPutGet)
 {
   return new FileTransferAgent(statementPutGet);
