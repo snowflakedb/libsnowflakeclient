@@ -46,6 +46,8 @@ using Snowflake::Client::FileCompressionType;
 #define ORC_MAGIC "\x4f\x52\x43"
 #define ORC_NAME "orc"
 #define ORC_EXTENSION ".orc"
+#define NONE_NAME "none"
+#define NONE_EXTENSION ""
 
 std::vector<const char *> gzip_magics = {GZIP_MAGIC};
 std::vector<const char *> deflate_magics = {DEFLATE_MAGIC_LOW,
@@ -60,8 +62,9 @@ std::vector<const char *> brotli_magics = {BROTLI_MAGIC};
 Snowflake::Client::FileCompressionType::FileCompressionType(
   const char * fileExtension,
   const char * name,
-  bool isSupported){
-  Snowflake::Client::FileCompressionType(fileExtension, name, {}, 0, isSupported);
+  bool isSupported) :
+  Snowflake::Client::FileCompressionType(fileExtension, name, {}, 0, isSupported)
+{
 }
 
 Snowflake::Client::FileCompressionType::FileCompressionType(
@@ -133,7 +136,7 @@ const FileCompressionType FileCompressionType::COMPRESS =
   FileCompressionType(COMPRESS_EXTENSION, COMPRESS_NAME, false);
 
 const FileCompressionType FileCompressionType::NONE =
-  FileCompressionType("", "", true);
+  FileCompressionType(NONE_EXTENSION, NONE_NAME, true);
 
 bool Snowflake::Client::FileCompressionType::matchMagicNumber(char *header) const
 {

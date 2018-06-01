@@ -48,7 +48,7 @@ public:
 
   const char * getColumnName(int columnIndex);
 
-  const char * getColumnAsString(int columnIndex);
+  void getColumnAsString(int columnIndex, std::string &value);
 
   CommandType getCommandType();
 

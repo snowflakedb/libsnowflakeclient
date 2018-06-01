@@ -90,10 +90,11 @@ void test_parallel_upload_download_core(int fileNumber)
   ITransferResult *result = agent.execute(&putCommand);
   assert_int_equal(fileNumber, result->getResultSize());
 
+  std::string put_status;
   while(result->next())
   {
-    assert_string_equal("UPLOADED", result->getColumnAsString(
-      result->findColumnByName("STATUS", 6)));
+    result->getColumnAsString(6, put_status);
+    assert_string_equal("UPLOADED", put_status.c_str());
   }
 
   std::string copyCommand = "copy into test_parallel_upload_download";
@@ -122,10 +123,11 @@ void test_parallel_upload_download_core(int fileNumber)
   result = agent.execute(&getCommand);
   assert_int_equal(fileNumber, result->getResultSize());
 
+  std::string get_status;
   while(result->next())
   {
-    assert_string_equal("DOWNLOADED", result->getColumnAsString(
-      result->findColumnByName("STATUS", 6)));
+    result->getColumnAsString(2, get_status);
+    assert_string_equal("DOWNLOADED", get_status.c_str());
   }
 
   std::string compCmd = "diff " + dataDir + "test_parallel_upload/ " + dataDir + "test_parallel_download/";
