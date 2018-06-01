@@ -49,7 +49,7 @@ public:
   /**
    * @return column value as string
    */
-  virtual const char * getColumnAsString(int columnIndex) = 0;
+  virtual void getColumnAsString(int columnIndex, std::string & value) = 0;
 
   /**
    * @return command type (upload or download) for file transfer

@@ -127,7 +127,8 @@ int FileTransferExecutionResult::getResultSize()
   return m_resultEntryNum;
 }
 
-const char * FileTransferExecutionResult::getColumnAsString(int columnIndex)
+void FileTransferExecutionResult::getColumnAsString(int columnIndex,
+                                                    std::string & value)
 {
   if (columnIndex < getColumnSize())
   {
@@ -139,51 +140,71 @@ const char * FileTransferExecutionResult::getColumnAsString(int columnIndex)
           case PUT_COLUMN::SOURCE:
             {
               std::string &srcFileFull = m_fileMetadatas[m_currentIndex]->srcFileName;
-              return srcFileFull.substr(
-                srcFileFull.find_last_of('/') + 1).c_str();
+              value = srcFileFull.substr(srcFileFull.find_last_of('/') + 1);
             }
+            break;
 
           case PUT_COLUMN::TARGET:
-            return m_fileMetadatas[m_currentIndex]->destFileName.c_str();
+            value = m_fileMetadatas[m_currentIndex]->destFileName;
+            break;
 
           case PUT_COLUMN::SOURCE_SIZE:
-            return std::to_string(
-              m_fileMetadatas[m_currentIndex]->srcFileSize).c_str();
+            value = std::to_string(m_fileMetadatas[m_currentIndex]->srcFileSize);
+            break;
 
           case PUT_COLUMN::TARGET_SIZE:
-            return std::to_string(
-              m_fileMetadatas[m_currentIndex]->destFileSize).c_str();
+            value = std::to_string(m_fileMetadatas[m_currentIndex]->destFileSize);
+            break;
 
           case PUT_COLUMN::SOURCE_COMPRESSION:
-            return m_fileMetadatas[m_currentIndex]->sourceCompression->getName();
+            value = std::string(m_fileMetadatas[m_currentIndex]->
+              sourceCompression->getName());
+            break;
 
           case PUT_COLUMN::TARGET_COMPRESSION:
-            return m_fileMetadatas[m_currentIndex]->targetCompression->getName();
+            value = std::string(m_fileMetadatas[m_currentIndex]->
+              targetCompression->getName());
+            break;
 
           case PUT_COLUMN::PUT_STATUS:
-            return fromOutcomeToStr(m_outcomes[m_currentIndex]);
+            value = std::string(fromOutcomeToStr(m_outcomes[m_currentIndex]));
+            break;
 
           case PUT_COLUMN::PUT_ENCRYPTION:
-            return ENCRYPTION_ENCRYPTED;
+            value = std::string(ENCRYPTION_ENCRYPTED);
+            break;
 
           case PUT_COLUMN::PUT_MESSAGE:
-            return m_outcomes[m_currentIndex] == RemoteStorageRequestOutcome::
-                   SKIP_UPLOAD_FILE ? MESSAGE_SKIPPED : "";
+            value = std::string(
+              m_outcomes[m_currentIndex] == RemoteStorageRequestOutcome::
+                   SKIP_UPLOAD_FILE ? MESSAGE_SKIPPED : "");
+            break;
         }
+        break;
       case DOWNLOAD:
         switch(columnIndex)
         {
           case GET_COLUMN::FILE:
-            return m_fileMetadatas[m_currentIndex]->destFileName.c_str();
+            value = m_fileMetadatas[m_currentIndex]->destFileName;
+            break;
+
           case GET_COLUMN::SIZE:
-            return std::to_string(m_fileMetadatas[m_currentIndex]->srcFileSize).c_str();
+            value = std::to_string(m_fileMetadatas[m_currentIndex]->srcFileSize);
+            break;
+
           case GET_COLUMN::GET_STATUS:
-            return fromOutcomeToStr(m_outcomes[m_currentIndex]);
+            value = std::string(fromOutcomeToStr(m_outcomes[m_currentIndex]));
+            break;
+
           case GET_COLUMN::GET_ENCRYPTION:
-            return ENCRYPTION_DECRYPTED;
+            value = std::string(ENCRYPTION_DECRYPTED);
+            break;
+
           case GET_COLUMN::GET_MESSAGE:
-            return "";
+            value ="";
+            break;
         }
+        break;
     }
   }
 }

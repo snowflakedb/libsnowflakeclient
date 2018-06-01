@@ -221,10 +221,11 @@ void test_token_renew_core(std::string fileName)
 
   ITransferResult * result = agent.execute(&cmd);
 
+  std::string put_status;
   while(result->next())
   {
-    assert_string_equal("UPLOADED", result->getColumnAsString(
-      result->findColumnByName("STATUS", 6)));
+    result->getColumnAsString(6, put_status);
+    assert_string_equal("UPLOADED", put_status.c_str());
   }
 
   // original parse command call + renew call
@@ -266,10 +267,11 @@ void test_token_renew_get_remote_meta(void **unused)
 
   ITransferResult * result = agent.execute(&cmd);
 
+  std::string get_status;
   while(result->next())
   {
-    assert_string_equal("DOWNLOADED", result->getColumnAsString(
-      result->findColumnByName("STATUS", 6)));
+    result->getColumnAsString(2, get_status);
+    assert_string_equal("DOWNLOADED", get_status.c_str());
   }
 
   // original parse call + token renew call
