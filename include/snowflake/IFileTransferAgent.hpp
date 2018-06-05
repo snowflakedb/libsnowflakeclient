@@ -6,6 +6,7 @@
 #define SNOWFLAKECLIENT_IFILETRANSFERAGENT_HPP
 
 #include "ITransferResult.hpp"
+#include "ISFLogger.hpp"
 #include "IStatementPutGet.hpp"
 
 namespace Snowflake
@@ -30,6 +31,13 @@ public:
    */
   static IFileTransferAgent *getTransferAgent(
     IStatementPutGet * statementPutGet);
+
+
+  /**
+   * Used by ODBC to inject logger. If this method is not called, default logger
+   * will be used.
+   */
+  static void injectExternalLogger(ISFLogger * logger);
 };
 
 }

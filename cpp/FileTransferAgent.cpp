@@ -16,6 +16,7 @@
 #include "util/CompressionUtil.hpp"
 #include "util/ThreadPool.hpp"
 #include "EncryptionProvider.hpp"
+#include "logger/SFLogger.hpp"
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
 
@@ -67,7 +68,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
     //TODO finalize exception;
     throw;
   }
-  sf_log_info(CXX_LOG_NS, "Parse response succeed.");
+  CXX_LOG_INFO("Parse response succeed");
 
   // init storage client
   m_storageClient = StorageClientFactory
@@ -117,15 +118,14 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
 
           if (outcome == TOKEN_EXPIRED)
           {
-            sf_log_debug(CXX_LOG_NS,
-                         "Token expired when getting download metadata");
+            CXX_LOG_DEBUG("Token expired when getting download metadata");
             this->renewToken(command);
             i--;
           }
           break;
         }
       default:
-        sf_log_error(CXX_LOG_NS, "Invalid command type");
+        CXX_LOG_FATAL(CXX_LOG_NS, "Invalid command type");
         throw;
     }
   }
@@ -203,6 +203,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
   // sure that some other thread has already renewed the token
   if (now - m_lastRefreshTokenSec > 10 * 60)
   {
+    CXX_LOG_INFO("Renew aws token");
     m_stmtPutGet->parsePutGetCommand(command, &response);
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
       (unsigned int) response.parallel);
@@ -291,6 +292,7 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 void Snowflake::Client::FileTransferAgent::compressSourceFile(
   FileMetadata *fileMetadata)
 {
+  CXX_LOG_DEBUG("Starting file compression");
   //TODO Better handle tmp directory
   fileMetadata->srcFileToUpload = "/tmp/" + fileMetadata->destFileName;
 
@@ -314,6 +316,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
   const int err = system(createDirIfNotExist.c_str());
   if (err != 0)
   {
+    CXX_LOG_DEBUG("Filed to create directory %s", response.localLocation);
     throw;
   }
 
