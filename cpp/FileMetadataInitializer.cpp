@@ -4,6 +4,7 @@
 
 #include "FileMetadataInitializer.hpp"
 #include "EncryptionProvider.hpp"
+#include "logger/SFLogger.hpp"
 #include <dirent.h>
 #include <fnmatch.h>
 
@@ -44,6 +45,7 @@ void Snowflake::Client::FileMetadataInitializer::initFileMetadata(
   }
   else
   {
+    CXX_LOG_ERROR("Cannot read path struct");
     throw;
   }
 }
@@ -84,12 +86,14 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
                   sizeof(COMPRESSION_AUTO)))
   {
     // guess
+    CXX_LOG_INFO("Auto detect on compression type");
     fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
       fileMetadata->srcFileName);
   }
   else if (!strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
                         sizeof(COMPRESSION_NONE)))
   {
+    CXX_LOG_INFO("No compression in source file");
     fileMetadata->sourceCompression = &FileCompressionType::NONE;
   }
   else
@@ -161,6 +165,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
 
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
+    CXX_LOG_DEBUG("Success on getting remote file metadata");
     std::vector<FileMetadata> *metaListToPush =
       fileMetadata.srcFileSize > DATA_SIZE_THRESHOLD ?
       m_largeFileMetadata : m_smallFileMetadata;

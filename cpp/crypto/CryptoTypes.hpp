@@ -42,7 +42,7 @@ enum class CryptoMode
   CBC,  /// Cipher-block chaining
   CFB,  /// Cipher feedback
   //CTR,  /// Counter NOT SUPPORTED
-    ECB,  /// Electronic codebook
+  ECB,  /// Electronic codebook
   GCM,  /// Galois counter
   OFB,  /// Output feedback
   KW    /// Key wrap

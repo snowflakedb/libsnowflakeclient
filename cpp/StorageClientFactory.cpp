@@ -4,6 +4,7 @@
 
 #include "StorageClientFactory.hpp"
 #include "SnowflakeS3Client.hpp"
+#include "logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -18,6 +19,7 @@ IStorageClient * StorageClientFactory::getClient(
   switch (stageInfo->stageType)
   {
     case StageType::S3:
+      CXX_LOG_INFO("Creating S3 client");
       return new SnowflakeS3Client(stageInfo, parallel);
     case StageType::MOCKED_STAGE_TYPE:
       return injectedClient;

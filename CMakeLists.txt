@@ -122,9 +122,13 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp
+        cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
+        cpp/logger/SFLogger.cpp
+        cpp/logger/SFLogger.hpp
         include/snowflake/IFileTransferAgent.hpp
+        include/snowflake/ISFLogger.hpp
         include/snowflake/IStatementPutGet.hpp
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
