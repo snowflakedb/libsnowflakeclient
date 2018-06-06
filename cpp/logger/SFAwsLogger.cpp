@@ -44,19 +44,6 @@ void Snowflake::Client::SFAwsLogger::LogStream(LogLevel logLevel,
                                                const char *tag,
                                                const Aws::OStringStream &messageStream)
 {
-  /*if (logLevel != LogLevel::Off)
-  {
-    if (SFLogger::getExternalLogger() != NULL)
-    {
-      SFLogger::getExternalLogger()->logLineVA((SF_LOG_LEVEL)toSFLogeLevel(logLevel),
-        AWS_NS, tag, "%s", messageStream.rdbuf()->str().c_str());
-    }
-    else
-    {
-      log_log(toSFLogeLevel(logLevel), tag, AWS_LINE, AWS_NS,
-              "%s", messageStream.rdbuf()->str().c_str());
-    }
-  }*/
   this->Log(logLevel, tag, "%s", messageStream.rdbuf()->str().c_str());
 }
 
