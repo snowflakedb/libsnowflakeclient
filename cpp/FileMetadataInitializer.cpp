@@ -73,6 +73,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
   else
   {
     // open dir failed
+    CXX_LOG_ERROR("Cannot open directory %s, errno(%d)",
+      dirPath.c_str(), errno);
     throw;
   }
 }
@@ -80,6 +82,9 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   FileMetadata *fileMetadata)
 {
+  CXX_LOG_DEBUG("Init compression metadata for file %s",
+                fileMetadata->srcFileName.c_str());
+
   if(!strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
                   sizeof(COMPRESSION_AUTO_DETECT)) ||
      !strncasecmp(m_sourceCompression, COMPRESSION_AUTO, 
@@ -99,12 +104,14 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   else
   {
     // look up
+    CXX_LOG_INFO("Compression type lookup by name.");
     fileMetadata->sourceCompression = FileCompressionType::lookUpByName(
       m_sourceCompression);
 
     if (!fileMetadata->sourceCompression)
     {
       // no compression found
+      CXX_LOG_INFO("Compression type %s not found.", m_sourceCompression);
       throw;
     }
   }

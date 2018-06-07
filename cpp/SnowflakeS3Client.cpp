@@ -63,6 +63,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
     Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
   s3Client = new Aws::S3::S3Client(credentials, clientConfiguration);
+  CXX_LOG_TRACE("Successfully created s3 client. End of constructor.");
 }
 
 SnowflakeS3Client::~SnowflakeS3Client()
