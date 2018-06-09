@@ -75,7 +75,10 @@ if (LINUX)
             ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl ssl crypto)
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl ssl crypto
+            aws-cpp-sdk-core aws-cpp-sdk-s3)
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl
+            ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3)
 endif()
 if (WIN32)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} libcurl_a libssl_a libcrypto_a zlib_a)
@@ -99,7 +102,7 @@ FOREACH (T ${TESTS_C})
             ./${T})
 ENDFOREACH ()
 
-if (LINUX)
+if (UNIX)
     FOREACH(T ${TESTS_CXX})
         add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
         target_include_directories(
