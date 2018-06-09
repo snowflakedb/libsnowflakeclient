@@ -195,20 +195,18 @@ set_target_properties(snowflakeclient PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 #set (CMAKE_CXX_STANDARD 11)
 
-if (LINUX)
-link_directories(
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
-)
-endif()
-
 if(APPLE)
     link_directories(
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
+    )
+else()
+    link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
     )
 endif()
 
