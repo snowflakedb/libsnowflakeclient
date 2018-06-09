@@ -7,6 +7,7 @@
 #include "logger/SFLogger.hpp"
 #include <dirent.h>
 #include <fnmatch.h>
+#include <cerrno>
 
 #define COMPRESSION_AUTO "AUTO"
 #define COMPRESSION_AUTO_DETECT "AUTO_DETECT"
