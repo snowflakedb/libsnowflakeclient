@@ -145,14 +145,22 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Statement.cpp
         cpp/lib/Column.cpp)
 
-if (UNIX)
-    # Linux and OSX
+if (LINUX)
+    # Linux
     find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
 endif ()
+
+if (APPLE)
+    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
+    find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
+    find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+endif()
 
 if (WIN32)
     # Windows
@@ -177,7 +185,7 @@ message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 
-if (LINUX)
+if (UNIX)
     add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
 else()
     add_library(snowflakeclient STATIC ${SOURCE_FILES})
@@ -187,12 +195,22 @@ set_target_properties(snowflakeclient PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 #set (CMAKE_CXX_STANDARD 11)
 
+if (LINUX)
 link_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
 )
+endif()
+
+if(APPLE)
+    link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
+    )
+endif()
 
 if (LINUX)
     # Linux
