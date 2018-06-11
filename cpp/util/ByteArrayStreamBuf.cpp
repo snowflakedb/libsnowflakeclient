@@ -27,6 +27,7 @@ void * Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
   this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
   this->setp(m_dataBuffer, m_dataBuffer + updatedSize);
   this->size = updatedSize;
+  return nullptr;
 }
 
 Snowflake::Client::Util::StreamSplitter::StreamSplitter(
@@ -37,7 +38,7 @@ Snowflake::Client::Util::StreamSplitter::StreamSplitter(
   m_partMaxSize(partMaxSize),
   m_currentPartIndex(-1)
 {
-  _mutex_init(&streamMutex);
+  _critical_section_init(&streamMutex);
   for (int i=0; i<numOfBuffer; i++)
   {
     buffers.push_back(new ByteArrayStreamBuf(partMaxSize));
@@ -48,20 +49,20 @@ Snowflake::Client::Util::ByteArrayStreamBuf*
 Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(
   int bufIndex, int &partIndex)
 {
-  _mutex_lock(&streamMutex);
+  _critical_section_lock(&streamMutex);
   ByteArrayStreamBuf * buf = buffers[bufIndex];
   memset(buf->getDataBuffer(), 0, m_partMaxSize);
   m_inputStream->read(buf->getDataBuffer(), m_partMaxSize);
   buf->updateSize(m_inputStream->gcount());
   m_currentPartIndex ++;
   partIndex = m_currentPartIndex;
-  _mutex_unlock(&streamMutex);
+  _critical_section_unlock(&streamMutex);
   return buf;
 }
 
 Snowflake::Client::Util::StreamSplitter::~StreamSplitter()
 {
-  _mutex_term(&streamMutex);
+  _critical_section_term(&streamMutex);
   for (unsigned int i=0; i<buffers.size(); i++)
   {
     delete buffers[i];
@@ -89,7 +90,7 @@ Snowflake::Client::Util::StreamAppender::StreamAppender(
     m_buffers[i] = nullptr;
   }
 
-  _mutex_init(&m_streamMutex);
+  _critical_section_init(&m_streamMutex);
   _cond_init(&m_streamCv);
 }
 
@@ -120,7 +121,7 @@ StreamAppender::GetBuffer(
 void Snowflake::Client::Util::StreamAppender::WritePartToOutputStream(
   int threadId, int partIndex)
 {
-  _mutex_lock(&m_streamMutex);
+  _critical_section_lock(&m_streamMutex);
   while(partIndex > m_currentPartIndex)
   {
     _cond_wait(&m_streamCv, &m_streamMutex);
@@ -135,5 +136,5 @@ void Snowflake::Client::Util::StreamAppender::WritePartToOutputStream(
     m_outputStream->flush();
   }
   _cond_broadcast(&m_streamCv);
-  _mutex_unlock(&m_streamMutex);
+  _critical_section_unlock(&m_streamMutex);
 }

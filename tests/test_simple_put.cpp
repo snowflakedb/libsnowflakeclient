@@ -5,6 +5,7 @@
 #include <aws/core/Aws.h>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 #include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
@@ -17,13 +18,6 @@
 #define COLUMN_ENCRYPTION "encryption"
 
 using namespace ::Snowflake::Client;
-
-void getDataDirectory(std::string& dataDir)
-{
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
-}
 
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
@@ -47,8 +41,7 @@ void test_simple_put_core(const char * fileName,
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  std::string dataDir;
-  getDataDirectory(dataDir);
+  std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
   std::string putCommand = "put file://" + file + " @%test_small_put";
   if (!autoCompress)
@@ -233,8 +226,7 @@ void test_simple_put_skip(void **unused)
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  std::string dataDir;
-  getDataDirectory(dataDir);
+  std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + "small_file.csv";
   std::string putCommand = "put file://" + file + " @%test_small_put";
 

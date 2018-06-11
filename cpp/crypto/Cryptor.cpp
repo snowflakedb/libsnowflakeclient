@@ -12,8 +12,6 @@
 #include <vector>
 #include <string>
 
-#include <pthread.h>
-
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>

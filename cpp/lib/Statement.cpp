@@ -11,7 +11,7 @@ Snowflake::Client::Statement::Statement(Connection &connection_) {
 Snowflake::Client::Statement::~Statement() {
     // TODO implement this
 }
-
+/*
 Snowflake::Client::Column& Snowflake::Client::Statement::column(size_t i) {
     // TODO implement this
 }
@@ -23,5 +23,4 @@ void Snowflake::Client::Statement::query(const std::string &command_) {
 SF_STATUS Snowflake::Client::Statement::fetch() {
     // TODO implement this
 }
-
-
+*/

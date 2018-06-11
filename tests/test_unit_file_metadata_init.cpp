@@ -7,6 +7,8 @@
 #include "FileMetadata.hpp"
 #include "FileCompressionType.hpp"
 #include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
+#include "snowflake/platform.h"
 #include <unordered_set>
 #include <iostream>
 #include <map>
@@ -18,11 +20,12 @@ typedef ::Snowflake::Client::FileCompressionType FileCompressionType;
 
 using namespace ::Snowflake::Client;
 
-void getDataDirectory(std::string& dataDir)
+std::string getTestFileMatchDir()
 {
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
+  std::string srcLocation = TestSetup::getDataDir();
+  srcLocation += "test_file_match_dir"; 
+  srcLocation += PATH_SEP;
+  return srcLocation;
 }
 
 void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
@@ -33,13 +36,9 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
 
   FileMetadataInitializer initializer(&smallFileMetadata, &largeFileMetadata);
   initializer.setSourceCompression((char *)"none");
-
-
-  std::string srcLocation;
-  getDataDirectory(srcLocation);
-  srcLocation += "test_file_match_dir/";
-
-  std::string fullFilePattern = srcLocation + filePattern;
+  
+  std::string testDir = getTestFileMatchDir();
+  std::string fullFilePattern = testDir + filePattern;
   initializer.populateSrcLocUploadMetadata(fullFilePattern);
 
   std::unordered_set<std::string> actualFiles;
@@ -51,7 +50,7 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
   std::unordered_set<std::string> expectedFilesFull;
   for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++)
   {
-    std::string expectedFileFull = srcLocation + *i;
+    std::string expectedFileFull = testDir + *i;
     expectedFilesFull.insert(expectedFileFull);
   }
 
@@ -60,29 +59,21 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
 
 static int file_pattern_match_teardown(void ** unused)
 {
-  std::string srcLocation;
-  getDataDirectory(srcLocation);
-  srcLocation += "test_file_match_dir/";
-  std::string rm = "rm -rf " + srcLocation;
-
-  system(rm.c_str());
+  std::string testDir = getTestFileMatchDir();
+  sf_delete_directory_if_exists(testDir.c_str());
   return 0;
 }
 
 static int file_pattern_match_setup(void **unused)
 {
-  std::string srcLocation;
-  getDataDirectory(srcLocation);
-  srcLocation += "test_file_match_dir/";
-
-  std::string mkdirCmd = "mkdir -p " + srcLocation;
-  int ret = system(mkdirCmd.c_str());
+  std::string testDir = getTestFileMatchDir();
+  int ret = sf_create_directory_if_not_exists(testDir.c_str());
   assert_int_equal(0, ret);
 
   std::vector<std::string> allFiles = {FILES_IN_DIR};
   for (auto i = allFiles.begin(); i != allFiles.end(); i++)
   {
-    std::string fullFileName = srcLocation + *i;
+    std::string fullFileName = testDir + *i;
     std::ofstream ofs(fullFileName);
     assert_true(ofs.is_open());
     ofs.close();
@@ -108,12 +99,24 @@ void test_file_pattern_match(void **unused)
 
 }
 
+static int gr_setup(void **unused)
+{
+  initialize_test(SF_BOOLEAN_FALSE);
+  return 0;
+}
+
+static int gr_teardown(void **unused)
+{
+  snowflake_global_term();
+  return 0;
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_setup_teardown(test_file_pattern_match,
                                     file_pattern_match_setup,
                                     file_pattern_match_teardown),
   };
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
+  int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }

@@ -3,6 +3,7 @@
  */
 
 #include "FileTransferExecutionResult.hpp"
+#include "snowflake/platform.h";
 
 #define STATUS_SKIPPED "SKIPPED"
 #define STATUS_UPLOADED "UPLOADED"
@@ -140,7 +141,7 @@ void FileTransferExecutionResult::getColumnAsString(int columnIndex,
           case PUT_COLUMN::SOURCE:
             {
               std::string &srcFileFull = m_fileMetadatas[m_currentIndex]->srcFileName;
-              value = srcFileFull.substr(srcFileFull.find_last_of('/') + 1);
+              value = srcFileFull.substr(srcFileFull.find_last_of(PATH_SEP) + 1);
             }
             break;
 

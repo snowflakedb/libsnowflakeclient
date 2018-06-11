@@ -45,8 +45,8 @@ SET(TESTS_CXX
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter
-        test_unit_thread_pool
-        test_cpp_select1)
+        test_unit_thread_pool)
+        #test_cpp_select1)
 
 set(SOURCE_UTILS
         utils/test_setup.c
@@ -75,13 +75,15 @@ if (LINUX)
             ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl ssl crypto
-            aws-cpp-sdk-core aws-cpp-sdk-s3)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load curl
-            ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3)
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load
+            ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${AWS_CORE_LIB} ${AWS_S3_LIB})
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load ${CURL_LIB}
+            ${SSL_LIB} ${CRYPTO_LIB} pthread ${AWS_CORE_LIB} ${AWS_S3_LIB})
 endif()
 if (WIN32)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} libcurl_a libssl_a libcrypto_a zlib_a)
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
+	set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} 
+			Version.lib Userenv.lib Bcrypt.lib)
 endif()
 
 FOREACH (T ${TESTS_C})
@@ -102,22 +104,22 @@ FOREACH (T ${TESTS_C})
             ./${T})
 ENDFOREACH ()
 
-if (UNIX)
-    FOREACH(T ${TESTS_CXX})
-        add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/cmocka/include
-        )
-        target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
-        add_test(${T} ${T})
-        # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
-                valgrind
-                --tool=memcheck
-                --leak-check=full
-                --error-exitcode=1
-                --suppressions=${VALGRIND_SUPPRESSION}
-                ./${T})
-    ENDFOREACH()
-endif()
+
+FOREACH(T ${TESTS_CXX})
+    add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
+    target_include_directories(
+            ${T} PUBLIC
+            ../deps-build/${PLATFORM}/cmocka/include
+    )
+    target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
+    add_test(${T} ${T})
+    # Removed to suppress false alarm: "--run-libc-freeres=no"
+    add_test(valgrind_${T}
+             valgrind
+             --tool=memcheck
+             --leak-check=full
+             --error-exitcode=1
+             --suppressions=${VALGRIND_SUPPRESSION}
+             ./${T})
+ENDFOREACH()
+

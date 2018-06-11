@@ -11,6 +11,7 @@
 #if defined(__linux__) || defined(__APPLE__)
 
 #include <sys/time.h>
+#include <errno.h>
 
 #endif
 
@@ -303,7 +304,62 @@ int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock) {
 
 sf_bool STDCALL _is_put_get_command(char *sql_text) {
 #ifdef _WIN32
-    return SF_BOOLEAN_FALSE;
+  // TODO use some library to parse put get command in windows
+  char *it;
+  sf_bool in_comment_block = SF_BOOLEAN_FALSE;
+  sf_bool is_put_get_command = SF_BOOLEAN_FALSE;
+  for (it = sql_text; it != '\0'; it++)
+  {
+    if (in_comment_block)
+    {
+      if (*it == '*' && * (it + 1) == '/')
+      {
+        it++;
+        in_comment_block = SF_BOOLEAN_FALSE;
+      }
+    }
+    else
+    {
+      if (*it == ' ')
+      {
+        // do nothing
+      }
+      else if (*it == '/' && * (it + 1) == '*')
+      {
+        in_comment_block = SF_BOOLEAN_TRUE;
+      }
+      else if (*it == 'p' || *it == 'P')
+      {
+        if ((*(it + 1) == 'u' || *(it + 1) == 'U')
+          && (*(it + 2) == 't' || *(it + 2) == 'T'))
+        {
+          return SF_BOOLEAN_TRUE;
+        }
+        else
+        {
+          return SF_BOOLEAN_FALSE;
+        }
+      }
+      else if (*it == 'g' || *it == 'G')
+      {
+        if ((*(it + 1) == 'e' || *(it + 1) == 'E')
+          && (*(it + 2) == 't' || *(it + 2) == 'T'))
+        {
+          return SF_BOOLEAN_TRUE;
+        }
+        else
+        {
+          return SF_BOOLEAN_FALSE;
+        }
+      }
+      else
+      {
+        return SF_BOOLEAN_FALSE;
+      }
+    }
+  }
+  return SF_BOOLEAN_FALSE;
+
 #else
     //TODO better handle regex for detecting put and get command
     regex_t put_get_regex;
@@ -452,5 +508,42 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     sprintf(tsbuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
         t.wYear, t.wMonth, t.wDay,
         t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
+#endif
+}
+
+int STDCALL sf_create_directory_if_not_exists(const char * directoryName)
+{
+#ifdef _WIN32
+  return !(CreateDirectory(directoryName, NULL)
+    || ERROR_ALREADY_EXISTS == GetLastError());
+#else
+  // read, write, execute by user and group
+  struct stat st = {0};
+  return stat(directoryName, &st) == -1 ?
+      mkdir(directoryName, S_IRWXU | S_IRWXG) : 0;
+#endif
+}
+
+int STDCALL sf_delete_directory_if_exists(const char * directoryName)
+{
+#ifdef _WIN32
+  char rmCmd[500];
+  strcpy(rmCmd, "rd /s /q ");
+  strcat(rmCmd, directoryName);
+  return system(rmCmd);
+#else
+  char rmCmd[500];
+  strcpy(rmCmd, "rm -rf ");
+  strcat(rmCmd, directoryName);
+  return system(rmCmd);
+#endif
+}
+
+void STDCALL sf_get_tmp_dir(char * tmpDir)
+{
+#ifdef _WIN32
+  GetTempPath(100, tmpDir);
+#else
+  strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
 #endif
 }

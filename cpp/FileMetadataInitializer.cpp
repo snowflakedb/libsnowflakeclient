@@ -5,13 +5,21 @@
 #include "FileMetadataInitializer.hpp"
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
-#include <dirent.h>
-#include <fnmatch.h>
+#include "snowflake/platform.h"
 #include <cerrno>
 
 #define COMPRESSION_AUTO "AUTO"
 #define COMPRESSION_AUTO_DETECT "AUTO_DETECT"
 #define COMPRESSION_NONE "NONE"
+
+#ifdef _WIN32
+#include "Shlwapi.h"
+#else
+#include <dirent.h>
+#include <fnmatch.h>
+#endif
+
+
 
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> * smallFileMetadata,
@@ -23,38 +31,72 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 }
 
 void Snowflake::Client::FileMetadataInitializer::initFileMetadata(
-  std::string &fileDir, char *fileName)
+  std::string &fileDir, char *fileName, long fileSize)
 {
-  std::string srcFileName = fileDir + fileName;
-  struct stat fileStatus;
-  if (!stat(srcFileName.c_str(), &fileStatus))
-  {
-    if (S_ISREG(fileStatus.st_mode))
-    {
-      std::vector<FileMetadata> *metaListToPush =
-        fileStatus.st_size > DATA_SIZE_THRESHOLD ?
-        m_largeFileMetadata : m_smallFileMetadata;
 
-      metaListToPush->emplace_back();
-      metaListToPush->back().srcFileName = srcFileName;
-      metaListToPush->back().srcFileSize = (long)fileStatus.st_size;
-      metaListToPush->back().destFileName = std::string(fileName);
+  std::vector<FileMetadata> *metaListToPush =
+    fileSize > DATA_SIZE_THRESHOLD ?
+    m_largeFileMetadata : m_smallFileMetadata;
+  
+  std::string fileNameFull = fileDir;
+  fileNameFull += fileName;
 
-      // process compression type
-      initCompressionMetadata(&metaListToPush->back());
-    }
-  }
-  else
-  {
-    CXX_LOG_ERROR("Cannot read path struct");
-    throw;
-  }
+  metaListToPush->emplace_back();
+  metaListToPush->back().srcFileName = fileNameFull;
+  metaListToPush->back().srcFileSize = fileSize;
+  metaListToPush->back().destFileName = std::string(fileName);
+
+  // process compression type
+  initCompressionMetadata(&metaListToPush->back());
 }
 
 void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
   std::string &sourceLocation)
 {
-  unsigned long dirSep = sourceLocation.find_last_of('/');
+// looking for files on disk. 
+#ifdef _WIN32
+  WIN32_FIND_DATA fdd;
+  HANDLE hFind = FindFirstFile(sourceLocation.c_str(), &fdd);
+  if (hFind == INVALID_HANDLE_VALUE)
+  {
+    DWORD dwError = GetLastError();
+    if (dwError == ERROR_NO_MORE_FILES || dwError == ERROR_FILE_NOT_FOUND)
+    {
+      CXX_LOG_ERROR("No file matching pattern %s has been found. Error: %d", 
+        sourceLocation.c_str(), dwError);
+      FindClose(hFind);
+      return;
+    }
+    else if (dwError != ERROR_SUCCESS)
+    {
+      CXX_LOG_ERROR("Failed on FindFirstFile. Error: %d", dwError);
+      throw;
+    }
+  }
+
+  do {
+    if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
+    {
+      std::string fileFullPath = std::string(fdd.cFileName);
+      unsigned long dirSep = sourceLocation.find_last_of(PATH_SEP);
+      std::string dirPath = sourceLocation.substr(0, dirSep + 1);
+      LARGE_INTEGER fileSize;
+      fileSize.LowPart = fdd.nFileSizeLow;
+      fileSize.HighPart = fdd.nFileSizeHigh;
+      initFileMetadata(dirPath, (char *)fdd.cFileName, fileSize.QuadPart);
+    }
+  } while (FindNextFile(hFind, &fdd) != 0);
+
+  DWORD dwError = GetLastError();
+  if (dwError != ERROR_NO_MORE_FILES)
+  {
+    CXX_LOG_ERROR("Failed on FindNextFile. Error: %d", dwError);
+    throw;
+  }
+  FindClose(hFind);
+
+#else
+  unsigned long dirSep = sourceLocation.find_last_of(PATH_SEP);
   std::string dirPath = sourceLocation.substr(0, dirSep + 1);
   std::string filePattern = sourceLocation.substr(dirSep + 1);
 
@@ -66,7 +108,20 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
     {
       if (!fnmatch(filePattern.c_str(), dir_entry->d_name, 0))
       {
-        initFileMetadata(dirPath, dir_entry->d_name);
+        std::string srcFileName = dirPath + dir_entry->d_name;
+        struct stat fileStatus;
+        if (!stat(srcFileName.c_str(), &fileStatus))
+        {
+          if (S_ISREG(fileStatus.st_mode)) {
+            initFileMetadata(dirPath, dir_entry->d_name,
+                             (long) fileStatus.st_size);
+          }
+        }
+        else
+        {
+          CXX_LOG_ERROR("Cannot read path struct");
+          throw;
+        }
       }
     }
     closedir(dir);
@@ -78,6 +133,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
       dirPath.c_str(), errno);
     throw;
   }
+#endif
 }
 
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
@@ -86,9 +142,9 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   CXX_LOG_DEBUG("Init compression metadata for file %s",
                 fileMetadata->srcFileName.c_str());
 
-  if(!strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
+  if(!sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
                   sizeof(COMPRESSION_AUTO_DETECT)) ||
-     !strncasecmp(m_sourceCompression, COMPRESSION_AUTO, 
+     !sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO, 
                   sizeof(COMPRESSION_AUTO)))
   {
     // guess
@@ -96,7 +152,7 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
     fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
       fileMetadata->srcFileName);
   }
-  else if (!strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
+  else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
                         sizeof(COMPRESSION_NONE)))
   {
     CXX_LOG_INFO("No compression in source file");

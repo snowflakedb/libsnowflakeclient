@@ -169,6 +169,8 @@ if (WIN32)
     find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/zlib/lib/ REQUIRED)
+	find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+	find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
 endif ()
 
 include_directories(
@@ -185,28 +187,25 @@ message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 
-if (UNIX)
-    add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
-else()
-    add_library(snowflakeclient STATIC ${SOURCE_FILES})
-endif()
+
+add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
 
 set_target_properties(snowflakeclient PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 #set (CMAKE_CXX_STANDARD 11)
 
-if(APPLE)
-    link_directories(
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
-    )
-else()
+if(LINUX)
     link_directories(
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
+    )
+elseif()
+	link_directories(
+        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
+        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
+        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
     )
 endif()
 

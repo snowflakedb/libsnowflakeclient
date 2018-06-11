@@ -20,8 +20,11 @@
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/DefaultLogSystem.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
+
+
 
 #define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
 #define AMZ_KEY "x-amz-key"
@@ -63,6 +66,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
     Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
   s3Client = new Aws::S3::S3Client(credentials, clientConfiguration);
+
   CXX_LOG_TRACE("Successfully created s3 client. End of constructor.");
 }
 
@@ -152,7 +156,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
   }
 }
 
-void *Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCtx)
+void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCtx)
 {
   Aws::S3::Model::UploadPartRequest uploadPartRequest;
 
@@ -217,14 +221,12 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     CXX_LOG_INFO("Total file size: %d, split into %d parts.",
                 fileMetadata->encryptionMetadata.cipherStreamSize, totalParts);
 
-    MultiUploadCtx uploadParts[totalParts];
+    std::vector<MultiUploadCtx> uploadParts;
+    uploadParts.reserve(totalParts);
 
     for (unsigned int i = 0; i < totalParts; i++)
     {
-      uploadParts[i].m_uploadId = uploadId;
-      uploadParts[i].m_partNumber = i+1;
-      uploadParts[i].m_bucket = bucket;
-      uploadParts[i].m_key = key;
+      uploadParts.emplace_back(uploadId, i+1, key, bucket);
     }
 
     for (unsigned int i = 0; i < totalParts; i++)

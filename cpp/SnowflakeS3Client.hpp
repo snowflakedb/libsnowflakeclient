@@ -15,6 +15,13 @@
 #include "util/ThreadPool.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
 
+#ifdef _WIN32
+ // see https://github.com/aws/aws-sdk-cpp/issues/402
+#undef GetMessage
+#undef GetObject
+#undef min
+#endif
+
 namespace Snowflake
 {
 namespace Client
@@ -25,6 +32,17 @@ namespace Client
  */
 struct MultiUploadCtx
 {
+  MultiUploadCtx(Aws::String &uploadId,
+    unsigned int partNumber,
+    std::string &key,
+    std::string &bucket)
+  {
+    m_uploadId = uploadId;
+    m_partNumber = partNumber;
+    m_key = key;
+    m_bucket = bucket;
+  }
+
   /// in memory buffer used to store current part data
   Util::ByteArrayStreamBuf *buf;
 
@@ -132,7 +150,7 @@ private:
   RemoteStorageRequestOutcome doMultiPartUpload(FileMetadata * fileMetadata,
                                     std::basic_iostream<char> *dataStream);
 
-  void *uploadParts(MultiUploadCtx * uploadCtx);
+  void uploadParts(MultiUploadCtx * uploadCtx);
 
   RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
 };

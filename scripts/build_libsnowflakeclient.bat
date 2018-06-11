@@ -18,6 +18,9 @@ if not "%VisualStudioVersion%"=="14.0" (
     if %ERRORLEVEL% NEQ 0 goto :error
 )
 
+if not exist %scriptdir%\..\deps-build\%arcdir%\aws\ call "%scriptdir%\build_awssdk.bat" %platform% %build_type%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 rmdir /q /s cmake-build-%arcdir%
 if %ERRORLEVEL% NEQ 0 goto :error
 mkdir cmake-build-%arcdir%

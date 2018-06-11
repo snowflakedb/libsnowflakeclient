@@ -12,20 +12,15 @@
 #include "snowflake/PutGetParseResponse.hpp"
 #include <fstream>
 #include <memory>
+#include <cstdio>
 #include "util/Base64.hpp"
 #include "FileTransferExecutionResult.hpp"
 #include "FileTransferAgent.hpp"
 #include "StorageClientFactory.hpp"
 #include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 
 using namespace ::Snowflake::Client;
-
-void getDataDirectory(std::string& dataDir)
-{
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
-}
 
 class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
@@ -83,8 +78,7 @@ public:
     : IStatementPutGet()
   {
     m_stageInfo.stageType = StageType::MOCKED_STAGE_TYPE;
-    std::string dataDir;
-    getDataDirectory(dataDir);
+    std::string dataDir = TestSetup::getDataDir();
     m_srcLocations.push_back(dataDir + fileName);
     m_encryptionMaterial.emplace_back(
       (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
@@ -239,8 +233,7 @@ void test_token_renew_small_files(void ** unused)
 
 void test_token_renew_large_file(void ** unused)
 {
-  std::string dataDir;
-  getDataDirectory(dataDir);
+  std::string dataDir = TestSetup::getDataDir();
   std::string fullFileName = dataDir + "large_file.csv";
 
   std::ofstream ofs(fullFileName);
@@ -281,12 +274,10 @@ void test_token_renew_get_remote_meta(void **unused)
 
 static int large_file_removal(void **unused)
 {
-  std::string dataDir;
-  getDataDirectory(dataDir);
+  std::string dataDir = TestSetup::getDataDir();
   std::string fullFileName = dataDir + "large_file.csv";
 
-  std::string rmCmd = "rm " + fullFileName;
-  system(rmCmd.c_str());
+  std::remove(fullFileName.c_str());
   return 0;
 }
 

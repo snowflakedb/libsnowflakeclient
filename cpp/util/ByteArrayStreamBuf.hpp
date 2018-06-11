@@ -76,7 +76,7 @@ public:
 
 private:
   /// mutex for threads to read data
-  SF_MUTEX_HANDLE streamMutex;
+  SF_CRITICAL_SECTION_HANDLE streamMutex;
 
   /// input stream to be splitted.
   std::basic_iostream<char> * m_inputStream;
@@ -120,7 +120,7 @@ private:
   std::basic_iostream<char> * m_outputStream;
 
   /// mutex for multiple thread write into one outputstream
-  SF_MUTEX_HANDLE m_streamMutex;
+  SF_CRITICAL_SECTION_HANDLE m_streamMutex;
 
   /// appended stream cv
   SF_CONDITION_HANDLE m_streamCv;

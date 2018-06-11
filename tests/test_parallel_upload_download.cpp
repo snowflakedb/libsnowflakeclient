@@ -6,7 +6,9 @@
 #include <snowflake/client.h>
 #include <fstream>
 #include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 #include "snowflake/IStatementPutGet.hpp"
+#include "snowflake/platform.h"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 
@@ -15,17 +17,9 @@
 
 using namespace ::Snowflake::Client;
 
-void getDataDirectory(std::string& dataDir)
-{
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
-}
-
 void populateDataInTestDir(std::string &testDir, int numberOfFiles)
 {
-  std::string mkdirCmd = "mkdir -p " + testDir;
-  int ret = system(mkdirCmd.c_str());
+  int ret = sf_create_directory_if_not_exists(testDir.c_str());
   assert_int_equal(0, ret);
 
   if (numberOfFiles == 1)
@@ -74,9 +68,9 @@ void test_parallel_upload_download_core(int fileNumber)
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  std::string dataDir;
-  getDataDirectory(dataDir);
-  std::string testDir = dataDir + "test_parallel_upload/";
+  std::string dataDir = TestSetup::getDataDir();
+  std::string testDir = dataDir + "test_parallel_upload";
+  testDir += PATH_SEP;
 
   populateDataInTestDir(testDir, fileNumber);
 
@@ -130,7 +124,11 @@ void test_parallel_upload_download_core(int fileNumber)
     assert_string_equal("DOWNLOADED", get_status.c_str());
   }
 
+#ifdef _WIN32
+  std::string compCmd = "FC " + dataDir + "test_parallel_upload\\* " + dataDir + "test_parallel_download\\*";
+#else
   std::string compCmd = "diff " + dataDir + "test_parallel_upload/ " + dataDir + "test_parallel_download/";
+#endif
   int res = system(compCmd.c_str());
   assert_int_equal(0, res);
 
@@ -155,11 +153,12 @@ static int teardown(void **unused)
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
 
-  std::string dataDir;
-  getDataDirectory(dataDir);
-  std::string testDir = dataDir + "test_parallel_*load/";
-  std::string rmCmd = "rm -rf " + testDir;
-  system(rmCmd.c_str());
+  std::string dataDir = TestSetup::getDataDir();
+  std::string uploadDir = dataDir + "test_parallel_upload";
+  std::string downloadDir = dataDir + "test_parallel_download";
+
+  sf_delete_directory_if_exists(uploadDir.c_str());
+  sf_delete_directory_if_exists(downloadDir.c_str());
   return 0;
 }
 
