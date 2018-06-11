@@ -5,7 +5,12 @@
 #ifndef SNOWFLAKECLIENT_THREADPOOL_HPP
 #define SNOWFLAKECLIENT_THREADPOOL_HPP
 
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
+
 #include <vector>
 #include <deque>
 #include <functional>
@@ -49,15 +54,23 @@ private:
   SF_CONDITION_HANDLE wait_var;
 
   /// queue mutex
-  SF_MUTEX_HANDLE queue_mutex;
+  SF_CRITICAL_SECTION_HANDLE queue_mutex;
 
+#ifdef _WIN32
+  DWORD key;
+#else
   /// key to get thread local object
   pthread_key_t key;
+#endif
 
   struct ThreadCtx
   {
     ThreadPool *tp;
-    pthread_key_t * key;
+#ifdef _WIN32
+    DWORD *key;
+#else
+    pthread_key_t *key;
+#endif
     int threadIdx;
   };
 
@@ -67,9 +80,18 @@ private:
   static void *TaskWrapper(void *arg)
   {
     ThreadCtx* ctx = reinterpret_cast<ThreadCtx *>(arg);
+#ifdef _WIN32
+    LPVOID lpData = new int(ctx->threadIdx);
+    TlsSetValue(*ctx->key, lpData);
+#else
     pthread_setspecific(*ctx->key, &ctx->threadIdx);
+#endif
     ctx->tp->execute_thread();
     delete ctx;
+#ifdef _WIN32
+    delete lpData;
+#endif
+    return nullptr;
   }
 
   /**
@@ -80,7 +102,7 @@ private:
     std::function<void(void)> res;
     while(true)
     {
-      _mutex_lock(&queue_mutex);
+      _critical_section_lock(&queue_mutex);
 
       busyThreads --;
       if (busyThreads == 0)
@@ -95,7 +117,7 @@ private:
       // Get job from the queue
       if (finished)
       {
-        _mutex_unlock(&queue_mutex);
+        _critical_section_unlock(&queue_mutex);
         break;
       }
       else
@@ -103,7 +125,7 @@ private:
         busyThreads ++;
         res = queue.front();
         queue.pop_front();
-        _mutex_unlock(&queue_mutex);
+        _critical_section_unlock(&queue_mutex);
         res();
       }
     }
@@ -115,10 +137,15 @@ public:
     , threadCount (threadNum)
     , busyThreads (threadNum)
   {
-    _mutex_init(&queue_mutex);
+    _critical_section_init(&queue_mutex);
     _cond_init(&job_available_var);
     _cond_init(&wait_var);
+
+#ifdef _WIN32
+    key = TlsAlloc();
+#else
     pthread_key_create(&key, NULL);
+#endif
 
     for( unsigned i = 0; i < threadCount; ++i )
     {
@@ -135,7 +162,11 @@ public:
 
   int GetThreadIdx()
   {
+#ifdef _WIN32
+    return *(int *)TlsGetValue(key);
+#else
     return *(int *)pthread_getspecific(key);
+#endif
   }
 
   /**
@@ -143,7 +174,7 @@ public:
    */
   ~ThreadPool() {
     JoinAll();
-    _mutex_term(&queue_mutex);
+    _critical_section_term(&queue_mutex);
     _cond_term(&job_available_var);
     _cond_term(&wait_var);
   }
@@ -154,10 +185,10 @@ public:
    *  the job is added to the end of the queue.
    */
   void AddJob( std::function<void(void)> job ) {
-    _mutex_lock(&queue_mutex);
+    _critical_section_lock(&queue_mutex);
     queue.emplace_back( job );
     _cond_signal(&job_available_var);
-    _mutex_unlock(&queue_mutex);
+    _critical_section_unlock(&queue_mutex);
   }
 
   /**
@@ -171,10 +202,10 @@ public:
    *  of jobs, look to use `ThreadPool::WaitAll`.
    */
   void JoinAll() {
-    _mutex_lock(&queue_mutex);
+    _critical_section_lock(&queue_mutex);
     finished = true;
     _cond_broadcast(&job_available_var);
-    _mutex_unlock(&queue_mutex);
+    _critical_section_unlock(&queue_mutex);
 
     for (auto &x : threads)
       _thread_join(x);
@@ -186,12 +217,12 @@ public:
    *  all jobs have finshed executing.
    */
   void WaitAll() {
-    _mutex_lock(&queue_mutex);
+    _critical_section_lock(&queue_mutex);
     while(busyThreads > 0 || !queue.empty())
     {
       _cond_wait(&wait_var, &queue_mutex);
     }
-    _mutex_unlock(&queue_mutex);
+    _critical_section_unlock(&queue_mutex);
   }
 };
 

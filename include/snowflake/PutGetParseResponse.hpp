@@ -19,7 +19,7 @@ struct EncryptionMaterial
 {
   EncryptionMaterial(char * queryStageMasterKey,
                      char * queryId,
-                     long smkId)
+                     long long smkId)
   {
     this->queryStageMasterKey = std::string(queryStageMasterKey);
     this->queryId = std::string(queryId);
@@ -33,7 +33,7 @@ struct EncryptionMaterial
   std::string queryId;
 
   /// smk id
-  long smkId;
+  long long smkId;
 };
 
 enum StageType

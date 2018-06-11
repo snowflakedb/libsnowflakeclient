@@ -9,12 +9,22 @@
 #include <snowflake/Connection.hpp>
 #include <snowflake/Statement.hpp>
 
+#ifdef _WIN32 
+#define PATH_SEP '\\'
+#else
+#define PATH_SEP '/'
+#endif 
+
+
 class TestSetup {
 public:
     static Snowflake::Client::Connection *connectionFactory();
 
     static Snowflake::Client::Connection *connectionWithAutocommitFactory(const std::string timezone,
                                                                    bool autocommit);
+    
+    // Used by put/get tests to get <workspace>/test/data/ directory
+    static std::string getDataDir();
 
 private:
     TestSetup() {};

@@ -22,13 +22,6 @@ using Snowflake::Client::Crypto::CipherStreamBuf;
 using Snowflake::Client::Crypto::CipherIOStream;
 using Snowflake::Client::Util::ByteArrayStreamBuf;
 
-void getDataDirectory(std::string& dataDir)
-{
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
-}
-
 void test_byte_array_stream(void **unused)
 {
   char data[] = "0123456789";

@@ -4,21 +4,14 @@
 
 #include "FileCompressionType.hpp"
 #include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 
 typedef ::Snowflake::Client::FileCompressionType FileCompressionType;
-
-void getDataDirectory(std::string& dataDir)
-{
-  const std::string current_file = __FILE__;
-  std::string testsDir = current_file.substr(0, current_file.find_last_of('/'));
-  dataDir = testsDir + "/data/";
-}
 
 void test_file_type_detect_core(const FileCompressionType *expected_type,
                                 const char * file_name)
 {
-  std::string full_file_path;
-  getDataDirectory(full_file_path);
+  std::string full_file_path = TestSetup::getDataDir();
   full_file_path += file_name;
 
   const FileCompressionType * actual_type = FileCompressionType

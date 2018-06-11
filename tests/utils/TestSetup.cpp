@@ -46,3 +46,10 @@ Snowflake::Client::Connection* TestSetup::connectionWithAutocommitFactory(const 
     }
     return cnx;
 }
+
+std::string TestSetup::getDataDir()
+{
+  const std::string current_file = __FILE__;
+  std::string utilDir = current_file.substr(0, current_file.find_last_of(PATH_SEP));
+  return utilDir + PATH_SEP + ".." + PATH_SEP + "data" + PATH_SEP;
+}

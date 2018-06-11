@@ -65,7 +65,7 @@ private:
    * Given file name, populate metadata
    * @param fileName
    */
-  void initFileMetadata(std::string &fileDir, char *fileName);
+  void initFileMetadata(std::string &fileDir, char *fileName, long fileSize);
 
   /**
    * init compression metadata

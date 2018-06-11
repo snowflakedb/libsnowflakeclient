@@ -17,6 +17,7 @@
 #include "util/ThreadPool.hpp"
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
+#include "snowflake/platform.h"
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
 
@@ -293,14 +294,23 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   FileMetadata *fileMetadata)
 {
   CXX_LOG_DEBUG("Starting file compression");
-  //TODO Better handle tmp directory
-  fileMetadata->srcFileToUpload = "/tmp/" + fileMetadata->destFileName;
+  
+  char tempDir[100];
+  sf_get_tmp_dir(tempDir);
+  std::string stagingFile(tempDir);
+  stagingFile += fileMetadata->destFileName;
 
+  fileMetadata->srcFileToUpload = stagingFile;
   FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
   FILE *destFile = fopen(fileMetadata->srcFileToUpload.c_str(), "w");
 
-  Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
+  int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize);
+  if (ret != 0)
+  {
+    CXX_LOG_ERROR("Failed to compress source file. Error code: %d", ret);
+    throw;
+  }
 
   fclose(sourceFile);
   fclose(destFile);
@@ -311,10 +321,8 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
   m_executionResults = new FileTransferExecutionResult(CommandType::DOWNLOAD,
     m_largeFilesMeta.size() + m_smallFilesMeta.size());
 
-  std::string createDirIfNotExist = "mkdir -p " +
-    std::string(response.localLocation);
-  const int err = system(createDirIfNotExist.c_str());
-  if (err != 0)
+  int ret = sf_create_directory_if_not_exists((const char *)response.localLocation);
+  if (ret != 0)
   {
     CXX_LOG_DEBUG("Filed to create directory %s", response.localLocation);
     throw;
