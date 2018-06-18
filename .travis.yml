@@ -1,7 +1,5 @@
 sudo: required
 language: cpp
-script:
-  - ./scripts/run_travis.sh
 matrix:
   include:
   - os: linux
@@ -25,7 +23,8 @@ matrix:
       - pip install -U virtualenv
       - virtualenv env
       - source env/bin/activate
-    after_succss:
+    script:
+      - ./scripts/run_travis.sh
       - bash <(curl -s https://codecov.io/bash)
   - os: linux
     addons:
@@ -49,6 +48,8 @@ matrix:
       - pip install -U virtualenv
       - virtualenv env
       - source env/bin/activate
+    script:
+      - ./scripts/run_travis.sh
   - os: osx
     before_install:
       - sw_vers
@@ -58,6 +59,8 @@ matrix:
       - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
       - python3 -m venv env
       - source env/bin/activate
+    script:
+      - ./scripts/run_travis.sh
 
 env:
   global:
