@@ -51,7 +51,8 @@ std::string TestSetup::getDataDir()
 {
 #ifdef _WIN32
   char appveyorBuildDir[500];
-  DWORD dwRet = GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER", appveyorBuildDir, dwRet);
+  DWORD dwRet = 0;
+  dwRet= GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER", appveyorBuildDir, sizeof(appveyorBuildDir));
   if (dwRet != 0)
   {
     return std::string(appveyorBuildDir) + PATH_SEP + "tests" + PATH_SEP + "data" + PATH_SEP;
