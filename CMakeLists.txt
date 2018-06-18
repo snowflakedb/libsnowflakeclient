@@ -100,6 +100,7 @@ set (SOURCE_FILES_PUT_GET
         cpp/IStorageClient.hpp
         cpp/SnowflakeS3Client.hpp
         cpp/SnowflakeS3Client.cpp
+        cpp/SnowflakeTransferException.cpp
         cpp/StatementPutGet.hpp
         cpp/StatementPutGet.cpp
         cpp/StorageClientFactory.hpp
@@ -132,6 +133,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/IStatementPutGet.hpp
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
+        include/snowflake/SnowflakeTransferException.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER
