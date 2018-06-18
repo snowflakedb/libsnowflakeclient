@@ -544,6 +544,18 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 #ifdef _WIN32
   GetTempPath(100, tmpDir);
 #else
-  strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
+  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+
+  if (!tmpEnv)
+  {
+    strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
+  }
+  else
+  {
+    strncpy(tmpDir, tmpEnv, strlen(tmpEnv));
+    size_t oldLen = strlen(tmpDir);
+    tmpDir[oldLen] = PATH_SEP;
+    tmpDir[oldLen+1] = '\0';
+  }
 #endif
 }

@@ -11,7 +11,7 @@
 #define WINDOW_BIT 15
 #define GZIP_ENCODING 16
 
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
+#ifdef _WIN32
 #  include <fcntl.h>
 #  include <io.h>
 #  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
@@ -39,7 +39,6 @@ int Snowflake::Client::Util::CompressionUtil::compressWithGzip(FILE *source,
   strm.opaque = Z_NULL;
   ret = deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
                      WINDOW_BIT | GZIP_ENCODING, 8, Z_DEFAULT_STRATEGY);
-  //ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
   if (ret != Z_OK)
     return ret;
 
