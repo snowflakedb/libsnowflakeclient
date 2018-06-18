@@ -9,13 +9,6 @@
 #include <snowflake/Connection.hpp>
 #include <snowflake/Statement.hpp>
 
-#ifdef _WIN32 
-#define PATH_SEP '\\'
-#else
-#define PATH_SEP '/'
-#endif 
-
-
 class TestSetup {
 public:
     static Snowflake::Client::Connection *connectionFactory();
