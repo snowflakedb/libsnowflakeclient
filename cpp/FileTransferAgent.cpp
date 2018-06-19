@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include "FileTransferAgent.hpp"
+#include "snowflake/SnowflakeTransferException.hpp"
 #include "snowflake/IStatementPutGet.hpp"
 #include "util/Base64.hpp"
 #include "SnowflakeS3Client.hpp"
@@ -66,8 +67,8 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   // first parse command
   if (!m_stmtPutGet->parsePutGetCommand(command, &response))
   {
-    //TODO finalize exception;
-    throw;
+    throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+      "Failed to parse response.");
   }
   CXX_LOG_INFO("Parse response succeed");
 
@@ -89,7 +90,8 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
       break;
 
     default:
-      throw;
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+        "Invalid command type.");
   }
 
   return m_executionResults;
@@ -127,7 +129,8 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
         }
       default:
         CXX_LOG_FATAL(CXX_LOG_NS, "Invalid command type");
-        throw;
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                         "Invalid command type.");
     }
   }
 }
@@ -309,7 +312,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   if (ret != 0)
   {
     CXX_LOG_ERROR("Failed to compress source file. Error code: %d", ret);
-    throw;
+    throw SnowflakeTransferException(TransferError::COMPRESSION_ERROR, ret);
   }
 
   fclose(sourceFile);
@@ -324,8 +327,9 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
   int ret = sf_create_directory_if_not_exists((const char *)response.localLocation);
   if (ret != 0)
   {
-    CXX_LOG_DEBUG("Filed to create directory %s", response.localLocation);
-    throw;
+    CXX_LOG_ERROR("Filed to create directory %s", response.localLocation);
+    throw SnowflakeTransferException(TransferError::MKDIR_ERROR, 
+      response.localLocation, ret);
   }
 
   if (m_largeFilesMeta.size() > 0)

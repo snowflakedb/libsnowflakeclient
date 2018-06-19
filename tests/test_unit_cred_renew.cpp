@@ -13,6 +13,7 @@
 #include <fstream>
 #include <memory>
 #include <cstdio>
+#include <snowflake/SnowflakeTransferException.hpp>
 #include "util/Base64.hpp"
 #include "FileTransferExecutionResult.hpp"
 #include "FileTransferAgent.hpp"
@@ -21,6 +22,19 @@
 #include "utils/TestSetup.hpp"
 
 using namespace ::Snowflake::Client;
+
+class MockedFailedParseStmt : public Snowflake::Client::IStatementPutGet
+{
+public:
+  MockedFailedParseStmt()
+    : Snowflake::Client::IStatementPutGet(){}
+
+  virtual bool parsePutGetCommand(std::string *sql,
+                                  PutGetParseResponse *putGetParseResponse)
+  {
+    return false;
+  }
+};
 
 class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
@@ -272,6 +286,32 @@ void test_token_renew_get_remote_meta(void **unused)
   assert_int_equal(2, client->getNumGetRemoteMetaCalled());
 }
 
+void test_parse_exception(void **unused)
+{
+  MockedStorageClient *client = new MockedStorageClient();
+  StorageClientFactory::injectMockedClient(client);
+
+  std::string cmd = "fake get command";
+
+  MockedFailedParseStmt failedParseStmt;
+
+  Snowflake::Client::FileTransferAgent agent(&failedParseStmt);
+
+  try
+  {
+    ITransferResult *result = agent.execute(&cmd);
+    assert_true(false);
+  }
+  catch (SnowflakeTransferException & e)
+  {
+    assert_int_equal(TransferError::INTERNAL_ERROR, e.getCode());
+
+    //assert error message is formatted correctly
+    const char * expectedMsg = "Internal error: Failed to parse response.";
+    assert_memory_equal(e.what(), expectedMsg, strlen(expectedMsg));
+  }
+}
+
 static int large_file_removal(void **unused)
 {
   std::string dataDir = TestSetup::getDataDir();
@@ -289,6 +329,7 @@ static int gr_setup(void **unused)
 
 int main(void) {
   const struct CMUnitTest tests[] = {
+    cmocka_unit_test(test_parse_exception),
     cmocka_unit_test(test_token_renew_small_files),
     cmocka_unit_test_teardown(test_token_renew_large_file, large_file_removal),
     cmocka_unit_test(test_token_renew_get_remote_meta)

@@ -14,7 +14,13 @@ namespace Client
 
 enum TransferError
 {
-  INTERNAL_ERROR
+  INTERNAL_ERROR,
+  COMPRESSION_ERROR,
+  MKDIR_ERROR,
+  UNSUPPORTED_FEATURE,
+  COLUMN_INDEX_OUT_OF_RANGE,
+  DIR_OPEN_ERROR,
+  COMPRESSION_NOT_SUPPORTED
 };
 
 class SnowflakeTransferException : public std::exception
@@ -22,14 +28,14 @@ class SnowflakeTransferException : public std::exception
 public:
   SnowflakeTransferException(TransferError transferError, ...);
 
-  const char * getErrorMessage();
-
   int getCode();
+
+  virtual const char* what() const noexcept;
 
 private:
   int m_code;
 
-  const char * m_msg;
+  char m_msg[1000];
 };
 }
 }
