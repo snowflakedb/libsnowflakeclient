@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include <snowflake/SnowflakeTransferException.hpp>
 #include "FileTransferExecutionResult.hpp"
 #include "snowflake/platform.h";
 
@@ -119,7 +120,8 @@ const char * FileTransferExecutionResult::getColumnName(int columnIndex)
   }
   else
   {
-    throw;
+    throw SnowflakeTransferException(TransferError::COLUMN_INDEX_OUT_OF_RANGE,
+      columnIndex, getColumnSize());
   }
 }
 

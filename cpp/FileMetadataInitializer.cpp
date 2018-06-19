@@ -6,6 +6,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
+#include "snowflake/SnowflakeTransferException.hpp"
 #include <cerrno>
 
 #define COMPRESSION_AUTO "AUTO"
@@ -70,7 +71,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
     else if (dwError != ERROR_SUCCESS)
     {
       CXX_LOG_ERROR("Failed on FindFirstFile. Error: %d", dwError);
-      throw;
+      throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
+        sourceLocation.c_str(), dwError);
     }
   }
 
@@ -91,7 +93,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
   if (dwError != ERROR_NO_MORE_FILES)
   {
     CXX_LOG_ERROR("Failed on FindNextFile. Error: %d", dwError);
-    throw;
+    throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
+      sourceLocation.c_str(), dwError);
   }
   FindClose(hFind);
 
@@ -110,7 +113,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
       {
         std::string srcFileName = dirPath + dir_entry->d_name;
         struct stat fileStatus;
-        if (!stat(srcFileName.c_str(), &fileStatus))
+        int ret = stat(srcFileName.c_str(), &fileStatus);
+        if (!ret)
         {
           if (S_ISREG(fileStatus.st_mode)) {
             initFileMetadata(dirPath, dir_entry->d_name,
@@ -120,7 +124,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
         else
         {
           CXX_LOG_ERROR("Cannot read path struct");
-          throw;
+          throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
+                                           sourceLocation.c_str(), ret);
         }
       }
     }
@@ -131,7 +136,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
     // open dir failed
     CXX_LOG_ERROR("Cannot open directory %s, errno(%d)",
       dirPath.c_str(), errno);
-    throw;
+    throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
+                                     dirPath.c_str(), errno);
   }
 #endif
 }
@@ -169,7 +175,8 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
     {
       // no compression found
       CXX_LOG_INFO("Compression type %s not found.", m_sourceCompression);
-      throw;
+      throw SnowflakeTransferException(TransferError::COMPRESSION_NOT_SUPPORTED,
+        m_sourceCompression);
     }
   }
 
