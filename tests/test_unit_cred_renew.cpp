@@ -288,9 +288,6 @@ void test_token_renew_get_remote_meta(void **unused)
 
 void test_parse_exception(void **unused)
 {
-  MockedStorageClient *client = new MockedStorageClient();
-  StorageClientFactory::injectMockedClient(client);
-
   std::string cmd = "fake get command";
 
   MockedFailedParseStmt failedParseStmt;
