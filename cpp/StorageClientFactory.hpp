@@ -8,6 +8,7 @@
 #include <memory>
 #include "IStorageClient.hpp"
 #include "snowflake/PutGetParseResponse.hpp"
+#include "snowflake/IFileTransferAgent.hpp"
 
 namespace Snowflake
 {
@@ -29,7 +30,8 @@ public:
    * @return
    */
   static IStorageClient *getClient(StageInfo *stageInfo,
-                                   unsigned int parallel);
+                                   unsigned int parallel,
+                                   TransferConfig * transferConfig = nullptr);
 
   /**
    * Testing method. Used to inject a mocked remote storage client.

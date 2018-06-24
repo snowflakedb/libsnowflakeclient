@@ -14,6 +14,14 @@ namespace Snowflake
 namespace Client
 {
 
+/**
+ * Config struct that is passed from external component
+ */
+struct TransferConfig
+{
+  char * caBundleFile;
+};
+
 class IFileTransferAgent
 {
 public:
@@ -30,7 +38,8 @@ public:
    * @return a newly allocated IFileTransferAgent, caller need to delete instance
    */
   static IFileTransferAgent *getTransferAgent(
-    IStatementPutGet * statementPutGet);
+    IStatementPutGet * statementPutGet,
+    TransferConfig * transferConfig);
 
 
   /**

@@ -9,6 +9,7 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
+#include "snowflake/IFileTransferAgent.hpp"
 #include "IStorageClient.hpp"
 #include "snowflake/PutGetParseResponse.hpp"
 #include "FileMetadata.hpp"
@@ -86,7 +87,8 @@ struct MultiDownloadCtx
 class SnowflakeS3Client : public Snowflake::Client::IStorageClient
 {
 public:
-  SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel);
+  SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel,
+                    TransferConfig * transferConfig);
 
   ~SnowflakeS3Client();
 

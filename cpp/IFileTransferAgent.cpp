@@ -9,9 +9,10 @@
 
 Snowflake::Client::IFileTransferAgent *
 Snowflake::Client::IFileTransferAgent::getTransferAgent(
-  IStatementPutGet *statementPutGet)
+  IStatementPutGet *statementPutGet,
+  TransferConfig * transferConfig)
 {
-  return new FileTransferAgent(statementPutGet);
+  return new FileTransferAgent(statementPutGet, transferConfig);
 }
 
 void Snowflake::Client::IFileTransferAgent::injectExternalLogger(

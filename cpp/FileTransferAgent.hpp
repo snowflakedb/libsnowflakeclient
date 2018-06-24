@@ -33,7 +33,8 @@ struct FileTransferExecutionResult;
 class FileTransferAgent : public IFileTransferAgent
 {
 public:
-  FileTransferAgent(IStatementPutGet *statement);
+  FileTransferAgent(IStatementPutGet *statement,
+                    TransferConfig * transferConfig = nullptr);
 
   ~FileTransferAgent();
 
@@ -132,6 +133,9 @@ private:
 
   /// seconds in unix time for last time token is refreshed
   long m_lastRefreshTokenSec;
+
+  /// config struct that is passed in.
+  TransferConfig * m_transferConfig;
 };
 }
 }
