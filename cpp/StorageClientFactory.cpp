@@ -15,13 +15,14 @@ namespace Client
 IStorageClient * StorageClientFactory::injectedClient = nullptr;
 
 IStorageClient * StorageClientFactory::getClient(
-  StageInfo *stageInfo, unsigned int parallel)
+  StageInfo *stageInfo, unsigned int parallel,
+  TransferConfig * transferConfig)
 {
   switch (stageInfo->stageType)
   {
     case StageType::S3:
       CXX_LOG_INFO("Creating S3 client");
-      return new SnowflakeS3Client(stageInfo, parallel);
+      return new SnowflakeS3Client(stageInfo, parallel, transferConfig);
     case StageType::MOCKED_STAGE_TYPE:
       return injectedClient;
     case StageType::AZURE:

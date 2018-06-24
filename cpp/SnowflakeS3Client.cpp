@@ -42,7 +42,8 @@ namespace Client
 {
 
 
-SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel):
+SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel,
+  TransferConfig * transferConfig):
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
@@ -50,13 +51,22 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   Aws::Utils::Logging::InitializeAWSLogging(
     Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
 
-  char caBundleFile[200] = {0};
-  snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+  Aws::String caFile;
+  if (transferConfig != nullptr)
+  {
+    caFile = Aws::String(transferConfig->caBundleFile);
+  }
+  else
+  {
+    char caBundleFile[200] = {0};
+    snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+    caFile = Aws::String(caBundleFile);
+  }
 
   //TODO move this to global init
   Aws::InitAPI(options);
   clientConfiguration.region = stageInfo->region;
-  clientConfiguration.caFile = Aws::String(caBundleFile);
+  clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
 
