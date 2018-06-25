@@ -31,6 +31,7 @@ if not exist %AWS_BUILD_DIR% mkdir %AWS_BUILD_DIR%
 
 cd %AWS_CMAKE_BUILD_DIR%
 
+set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
 -G %generator% ^
 -DBUILD_ONLY=s3 ^
