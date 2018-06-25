@@ -31,6 +31,7 @@ if not exist %AWS_BUILD_DIR% mkdir %AWS_BUILD_DIR%
 
 cd %AWS_CMAKE_BUILD_DIR%
 
+REM https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
 -G %generator% ^
