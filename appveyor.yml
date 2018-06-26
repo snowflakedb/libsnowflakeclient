@@ -25,7 +25,8 @@ before_build:
   - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
 
 build_script:
-  - .\scripts\build_libsnowflakeclient.bat %VCVARS_PLATFORM% Release
+  # 3rd argument is enable dynamic runtime, 4th argument is to enable building tests
+  - .\scripts\build_libsnowflakeclient.bat %VCVARS_PLATFORM% Release ON ON 
 
 test_script:
   - C:\Python36-x64\python -m venv env

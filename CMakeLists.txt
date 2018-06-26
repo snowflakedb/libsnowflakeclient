@@ -11,6 +11,8 @@ enable_testing()
 
 add_definitions(-DLOG_USE_COLOR)
 
+option(BUILD_TESTS "True if build tests" on)
+
 if (UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif ()
@@ -166,6 +168,7 @@ endif()
 
 if (WIN32)
     # Windows
+    option(DYNAMIC_RUNTIME "Dynamic runtime" ON)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
     find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
@@ -222,7 +225,17 @@ endif ()
 if (WIN32)
     # Windows
     target_link_libraries(snowflakeclient)
+    if (DYNAMIC_RUNTIME)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+    else()
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    endif()
 endif ()
 
 add_subdirectory(examples)
-add_subdirectory(tests)
+
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
