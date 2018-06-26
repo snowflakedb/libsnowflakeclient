@@ -38,7 +38,7 @@ if "%arch%"=="x86" (
 )
 if %ERRORLEVEL% NEQ 0 goto :error
 REM NOTE cmake --build doesn't work as it cannot recognize Release|Win32 profile
-devenv ALL_BUILD.vcxproj /Build %build_type%
+msbuild ALL_BUILD.vcxproj /property:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
