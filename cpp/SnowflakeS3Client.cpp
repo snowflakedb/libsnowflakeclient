@@ -69,6 +69,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
+  CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
 
   Aws::Auth::AWSCredentials credentials(
     Aws::String(stageInfo->credentials.at(AWS_KEY_ID)),
