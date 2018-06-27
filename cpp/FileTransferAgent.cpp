@@ -75,8 +75,8 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   CXX_LOG_INFO("Parse response succeed");
 
   // init storage client
-  m_storageClient = StorageClientFactory
-  ::getClient(&response.stageInfo, (unsigned int)response.parallel);
+  m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
+    (unsigned int)response.parallel, m_transferConfig);
 
   // init file metadata
   initFileMetadata(command);
@@ -212,7 +212,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
     CXX_LOG_INFO("Renew aws token");
     m_stmtPutGet->parsePutGetCommand(command, &response);
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
-      (unsigned int) response.parallel);
+      (unsigned int) response.parallel, m_transferConfig);
     m_lastRefreshTokenSec = now;
   }
 }
