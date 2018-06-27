@@ -6,6 +6,7 @@ function usage() {
     echo "Usage: `basename $0` [-p]"
     echo "-p                 : Rebuild Snowflake Client with profile option. default: no profile"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-s                 : Build source only. Skipping building tests."
     exit 2
 }
 set -o pipefail
@@ -22,5 +23,10 @@ cmake_opts=(
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
 )
+
+if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
+    cmake_opts+=("-DBUILD_TESTS=OFF")
+fi
+
 $CMAKE ${cmake_opts[@]} ..
 make
