@@ -56,7 +56,7 @@ add_library(aws-cpp-sdk-core STATIC IMPORTED)
 set_target_properties(aws-cpp-sdk-core PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "AWS_SDK_VERSION_MAJOR=1;AWS_SDK_VERSION_MINOR=3;AWS_SDK_VERSION_PATCH=50"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "pthread;/Users/hyu/Snowflake/git/libsnowflakeclient/deps-build/darwin/curl/lib/libcurl.a"
+  INTERFACE_LINK_LIBRARIES "pthread;/Users/hyu/Snowflake/git/libsnowflakeclient/deps-build/darwin/curl/lib"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)

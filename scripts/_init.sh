@@ -38,12 +38,14 @@ else
 fi
 
 export BUILD_WITH_PROFILE_OPTION=
+export BUILD_SOURCE_ONLY=
 target=Release
-while getopts ":hpt:" opt; do
+while getopts ":hpt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;
     p) export BUILD_WITH_PROFILE_OPTION=true ;;
     h) usage;;
+    s) export BUILD_SOURCE_ONLY=true ;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
   esac

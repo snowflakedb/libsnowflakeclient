@@ -1,4 +1,4 @@
-prefix=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl
+prefix=/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
@@ -6,7 +6,7 @@ enginesdir=${libdir}/engines-1.1
 
 Name: OpenSSL-libcrypto
 Description: OpenSSL cryptography library
-Version: 1.1.0f
+Version: 1.1.0g
 Libs: -L${libdir} -lcrypto
 Libs.private: 
 Cflags: -I${includedir}
