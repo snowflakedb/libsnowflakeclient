@@ -39,6 +39,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make install_sw install_ssldirs > /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
     # OSX/macos 32 and 64 bit universal
+    openssl_config_opts+=("-mmacosx-version-min=10.11")
     make distclean clean &> /dev/null || true
     ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
     make -j 4 > /dev/null

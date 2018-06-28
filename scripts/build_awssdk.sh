@@ -36,8 +36,10 @@ aws_configure_opts+=(
     "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib"
 )
 
+ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
     aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.11"
 fi
 
 rm -rf $AWS_BUILD_DIR
@@ -48,6 +50,6 @@ mkdir $AWS_CMAKE_BUILD_DIR
 export GIT_DIR=/tmp
 
 cd $AWS_CMAKE_BUILD_DIR
-$CMAKE ${aws_configure_opts[@]} ../
+$CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${aws_configure_opts[@]} ../
 make
 make install
