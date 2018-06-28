@@ -283,7 +283,8 @@ CJSON_PUBLIC(void) snowflake_cJSON_Minify(char *json);
 /* When assigning an integer value, it needs to be propagated to valuedouble too. */
 #define snowflake_cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
 /* helper for the snowflake_cJSON_SetNumberValue macro */
-CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
+CJSON_PUBLIC(double) snowflake_cJSON_SetNumberHelper(cJSON *object,
+                                                     double number);
 #define snowflake_cJSON_SetNumberValue(object, number) ((object != NULL) ? snowflake_cJSON_SetNumberHelper(object, (double)number) : (number))
 
 /* Macro for iterating over an array or object */
