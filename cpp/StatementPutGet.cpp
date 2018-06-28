@@ -28,9 +28,9 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     ->source_compression;
 
   cJSON *src = (cJSON *) response->src_list;
-  for (int i = 0; i < cJSON_GetArraySize(src); i++)
+  for (int i = 0; i < snowflake_cJSON_GetArraySize(src); i++)
   {
-    cJSON *val = cJSON_GetArrayItem(src, i);
+    cJSON *val = snowflake_cJSON_GetArrayItem(src, i);
     putGetParseResponse->srcLocations.emplace_back(val->valuestring);
   }
 
@@ -46,13 +46,13 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   {
     putGetParseResponse->command = CommandType::DOWNLOAD;
     cJSON *enc_mat_array_get = (cJSON *) response->enc_mat_get;
-    for (int i=0; i<cJSON_GetArraySize(enc_mat_array_get); i++)
+    for (int i=0; i< snowflake_cJSON_GetArraySize(enc_mat_array_get); i++)
     {
-      cJSON * enc_mat = cJSON_GetArrayItem(enc_mat_array_get, i);
+      cJSON * enc_mat = snowflake_cJSON_GetArrayItem(enc_mat_array_get, i);
       putGetParseResponse->encryptionMaterials.emplace_back(
-        cJSON_GetObjectItem(enc_mat, "queryStageMasterKey")->valuestring,
-        cJSON_GetObjectItem(enc_mat, "queryId")->valuestring,
-        cJSON_GetObjectItem(enc_mat, "smkId")->valueint);
+        snowflake_cJSON_GetObjectItem(enc_mat, "queryStageMasterKey")->valuestring,
+        snowflake_cJSON_GetObjectItem(enc_mat, "queryId")->valuestring,
+        snowflake_cJSON_GetObjectItem(enc_mat, "smkId")->valueint);
     }
   } else
   {
