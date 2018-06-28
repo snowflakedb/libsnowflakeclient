@@ -24,6 +24,11 @@ config_opts=(
     "-DCMAKE_BUILD_TYPE=$target"
     "-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR"
 )
+
+if [[ "$PLATFORM" == "darwin" ]]; then
+    config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+fi
+
 cd $SOURCE_DIR
 rm -rf cmake-build
 mkdir cmake-build
@@ -31,7 +36,7 @@ cd cmake-build
 echo cmake ${config_opts[@]} ..
 $CMAKE ${config_opts[@]} ..
 make
-make test
+#make test
 make install
 
 DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM
