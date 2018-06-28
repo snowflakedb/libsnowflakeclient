@@ -136,37 +136,38 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     char os_version[128];
 
     //Create Client Environment JSON blob
-    client_env = cJSON_CreateObject();
-    cJSON_AddStringToObject(client_env, "APPLICATION", application);
-    cJSON_AddStringToObject(client_env, "OS", sf_os_name());
+    client_env = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
+  snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
     sf_os_version(os_version);
-    cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
+  snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
-    session_parameters = cJSON_CreateObject();
-    cJSON_AddStringToObject(
-      session_parameters,
-      "AUTOCOMMIT",
-      autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
-                                    : SF_BOOLEAN_INTERNAL_FALSE_STR);
+    session_parameters = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(
+    session_parameters,
+    "AUTOCOMMIT",
+    autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
+                                  : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
-    cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
+  snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
 
     //Create Request Data JSON blob
-    data = cJSON_CreateObject();
-    cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
-    cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
-    cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
-    cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    data = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
+  snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
+  snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
+  snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
     // Add password if one exists
     if (sf->password && *(sf->password)) {
-        cJSON_AddStringToObject(data, "PASSWORD", sf->password);
+      snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
     }
-    cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
-    cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
+  snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
+  snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
+                                  session_parameters);
 
     //Create body
-    body = cJSON_CreateObject();
-    cJSON_AddItemToObject(body, "data", data);
+    body = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddItemToObject(body, "data", data);
 
 
     return body;
@@ -175,13 +176,13 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id) {
     cJSON *body;
     // Create body
-    body = cJSON_CreateObject();
-    cJSON_AddStringToObject(body, "sqlText", sql_text);
-    cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
-    cJSON_AddNumberToObject(body, "sequenceId", (double)sequence_id);
+    body = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
+  snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
+  snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
     if (request_id)
     {
-        cJSON_AddStringToObject(body, "requestId", request_id);
+      snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
     return body;
 }
@@ -189,9 +190,9 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
 cJSON *STDCALL create_renew_session_json_body(const char *old_token) {
     cJSON *body;
     // Create body
-    body = cJSON_CreateObject();
-    cJSON_AddStringToObject(body, "oldSessionToken", old_token);
-    cJSON_AddStringToObject(body, "requestType", REQUEST_TYPE_RENEW);
+    body = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(body, "oldSessionToken", old_token);
+  snowflake_cJSON_AddStringToObject(body, "requestType", REQUEST_TYPE_RENEW);
 
     return body;
 }
@@ -296,7 +297,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
             memset(query_code, 0, QUERYCODE_LEN);
-            data = cJSON_GetObjectItem(*json, "data");
+            data = snowflake_cJSON_GetObjectItem(*json, "data");
             if (json_copy_string(&result_url, data, "getResultUrl") !=
                 SF_JSON_ERROR_NONE) {
                 stop = SF_BOOLEAN_TRUE;
@@ -554,12 +555,12 @@ sf_bool is_string_empty(const char *str) {
 SF_JSON_ERROR STDCALL
 json_copy_string(char **dest, cJSON *data, const char *item) {
     size_t blob_size;
-    cJSON *blob = cJSON_GetObjectItem(data, item);
+    cJSON *blob = snowflake_cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsString(blob)) {
+    } else if (!snowflake_cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         blob_size = strlen(blob->valuestring) + 1;
@@ -583,12 +584,12 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
 SF_JSON_ERROR STDCALL
 json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
                           size_t dest_size) {
-    cJSON *blob = cJSON_GetObjectItem(data, item);
+    cJSON *blob = snowflake_cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsString(blob)) {
+    } else if (!snowflake_cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         strncpy(dest, blob->valuestring, dest_size);
@@ -604,15 +605,15 @@ json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
 
 SF_JSON_ERROR STDCALL
 json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
-    cJSON *blob = cJSON_GetObjectItem(data, item);
+    cJSON *blob = snowflake_cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsBool(blob)) {
+    } else if (!snowflake_cJSON_IsBool(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
-        *dest = cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+        *dest = snowflake_cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
         log_debug("Item and Value; %s: %i", item, *dest);
     }
 
@@ -621,12 +622,12 @@ json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
 
 SF_JSON_ERROR STDCALL
 json_copy_int(int64 *dest, cJSON *data, const char *item) {
-    cJSON *blob = cJSON_GetObjectItem(data, item);
+    cJSON *blob = snowflake_cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsNumber(blob)) {
+    } else if (!snowflake_cJSON_IsNumber(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         *dest = (int64) blob->valuedouble;
@@ -638,16 +639,16 @@ json_copy_int(int64 *dest, cJSON *data, const char *item) {
 
 SF_JSON_ERROR STDCALL
 json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
-    cJSON *blob = cJSON_DetachItemFromObject(data, item);
+    cJSON *blob = snowflake_cJSON_DetachItemFromObject(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsArray(blob)) {
+    } else if (!snowflake_cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         if (*dest) {
-            cJSON_Delete(*dest);
+            snowflake_cJSON_Delete(*dest);
         }
         *dest = blob;
         log_debug("Array: %s", item);
@@ -658,16 +659,16 @@ json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
 
 SF_JSON_ERROR STDCALL
 json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
-    cJSON *blob = cJSON_DetachItemFromArray(data, index);
+    cJSON *blob = snowflake_cJSON_DetachItemFromArray(data, index);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsArray(blob)) {
+    } else if (!snowflake_cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         if (*dest) {
-            cJSON_Delete(*dest);
+            snowflake_cJSON_Delete(*dest);
         }
         *dest = blob;
         log_debug("Array at Index: %s", index);
@@ -678,16 +679,16 @@ json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
 
 SF_JSON_ERROR STDCALL
 json_detach_object_from_array(cJSON **dest, cJSON *data, int index) {
-    cJSON *blob = cJSON_DetachItemFromArray(data, index);
+    cJSON *blob = snowflake_cJSON_DetachItemFromArray(data, index);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (cJSON_IsNull(blob)) {
+    } else if (snowflake_cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
-    } else if (!cJSON_IsObject(blob)) {
+    } else if (!snowflake_cJSON_IsObject(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         if (*dest) {
-            cJSON_Delete(*dest);
+            snowflake_cJSON_Delete(*dest);
         }
         *dest = blob;
         log_debug("Object at index: %d", index);
@@ -697,7 +698,7 @@ json_detach_object_from_array(cJSON **dest, cJSON *data, int index) {
 }
 
 ARRAY_LIST *json_get_object_keys(const cJSON *item) {
-    if (!item || !cJSON_IsObject(item)) {
+    if (!item || !snowflake_cJSON_IsObject(item)) {
         return NULL;
     }
     // Get the first key-value pair in the object
@@ -921,9 +922,9 @@ sf_bool STDCALL http_perform(CURL *curl,
             // Set null terminator
             buffer.buffer[buffer.size] = '\0';
         }
-        cJSON_Delete(*json);
+        snowflake_cJSON_Delete(*json);
         *json = NULL;
-        *json = cJSON_Parse(buffer.buffer);
+        *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
         } else {
@@ -1072,7 +1073,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
 
     // Create body and convert to string
     body = create_renew_session_json_body(sf->token);
-    s_body = cJSON_Print(body);
+    s_body = snowflake_cJSON_Print(body);
 
     // Create request id, set in url parameter and encode url
     uuid4_generate(request_id);
@@ -1103,13 +1104,13 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
                             "Request returned as being unsuccessful",
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
-    } else if (!(data = cJSON_GetObjectItem(json, "data"))) {
+    } else if (!(data = snowflake_cJSON_GetObjectItem(json, "data"))) {
         log_error("Missing data field in response");
         SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                             "No data object in JSON response",
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
-    } else if (!(has_token = cJSON_HasObjectItem(data, "sessionToken"))) {
+    } else if (!(has_token = snowflake_cJSON_HasObjectItem(data, "sessionToken"))) {
         log_error("No session token in JSON response");
         SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                             "No session token in JSON response",
@@ -1127,8 +1128,8 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
 
 cleanup:
     curl_slist_free_all(header);
-    cJSON_Delete(body);
-    cJSON_Delete(json);
+    snowflake_cJSON_Delete(body);
+    snowflake_cJSON_Delete(json);
     SF_FREE(s_body);
     SF_FREE(header_token);
     SF_FREE(encoded_url);

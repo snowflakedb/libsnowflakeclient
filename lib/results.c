@@ -243,13 +243,13 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
     cJSON *blob;
     cJSON *column;
     SF_COLUMN_DESC *desc = NULL;
-    size_t array_size = (size_t) cJSON_GetArraySize(rowtype);
+    size_t array_size = (size_t) snowflake_cJSON_GetArraySize(rowtype);
     if (rowtype == NULL || array_size == 0) {
         return desc;
     }
     desc = (SF_COLUMN_DESC *) SF_CALLOC(array_size, sizeof(SF_COLUMN_DESC));
     for (i = 0; i < (int)array_size; i++) {
-        column = cJSON_GetArrayItem(rowtype, i);
+        column = snowflake_cJSON_GetArrayItem(rowtype, i);
         if(json_copy_string(&desc[i].name, column, "name")) {
             desc[i].name = NULL;
         }
@@ -269,8 +269,8 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
             desc[i].null_ok = SF_BOOLEAN_FALSE;
         }
         // Get type
-        blob = cJSON_GetObjectItem(column, "type");
-        if (cJSON_IsString(blob)) {
+        blob = snowflake_cJSON_GetObjectItem(column, "type");
+        if (snowflake_cJSON_IsString(blob)) {
             desc[i].type = string_to_snowflake_type(blob->valuestring);
         } else {
             // TODO Replace with default type

@@ -270,10 +270,10 @@ static SF_STATUS STDCALL _reset_connection_parameters(
     sf_bool do_validate) {
     if (parameters != NULL) {
         int i, len;
-        for (i = 0, len = cJSON_GetArraySize(parameters); i < len; ++i) {
-            cJSON *p1 = cJSON_GetArrayItem(parameters, i);
-            cJSON *name = cJSON_GetObjectItem(p1, "name");
-            cJSON *value = cJSON_GetObjectItem(p1, "value");
+        for (i = 0, len = snowflake_cJSON_GetArraySize(parameters); i < len; ++i) {
+            cJSON *p1 = snowflake_cJSON_GetArrayItem(parameters, i);
+            cJSON *name = snowflake_cJSON_GetObjectItem(p1, "name");
+            cJSON *value = snowflake_cJSON_GetObjectItem(p1, "value");
             if (strcmp(name->valuestring, "TIMEZONE") == 0) {
                 if (sf->timezone == NULL ||
                     strcmp(sf->timezone, value->valuestring) != 0) {
@@ -286,7 +286,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
     if (session_info != NULL) {
         char msg[1024];
         // database
-        cJSON *db = cJSON_GetObjectItem(session_info, "databaseName");
+        cJSON *db = snowflake_cJSON_GetObjectItem(session_info, "databaseName");
         if (do_validate && sf->database && sf->database[0] != (char) 0 &&
             db->valuestring == NULL) {
             sprintf(msg, "Specified database doesn't exists: [%s]",
@@ -302,7 +302,8 @@ static SF_STATUS STDCALL _reset_connection_parameters(
         alloc_buffer_and_copy(&sf->database, db->valuestring);
 
         // schema
-        cJSON *schema = cJSON_GetObjectItem(session_info, "schemaName");
+        cJSON *schema = snowflake_cJSON_GetObjectItem(session_info,
+                                                      "schemaName");
         if (do_validate && sf->schema && sf->schema[0] != (char) 0 &&
             schema->valuestring == NULL) {
             sprintf(msg, "Specified schema doesn't exists: [%s]",
@@ -319,7 +320,8 @@ static SF_STATUS STDCALL _reset_connection_parameters(
         alloc_buffer_and_copy(&sf->schema, schema->valuestring);
 
         // warehouse
-        cJSON *warehouse = cJSON_GetObjectItem(session_info, "warehouseName");
+        cJSON *warehouse = snowflake_cJSON_GetObjectItem(session_info,
+                                                         "warehouseName");
         if (do_validate && sf->warehouse && sf->warehouse[0] != (char) 0 &&
             warehouse->valuestring == NULL) {
             sprintf(msg, "Specified warehouse doesn't exists: [%s]",
@@ -335,7 +337,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
         alloc_buffer_and_copy(&sf->warehouse, warehouse->valuestring);
 
         // role
-        cJSON *role = cJSON_GetObjectItem(session_info, "roleName");
+        cJSON *role = snowflake_cJSON_GetObjectItem(session_info, "roleName");
         // No validation is required as already done by the server
         alloc_buffer_and_copy(&sf->role, role->valuestring);
     }
@@ -683,13 +685,13 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         if (request(sf, &resp, DELETE_SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), NULL, NULL,
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
-            s_resp = cJSON_Print(resp);
+            s_resp = snowflake_cJSON_Print(resp);
             log_trace("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
              * Catching error here won't help
              */
         }
-        cJSON_Delete(resp);
+        snowflake_cJSON_Delete(resp);
         SF_FREE(s_resp);
     }
 
@@ -785,7 +787,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->timezone,
         sf->autocommit);
     log_trace("Created body");
-    s_body = cJSON_Print(body);
+    s_body = snowflake_cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
         log_debug("body:\n%s", s_body);
@@ -795,7 +797,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     if (request(sf, &resp, SESSION_URL, url_params,
                 sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
                 POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
-        s_resp = cJSON_Print(resp);
+        s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         if ((json_error = json_copy_bool(&success, resp, "success")) !=
             SF_JSON_ERROR_NONE) {
@@ -806,14 +808,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             goto cleanup;
         }
         if (!success) {
-            cJSON *messageJson = cJSON_GetObjectItem(resp, "message");
+            cJSON *messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
             char *message = NULL;
             cJSON *codeJson = NULL;
             int64 code = -1;
             if (messageJson) {
                 message = messageJson->valuestring;
             }
-            codeJson = cJSON_GetObjectItem(resp, "code");
+            codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
             if (codeJson) {
                 code = strtol(codeJson->valuestring, NULL, 10);
             } else {
@@ -826,7 +828,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             goto cleanup;
         }
 
-        data = cJSON_GetObjectItem(resp, "data");
+        data = snowflake_cJSON_GetObjectItem(resp, "data");
         if (!set_tokens(sf, data, "token", "masterToken", &sf->error)) {
             goto cleanup;
         }
@@ -862,8 +864,8 @@ cleanup:
         memset(sf->passcode, 0, strlen(sf->passcode) + 1);
         SF_FREE(sf->passcode);
     }
-    cJSON_Delete(body);
-    cJSON_Delete(resp);
+    snowflake_cJSON_Delete(body);
+    snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
     SF_FREE(s_resp);
 
@@ -874,8 +876,8 @@ static SF_STATUS STDCALL _set_parameters_session_info(
     SF_CONNECT *sf, cJSON *data) {
     SF_STATUS ret = _reset_connection_parameters(
         sf,
-        cJSON_GetObjectItem(data, "parameters"),
-        cJSON_GetObjectItem(data, "sessionInfo"), SF_BOOLEAN_TRUE);
+        snowflake_cJSON_GetObjectItem(data, "parameters"),
+        snowflake_cJSON_GetObjectItem(data, "sessionInfo"), SF_BOOLEAN_TRUE);
     return ret;
 }
 
@@ -1027,7 +1029,7 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     sfstmt->sql_text = NULL;
 
     if (sfstmt->raw_results) {
-        cJSON_Delete(sfstmt->raw_results);
+        snowflake_cJSON_Delete(sfstmt->raw_results);
         sfstmt->raw_results = NULL;
     }
     sfstmt->raw_results = NULL;
@@ -1103,8 +1105,8 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
     SF_FREE(put_get_response->enc_mat_put);
     SF_FREE(put_get_response->localLocation);
 
-    cJSON_Delete((cJSON *) put_get_response->src_list);
-    cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
+    snowflake_cJSON_Delete((cJSON *) put_get_response->src_list);
+    snowflake_cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
 
     SF_FREE(put_get_response);
 }
@@ -1235,7 +1237,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                     sfstmt->chunk_downloader->queue_size) {
                     // No more chunks, set EOL and break
                     log_debug("Out of chunks, setting EOL.");
-                    cJSON_Delete(sfstmt->raw_results);
+                    snowflake_cJSON_Delete(sfstmt->raw_results);
                     sfstmt->raw_results = NULL;
                     ret = SF_STATUS_EOF;
                     break;
@@ -1262,7 +1264,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                     sfstmt->chunk_downloader->consumer_head++;
 
                     // Delete old cJSON results struct
-                    cJSON_Delete((cJSON *) sfstmt->raw_results);
+                    snowflake_cJSON_Delete((cJSON *) sfstmt->raw_results);
                     // Set new chunk and remove chunk reference from locked array
                     sfstmt->raw_results = sfstmt->chunk_downloader->queue[index].chunk;
                     sfstmt->chunk_downloader->queue[index].chunk = NULL;
@@ -1309,7 +1311,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     }
 
     // Get next result row
-    row = cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
+    row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
     sfstmt->chunk_rowcount--;
 
     // Write to results
@@ -1329,7 +1331,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         size_t slen = (size_t)0;
         memset(&tm_obj, 0, sizeof(tm_obj));
 
-        raw_result = cJSON_GetArrayItem(row, (int) i);
+        raw_result = snowflake_cJSON_GetArrayItem(row, (int) i);
         if (raw_result->valuestring == NULL) {
             log_info("setting value and len = NULL");
             ((char *) result->value)[0] = '\0'; // empty string
@@ -1342,7 +1344,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
             case SF_C_TYPE_INT8:
                 switch (sfstmt->desc[i].type) {
                     case SF_DB_TYPE_BOOLEAN:
-                        *(int8 *) result->value = cJSON_IsTrue(raw_result)
+                        *(int8 *) result->value = snowflake_cJSON_IsTrue(
+                          raw_result)
                                                   ? SF_BOOLEAN_TRUE
                                                   : SF_BOOLEAN_FALSE;
                         break;
@@ -1448,7 +1451,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                 }
                 break;
             case SF_C_TYPE_BOOLEAN:
-                *(sf_bool *) result->value = cJSON_IsTrue(raw_result)
+                *(sf_bool *) result->value = snowflake_cJSON_IsTrue(raw_result)
                                              ? SF_BOOLEAN_TRUE
                                              : SF_BOOLEAN_FALSE;
                 result->len = sizeof(sf_bool);
@@ -1464,7 +1467,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     ret = SF_STATUS_SUCCESS;
 
 cleanup:
-    cJSON_Delete(row);
+    snowflake_cJSON_Delete(row);
     return ret;
 }
 
@@ -1517,7 +1520,7 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
         /* no way to set the error other than return value */
         return ret;
     }
-    if (cJSON_GetArraySize(sfstmt->raw_results) == 0) {
+    if (snowflake_cJSON_GetArraySize(sfstmt->raw_results) == 0) {
         /* no affected rows is determined. The potential cause is
          * the query is not DML or no stmt was executed at all . */
         SET_SNOWFLAKE_STMT_ERROR(
@@ -1529,13 +1532,13 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
     }
 
     if (sfstmt->is_dml) {
-        row = cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
+        row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
         ret = 0;
         for (i = 0; i < (size_t) sfstmt->total_fieldcount; ++i) {
-            raw_row_result = cJSON_GetArrayItem(row, (int) i);
+            raw_row_result = snowflake_cJSON_GetArrayItem(row, (int) i);
             ret += (int64) strtoll(raw_row_result->valuestring, NULL, 10);
         }
-        cJSON_Delete(row);
+        snowflake_cJSON_Delete(row);
     } else {
         ret = sfstmt->total_rowcount;
     }
@@ -1613,7 +1616,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     // TODO Do error handing and checking and stuff
     ARRAY_LIST *p = (ARRAY_LIST *) sfstmt->params;
     if (p && p->used > 0) {
-        bindings = cJSON_CreateObject();
+        bindings = snowflake_cJSON_CreateObject();
         for (i = 0; i < p->used; i++) {
             cJSON *binding;
             input = (SF_BIND_INPUT *) sf_array_list_get(p, i + 1);
@@ -1624,12 +1627,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             type = snowflake_type_to_string(
                 c_type_to_snowflake(input->c_type, SF_DB_TYPE_TIMESTAMP_NTZ));
             value = value_to_string(input->value, input->len, input->c_type);
-            binding = cJSON_CreateObject();
+            binding = snowflake_cJSON_CreateObject();
             char idxbuf[20];
             sprintf(idxbuf, "%lu", (unsigned long) (i + 1));
-            cJSON_AddStringToObject(binding, "type", type);
-            cJSON_AddStringToObject(binding, "value", value);
-            cJSON_AddItemToObject(bindings, idxbuf, binding);
+          snowflake_cJSON_AddStringToObject(binding, "type", type);
+          snowflake_cJSON_AddStringToObject(binding, "value", value);
+          snowflake_cJSON_AddItemToObject(bindings, idxbuf, binding);
             if (value) {
                 SF_FREE(value);
             }
@@ -1654,9 +1657,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                   NULL : sfstmt->request_id);
     if (bindings != NULL) {
         /* binding parameters if exists */
-        cJSON_AddItemToObject(body, "bindings", bindings);
+      snowflake_cJSON_AddItemToObject(body, "bindings", bindings);
     }
-    s_body = cJSON_Print(body);
+    s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
 
@@ -1667,9 +1670,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
-        s_resp = cJSON_Print(resp);
+        s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
-        data = cJSON_GetObjectItem(resp, "data");
+        data = snowflake_cJSON_GetObjectItem(resp, "data");
         if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId",
                                       SF_UUID4_LEN) && !is_put_get_command) {
             log_debug("No valid sfqid found in response");
@@ -1698,14 +1701,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     &sfstmt->put_get_response->client_show_encryption_param,
                     data, "clientShowEncryptionParameter");
 
-                cJSON *enc_mat = cJSON_GetObjectItem(data,
-                                                     "encryptionMaterial");
+                cJSON *enc_mat = snowflake_cJSON_GetObjectItem(data,
+                                                               "encryptionMaterial");
 
                 // In put command response, value of encryptionMaterial is an
                 // object, which in get command response, value is an array of
                 // object since different remote files might have different
                 // encryption material
-                if (cJSON_IsArray(enc_mat))
+                if (snowflake_cJSON_IsArray(enc_mat))
                 {
                     json_detach_array_from_object(
                       (cJSON **) (&sfstmt->put_get_response->enc_mat_get),
@@ -1723,8 +1726,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                   enc_mat, "smkId");
                 }
 
-                cJSON *stage_info = cJSON_GetObjectItem(data, "stageInfo");
-                cJSON *stage_cred = cJSON_GetObjectItem(stage_info, "creds");
+                cJSON *stage_info = snowflake_cJSON_GetObjectItem(data,
+                                                                  "stageInfo");
+                cJSON *stage_cred = snowflake_cJSON_GetObjectItem(stage_info,
+                                                                  "creds");
 
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->location_type,
@@ -1763,9 +1768,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 } else {
                     sfstmt->is_dml = detect_stmt_type(stmt_type_id);
                 }
-                rowtype = cJSON_GetObjectItem(data, "rowtype");
-                if (cJSON_IsArray(rowtype)) {
-                    sfstmt->total_fieldcount = cJSON_GetArraySize(rowtype);
+                rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
+                if (snowflake_cJSON_IsArray(rowtype)) {
+                    sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
+                      rowtype);
                     _snowflake_stmt_desc_reset(sfstmt);
                     sfstmt->desc = set_description(rowtype);
                 }
@@ -1784,18 +1790,19 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
                     log_warn(
                         "No total count found in response. Reverting to using array size of results");
-                    sfstmt->total_rowcount = cJSON_GetArraySize(
-                        sfstmt->raw_results);
+                    sfstmt->total_rowcount = snowflake_cJSON_GetArraySize(
+                      sfstmt->raw_results);
                 }
                 // Get number of rows in this chunk
-                sfstmt->chunk_rowcount = cJSON_GetArraySize(
-                    sfstmt->raw_results);
+                sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
+                  sfstmt->raw_results);
 
                 // Set large result set if one exists
-                if ((chunks = cJSON_GetObjectItem(data, "chunks")) != NULL) {
+                if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
                     // We don't care if there is no qrmk, so ignore return code
                     json_copy_string(&qrmk, data, "qrmk");
-                    chunk_headers = cJSON_GetObjectItem(data, "chunkHeaders");
+                    chunk_headers = snowflake_cJSON_GetObjectItem(data,
+                                                                  "chunkHeaders");
                     sfstmt->chunk_downloader = chunk_downloader_init(
                         qrmk,
                         chunk_headers,
@@ -1824,11 +1831,11 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                           "sqlState", SF_SQLSTATE_LEN)) {
                 log_debug("No valid sqlstate found in response");
             }
-            messageJson = cJSON_GetObjectItem(resp, "message");
+            messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
             if (messageJson) {
                 message = messageJson->valuestring;
             }
-            codeJson = cJSON_GetObjectItem(resp, "code");
+            codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
             if (codeJson) {
                 code = (int64) atol(codeJson->valuestring);
             } else {
@@ -1848,8 +1855,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     ret = SF_STATUS_SUCCESS;
 
 cleanup:
-    cJSON_Delete(body);
-    cJSON_Delete(resp);
+    snowflake_cJSON_Delete(body);
+    snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
     SF_FREE(s_resp);
     SF_FREE(qrmk);

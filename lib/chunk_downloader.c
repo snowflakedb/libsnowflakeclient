@@ -150,7 +150,7 @@ sf_bool STDCALL fill_queue(struct SF_CHUNK_DOWNLOADER *chunk_downloader, cJSON *
         }
 
         // Free detached chunk
-        cJSON_Delete(chunk);
+      snowflake_cJSON_Delete(chunk);
         chunk = NULL;
     }
 
@@ -177,7 +177,7 @@ sf_bool STDCALL create_chunk_headers(struct SF_CHUNK_DOWNLOADER *chunk_downloade
         key = (char *) sf_array_list_get(keys, i);
         // Since I know that these keys are correct from a case sensitive view,
         // I can use the faster case sensitive version
-        item = cJSON_GetObjectItemCaseSensitive(json_headers, key);
+        item = snowflake_cJSON_GetObjectItemCaseSensitive(json_headers, key);
         if (!item || (header_field_size = snprintf(NULL, 0, "%s: %s", key, item->valuestring)) < 0) {
             SET_SNOWFLAKE_ERROR(chunk_downloader->sf_error, SF_STATUS_ERROR_BAD_JSON,
                                 "Could not find critical chunk header item", "");
@@ -234,7 +234,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
             fetch_slots <= 0 ||
             !(chunk_headers || qrmk) ||
             !chunks ||
-            !cJSON_IsArray(chunks) ||
+            !snowflake_cJSON_IsArray(chunks) ||
             strcmp(chunks->string, "chunks") != 0) {
         return NULL;
     }
@@ -273,7 +273,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     }
 
     // Initialize queue and thread memory
-    chunk_count = cJSON_GetArraySize(chunks);
+    chunk_count = snowflake_cJSON_GetArraySize(chunks);
     chunk_downloader->threads = (SF_THREAD_HANDLE *)SF_CALLOC((int)thread_count, sizeof(SF_THREAD_HANDLE));
     chunk_downloader->queue = (SF_QUEUE_ITEM *) SF_CALLOC(chunk_count, sizeof(SF_QUEUE_ITEM));
     if (!chunk_downloader->threads || !chunk_downloader->queue) {
@@ -379,7 +379,7 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
     // Free all the memory of the items in the queue before freeing queue memory
     for (i = 0; i < chunk_downloader->queue_size; i++) {
         SF_FREE(chunk_downloader->queue[i].url);
-        cJSON_Delete(chunk_downloader->queue[i].chunk);
+      snowflake_cJSON_Delete(chunk_downloader->queue[i].chunk);
     }
     SF_FREE(chunk_downloader->queue);
     SF_FREE(chunk_downloader->qrmk);
