@@ -24,6 +24,10 @@ cmake_opts=(
     "-DCMAKE_BUILD_TYPE=$target"
 )
 
+if [[ "$PLATFORM" == "darwin" ]]; then
+    cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+fi
+
 if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
     cmake_opts+=("-DBUILD_TESTS=OFF")
 fi

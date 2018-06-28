@@ -36,10 +36,16 @@ aws_configure_opts+=(
     "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib"
 )
 
+if [[ "$PLATFORM" == "darwin" ]]; then
+    aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+fi
+
 rm -rf $AWS_BUILD_DIR
 rm -rf $AWS_CMAKE_BUILD_DIR
 mkdir $AWS_BUILD_DIR
 mkdir $AWS_CMAKE_BUILD_DIR
+
+export GIT_DIR=/tmp
 
 cd $AWS_CMAKE_BUILD_DIR
 $CMAKE ${aws_configure_opts[@]} ../
