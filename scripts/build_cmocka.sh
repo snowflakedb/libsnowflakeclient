@@ -28,7 +28,7 @@ config_opts=(
 ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
     config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
-    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.11"
+    ADDITIONAL_CFLAGS="-mmacosx-version-min=10.11"
 fi
 
 cd $SOURCE_DIR
@@ -36,7 +36,7 @@ rm -rf cmake-build
 mkdir cmake-build
 cd cmake-build
 echo cmake ${config_opts[@]} ..
-$CMAKE -E env CFLAGS="-mmacosx-version-min=10.11" $CMAKE ${config_opts[@]} ..
+$CMAKE -E env CFLAGS=$ADDITIONAL_CFLAGS $CMAKE ${config_opts[@]} ..
 make
 make test
 make install
