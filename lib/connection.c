@@ -961,7 +961,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
     struct curl_slist *my_header = NULL;
     char *header_token = NULL;
     size_t header_token_size;
-
+    char *header_direct_query_token = NULL;
+    size_t header_direct_query_token_size;
     curl = curl_easy_init();
     if (curl) {
         // Use passed in header if one exists
@@ -982,6 +983,19 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                 snprintf(header_token, header_token_size,
                          HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
                 my_header = create_header_token(header_token, use_application_json_accept_type);
+            } else if (sf->direct_query_token) {
+                header_direct_query_token_size = strlen(HEADER_DIRECT_QUERY_TOKEN_FORMAT) - 2 +
+                                    strlen(sf->direct_query_token) + 1;
+                header_direct_query_token = (char *) SF_CALLOC(1, header_direct_query_token_size);
+                if (!header_direct_query_token) {
+                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                        "Ran out of memory trying to create header direct query token",
+                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    goto cleanup;
+                }
+                snprintf(header_direct_query_token, header_direct_query_token_size,
+                         HEADER_DIRECT_QUERY_TOKEN_FORMAT, sf->direct_query_token);
+                my_header = create_header_token(header_direct_query_token, use_application_json_accept_type);
             } else {
                 my_header = create_header_no_token(use_application_json_accept_type);
             }
@@ -990,7 +1004,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
 
         encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
                                  sf->port, url, url_params, num_url_params,
-                                 error, sf->XPR_direct_param);
+                                 error, sf->directURL_param);
         if (encoded_url == NULL) {
             goto cleanup;
         }
@@ -1023,7 +1037,7 @@ cleanup:
 
 sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    if (!is_string_empty(sf->XPR_directURL))
+    if (!is_string_empty(sf->directURL))
     {
       SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
                           "Attempt to renew session with XPR direct URL",
@@ -1080,7 +1094,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     url_params[0].value = request_id;
     encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
                              sf->port, RENEW_SESSION_URL, url_params, 1, error,
-                             sf->XPR_direct_param);
+                             sf->directURL_param);
     if (!encoded_url) {
         goto cleanup;
     }

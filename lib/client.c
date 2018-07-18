@@ -661,8 +661,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->request_id[0] = '\0';
         clear_snowflake_error(&sf->error);
 
-        sf->XPR_direct_param = NULL;
-        sf->XPR_directURL = NULL;
+        sf->directURL_param = NULL;
+        sf->directURL = NULL;
+        sf->direct_query_token = NULL;
     }
 
     return sf;
@@ -715,6 +716,9 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->timezone);
     SF_FREE(sf->master_token);
     SF_FREE(sf->token);
+    SF_FREE(sf->directURL);
+    SF_FREE(sf->directURL_param);
+    SF_FREE(sf->direct_query_token);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -747,15 +751,16 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
              sf_os_name(),
              os_version);
 
-    if (!is_string_empty(sf->XPR_directURL))
+    if (!is_string_empty(sf->directURL))
     {
+        if (is_string_empty(sf->directURL_param) ||
+                is_string_empty(sf->direct_query_token))
+        {
+            return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
+        }
         return SF_STATUS_SUCCESS;
     }
 
-    if (!is_string_empty(sf->XPR_direct_param))
-    {
-        return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
-    }
 
     cJSON *body = NULL;
     cJSON *data = NULL;
@@ -970,11 +975,14 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_TIMEZONE:
             alloc_buffer_and_copy(&sf->timezone, value);
             break;
-        case SF_XPR_DIR_QUERY_URL:
-            alloc_buffer_and_copy(&sf->XPR_directURL, value);
+        case SF_DIR_QUERY_URL:
+            alloc_buffer_and_copy(&sf->directURL, value);
         break;
-        case SF_XPR_DIR_QUERY_PARAM:
-            alloc_buffer_and_copy(&sf->XPR_direct_param, value);
+        case SF_DIR_QUERY_URL_PARAM:
+            alloc_buffer_and_copy(&sf->directURL_param, value);
+        break;
+        case SF_DIR_QUERY_TOKEN:
+            alloc_buffer_and_copy(&sf->direct_query_token, value);
         break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1639,7 +1647,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         }
     }
 
-    if (is_string_empty(sfstmt->connection->XPR_directURL) &&
+    if (is_string_empty(sfstmt->connection->directURL) &&
         (is_string_empty(sfstmt->connection->master_token) ||
          is_string_empty(sfstmt->connection->token))) {
         log_error(
@@ -1653,7 +1661,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
-                                  is_string_empty(sfstmt->connection->XPR_directURL) ?
+                                  is_string_empty(sfstmt->connection->directURL) ?
                                   NULL : sfstmt->request_id);
     if (bindings != NULL) {
         /* binding parameters if exists */
@@ -1663,9 +1671,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
 
-    char* queryURL = is_string_empty(sfstmt->connection->XPR_directURL) ?
-                     QUERY_URL : sfstmt->connection->XPR_directURL;
-    int url_paramSize = is_string_empty(sfstmt->connection->XPR_directURL) ?
+    char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
+                     QUERY_URL : sfstmt->connection->directURL;
+    int url_paramSize = is_string_empty(sfstmt->connection->directURL) ?
                         sizeof(url_params) / sizeof(URL_KEY_VALUE) : 0;
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
