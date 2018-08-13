@@ -21,7 +21,7 @@
 #
 ###########################################################################
 
-prefix=/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/curl
+prefix=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/curl
 exec_prefix=${prefix}
 includedir=${prefix}/include
 cppflag_curl_staticlib=-DCURL_STATICLIB
@@ -76,7 +76,7 @@ while test $# -gt 0; do
         ;;
 
     --cc)
-        echo "gcc"
+        echo "clang"
         ;;
 
     --prefix)
@@ -160,7 +160,7 @@ while test $# -gt 0; do
 
     --static-libs)
         if test "Xyes" != "Xno" ; then
-          echo ${exec_prefix}/lib/libcurl.a -L/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl/lib -lssl -lcrypto -lz -ldl
+          echo ${exec_prefix}/lib/libcurl.a -L/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl/lib -lssl -lcrypto -lz -ldl
         else
           echo "curl was built with static libraries disabled" >&2
           exit 1
@@ -168,7 +168,7 @@ while test $# -gt 0; do
         ;;
 
     --configure)
-        echo " '--with-ssl=/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl' '--without-nss' '--enable-static' '--disable-shared' '--prefix=/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/curl' '--without-libssh2' '--disable-rtsp' '--disable-ldap' '--disable-ldaps' '--disable-telnet' '--disable-tftp' '--disable-imap' '--disable-smb' '--disable-smtp' '--disable-gopher' '--disable-pop3' '--disable-ftp' '--disable-dict' '--disable-file' '--disable-manual' 'CFLAGS=-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.11' 'LIBS=-ldl'"
+        echo " '--with-ssl=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl' '--without-nss' '--enable-static' '--disable-shared' '--prefix=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/curl' '--without-libssh2' '--disable-rtsp' '--disable-ldap' '--disable-ldaps' '--disable-telnet' '--disable-tftp' '--disable-imap' '--disable-smb' '--disable-smtp' '--disable-gopher' '--disable-pop3' '--disable-ftp' '--disable-dict' '--disable-file' '--disable-manual' 'CC=clang' 'CFLAGS=-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.11' 'LIBS=-ldl'"
         ;;
 
     *)
