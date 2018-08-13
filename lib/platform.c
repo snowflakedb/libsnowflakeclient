@@ -365,7 +365,7 @@ sf_bool STDCALL _is_put_get_command(char *sql_text) {
     regex_t put_get_regex;
     // On MacOS seems \s to match white space character did not work. Change to '[ ]' for now
     //TODO maybe regex compilation should be moved to static variable so that no recompilation needed
-    regcomp(&put_get_regex, "^([ ]*\\/*.*\\/*[ ]*)*(put|get)[ ]+",
+    regcomp(&put_get_regex, "^([ ]*\\/\\*.*\\*\\/[ ]*)*([ ]*)*(put|get)[ ]+",
             REG_ICASE | REG_EXTENDED);
 
     int res;
