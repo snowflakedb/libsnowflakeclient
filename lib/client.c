@@ -1857,6 +1857,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         }
     } else {
         log_trace("Connection failed");
+        goto cleanup;
     }
 
     // Everything went well if we got to this point

@@ -137,37 +137,37 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
     //Create Client Environment JSON blob
     client_env = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
-  snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
+    snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
+    snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
     sf_os_version(os_version);
-  snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
+    snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
     session_parameters = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(
-    session_parameters,
-    "AUTOCOMMIT",
-    autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
-                                  : SF_BOOLEAN_INTERNAL_FALSE_STR);
+    snowflake_cJSON_AddStringToObject(
+        session_parameters,
+        "AUTOCOMMIT",
+        autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
+                                      : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
-  snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
+    snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
 
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
-  snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
-  snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
-  snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
+    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
+    snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
+    snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
     // Add password if one exists
     if (sf->password && *(sf->password)) {
-      snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
+        snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
     }
-  snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
-  snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
+    snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
+    snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
                                   session_parameters);
 
     //Create body
     body = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddItemToObject(body, "data", data);
+    snowflake_cJSON_AddItemToObject(body, "data", data);
 
 
     return body;
@@ -177,12 +177,13 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
     cJSON *body;
     // Create body
     body = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
-  snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
-  snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
+    snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
+    snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
+    snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
+    snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", (double) time(NULL) * 1000);
     if (request_id)
     {
-      snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
+        snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
     return body;
 }
@@ -191,8 +192,8 @@ cJSON *STDCALL create_renew_session_json_body(const char *old_token) {
     cJSON *body;
     // Create body
     body = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(body, "oldSessionToken", old_token);
-  snowflake_cJSON_AddStringToObject(body, "requestType", REQUEST_TYPE_RENEW);
+    snowflake_cJSON_AddStringToObject(body, "oldSessionToken", old_token);
+    snowflake_cJSON_AddStringToObject(body, "requestType", REQUEST_TYPE_RENEW);
 
     return body;
 }
