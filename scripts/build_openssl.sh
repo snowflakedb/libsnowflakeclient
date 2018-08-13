@@ -25,7 +25,7 @@ openssl_config_opts+=(
     "--prefix=$OPENSSL_BUILD_DIR"
 )
 if [[ "$target" != "Release" ]]; then
-    openssl_config_opts+=("-d")
+    openssl_config_opts+=("--debug")
 fi
 
 cd $OPENSSL_SOURCE_DIR

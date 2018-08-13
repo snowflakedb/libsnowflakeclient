@@ -37,6 +37,13 @@ else
     GXX="$(which g++)"
 fi
 
+if [[ "$PLATFORM" == "darwin" ]]; then
+    export CC=clang
+    export CXX=clang++
+    export GCC=$CC
+    export GXX=$CXX
+fi
+
 export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
 target=Release

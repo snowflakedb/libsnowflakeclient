@@ -1,4 +1,4 @@
-prefix=/Users/hyu/Snowflake/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl
+prefix=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/openssl
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
