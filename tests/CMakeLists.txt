@@ -34,6 +34,7 @@ SET(TESTS_C
         test_timestamp_tz
         test_timezone
         test_adjust_fetch_data
+        test_issue_76
         )
 
 SET(TESTS_CXX
