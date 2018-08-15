@@ -76,8 +76,10 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
     Aws::String(stageInfo->credentials.at(AWS_SECRET_KEY)),
     Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
-  s3Client = new Aws::S3::S3Client(credentials, clientConfiguration,
-          Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, true);
+  s3Client = new Aws::S3::S3Client(credentials,
+          clientConfiguration,
+          Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never,
+          true); // explicitly set virtual addressing style to be true
   CXX_LOG_TRACE("Successfully created s3 client. End of constructor.");
 }
 
