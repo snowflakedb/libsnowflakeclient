@@ -493,7 +493,7 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     /* Get current time */
     struct timeval tmnow;
     gettimeofday(&tmnow, NULL);
-    struct tm *lt = localtime(&tmnow.tv_sec);
+    struct tm *lt = gmtime(&tmnow.tv_sec);
     char msec[10];    /* Microsecond buffer */
 
     snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
@@ -504,7 +504,8 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     strcat(tsbuf, msec);
 #else /* Windows */
     SYSTEMTIME t;
-    GetLocalTime(&t);
+    // Get the system time, which is expressed in UTC
+    GetSystemTime(&t);
     sprintf(tsbuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
         t.wYear, t.wMonth, t.wDay,
         t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
