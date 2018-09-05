@@ -14,6 +14,17 @@ namespace Util
 const char Base64::BASE64_INDEX[] =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+const char Base64::BASE64_URL_INDEX[] =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+const char Base64::INDEX_SIZE = 64;
+
+const Base64::ReverseIndex
+Base64::BASE64_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
+
+const Base64::ReverseIndex
+Base64::BASE64_URL_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"};
+
 size_t Base64::decodedLength(const void *const vsrc,
                              const size_t srcLength) noexcept
 {
@@ -40,9 +51,10 @@ size_t Base64::decodedLength(const void *const vsrc,
   }
 }
 
-size_t Base64::encode(const void *const vsrc,
-                      const size_t srcLength,
-                      void *const vdst) noexcept
+size_t Base64::encodeHelper(const void *const vsrc,
+                            const size_t srcLength,
+                            void *const vdst,
+                            const char *dictionary) noexcept
 {
   const unsigned char *const src = static_cast<const unsigned char *>(vsrc);
   char *const dst = static_cast<char *>(vdst);
@@ -56,10 +68,10 @@ size_t Base64::encode(const void *const vsrc,
     const ub4 b3 = i < srcLength ? src[i++] : 0;
     const ub4 combined = (b1 << 16) | (b2 << 8) | b3;
 
-    dst[j++] = BASE64_INDEX[(combined >> 18) & 0x3F];
-    dst[j++] = BASE64_INDEX[(combined >> 12) & 0x3F];
-    dst[j++] = BASE64_INDEX[(combined >> 6) & 0x3F];
-    dst[j++] = BASE64_INDEX[(combined >> 0) & 0x3F];
+    dst[j++] = dictionary[(combined >> 18) & 0x3F];
+    dst[j++] = dictionary[(combined >> 12) & 0x3F];
+    dst[j++] = dictionary[(combined >> 6) & 0x3F];
+    dst[j++] = dictionary[(combined >> 0) & 0x3F];
   }
 
   // Add trailing "=" or "==" for inputs not being a multiple of 3.
@@ -71,23 +83,11 @@ size_t Base64::encode(const void *const vsrc,
   return j;
 }
 
-size_t Base64::decode(const void *const vsrc,
-                      const size_t srcLength,
-                      void *const vdst) noexcept
+size_t Base64::decodeHelper(const void *const vsrc,
+                            const size_t srcLength,
+                            void *const vdst,
+                            const ReverseIndex &REV_INDEX) noexcept
 {
-  // Reverse index, populated on first call.
-  struct ReverseIndex final
-  {
-    ReverseIndex()
-    {
-      std::memset(data, 0xFF, sizeof(data));
-      for (size_t i = 0; i < sizeof(BASE64_INDEX); ++i)
-        data[static_cast<unsigned char>(BASE64_INDEX[i])] = i;
-    }
-
-    unsigned char data[256];
-  } static const BASE64_REV_INDEX;
-
   // Check for correct padding.
   if (srcLength % 4)
     return -1;
@@ -102,10 +102,10 @@ size_t Base64::decode(const void *const vsrc,
     while (i < (srcLength - 4))
     {
       no_padding:
-      const ub4 b1 = BASE64_REV_INDEX.data[src[i]];
-      const ub4 b2 = BASE64_REV_INDEX.data[src[i + 1]];
-      const ub4 b3 = BASE64_REV_INDEX.data[src[i + 2]];
-      const ub4 b4 = BASE64_REV_INDEX.data[src[i + 3]];
+      const ub4 b1 = REV_INDEX[src[i]];
+      const ub4 b2 = REV_INDEX[src[i + 1]];
+      const ub4 b3 = REV_INDEX[src[i + 2]];
+      const ub4 b4 = REV_INDEX[src[i + 3]];
 
       // Check for illegal input.
       if ((b1 == 0xFF) || (b2 == 0xFF) || (b3 == 0xFF) ||
