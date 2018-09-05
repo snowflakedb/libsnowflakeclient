@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
-#include <numeric>
 #include <iterator>
 #include <algorithm>
 #include <memory>
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include <util/Base64.hpp>
 #include "utils/TestSetup.hpp"
@@ -81,8 +81,8 @@ struct Base64TestcaseFile : Base64TestcaseI
   }
 
   Base64TestcaseFile(std::string decode_file_name, std::string encode_file_name) {
-    decode_ = readAllBytes(decode_file_name.c_str());
-    encode_ = readAllBytes(encode_file_name.c_str());
+    decode_ = readAllBytes(decode_file_name);
+    encode_ = readAllBytes(encode_file_name);
   }
 
 private:
