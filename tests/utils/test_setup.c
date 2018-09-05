@@ -58,3 +58,38 @@ void dump_error(SF_ERROR_STRUCT *error) {
             error->file,
             error->line);
 }
+
+void col_conv_setup(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char* query) {
+    SF_STATUS status;
+    SF_CONNECT *sf;
+    SF_STMT *sfstmt;
+    sf = setup_snowflake_connection();
+    // Save created connection
+    *sfp = sf;
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    sfstmt = snowflake_stmt(sf);
+    // Save created statement
+    *sfstmtp = sfstmt;
+
+    status = snowflake_query(
+      sfstmt,
+      query,
+      0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+}
+
+void process_results(struct timespec begin, struct timespec end, int num_iterations, const char *label) {
+    FILE *results_file = fopen("/tmp/test_results.csv", "a+");
+    double time_elapsed = (double) (end.tv_sec - begin.tv_sec) + (double) (end.tv_nsec - begin.tv_nsec) / 1000000000;
+    fprintf(results_file, "%s, %lf, %i\n", label, time_elapsed, num_iterations);
+    printf("%s, %lf, %i\n", label, time_elapsed, num_iterations);
+    fclose(results_file);
+}
