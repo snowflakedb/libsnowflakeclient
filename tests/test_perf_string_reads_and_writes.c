@@ -3,6 +3,7 @@
  */
 
 #include <ctype.h>
+
 #include <string.h>
 #include <unistd.h>
 #include <snowflake/client.h>
@@ -158,7 +159,6 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
 
     // Get all public domain books. Sort by text_part_id to ensure that you concatenate book in right order
     col_conv_setup(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
-
     // Begin timing
     clock_gettime(clk_id, &begin);
 
