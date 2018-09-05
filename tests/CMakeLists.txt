@@ -49,7 +49,8 @@ SET(TESTS_CXX
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter
-        test_unit_thread_pool)
+        test_unit_thread_pool
+        test_unit_base64)
         #test_cpp_select1)
 
 set(SOURCE_UTILS
