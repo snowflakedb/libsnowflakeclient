@@ -35,6 +35,9 @@ SET(TESTS_C
         test_timezone
         test_adjust_fetch_data
         test_issue_76
+        test_perf_string_reads_and_writes
+        test_perf_column_evaluation
+        test_perf_type_conversion
         )
 
 SET(TESTS_CXX
