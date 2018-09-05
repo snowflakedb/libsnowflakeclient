@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
-#include <numeric>
 #include <iterator>
 #include <algorithm>
 #include <memory>
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include <util/Base64.hpp>
 #include "utils/TestSetup.hpp"
