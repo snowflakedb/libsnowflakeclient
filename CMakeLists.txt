@@ -126,6 +126,10 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp
+        cpp/jwt/Jwt.cpp
+        cpp/jwt/Jwt.hpp
+        cpp/jwt/Signer.cpp
+        cpp/jwt/Signer.hpp
         cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
@@ -148,7 +152,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
-        cpp/lib/Column.cpp)
+        cpp/lib/Column.cpp
+        cpp/jwt/ClaimSet.cpp
+        cpp/jwt/ClaimSet.hpp)
 
 if (LINUX)
     # Linux
