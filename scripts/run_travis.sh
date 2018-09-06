@@ -37,6 +37,10 @@ trap finish EXIT
 
 source $DIR/env.sh
 
+travis_fold_start setup_test_data "Setting up test data"
+python $DIR/setup_test_data.py
+travis_fold_end
+
 travis_fold_start create_schema "Create test schema"
 python $DIR/create_schema.py 
 travis_fold_end
