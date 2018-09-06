@@ -143,7 +143,6 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
 }
 
 void test_col_buffer_copy_concat_multiple_rows(void **unused) {
-    SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
@@ -175,21 +174,21 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     columns[0].max_length = sizeof(id);
     snowflake_bind_result(sfstmt, &columns[0]);
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char title[STRING_FIELD_MAX_SIZE + 1];
+    char *title = calloc(1, STRING_FIELD_MAX_SIZE + 1);
     columns[1].idx = 2;
     columns[1].c_type = SF_C_TYPE_STRING;
-    columns[1].value = (void *) &title;
-    columns[1].max_length = sizeof(title);
+    columns[1].value = (void *) title;
+    columns[1].max_length = STRING_FIELD_MAX_SIZE + 1;
     snowflake_bind_result(sfstmt, &columns[1]);
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char text[STRING_FIELD_MAX_SIZE + 1];
+    char *text = calloc(1, STRING_FIELD_MAX_SIZE + 1);
     columns[2].idx = 3;
     columns[2].c_type = SF_C_TYPE_STRING;
-    columns[2].value = (void *) &text;
-    columns[2].max_length = sizeof(text);
+    columns[2].value = (void *) text;
+    columns[2].max_length = STRING_FIELD_MAX_SIZE + 1;
     snowflake_bind_result(sfstmt, &columns[2]);
 
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+    while (snowflake_fetch(sfstmt) == SF_STATUS_SUCCESS) {
         // Set title if NULL
         if (!books[id].title) {
             books[id].title = (char *) malloc(columns[1].len + 1);
@@ -218,6 +217,8 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
         }
     }
 
+    free(title);
+    free(text);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
