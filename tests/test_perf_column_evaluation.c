@@ -35,7 +35,7 @@ void test_eval_all_cols(void **unused) {
     snowflake_bind_result_array(sfstmt, columns, NUM_COLS);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[1], out[2], out[3], out[4], out[5], out[6]);
+        fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
     }
 
     clock_gettime(clk_id, &end);
@@ -74,9 +74,9 @@ void test_eval_half_cols(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         if (sfstmt->total_row_index % 2) {
-            fprintf(dev_null, "%lli, %lli, %lli", out[1], out[2], out[3]);
+            fprintf(dev_null, "%lli, %lli, %lli", out[0], out[1], out[2]);
         } else {
-            fprintf(dev_null, "%lli, %lli, %lli", out[4], out[5], out[6]);
+            fprintf(dev_null, "%lli, %lli, %lli", out[3], out[4], out[5]);
         }
     }
 
@@ -116,7 +116,7 @@ void test_skip_rows_half(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         if (sfstmt->total_row_index % 2) {
-            fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[1], out[2], out[3], out[4], out[5], out[6]);
+            fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
         }
     }
 
