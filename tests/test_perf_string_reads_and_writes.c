@@ -2,16 +2,18 @@
  * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
 
-#define BOOK_TEXT_FIELD_MAX_SIZE 1048576
+#define STRING_FIELD_MAX_SIZE 1048576
+#define STRING_FIELD_FIXED_SIZE 10240
 
-const char *COL_EVAL_QUERY = "select randstr(1048575,random()) from table(generator(rowcount=>1));";
+const char *COL_EVAL_QUERY = "select randstr(10239,random()) from table(generator(rowcount=>500));";
 const size_t NUM_COLS = 1;
-const int NUM_ROWS = 1;
+const int NUM_ROWS = 500;
 
 typedef struct BOOK {
     char *title;
@@ -33,7 +35,7 @@ void test_col_string_read_fixed_size(void **unused) {
 
     // Configure result binding and bind
     SF_BIND_OUTPUT c1 = {0};
-    char out[BOOK_TEXT_FIELD_MAX_SIZE];
+    char out[STRING_FIELD_FIXED_SIZE];
     c1.idx = 1;
     c1.c_type = SF_C_TYPE_STRING;
     c1.value = (void *) &out;
@@ -42,8 +44,8 @@ void test_col_string_read_fixed_size(void **unused) {
 
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        if ((len = strlen(out)) != BOOK_TEXT_FIELD_MAX_SIZE - 1) {
-            fail_msg("Query in %s should have a text field with %i characters, instead has %zd", "test_col_string_read_fixed_size", BOOK_TEXT_FIELD_MAX_SIZE - 1, len);
+        if ((len = strlen(out)) != STRING_FIELD_FIXED_SIZE - 1) {
+            fail_msg("Query in %s should have a text field with %i characters, instead has %zd", "test_col_string_read_fixed_size", STRING_FIELD_FIXED_SIZE - 1, len);
         }
     }
 
@@ -55,7 +57,7 @@ void test_col_string_read_fixed_size(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_buffer_copy_fixed_size(void **unused) {
+void test_col_string_manipulate_fixed_size(void **unused) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -67,70 +69,28 @@ void test_col_buffer_copy_fixed_size(void **unused) {
     // Begin timing
     clock_gettime(clk_id, &begin);
 
-    int row = 0;
     // Configure result binding and bind
     SF_BIND_OUTPUT c1 = {0};
-    char out[1][BOOK_TEXT_FIELD_MAX_SIZE];
+    char out[STRING_FIELD_MAX_SIZE];
     c1.idx = 1;
     c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out[row];
-    c1.max_length = sizeof(out[row]);
+    c1.value = (void *) &out;
+    c1.max_length = sizeof(out);
     snowflake_bind_result(sfstmt, &c1);
 
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        if ((len = strlen(out[row])) != BOOK_TEXT_FIELD_MAX_SIZE - 1) {
-            fail_msg("Query in %s should have a text field with %i characters, instead has %zd", "test_col_string_read_fixed_size", BOOK_TEXT_FIELD_MAX_SIZE - 1, len);
+        // Convert string to lowercase then discard
+        char *p = out;
+        while (*p) {
+            *p = (char) tolower(*p);
+            p++;
         }
-        // Increment row and set new value and max_length
-        row++;
-        c1.value = (void *) &out[row];
-        c1.max_length = sizeof(out[row]);
     }
 
     clock_gettime(clk_id, &end);
 
-    process_results(begin, end, NUM_ROWS, "test_col_buffer_copy_fixed_size");
-
-    snowflake_stmt_term(sfstmt);
-    snowflake_term(sf);
-}
-
-void test_col_buffer_copy_unknown_size_static_memory(void **unused) {
-    SF_STATUS status;
-    SF_CONNECT *sf = NULL;
-    SF_STMT *sfstmt = NULL;
-    struct timespec begin, end;
-    clockid_t clk_id = CLOCK_MONOTONIC;
-
-    // Randomly select string size based on provided gen seed
-    col_conv_setup(&sf, &sfstmt, "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>200));");
-
-    // Begin timing
-    clock_gettime(clk_id, &begin);
-
-    int row = 0;
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    // Use max buffer size since we have to assume the largest buffer size
-    char out[NUM_ROWS][BOOK_TEXT_FIELD_MAX_SIZE];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out[row];
-    c1.max_length = sizeof(out[row]);
-    snowflake_bind_result(sfstmt, &c1);
-
-    size_t len;
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        // Increment row and set new value and max_length
-        row++;
-        c1.value = (void *) &out[row];
-        c1.max_length = sizeof(out[row]);
-    }
-
-    clock_gettime(clk_id, &end);
-
-    process_results(begin, end, NUM_ROWS, "test_col_buffer_copy_unknown_size_static_memory");
+    process_results(begin, end, NUM_ROWS, "test_col_string_manipulate_fixed_size");
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
@@ -144,7 +104,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Randomly select string size based on provided gen seed
-    col_conv_setup(&sf, &sfstmt, "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>200));");
+    col_conv_setup(&sf, &sfstmt, "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -153,7 +113,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     // Configure result binding and bind
     SF_BIND_OUTPUT c1 = {0};
     // Use max buffer size since we have to assume the largest buffer size for each row
-    char out[BOOK_TEXT_FIELD_MAX_SIZE];
+    char out[STRING_FIELD_MAX_SIZE];
     c1.idx = 1;
     c1.c_type = SF_C_TYPE_STRING;
     c1.value = (void *) &out;
@@ -161,7 +121,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     snowflake_bind_result(sfstmt, &c1);
 
     // Create array of char pointers to hold dynamically created buffers
-    char *out_buff[200];
+    char *out_buff[NUM_ROWS];
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Create dynamic buffer and copy over
@@ -198,7 +158,7 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     }
 
     // Get all public domain books. Sort by text_part_id to ensure that you concatenate book in right order
-    col_conv_setup(&sf, &sfstmt, "select * from testdb_capi.public.public_domain_books order by id, text_part;");
+    col_conv_setup(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -215,14 +175,14 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     columns[0].max_length = sizeof(id);
     snowflake_bind_result(sfstmt, &columns[0]);
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char title[BOOK_TEXT_FIELD_MAX_SIZE + 1];
+    char title[STRING_FIELD_MAX_SIZE + 1];
     columns[1].idx = 2;
     columns[1].c_type = SF_C_TYPE_STRING;
     columns[1].value = (void *) &title;
     columns[1].max_length = sizeof(title);
     snowflake_bind_result(sfstmt, &columns[1]);
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char text[BOOK_TEXT_FIELD_MAX_SIZE + 1];
+    char text[STRING_FIELD_MAX_SIZE + 1];
     columns[2].idx = 3;
     columns[2].c_type = SF_C_TYPE_STRING;
     columns[2].value = (void *) &text;
@@ -265,9 +225,8 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      //cmocka_unit_test(test_col_string_read_fixed_size),
-      cmocka_unit_test(test_col_buffer_copy_fixed_size),
-      cmocka_unit_test(test_col_buffer_copy_unknown_size_static_memory),
+      cmocka_unit_test(test_col_string_read_fixed_size),
+      cmocka_unit_test(test_col_string_manipulate_fixed_size),
       cmocka_unit_test(test_col_buffer_copy_unknown_size_dynamic_memory),
       cmocka_unit_test(test_col_buffer_copy_concat_multiple_rows),
     };
