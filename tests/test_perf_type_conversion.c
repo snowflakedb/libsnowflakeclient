@@ -99,6 +99,37 @@ void test_col_conv_str_type(void **unused) {
     snowflake_term(sf);
 }
 
+void test_col_conv_timestamp_type(void **unused) {
+    SF_STATUS status;
+    SF_CONNECT *sf = NULL;
+    SF_STMT *sfstmt = NULL;
+    struct timespec begin, end;
+    clockid_t clk_id = CLOCK_MONOTONIC;
+
+    col_conv_setup(&sf, &sfstmt, "select dateadd(day, uniform(1, 500, random()), current_timestamp) from table(generator(rowcount=>4000));");
+
+    // Begin timing
+    clock_gettime(clk_id, &begin);
+
+    // Configure result binding and bind
+    SF_BIND_OUTPUT c1 = {0};
+    char out[1000];
+    c1.idx = 1;
+    c1.c_type = SF_C_TYPE_STRING;
+    c1.value = (void *) &out;
+    c1.max_length = sizeof(out);
+    snowflake_bind_result(sfstmt, &c1);
+
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
+
+    clock_gettime(clk_id, &end);
+
+    process_results(begin, end, 4000, "test_col_conv_timestamp_type");
+
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 void test_col_conv_multi_type(void **unused) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
@@ -189,6 +220,7 @@ int main(void) {
       cmocka_unit_test(test_col_conv_int64_type),
       cmocka_unit_test(test_col_conv_float64_type),
       cmocka_unit_test(test_col_conv_str_type),
+      cmocka_unit_test(test_col_conv_timestamp_type),
       cmocka_unit_test(test_col_conv_multi_type),
       cmocka_unit_test(test_col_conv_multi_types_per_row),
     };
