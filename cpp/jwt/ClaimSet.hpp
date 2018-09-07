@@ -1,6 +1,6 @@
-//
-// Created by tchen on 9/5/18.
-//
+/*
+ * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #ifndef SNOWFLAKECLIENT_CLAIMSET_HPP
 #define SNOWFLAKECLIENT_CLAIMSET_HPP
@@ -10,42 +10,66 @@
 #include <memory>
 #include <set>
 #include <chrono>
-
-#define CLAIM_ISSUER "iss"
-#define CLAIM_SUBJECT "sub"
-#define CLAIM_AUDIENCE "aud"
-#define CLAIM_EXPIRATION "exp"
-#define CLAIM_NOT_BEFORE "nbf"
-#define CLAIM_ISSUED_AT "iat"
-#define CLAIM_JWT_ID "jti"
+#include "Util.hpp"
+#include "JwtException.hpp"
 
 namespace Snowflake
 {
 namespace Jwt
 {
-class ClaimSet
+class IClaimSet
 {
 
 public:
-
   using sysClock = std::chrono::system_clock;
   using sysTimeDuration = sysClock::duration;
 
-  virtual bool containsClaim(std::string &key);
+  virtual ~IClaimSet() = default;
 
+  static IClaimSet *buildClaimSet();
 
-  virtual bool addClaim(std::string &key, std::string &value);
+  static IClaimSet *parseClaimset(const std::string &text);
 
+  /**
+   * Check if the claim set contains a specific key
+   */
+  virtual bool containsClaim(std::string &key) = 0;
 
-  virtual bool addClaim(std::string &key, long number);
+  /**
+   * Add the key and a string value to the claim set
+   * Would replace the old one if the key exists
+   * @param key
+   * @param value
+   */
+  virtual void addClaim(std::string &key, std::string &value) = 0;
 
-  virtual std::string getClaimInString(std::string &key);
+  /**
+   * Add the key and a long value to the claim set
+   * Would replace the old one if the key exists
+   * @param key
+   * @param value
+   */
+  virtual void addClaim(std::string &key, long number) = 0;
 
-  virtual long getClaimInLong(std::string &key);
+  /**
+   * Get a claim from the claim set in string type
+   */
+  virtual std::string getClaimInString(std::string &key) = 0;
 
-  virtual std::string serialize();
+  /**
+   * Get a claim from the claim set in long type
+   */
+  virtual long getClaimInLong(std::string &key) = 0;
 
-  virtual void removeClaim(std::string &key);
+  /**
+   * Serialize the claim set to base64url encoded format
+   */
+  virtual std::string serialize() = 0;
+
+  /**
+   * Remove a claim from the claim set with specified key
+   */
+  virtual void removeClaim(std::string &key) = 0;
 
 private:
   inline long timeDurationToSecond(sysTimeDuration &td)
@@ -54,7 +78,10 @@ private:
   }
 };
 
-class CJSONClaimSet : ClaimSet
+/**
+ * The ClaimSet implementation using CJSON as underlying data structure
+ */
+class CJSONClaimSet : public IClaimSet
 {
 public:
   /**
@@ -62,75 +89,71 @@ public:
    */
   CJSONClaimSet()
   {
-    this->json_root_ = snowflake_cJSON_CreateObject();
-    if (!this->json_root_) {
-      // TODO throw an exception
+    this->json_root_ = {snowflake_cJSON_CreateObject(), CJSONOperation::cJSONDeleter};
+    if (this->json_root_ == nullptr)
+    {
+      throw JwtMemoryAllocationFailure();
     }
   }
 
-  explicit CJSONClaimSet(std::string &text)
+  /**
+   * Constructor of an claim set given the base64encoded text
+   * @param text
+   */
+  explicit CJSONClaimSet(const std::string &text)
   {
-    this->json_root_ = snowflake_cJSON_Parse(text.c_str());
-    if (!this->json_root_) {
-      // TODO throw an exception
-    }
-  }
-
-  ~CJSONClaimSet()
-  {
-    if (this->json_root_) {
-      snowflake_cJSON_Delete(this->json_root_);
-    }
+    this->json_root_ = {CJSONOperation::parse(text), CJSONOperation::cJSONDeleter};
   }
 
   inline bool containsClaim(std::string &key) override
   {
-    return snowflake_cJSON_HasObjectItem(json_root_, key.c_str());
+    return snowflake_cJSON_HasObjectItem(json_root_.get(), key.c_str());
   }
 
-  inline bool addClaim(std::string &key, std::string &value) override
+  inline void addClaim(std::string &key, std::string &value) override
   {
     cJSON *item = snowflake_cJSON_CreateString(value.c_str());
-    return addJSONClaim(key, item);
+    return CJSONOperation::addOrReplaceJSON(json_root_.get(), key, item);
   }
 
-  inline bool addClaim(std::string &key, long number) override
+  inline void addClaim(std::string &key, long number) override
   {
     double d_num = number;
     cJSON *item = snowflake_cJSON_CreateNumber(d_num);
-    return addJSONClaim(key, item);
+    return CJSONOperation::addOrReplaceJSON(json_root_.get(), key, item);
   }
 
   inline std::string getClaimInString(std::string &key) override
   {
-    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_, key.c_str());
+    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_.get(), key.c_str());
     if (!value || (value->type != cJSON_String)) return "";
     return std::string(value->string);
   }
 
   inline long getClaimInLong(std::string &key) override
   {
-    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_, key.c_str());
+    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_.get(), key.c_str());
     if (!value || (value->type != cJSON_String)) return 0;
     return (long)value->valuedouble;
   }
 
-  std::string serialize() override;
+  inline std::string serialize() override
+  {
+    return CJSONOperation::serialize(json_root_.get());
+  }
 
   inline void removeClaim(std::string &key) override
   {
-    snowflake_cJSON_DeleteItemFromObject(this->json_root_, key.c_str());
+    snowflake_cJSON_DeleteItemFromObject(this->json_root_.get(), key.c_str());
   }
 
 private:
 
-  inline bool addJSONClaim(std::string key, cJSON *value);
-
-  cJSON *json_root_;
+  std::unique_ptr<cJSON, void (*)(cJSON *)> json_root_;
 
 };
 
-}
-}
+} // namespace Jwt
+} // namespace Snowflake
 
 #endif //SNOWFLAKECLIENT_CLAIMSET_HPP

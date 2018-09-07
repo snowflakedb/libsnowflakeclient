@@ -130,6 +130,13 @@ set (SOURCE_FILES_PUT_GET
         cpp/jwt/Jwt.hpp
         cpp/jwt/Signer.cpp
         cpp/jwt/Signer.hpp
+        cpp/jwt/Util.cpp
+        cpp/jwt/Util.hpp
+        cpp/jwt/ClaimSet.hpp
+        cpp/jwt/ClaimSet.cpp
+        cpp/jwt/Header.cpp
+        cpp/jwt/Header.hpp
+        cpp/jwt/JwtException.hpp
         cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
@@ -152,9 +159,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
-        cpp/lib/Column.cpp
-        cpp/jwt/ClaimSet.cpp
-        cpp/jwt/ClaimSet.hpp)
+        cpp/lib/Column.cpp)
 
 if (LINUX)
     # Linux
