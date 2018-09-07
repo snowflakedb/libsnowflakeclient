@@ -24,7 +24,10 @@ Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(
 {
   const char * msgFmt = errorMsgFmts[(int)transferError];
   va_list args;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvarargs"
   va_start (args, transferError);
+#pragma clang diagnostic pop
   vsprintf(m_msg, msgFmt, args);
   va_end(args);
 }

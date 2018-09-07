@@ -249,6 +249,7 @@ const EVP_CIPHER *getCipher(const CryptoAlgo algo,
                    static_cast<int>(mode));*/
 
 #undef SF_CRYPTO_GET_CIPHER
+  return nullptr;
 }
 
 Cryptor::Cryptor()

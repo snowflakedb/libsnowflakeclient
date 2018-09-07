@@ -15,8 +15,12 @@ Snowflake::Client::Connection::~Connection() {
 void Snowflake::Client::Connection::connect() {
     SF_STATUS status = snowflake_connect(this->m_connection);
 
-    switch (status) {
+    switch ((int)status) {
         // TODO implement exception throwing based on return status
+        case 0:
+            break;
+        default:
+            break;
     }
 }
 

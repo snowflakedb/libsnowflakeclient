@@ -204,7 +204,7 @@ const FileCompressionType *FileCompressionType::lookUpByName(const char *name)
 {
   for (size_t i=0; i<types.size(); i++)
   {
-    if (!strncmp(name, types.at(i)->m_name, sizeof(types.at(i)->m_name)))
+    if (!strncmp(name, (const char*)(types.at(i)->m_name), sizeof(types.at(i)->m_name)))
     {
       return types.at(i);
     }
