@@ -90,6 +90,6 @@ void process_results(struct timespec begin, struct timespec end, int num_iterati
     FILE *results_file = fopen("/tmp/test_results.csv", "a+");
     double time_elapsed = (double) (end.tv_sec - begin.tv_sec) + (double) (end.tv_nsec - begin.tv_nsec) / 1000000000;
     fprintf(results_file, "%s, %lf, %i\n", label, time_elapsed, num_iterations);
-    printf("%s, %lf, %i\n", label, time_elapsed, num_iterations);
+    //printf("%s, %lf, %i\n", label, time_elapsed, num_iterations);
     fclose(results_file);
 }
