@@ -3,6 +3,8 @@
  */
 
 #include "Util.hpp"
+#include "JwtException.hpp"
+#include "../util/Base64.hpp"
 #include <vector>
 
 namespace Snowflake
@@ -23,16 +25,25 @@ std::string CJSONOperation::serialize(cJSON *root)
 
   snowflake_cJSON_free(json_str);
 
+  // remove the end of padding
+  // TODO This is an ugly hack, change the Base64::encodeUrl() later
+  while (buffer[len - 1] == '=') len--;
 
   return std::string(buffer.data(), len);
 }
 
 cJSON *CJSONOperation::parse(const std::string &text)
 {
+  // Add padding
+  // TODO This is an ugly hack, change the Base64::decodeUrl() later
+  std::string in_text = text;
+  size_t pad_len = in_text.length() % 4;
+  in_text.append(pad_len, '=');
+
   // Base 64 decode text
-  size_t decode_len = Client::Util::Base64::decodedLength(text.size());
+  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
   std::vector<char> decoded(decode_len, 0);
-  decode_len = Client::Util::Base64::decodeUrl(text.c_str(), text.length(), decoded.data());
+  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
   if ((ssize_t) decode_len == -1) throw JwtParseFailure();
 
   // Parse the decode string to object

@@ -4,6 +4,7 @@
 
 #include <vector>
 #include "Signer.hpp"
+#include "JwtException.hpp"
 
 namespace Snowflake
 {
@@ -65,7 +66,6 @@ ISigner *ISigner::buildSigner(Snowflake::Jwt::AlgorithmType type)
       throw JwtNotImplementedException();
   }
 }
-
 
 template<typename Hash>
 std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)

@@ -12,7 +12,7 @@
 
 #define ALGORITHM "alg"
 #define TOKEN_TYPE "typ"
-#define DEFAULT_TOKEN_TYPE "jwt"
+#define DEFAULT_TOKEN_TYPE "JWT"
 
 namespace Snowflake
 {
@@ -57,7 +57,8 @@ public:
 
   explicit CJSONHeader(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(text), CJSONOperation::cJSONDeleter()};
+    this->json_root_ = {CJSONOperation::parse(text),
+                        [](cJSON *t) { CJSONOperation::cJSONDeleter(t); }};
   }
 
   /**
@@ -74,7 +75,7 @@ public:
   /**
    * See IHeader
    */
-  inline AlgorithmType getAlgorithmType() override;
+  AlgorithmType getAlgorithmType() override;
 
   /**
    * See IHeader
@@ -86,7 +87,7 @@ public:
 
 
 private:
-  std::unique_ptr<cJSON, void (*)(cJSON *)> json_root_;
+  std::unique_ptr<cJSON, std::function<void(cJSON *)>> json_root_;
 };
 
 

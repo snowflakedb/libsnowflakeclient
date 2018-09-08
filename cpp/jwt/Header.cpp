@@ -3,6 +3,7 @@
  */
 
 #include "Header.hpp"
+#include "JwtException.hpp"
 
 namespace Snowflake
 {
@@ -41,7 +42,7 @@ AlgorithmType CJSONHeader::getAlgorithmType()
 {
   cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), ALGORITHM);
   if (!item || (item->type != cJSON_String)) return AlgorithmType::UNKNOWN;
-  return AlgorithmTypeMapper::toAlgorithmType(std::string(item->string));
+  return AlgorithmTypeMapper::toAlgorithmType(std::string(item->valuestring));
 }
 
 }

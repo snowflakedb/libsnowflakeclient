@@ -22,13 +22,13 @@ JWTObject::JWTObject(std::string &input)
   pos = input.find('.');
   if (pos == std::string::npos) throw JwtParseFailure();
   header = input.substr(0, pos);
-  this->header_ = ClaimSetPtr(IHeader::parseHeader(header));
+  this->header_ = HeaderPtr(IHeader::parseHeader(header));
 
   remain = input.substr(pos + 1);
   pos = remain.find('.');
   if (pos == std::string::npos) throw JwtParseFailure();
   claim_set = remain.substr(0, pos);
-  this->claim_set_ = HeaderPtr(IClaimSet::parseClaimset(claim_set));
+  this->claim_set_ = ClaimSetPtr(IClaimSet::parseClaimset(claim_set));
 
   secret_ = remain.substr(pos + 1);
 }

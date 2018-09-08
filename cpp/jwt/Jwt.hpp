@@ -5,7 +5,6 @@
 #ifndef SNOWFLAKECLIENT_JWT_HPP
 #define SNOWFLAKECLIENT_JWT_HPP
 
-#include <unordered_map>
 #include <memory>
 #include "Signer.hpp"
 #include "ClaimSet.hpp"
