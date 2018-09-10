@@ -17,9 +17,9 @@ std::map<std::string, AlgorithmType>
   {HS_384,  AlgorithmType::HS384},
   {HS_512,  AlgorithmType::HS512},
   {RS_256,  AlgorithmType::RS256},
-  {RS_256,  AlgorithmType::RS256},
   {RS_384,  AlgorithmType::RS384},
-  {ES_512,  AlgorithmType::ES512},
+  {RS_512,  AlgorithmType::RS512},
+  {ES_256,  AlgorithmType::ES256},
   {ES_384,  AlgorithmType::ES384},
   {ES_512,  AlgorithmType::ES512},
   {unknown, AlgorithmType::UNKNOWN},
@@ -81,7 +81,7 @@ std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)
   if (1 != EVP_DigestSignInit(mdctx.get(), nullptr, Hash{}(), nullptr, key)) return "";
 
   /* Call update with the message */
-  if (1 != EVP_DigestSignUpdate(mdctx.get(), msg.c_str(), msg.length()));
+  if (1 != EVP_DigestSignUpdate(mdctx.get(), msg.c_str(), msg.length())) return "";
 
   /* Finalise the DigestSign operation */
   /* First call EVP_DigestSignFinal with a NULL sig parameter to obtain the length of the
@@ -95,7 +95,6 @@ std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)
   /* Success */
   buf.resize(slen);
   return Base64URLOpt::encodeNoPadding(buf);
-//  return std::string(buf.begin(), buf.end());
 }
 
 template<typename Hash>
