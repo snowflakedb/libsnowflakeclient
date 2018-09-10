@@ -7,6 +7,7 @@
 
 #include <string>
 #include <cJSON.h>
+#include <functional>
 #include "Signer.hpp"
 #include "Util.hpp"
 

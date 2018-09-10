@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <set>
+#include <functional>
 #include "Util.hpp"
 #include "JwtException.hpp"
 

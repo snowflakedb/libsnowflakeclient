@@ -3,6 +3,7 @@
  */
 
 #include <vector>
+#include <functional>
 #include "Signer.hpp"
 #include "JwtException.hpp"
 #include "Util.hpp"
