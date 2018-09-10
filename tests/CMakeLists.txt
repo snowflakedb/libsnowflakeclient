@@ -38,7 +38,6 @@ SET(TESTS_C
         )
 
 SET(TESTS_CXX
-        test_cJSON
         test_unit_jwt
         test_include_aws
         test_parallel_upload_download
