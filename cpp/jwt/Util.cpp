@@ -73,7 +73,7 @@ std::vector<char> Base64URLOpt::decodeNoPadding(const std::string &text)
   size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
   std::vector<char> decoded(decode_len);
   decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
-  if ((ssize_t) decode_len == -1) throw JwtParseFailure();
+  if (decode_len == static_cast<size_t >(-1L)) throw JwtParseFailure();
 
   decoded.resize(decode_len);
   return decoded;
