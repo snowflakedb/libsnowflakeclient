@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <openssl/evp.h>
+#include "openssl/evp.h"
 
 namespace Snowflake
 {

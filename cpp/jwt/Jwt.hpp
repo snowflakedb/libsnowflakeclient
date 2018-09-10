@@ -21,6 +21,9 @@ class JWTObject
   typedef std::shared_ptr<IHeader> HeaderPtr;
 
 public:
+
+  JWTObject() = default;
+
   /**
    * Marshalize a plain jwt token text to JWTObject data
    * @param input
@@ -71,7 +74,7 @@ public:
    * @param key
    * @return true if the verification pass
    */
-  inline bool verify(EVP_PKEY *key);
+  bool verify(EVP_PKEY *key);
 
   /**
    * Serialize the JWT token to a string, the secret field would be set

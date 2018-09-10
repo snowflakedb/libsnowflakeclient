@@ -5,6 +5,7 @@
 #include <vector>
 #include "Signer.hpp"
 #include "JwtException.hpp"
+#include "Util.hpp"
 
 namespace Snowflake
 {
@@ -71,7 +72,7 @@ template<typename Hash>
 std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)
 {
   /* Create the Message Digest Context */
-  std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX *)> mdctx(
+  std::unique_ptr<EVP_MD_CTX, std::function<void(EVP_MD_CTX *)>> mdctx(
     EVP_MD_CTX_create(), EVP_MD_CTXDeleter);
 
   if (mdctx == nullptr) return "";
@@ -92,8 +93,9 @@ std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)
   if (1 != EVP_DigestSignFinal(mdctx.get(), (unsigned char *) buf.data(), &slen)) return "";
 
   /* Success */
-
-  return std::string(buf.data(), buf.size());
+  buf.resize(slen);
+  return Base64URLOpt::encodeNoPadding(buf);
+//  return std::string(buf.begin(), buf.end());
 }
 
 template<typename Hash>
@@ -101,7 +103,7 @@ bool
 RSASigner<Hash>::verify(EVP_PKEY *key, const std::string &msg, const std::string &sig)
 {
   /* Create the Message Digest Context */
-  std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX *)> mdctx(
+  std::unique_ptr<EVP_MD_CTX, std::function<void(EVP_MD_CTX *)>> mdctx(
     EVP_MD_CTX_create(), EVP_MD_CTXDeleter);
 
   /* Initialize `key` with a public key */
@@ -116,7 +118,9 @@ RSASigner<Hash>::verify(EVP_PKEY *key, const std::string &msg, const std::string
     return false;
   }
 
-  return (1 == EVP_DigestVerifyFinal(mdctx.get(), (unsigned char *) sig.c_str(), sig.length()));
+  auto sig_decode = Base64URLOpt::decodeNoPadding(sig);
+
+  return (1 == EVP_DigestVerifyFinal(mdctx.get(), (unsigned char *) sig_decode.data(), sig_decode.size()));
 }
 
 } // namespace Jwt

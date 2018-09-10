@@ -9,6 +9,7 @@
 #include <string>
 #include <cJSON.h>
 #include <cstring>
+#include <vector>
 
 namespace Snowflake
 {
@@ -27,12 +28,12 @@ public:
    * @param root root of the cJSON object to be serialize
    * @return a base64URL coded cJSON object without padding
    */
-  static std::string serialize(cJSON *root);
+  static std::vector<char> serialize(cJSON *root);
 
   /**
    * parse a base64url encoded string and construct a CJSON object
    */
-  static cJSON *parse(const std::string &text);
+  static cJSON *parse(const std::vector<char> &text);
 
   /**
    * Add an item below the cJSON root with key specified
@@ -50,6 +51,14 @@ public:
   {
     if (item) snowflake_cJSON_Delete(item);
   }
+};
+
+class Base64URLOpt
+{
+public:
+  static std::string encodeNoPadding(const std::vector<char> &bytes);
+
+  static std::vector<char> decodeNoPadding(const std::string &code);
 };
 
 }

@@ -57,8 +57,8 @@ public:
 
   explicit CJSONHeader(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(text),
-                        [](cJSON *t) { CJSONOperation::cJSONDeleter(t); }};
+    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+                        CJSONOperation::cJSONDeleter};
   }
 
   /**
@@ -82,9 +82,8 @@ public:
    */
   inline std::string serialize() override
   {
-    return CJSONOperation::serialize(this->json_root_.get());
+    return Base64URLOpt::encodeNoPadding(CJSONOperation::serialize(this->json_root_.get()));
   }
-
 
 private:
   std::unique_ptr<cJSON, std::function<void(cJSON *)>> json_root_;

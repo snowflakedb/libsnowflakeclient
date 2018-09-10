@@ -9,7 +9,6 @@
 #include <string>
 #include <memory>
 #include <set>
-#include <chrono>
 #include "Util.hpp"
 #include "JwtException.hpp"
 
@@ -21,9 +20,6 @@ class IClaimSet
 {
 
 public:
-  using sysClock = std::chrono::system_clock;
-  using sysTimeDuration = sysClock::duration;
-
   virtual ~IClaimSet() = default;
 
   static IClaimSet *buildClaimSet();
@@ -69,13 +65,8 @@ public:
   /**
    * Remove a claim from the claim set with specified key
    */
-  virtual void removeClaim(std::string &key) = 0;
+  virtual void removeClaim(const std::string &key) = 0;
 
-private:
-  inline long timeDurationToSecond(sysTimeDuration &td)
-  {
-    return td.count() * sysClock::period::num / sysClock::period::den;
-  }
 };
 
 /**
@@ -90,7 +81,7 @@ public:
   CJSONClaimSet()
   {
     this->json_root_ = {snowflake_cJSON_CreateObject(),
-                        [](cJSON *t) { CJSONOperation::cJSONDeleter(t); }};
+                        CJSONOperation::cJSONDeleter};
     if (this->json_root_ == nullptr)
     {
       throw JwtMemoryAllocationFailure();
@@ -103,7 +94,8 @@ public:
    */
   explicit CJSONClaimSet(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(text), CJSONOperation::cJSONDeleter};
+    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+                        CJSONOperation::cJSONDeleter};
   }
 
   inline bool containsClaim(const std::string &key) override
@@ -140,16 +132,16 @@ public:
 
   inline std::string serialize() override
   {
-    return CJSONOperation::serialize(json_root_.get());
+    auto json_str = CJSONOperation::serialize(json_root_.get());
+    return Base64URLOpt::encodeNoPadding(json_str);
   }
 
-  inline void removeClaim(std::string &key) override
+  inline void removeClaim(const std::string &key) override
   {
     snowflake_cJSON_DeleteItemFromObject(this->json_root_.get(), key.c_str());
   }
 
 private:
-
   std::unique_ptr<cJSON, std::function<void(cJSON *)>> json_root_;
 
 };

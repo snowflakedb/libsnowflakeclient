@@ -6,48 +6,29 @@
 #include "JwtException.hpp"
 #include "../util/Base64.hpp"
 #include <vector>
+#include <memory>
+#include <functional>
 
 namespace Snowflake
 {
 namespace Jwt
 {
-std::string CJSONOperation::serialize(cJSON *root)
+std::vector<char> CJSONOperation::serialize(cJSON *root)
 {
-  char *json_str = snowflake_cJSON_Print(root);
-  if (!json_str)
-  {
-    throw JwtMemoryAllocationFailure();
-  }
-  size_t json_str_len = strlen(json_str);
-  size_t buf_len = Client::Util::Base64::encodedLength(json_str_len);
-  std::vector<char> buffer(buf_len, 0);
-  size_t len = Client::Util::Base64::encodeUrl(json_str, json_str_len, buffer.data());
+  std::unique_ptr<char, std::function<void(char *)>>
+    json_str(snowflake_cJSON_Print(root), [](char *str) { snowflake_cJSON_free(str); });
+  if (json_str == nullptr) throw JwtMemoryAllocationFailure();
+  size_t json_str_len = strlen(json_str.get());
 
-  snowflake_cJSON_free(json_str);
+  std::vector<char> result(json_str.get(), json_str.get() + json_str_len + 1);
 
-  // remove the end of padding
-  // TODO This is an ugly hack, change the Base64::encodeUrl() later
-  while (buffer[len - 1] == '=') len--;
-
-  return std::string(buffer.data(), len);
+  return result;
 }
 
-cJSON *CJSONOperation::parse(const std::string &text)
+cJSON *CJSONOperation::parse(const std::vector<char> &text)
 {
-  // Add padding
-  // TODO This is an ugly hack, change the Base64::decodeUrl() later
-  std::string in_text = text;
-  size_t pad_len = in_text.length() % 4;
-  in_text.append(pad_len, '=');
-
-  // Base 64 decode text
-  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
-  std::vector<char> decoded(decode_len, 0);
-  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
-  if ((ssize_t) decode_len == -1) throw JwtParseFailure();
-
   // Parse the decode string to object
-  cJSON *root = snowflake_cJSON_Parse(decoded.data());
+  cJSON *root = snowflake_cJSON_Parse(text.data());
   if (root == nullptr) throw JwtParseFailure();
 
   return root;
@@ -70,6 +51,33 @@ void CJSONOperation::addOrReplaceJSON(cJSON *root, std::string key, cJSON *item)
   snowflake_cJSON_ReplaceItemInObject(root, key.c_str(), item);
 }
 
+std::string Base64URLOpt::encodeNoPadding(const std::vector<char> &bytes)
+{
+  size_t buf_len = Client::Util::Base64::encodedLength(bytes.size());
+  std::string buffer(buf_len, 0);
+  size_t len = Client::Util::Base64::encodeUrl(bytes.data(), bytes.size(), (void *) buffer.data());
+
+  // remove the end of padding
+  while (buffer[len - 1] == '=') len--;
+
+  return buffer.substr(0, len);
+}
+
+std::vector<char> Base64URLOpt::decodeNoPadding(const std::string &text)
+{
+  // add padding to the end
+  size_t pad_len = (4 - text.length() % 4) % 4;
+  std::string in_text = text + std::string(pad_len, '=');
+
+  // Base 64 decode text
+  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
+  std::vector<char> decoded(decode_len);
+  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
+  if ((ssize_t) decode_len == -1) throw JwtParseFailure();
+
+  decoded.resize(decode_len);
+  return decoded;
+}
 
 }
 }
