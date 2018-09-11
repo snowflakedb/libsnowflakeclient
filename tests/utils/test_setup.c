@@ -8,7 +8,8 @@
 #include <values.h>
 #include "test_setup.h"
 
-char PERFORMANCE_TEST_RESULTS_PATH[PATH_MAX];
+// Long path space
+char PERFORMANCE_TEST_RESULTS_PATH[4096];
 
 void initialize_test(sf_bool debug) {
     // default location and the maximum logging
@@ -17,16 +18,20 @@ void initialize_test(sf_bool debug) {
     snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
     snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
 
-    // Setup performance test results path
-    const char * rel_path_to_results = "/../../performance_tests.csv";
-    char cur_file_path[PATH_MAX];
-    realpath(__FILE__, cur_file_path);
-    dirname(cur_file_path);
-    size_t path_len = strlen(cur_file_path) + strlen(rel_path_to_results);
-    char file_path[PATH_MAX];
-    snprintf(file_path, path_len + 1, "%s%s", cur_file_path, rel_path_to_results);
-    if (!realpath(file_path, PERFORMANCE_TEST_RESULTS_PATH)) {
-        perror("Error determining PERFORMANCE_TEST_RESULTS_PATH");
+    // Setup performance test log file
+    const char *perf_test_fn = "performance_tests.csv";
+    const char *test_log_dir = getenv("SNOWFLAKE_TEST_LOG_DIR");
+#ifdef _WIN32
+    const char *sep = "\\";
+#else
+    const char *sep = "/";
+#endif
+    if (!test_log_dir) {
+        char tmp_dir[4096];
+        sf_get_tmp_dir(tmp_dir);
+        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 4096, "%s%s%s", tmp_dir, sep, perf_test_fn);
+    } else {
+        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 4096, "%s%s%s", test_log_dir, sep, perf_test_fn);
     }
 }
 
