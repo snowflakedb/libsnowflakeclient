@@ -126,6 +126,17 @@ set (SOURCE_FILES_PUT_GET
         cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp
         cpp/crypto/HashContext.hpp
+        cpp/jwt/Jwt.cpp
+        cpp/jwt/Jwt.hpp
+        cpp/jwt/Signer.cpp
+        cpp/jwt/Signer.hpp
+        cpp/jwt/Util.cpp
+        cpp/jwt/Util.hpp
+        cpp/jwt/ClaimSet.hpp
+        cpp/jwt/ClaimSet.cpp
+        cpp/jwt/Header.cpp
+        cpp/jwt/Header.hpp
+        cpp/jwt/JwtException.hpp
         cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
