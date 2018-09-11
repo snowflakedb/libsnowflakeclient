@@ -1321,6 +1321,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     // Get next result row
     row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
     sfstmt->chunk_rowcount--;
+    sfstmt->total_row_index++;
 
     // Write to results
     for (i = 0; i < sfstmt->total_fieldcount; i++) {
@@ -1804,6 +1805,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 // Get number of rows in this chunk
                 sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
                   sfstmt->raw_results);
+
+                // Index starts at 0 and incremented each fetch
+                sfstmt->total_row_index = 0;
+
 
                 // Set large result set if one exists
                 if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
