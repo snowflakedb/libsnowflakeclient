@@ -34,8 +34,7 @@ SET(TESTS_C
         test_timestamp_tz
         test_timezone
         test_adjust_fetch_data
-        test_issue_76
-        )
+        test_issue_76)
 
 SET(TESTS_CXX
         test_unit_jwt
@@ -50,6 +49,11 @@ SET(TESTS_CXX
         test_unit_thread_pool
         test_unit_base64)
         #test_cpp_select1)
+
+SET(TESTS_PERF
+        test_perf_string_reads_and_writes
+        test_perf_column_evaluation
+        test_perf_type_conversion)
 
 set(SOURCE_UTILS
         utils/test_setup.c
@@ -126,3 +130,23 @@ FOREACH(T ${TESTS_CXX})
              ./${T})
 ENDFOREACH()
 
+# Tests only work on Unix at the moment
+if (UNIX)
+    FOREACH (T ${TESTS_PERF})
+        add_executable(${T} ${SOURCE_UTILS} ${T}.c)
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/cmocka/include
+        )
+        target_link_libraries(${T} ${TESTLIB_OPTS_C})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        add_test(valgrind_${T}
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T})
+    ENDFOREACH ()
+endif ()

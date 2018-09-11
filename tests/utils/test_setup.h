@@ -16,6 +16,7 @@ extern "C" {
 #include <cmocka.h>
 // cmocka end
 
+#include <time.h>
 #include <snowflake/client.h>
 #include <snowflake/platform.h>
 
@@ -25,6 +26,10 @@ SF_CONNECT *setup_snowflake_connection();
 
 SF_CONNECT *setup_snowflake_connection_with_autocommit(
         const char *timezone, sf_bool autocommit);
+
+void col_conv_setup(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char* query);
+
+void process_results(struct timespec begin, struct timespec end, int num_iterations, const char *label);
 
 /**
  * Dump error
