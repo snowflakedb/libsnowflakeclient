@@ -38,7 +38,7 @@ endif ()
 set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fPIC -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -std=gnu99 -g -fPIC -Werror")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=gnu++11 -fPIC -Werror")
 endif ()
 if (LINUX)
@@ -186,8 +186,8 @@ if (WIN32)
     find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/zlib/lib/ REQUIRED)
-	find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
-	find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+    find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
 endif ()
 
 include_directories(
@@ -219,10 +219,10 @@ if(LINUX)
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
     )
 elseif()
-	link_directories(
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
+    link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
     )
 endif()
 

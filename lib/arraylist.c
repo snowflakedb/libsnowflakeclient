@@ -24,6 +24,9 @@ void STDCALL sf_array_list_deallocate(ARRAY_LIST *al) {
 }
 
 void STDCALL sf_array_list_grow(ARRAY_LIST *al, size_t min_size) {
+    if (!al) {
+        return;
+    }
     size_t i;
     size_t new_size = al->size;
     while (new_size < min_size) {
@@ -38,6 +41,9 @@ void STDCALL sf_array_list_grow(ARRAY_LIST *al, size_t min_size) {
 }
 
 void STDCALL sf_array_list_set(ARRAY_LIST *al, void *item, size_t index) {
+    if (!al) {
+        return;
+    }
     if (al->size <= index) {
         sf_array_list_grow(al, index+1);
     }
@@ -54,6 +60,9 @@ void STDCALL sf_array_list_set(ARRAY_LIST *al, void *item, size_t index) {
 }
 
 void* STDCALL sf_array_list_get(ARRAY_LIST *al, size_t index) {
+    if (!al) {
+        return NULL;
+    }
     if (al->size <= index) {
         sf_array_list_grow(al, index+1);
     }
