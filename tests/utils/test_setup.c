@@ -3,9 +3,9 @@
  */
 
 #include <snowflake/logger.h>
-#include <values.h>
 #include <libgen.h>
 #include <string.h>
+#include <values.h>
 #include "test_setup.h"
 
 char PERFORMANCE_TEST_RESULTS_PATH[PATH_MAX];
@@ -19,18 +19,15 @@ void initialize_test(sf_bool debug) {
 
     // Setup performance test results path
     const char * rel_path_to_results = "/../../performance_tests.csv";
-    char *cur_file_path = (char *) malloc(strlen(__FILE__) + 1);
+    char cur_file_path[PATH_MAX];
     realpath(__FILE__, cur_file_path);
     dirname(cur_file_path);
     size_t path_len = strlen(cur_file_path) + strlen(rel_path_to_results);
-    char * file_path = (char *) malloc(path_len + 1);
+    char file_path[PATH_MAX];
     snprintf(file_path, path_len + 1, "%s%s", cur_file_path, rel_path_to_results);
     if (!realpath(file_path, PERFORMANCE_TEST_RESULTS_PATH)) {
         perror("Error determining PERFORMANCE_TEST_RESULTS_PATH");
     }
-    // Free memory allocated by realpath() and malloc
-    free(cur_file_path);
-    free(file_path);
 }
 
 SF_CONNECT *setup_snowflake_connection() {
