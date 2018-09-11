@@ -3,9 +3,7 @@
  */
 
 #include <snowflake/logger.h>
-#include <libgen.h>
 #include <string.h>
-#include <values.h>
 #include "test_setup.h"
 
 // Long path space
