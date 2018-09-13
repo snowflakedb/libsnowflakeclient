@@ -9,6 +9,7 @@
 #include "Signer.hpp"
 #include "ClaimSet.hpp"
 #include "Header.hpp"
+#include "snowflake/IJwt.hpp"
 
 namespace Snowflake
 {
@@ -17,20 +18,20 @@ namespace Client
 namespace Jwt
 {
 
-class JWTObject
+class JWTObject : public IJwt
 {
   typedef std::shared_ptr<IClaimSet> ClaimSetPtr;
   typedef std::shared_ptr<IHeader> HeaderPtr;
 
 public:
 
-  JWTObject() = default;
+  JWTObject();
 
   /**
    * Marshalize a plain jwt token text to JWTObject data
    * @param input
    */
-  explicit JWTObject(std::string &input);
+  explicit JWTObject(const std::string &input);
 
   /**
    * Set the claim set
@@ -38,14 +39,14 @@ public:
    */
   inline void setClaimSet(ClaimSetPtr claim_set)
   {
-    this->claim_set_ = std::move(claim_set);
+    this->claim_set_ = claim_set;
   }
 
   /**
    * Get the claim set
    * @return
    */
-  inline const ClaimSetPtr getClaimSet()
+  inline ClaimSetPtr getClaimSet()
   {
     return claim_set_;
   }
@@ -63,7 +64,7 @@ public:
    * Get the header
    * @return
    */
-  inline const HeaderPtr getHeader()
+  inline HeaderPtr getHeader()
   {
     return header_;
   }

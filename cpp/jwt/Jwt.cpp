@@ -11,7 +11,23 @@ namespace Client
 namespace Jwt
 {
 
-JWTObject::JWTObject(std::string &input)
+IJwt *IJwt::buildIJwt()
+{
+  return new JWTObject();
+}
+
+IJwt *IJwt::buildIJwt(const std::string &text)
+{
+  return new JWTObject(text);
+}
+
+JWTObject::JWTObject()
+{
+  this->header_ = HeaderPtr(IHeader::buildHeader());
+  this->claim_set_ = ClaimSetPtr(IClaimSet::buildClaimSet());
+}
+
+JWTObject::JWTObject(const std::string &input)
 {
   if (input.length() == 0) throw JwtParseFailure();
 

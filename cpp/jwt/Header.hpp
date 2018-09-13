@@ -23,34 +23,6 @@ namespace Client
 namespace Jwt
 {
 
-class IHeader
-{
-public:
-  virtual ~IHeader() = default;
-
-  static IHeader *buildHeader();
-
-  static IHeader *parseHeader(const std::string &text);
-
-  /**
-   * Set the algorithm's type
-   * @param type
-   */
-  virtual void setAlgorithm(AlgorithmType type) = 0;
-
-  /**
-   * Get the algorithm type of the header
-   * @return the algorithm type
-   */
-  virtual AlgorithmType getAlgorithmType() = 0;
-
-  /**
-   * Serialize the header
-   * @return serialized string in base64urlencoded
-   */
-  virtual std::string serialize() = 0;
-};
-
 /**
  * CJSONHeader is an implementation that uses cJSON to store data
  */
