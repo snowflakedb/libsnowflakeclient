@@ -7,6 +7,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -21,4 +23,5 @@ IClaimSet *IClaimSet::parseClaimset(const std::string &text)
 }
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake

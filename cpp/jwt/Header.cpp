@@ -7,6 +7,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -46,4 +48,5 @@ AlgorithmType CJSONHeader::getAlgorithmType()
 }
 
 }
+} // namespace Client
 }

@@ -25,6 +25,56 @@ Base64::BASE64_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 const Base64::ReverseIndex
 Base64::BASE64_URL_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"};
 
+
+std::string Base64::encodeURLNoPadding(const std::vector<char> &bytes)
+{
+  size_t buf_len = encodedLength(bytes.size());
+  std::string buffer(buf_len, 0);
+  size_t len = encodeUrl(bytes.data(), bytes.size(), (void *) buffer.data());
+
+  // remove the end of padding
+  while (buffer[len - 1] == '=') len--;
+
+  return buffer.substr(0, len);
+}
+
+std::vector<char> Base64::decodeURLNoPadding(const std::string &text)
+{
+  // add padding to the end
+  size_t pad_len = (4 - text.length() % 4) % 4;
+  std::string in_text = text + std::string(pad_len, '=');
+
+  // Base 64 decode text
+  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
+  std::vector<char> decoded(decode_len);
+  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
+  if (decode_len == static_cast<size_t >(-1L)) throw;
+
+  decoded.resize(decode_len);
+  return decoded;
+}
+
+std::string Base64::encodePadding(const std::vector<char> &bytes)
+{
+  size_t buf_len = encodedLength(bytes.size());
+  std::string buffer(buf_len, 0);
+  size_t len = encode(bytes.data(), bytes.size(), (void *) buffer.data());
+
+  return buffer.substr(0, len);
+}
+
+std::vector<char> Base64::decodePadding(const std::string &text)
+{
+  // Base 64 decode text
+  size_t decode_len = Client::Util::Base64::decodedLength(text.length());
+  std::vector<char> decoded(decode_len);
+  decode_len = Client::Util::Base64::decodeUrl(text.c_str(), text.length(), decoded.data());
+  if (decode_len == static_cast<size_t >(-1L)) return std::vector<char>();
+
+  decoded.resize(decode_len);
+  return decoded;
+}
+
 size_t Base64::decodedLength(const void *const vsrc,
                              const size_t srcLength) noexcept
 {

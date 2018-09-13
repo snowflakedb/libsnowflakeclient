@@ -10,12 +10,15 @@
 #include <functional>
 #include "Signer.hpp"
 #include "Util.hpp"
+#include "../util/Base64.hpp"
 
 #define ALGORITHM "alg"
 #define TOKEN_TYPE "typ"
 #define DEFAULT_TOKEN_TYPE "JWT"
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -58,7 +61,7 @@ public:
 
   explicit CJSONHeader(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+    this->json_root_ = {CJSONOperation::parse(Util::Base64::decodeURLNoPadding(text)),
                         CJSONOperation::cJSONDeleter};
   }
 
@@ -83,15 +86,15 @@ public:
    */
   inline std::string serialize() override
   {
-    return Base64URLOpt::encodeNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
   }
 
 private:
   std::unique_ptr<cJSON, std::function<void(cJSON *)>> json_root_;
 };
 
-
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 #endif //SNOWFLAKECLIENT_HEADER_HPP

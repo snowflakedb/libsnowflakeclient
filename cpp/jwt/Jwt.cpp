@@ -6,6 +6,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -52,4 +54,5 @@ std::string JWTObject::serialize(EVP_PKEY *key)
 }
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake

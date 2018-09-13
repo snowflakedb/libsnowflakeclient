@@ -9,6 +9,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -37,5 +39,6 @@ struct JwtNotImplementedException : public std::exception
 };
 
 }
+} // namespace Client
 }
 #endif //SNOWFLAKECLIENT_JWTEXCEPTION_HPP

@@ -11,6 +11,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 std::vector<char> CJSONOperation::serialize(cJSON *root)
@@ -51,33 +53,7 @@ void CJSONOperation::addOrReplaceJSON(cJSON *root, std::string key, cJSON *item)
   snowflake_cJSON_ReplaceItemInObject(root, key.c_str(), item);
 }
 
-std::string Base64URLOpt::encodeNoPadding(const std::vector<char> &bytes)
-{
-  size_t buf_len = Client::Util::Base64::encodedLength(bytes.size());
-  std::string buffer(buf_len, 0);
-  size_t len = Client::Util::Base64::encodeUrl(bytes.data(), bytes.size(), (void *) buffer.data());
-
-  // remove the end of padding
-  while (buffer[len - 1] == '=') len--;
-
-  return buffer.substr(0, len);
-}
-
-std::vector<char> Base64URLOpt::decodeNoPadding(const std::string &text)
-{
-  // add padding to the end
-  size_t pad_len = (4 - text.length() % 4) % 4;
-  std::string in_text = text + std::string(pad_len, '=');
-
-  // Base 64 decode text
-  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
-  std::vector<char> decoded(decode_len);
-  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
-  if (decode_len == static_cast<size_t >(-1L)) throw JwtParseFailure();
-
-  decoded.resize(decode_len);
-  return decoded;
-}
 
 }
+} // namespace Client
 }

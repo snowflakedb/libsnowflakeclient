@@ -23,6 +23,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 #define ADD_RSA_ALGORITHM(hashType, hashFunc) \
@@ -156,6 +158,7 @@ private:
   }
 };
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 

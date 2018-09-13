@@ -12,6 +12,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -90,6 +92,7 @@ private:
 };
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 

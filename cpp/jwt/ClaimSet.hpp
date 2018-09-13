@@ -12,8 +12,11 @@
 #include <functional>
 #include "Util.hpp"
 #include "JwtException.hpp"
+#include "../util/Base64.hpp"
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -95,7 +98,7 @@ public:
    */
   explicit CJSONClaimSet(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+    this->json_root_ = {CJSONOperation::parse(Client::Util::Base64::decodeURLNoPadding(text)),
                         CJSONOperation::cJSONDeleter};
   }
 
@@ -134,7 +137,7 @@ public:
   inline std::string serialize() override
   {
     auto json_str = CJSONOperation::serialize(json_root_.get());
-    return Base64URLOpt::encodeNoPadding(json_str);
+    return Client::Util::Base64::encodeURLNoPadding(json_str);
   }
 
   inline void removeClaim(const std::string &key) override
@@ -148,6 +151,7 @@ private:
 };
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 #endif //SNOWFLAKECLIENT_CLAIMSET_HPP

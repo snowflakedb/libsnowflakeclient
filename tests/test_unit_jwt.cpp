@@ -9,10 +9,10 @@
 #include <openssl/pem.h>
 
 
-using Snowflake::Jwt::IHeader;
-using Snowflake::Jwt::IClaimSet;
-using Snowflake::Jwt::AlgorithmType;
-using Snowflake::Jwt::JWTObject;
+using Snowflake::Client::Jwt::IHeader;
+using Snowflake::Client::Jwt::IClaimSet;
+using Snowflake::Client::Jwt::AlgorithmType;
+using Snowflake::Client::Jwt::JWTObject;
 using IHeaderUptr = std::unique_ptr<IHeader>;
 using IClaimSetUptr = std::unique_ptr<IClaimSet>;
 using IHeaderSptr = std::shared_ptr<IHeader>;
