@@ -148,6 +148,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
         include/snowflake/SnowflakeTransferException.hpp
+        include/snowflake/IJwt.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER
