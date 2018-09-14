@@ -5,7 +5,6 @@
 #include <vector>
 #include <functional>
 #include "Signer.hpp"
-#include "JwtException.hpp"
 #include "Util.hpp"
 #include "../util/Base64.hpp"
 
@@ -68,7 +67,7 @@ ISigner *ISigner::buildSigner(Snowflake::Client::Jwt::AlgorithmType type)
       return new RSASigner<RS512>();
     default:
       // TODO Implement the other signer class when needed
-      throw JwtNotImplementedException();
+      throw JwtException("Algorithm type not implemented");
   }
 }
 

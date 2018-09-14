@@ -3,11 +3,10 @@
  */
 
 #include "Util.hpp"
-#include "JwtException.hpp"
-#include "../util/Base64.hpp"
 #include <vector>
 #include <memory>
 #include <functional>
+#include <snowflake/IJwt.hpp>
 
 namespace Snowflake
 {
@@ -19,9 +18,11 @@ std::vector<char> CJSONOperation::serialize(cJSON *root)
 {
   std::unique_ptr<char, std::function<void(char *)>>
     json_str(snowflake_cJSON_Print(root), [](char *str) { snowflake_cJSON_free(str); });
-  if (json_str == nullptr) throw JwtMemoryAllocationFailure();
+
+  if (json_str == nullptr) throw JwtException("Error serializing JSon object");
   size_t json_str_len = strlen(json_str.get());
 
+  // include the final '/0'
   std::vector<char> result(json_str.get(), json_str.get() + json_str_len + 1);
 
   return result;
@@ -31,7 +32,7 @@ cJSON *CJSONOperation::parse(const std::vector<char> &text)
 {
   // Parse the decode string to object
   cJSON *root = snowflake_cJSON_Parse(text.data());
-  if (root == nullptr) throw JwtParseFailure();
+  if (root == nullptr) throw JwtException("Error parsing JSon object");
 
   return root;
 }
@@ -40,7 +41,7 @@ void CJSONOperation::addOrReplaceJSON(cJSON *root, std::string key, cJSON *item)
 {
   if (item == nullptr)
   {
-    throw JwtMemoryAllocationFailure();
+    throw std::bad_alloc();
   }
 
   bool contains = snowflake_cJSON_HasObjectItem(root, key.c_str());

@@ -197,7 +197,7 @@ private:
    /**
    * The size of base64/base64url dictionary
    */
-  static const char INDEX_SIZE;
+  static const unsigned char INDEX_SIZE;
 
   /**
    * Encodes given source data of specified length.

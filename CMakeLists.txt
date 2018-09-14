@@ -136,7 +136,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/jwt/ClaimSet.cpp
         cpp/jwt/Header.cpp
         cpp/jwt/Header.hpp
-        cpp/jwt/JwtException.hpp
         cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp

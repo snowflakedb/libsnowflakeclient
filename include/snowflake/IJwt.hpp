@@ -27,6 +27,18 @@ enum class AlgorithmType
   UNKNOWN,
 };
 
+struct JwtException : public std::exception
+{
+  JwtException(const std::string &message) : message_(message) {}
+  const char *what() noexcept
+  {
+    return message_.c_str();
+  }
+
+  std::string message_;
+};
+
+
 class IClaimSet
 {
 

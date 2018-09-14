@@ -14,8 +14,23 @@ namespace Client
 {
 namespace Util
 {
+class Base64DecodeException : public std::exception
+{
+public:
+  Base64DecodeException(const std::string &message) : message_(message) {}
+  
+  const char *what() const throw()
+  {
+    return message_.c_str();
+  }
+
+private:
+  std::string message_;
+};
+
   class IBase64
   {
+  public:
    static std::string encodeURLNoPadding(const std::vector<char> &bytes);
 
    static std::vector<char> decodeURLNoPadding(const std::string &code);
@@ -24,7 +39,8 @@ namespace Util
 
    static std::vector<char> decodePadding(const std::string &code);
   };
-} // namespace Jwt
+  
+} // namespace Util
 } // namespace Client
 } // namespace Snowflake
 

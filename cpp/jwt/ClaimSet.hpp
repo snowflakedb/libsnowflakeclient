@@ -11,7 +11,6 @@
 #include <set>
 #include <functional>
 #include "Util.hpp"
-#include "JwtException.hpp"
 #include "../util/Base64.hpp"
 #include "snowflake/IJwt.hpp"
 
@@ -36,7 +35,7 @@ public:
                         CJSONOperation::cJSONDeleter};
     if (this->json_root_ == nullptr)
     {
-      throw JwtMemoryAllocationFailure();
+      throw std::bad_alloc();
     }
   }
 
