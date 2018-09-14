@@ -4,6 +4,7 @@
 
 #include "Base64.hpp"
 #include <cstring>
+#include "snowflake/IBase64.hpp"
 
 namespace Snowflake
 {
@@ -24,7 +25,6 @@ Base64::BASE64_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 
 const Base64::ReverseIndex
 Base64::BASE64_URL_REV_INDEX{64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"};
-
 
 std::string Base64::encodeURLNoPadding(const std::vector<char> &bytes)
 {
@@ -209,6 +209,27 @@ size_t Base64::decodeHelper(const void *const vsrc,
 
   return j;
 }
+
+std::string IBase64::encodeURLNoPadding(const std::vector<char> &bytes)
+{
+  return Base64::encodeURLNoPadding(bytes);
+}
+
+std::string IBase64::encodePadding(const std::vector<char> &bytes)
+{
+  return Base64::encodePadding(bytes);
+}
+
+std::vector<char> IBase64::decodeURLNoPadding(const std::string &code)
+{
+  return Base64::decodeURLNoPadding(code);
+}
+
+std::vector<char> IBase64::decodePadding(const std::string &code)
+{
+  return Base64::decodePadding(code);
+}
+
 }
 }
 }
