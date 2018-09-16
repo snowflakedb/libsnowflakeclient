@@ -746,7 +746,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
-    int32 http_code = 0;
+    int64 http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
       1,      //base
       16      //cap
@@ -941,7 +941,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     return ret;
 }
 
-sf_bool STDCALL is_retryable_http_code(int32 code) {
+sf_bool STDCALL is_retryable_http_code(int64 code) {
     return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
             code == 408) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
