@@ -102,17 +102,19 @@ void test_time(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    
+
     int64 c1_out;
-    const char *c2_out = NULL;
+    char *c2_out = NULL;
     assert_int_equal(snowflake_num_rows(sfstmt), no_error_test_cases);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1_out);
-        snowflake_column_as_const_str(sfstmt, 2, &c2_out);
+        snowflake_column_as_str(sfstmt, 2, &c2_out, NULL);
         TEST_CASE_TO_STRING v = test_cases[c1_out - 1];
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert_string_equal(v.c2out, c2_out);
+        free(c2_out);
+        c2_out = NULL;
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

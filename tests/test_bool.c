@@ -22,7 +22,7 @@ void test_bool(void **unused) {
       {.c1in = 2, .c2in = &SF_BOOLEAN_FALSE, .c2out = "", .c2_is_null=SF_BOOLEAN_FALSE},
       {.c1in = 3, .c2in = &large_value, .c2out = "1", .c2_is_null=SF_BOOLEAN_FALSE},
       {.c1in = 4, .c2in = &zero_value, .c2out = "", .c2_is_null=SF_BOOLEAN_FALSE},
-      {.c1in = 5, .c2in = NULL, .c2out = "", .c2_is_null=SF_BOOLEAN_TRUE},
+      {.c1in = 5, .c2in = NULL, .c2out = NULL, .c2_is_null=SF_BOOLEAN_TRUE},
       {.c1in = 6, .c2in = &negative_value, .c2out = "1", .c2_is_null=SF_BOOLEAN_FALSE}
     };
 
@@ -109,7 +109,7 @@ void test_bool(void **unused) {
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
-        if (v.c2out != NULL) {
+        if (v.c2in != NULL) {
             snowflake_column_as_str(sfstmt, 2, &c2, NULL);
             assert_string_equal(v.c2out, c2);
             free(c2);

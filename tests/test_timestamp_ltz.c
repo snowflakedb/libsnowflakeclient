@@ -31,7 +31,7 @@ void test_timestamp_ltz(void** unused) {
       {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000"},
       {.c1in = 7, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
 #endif // _WIN32
-      {.c1in = 8, .c2in = NULL, .c2out = ""},
+      {.c1in = 8, .c2in = NULL, .c2out = NULL},
       /* // none of the platform supports this
       {.c1in = 9, .c2in = "9999-12-31 23:59:59.9999", .c2out = "9999-12-31 23:59:59.99990 -05:00"},
        */

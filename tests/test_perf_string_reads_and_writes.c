@@ -157,6 +157,7 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
         if (!books[id].title) {
             snowflake_column_as_str(sfstmt, 2, &title, NULL);
             books[id].title = title;
+            title = NULL;
         }
         // Copy text into the right buffer
         snowflake_column_as_const_str(sfstmt, 3, &text);
@@ -183,7 +184,9 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
         }
     }
 
-    free(title);
+    if (title) {
+        free(title);
+    }
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

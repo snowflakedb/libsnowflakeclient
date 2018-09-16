@@ -46,6 +46,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
     int64 total = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // printf("c1: %lld, c2: %s\n", c1v, c2v);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
         total += c1;
     }
     assert_int_equal(total, expected_sum);
