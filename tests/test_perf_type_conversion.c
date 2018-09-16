@@ -15,7 +15,7 @@ void test_col_conv_int64_type(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
 
@@ -45,7 +45,7 @@ void test_col_conv_float64_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
 
@@ -75,7 +75,7 @@ void test_col_conv_str_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, "select randstr(999,random()) from table(generator(rowcount=>4000));");
+    setup_and_run_query(&sf, &sfstmt, "select randstr(999,random()) from table(generator(rowcount=>4000));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -106,7 +106,8 @@ void test_col_conv_timestamp_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, "select dateadd(day, uniform(1, 500, random()), current_timestamp) from table(generator(rowcount=>4000));");
+    setup_and_run_query(&sf, &sfstmt,
+                        "select dateadd(day, uniform(1, 500, random()), current_timestamp) from table(generator(rowcount=>4000));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -137,7 +138,7 @@ void test_col_conv_multi_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -185,7 +186,7 @@ void test_col_conv_multi_types_per_row(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
 

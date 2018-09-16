@@ -18,7 +18,7 @@ void test_eval_all_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
@@ -56,7 +56,7 @@ void test_eval_half_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
@@ -98,7 +98,7 @@ void test_skip_rows_half(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
@@ -138,7 +138,7 @@ void test_skip_all_rows(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
@@ -174,7 +174,7 @@ void test_skip_all_rows_no_bind(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 

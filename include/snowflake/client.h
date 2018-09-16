@@ -123,6 +123,10 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_CONNECTION_NOT_EXIST = 240016,
     SF_STATUS_ERROR_STATEMENT_NOT_EXIST = 240017,
     SF_STATUS_ERROR_CONVERSION_FAILURE = 240018,
+    SF_STATUS_ERROR_OUT_OF_BOUNDS = 240019,
+    SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW = 240020,
+    SF_STATUS_ERROR_INVALID_CONVERSION = 240021,
+    SF_STATUS_ERROR_OUT_OF_RANGE = 240022
 
 } SF_STATUS;
 
@@ -322,6 +326,7 @@ typedef struct SF_STMT {
     SF_CONNECT *connection;
     char *sql_text;
     void *raw_results;
+    void *cur_row;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
@@ -535,7 +540,7 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of rows.
  */
-uint64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
+int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
 
 /**
  * Returns the number of fields in the result set.
@@ -543,7 +548,7 @@ uint64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of fields.
  */
-uint64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
+int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
 
 /**
  * Returns a SQLState for the result set.
@@ -692,6 +697,62 @@ const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_check_connection_parameters(SF_CONNECT *sf);
+
+/**
+ * Converts a column in the current row into a boolean value (if a valid conversion exists)
+ *
+ * @param stmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *stmt, int idx, sf_bool *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *stmt, int idx, uint8 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *stmt, int idx, uint32 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *stmt, int idx, uint64 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *stmt, int idx, int8 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *stmt, int idx, int32 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *stmt, int idx, int64 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *stmt, int idx, float32 *value_ptr);
+
+
+SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *stmt, int idx, float64 *value_ptr);
+
+/**
+ * Returns the raw column data in the form of a const char pointer that the user can then use
+ * to read the string data or copy to another buffer
+ */
+
+SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *stmt, int idx, const char **value_ptr);
+
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_ptr, size_t *value_len_ptr);
+
+/**
+ * Returns the length of the raw column data
+ *
+ * @param stmt
+ * @param idx
+ * @return
+ */
+SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *stmt, int idx, size_t *value_ptr);
+
+// Returns whether or not the column data is null
+SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *stmt, int idx, sf_bool *value_ptr);
+
 
 #ifdef  __cplusplus
 }

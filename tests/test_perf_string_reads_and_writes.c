@@ -29,7 +29,7 @@ void test_col_string_read_fixed_size(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -65,7 +65,7 @@ void test_col_string_manipulate_fixed_size(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -105,7 +105,8 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Randomly select string size based on provided gen seed
-    col_conv_setup(&sf, &sfstmt, "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
+    setup_and_run_query(&sf, &sfstmt,
+                        "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -158,7 +159,7 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     }
 
     // Get all public domain books. Sort by text_part_id to ensure that you concatenate book in right order
-    col_conv_setup(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
+    setup_and_run_query(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
     // Begin timing
     clock_gettime(clk_id, &begin);
 

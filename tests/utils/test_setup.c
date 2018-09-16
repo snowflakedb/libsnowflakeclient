@@ -79,7 +79,7 @@ void dump_error(SF_ERROR_STRUCT *error) {
             error->line);
 }
 
-void col_conv_setup(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char* query) {
+void setup_and_run_query(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char *query) {
     SF_STATUS status;
     SF_CONNECT *sf;
     SF_STMT *sfstmt;
