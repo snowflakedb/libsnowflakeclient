@@ -332,7 +332,6 @@ typedef struct SF_STMT {
     int64 total_fieldcount;
     int64 total_row_index;
     void *params;
-    void *results;
     SF_COLUMN_DESC *desc;
     void *stmt_attrs;
     sf_bool is_dml;
@@ -360,14 +359,14 @@ typedef struct {
 /**
  * Bind output parameter context
  */
-typedef struct {
-    size_t idx; /* One based index of the columns */
-    SF_C_TYPE c_type; /* expected data type in C */
-    size_t max_length; /* maximum buffer size provided by application */
-    void *value; /* input and output: buffer to stoare a value */
-    size_t len; /* output: actual value length */
-    sf_bool is_null; /* output: SF_BOOLEAN_TRUE if is null else SF_BOOLEAN_FALSE */
-} SF_BIND_OUTPUT;
+//typedef struct {
+//    size_t idx; /* One based index of the columns */
+//    SF_C_TYPE c_type; /* expected data type in C */
+//    size_t max_length; /* maximum buffer size provided by application */
+//    void *value; /* input and output: buffer to stoare a value */
+//    size_t len; /* output: actual value length */
+//    sf_bool is_null; /* output: SF_BOOLEAN_TRUE if is null else SF_BOOLEAN_FALSE */
+//} SF_BIND_OUTPUT;
 
 
 /**
@@ -644,27 +643,6 @@ SF_STATUS STDCALL snowflake_bind_param(
  */
 SF_STATUS snowflake_bind_param_array(
     SF_STMT *sfstmt, SF_BIND_INPUT *sfbind_array, size_t size);
-
-/**
- * Binds buffers with the statement for result set processing.
- *
- * @param sfstmt SNOWFLAKE_STMT context.
- * @param sfbind_array SNOWFLAKE_BIND_OUTPUT context array.
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL snowflake_bind_result(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind);
-
-/**
- * Binds an array of buffers with the statement for result set processing.
- *
- * @param sfstmt SF_STMT context.
- * @param sfbind_array SF_BIND_OUTPUT array of result buffers.
- * @param size size_t size of the result buffer array (sfbind_array).
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS snowflake_bind_result_array(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind_array, size_t size);
 
 /**
  * Returns a query id associated with the statement after execution. If not

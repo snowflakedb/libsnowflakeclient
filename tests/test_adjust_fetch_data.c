@@ -29,28 +29,22 @@ void test_select_long_data_with_small_initial_buffer(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    size_t init_size = 10;
-    SF_BIND_OUTPUT c1 = {
-        .idx = 1,
-        .c_type = SF_C_TYPE_STRING,
-        .value = calloc(1, init_size),
-        .len = init_size,
-        .max_length = init_size
-    };
-    snowflake_bind_result(sfstmt, &c1);
+    
+    char *value = NULL;
     assert_int_equal(snowflake_num_rows(sfstmt), 2);
 
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        assert_int_equal(strlen(c1.value), 100);
+        snowflake_column_as_str(sfstmt, 1, &value, NULL);
+        assert_int_equal(strlen(value), 100);
+        free(value);
+        value = NULL;
         ++counter;
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_EOF);
-    free(c1.value);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

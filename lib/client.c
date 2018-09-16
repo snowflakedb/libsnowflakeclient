@@ -162,115 +162,6 @@ static void log_lock_func(void *udata, int lock) {
  * @param scale Timestamp data type scale between 0 and 9
  * @return SF_BOOLEAN_TRUE if success otherwise SF_BOOLEAN_FALSE
  */
-static sf_bool _extract_timestamp(
-    SF_BIND_OUTPUT *result, SF_DB_TYPE sftype,
-    const char *src, const char *timezone, int64 scale) {
-    time_t nsec = 0L;
-    time_t sec = 0L;
-    int64 tzoffset = 0;
-    struct tm tm_obj;
-    struct tm *tm_ptr = NULL;
-    char tzname[64];
-    char *tzptr = (char *) timezone;
-
-    memset(&tm_obj, 0, sizeof(tm_obj));
-
-    /* Search for a decimal point */
-    char *ptr = strchr(src, (int) '.');
-    if (ptr == NULL) {
-        return SF_BOOLEAN_FALSE;
-    }
-    sec = strtoll(src, NULL, 10);
-
-    /* Search for a space for TIMESTAMP_TZ */
-    char *sptr = strchr(ptr + 1, (int) ' ');
-    nsec = strtoll(ptr + 1, NULL, 10);
-    if (sptr != NULL) {
-        /* TIMESTAMP_TZ */
-        nsec = strtoll(ptr + 1, NULL, 10);
-        tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
-    }
-    if (sec < 0 && nsec > 0) {
-        nsec = pow10_int64[scale] - nsec;
-        sec--;
-    }
-    log_info("sec: %lld, nsec: %lld", sec, nsec);
-
-    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* make up Timezone name from the tzoffset */
-        ldiv_t dm = ldiv((long) tzoffset, 60L);
-        sprintf(tzname, "UTC%c%02ld:%02ld",
-                dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
-        tzptr = tzname;
-    }
-
-    /* replace a dot character with NULL */
-    if (sftype == SF_DB_TYPE_TIMESTAMP_NTZ ||
-        sftype == SF_DB_TYPE_TIME) {
-        tm_ptr = sf_gmtime(&sec, &tm_obj);
-    } else if (sftype == SF_DB_TYPE_TIMESTAMP_LTZ ||
-               sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* set the environment variable TZ to the session timezone
-         * so that localtime_tz honors it.
-         */
-        _mutex_lock(&gmlocaltime_lock);
-        const char *prev_tz_ptr = sf_getenv("TZ");
-        sf_setenv("TZ", tzptr);
-        sf_tzset();
-        sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
-        tm_ptr = sf_localtime(&sec, &tm_obj);
-        if (prev_tz_ptr != NULL) {
-            sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
-        } else {
-            sf_unsetenv("TZ");
-        }
-        sf_tzset();
-        _mutex_unlock(&gmlocaltime_lock);
-    }
-    if (tm_ptr == NULL) {
-        result->len = 0;
-        return SF_BOOLEAN_FALSE;
-    }
-    const char *fmt0;
-    if (sftype != SF_DB_TYPE_TIME) {
-        fmt0 = "%Y-%m-%d %H:%M:%S";
-    } else {
-        fmt0 = "%H:%M:%S";
-    }
-    /* adjust scale */
-    char fmt[20];
-    sprintf(fmt, ".%%0%lldld", scale);
-    result->len = strftime(result->value,
-                           result->max_length, fmt0, &tm_obj);
-    if (scale > 0) {
-        result->len += snprintf(
-            &((char *) result->value)[result->len],
-            result->max_length - result->len, fmt,
-            nsec);
-    }
-    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* Timezone info */
-        ldiv_t dm = ldiv((long) tzoffset, 60L);
-        result->len += snprintf(
-            &((char *) result->value)[result->len],
-            result->max_length - result->len,
-            " %c%02ld:%02ld",
-            dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
-    }
-    return SF_BOOLEAN_TRUE;
-}
-
-/**
- * Extracts a Snowflake internal representation of timestamp into
- * seconds, nanoseconds and optionally Timezone offset.
- * @param sec pointer of seconds
- * @param nsec pointer of nanoseconds
- * @param tzoffset pointer of Timezone offset.
- * @param src source buffer including a Snowflake internal timestamp
- * @param timezone Timezone for TIMESTAMP_LTZ
- * @param scale Timestamp data type scale between 0 and 9
- * @return SF_BOOLEAN_TRUE if success otherwise SF_BOOLEAN_FALSE
- */
 static sf_bool _extract_timestamp_dynamic(
   char **result_ptr, size_t *result_len_ptr, SF_DB_TYPE sftype,
   const char *src, const char *timezone, int64 scale) {
@@ -1183,11 +1074,6 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->params = NULL;
 
-    if (sfstmt->results) {
-        sf_array_list_deallocate(sfstmt->results); /* binding columns */
-    }
-    sfstmt->results = NULL;
-
     _snowflake_stmt_desc_reset(sfstmt);
 
     if (sfstmt->stmt_attrs) {
@@ -1306,36 +1192,6 @@ SF_STATUS snowflake_bind_param_array(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_bind_result(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind) {
-    if (!sfstmt) {
-        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
-    }
-    clear_snowflake_error(&sfstmt->error);
-    if (sfstmt->results == NULL) {
-        sfstmt->results = sf_array_list_init();
-    }
-    sf_array_list_set(sfstmt->results, sfbind, sfbind->idx);
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS snowflake_bind_result_array(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind_array, size_t size) {
-    size_t i;
-    if (!sfstmt) {
-        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
-    }
-    clear_snowflake_error(&sfstmt->error);
-    if (sfstmt->results == NULL) {
-        sfstmt->results = sf_array_list_init();
-    }
-    for (i = 0; i < size; i++) {
-        sf_array_list_set(sfstmt->results, &sfbind_array[i],
-                          sfbind_array[i].idx);
-    }
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL snowflake_query(
     SF_STMT *sfstmt, const char *command, size_t command_size) {
     if (!sfstmt) {
@@ -1363,8 +1219,6 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     int64 i;
     uint64 index;
     cJSON *row = NULL;
-    cJSON *raw_result;
-    SF_BIND_OUTPUT *result;
 
     // Check for chunk_downloader error
     if (sfstmt->chunk_downloader && get_error(sfstmt->chunk_downloader)) {
@@ -1440,177 +1294,14 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         }
     }
 
-    // TODO Remove this block of code
-//    // Check that we can write to the provided result bindings
-//    for (i = 0; i < sfstmt->total_fieldcount; i++) {
-//        result = sf_array_list_get(sfstmt->results, (size_t) i + 1);
-//        if (result == NULL) {
-//            continue;
-//        } else {
-//            if (result->c_type != sfstmt->desc[i].c_type &&
-//                result->c_type != SF_C_TYPE_STRING) {
-//                goto cleanup;
-//            }
-//        }
-//    }
-
     // Get next result row
     row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
-    snowflake_cJSON_free((cJSON *) sfstmt->cur_row);
+    if (sfstmt->cur_row != NULL) {
+        snowflake_cJSON_free(sfstmt->cur_row);
+    }
     sfstmt->cur_row = row;
     sfstmt->chunk_rowcount--;
     sfstmt->total_row_index++;
-
-    // Write to results
-    for (i = 0; i < sfstmt->total_fieldcount; i++) {
-        result = sf_array_list_get(sfstmt->results, (size_t) i + 1);
-        log_info("snowflake type: %s, C type: %s",
-                 snowflake_type_to_string(sfstmt->desc[i].type),
-                 result != NULL ?
-                 snowflake_c_type_to_string(result->c_type) : NULL);
-        if (result == NULL) {
-            // not bound. skipping
-            continue;
-        }
-        time_t sec = 0L;
-        struct tm tm_obj;
-        struct tm *tm_ptr;
-        size_t slen = (size_t)0;
-        memset(&tm_obj, 0, sizeof(tm_obj));
-
-        raw_result = snowflake_cJSON_GetArrayItem(row, (int) i);
-        if (raw_result->valuestring == NULL) {
-            log_info("setting value and len = NULL");
-            ((char *) result->value)[0] = '\0'; // empty string
-            result->len = (size_t) 0;
-            result->is_null = SF_BOOLEAN_TRUE;
-            continue;
-        }
-        result->is_null = SF_BOOLEAN_FALSE;
-        switch (result->c_type) {
-            case SF_C_TYPE_INT8:
-                switch (sfstmt->desc[i].type) {
-                    case SF_DB_TYPE_BOOLEAN:
-                        *(int8 *) result->value = snowflake_cJSON_IsTrue(
-                          raw_result)
-                                                  ? SF_BOOLEAN_TRUE
-                                                  : SF_BOOLEAN_FALSE;
-                        break;
-                    default:
-                        // field is a char?
-                        *(int8 *) result->value = (int8) raw_result->valuestring[0];
-                        break;
-                }
-                result->len = sizeof(int8);
-                break;
-            case SF_C_TYPE_UINT8:
-                *(uint8 *) result->value = (uint8) raw_result->valuestring[0];
-                result->len = sizeof(uint8);
-                break;
-            case SF_C_TYPE_INT64:
-                *(int64 *) result->value = (int64) strtoll(
-                    raw_result->valuestring, NULL, 10);
-                result->len = sizeof(int64);
-                break;
-            case SF_C_TYPE_UINT64:
-                *(uint64 *) result->value = (uint64) strtoull(
-                    raw_result->valuestring, NULL, 10);
-                result->len = sizeof(uint64);
-                break;
-            case SF_C_TYPE_FLOAT64:
-                *(float64 *) result->value = (float64) strtod(
-                    raw_result->valuestring, NULL);
-                result->len = sizeof(float64);
-                break;
-            case SF_C_TYPE_STRING:
-                switch (sfstmt->desc[i].type) {
-                    case SF_DB_TYPE_BOOLEAN:
-                        log_info("value: %p, max_length: %lld, len: %lld",
-                                 result->value, result->max_length,
-                                 result->len);
-                        if (strcmp(raw_result->valuestring, "0") == 0) {
-                            /* False */
-                            strncpy(result->value, SF_BOOLEAN_FALSE_STR,
-                                    result->max_length);
-                            result->len = sizeof(SF_BOOLEAN_FALSE_STR) - 1;
-                        } else {
-                            /* True */
-                            strncpy(result->value, SF_BOOLEAN_TRUE_STR,
-                                    result->max_length);
-                            result->len = sizeof(SF_BOOLEAN_TRUE_STR) - 1;
-                        }
-                        break;
-                    case SF_DB_TYPE_DATE:
-                        sec =
-                            (time_t) strtol(raw_result->valuestring, NULL, 10) *
-                            86400L;
-                        _mutex_lock(&gmlocaltime_lock);
-                        tm_ptr = sf_gmtime(&sec, &tm_obj);
-                        _mutex_unlock(&gmlocaltime_lock);
-                        if (tm_ptr == NULL) {
-                            SET_SNOWFLAKE_ERROR(&sfstmt->error,
-                                                SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                                "Failed to convert a date value to a string.",
-                                                SF_SQLSTATE_GENERAL_ERROR);
-                            result->len = 0;
-                            goto cleanup;
-                        }
-                        result->len = strftime(
-                            result->value, result->max_length,
-                            "%Y-%m-%d", &tm_obj);
-                        break;
-                    case SF_DB_TYPE_TIME:
-                    case SF_DB_TYPE_TIMESTAMP_NTZ:
-                    case SF_DB_TYPE_TIMESTAMP_LTZ:
-                    case SF_DB_TYPE_TIMESTAMP_TZ:
-                        if (!_extract_timestamp(
-                            result,
-                            sfstmt->desc[i].type,
-                            raw_result->valuestring,
-                            sfstmt->connection->timezone,
-                            sfstmt->desc[i].scale)) {
-                            SET_SNOWFLAKE_ERROR(&sfstmt->error,
-                                                SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                                "Failed to convert a timestamp value to a string.",
-                                                SF_SQLSTATE_GENERAL_ERROR);
-                            result->len = 0;
-                            goto cleanup;
-                        }
-                        break;
-                    default:
-                        slen = strlen(raw_result->valuestring);
-                        log_debug("slen: %llu, maxbuflen: %llu, realloc func: %p",
-                                     slen,
-                                     result->max_length,
-                                     (void*)sfstmt->user_realloc_func);
-                        result->len = slen;
-                        if (sfstmt->user_realloc_func != NULL &&
-                            slen > result->max_length) {
-                            // reallocate the result buffer if the output
-                            // buffer size is not large enough.
-                            result->value = sfstmt->user_realloc_func(
-                                result->value, slen + 1);
-                            result->max_length = slen + 1;
-                        }
-                        strncpy(result->value, raw_result->valuestring,
-                                result->max_length);
-                        break;
-                }
-                break;
-            case SF_C_TYPE_BOOLEAN:
-                *(sf_bool *) result->value = snowflake_cJSON_IsTrue(raw_result)
-                                             ? SF_BOOLEAN_TRUE
-                                             : SF_BOOLEAN_FALSE;
-                result->len = sizeof(sf_bool);
-                break;
-            case SF_C_TYPE_TIMESTAMP:
-                /* TODO: may need Snowflake TIMESTAMP struct like super set of strust tm */
-                break;
-            default:
-                break;
-        }
-    }
-
     ret = SF_STATUS_SUCCESS;
 
 cleanup:
@@ -2527,7 +2218,9 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
 
 cleanup:
     *value_ptr = value;
-    *value_len_ptr = value_len;
+    if (value_len_ptr) {
+        *value_len_ptr = value_len;
+    }
     return SF_STATUS_SUCCESS;
 }
 
