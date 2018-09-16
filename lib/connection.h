@@ -379,7 +379,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
  * @param code The HTTP code to test.
  * @return Retryable/Non-retryable. 1 = Retryable; 0 = Non-retryable
  */
-sf_bool STDCALL is_retryable_http_code(int64 code);
+sf_bool STDCALL is_retryable_http_code(long int code);
 
 /**
  * Renews a session once the session token has expired.
