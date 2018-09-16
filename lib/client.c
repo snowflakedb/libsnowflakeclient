@@ -2332,7 +2332,7 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *stmt, int idx, int32 *value
     if (endptr == column->valuestring) {
         return SF_STATUS_ERROR_INVALID_CONVERSION;
     }
-    if (((value == SF_INT64_MAX || value == SF_INT64_MIN) && errno == ERANGE) || (value > SF_INT32_MAX || value < SF_INT32_MIN)) {
+    if (((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) || (value > SF_INT32_MAX || value < SF_INT32_MIN)) {
         return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
     // Everything checks out, set value and return success
