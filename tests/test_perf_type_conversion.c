@@ -18,17 +18,11 @@ void test_col_conv_int64_type(void **unused) {
     setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
-
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
+    
     int64 out = 0;
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_INT64;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_int64(sfstmt, 1, &out);
+    }
 
     clock_gettime(clk_id, &end);
 
@@ -48,17 +42,11 @@ void test_col_conv_float64_type(void **unused) {
     setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
-
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
+    
     float64 out = 0;
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_FLOAT64;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_float64(sfstmt, 1, &out);
+    }
 
     clock_gettime(clk_id, &end);
 
@@ -79,17 +67,11 @@ void test_col_conv_str_type(void **unused) {
 
     // Begin timing
     clock_gettime(clk_id, &begin);
-
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    char out[1000];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
+    
+    const char *out;
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_const_str(sfstmt, 1, &out);
+    }
 
     clock_gettime(clk_id, &end);
 
@@ -111,17 +93,13 @@ void test_col_conv_timestamp_type(void **unused) {
 
     // Begin timing
     clock_gettime(clk_id, &begin);
-
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    char out[1000];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
+    
+    char *out = NULL;
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_str(sfstmt, 1, &out, NULL);
+        free(out);
+        out = NULL;
+    }
 
     clock_gettime(clk_id, &end);
 
@@ -143,30 +121,17 @@ void test_col_conv_multi_type(void **unused) {
     // Begin timing
     clock_gettime(clk_id, &begin);
 
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1;
-    char out_str[1000];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out_str;
-    c1.max_length = sizeof(out_str);
-
+    const char *out_str;
     int64 out_int;
-
-    snowflake_bind_result(sfstmt, &c1);
-
+    
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Bind different result type every time to convert to multiple types
         switch(sfstmt->total_row_index % 2) {
             case 0:
-                c1.c_type = SF_C_TYPE_STRING;
-                c1.value = (void *) &out_str;
-                c1.max_length = sizeof(out_str);
+                snowflake_column_as_const_str(sfstmt, 1, &out_str);
                 break;
             case 1:
-                c1.c_type = SF_C_TYPE_INT64;
-                c1.value = (void *) &out_int;
-                c1.max_length = sizeof(out_int);
+                snowflake_column_as_int64(sfstmt, 1, &out_int);
                 break;
         }
     }
@@ -190,21 +155,14 @@ void test_col_conv_multi_types_per_row(void **unused) {
 
     clock_gettime(clk_id, &begin);
 
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    char out_str[1000];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out_str;
-    c1.max_length = sizeof(out_str);
-    snowflake_bind_result(sfstmt, &c1);
-
+    const char *out_str;
     int64 out_int;
     float64 out_float;
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        out_int = strtol(out_str, NULL, 0);
-        out_float = strtod(out_str, NULL);
+        snowflake_column_as_int64(sfstmt, 1, &out_int);
+        snowflake_column_as_float64(sfstmt, 1, &out_float);
+        snowflake_column_as_const_str(sfstmt, 1, &out_str);
     }
 
     clock_gettime(clk_id, &end);

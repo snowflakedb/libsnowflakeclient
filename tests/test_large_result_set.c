@@ -29,22 +29,6 @@ void test_large_result_set(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_BIND_OUTPUT c1 = {0};
-    int64 out = 0;
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_INT64;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1001];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.max_length = sizeof(c2buf);
-    snowflake_bind_result(sfstmt, &c2);
-
     uint64 counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // printf("output: %lld, %s\n", out, c2buf);

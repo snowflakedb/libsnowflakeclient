@@ -21,18 +21,12 @@ void test_select1(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     int64 out = 0;
-    SF_BIND_OUTPUT c1 = {
-      .idx = 1,
-      .c_type = SF_C_TYPE_INT64,
-      .value = (void *) &out,
-      .len = sizeof(out)
-    };
-    snowflake_bind_result(sfstmt, &c1);
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        assert_int_equal(*(int64 *) c1.value, 1);
+        snowflake_column_as_int64(sfstmt, 1, &out);
+        assert_int_equal(out, 1);
         ++counter;
     }
     if (status != SF_STATUS_EOF) {

@@ -11,12 +11,7 @@ void test_no_connect_and_retry(void **unused) {
     SF_CONNECT *sf = snowflake_init();
     SF_STMT *sfstmt = snowflake_stmt(sf);
     snowflake_prepare(sfstmt, "select 1;", 0);
-    SF_BIND_OUTPUT c1 = {0};
     int64 out = 0;
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_INT64;
-    c1.value = (void *) &out;
-    snowflake_bind_result(sfstmt, &c1);
     SF_STATUS status = snowflake_execute(sfstmt);
     assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
@@ -59,6 +54,7 @@ void test_no_connect_and_retry(void **unused) {
 
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_int64(sfstmt, 1, &out);
         ++counter;
     }
     assert_int_equal(counter, 1);

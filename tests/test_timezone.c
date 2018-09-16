@@ -31,18 +31,12 @@ void test_timezone(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1024];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.len = sizeof(c2buf);
-    c2.max_length = sizeof(c2buf);
-    snowflake_bind_result(sfstmt, &c2);
+    const char *c2buf = NULL;
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        assert_string_equal(local_timezone, c2.value);
+        snowflake_column_as_const_str(sfstmt, 2, &c2buf);
+        assert_string_equal(local_timezone, c2buf);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

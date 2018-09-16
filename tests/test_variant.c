@@ -78,38 +78,18 @@ void test_variant(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_BIND_OUTPUT c1 = {0};
-    char c1buf[1024];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) c1buf;
-    c1.len = sizeof(c1buf);
-    c1.max_length = sizeof(c1buf);
-    snowflake_bind_result(sfstmt, &c1);
-
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1024];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.len = sizeof(c2buf);
-    c2.max_length = sizeof(c2buf);
-    snowflake_bind_result(sfstmt, &c2);
-
-    SF_BIND_OUTPUT c3 = {0};
-    char c3buf[1024];
-    c3.idx = 3;
-    c3.c_type = SF_C_TYPE_STRING;
-    c3.value = (void *) c3buf;
-    c3.max_length = sizeof(c3buf);
-    snowflake_bind_result(sfstmt, &c3);
-
+    const char *c1buf = NULL;
+    const char *c2buf = NULL;
+    const char *c3buf = NULL;
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        assert_string_equal(c1.value, "{\n  \"test1\": 1\n}");
-        assert_string_equal(c2.value, "[\n  \"[1,2,3]\"\n]");
-        assert_string_equal(c3.value, "\"[456,789]\"");
+        snowflake_column_as_const_str(sfstmt, 1, &c1buf);
+        snowflake_column_as_const_str(sfstmt, 2, &c2buf);
+        snowflake_column_as_const_str(sfstmt, 3, &c3buf);
+        assert_string_equal(c1buf, "{\n  \"test1\": 1\n}");
+        assert_string_equal(c2buf, "[\n  \"[1,2,3]\"\n]");
+        assert_string_equal(c3buf, "\"[456,789]\"");
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

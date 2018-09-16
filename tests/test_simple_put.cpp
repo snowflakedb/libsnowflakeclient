@@ -98,45 +98,21 @@ void test_simple_put_core(const char * fileName,
     ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
     assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    char out_c1[5];
-    SF_BIND_OUTPUT c1;
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.max_length = sizeof(out_c1);
-    c1.value = (void *) out_c1;
-    c1.len = sizeof(out_c1);
-
-    char out_c2[5];
-    SF_BIND_OUTPUT c2;
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.max_length = sizeof(out_c2);
-    c2.value = (void *) out_c2;
-    c2.len = sizeof(out_c2);
-
-    char out_c3[20];
-    SF_BIND_OUTPUT c3;
-    c3.idx = 3;
-    c3.c_type = SF_C_TYPE_STRING;
-    c3.max_length = sizeof(out_c3);
-    c3.value = (void *) out_c3;
-    c3.len = sizeof(out_c3);
-
-    ret = snowflake_bind_result(sfstmt, &c1);
-    assert_int_equal(SF_STATUS_SUCCESS, ret);
-    ret = snowflake_bind_result(sfstmt, &c2);
-    assert_int_equal(SF_STATUS_SUCCESS, ret);
-    ret = snowflake_bind_result(sfstmt, &c3);
-    assert_int_equal(SF_STATUS_SUCCESS, ret);
-
+    const char *out_c1;
+    const char *out_c2;
+    const char *out_c3;
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
     ret = snowflake_fetch(sfstmt);
     assert_int_equal(SF_STATUS_SUCCESS, ret);
+    
+    snowflake_column_as_const_str(sfstmt, 1, &out_c1);
+    snowflake_column_as_const_str(sfstmt, 2, &out_c2);
+    snowflake_column_as_const_str(sfstmt, 3, &out_c3);
 
-    assert_string_equal((char *) c1.value, "1");
-    assert_string_equal((char *) c2.value, "2");
-    assert_string_equal((char *) c3.value, "test_string");
+    assert_string_equal(out_c1, "1");
+    assert_string_equal(out_c2, "2");
+    assert_string_equal(out_c3, "test_string");
 
     ret = snowflake_fetch(sfstmt);
     assert_int_equal(SF_STATUS_EOF, ret);

@@ -13,7 +13,6 @@ SET(TESTS_C
         test_connect
         test_connect_negative
         test_bind_params
-        test_bind_results
         test_change_current
         test_select1
         test_check_ctypes

@@ -11,31 +11,8 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    int64 c1v = 0;
-    SF_BIND_OUTPUT c1 = {0};
-    c1.idx = 1;
-    c1.max_length = sizeof(c1v);
-    c1.c_type = SF_C_TYPE_INT64;
-    c1.value = &c1v;
-    status = snowflake_bind_result(sfstmt, &c1);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    char c2v[1000];
-    SF_BIND_OUTPUT c2 = {0};
-    c2.idx = 2;
-    c2.max_length = sizeof(c2v);
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = &c2v;
-    status = snowflake_bind_result(sfstmt, &c2);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    uint64 num_fields = snowflake_num_fields(sfstmt);
+    int64 c1 = 0;
+    int64 num_fields = snowflake_num_fields(sfstmt);
     assert_int_equal(num_fields, 2);
 
     SF_COLUMN_DESC *descs = snowflake_desc(sfstmt);
@@ -69,7 +46,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
     int64 total = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // printf("c1: %lld, c2: %s\n", c1v, c2v);
-        total += c1v;
+        total += c1;
     }
     assert_int_equal(total, expected_sum);
     if (status != SF_STATUS_EOF) {

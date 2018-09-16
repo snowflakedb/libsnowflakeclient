@@ -94,38 +94,16 @@ void test_selectbin(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_BIND_OUTPUT c1 = {0};
-    char c1buf[1024];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) c1buf;
-    c1.len = sizeof(c1buf);
-    c1.max_length = sizeof(c1buf);
-    status = snowflake_bind_result(sfstmt, &c1);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1024];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.len = sizeof(c2buf);
-    c2.max_length = sizeof(c2buf);
-    status = snowflake_bind_result(sfstmt, &c2);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
     assert_int_equal(snowflake_num_rows(sfstmt),
                      sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING));
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        TEST_CASE_TO_STRING v = test_cases[atoll(c1.value) - 1];
-        assert_string_equal(v.c2out, c2.value);
+        int64 c1 = 0;
+        const char *c2 = NULL;
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        snowflake_column_as_const_str(sfstmt, 2, &c2);
+        TEST_CASE_TO_STRING v = test_cases[c1 - 1];
+        assert_string_equal(v.c2out, c2);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

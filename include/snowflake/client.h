@@ -359,6 +359,7 @@ typedef struct {
 /**
  * Bind output parameter context
  */
+ // TODO Remove
 //typedef struct {
 //    size_t idx; /* One based index of the columns */
 //    SF_C_TYPE c_type; /* expected data type in C */
