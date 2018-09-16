@@ -1166,6 +1166,12 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->sql_text = NULL;
 
+    if (sfstmt->cur_row) {
+        snowflake_cJSON_Delete(sfstmt->cur_row);
+        sfstmt->cur_row = NULL;
+    }
+    sfstmt->cur_row = NULL;
+
     if (sfstmt->raw_results) {
         snowflake_cJSON_Delete(sfstmt->raw_results);
         sfstmt->raw_results = NULL;
