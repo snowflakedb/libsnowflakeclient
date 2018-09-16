@@ -1218,7 +1218,10 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
     int64 i;
     uint64 index;
-    cJSON *row = NULL;
+    if (sfstmt->cur_row != NULL) {
+        snowflake_cJSON_Delete(sfstmt->cur_row);
+        sfstmt->cur_row = NULL;
+    }
 
     // Check for chunk_downloader error
     if (sfstmt->chunk_downloader && get_error(sfstmt->chunk_downloader)) {
@@ -1295,11 +1298,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     }
 
     // Get next result row
-    row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
-    if (sfstmt->cur_row != NULL) {
-        snowflake_cJSON_free(sfstmt->cur_row);
-    }
-    sfstmt->cur_row = row;
+    sfstmt->cur_row = snowflake_cJSON_DetachItemFromArray(sfstmt->raw_results, 0);
     sfstmt->chunk_rowcount--;
     sfstmt->total_row_index++;
     ret = SF_STATUS_SUCCESS;

@@ -18,7 +18,7 @@ void test_col_conv_int64_type(void **unused) {
     setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
-    
+
     int64 out = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &out);
@@ -42,7 +42,7 @@ void test_col_conv_float64_type(void **unused) {
     setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>12000));");
 
     clock_gettime(clk_id, &begin);
-    
+
     float64 out = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_float64(sfstmt, 1, &out);
@@ -67,7 +67,7 @@ void test_col_conv_str_type(void **unused) {
 
     // Begin timing
     clock_gettime(clk_id, &begin);
-    
+
     const char *out;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_const_str(sfstmt, 1, &out);
@@ -93,7 +93,7 @@ void test_col_conv_timestamp_type(void **unused) {
 
     // Begin timing
     clock_gettime(clk_id, &begin);
-    
+
     char *out = NULL;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_str(sfstmt, 1, &out, NULL);
@@ -123,7 +123,7 @@ void test_col_conv_multi_type(void **unused) {
 
     const char *out_str;
     int64 out_int;
-    
+
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Bind different result type every time to convert to multiple types
         switch(sfstmt->total_row_index % 2) {
