@@ -48,7 +48,7 @@ std::vector<char> Base64::decodeURLNoPadding(const std::string &text)
   size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
   std::vector<char> decoded(decode_len);
   decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
-  
+
   if (decode_len == static_cast<size_t >(-1L))
   {
     throw Base64DecodeException("Decode of base64URL with no padding failed");

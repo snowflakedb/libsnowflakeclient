@@ -17,9 +17,9 @@ namespace Util
 class Base64DecodeException : public std::exception
 {
 public:
-  Base64DecodeException(const std::string &message) : message_(message) {}
-  
-  const char *what() const throw()
+  explicit Base64DecodeException(const std::string &message) : message_(message) {}
+
+  const char *what() const throw() override
   {
     return message_.c_str();
   }
@@ -28,17 +28,34 @@ private:
   std::string message_;
 };
 
-  class IBase64
-  {
-  public:
-   static std::string encodeURLNoPadding(const std::vector<char> &bytes);
+/**
+ * This class provide a bunch of useful c++ style interface for base64 encoding
+ */
+class IBase64
+{
+public:
+  /**
+   * Encode a vector of bytes into a string in Base64URL format with no padding
+   */
+  static std::string encodeURLNoPadding(const std::vector<char> &bytes);
 
-   static std::vector<char> decodeURLNoPadding(const std::string &code);
+  /**
+   * Decode a string of coded Base64URL format with no padding to a vector of bytes
+   * @throw Base64DecodeException when the code is not valid base64URL encoded
+   */
+  static std::vector<char> decodeURLNoPadding(const std::string &code);
 
-   static std::string encodePadding(const std::vector<char> &bytes);
+  /**
+   * Encode a vector of bytes into a Base64 format with padding
+   */
+  static std::string encodePadding(const std::vector<char> &bytes);
 
-   static std::vector<char> decodePadding(const std::string &code);
-  };
+  /**
+   * Decode a string of coded base64 format with padding to a vector of bytes
+   * @throw Base64EncodeException when the code is not valid base64 encoded
+   */
+  static std::vector<char> decodePadding(const std::string &code);
+};
   
 } // namespace Util
 } // namespace Client

@@ -39,14 +39,25 @@ struct JwtException : public std::exception
 };
 
 
+/**
+ * This is the interface of a Claim Set that can be inserted to the JWT token
+ */
 class IClaimSet
 {
-
 public:
   virtual ~IClaimSet() = default;
 
+  /**
+   * Constructor function for the claimset
+   * ALWAYS USE THIS FUNCTION TO INSTANTIATE A CLAIM SET!
+   */
   static IClaimSet *buildClaimSet();
 
+  /**
+   * Construct function for the claimset given the string of the
+   * JSON text
+   * @throw JWTException when the text is not valid
+   */
   static IClaimSet *parseClaimset(const std::string &text);
 
   /**
@@ -90,15 +101,27 @@ public:
    */
   virtual void removeClaim(const std::string &key) = 0;
 
+protected:
+  IClaimSet() = default;
 };
 
+/**
+ * This is a header of the JWT token
+ */
 class IHeader
 {
 public:
   virtual ~IHeader() = default;
 
+  /**
+   * Construct function for JWT header
+   */
   static IHeader *buildHeader();
 
+  /**
+   * Construct function for JWT header given the JSON text for header
+   * @throw JWTException when the header is not valid
+   */
   static IHeader *parseHeader(const std::string &text);
 
   /**
@@ -118,27 +141,60 @@ public:
    * @return serialized string in base64urlencoded
    */
   virtual std::string serialize() = 0;
+
+protected:
+  IHeader() = default;
 };
 
-
+/**
+ * JWT interface class
+ * The general use case would be:
+ * For issuer:
+ *  Use IClaimSet and IHeader to construct elements in the JWT.
+ *  Set the claim set and header to the jwt token
+ *  Serialize the token with the key and send the result of string to authenticator
+ *
+ * For authenticator
+ *  Use buildJwt(std::string text to marshalize the JWT structure
+ *  Verify the token using public key
+ */
 class IJwt
 {
   typedef std::shared_ptr<IClaimSet> ClaimSetPtr;
   typedef std::shared_ptr<IHeader> HeaderPtr;
 
 public:
+  /**
+   * Construct function for the JWT
+   */
   static IJwt *buildIJwt();
 
+  /**
+   * Construct function for the JWT with text of that token
+   * FORMAT: <base64url coded header>.<base64url coded claimset>.<secret>
+   * @throw JWTExcpetion if the text is not corrected serialized
+   */
   static IJwt *buildIJwt(const std::string &text);
-
-  IJwt() = default;
 
   virtual ~IJwt() {}
 
+  /**
+   * Serialize the JWT token with private key specified
+   * The algorithm of signing is specified in the IHeader
+   * @usedBy issuer
+   */
   virtual std::string serialize(EVP_PKEY *key) = 0;
 
+  /**
+   * Verify the JWT is valid using the public key
+   * @usedBy authenticator
+   */
   virtual bool verify(EVP_PKEY *key) = 0;
 
+  /**
+   * Setter and getter functions for header and claimset
+   * Generally used by issuer
+   */
   virtual void setClaimSet(ClaimSetPtr claim_set) = 0;
 
   virtual ClaimSetPtr getClaimSet() = 0;
@@ -146,6 +202,9 @@ public:
   virtual void setHeader(HeaderPtr header) = 0;
 
   virtual HeaderPtr getHeader() = 0;
+
+protected:
+  IJwt() = default;
 };
 
 } // namespace Jwt
