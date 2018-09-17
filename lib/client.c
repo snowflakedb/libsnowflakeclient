@@ -1982,7 +1982,7 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
 
     char *endptr;
     errno = 0;
-    value = strtoul(column->valuestring, &endptr, 10);
+    value = strtoull(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
@@ -1990,11 +1990,19 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
         status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
-    if (((value == ULONG_MAX || value == 0) && errno == ERANGE) || value > SF_UINT32_MAX) {
+    sf_bool neg = (strchr(column->valuestring, '-') != NULL) ? SF_BOOLEAN_TRUE: SF_BOOLEAN_FALSE;
+    // Check for out of range
+    if (((value == ULONG_MAX || value == 0) && errno == ERANGE) ||
+            (!neg && value > SF_UINT32_MAX) ||
+            (neg && value < (SF_UINT64_MAX - SF_UINT32_MAX))) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
                                  "Value out of range for uint32", "", sfstmt->sfqid);
         status = SF_STATUS_ERROR_OUT_OF_RANGE;
         goto cleanup;
+    }
+    // If the input was negative, we have to do a little trickery to get it into uint32 form
+    if (neg && value > SF_UINT32_MAX) {
+        value = value - (SF_UINT64_MAX - SF_UINT32_MAX);
     }
     // Everything checks out, set value and return success
     status = SF_STATUS_SUCCESS;
@@ -2085,7 +2093,7 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
 
     char *endptr;
     errno = 0;
-    value = strtol(column->valuestring, &endptr, 10);
+    value = strtoll(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
