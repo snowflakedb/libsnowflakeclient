@@ -136,7 +136,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/jwt/ClaimSet.cpp
         cpp/jwt/Header.cpp
         cpp/jwt/Header.hpp
-        cpp/jwt/JwtException.hpp
         cpp/logger/ISFLogger.cpp
         cpp/logger/SFAwsLogger.cpp
         cpp/logger/SFAwsLogger.hpp
@@ -148,6 +147,8 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
         include/snowflake/SnowflakeTransferException.hpp
+        include/snowflake/IJwt.hpp
+        include/snowflake/IBase64.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER

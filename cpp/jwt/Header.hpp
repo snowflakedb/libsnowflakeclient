@@ -10,6 +10,7 @@
 #include <functional>
 #include "Signer.hpp"
 #include "Util.hpp"
+#include "../util/Base64.hpp"
 
 #define ALGORITHM "alg"
 #define TOKEN_TYPE "typ"
@@ -17,36 +18,10 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
-
-class IHeader
-{
-public:
-  virtual ~IHeader() = default;
-
-  static IHeader *buildHeader();
-
-  static IHeader *parseHeader(const std::string &text);
-
-  /**
-   * Set the algorithm's type
-   * @param type
-   */
-  virtual void setAlgorithm(AlgorithmType type) = 0;
-
-  /**
-   * Get the algorithm type of the header
-   * @return the algorithm type
-   */
-  virtual AlgorithmType getAlgorithmType() = 0;
-
-  /**
-   * Serialize the header
-   * @return serialized string in base64urlencoded
-   */
-  virtual std::string serialize() = 0;
-};
 
 /**
  * CJSONHeader is an implementation that uses cJSON to store data
@@ -58,7 +33,7 @@ public:
 
   explicit CJSONHeader(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+    this->json_root_ = {CJSONOperation::parse(Util::Base64::decodeURLNoPadding(text)),
                         CJSONOperation::cJSONDeleter};
   }
 
@@ -83,15 +58,15 @@ public:
    */
   inline std::string serialize() override
   {
-    return Base64URLOpt::encodeNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
   }
 
 private:
   std::unique_ptr<cJSON, std::function<void(cJSON *)>> json_root_;
 };
 
-
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 #endif //SNOWFLAKECLIENT_HEADER_HPP

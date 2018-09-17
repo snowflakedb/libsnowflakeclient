@@ -13,6 +13,8 @@
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
 
@@ -53,15 +55,8 @@ public:
   }
 };
 
-class Base64URLOpt
-{
-public:
-  static std::string encodeNoPadding(const std::vector<char> &bytes);
-
-  static std::vector<char> decodeNoPadding(const std::string &code);
-};
-
 }
+} // namespace Client
 }
 
 

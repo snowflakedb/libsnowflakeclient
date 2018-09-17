@@ -5,10 +5,12 @@
 #include <vector>
 #include <functional>
 #include "Signer.hpp"
-#include "JwtException.hpp"
 #include "Util.hpp"
+#include "../util/Base64.hpp"
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -53,7 +55,7 @@ std::string AlgorithmTypeMapper::toString(AlgorithmType type)
   }
 }
 
-ISigner *ISigner::buildSigner(Snowflake::Jwt::AlgorithmType type)
+ISigner *ISigner::buildSigner(Snowflake::Client::Jwt::AlgorithmType type)
 {
   switch (type)
   {
@@ -65,7 +67,7 @@ ISigner *ISigner::buildSigner(Snowflake::Jwt::AlgorithmType type)
       return new RSASigner<RS512>();
     default:
       // TODO Implement the other signer class when needed
-      throw JwtNotImplementedException();
+      throw JwtException("Algorithm type not implemented");
   }
 }
 
@@ -95,7 +97,7 @@ std::string RSASigner<Hash>::sign(EVP_PKEY *key, const std::string &msg)
 
   /* Success */
   buf.resize(slen);
-  return Base64URLOpt::encodeNoPadding(buf);
+  return Util::Base64::encodeURLNoPadding(buf);
 }
 
 template<typename Hash>
@@ -118,10 +120,11 @@ RSASigner<Hash>::verify(EVP_PKEY *key, const std::string &msg, const std::string
     return false;
   }
 
-  auto sig_decode = Base64URLOpt::decodeNoPadding(sig);
+  auto sig_decode = Util::Base64::decodeURLNoPadding(sig);
 
   return (1 == EVP_DigestVerifyFinal(mdctx.get(), (unsigned char *) sig_decode.data(), sig_decode.size()));
 }
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake

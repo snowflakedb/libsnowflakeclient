@@ -11,65 +11,15 @@
 #include <set>
 #include <functional>
 #include "Util.hpp"
-#include "JwtException.hpp"
+#include "../util/Base64.hpp"
+#include "snowflake/IJwt.hpp"
 
 namespace Snowflake
 {
+namespace Client
+{
 namespace Jwt
 {
-class IClaimSet
-{
-
-public:
-  virtual ~IClaimSet() = default;
-
-  static IClaimSet *buildClaimSet();
-
-  static IClaimSet *parseClaimset(const std::string &text);
-
-  /**
-   * Check if the claim set contains a specific key
-   */
-  virtual bool containsClaim(const std::string &key) = 0;
-
-  /**
-   * Add the key and a string value to the claim set
-   * Would replace the old one if the key exists
-   * @param key
-   * @param value
-   */
-  virtual void addClaim(const std::string &key, const std::string &value) = 0;
-
-  /**
-   * Add the key and a long value to the claim set
-   * Would replace the old one if the key exists
-   * @param key
-   * @param value
-   */
-  virtual void addClaim(const std::string &key, long number) = 0;
-
-  /**
-   * Get a claim from the claim set in string type
-   */
-  virtual std::string getClaimInString(const std::string &key) = 0;
-
-  /**
-   * Get a claim from the claim set in long type
-   */
-  virtual long getClaimInLong(const std::string &key) = 0;
-
-  /**
-   * Serialize the claim set to base64url encoded format
-   */
-  virtual std::string serialize() = 0;
-
-  /**
-   * Remove a claim from the claim set with specified key
-   */
-  virtual void removeClaim(const std::string &key) = 0;
-
-};
-
 /**
  * The ClaimSet implementation using CJSON as underlying data structure
  */
@@ -85,7 +35,7 @@ public:
                         CJSONOperation::cJSONDeleter};
     if (this->json_root_ == nullptr)
     {
-      throw JwtMemoryAllocationFailure();
+      throw std::bad_alloc();
     }
   }
 
@@ -95,7 +45,7 @@ public:
    */
   explicit CJSONClaimSet(const std::string &text)
   {
-    this->json_root_ = {CJSONOperation::parse(Base64URLOpt::decodeNoPadding(text)),
+    this->json_root_ = {CJSONOperation::parse(Client::Util::Base64::decodeURLNoPadding(text)),
                         CJSONOperation::cJSONDeleter};
   }
 
@@ -134,7 +84,7 @@ public:
   inline std::string serialize() override
   {
     auto json_str = CJSONOperation::serialize(json_root_.get());
-    return Base64URLOpt::encodeNoPadding(json_str);
+    return Client::Util::Base64::encodeURLNoPadding(json_str);
   }
 
   inline void removeClaim(const std::string &key) override
@@ -148,6 +98,7 @@ private:
 };
 
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 #endif //SNOWFLAKECLIENT_CLAIMSET_HPP

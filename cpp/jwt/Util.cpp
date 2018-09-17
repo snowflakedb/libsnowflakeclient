@@ -3,13 +3,14 @@
  */
 
 #include "Util.hpp"
-#include "JwtException.hpp"
-#include "../util/Base64.hpp"
 #include <vector>
 #include <memory>
 #include <functional>
+#include <snowflake/IJwt.hpp>
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -17,9 +18,11 @@ std::vector<char> CJSONOperation::serialize(cJSON *root)
 {
   std::unique_ptr<char, std::function<void(char *)>>
     json_str(snowflake_cJSON_Print(root), [](char *str) { snowflake_cJSON_free(str); });
-  if (json_str == nullptr) throw JwtMemoryAllocationFailure();
+
+  if (json_str == nullptr) throw JwtException("Error serializing JSon object");
   size_t json_str_len = strlen(json_str.get());
 
+  // include the final '/0'
   std::vector<char> result(json_str.get(), json_str.get() + json_str_len + 1);
 
   return result;
@@ -29,7 +32,7 @@ cJSON *CJSONOperation::parse(const std::vector<char> &text)
 {
   // Parse the decode string to object
   cJSON *root = snowflake_cJSON_Parse(text.data());
-  if (root == nullptr) throw JwtParseFailure();
+  if (root == nullptr) throw JwtException("Error parsing JSon object");
 
   return root;
 }
@@ -38,7 +41,7 @@ void CJSONOperation::addOrReplaceJSON(cJSON *root, std::string key, cJSON *item)
 {
   if (item == nullptr)
   {
-    throw JwtMemoryAllocationFailure();
+    throw std::bad_alloc();
   }
 
   bool contains = snowflake_cJSON_HasObjectItem(root, key.c_str());
@@ -51,33 +54,7 @@ void CJSONOperation::addOrReplaceJSON(cJSON *root, std::string key, cJSON *item)
   snowflake_cJSON_ReplaceItemInObject(root, key.c_str(), item);
 }
 
-std::string Base64URLOpt::encodeNoPadding(const std::vector<char> &bytes)
-{
-  size_t buf_len = Client::Util::Base64::encodedLength(bytes.size());
-  std::string buffer(buf_len, 0);
-  size_t len = Client::Util::Base64::encodeUrl(bytes.data(), bytes.size(), (void *) buffer.data());
-
-  // remove the end of padding
-  while (buffer[len - 1] == '=') len--;
-
-  return buffer.substr(0, len);
-}
-
-std::vector<char> Base64URLOpt::decodeNoPadding(const std::string &text)
-{
-  // add padding to the end
-  size_t pad_len = (4 - text.length() % 4) % 4;
-  std::string in_text = text + std::string(pad_len, '=');
-
-  // Base 64 decode text
-  size_t decode_len = Client::Util::Base64::decodedLength(in_text.length());
-  std::vector<char> decoded(decode_len);
-  decode_len = Client::Util::Base64::decodeUrl(in_text.c_str(), in_text.length(), decoded.data());
-  if (decode_len == static_cast<size_t >(-1L)) throw JwtParseFailure();
-
-  decoded.resize(decode_len);
-  return decoded;
-}
 
 }
+} // namespace Client
 }

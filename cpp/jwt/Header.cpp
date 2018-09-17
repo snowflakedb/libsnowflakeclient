@@ -3,9 +3,10 @@
  */
 
 #include "Header.hpp"
-#include "JwtException.hpp"
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -25,7 +26,7 @@ CJSONHeader::CJSONHeader()
   json_root_ = {snowflake_cJSON_CreateObject(), CJSONOperation::cJSONDeleter};
   if (json_root_ == nullptr)
   {
-    throw JwtMemoryAllocationFailure();
+    throw std::bad_alloc();
   }
 
   // Add the typ field to be token
@@ -33,7 +34,7 @@ CJSONHeader::CJSONHeader()
   cJSON *item = snowflake_cJSON_CreateString(default_token_type.c_str());
   if (!item)
   {
-    throw JwtMemoryAllocationFailure();
+    throw std::bad_alloc();
   }
   CJSONOperation::addOrReplaceJSON(json_root_.get(), TOKEN_TYPE, item);
 }
@@ -46,4 +47,5 @@ AlgorithmType CJSONHeader::getAlgorithmType()
 }
 
 }
+} // namespace Client
 }

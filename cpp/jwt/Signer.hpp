@@ -19,9 +19,12 @@
 #include <memory>
 #include <string>
 #include <map>
+#include "snowflake/IJwt.hpp"
 #include "openssl/evp.h"
 
 namespace Snowflake
+{
+namespace Client
 {
 namespace Jwt
 {
@@ -31,17 +34,6 @@ namespace Jwt
     const EVP_MD *operator()() noexcept \
     { return hashFunc(); }\
   };
-
-/**
- * Type of algorithms
- */
-enum class AlgorithmType
-{
-  HS256, HS384, HS512,
-  RS256, RS384, RS512,
-  ES256, ES384, ES512,
-  UNKNOWN,
-};
 
 /**
  * AlgorithmTypeMapper maps between type and strings
@@ -156,6 +148,7 @@ private:
   }
 };
 } // namespace Jwt
+} // namespace Client
 } // namespace Snowflake
 
 

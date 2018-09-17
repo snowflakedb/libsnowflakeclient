@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <string>
+#include <vector>
 
 namespace Snowflake
 {
@@ -23,6 +25,34 @@ typedef uint32_t ub4;
  */
 struct Base64 final
 {
+  /**
+   * High level cpp api to encode
+   * @param bytes
+   * @return base64URL format code without padding
+   */
+  static std::string encodeURLNoPadding(const std::vector<char> &bytes);
+
+  /**
+    * High level cpp api for decode
+    * @param code in base64URL format without padding
+    * @return bytes
+    */
+  static std::vector<char> decodeURLNoPadding(const std::string &code);
+
+  /**
+   * High level cpp api to encode
+   * @param bytes
+   * @return base64 format code with padding
+   */
+  static std::string encodePadding(const std::vector<char> &bytes);
+
+  /**
+    * High level cpp api for decode
+    * @param code in base64 format with padding
+    * @return bytes
+    */
+  static std::vector<char> decodePadding(const std::string &code);
+
 
   /**
    * Provides exact amount of memory needed to store the result of encode()
@@ -167,7 +197,7 @@ private:
    /**
    * The size of base64/base64url dictionary
    */
-  static const char INDEX_SIZE;
+  static const unsigned char INDEX_SIZE;
 
   /**
    * Encodes given source data of specified length.
