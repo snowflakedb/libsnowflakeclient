@@ -160,14 +160,14 @@ void test_column_as_int32(void **unused) {
         }
         assert_int_equal(out, 0);
 
-        // Case where a valid conversion leads to the max value for an int64
+        // Case where a valid conversion leads to the max value for an int32
         if ((status = snowflake_column_as_int32(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_INT32_MAX);
 
-        // Case where a valid conversion leads to the min value for an int64
+        // Case where a valid conversion leads to the min value for an int32
         if ((status = snowflake_column_as_int32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
@@ -194,15 +194,15 @@ void test_column_as_int32(void **unused) {
         if (!(status = snowflake_column_as_int32(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
-        // Trying to convert a number that is out of range for int64
+        // Trying to convert a number that is out of range for int32
         if (!(status = snowflake_column_as_int32(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
-        // Trying to convert a number that is out of range for int64
+        // Trying to convert a number that is out of range for int32
         if (!(status = snowflake_column_as_int32(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
@@ -284,7 +284,7 @@ void test_column_as_int64(void **unused) {
         if (!(status = snowflake_column_as_int64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for int64
         if (!(status = snowflake_column_as_int64(sfstmt, 8, &out))) {
@@ -385,27 +385,27 @@ void test_column_as_uint32(void **unused) {
         }
         assert(out == 0);
 
-        // Case where a valid conversion leads to the max value for an int64
+        // Case where a valid conversion leads to the max value for an uint32
         if ((status = snowflake_column_as_uint32(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT32_MAX);
 
-        // Trying to convert a negative number to an uint64
+        // Trying to convert a negative number to an uint32
         if ((status = snowflake_column_as_uint32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT32_MAX);
 
-        // Trying to convert a float to an uint64
+        // Trying to convert a float to an uint32
         if (snowflake_column_as_uint32(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(10, out);
 
-        // Trying to convert a NULL to an uint64
+        // Trying to convert a NULL to an uint32
         if (snowflake_column_as_uint32(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
@@ -415,11 +415,11 @@ void test_column_as_uint32(void **unused) {
         // Start of invalid conversions
         // **************************************************
 
-        // Trying to convert non-numerical string to an uint64
+        // Trying to convert non-numerical string to an uint32
         if (!(status = snowflake_column_as_uint32(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for uint32
         if (!(status = snowflake_column_as_uint32(sfstmt, 8, &out))) {
@@ -468,7 +468,7 @@ void test_column_as_uint64(void **unused) {
         }
         assert(out == 0);
 
-        // Case where a valid conversion leads to the max value for an int64
+        // Case where a valid conversion leads to the max value for an uint64
         if ((status = snowflake_column_as_uint64(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
@@ -502,7 +502,7 @@ void test_column_as_uint64(void **unused) {
         if (!(status = snowflake_column_as_uint64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for uint64
         if (!(status = snowflake_column_as_uint64(sfstmt, 8, &out))) {
@@ -558,19 +558,19 @@ void test_column_as_float32(void **unused) {
         }
         assert(out == (float32) 1.1);
 
-        // Case where a valid conversion leads to the max value for a float64
+        // Case where a valid conversion leads to the max value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
-        // Case where a valid conversion leads to the min positive value for a float64
+        // Case where a valid conversion leads to the min positive value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 5, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
-        // Case where a valid conversion leads to the min positive value for a float64
+        // Case where a valid conversion leads to the min positive value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 6, &out))) {
             dump_error(&(sfstmt->error));
         }
@@ -580,11 +580,11 @@ void test_column_as_float32(void **unused) {
         // Start of invalid conversions
         // **************************************************
 
-        // Trying to convert non-numerical string to an uint64
+        // Trying to convert non-numerical string to an float32
         if (!(status = snowflake_column_as_float32(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for float32
         if (!(status = snowflake_column_as_float32(sfstmt, 8, &out))) {
@@ -662,11 +662,11 @@ void test_column_as_float64(void **unused) {
         // Start of invalid conversions
         // **************************************************
 
-        // Trying to convert non-numerical string to an uint64
+        // Trying to convert non-numerical string to an float64
         if (!(status = snowflake_column_as_float64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
-        assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
+        assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for float64
         if (!(status = snowflake_column_as_float64(sfstmt, 8, &out))) {
@@ -716,19 +716,19 @@ void test_column_as_const_str(void **unused) {
         }
         assert_string_equal("", out);
 
-        // Case where a valid conversion leads to the max value for an int64
+        // Case with a DOUBLE DB type
         if (snowflake_column_as_const_str(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("1.1", out);
 
-        // Trying to convert non-numerical string to an uint64
+        // Case with a INTEGER DB type
         if (snowflake_column_as_const_str(sfstmt, 4, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("10", out);
 
-        // Trying to convert a float to an uint64
+        // Case with a BOOLEAN DB type
         if (snowflake_column_as_const_str(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
@@ -780,7 +780,7 @@ void test_column_is_null(void **unused) {
         }
         assert_true(out);
 
-        // Case where a valid conversion leads to the max value for an int64
+        // Case where column is boolean false
         if (snowflake_column_is_null(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }

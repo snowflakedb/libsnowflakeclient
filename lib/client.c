@@ -1893,9 +1893,9 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
             float64 float_val = strtod(column->valuestring, &endptr);
             // Check for errors
             if (endptr == column->valuestring) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                          "Cannot convert value into boolean from float64", "", sfstmt->sfqid);
-                status = SF_STATUS_ERROR_INVALID_CONVERSION;
+                status = SF_STATUS_ERROR_CONVERSION_FAILURE;
                 goto cleanup;
             }
             if (errno == ERANGE || float_val == INFINITY || float_val == -INFINITY) {
@@ -1911,9 +1911,9 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
             int64 int_val = strtoll(column->valuestring, &endptr, 10);
             // Check for errors
             if (endptr == column->valuestring) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                          "Cannot convert value into boolean from int64", "", sfstmt->sfqid);
-                status = SF_STATUS_ERROR_INVALID_CONVERSION;
+                status = SF_STATUS_ERROR_CONVERSION_FAILURE;
                 goto cleanup;
             }
             if ((int_val == SF_INT64_MAX || int_val == SF_INT64_MIN) && errno == ERANGE) {
@@ -1933,9 +1933,9 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
             }
             break;
         default:
-            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                      "No valid conversion to boolean from data type", "", sfstmt->sfqid);
-            status = SF_STATUS_ERROR_INVALID_CONVERSION;
+            status = SF_STATUS_ERROR_CONVERSION_FAILURE;
             goto cleanup;
     }
 
@@ -1985,9 +1985,9 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
     value = strtoul(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into uint32", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if (((value == ULONG_MAX || value == 0) && errno == ERANGE) || value > SF_UINT32_MAX) {
@@ -2028,9 +2028,9 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *v
     value = strtoull(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into uint64", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if ((value == SF_UINT64_MAX || value == 0) && errno == ERANGE) {
@@ -2088,9 +2088,9 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
     value = strtol(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into int32", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if (((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) || (value > SF_INT32_MAX || value < SF_INT32_MIN)) {
@@ -2131,9 +2131,9 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *val
     value = strtoll(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into int64", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if ((value == SF_INT64_MAX || value == SF_INT64_MIN) && errno == ERANGE) {
@@ -2174,9 +2174,9 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
     value = strtof(column->valuestring, &endptr);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into float32", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if (errno == ERANGE || value == INFINITY || value == -INFINITY) {
@@ -2217,9 +2217,9 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 
     value = strtod(column->valuestring, &endptr);
     // Check for errors
     if (endptr == column->valuestring) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_CONVERSION_FAILURE,
                                  "Cannot convert value into float64", "", sfstmt->sfqid);
-        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        status = SF_STATUS_ERROR_CONVERSION_FAILURE;
         goto cleanup;
     }
     if (errno == ERANGE || value == INFINITY || value == -INFINITY) {
