@@ -421,7 +421,7 @@ void test_column_as_uint32(void **unused) {
         }
         assert_int_equal(status, SF_STATUS_ERROR_INVALID_CONVERSION);
 
-        // Trying to convert a number that is out of range for uint64
+        // Trying to convert a number that is out of range for uint32
         if (!(status = snowflake_column_as_uint32(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }

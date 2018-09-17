@@ -1830,23 +1830,19 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
     return SF_STATUS_SUCCESS;
 }
 
-
-/**
- *
- * Start of new fetch API
- *
- */
-
-
 // Make sure that idx is in bounds and that column exists
-SF_STATUS STDCALL _snowflake_get_column(SF_STMT *stmt, int idx, cJSON **column_ptr) {
-    if (idx > snowflake_num_fields(stmt) || idx <= 0) {
+SF_STATUS STDCALL _snowflake_get_cJSON_column(SF_STMT *sfstmt, int idx, cJSON **column_ptr) {
+    if (idx > snowflake_num_fields(sfstmt) || idx <= 0) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_BOUNDS,
+                                 "Column index must be between 1 and snowflake_num_fields()", "", sfstmt->sfqid);
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    cJSON *column = snowflake_cJSON_GetArrayItem(stmt->cur_row, idx - 1);
+    cJSON *column = snowflake_cJSON_GetArrayItem(sfstmt->cur_row, idx - 1);
     if (!column) {
         *column_ptr = NULL;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW,
+                                 "Column is missing from row.", "", sfstmt->sfqid);
         return SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW;
     }
 
@@ -1854,48 +1850,77 @@ SF_STATUS STDCALL _snowflake_get_column(SF_STMT *stmt, int idx, cJSON **column_p
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *stmt, int idx, sf_bool *value_ptr) {
+// Does NULL checking and clears the SF_STMT error struct
+SF_STATUS STDCALL _snowflake_column_null_checks(SF_STMT *sfstmt, void *value_ptr) {
+    if (!sfstmt) {
+        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+    clear_snowflake_error(&sfstmt->error);
+    if (value_ptr == NULL) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_NULL_POINTER,
+                                 "value_ptr must not be NULL", "", sfstmt->sfqid);
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
 
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     sf_bool value = SF_BOOLEAN_FALSE;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
-    switch (stmt->desc[idx - 1].c_type) {
+    errno = 0;
+    switch (sfstmt->desc[idx - 1].c_type) {
         case SF_C_TYPE_BOOLEAN:
             value = strcmp("1", column->valuestring) == 0 ? SF_BOOLEAN_TRUE: SF_BOOLEAN_FALSE;
             break;
-        case SF_C_TYPE_FLOAT64:
-            errno = 0;
+        case SF_C_TYPE_FLOAT64: ;
             float64 float_val = strtod(column->valuestring, &endptr);
             // Check for errors
             if (endptr == column->valuestring) {
-                return SF_STATUS_ERROR_INVALID_CONVERSION;
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                         "Cannot convert value into boolean from float64", "", sfstmt->sfqid);
+                status = SF_STATUS_ERROR_INVALID_CONVERSION;
+                goto cleanup;
             }
-            if ((float_val == SF_HUGE_VAL || float_val == -SF_HUGE_VAL) && errno == ERANGE) {
-                return SF_STATUS_ERROR_OUT_OF_RANGE;
+            if (errno == ERANGE || float_val == INFINITY || float_val == -INFINITY) {
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                         "Value out of range for float64. Cannot convert value into boolean", "", sfstmt->sfqid);
+                status = SF_STATUS_ERROR_OUT_OF_RANGE;
+                goto cleanup;
             }
             // Determine if true or false
             value = (float_val == 0.0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             break;
-        case SF_C_TYPE_INT64:
-            errno = 0;
+        case SF_C_TYPE_INT64: ;
             int64 int_val = strtoll(column->valuestring, &endptr, 10);
             // Check for errors
             if (endptr == column->valuestring) {
-                return SF_STATUS_ERROR_INVALID_CONVERSION;
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                         "Cannot convert value into boolean from int64", "", sfstmt->sfqid);
+                status = SF_STATUS_ERROR_INVALID_CONVERSION;
+                goto cleanup;
             }
             if ((int_val == SF_INT64_MAX || int_val == SF_INT64_MIN) && errno == ERANGE) {
-                return SF_STATUS_ERROR_OUT_OF_RANGE;
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                         "Value out of range for int64. Cannot convert value into boolean", "", sfstmt->sfqid);
+                status = SF_STATUS_ERROR_OUT_OF_RANGE;
+                goto cleanup;
             }
             // Determine if true or false
             value = (int_val == 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
@@ -1908,18 +1933,27 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *stmt, int idx, sf_bool *v
             }
             break;
         default:
-            return SF_STATUS_ERROR_INVALID_CONVERSION;
+            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                     "No valid conversion to boolean from data type", "", sfstmt->sfqid);
+            status = SF_STATUS_ERROR_INVALID_CONVERSION;
+            goto cleanup;
     }
+
+cleanup:
     *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *stmt, int idx, uint8 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
@@ -1927,19 +1961,23 @@ SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *stmt, int idx, uint8 *value
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *stmt, int idx, uint32 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
-    // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
-    uint32 value = 0;
+    // Get column
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+    uint64 value = 0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -1947,29 +1985,42 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *stmt, int idx, uint32 *val
     value = strtoul(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into uint32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
-    if ((value == SF_UINT32_MAX || value == 0) && errno == ERANGE) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    if (((value == ULONG_MAX || value == 0) && errno == ERANGE) || value > SF_UINT32_MAX) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for uint32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
-    *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
+    *value_ptr = (uint32) value;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *stmt, int idx, uint64 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     uint64 value = 0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -1977,22 +2028,35 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *stmt, int idx, uint64 *val
     value = strtoull(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into uint64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
     if ((value == SF_UINT64_MAX || value == 0) && errno == ERANGE) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for uint64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
     *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *stmt, int idx, int8 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
@@ -2000,19 +2064,23 @@ SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *stmt, int idx, int8 *value_p
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *stmt, int idx, int32 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     int64 value = 0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = (int32) value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -2020,29 +2088,42 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *stmt, int idx, int32 *value
     value = strtol(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into int32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
     if (((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) || (value > SF_INT32_MAX || value < SF_INT32_MIN)) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for int32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
     *value_ptr = (int32) value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *stmt, int idx, int64 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     int64 value = 0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -2050,29 +2131,42 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *stmt, int idx, int64 *value
     value = strtoll(column->valuestring, &endptr, 10);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into int64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
     if ((value == SF_INT64_MAX || value == SF_INT64_MIN) && errno == ERANGE) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for int64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
     *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *stmt, int idx, float32 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     float32 value = 0.0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -2080,29 +2174,42 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *stmt, int idx, float32 *v
     value = strtof(column->valuestring, &endptr);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into float32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
     if (errno == ERANGE || value == INFINITY || value == -INFINITY) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for float32", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
     *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *stmt, int idx, float64 *value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     float64 value = 0.0;
     if (snowflake_cJSON_IsNull(column)) {
-        *value_ptr = value;
-        return SF_STATUS_SUCCESS;
+        status = SF_STATUS_SUCCESS;
+        goto cleanup;
     }
 
     char *endptr;
@@ -2110,22 +2217,35 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *stmt, int idx, float64 *v
     value = strtod(column->valuestring, &endptr);
     // Check for errors
     if (endptr == column->valuestring) {
-        return SF_STATUS_ERROR_INVALID_CONVERSION;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_INVALID_CONVERSION,
+                                 "Cannot convert value into float64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_INVALID_CONVERSION;
+        goto cleanup;
     }
     if (errno == ERANGE || value == INFINITY || value == -INFINITY) {
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_RANGE,
+                                 "Value out of range for float64", "", sfstmt->sfqid);
+        status = SF_STATUS_ERROR_OUT_OF_RANGE;
+        goto cleanup;
     }
     // Everything checks out, set value and return success
+    status = SF_STATUS_SUCCESS;
+
+cleanup:
     *value_ptr = value;
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *stmt, int idx, const char **value_ptr) {
+SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
@@ -2134,12 +2254,16 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *stmt, int idx, const ch
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_ptr, size_t *value_len_ptr) {
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
@@ -2147,6 +2271,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
     size_t value_len = 0;
 
     if (snowflake_cJSON_IsNull(column)) {
+        status = SF_STATUS_SUCCESS;
         goto cleanup;
     }
 
@@ -2155,7 +2280,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
     struct tm *tm_ptr;
     memset(&tm_obj, 0, sizeof(tm_obj));
 
-    switch (stmt->desc[idx - 1].type) {
+    switch (sfstmt->desc[idx - 1].type) {
         case SF_DB_TYPE_BOOLEAN:
             if (strcmp(column->valuestring, "0") == 0) {
                 /* False */
@@ -2177,10 +2302,11 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
             tm_ptr = sf_gmtime(&sec, &tm_obj);
             _mutex_unlock(&gmlocaltime_lock);
             if (tm_ptr == NULL) {
-                SET_SNOWFLAKE_ERROR(&stmt->error,
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
                                     SF_STATUS_ERROR_CONVERSION_FAILURE,
                                     "Failed to convert a date value to a string.",
-                                    SF_SQLSTATE_GENERAL_ERROR);
+                                    SF_SQLSTATE_GENERAL_ERROR,
+                                    sfstmt->sfqid);
                 value = NULL;
                 value_len = 0;
                 goto cleanup;
@@ -2195,14 +2321,15 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
             if (!_extract_timestamp_dynamic(
               &value,
               &value_len,
-              stmt->desc[idx - 1].type,
+              sfstmt->desc[idx - 1].type,
               column->valuestring,
-              stmt->connection->timezone,
-              stmt->desc[idx - 1].scale)) {
-                SET_SNOWFLAKE_ERROR(&stmt->error,
+              sfstmt->connection->timezone,
+              sfstmt->desc[idx - 1].scale)) {
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
                                     SF_STATUS_ERROR_CONVERSION_FAILURE,
                                     "Failed to convert a timestamp value to a string.",
-                                    SF_SQLSTATE_GENERAL_ERROR);
+                                    SF_SQLSTATE_GENERAL_ERROR,
+                                    sfstmt->sfqid);
                 value = NULL;
                 value_len = 0;
                 goto cleanup;
@@ -2215,38 +2342,49 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *stmt, int idx, char **value_p
             break;
     }
 
+    // Everything went okay
+    status = SF_STATUS_SUCCESS;
+
 cleanup:
     *value_ptr = value;
     if (value_len_ptr) {
         *value_len_ptr = value_len;
     }
-    return SF_STATUS_SUCCESS;
+    return status;
 }
 
-SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *stmt, int idx, size_t *value_ptr) {
+SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
     if (snowflake_cJSON_IsNull(column)) {
         *value_ptr = 0;
     } else {
-        *value_ptr = strlen(snowflake_cJSON_GetArrayItem(stmt->cur_row, idx - 1)->valuestring);
+        *value_ptr = strlen(snowflake_cJSON_GetArrayItem(sfstmt->cur_row, idx - 1)->valuestring);
     }
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *stmt, int idx, sf_bool *value_ptr) {
+SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
     // Get column
-    if ((status = _snowflake_get_column(stmt, idx, &column)) != SF_STATUS_SUCCESS) {
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
         return status;
     }
 
