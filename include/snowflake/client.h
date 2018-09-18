@@ -356,18 +356,14 @@ typedef struct {
 } SF_BIND_INPUT;
 
 /**
- * Bind output parameter context
+ *
  */
- // TODO Remove
-//typedef struct {
-//    size_t idx; /* One based index of the columns */
-//    SF_C_TYPE c_type; /* expected data type in C */
-//    size_t max_length; /* maximum buffer size provided by application */
-//    void *value; /* input and output: buffer to stoare a value */
-//    size_t len; /* output: actual value length */
-//    sf_bool is_null; /* output: SF_BOOLEAN_TRUE if is null else SF_BOOLEAN_FALSE */
-//} SF_BIND_OUTPUT;
-
+typedef struct SF_USER_MEM_HOOKS {
+    void *(*alloc_fn)(size_t size);
+    void (*dealloc_fn)(void *ptr);
+    void *(*realloc_fn)(void *ptr, size_t size);
+    void *(*calloc_fn)(size_t nitems, size_t size);
+} SF_USER_MEM_HOOKS;
 
 /**
  * Global Snowflake initialization.
@@ -375,7 +371,7 @@ typedef struct {
  * @return 0 if successful, errno otherwise
  */
 SF_STATUS STDCALL
-snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level);
+snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks);
 
 /**
  * Global Snowflake cleanup.

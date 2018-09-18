@@ -11,7 +11,7 @@ char PERFORMANCE_TEST_RESULTS_PATH[4096];
 
 void initialize_test(sf_bool debug) {
     // default location and the maximum logging
-    snowflake_global_init(NULL, SF_LOG_TRACE);
+    snowflake_global_init(NULL, SF_LOG_TRACE, NULL);
 
     snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
     snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
