@@ -25,7 +25,7 @@ typedef struct SF_INTERNAL_MEM_HOOKS {
     void *(*calloc)(size_t nitems, size_t size);
 } SF_INTERNAL_MEM_HOOKS;
 
-static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc};
+static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc, calloc};
 
 void sf_memory_init();
 void sf_memory_term();
