@@ -6,7 +6,7 @@
 #include "utils/test_setup.h"
 
 const char *COL_EVAL_QUERY = "select seq4(), seq4(), seq4(), seq4(), seq4(), seq4() from table(generator(rowcount=>4000));";
-const size_t NUM_COLS = 6;
+const int NUM_COLS = 6;
 const int NUM_ROWS = 4000;
 
 void test_eval_all_cols(void **unused) {
@@ -18,23 +18,17 @@ void test_eval_all_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
     // Configure result binding and bind
-    SF_BIND_OUTPUT columns[NUM_COLS];
     int64 out[NUM_COLS];
-    
-    for (size_t i = 0; i < NUM_COLS; i++) {
-        columns[i].idx = i + 1;
-        columns[i].c_type = SF_C_TYPE_INT64;
-        columns[i].value = (void *) &out[i];
-        columns[i].max_length = sizeof(out[i]);
-    }
-    snowflake_bind_result_array(sfstmt, columns, NUM_COLS);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        for (int i = 0; i < NUM_COLS; i++) {
+            snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
+        }
         fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
     }
 
@@ -56,26 +50,23 @@ void test_eval_half_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
     // Configure result binding and bind
-    SF_BIND_OUTPUT columns[NUM_COLS];
     int64 out[NUM_COLS];
-
-    for (size_t i = 0; i < NUM_COLS; i++) {
-        columns[i].idx = i + 1;
-        columns[i].c_type = SF_C_TYPE_INT64;
-        columns[i].value = (void *) &out[i];
-        columns[i].max_length = sizeof(out[i]);
-    }
-    snowflake_bind_result_array(sfstmt, columns, NUM_COLS);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         if (sfstmt->total_row_index % 2) {
+            for (int i = 0; i < 3; i++) {
+                snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
+            }
             fprintf(dev_null, "%lli, %lli, %lli", out[0], out[1], out[2]);
         } else {
+            for (int i = 3; i < NUM_COLS; i++) {
+                snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
+            }
             fprintf(dev_null, "%lli, %lli, %lli", out[3], out[4], out[5]);
         }
     }
@@ -98,24 +89,18 @@ void test_skip_rows_half(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
     // Configure result binding and bind
-    SF_BIND_OUTPUT columns[NUM_COLS];
     int64 out[NUM_COLS];
-
-    for (size_t i = 0; i < NUM_COLS; i++) {
-        columns[i].idx = i + 1;
-        columns[i].c_type = SF_C_TYPE_INT64;
-        columns[i].value = (void *) &out[i];
-        columns[i].max_length = sizeof(out[i]);
-    }
-    snowflake_bind_result_array(sfstmt, columns, NUM_COLS);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         if (sfstmt->total_row_index % 2) {
+            for (int i = 0; i < NUM_COLS; i++) {
+                snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
+            }
             fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
         }
     }
@@ -138,23 +123,18 @@ void test_skip_all_rows(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 
     // Configure result binding and bind
-    SF_BIND_OUTPUT columns[NUM_COLS];
     int64 out[NUM_COLS];
 
-    for (size_t i = 0; i < NUM_COLS; i++) {
-        columns[i].idx = i + 1;
-        columns[i].c_type = SF_C_TYPE_INT64;
-        columns[i].value = (void *) &out[i];
-        columns[i].max_length = sizeof(out[i]);
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        for (int i = 0; i < NUM_COLS; i++) {
+            snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
+        }
     }
-    snowflake_bind_result_array(sfstmt, columns, NUM_COLS);
-
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {}
 
     clock_gettime(clk_id, &end);
 
@@ -174,7 +154,7 @@ void test_skip_all_rows_no_bind(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     clock_gettime(clk_id, &begin);
 

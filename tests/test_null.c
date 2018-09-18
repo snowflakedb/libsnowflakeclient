@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 #include <string.h>
+#include <assert.h>
 #include "utils/test_setup.h"
 
 
@@ -22,7 +23,7 @@ typedef struct test_case_to_string {
 
 void test_null(void **unused) {
     TEST_CASE_TO_STRING test_cases[] = {
-      {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c2out = "", .c2_is_null = SF_BOOLEAN_TRUE, .c3out="", .c3_is_null=SF_BOOLEAN_TRUE, .c4out= "", .c4_is_null = SF_BOOLEAN_TRUE}
+      {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c2out = NULL, .c2_is_null = SF_BOOLEAN_TRUE, .c3out=NULL, .c3_is_null=SF_BOOLEAN_TRUE, .c4out= NULL, .c4_is_null = SF_BOOLEAN_TRUE}
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -118,69 +119,27 @@ void test_null(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c1 = {0};
-    char c1buf[1024];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) c1buf;
-    c1.len = sizeof(c1buf);
-    c1.max_length = sizeof(c1buf);
-    status = snowflake_bind_result(sfstmt, &c1);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1024];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.len = sizeof(c2buf);
-    c2.max_length = sizeof(c2buf);
-    status = snowflake_bind_result(sfstmt, &c2);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c3 = {0};
-    char c3buf[1024];
-    c3.idx = 3;
-    c3.c_type = SF_C_TYPE_INT64;
-    c3.value = (void *) c3buf;
-    c3.len = sizeof(c3buf);
-    c3.max_length = sizeof(c3buf);
-    status = snowflake_bind_result(sfstmt, &c3);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c4 = {0};
-    char c4buf[1024];
-    c4.idx = 4;
-    c4.c_type = SF_C_TYPE_BOOLEAN;
-    c4.value = (void *) c4buf;
-    c4.len = sizeof(c4buf);
-    c4.max_length = sizeof(c4buf);
-    status = snowflake_bind_result(sfstmt, &c4);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt),
                      sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING));
 
+    sf_bool is_null = SF_BOOLEAN_FALSE;
+    int64 c1 = 0;
+    char *null_val = NULL;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        TEST_CASE_TO_STRING v = test_cases[atoll(c1.value) - 1];
-        assert_true(v.c2_is_null == c2.is_null);
-        assert_string_equal(v.c2out, c2.value);
-        assert_true(v.c3_is_null == c3.is_null);
-        assert_string_equal(v.c3out, c3.value);
-        assert_true(v.c4_is_null == c4.is_null);
-        assert_string_equal(v.c4out, c4.value);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        TEST_CASE_TO_STRING v = test_cases[c1 - 1];
+        snowflake_column_is_null(sfstmt, 2, &is_null);
+        snowflake_column_as_str(sfstmt, 2, &null_val, NULL);
+        assert_true(v.c2_is_null == is_null);
+        assert(v.c2out == null_val);
+        snowflake_column_is_null(sfstmt, 3, &is_null);
+        snowflake_column_as_str(sfstmt, 3, &null_val, NULL);
+        assert_true(v.c3_is_null == is_null);
+        assert(v.c3out == null_val);
+        snowflake_column_is_null(sfstmt, 4, &is_null);
+        snowflake_column_as_str(sfstmt, 4, &null_val, NULL);
+        assert_true(v.c4_is_null == is_null);
+        assert(v.c4out == null_val);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

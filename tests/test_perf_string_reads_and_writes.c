@@ -29,23 +29,15 @@ void test_col_string_read_fixed_size(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
 
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    char out[STRING_FIELD_FIXED_SIZE];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        if ((len = strlen(out)) != STRING_FIELD_FIXED_SIZE - 1) {
+        snowflake_column_strlen(sfstmt, 1, &len);
+        if (len != STRING_FIELD_FIXED_SIZE - 1) {
             fail_msg("Query in %s should have a text field with %i characters, instead has %zd", "test_col_string_read_fixed_size", STRING_FIELD_FIXED_SIZE - 1, len);
         }
     }
@@ -65,28 +57,25 @@ void test_col_string_manipulate_fixed_size(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    col_conv_setup(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
 
     // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    char out[STRING_FIELD_MAX_SIZE];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
+    char *out = NULL;
 
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Convert string to lowercase then discard
+        snowflake_column_as_str(sfstmt, 1, &out, NULL);
         char *p = out;
         while (*p) {
             *p = (char) tolower(*p);
             p++;
         }
+        free(out);
+        out = NULL;
     }
 
     clock_gettime(clk_id, &end);
@@ -105,29 +94,21 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Randomly select string size based on provided gen seed
-    col_conv_setup(&sf, &sfstmt, "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
+    setup_and_run_query(&sf, &sfstmt,
+                        "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
 
     int row = 0;
-    // Configure result binding and bind
-    SF_BIND_OUTPUT c1 = {0};
-    // Use max buffer size since we have to assume the largest buffer size for each row
-    char out[STRING_FIELD_MAX_SIZE];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) &out;
-    c1.max_length = sizeof(out);
-    snowflake_bind_result(sfstmt, &c1);
-
     // Create array of char pointers to hold dynamically created buffers
     char *out_buff[NUM_ROWS];
-    size_t len;
+    char *out = NULL;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Create dynamic buffer and copy over
-        out_buff[row] = (char *) malloc(c1.len + 1);
-        strncpy(out_buff[row], out, c1.len + 1);
+        snowflake_column_as_str(sfstmt, 1, &out, NULL);
+        out_buff[row] = out;
+        out = NULL;
         row++;
     }
 
@@ -158,46 +139,32 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     }
 
     // Get all public domain books. Sort by text_part_id to ensure that you concatenate book in right order
-    col_conv_setup(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
+    setup_and_run_query(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
     // Begin timing
     clock_gettime(clk_id, &begin);
 
     int row = 0;
-    // Configure result binding and bind
-    SF_BIND_OUTPUT columns[3];
-
     // Store ID to use as array index
-    int64 id;
-    columns[0].idx = 1;
-    columns[0].c_type = SF_C_TYPE_INT64;
-    columns[0].value = (void *) &id;
-    columns[0].max_length = sizeof(id);
-    snowflake_bind_result(sfstmt, &columns[0]);
+    int64 id = 0;
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char *title = calloc(1, STRING_FIELD_MAX_SIZE + 1);
-    columns[1].idx = 2;
-    columns[1].c_type = SF_C_TYPE_STRING;
-    columns[1].value = (void *) title;
-    columns[1].max_length = STRING_FIELD_MAX_SIZE + 1;
-    snowflake_bind_result(sfstmt, &columns[1]);
+    char *title = NULL;
     // Use max buffer size since we have to assume the largest buffer size for each row of text
-    char *text = calloc(1, STRING_FIELD_MAX_SIZE + 1);
-    columns[2].idx = 3;
-    columns[2].c_type = SF_C_TYPE_STRING;
-    columns[2].value = (void *) text;
-    columns[2].max_length = STRING_FIELD_MAX_SIZE + 1;
-    snowflake_bind_result(sfstmt, &columns[2]);
+    const char *text = NULL;
+    size_t text_len = 0;
 
     while (snowflake_fetch(sfstmt) == SF_STATUS_SUCCESS) {
         // Set title if NULL
         if (!books[id].title) {
-            books[id].title = (char *) malloc(columns[1].len + 1);
-            strncpy(books[id].title, title, columns[1].len + 1);
+            snowflake_column_as_str(sfstmt, 2, &title, NULL);
+            books[id].title = title;
+            title = NULL;
         }
         // Copy text into the right buffer
-        books[id].text = (char *) realloc(books[id].text, columns[2].len + books[id].text_len + 1);
-        memcpy(&books[id].text[books[id].text_len], text, columns[2].len);
-        books[id].text_len += columns[2].len;
+        snowflake_column_as_const_str(sfstmt, 3, &text);
+        snowflake_column_strlen(sfstmt, 3, &text_len);
+        books[id].text = (char *) realloc(books[id].text, text_len + books[id].text_len + 1);
+        memcpy(&books[id].text[books[id].text_len], text, text_len);
+        books[id].text_len += text_len;
         books[id].text[books[id].text_len] = '\0';
     }
 
@@ -217,8 +184,9 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
         }
     }
 
-    free(title);
-    free(text);
+    if (title) {
+        free(title);
+    }
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

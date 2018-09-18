@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
  */
 #include <string.h>
+#include <assert.h>
 #include "utils/test_setup.h"
 
 
@@ -115,64 +116,34 @@ void test_number(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c1 = {0};
-    char c1buf[1024];
-    c1.idx = 1;
-    c1.c_type = SF_C_TYPE_STRING;
-    c1.value = (void *) c1buf;
-    c1.len = sizeof(c1buf);
-    c1.max_length = sizeof(c1buf);
-    status = snowflake_bind_result(sfstmt, &c1);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c2 = {0};
-    char c2buf[1024];
-    c2.idx = 2;
-    c2.c_type = SF_C_TYPE_STRING;
-    c2.value = (void *) c2buf;
-    c2.len = sizeof(c2buf);
-    c2.max_length = sizeof(c2buf);
-    status = snowflake_bind_result(sfstmt, &c2);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c3 = {0};
-    char c3buf[1024];
-    c3.idx = 3;
-    c3.c_type = SF_C_TYPE_STRING;
-    c3.value = (void *) c3buf;
-    c3.max_length = sizeof(c3buf);
-    status = snowflake_bind_result(sfstmt, &c3);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT c4 = {0};
-    char c4buf[1024];
-    c4.idx = 4;
-    c4.c_type = SF_C_TYPE_STRING;
-    c4.value = (void *) c4buf;
-    c4.max_length = sizeof(c4buf);
-    status = snowflake_bind_result(sfstmt, &c4);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt),
                      sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING));
 
+    int64 c1 = 0;
+    char *str = NULL;
+    int64 int_val = 0;
+    float64 float_val = 0.0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        TEST_CASE_TO_STRING v = test_cases[atoll(c1.value) - 1];
-        assert_string_equal(v.c2out, c2.value);
-        assert_string_equal(v.c3out, c3.value);
-        assert_string_equal(v.c4out, c4.value);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        TEST_CASE_TO_STRING v = test_cases[c1 - 1];
+        snowflake_column_as_float64(sfstmt, 2, &float_val);
+        snowflake_column_as_str(sfstmt, 2, &str, NULL);
+        assert(float_val = v.c2in);
+        assert_string_equal(v.c2out, str);
+        free(str);
+        str = NULL;
+        snowflake_column_as_int64(sfstmt, 3, &int_val);
+        snowflake_column_as_str(sfstmt, 3, &str, NULL);
+        assert(int_val = v.c3in);
+        assert_string_equal(v.c3out, str);
+        free(str);
+        str = NULL;
+        snowflake_column_as_float64(sfstmt, 4, &float_val);
+        snowflake_column_as_str(sfstmt, 4, &str, NULL);
+        assert(float_val = v.c4in);
+        assert_string_equal(v.c4out, str);
+        free(str);
+        str = NULL;
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));

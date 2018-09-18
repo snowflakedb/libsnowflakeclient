@@ -123,7 +123,10 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_CONNECTION_NOT_EXIST = 240016,
     SF_STATUS_ERROR_STATEMENT_NOT_EXIST = 240017,
     SF_STATUS_ERROR_CONVERSION_FAILURE = 240018,
-
+    SF_STATUS_ERROR_OUT_OF_BOUNDS = 240019,
+    SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW = 240020,
+    SF_STATUS_ERROR_OUT_OF_RANGE = 240021,
+    SF_STATUS_ERROR_NULL_POINTER = 240022,
 } SF_STATUS;
 
 /**
@@ -322,12 +325,12 @@ typedef struct SF_STMT {
     SF_CONNECT *connection;
     char *sql_text;
     void *raw_results;
+    void *cur_row;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
     int64 total_row_index;
     void *params;
-    void *results;
     SF_COLUMN_DESC *desc;
     void *stmt_attrs;
     sf_bool is_dml;
@@ -353,17 +356,14 @@ typedef struct {
 } SF_BIND_INPUT;
 
 /**
- * Bind output parameter context
+ *
  */
-typedef struct {
-    size_t idx; /* One based index of the columns */
-    SF_C_TYPE c_type; /* expected data type in C */
-    size_t max_length; /* maximum buffer size provided by application */
-    void *value; /* input and output: buffer to stoare a value */
-    size_t len; /* output: actual value length */
-    sf_bool is_null; /* output: SF_BOOLEAN_TRUE if is null else SF_BOOLEAN_FALSE */
-} SF_BIND_OUTPUT;
-
+typedef struct SF_USER_MEM_HOOKS {
+    void *(*alloc_fn)(size_t size);
+    void (*dealloc_fn)(void *ptr);
+    void *(*realloc_fn)(void *ptr, size_t size);
+    void *(*calloc_fn)(size_t nitems, size_t size);
+} SF_USER_MEM_HOOKS;
 
 /**
  * Global Snowflake initialization.
@@ -371,7 +371,7 @@ typedef struct {
  * @return 0 if successful, errno otherwise
  */
 SF_STATUS STDCALL
-snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level);
+snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks);
 
 /**
  * Global Snowflake cleanup.
@@ -535,7 +535,7 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of rows.
  */
-uint64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
+int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
 
 /**
  * Returns the number of fields in the result set.
@@ -543,7 +543,7 @@ uint64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of fields.
  */
-uint64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
+int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
 
 /**
  * Returns a SQLState for the result set.
@@ -641,27 +641,6 @@ SF_STATUS snowflake_bind_param_array(
     SF_STMT *sfstmt, SF_BIND_INPUT *sfbind_array, size_t size);
 
 /**
- * Binds buffers with the statement for result set processing.
- *
- * @param sfstmt SNOWFLAKE_STMT context.
- * @param sfbind_array SNOWFLAKE_BIND_OUTPUT context array.
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL snowflake_bind_result(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind);
-
-/**
- * Binds an array of buffers with the statement for result set processing.
- *
- * @param sfstmt SF_STMT context.
- * @param sfbind_array SF_BIND_OUTPUT array of result buffers.
- * @param size size_t size of the result buffer array (sfbind_array).
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS snowflake_bind_result_array(
-    SF_STMT *sfstmt, SF_BIND_OUTPUT *sfbind_array, size_t size);
-
-/**
  * Returns a query id associated with the statement after execution. If not
  * executed, NULL is returned.
  *
@@ -692,6 +671,148 @@ const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_check_connection_parameters(SF_CONNECT *sf);
+
+/**
+ * Converts a column in the current row into a boolean value (if a valid conversion exists).
+ * A NULL column will evaluate to false.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
+
+/**
+ * Stores the first character of the column in a uint8 variable. A NULL column will evaluate to 0
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *value_ptr);
+
+/**
+ * Converts a column in the current row into a uint32 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *value_ptr);
+
+/**
+ * Converts a column in the current row into a uint64 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *value_ptr);
+
+/**
+ * Stores the first character of the column in a int8 variable. A NULL column will evaluate to 0
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value_ptr);
+
+/**
+ * Converts a column in the current row into a int32 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *value_ptr);
+
+/**
+ * Converts a column in the current row into a int64 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *value_ptr);
+
+/**
+ * Converts a column in the current row into a float32 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 *value_ptr);
+
+/**
+ * Converts a column in the current row into a float64 value (if a valid conversion exists).
+ * A NULL column will evaluate to 0.0.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr);
+
+/**
+ * Returns the raw column data in the form of a const char pointer that the user can then use
+ * to read the string data or copy to another buffer. A NULL column will return a NULL pointer
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Raw column data is stored in this pointer
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr);
+
+/**
+ * Allocates a new string buffer to store the result and stores that buffer address in value_ptr.
+ * The user must pass this buffer to free() once they are done using it, this memory is NOT freed by the library.
+ * Buffer pointed to by value_ptr will not be free'd by the library.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Copied Column data is stored in this pointer (if conversion was successful)
+ * @param value_len_ptr
+ * @return
+ */
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr);
+
+/**
+ * Returns the length of the raw column data
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Pointer to the length of the raw column data
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr);
+
+/**
+ * Returns whether or not the column data is null
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Column's NULL status is stored in this pointer
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
+
 
 #ifdef  __cplusplus
 }

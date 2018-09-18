@@ -13,7 +13,6 @@ SET(TESTS_C
         test_connect
         test_connect_negative
         test_bind_params
-        test_bind_results
         test_change_current
         test_select1
         test_check_ctypes
@@ -34,7 +33,8 @@ SET(TESTS_C
         test_timestamp_tz
         test_timezone
         test_adjust_fetch_data
-        test_issue_76)
+        test_issue_76
+        test_column_fetch)
 
 SET(TESTS_CXX
         test_unit_jwt

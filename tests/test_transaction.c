@@ -109,19 +109,7 @@ void test_transaction(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    SF_BIND_OUTPUT v1 = {0};
-
-    v1.idx = 1;
-    v1.c_type = SF_C_TYPE_INT64;
-    v1.value = &v;
-    v1.max_length = sizeof(v1);
-    status = snowflake_bind_result(sfstmt, &v1);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
+    
     status = snowflake_fetch(sfstmt);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
@@ -142,7 +130,6 @@ void test_transaction(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    status = snowflake_bind_result(sfstmt, &v1);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
@@ -153,6 +140,7 @@ void test_transaction(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_column_as_int64(sfstmt, 1, &v);
     assert_int_equal(v, 3);
 
     status = snowflake_query(

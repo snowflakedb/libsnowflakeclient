@@ -95,21 +95,12 @@ void test_parallel_upload_download_core(int fileNumber)
   ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  char out_c2[7];
-  SF_BIND_OUTPUT c2;
-  c2.idx = 2;
-  c2.c_type = SF_C_TYPE_STRING;
-  c2.max_length = sizeof(out_c2);
-  c2.value = (void *) out_c2;
-  c2.len = sizeof(out_c2);
-
-  ret = snowflake_bind_result(sfstmt, &c2);
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
-
   assert_int_equal(snowflake_num_rows(sfstmt), fileNumber);
-
+  
+  const char *c2 = nullptr;
   while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-    assert_string_equal((char *) c2.value, "LOADED");
+    snowflake_column_as_const_str(sfstmt, 2, &c2);
+    assert_string_equal(c2, "LOADED");
   }
   assert_int_equal(status, SF_STATUS_EOF);
 
