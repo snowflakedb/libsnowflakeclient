@@ -367,6 +367,42 @@ cleanup:
     return ret;
 }
 
+void STDCALL _snowflake_memory_hooks_setup(SF_USER_MEM_HOOKS *hooks) {
+    if (hooks == NULL)
+    {
+        /* Reset hooks */
+        global_hooks.alloc = malloc;
+        global_hooks.dealloc = free;
+        global_hooks.realloc = realloc;
+        global_hooks.calloc = calloc;
+        return;
+    }
+
+    global_hooks.alloc = malloc;
+    if (hooks->alloc_fn != NULL)
+    {
+        global_hooks.alloc = hooks->alloc_fn;
+    }
+
+    global_hooks.dealloc = free;
+    if (hooks->dealloc_fn != NULL)
+    {
+        global_hooks.dealloc = hooks->dealloc_fn;
+    }
+
+    global_hooks.realloc = realloc;
+    if (hooks->realloc_fn != NULL)
+    {
+        global_hooks.realloc = hooks->realloc_fn;
+    }
+
+    global_hooks.calloc = calloc;
+    if (hooks->calloc_fn != NULL)
+    {
+        global_hooks.calloc = hooks->calloc_fn;
+    }
+}
+
 /*
  * Initializes logging file
  */
@@ -560,7 +596,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
 
 SF_STATUS STDCALL snowflake_global_init(
-    const char *log_path, SF_LOG_LEVEL log_level) {
+    const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks) {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
 
     // Initialize constants
@@ -569,6 +605,7 @@ SF_STATUS STDCALL snowflake_global_init(
     SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
     DEBUG = SF_BOOLEAN_FALSE;
 
+    _snowflake_memory_hooks_setup(hooks);
     sf_memory_init();
     sf_error_init();
     if (!log_init(log_path, log_level)) {
@@ -2293,12 +2330,12 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
             if (strcmp(column->valuestring, "0") == 0) {
                 /* False */
                 value_len = strlen(SF_BOOLEAN_FALSE_STR);
-                value = calloc(1, value_len + 1);
+                value = global_hooks.calloc(1, value_len + 1);
                 strncpy(value, SF_BOOLEAN_FALSE_STR, value_len + 1);
             } else {
                 /* True */
                 value_len = strlen(SF_BOOLEAN_TRUE_STR);
-                value = calloc(1, value_len + 1);
+                value = global_hooks.calloc(1, value_len + 1);
                 strncpy(value, SF_BOOLEAN_TRUE_STR, value_len + 1);
             }
             break;
@@ -2319,7 +2356,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 value_len = 0;
                 goto cleanup;
             }
-            value = calloc(1, 13);
+            value = global_hooks.calloc(1, 13);
             value_len = strftime(value, 13, "%Y-%m-%d", &tm_obj);
             break;
         case SF_DB_TYPE_TIME:
@@ -2345,7 +2382,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
             break;
         default:
             value_len = strlen(column->valuestring);
-            value = calloc(1, value_len + 1);
+            value = global_hooks.calloc(1, value_len + 1);
             strncpy(value, column->valuestring, value_len + 1);
             break;
     }
