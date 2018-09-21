@@ -150,11 +150,6 @@ private:
   }
 };
 
-inline std::string removePadding(const std::string &origin)
-{
-
-}
-
 static std::shared_ptr<Base64TestcaseI> testcasesPadding[] = {
   std::make_shared<Base64TestcaseStr>("eoqwiroiqnweropiqnweorinqwoepir",
                                       "ZW9xd2lyb2lxbndlcm9waXFud2VvcmlucXdvZXBpcg=="),
