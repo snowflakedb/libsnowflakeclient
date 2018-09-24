@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+#include <time.h>
 #include "basic_types.h"
 #include "platform.h"
 #include "version.h"
@@ -127,6 +128,7 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW = 240020,
     SF_STATUS_ERROR_OUT_OF_RANGE = 240021,
     SF_STATUS_ERROR_NULL_POINTER = 240022,
+    SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
 } SF_STATUS;
 
 /**
@@ -364,6 +366,17 @@ typedef struct SF_USER_MEM_HOOKS {
     void *(*realloc_fn)(void *ptr, size_t size);
     void *(*calloc_fn)(size_t nitems, size_t size);
 } SF_USER_MEM_HOOKS;
+
+/**
+ * Timestamp type that can represent any Snowflake DB Datetime/Timestamp type
+ */
+typedef struct SF_TIMESTAMP {
+    struct tm tm_obj;
+    int32 nsec;
+    int32 tzoffset;
+    int32 scale;
+    SF_DB_TYPE ts_type;
+} SF_TIMESTAMP;
 
 /**
  * Global Snowflake initialization.
@@ -770,6 +783,17 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
 SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr);
 
 /**
+ * Converts a column in the current row into a SF_TIMESTAMP value (if a valid conversion exists).
+ * A NULL column will evaluate to the epoch.
+ *
+ * @param sfstmt SF_STMT context
+ * @param idx Column index
+ * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIMESTAMP *value_ptr);
+
+/**
  * Returns the raw column data in the form of a const char pointer that the user can then use
  * to read the string data or copy to another buffer. A NULL column will return a NULL pointer
  *
@@ -813,6 +837,155 @@ SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *valu
  */
 SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
 
+/**
+ *
+ * Start of timestamp functions
+ *
+ */
+
+/**
+ * Creates a SF_TIMESTAMP from parts. Does not do any validation to ensure that the
+ * timestamp created is a valid date other than ensure that the passed in value is within
+ * the range specified for each input field.
+ *
+ * @param ts Pointer to a timestamp object. All fields will be overwritten
+ * @param nanoseconds Number of nanoseconds in timestamp (0-999999999)
+ * @param seconds Number of seconds in timestamp (0-59)
+ * @param minutes Number of minutes in timestamp (0-59)
+ * @param hours Number of hours in timestamp (0-23)
+ * @param mday Day of the month (1-31)
+ * @param months Month number of the year (1-12)
+ * @param year Year using the Anno Domini dating system.
+ *             Negative values are assumed to be B.C. and
+ *             positive values are assumed to be A.D. (-99999 to 99999)
+ * @param tzoffset Timezone offset from UTC in minutes (0-1439)
+ * @return
+ */
+SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanoseconds, int32 seconds,
+                                                 int32 minutes, int32 hours, int32 mday, int32 months,
+                                                 int32 year, int32 tzoffset, int32 scale, SF_DB_TYPE ts_type);
+
+/**
+ *
+ * @param ts
+ * @param str
+ * @param timezone
+ * @param scale
+ * @param ts_type
+ * @return
+ */
+SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
+                                                         int32 scale, SF_DB_TYPE ts_type);
+
+/**
+ *
+ * @param ts
+ * @param fmt
+ * @param buffer_ptr
+ * @param buf_size
+ * @param bytes_written
+ * @param reallocate
+ * @return
+ */
+SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fmt, char **buffer_ptr,
+                                                size_t buf_size, size_t *bytes_written,
+                                                sf_bool reallocate);
+/**
+ * Gets seconds from the epoch from the given timestamp.
+ *
+ * @param ts Timestamp to get epoch seconds from
+ * @param epoch_time Pointer to store the number of seconds since the epoch
+ * @return 0 if success, otherwise an errno is returned
+ */
+SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, int32 *epoch_time);
+
+/**
+ * Extracts the part of the timestamp that contains the number of nanoseconds
+ *
+ * @param ts Timestamp to get nanoseconds from
+ * @return Returns -1 if ts is NULL, otherwise number of nanoseconds
+ */
+int32 STDCALL snowflake_timestamp_get_nanoseconds(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the number of seconds
+ *
+ * @param ts Timestamp to get seconds from
+ * @return Returns -1 if ts is NULL, otherwise number of seconds
+ */
+int32 STDCALL snowflake_timestamp_get_seconds(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the number of minutes
+ *
+ * @param ts Timestamp to get minutes from
+ * @return Returns -1 if ts is NULL, otherwise number of minutes
+ */
+int32 STDCALL snowflake_timestamp_get_minutes(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the number of hours
+ *
+ * @param ts Timestamp to get hours from
+ * @return Returns -1 if ts is NULL, otherwise number of hours
+ */
+int32 STDCALL snowflake_timestamp_get_hours(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the day of the week since Sunday
+ *
+ * @param ts Timestamp to get day of the week from
+ * @return Returns -1 if ts is NULL, otherwise day of the week since Sunday (0-6)
+ */
+int32 STDCALL snowflake_timestamp_get_wday(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the day of the month
+ *
+ * @param ts Timestamp to get day of the month from
+ * @return Returns -1 if ts is NULL, otherwise day of the month (1-31)
+ */
+int32 STDCALL snowflake_timestamp_get_mday(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the day of the year since January 1
+ *
+ * @param ts Timestamp to get day of the year from
+ * @return Returns -1 if ts is NULL, otherwise the day of the year since January 1 (0-365)
+ */
+int32 STDCALL snowflake_timestamp_get_yday(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the month of the year
+ *
+ * @param ts Timestamp to get month of the year from
+ * @return Returns -1 if ts is NULL, otherwise month of the year (1-12)
+ */
+int32 STDCALL snowflake_timestamp_get_month(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the year
+ *
+ * @param ts Timestamp to get the year from
+ * @return Returns -100000 if ts is NULL, otherwise the year
+ */
+int32 STDCALL snowflake_timestamp_get_year(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the timezone offset
+ *
+ * @param ts Timestamp to get timezone offset from
+ * @return Returns -1 if ts is NULL, otherwise the timezone offset (0-1439)
+ */
+int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
+
+/**
+ * Extracts the part of the timestamp that contains the scale
+ *
+ * @param ts Timestamp to get month of the year from
+ * @return Returns -1 if ts is NULL, otherwise scale from timestamp (0-9)
+ */
+int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
 
 #ifdef  __cplusplus
 }

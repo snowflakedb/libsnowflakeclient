@@ -254,7 +254,7 @@ static sf_bool _extract_timestamp_dynamic(
     // Add space for timezone if SF_DB_TYPE_TIMESTAMP_TZ is set
     max_len += (sftype == SF_DB_TYPE_TIMESTAMP_TZ) ? 7 : 0;
     // Allocate string buffer to store date using our calculated max length
-    value = SF_CALLOC(1, max_len);
+    value = global_hooks.calloc(1, max_len);
     len = strftime(value, max_len, fmt0, &tm_obj);
     if (scale > 0) {
         len += snprintf(
@@ -2281,6 +2281,40 @@ cleanup:
     return status;
 }
 
+SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIMESTAMP *value_ptr) {
+    SF_STATUS status;
+    cJSON *column = NULL;
+
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+    // Get column
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+    SF_DB_TYPE db_type = sfstmt->desc[idx - 1].type;
+    if (snowflake_cJSON_IsNull(column)) {
+        snowflake_timestamp_from_parts(value_ptr, 0, 0, 0, 0, 1, 1, 1970, 0, 9, SF_DB_TYPE_TIMESTAMP_NTZ);
+        return SF_STATUS_SUCCESS;
+    }
+
+    if (db_type == SF_DB_TYPE_DATE ||
+        db_type == SF_DB_TYPE_TIME ||
+        db_type == SF_DB_TYPE_TIMESTAMP_LTZ ||
+        db_type == SF_DB_TYPE_TIMESTAMP_NTZ ||
+        db_type == SF_DB_TYPE_TIMESTAMP_TZ) {
+        return snowflake_timestamp_from_epoch_seconds(value_ptr,
+                                                      column->valuestring,
+                                                      sfstmt->connection->timezone,
+                                                      (int32) sfstmt->desc[idx - 1].scale,
+                                                      db_type);
+    } else {
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
+}
+
 SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
@@ -2362,23 +2396,53 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
         case SF_DB_TYPE_TIME:
         case SF_DB_TYPE_TIMESTAMP_NTZ:
         case SF_DB_TYPE_TIMESTAMP_LTZ:
-        case SF_DB_TYPE_TIMESTAMP_TZ:
-            if (!_extract_timestamp_dynamic(
-              &value,
-              &value_len,
-              sfstmt->desc[idx - 1].type,
-              column->valuestring,
-              sfstmt->connection->timezone,
-              sfstmt->desc[idx - 1].scale)) {
+        case SF_DB_TYPE_TIMESTAMP_TZ: ;
+            SF_TIMESTAMP ts;
+            if (snowflake_timestamp_from_epoch_seconds(&ts,
+                                                        column->valuestring,
+                                                        sfstmt->connection->timezone,
+                                                        (int32) sfstmt->desc[idx - 1].scale,
+                                                        sfstmt->desc[idx - 1].type)) {
                 SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                    SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                    "Failed to convert a timestamp value to a string.",
-                                    SF_SQLSTATE_GENERAL_ERROR,
-                                    sfstmt->sfqid);
+                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                         "Failed to convert the response from the server into a SF_TIMESTAMP.",
+                                         SF_SQLSTATE_GENERAL_ERROR,
+                                         sfstmt->sfqid);
                 value = NULL;
                 value_len = 0;
                 goto cleanup;
             }
+            // TODO add format when format is no longer a fixed string
+            if (snowflake_timestamp_to_string(&ts, "", &value, 0, &value_len, SF_BOOLEAN_TRUE)) {
+                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                         "Failed to convert a SF_TIMESTAMP value to a string.",
+                                         SF_SQLSTATE_GENERAL_ERROR,
+                                         sfstmt->sfqid);
+                if (value) {
+                    global_hooks.dealloc(value);
+                    value = NULL;
+                }
+                value_len = 0;
+                goto cleanup;
+            }
+
+//            if (!_extract_timestamp_dynamic(
+//              &value,
+//              &value_len,
+//              sfstmt->desc[idx - 1].type,
+//              column->valuestring,
+//              sfstmt->connection->timezone,
+//              sfstmt->desc[idx - 1].scale)) {
+//                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+//                                    SF_STATUS_ERROR_CONVERSION_FAILURE,
+//                                    "Failed to convert a timestamp value to a string.",
+//                                    SF_SQLSTATE_GENERAL_ERROR,
+//                                    sfstmt->sfqid);
+//                value = NULL;
+//                value_len = 0;
+//                goto cleanup;
+//            }
             break;
         default:
             value_len = strlen(column->valuestring);
@@ -2437,3 +2501,325 @@ SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *va
 
     return SF_STATUS_SUCCESS;
 }
+
+SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanoseconds, int32 seconds,
+                                                 int32 minutes, int32 hours, int32 mday, int32 months,
+                                                 int32 year, int32 tzoffset, int32 scale, SF_DB_TYPE ts_type) {
+    if (!ts) {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+    memset(ts, 0, sizeof(*ts));
+
+    if (nanoseconds < 0 || nanoseconds > 999999999) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->nsec = nanoseconds;
+
+    if (seconds < 0 || seconds > 59) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_sec = seconds;
+
+    if (minutes < 0 || minutes > 59) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_min = minutes;
+
+    if (hours < 0 || hours > 23) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_hour = hours;
+
+    if (mday < 1 || mday > 31) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_mday = mday;
+
+    if (months < 1 || months > 12) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_mon = months - 1;
+
+    if (year < -99999 || year > 99999) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tm_obj.tm_year = year - 1900;
+
+    if (tzoffset < 0 || tzoffset > 1439) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->tzoffset = tzoffset;
+
+    if (scale < 0 || scale > 9) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->scale = scale;
+
+    if (ts_type != SF_DB_TYPE_DATE &&
+        ts_type != SF_DB_TYPE_TIME &&
+        ts_type != SF_DB_TYPE_TIMESTAMP_LTZ &&
+        ts_type != SF_DB_TYPE_TIMESTAMP_NTZ &&
+        ts_type != SF_DB_TYPE_TIMESTAMP_TZ) {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    ts->ts_type = ts_type;
+
+    // A call to mktime will automatically set wday and yday in the tm struct
+    // We don't care about the output
+    mktime(&ts->tm_obj);
+
+    // Everything went okay
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
+                                                         int32 scale, SF_DB_TYPE ts_type) {
+    if (!ts) {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
+    SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
+    time_t nsec = 0L;
+    time_t sec = 0L;
+    int64 tzoffset = 0;
+    struct tm *tm_ptr = NULL;
+    char tzname[64];
+    char *tzptr = (char *) timezone;
+
+    memset(&ts->tm_obj, 0, sizeof(ts->tm_obj));
+    ts->nsec = 0;
+    ts->scale = scale;
+    ts->ts_type = ts_type;
+    ts->tzoffset = 0;
+
+    /* Search for a decimal point */
+    char *ptr = strchr(str, (int) '.');
+    if (ptr == NULL) {
+        ret = SF_STATUS_ERROR_GENERAL;
+        goto cleanup;
+    }
+    sec = strtoll(str, NULL, 10);
+
+    /* Search for a space for TIMESTAMP_TZ */
+    char *sptr = strchr(ptr + 1, (int) ' ');
+    nsec = strtoll(ptr + 1, NULL, 10);
+    if (sptr != NULL) {
+        /* TIMESTAMP_TZ */
+        nsec = strtoll(ptr + 1, NULL, 10);
+        tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
+    }
+    // If timestamp is before the epoch, we have to do some
+    // math to make things work just right
+    if (sec < 0 && nsec > 0) {
+        nsec = pow10_int64[ts->scale] - nsec;
+        sec--;
+    }
+    log_info("sec: %lld, nsec: %lld", sec, nsec);
+    // Transform nsec to a 9 digit number to store in the timestamp struct
+    ts->nsec = (int32) (nsec * pow10_int64[9-ts->scale]);
+
+    if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
+        /* make up Timezone name from the tzoffset */
+        ldiv_t dm = ldiv((long) tzoffset, 60L);
+        sprintf(tzname, "UTC%c%02ld:%02ld",
+                dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
+        tzptr = tzname;
+        ts->tzoffset = (int32) tzoffset;
+    }
+
+    /* replace a dot character with NULL */
+    if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_NTZ ||
+      ts->ts_type == SF_DB_TYPE_TIME) {
+        tm_ptr = sf_gmtime(&sec, &ts->tm_obj);
+    } else if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_LTZ ||
+      ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
+        /* set the environment variable TZ to the session timezone
+         * so that localtime_tz honors it.
+         */
+        _mutex_lock(&gmlocaltime_lock);
+        const char *prev_tz_ptr = sf_getenv("TZ");
+        sf_setenv("TZ", tzptr);
+        sf_tzset();
+        sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
+        tm_ptr = sf_localtime(&sec, &ts->tm_obj);
+        if (prev_tz_ptr != NULL) {
+            sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
+        } else {
+            sf_unsetenv("TZ");
+        }
+        sf_tzset();
+        _mutex_unlock(&gmlocaltime_lock);
+    }
+    if (tm_ptr == NULL) {
+        ret = SF_STATUS_ERROR_GENERAL;
+        goto cleanup;
+    }
+
+
+    ret = SF_STATUS_SUCCESS;
+cleanup:
+    return ret;
+}
+
+
+SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fmt, char **buffer_ptr,
+                                                size_t buf_size, size_t *bytes_written,
+                                                sf_bool reallocate) {
+    SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
+    size_t len = 0;
+    if (!ts || !buffer_ptr) {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+    char *buffer = *buffer_ptr;
+
+    // Using a fixed format for now.
+    // TODO update to translate sql format to C date format instead of using fixed format.
+    const char *fmt0;
+    size_t max_len = 1;
+    if (ts->ts_type != SF_DB_TYPE_TIME) {
+        max_len += 21;
+        fmt0 = "%Y-%m-%d %H:%M:%S";
+    } else {
+        max_len += 8;
+        fmt0 = "%H:%M:%S";
+    }
+    /* adjust scale */
+    char fmt_static[20];
+    sprintf(fmt_static, ".%%0%dld", ts->scale);
+
+    // Add space for scale if scale is greater than 0
+    max_len += (ts->scale > 0) ? 1 + ts->scale : 0;
+    // Add space for timezone if SF_DB_TYPE_TIMESTAMP_TZ is set
+    max_len += (ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) ? 7 : 0;
+    // Allocate string buffer to store date using our calculated max length
+    if (max_len > buf_size || buffer == NULL) {
+        if (reallocate || buffer == NULL) {
+            buffer = global_hooks.realloc(buffer, max_len);
+            buf_size = max_len;
+        } else {
+            ret = SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+            goto cleanup;
+        }
+    }
+    len = strftime(buffer, buf_size, fmt0, &ts->tm_obj);
+    if (ts->scale > 0) {
+        int64 nsec = ts->nsec / pow10_int64[9-ts->scale];
+        len += snprintf(
+          &(buffer)[len],
+          max_len - len, fmt_static,
+          nsec);
+    }
+    if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
+        /* Timezone info */
+        ldiv_t dm = ldiv((long) ts->tzoffset, 60L);
+        len += snprintf(
+          &((char *) buffer)[len],
+          max_len - len,
+          " %c%02ld:%02ld",
+          dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
+    }
+
+    ret = SF_STATUS_SUCCESS;
+
+cleanup:
+    if (bytes_written) {
+        *bytes_written = len;
+    }
+    *buffer_ptr = buffer;
+    return ret;
+
+}
+
+
+
+SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, int32 *epoch_time_ptr) {
+    if (!ts) {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
+    int32 epoch_time_local = (int32) mktime(&ts->tm_obj);
+    // mktime takes into account tm_gmtoff which is a Linux and OS X ONLY field
+#if defined(__linux__) || defined(__APPLE__)
+    epoch_time_local += ts->tm_obj.tm_gmtoff;
+#endif
+    *epoch_time_ptr = epoch_time_local - ts->tzoffset;
+    return SF_STATUS_SUCCESS;
+}
+
+int32 STDCALL snowflake_timestamp_get_nanoseconds(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return -1;
+    }
+    return ts->nsec;
+}
+
+int32 STDCALL snowflake_timestamp_get_seconds(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_sec;
+}
+
+int32 STDCALL snowflake_timestamp_get_minutes(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_min;
+}
+
+int32 STDCALL snowflake_timestamp_get_hours(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_hour;
+}
+
+int32 STDCALL snowflake_timestamp_get_wday(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_wday;
+}
+
+int32 STDCALL snowflake_timestamp_get_mday(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_mday;
+}
+
+int32 STDCALL snowflake_timestamp_get_yday(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_yday;
+}
+
+int32 STDCALL snowflake_timestamp_get_month(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -1;
+    }
+    return ts->tm_obj.tm_mon + 1;
+}
+
+int32 STDCALL snowflake_timestamp_get_year(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return  -100000;
+    }
+    return ts->tm_obj.tm_year + 1900;
+}
+
+int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return -1;
+    }
+    return ts->tzoffset;
+}
+
+int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts) {
+    if (!ts) {
+        return -1;
+    }
+    return ts->scale;
+}
+

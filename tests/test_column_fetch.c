@@ -690,6 +690,85 @@ void test_column_as_float64(void **unused) {
     snowflake_term(sf);
 }
 
+void test_column_as_timestamp(void **unused) {
+    SF_STATUS status;
+    SF_CONNECT *sf = NULL;
+    SF_STMT *sfstmt = NULL;
+
+    // Setup connection, run query, and get results back
+    setup_and_run_query(&sf, &sfstmt, "select timestamp_ltz_from_parts(2018, 06, 01, 14, 40, 52, 968746000),"
+                                      "timestamp_ntz_from_parts(2018, 06, 01, 14, 40, 52, 968746000),"
+                                      "timestamp_tz_from_parts(2018, 06, 01, 14, 40, 52, 968746000), "
+                                      "NULL");
+
+    // Stores the result from the fetch operation
+    SF_TIMESTAMP out[4];
+
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        // Timestamp LTZ case
+        if (snowflake_column_as_timestamp(sfstmt, 1, &out[0])) {
+            dump_error(&(sfstmt->error));
+        }
+
+        // Timestamp NTZ case
+        if (snowflake_column_as_timestamp(sfstmt, 2, &out[1])) {
+            dump_error(&(sfstmt->error));
+        }
+
+        // Timestamp TZ case
+        if (snowflake_column_as_timestamp(sfstmt, 3, &out[2])) {
+            dump_error(&(sfstmt->error));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            assert_int_equal(2018, snowflake_timestamp_get_year(&out[i]));
+            assert_int_equal(6, snowflake_timestamp_get_month(&out[i]));
+            assert_int_equal(1, snowflake_timestamp_get_mday(&out[i]));
+            assert_int_equal(5, snowflake_timestamp_get_wday(&out[i]));
+            assert_int_equal(151, snowflake_timestamp_get_yday(&out[i]));
+            assert_int_equal(14, snowflake_timestamp_get_hours(&out[i]));
+            assert_int_equal(40, snowflake_timestamp_get_minutes(&out[i]));
+            assert_int_equal(52, snowflake_timestamp_get_seconds(&out[i]));
+            assert_int_equal(968746000, snowflake_timestamp_get_nanoseconds(&out[i]));
+            assert_int_equal(9, snowflake_timestamp_get_scale(&out[i]));
+            int32 epoch_time = 0;
+            snowflake_timestamp_get_epoch_seconds(&out[i], &epoch_time);
+            assert_int_equal(1527867652, epoch_time);
+        }
+
+        // NULL case, should be the epoch
+        if (snowflake_column_as_timestamp(sfstmt, 4, &out[3])) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(1970, snowflake_timestamp_get_year(&out[3]));
+        assert_int_equal(1, snowflake_timestamp_get_month(&out[3]));
+        assert_int_equal(1, snowflake_timestamp_get_mday(&out[3]));
+        assert_int_equal(0, snowflake_timestamp_get_hours(&out[3]));
+        assert_int_equal(0, snowflake_timestamp_get_minutes(&out[3]));
+        assert_int_equal(0, snowflake_timestamp_get_seconds(&out[3]));
+        assert_int_equal(0, snowflake_timestamp_get_nanoseconds(&out[3]));
+        int32 epoch_time = 0;
+        snowflake_timestamp_get_epoch_seconds(&out[3], &epoch_time);
+        assert_int_equal(0, epoch_time);
+
+
+
+        // Out of bounds check
+        if (!(status = snowflake_column_as_timestamp(sfstmt, 5, &out[3]))) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
+
+        if (!(status = snowflake_column_as_timestamp(sfstmt, -1, &out[3]))) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
+    }
+
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 void test_column_as_const_str(void **unused) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
@@ -982,6 +1061,7 @@ int main(void) {
       cmocka_unit_test(test_column_as_uint64),
       cmocka_unit_test(test_column_as_float32),
       cmocka_unit_test(test_column_as_float64),
+      cmocka_unit_test(test_column_as_timestamp),
       cmocka_unit_test(test_column_as_const_str),
       cmocka_unit_test(test_column_is_null),
       cmocka_unit_test(test_column_strlen),
