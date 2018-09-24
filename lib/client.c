@@ -2427,22 +2427,6 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 goto cleanup;
             }
 
-//            if (!_extract_timestamp_dynamic(
-//              &value,
-//              &value_len,
-//              sfstmt->desc[idx - 1].type,
-//              column->valuestring,
-//              sfstmt->connection->timezone,
-//              sfstmt->desc[idx - 1].scale)) {
-//                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-//                                    SF_STATUS_ERROR_CONVERSION_FAILURE,
-//                                    "Failed to convert a timestamp value to a string.",
-//                                    SF_SQLSTATE_GENERAL_ERROR,
-//                                    sfstmt->sfqid);
-//                value = NULL;
-//                value_len = 0;
-//                goto cleanup;
-//            }
             break;
         default:
             value_len = strlen(column->valuestring);

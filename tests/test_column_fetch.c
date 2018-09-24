@@ -733,7 +733,7 @@ void test_column_as_timestamp(void **unused) {
             assert_int_equal(9, snowflake_timestamp_get_scale(&out[i]));
             int32 epoch_time = 0;
             snowflake_timestamp_get_epoch_seconds(&out[i], &epoch_time);
-            assert_int_equal(1527867652, epoch_time);
+            assert_int_equal(1527864052, epoch_time);
         }
 
         // NULL case, should be the epoch
