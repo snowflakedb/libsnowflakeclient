@@ -16,6 +16,7 @@ extern sf_bool DISABLE_VERIFY_PEER;
 extern char *CA_BUNDLE_FILE;
 extern int32 SSL_VERSION;
 extern sf_bool DEBUG;
+extern sf_bool SF_OCSP_CHECK;
 
 #ifdef __cplusplus
 }

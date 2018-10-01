@@ -851,6 +851,13 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, SF_OCSP_CHECK);
+        if (res != CURLE_OK) {
+            log_error("Unable to set OCSP check enable/disable [%s]",
+                      curl_easy_strerror(res));
+            break;
+        }
+
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
             res = curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");

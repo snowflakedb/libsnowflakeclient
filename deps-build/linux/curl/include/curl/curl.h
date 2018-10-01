@@ -1819,6 +1819,9 @@ typedef enum {
   /* Post MIME data. */
   CINIT(MIMEPOST, OBJECTPOINT, 269),
 
+  /* Snowflake options. True if enabling OCSP check */
+  CINIT(SSL_SF_OCSP_CHECK, LONG, 270),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 

@@ -49,6 +49,7 @@
 #include "strcase.h"
 #include "hostcheck.h"
 #include "curl_printf.h"
+#include "sf_ocsp.h"
 #include <openssl/ssl.h>
 #ifdef HAVE_OPENSSL_ENGINE_H
 #include <openssl/engine.h>
@@ -3055,6 +3056,43 @@ static CURLcode servercert(struct connectdata *conn,
     failf(data, "SSL: couldn't get peer certificate!");
     return CURLE_PEER_FAILED_VERIFICATION;
   }
+
+  /* !!! Starting Snowflake OCSP !!! */
+  if (SSL_CONN_CONFIG(sf_ocsp_check))
+  {
+    /* In Curl 7.54.0, the cert chain and store are retrieved in checkCert.
+       In Curl 7.58.0, they are retrieved here, because BACKEND became
+       a private structure in this file.
+    */
+    STACK_OF(X509) *ch = NULL;
+    X509_STORE     *st = NULL;
+
+    ch = SSL_get_peer_cert_chain(BACKEND->handle);
+    if (!ch)
+    {
+      failf(data, "Out of memory. Failed to get certificate chain\n");
+      X509_free(BACKEND->server_cert);
+      BACKEND->server_cert = NULL;
+      return CURLE_OUT_OF_MEMORY;
+    }
+    st = SSL_CTX_get_cert_store(BACKEND->ctx);
+    if (!st)
+    {
+      failf(data, "NULL data store\n");
+      X509_free(BACKEND->server_cert);
+      BACKEND->server_cert = NULL;
+      return CURLE_SSL_INVALIDCERTSTATUS;
+    }
+
+    result = checkCertOCSP(conn, ch, st);
+    if (result)
+    {
+      X509_free(BACKEND->server_cert);
+      BACKEND->server_cert = NULL;
+      return result;
+    }
+  }
+  /* !!! End of Snowflake OCSP !!! */
 
   infof(data, "%s certificate:\n", SSL_IS_PROXY() ? "Proxy" : "Server");
 
