@@ -964,7 +964,8 @@ static int Curl_ossl_init(void)
     }
   }
 #endif
-
+  /* init Cert OCSP revocation checks */
+  initCertOCSP();
   return 1;
 }
 

@@ -8,7 +8,14 @@
 #include "urldata.h"
 #include <openssl/ssl.h>
 
-CURLcode checkCertOCSP(struct connectdata *conn,
-                       STACK_OF(X509) *ch, X509_STORE *st);
+#ifdef _WIN32
+#define SF_PUBLIC(type)   __declspec(dllexport) type __stdcall
+#else
+#define SF_PUBLIC(type) type
+#endif
+
+SF_PUBLIC(CURLcode) initCertOCSP();
+SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, X509_STORE *st);
 
 #endif
+
