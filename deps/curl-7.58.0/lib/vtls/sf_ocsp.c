@@ -26,7 +26,9 @@
 #include <openssl/asn1.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#ifdef __linux__
 #include <linux/limits.h>
+#endif
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -258,7 +260,7 @@ OCSP_RESPONSE * queryResponderUsingCurl(char *path, char *host,
   char content_length_header[50];
   struct curl_slist *headers = NULL;
   struct curl_read_data pd;
-  OCSP_RESPONSE * ocsp_response;
+  OCSP_RESPONSE * ocsp_response = NULL;
   struct curl_memory_write ocsp_response_raw;
   unsigned char *ocsp_response_der = NULL;
   CURL *ocsp_curl = NULL;
@@ -331,6 +333,7 @@ OCSP_RESPONSE * queryResponderUsingCurl(char *path, char *host,
           goto end;
         }
       }
+      infof(data, "Retrying...");
       ocsp_retry_cnt ++;
     }
     while(ocsp_retry_cnt < 100);
@@ -350,7 +353,7 @@ OCSP_RESPONSE * queryResponderUsingCurl(char *path, char *host,
   if (ocsp_curl) curl_easy_cleanup(ocsp_curl);
   if (headers) curl_slist_free_all(headers);
 
-  curl_free(ocsp_response_raw.memory_ptr);
+  free(ocsp_response_raw.memory_ptr);
 
   return ocsp_response;
 }
@@ -873,6 +876,7 @@ void downloadOCSPCache(struct Curl_easy *data)
             curl_easy_strerror(res));
       goto end;
     }
+    infof(data, "Retrying...");
     ++retry_cnt;
   } while (retry_cnt < 100);
   infof(data, "Successfully downloaded OCSP Cache.\n");
@@ -895,7 +899,7 @@ void downloadOCSPCache(struct Curl_easy *data)
   if (curlh) curl_easy_cleanup(curlh);
   if (headers) curl_slist_free_all(headers);
 
-  curl_free(ocsp_response_cache_json_mem.memory_ptr);
+  free(ocsp_response_cache_json_mem.memory_ptr);
 }
 
 /**
@@ -1109,8 +1113,35 @@ char* ensureCacheDir(char* cache_dir, struct Curl_easy *data)
     goto err;
   }
   infof(data, "OCSP cache file directory: %s\n", cache_dir);
+#elif defined(__APPLE__)
+  char *home_env = getenv("HOME");
+  strcpy(cache_dir, (home_env == NULL ? (char*)"/tmp" : home_env));
+  if (mkdirIfNotExists(cache_dir, data) == NULL)
+  {
+    goto err;
+  }
+  strcat(cache_dir, "/Library");
+  if (mkdirIfNotExists(cache_dir, data) == NULL)
+  {
+    goto err;
+  }
+  strcat(cache_dir, "/Caches");
+  if (mkdirIfNotExists(cache_dir, data) == NULL)
+  {
+    goto err;
+  }
+  strcat(cache_dir, "/Snowflake");
+  if (mkdirIfNotExists(cache_dir, data) == NULL)
+  {
+    goto err;
+  }
+  infof(data, "OCSP cache file directory: %s\n", cache_dir);
+#elif  defined(_WIN32)
+  /* TODO: Windows */
 #else
-  /* TODO: Mac and Windows */
+  /* Unknown */
+  strcpy(cache_dir, "/tmp");
+  infof(data, "OCSP cache file directory: %s\n", cache_dir);
 #endif
   return cache_dir;
     err:
