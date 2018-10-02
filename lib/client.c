@@ -24,6 +24,7 @@ sf_bool DISABLE_VERIFY_PEER;
 char *CA_BUNDLE_FILE;
 int32 SSL_VERSION;
 sf_bool DEBUG;
+sf_bool SF_OCSP_CHECK;
 
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
@@ -604,6 +605,7 @@ SF_STATUS STDCALL snowflake_global_init(
     CA_BUNDLE_FILE = NULL;
     SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
     DEBUG = SF_BOOLEAN_FALSE;
+    SF_OCSP_CHECK = SF_BOOLEAN_TRUE;
 
     _snowflake_memory_hooks_setup(hooks);
     sf_memory_init();
@@ -659,6 +661,9 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
                 log_set_quiet(SF_BOOLEAN_TRUE);
             }
             break;
+        case SF_GLOBAL_OCSP_CHECK:
+            SF_OCSP_CHECK = *(sf_bool *) value;
+            break;
         default:
             break;
     }
@@ -675,6 +680,15 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value) {
             if (CA_BUNDLE_FILE) {
                 strncpy(value, CA_BUNDLE_FILE, strlen(CA_BUNDLE_FILE) + 1);
             }
+            break;
+        case SF_GLOBAL_SSL_VERSION:
+            *((int32 *) value) = SSL_VERSION;
+            break;
+        case SF_GLOBAL_DEBUG:
+            *((sf_bool *) value) = DEBUG;
+            break;
+        case SF_GLOBAL_OCSP_CHECK:
+            *((sf_bool *) value) = SF_OCSP_CHECK;
             break;
         default:
             break;

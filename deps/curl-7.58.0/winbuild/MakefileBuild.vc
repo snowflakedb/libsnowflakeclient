@@ -72,7 +72,11 @@ LFLAGS_PDB = /incremental:no /opt:ref,icf
 
 CFLAGS_LIBCURL_STATIC  = /DCURL_STATICLIB
 
+!IF "$(MACHINE)"=="x64"
 WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib
+!ELSE
+WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib msvcrt.lib
+!ENDIF
 
 BASE_NAME              = libcurl
 BASE_NAME_DEBUG        = $(BASE_NAME)_debug

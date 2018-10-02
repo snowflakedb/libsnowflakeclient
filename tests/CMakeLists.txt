@@ -150,3 +150,6 @@ if (UNIX)
                 ./${T})
     ENDFOREACH ()
 endif ()
+
+# Uncomment when you want to run the OCSP unit tests. Do not run as part of normal Travis testing
+# add_subdirectory(unit_test_ocsp)

@@ -241,7 +241,8 @@ am__objects_3 = vtls/libcurl_la-openssl.lo vtls/libcurl_la-gtls.lo \
 	vtls/libcurl_la-polarssl_threadlock.lo \
 	vtls/libcurl_la-axtls.lo vtls/libcurl_la-cyassl.lo \
 	vtls/libcurl_la-schannel.lo vtls/libcurl_la-darwinssl.lo \
-	vtls/libcurl_la-gskit.lo vtls/libcurl_la-mbedtls.lo
+	vtls/libcurl_la-gskit.lo vtls/libcurl_la-mbedtls.lo \
+    vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_cJSON.lo
 am__objects_4 = $(am__objects_1) $(am__objects_2) $(am__objects_3)
 am__objects_5 =
 am__objects_6 = $(am__objects_5) $(am__objects_5) $(am__objects_5)
@@ -250,7 +251,7 @@ libcurl_la_OBJECTS = $(am_libcurl_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libcurl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libcurl_la_CFLAGS) \
 	$(CFLAGS) $(libcurl_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -320,7 +321,8 @@ am__objects_9 = vtls/libcurlu_la-openssl.lo vtls/libcurlu_la-gtls.lo \
 	vtls/libcurlu_la-polarssl_threadlock.lo \
 	vtls/libcurlu_la-axtls.lo vtls/libcurlu_la-cyassl.lo \
 	vtls/libcurlu_la-schannel.lo vtls/libcurlu_la-darwinssl.lo \
-	vtls/libcurlu_la-gskit.lo vtls/libcurlu_la-mbedtls.lo
+	vtls/libcurlu_la-gskit.lo vtls/libcurlu_la-mbedtls.lo \
+    vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_cJSON.lo
 am__objects_10 = $(am__objects_7) $(am__objects_8) $(am__objects_9)
 am_libcurlu_la_OBJECTS = $(am__objects_10) $(am__objects_6)
 libcurlu_la_OBJECTS = $(am_libcurlu_la_OBJECTS)
@@ -335,12 +337,12 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
-DEFAULT_INCLUDES = 
+am__v_at_1 =
+DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -353,7 +355,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -361,7 +363,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(libcurl_la_SOURCES) $(libcurlu_la_SOURCES)
 DIST_SOURCES = $(libcurl_la_SOURCES) $(libcurlu_la_SOURCES)
 am__can_run_installinfo = \
@@ -635,7 +637,7 @@ EXTRA_DIST = Makefile.b32 Makefile.m32 config-win32.h	\
  objnames-test08.sh objnames-test10.sh objnames.inc
 
 lib_LTLIBRARIES = libcurl.la
-@BUILD_UNITTESTS_FALSE@noinst_LTLIBRARIES = 
+@BUILD_UNITTESTS_FALSE@noinst_LTLIBRARIES =
 @BUILD_UNITTESTS_TRUE@noinst_LTLIBRARIES = libcurlu.la
 
 # Specify our include paths here, and do it relative to $(top_srcdir) and
@@ -663,8 +665,8 @@ lib_LTLIBRARIES = libcurl.la
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
 	-I$(top_srcdir)/lib $(am__append_1) -DBUILDING_LIBCURL
 VERSIONINFO = -version-info 9:0:5
-AM_LDFLAGS = 
-AM_CFLAGS = 
+AM_LDFLAGS =
+AM_CFLAGS =
 libcurl_la_CPPFLAGS_EXTRA = $(am__append_7) $(am__append_8)
 libcurl_la_LDFLAGS_EXTRA = $(CODE_COVERAGE_LDFLAGS) $(am__append_2) \
 	$(am__append_3) $(am__append_4) $(am__append_5) \
@@ -685,12 +687,12 @@ LIB_VAUTH_HFILES = vauth/vauth.h vauth/digest.h vauth/ntlm.h
 LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c     \
   vtls/polarssl.c vtls/polarssl_threadlock.c vtls/axtls.c               \
   vtls/cyassl.c vtls/schannel.c vtls/darwinssl.c vtls/gskit.c           \
-  vtls/mbedtls.c
+  vtls/mbedtls.c vtls/sf_ocsp.c vtls/sf_cJSON.c
 
 LIB_VTLS_HFILES = vtls/openssl.h vtls/vtls.h vtls/gtls.h                \
   vtls/nssg.h vtls/polarssl.h vtls/polarssl_threadlock.h vtls/axtls.h   \
   vtls/cyassl.h vtls/schannel.h vtls/darwinssl.h vtls/gskit.h           \
-  vtls/mbedtls.h
+  vtls/mbedtls.h vtls/sf_ocsp.h vtls/sf_cJSON.h
 
 LIB_CFILES = file.c timeval.c base64.c hostip.c progress.c formdata.c   \
   cookie.c http.c sendf.c ftp.c url.c dict.c if2ip.c speedcheck.c       \
@@ -781,7 +783,7 @@ curl_config.h: stamp-h1
 stamp-h1: $(srcdir)/curl_config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status lib/curl_config.h
-$(srcdir)/curl_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+$(srcdir)/curl_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
@@ -874,6 +876,10 @@ vtls/$(DEPDIR)/$(am__dirstamp):
 	@: > vtls/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurl_la-openssl.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
+vtls/libcurl_la-sf_ocsp.lo: vtls/$(am__dirstamp) \
+	vtls/$(DEPDIR)/$(am__dirstamp)
+vtls/libcurl_la-sf_cJSON.lo: vtls/$(am__dirstamp) \
+	vtls/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurl_la-gtls.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurl_la-vtls.lo: vtls/$(am__dirstamp) \
@@ -897,7 +903,7 @@ vtls/libcurl_la-gskit.lo: vtls/$(am__dirstamp) \
 vtls/libcurl_la-mbedtls.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
 
-libcurl.la: $(libcurl_la_OBJECTS) $(libcurl_la_DEPENDENCIES) $(EXTRA_libcurl_la_DEPENDENCIES) 
+libcurl.la: $(libcurl_la_OBJECTS) $(libcurl_la_DEPENDENCIES) $(EXTRA_libcurl_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libcurl_la_LINK) -rpath $(libdir) $(libcurl_la_OBJECTS) $(libcurl_la_LIBADD) $(LIBS)
 vauth/libcurlu_la-vauth.lo: vauth/$(am__dirstamp) \
 	vauth/$(DEPDIR)/$(am__dirstamp)
@@ -925,6 +931,10 @@ vauth/libcurlu_la-spnego_sspi.lo: vauth/$(am__dirstamp) \
 	vauth/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurlu_la-openssl.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
+vtls/libcurlu_la-sf_ocsp.lo: vtls/$(am__dirstamp) \
+	vtls/$(DEPDIR)/$(am__dirstamp)
+vtls/libcurlu_la-sf_cJSON.lo: vtls/$(am__dirstamp) \
+	vtls/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurlu_la-gtls.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
 vtls/libcurlu_la-vtls.lo: vtls/$(am__dirstamp) \
@@ -948,7 +958,7 @@ vtls/libcurlu_la-gskit.lo: vtls/$(am__dirstamp) \
 vtls/libcurlu_la-mbedtls.lo: vtls/$(am__dirstamp) \
 	vtls/$(DEPDIR)/$(am__dirstamp)
 
-libcurlu.la: $(libcurlu_la_OBJECTS) $(libcurlu_la_DEPENDENCIES) $(EXTRA_libcurlu_la_DEPENDENCIES) 
+libcurlu.la: $(libcurlu_la_OBJECTS) $(libcurlu_la_DEPENDENCIES) $(EXTRA_libcurlu_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libcurlu_la_LINK) $(am_libcurlu_la_rpath) $(libcurlu_la_OBJECTS) $(libcurlu_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
@@ -1205,6 +1215,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-mbedtls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-nss.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-openssl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-polarssl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-polarssl_threadlock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurl_la-schannel.Plo@am__quote@
@@ -1217,6 +1229,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-mbedtls.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-nss.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-openssl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-polarssl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-polarssl_threadlock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@vtls/$(DEPDIR)/libcurlu_la-schannel.Plo@am__quote@
@@ -2078,6 +2092,20 @@ vtls/libcurl_la-openssl.lo: vtls/openssl.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vtls/openssl.c' object='vtls/libcurl_la-openssl.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurl_la-openssl.lo `test -f 'vtls/openssl.c' || echo '$(srcdir)/'`vtls/openssl.c
+
+vtls/libcurl_la-sf_ocsp.lo: vtls/sf_ocsp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT vtls/libcurl_la-sf_ocsp.lo -MD -MP -MF vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Tpo -c -o vtls/libcurl_la-sf_ocsp.lo `test -f 'vtls/sf_ocsp.c' || echo '$(srcdir)/'`vtls/sf_ocsp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Tpo vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vtls/sf_ocsp.c' object='vtls/libcurl_la-sf_ocsp.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurl_la-sf_ocsp.lo `test -f 'vtls/sf_ocsp.c' || echo '$(srcdir)/'`vtls/sf_ocsp.c
+
+vtls/libcurl_la-sf_cJSON.lo: vtls/sf_cJSON.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT vtls/libcurl_la-sf_cJSON.lo -MD -MP -MF vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Tpo -c -o vtls/libcurl_la-sf_cJSON.lo `test -f 'vtls/sf_cJSON.c' || echo '$(srcdir)/'`vtls/sf_cJSON.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Tpo vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vtls/sf_cJSON.c' object='vtls/libcurl_la-sf_cJSON.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurl_la-sf_cJSON.lo `test -f 'vtls/sf_cJSON.c' || echo '$(srcdir)/'`vtls/sf_cJSON.c
 
 vtls/libcurl_la-gtls.lo: vtls/gtls.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT vtls/libcurl_la-gtls.lo -MD -MP -MF vtls/$(DEPDIR)/libcurl_la-gtls.Tpo -c -o vtls/libcurl_la-gtls.lo `test -f 'vtls/gtls.c' || echo '$(srcdir)/'`vtls/gtls.c
@@ -2989,6 +3017,20 @@ vtls/libcurlu_la-openssl.lo: vtls/openssl.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurlu_la-openssl.lo `test -f 'vtls/openssl.c' || echo '$(srcdir)/'`vtls/openssl.c
 
+vtls/libcurlu_la-sf_ocsp.lo: vtls/sf_ocsp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT vtls/libcurlu_la-sf_ocsp.lo -MD -MP -MF vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Tpo -c -o vtls/libcurlu_la-sf_ocsp.lo `test -f 'vtls/sf_ocsp.c' || echo '$(srcdir)/'`vtls/sf_ocsp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Tpo vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vtls/sf_ocsp.c' object='vtls/libcurlu_la-sf_ocsp.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurlu_la-sf_ocsp.lo `test -f 'vtls/sf_ocsp.c' || echo '$(srcdir)/'`vtls/sf_ocsp.c
+
+vtls/libcurlu_la-sf_cJSON.lo: vtls/sf_cJSON.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT vtls/libcurlu_la-sf_cJSON.lo -MD -MP -MF vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Tpo -c -o vtls/libcurlu_la-sf_cJSON.lo `test -f 'vtls/sf_cJSON.c' || echo '$(srcdir)/'`vtls/sf_cJSON.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Tpo vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vtls/sf_cJSON.c' object='vtls/libcurlu_la-sf_cJSON.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o vtls/libcurlu_la-sf_cJSON.lo `test -f 'vtls/sf_cJSON.c' || echo '$(srcdir)/'`vtls/sf_cJSON.c
+
 vtls/libcurlu_la-gtls.lo: vtls/gtls.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT vtls/libcurlu_la-gtls.lo -MD -MP -MF vtls/$(DEPDIR)/libcurlu_la-gtls.Tpo -c -o vtls/libcurlu_la-gtls.lo `test -f 'vtls/gtls.c' || echo '$(srcdir)/'`vtls/gtls.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) vtls/$(DEPDIR)/libcurlu_la-gtls.Tpo vtls/$(DEPDIR)/libcurlu_la-gtls.Plo
@@ -3293,7 +3335,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 checksrc:
 	@PERL@ $(srcdir)/checksrc.pl -D$(srcdir) -W$(srcdir)/curl_config.h      \
-	$(srcdir)/*.[ch] $(srcdir)/vauth/*.[ch] $(srcdir)/vtls/*.[ch]
+	$(srcdir)/*.[ch] $(srcdir)/vauth/*.[ch]
 
 # for debug builds, we scan the sources on all regular make invokes
 @CURLDEBUG_TRUE@all-local: checksrc

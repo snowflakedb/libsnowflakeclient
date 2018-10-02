@@ -1729,6 +1729,15 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option,
         data->set.ssl.primary.verifystatus;
     }
     break;
+  case CURLOPT_SSL_SF_OCSP_CHECK:
+     data->set.ssl.primary.sf_ocsp_check = (0 != va_arg(param, long)) ?
+                                          TRUE : FALSE;
+     /* Update the current connection ssl_config. */
+     if(data->easy_conn) {
+       data->easy_conn->ssl_config.sf_ocsp_check =
+         data->set.ssl.primary.sf_ocsp_check;
+     }
+    break;
   case CURLOPT_SSL_CTX_FUNCTION:
     /*
      * Set a SSL_CTX callback
