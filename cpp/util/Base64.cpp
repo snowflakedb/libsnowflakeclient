@@ -5,6 +5,7 @@
 #include "Base64.hpp"
 #include <cstring>
 #include "snowflake/IBase64.hpp"
+#include "../logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -51,6 +52,7 @@ std::vector<char> Base64::decodeURLNoPadding(const std::string &text)
 
   if (decode_len == static_cast<size_t >(-1L))
   {
+    CXX_LOG_DEBUG("Fail to decode the string: %s", text.c_str());
     throw Base64DecodeException("Decode of base64URL with no padding failed");
   }
 
@@ -76,6 +78,7 @@ std::vector<char> Base64::decodePadding(const std::string &text)
 
   if (decode_len == static_cast<size_t >(-1L))
   {
+    CXX_LOG_DEBUG("Fail to decode the string: %s", text.c_str());
     throw Base64DecodeException("decode of base64 with padding failed");
   }
 
