@@ -188,8 +188,8 @@ size_t Base64::decodeHelper(const void *const vsrc,
     if (src[i + 2] == '=')
     {
       // Last block contains only one byte.
-      const ub4 b1 = BASE64_REV_INDEX.data[src[i]];
-      const ub4 b2 = BASE64_REV_INDEX.data[src[i + 1]];
+      const ub4 b1 = REV_INDEX[src[i]];
+      const ub4 b2 = REV_INDEX[src[i + 1]];
 
       // Check for illegal input.
       if ((b1 == 0xFF) || (b2 == 0xFF) || (src[i + 3] != '='))
@@ -200,9 +200,9 @@ size_t Base64::decodeHelper(const void *const vsrc,
     } else if (src[i + 3] == '=')
     {
       // Last block contains two bytes.
-      const ub4 b1 = BASE64_REV_INDEX.data[src[i]];
-      const ub4 b2 = BASE64_REV_INDEX.data[src[i + 1]];
-      const ub4 b3 = BASE64_REV_INDEX.data[src[i + 2]];
+      const ub4 b1 = REV_INDEX[src[i]];
+      const ub4 b2 = REV_INDEX[src[i + 1]];
+      const ub4 b3 = REV_INDEX[src[i + 2]];
 
       // Check for illegal input.
       if ((b1 == 0xFF) || (b2 == 0xFF) || (b3 == 0xFF))

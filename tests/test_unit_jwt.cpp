@@ -8,7 +8,6 @@
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 
-
 using Snowflake::Client::Jwt::IHeader;
 using Snowflake::Client::Jwt::IClaimSet;
 using Snowflake::Client::Jwt::AlgorithmType;
@@ -99,6 +98,8 @@ void test_claim_set(void **)
 
 void test_sign_verify(void **)
 {
+  for (int i = 0; i < 200; i++)
+  {
   JWTObject jwt;
 
   IHeaderSptr header(IHeader::buildHeader());
@@ -127,6 +128,7 @@ void test_sign_verify(void **)
   assert_string_not_equal(result.c_str(), "");
 
   assert_true(jwt.verify(pub_key.get()));
+  }
 }
 
 int main()
