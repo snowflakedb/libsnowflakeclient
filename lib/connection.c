@@ -13,6 +13,7 @@
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
+#define REQUEST_GUID_KEY_SIZE 13
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
@@ -800,7 +801,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     char *request_guid_ptr = strstr(url, "request_guid=");
     // Set pointer to the beginning of the UUID string if request GUID exists
     if (request_guid_ptr) {
-        request_guid_ptr = request_guid_ptr + 13;
+        request_guid_ptr = request_guid_ptr + REQUEST_GUID_KEY_SIZE;
     }
 
     do {
