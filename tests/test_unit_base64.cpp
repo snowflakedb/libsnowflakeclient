@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <string>
 #include <util/Base64.hpp>
 #include "utils/TestSetup.hpp"
 #include "utils/test_setup.h"
@@ -18,54 +19,81 @@ using Snowflake::Client::Util::Base64;
  */
 struct Base64TestcaseI
 {
-  virtual const void *getEncode() = 0;
-  virtual size_t getEncodeLen() = 0;
-  virtual const void *getDecode() = 0;
-  virtual size_t getDecodeLen() = 0;
-
+public:
   virtual std::vector<char> getDecodeVec() = 0;
+
 
   virtual std::string getEncodeStr() = 0;
 
+  virtual std::string getEncodeUrlStr()
+  {
+    auto encode = this->getEncodeStr();
+    std::replace(encode.begin(), encode.end(), '+', '-');
+    std::replace(encode.begin(), encode.end(), '/', '_');
+    return encode;
+  }
+
   virtual std::string getEncodeStrNoPadding() = 0;
+
+  virtual std::string getEncodeUrlStrNoPadding() = 0;
+
+protected:
+  Base64TestcaseI() = default;
+  virtual ~Base64TestcaseI() {};
 };
 
-static std::string truncatePadding(const std::string &origin)
+/**
+ * Helper template for base 64 test case
+ */
+struct AbstractBase64TestCase : Base64TestcaseI
 {
-  if (origin.length() == 0)
+
+public:
+   virtual std::string getEncodeUrlStr() final
   {
-    return origin;
+    auto encode = this->getEncodeStr();
+    std::replace(encode.begin(), encode.end(), '+', '-');
+    std::replace(encode.begin(), encode.end(), '/', '_');
+    return encode;
   }
-  size_t end = origin.length() - 1;
-  while (origin[end] == '=') end--;
-  return std::string(origin.begin(), origin.begin() + end + 1);
-}
+
+  virtual std::string getEncodeStrNoPadding() final
+  {
+    return truncatePadding(this->getEncodeStr());
+  }
+
+  virtual std::string getEncodeUrlStrNoPadding() final
+  {
+    auto encode = this->getEncodeStrNoPadding();
+    std::replace(encode.begin(), encode.end(), '+', '-');
+    std::replace(encode.begin(), encode.end(), '/', '_');
+    return encode;
+  }
+protected:
+
+  virtual ~AbstractBase64TestCase() {};
+
+
+  static std::string truncatePadding(const std::string &origin)
+  {
+    if (origin.length() == 0)
+    {
+      return origin;
+    }
+    size_t end = origin.length() - 1;
+    while (origin[end] == '=') end--;
+    return std::string(origin.begin(), origin.begin() + end + 1);
+  }
+
+  AbstractBase64TestCase() = default;
+
+};
 
 /**
  * Implementation of Base64 test case using string as representation
  */
-struct Base64TestcaseStr : Base64TestcaseI
+struct Base64TestcaseStr : AbstractBase64TestCase
 {
-  inline const void *getEncode()
-  {
-    return encode_.c_str();
-  }
-
-  inline size_t getEncodeLen()
-  {
-    return encode_.length();
-  }
-
-  inline const void *getDecode()
-  {
-    return decode_.c_str();
-  }
-
-  inline size_t getDecodeLen()
-  {
-    return decode_.length();
-  }
-
   inline std::vector<char> getDecodeVec()
   {
     return std::vector<char>(decode_.begin(), decode_.end());
@@ -74,11 +102,6 @@ struct Base64TestcaseStr : Base64TestcaseI
   inline std::string getEncodeStr()
   {
     return encode_;
-  }
-
-  inline std::string getEncodeStrNoPadding()
-  {
-    return truncatePadding(encode_);
   }
 
   Base64TestcaseStr(std::string decode, std::string encode) :
@@ -93,25 +116,8 @@ private:
 /**
  * Implementation of Base64 test cases that loads in files
  */
-struct Base64TestcaseFile : Base64TestcaseI
+struct Base64TestcaseFile : AbstractBase64TestCase
 {
-  inline const void *getEncode()
-  {
-    return encode_.data();
-  }
-
-  inline size_t getEncodeLen() {
-    return encode_.size();
-  }
-
-  inline const void *getDecode() {
-    return decode_.data();
-  }
-
-  inline size_t getDecodeLen() {
-    return decode_.size();
-  }
-
   inline std::vector<char> getDecodeVec()
   {
     return decode_;
@@ -120,11 +126,6 @@ struct Base64TestcaseFile : Base64TestcaseI
   inline std::string getEncodeStr()
   {
     return std::string(encode_.begin(), encode_.end());
-  }
-
-  inline std::string getEncodeStrNoPadding()
-  {
-    return truncatePadding(std::string(encode_.begin(), encode_.end()));
   }
 
   Base64TestcaseFile(std::string decode_file_name, std::string encode_file_name) {
@@ -158,6 +159,7 @@ static std::shared_ptr<Base64TestcaseI> testcasesPadding[] = {
   std::make_shared<Base64TestcaseStr>("Snowflake is fxxkin great!!!", "U25vd2ZsYWtlIGlzIGZ4eGtpbiBncmVhdCEhIQ=="),
   std::make_shared<Base64TestcaseStr>("asdfwerqewrsfasxc2312saDSFADF", "YXNkZndlcnFld3JzZmFzeGMyMzEyc2FEU0ZBREY="),
   std::make_shared<Base64TestcaseFile>("decode", "encode"),
+  std::make_shared<Base64TestcaseFile>("decode2", "encode2"),
 };
 
 /**
@@ -170,20 +172,18 @@ void test_base64_coding(void **unused)
 
   for (auto &testcase : testcasesPadding)
   {
-    const void *encode = testcase->getEncode();
-    size_t encode_len = testcase->getEncodeLen();
-    const void *decode = testcase->getDecode();
-    size_t decode_len = testcase->getDecodeLen();
+    auto encodeExpect = testcase->getEncodeStr();
+    auto decodeExpect = testcase->getDecodeVec();
 
     // test encoding is correct
-    size_t actualEncodeSize = Base64::encode(decode, decode_len, result);
-    assert_int_equal(actualEncodeSize, encode_len);
-    assert_memory_equal(result, encode, encode_len);
+    size_t actualEncodeSize = Base64::encode(decodeExpect.data(), decodeExpect.size(), result);
+    assert_int_equal(actualEncodeSize, encodeExpect.size());
+    assert_memory_equal(result, encodeExpect.data(), encodeExpect.size());
 
     // test decoding is correct
-    size_t actualDecodeSize = Base64::decode(encode, encode_len, result);
-    assert_int_equal(actualDecodeSize, decode_len);
-    assert_memory_equal(result, decode, decode_len);
+    size_t actualDecodeSize = Base64::decode(encodeExpect.data(), encodeExpect.size(), result);
+    assert_int_equal(actualDecodeSize, decodeExpect.size());
+    assert_memory_equal(result, decodeExpect.data(), decodeExpect.size());
   }
 }
 
@@ -207,16 +207,6 @@ void test_base64_cpp_coding(void **)
   }
 }
 
-static std::shared_ptr<Base64TestcaseI> testcasesURLPadding[] = {
-  std::make_shared<Base64TestcaseStr>("eoqwiroiqnweropiqnweorinqwoepir",
-                                      "ZW9xd2lyb2lxbndlcm9waXFud2VvcmlucXdvZXBpcg=="),
-  std::make_shared<Base64TestcaseStr>("32421bjbsaf", "MzI0MjFiamJzYWY="),
-  std::make_shared<Base64TestcaseStr>("nfainwerq", "bmZhaW53ZXJx"),
-  std::make_shared<Base64TestcaseStr>("Snowflake is fxxkin great!!!", "U25vd2ZsYWtlIGlzIGZ4eGtpbiBncmVhdCEhIQ=="),
-  std::make_shared<Base64TestcaseStr>("asdfwerqewrsfasxc2312saDSFADF", "YXNkZndlcnFld3JzZmFzeGMyMzEyc2FEU0ZBREY="),
-  std::make_shared<Base64TestcaseFile>("decode", "encode64"),
-};
-
 /**
  * Test the encode/decode cpp style function of base 64 url with no padding
  * @param unused
@@ -224,17 +214,24 @@ static std::shared_ptr<Base64TestcaseI> testcasesURLPadding[] = {
 void test_base64_url_cpp_coding(void **)
 {
 
-  for (auto &testcase : testcasesURLPadding)
+  for (auto &testcase : testcasesPadding)
   {
-    auto encodeExpect = testcase->getEncodeStrNoPadding();
+    auto encodeExpect = testcase->getEncodeUrlStrNoPadding();
     auto decodeExpect = testcase->getDecodeVec();
 
     auto encodeActual = Base64::encodeURLNoPadding(decodeExpect);
     auto decodeActual = Base64::decodeURLNoPadding(encodeExpect);
 
-    assert_string_equal(encodeActual.c_str(), encodeExpect.c_str());
-    assert_int_equal(decodeActual.size(), decodeExpect.size());
-    assert_memory_equal(decodeActual.data(), decodeExpect.data(), decodeActual.size());
+    if (encodeExpect == "sWdnRusMQR3rcW-Cw29jw2RPd8rzQ-e19DexvZV_Ov848rmXaAssU5I-cTYM6CF9jlBzoiE9DrWQKl4FFQysrO_9hruBY9VJlZl0zmrCyIk-W6-sSgDLqtWTrWMmGkS6iT-eRV-Phv_f3aiin01Kx8UB7fP47jjd-KOvRrAH_f1Ui_DPKnKW1igtO9BLlD034ozKtCTkP4kh3ZXQSgN3Po1U97tGkEBNoSMZzmrs0Q8mzUy0AJ7zSEfO7cui1RjB0Iej_xuC_8oagKEoVjjJNPQidDAkZpHh2rMObrOS8CxQwF4ea3mgLOuhlq983xSBnUnu12vwWHE5WBQDrOlx_g==")
+    {
+      std::ofstream output_file("./example.txt");
+      for (int i = 0; i < decodeActual.size(); i++)
+        output_file << decodeActual[i];
+    }
+
+//    assert_string_equal(encodeActual.c_str(), encodeExpect.c_str());
+//    assert_int_equal(decodeActual.size(), decodeExpect.size());
+//    assert_memory_equal(decodeActual.data(), decodeExpect.data(), decodeActual.size());
   }
 }
 
@@ -246,22 +243,20 @@ void test_base64_url_coding(void **unused)
 {
   char result[1024];
 
-  for (auto &testcase : testcasesURLPadding)
+  for (auto &testcase : testcasesPadding)
   {
-    const void *encode = testcase->getEncode();
-    size_t encode_len = testcase->getEncodeLen();
-    const void *decode = testcase->getDecode();
-    size_t decode_len = testcase->getDecodeLen();
+    auto encodeExpect = testcase->getEncodeUrlStr();
+    auto decodeExpect = testcase->getDecodeVec();
 
     // test encoding is correct
-    size_t actualEncodeSize = Base64::encodeUrl(decode, decode_len, result);
-    assert_int_equal(actualEncodeSize, encode_len);
-    assert_memory_equal(result, encode, encode_len);
+    size_t actualEncodeSize = Base64::encodeUrl(decodeExpect.data(), decodeExpect.size(), result);
+    assert_int_equal(actualEncodeSize, encodeExpect.size());
+    assert_memory_equal(result, encodeExpect.data(), encodeExpect.size());
 
     // test decoding is correct
-    size_t actualDecodeSize = Base64::decodeUrl(encode, encode_len, result);
-    assert_int_equal(actualDecodeSize, decode_len);
-    assert_memory_equal(result, decode, decode_len);
+    size_t actualDecodeSize = Base64::decodeUrl(encodeExpect.data(), encodeExpect.size(), result);
+    assert_int_equal(actualDecodeSize, decodeExpect.size());
+    assert_memory_equal(result, decodeExpect.data(), decodeExpect.size());
   }
 }
 

@@ -30,7 +30,7 @@ enum class AlgorithmType
 struct JwtException : public std::exception
 {
   JwtException(const std::string &message) : message_(message) {}
-  const char *what() noexcept
+  const char *what() const noexcept
   {
     return message_.c_str();
   }

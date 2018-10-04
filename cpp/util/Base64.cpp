@@ -5,6 +5,7 @@
 #include "Base64.hpp"
 #include <cstring>
 #include "snowflake/IBase64.hpp"
+#include "../logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -51,6 +52,7 @@ std::vector<char> Base64::decodeURLNoPadding(const std::string &text)
 
   if (decode_len == static_cast<size_t >(-1L))
   {
+    CXX_LOG_DEBUG("Fail to decode the string: %s", text.c_str());
     throw Base64DecodeException("Decode of base64URL with no padding failed");
   }
 
@@ -76,6 +78,7 @@ std::vector<char> Base64::decodePadding(const std::string &text)
 
   if (decode_len == static_cast<size_t >(-1L))
   {
+    CXX_LOG_DEBUG("Fail to decode the string: %s", text.c_str());
     throw Base64DecodeException("decode of base64 with padding failed");
   }
 
@@ -185,8 +188,8 @@ size_t Base64::decodeHelper(const void *const vsrc,
     if (src[i + 2] == '=')
     {
       // Last block contains only one byte.
-      const ub4 b1 = BASE64_REV_INDEX.data[src[i]];
-      const ub4 b2 = BASE64_REV_INDEX.data[src[i + 1]];
+      const ub4 b1 = REV_INDEX[src[i]];
+      const ub4 b2 = REV_INDEX[src[i + 1]];
 
       // Check for illegal input.
       if ((b1 == 0xFF) || (b2 == 0xFF) || (src[i + 3] != '='))
@@ -197,9 +200,9 @@ size_t Base64::decodeHelper(const void *const vsrc,
     } else if (src[i + 3] == '=')
     {
       // Last block contains two bytes.
-      const ub4 b1 = BASE64_REV_INDEX.data[src[i]];
-      const ub4 b2 = BASE64_REV_INDEX.data[src[i + 1]];
-      const ub4 b3 = BASE64_REV_INDEX.data[src[i + 2]];
+      const ub4 b1 = REV_INDEX[src[i]];
+      const ub4 b2 = REV_INDEX[src[i + 1]];
+      const ub4 b3 = REV_INDEX[src[i + 2]];
 
       // Check for illegal input.
       if ((b1 == 0xFF) || (b2 == 0xFF) || (b3 == 0xFF))

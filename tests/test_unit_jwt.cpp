@@ -8,7 +8,6 @@
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 
-
 using Snowflake::Client::Jwt::IHeader;
 using Snowflake::Client::Jwt::IClaimSet;
 using Snowflake::Client::Jwt::AlgorithmType;
