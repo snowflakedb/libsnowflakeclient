@@ -67,8 +67,7 @@ static int init_seed(void) {
     return UUID4_ESUCCESS;
 }
 
-
-int uuid4_generate(char *dst) {
+int uuid4_generate_non_terminated(char *dst) {
     static const char *template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
     static const char *chars = "0123456789abcdef";
     union { unsigned char b[16]; uint64_t word[2]; } s;
@@ -100,7 +99,17 @@ int uuid4_generate(char *dst) {
         }
         dst++, p++;
     }
-    *dst = '\0';
+
     /* return ok */
     return UUID4_ESUCCESS;
+}
+
+int uuid4_generate(char *dst) {
+    int ret = uuid4_generate_non_terminated(dst);
+
+    if (ret == UUID4_ESUCCESS) {
+        dst[SF_UUID4_LEN - 1] = '\0';
+    }
+
+    return ret;
 }

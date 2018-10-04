@@ -36,6 +36,7 @@
 #define REQUEST_TYPE_CLONE "CLONE"
 #define REQUEST_TYPE_ISSUE "ISSUE"
 
+int uuid4_generate_non_terminated(char *dst);
 int uuid4_generate(char *dst);
 
 /**

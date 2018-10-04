@@ -459,6 +459,18 @@ char * STDCALL encode_url(CURL *curl,
     size_t base_url_size = 1; //Null terminator
     // Size used to determine buffer size
     size_t encoded_url_size;
+    // Initialize reqeust_guid with a blank uuid that will be replaced for each request
+    URL_KEY_VALUE request_guid = {
+      "request_guid=",
+      "00000000-0000-0000-0000-000000000000",
+      NULL,
+      NULL,
+      0,
+      0
+    };
+    const char *amp = "&";
+    size_t amp_size = strlen(amp);
+
     // Set proper format based on variables passed into encode URL.
     // The format includes format specifiers that will be consumed by empty fields
     // (i.e if port is empty, add an extra specifier so that we have 1 call to snprintf, vs. 4 different calls)
@@ -501,8 +513,17 @@ char * STDCALL encode_url(CURL *curl,
         }
         vars[i].key_size = strlen(vars[i].formatted_key);
         vars[i].value_size = strlen(vars[i].formatted_value);
-        encoded_url_size += vars[i].key_size + vars[i].value_size;
+        // Add an ampersand for each URL parameter since we are going to add request_guid to the end
+        encoded_url_size += vars[i].key_size + vars[i].value_size + amp_size;
     }
+
+    // Encode request_guid and set size info
+    request_guid.formatted_key = request_guid.key;
+    request_guid.formatted_value = curl_easier_escape(curl, request_guid.value);
+    request_guid.key_size = strlen(request_guid.formatted_key);
+    request_guid.value_size = strlen(request_guid.formatted_value);
+    encoded_url_size += request_guid.key_size + request_guid.value_size;
+
 
     encoded_url_size += extraUrlParams ?
                         num_args > 0 ? strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : strlen(extraUrlParams)
@@ -525,7 +546,12 @@ char * STDCALL encode_url(CURL *curl,
     for (i = 0; i < num_args; i++) {
         strncat(encoded_url, vars[i].formatted_key, vars[i].key_size);
         strncat(encoded_url, vars[i].formatted_value, vars[i].value_size);
+        strncat(encoded_url, amp, amp_size);
     }
+
+    // Add encoded request_guid to encoded_url buffer
+    strncat(encoded_url, request_guid.formatted_key, request_guid.key_size);
+    strncat(encoded_url, request_guid.formatted_value, request_guid.value_size);
 
     // Adding the extra url param (setter of extraUrlParams is responsible to make
     // sure extraUrlParams is correct)
@@ -545,6 +571,7 @@ cleanup:
     for (i = 0; i < num_args; i++) {
         curl_free(vars[i].formatted_value);
     }
+    curl_free(request_guid.formatted_value);
 
     return encoded_url;
 }
@@ -769,10 +796,21 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     //TODO set error buffer
 
+    // Find request GUID in the supplied URL
+    char *request_guid_ptr = strstr(url, "request_guid=");
+    // Set pointer to the beginning of the UUID string
+    request_guid_ptr = request_guid_ptr + 13;
+
     do {
         // Reset buffer since this may not be our first rodeo
         SF_FREE(buffer.buffer);
         buffer.size = 0;
+
+        // Generate new request guid
+        if (uuid4_generate_non_terminated(request_guid_ptr)) {
+            log_error("Failed to generate new request GUID");
+            break;
+        }
 
         // Set parameters
         res = curl_easy_setopt(curl, CURLOPT_URL, url);
