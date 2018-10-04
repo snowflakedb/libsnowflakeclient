@@ -798,16 +798,18 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     // Find request GUID in the supplied URL
     char *request_guid_ptr = strstr(url, "request_guid=");
-    // Set pointer to the beginning of the UUID string
-    request_guid_ptr = request_guid_ptr + 13;
+    // Set pointer to the beginning of the UUID string if request GUID exists
+    if (request_guid_ptr) {
+        request_guid_ptr = request_guid_ptr + 13;
+    }
 
     do {
         // Reset buffer since this may not be our first rodeo
         SF_FREE(buffer.buffer);
         buffer.size = 0;
 
-        // Generate new request guid
-        if (uuid4_generate_non_terminated(request_guid_ptr)) {
+        // Generate new request guid, if request guid exists in url
+        if (request_guid_ptr && uuid4_generate_non_terminated(request_guid_ptr)) {
             log_error("Failed to generate new request GUID");
             break;
         }
