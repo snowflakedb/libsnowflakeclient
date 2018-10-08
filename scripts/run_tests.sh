@@ -14,7 +14,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 use_valgrind=false
 skip_env_args=false
-while getopts "hm" opt; do
+while getopts "hms" opt; do
   case $opt in
     m) use_valgrind=true ;;
     h) usage;;
