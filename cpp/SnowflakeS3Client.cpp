@@ -534,19 +534,21 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 void SnowflakeS3Client::decomposeProxyToParts(
   Aws::String &user, Aws::String &pwd, Aws::String &machine, unsigned &port, Aws::Http::Scheme &scheme)
 {
-  std::string proxy;
+  std::string proxy, protocol;
   std::size_t found, pos;
+  bool scheme_set = false;
 
   // Get proxy string and set scheme
   if (std::getenv("all_proxy")) {
     proxy = std::getenv("all_proxy");
-    scheme = Aws::Http::Scheme::HTTPS;
   } else if (std::getenv("https_proxy")) {
     proxy = std::getenv("https_proxy");
     scheme = Aws::Http::Scheme::HTTPS;
+    scheme_set = true;
   } else if (std::getenv("http_proxy")) {
     proxy = std::getenv("http_proxy");
     scheme = Aws::Http::Scheme::HTTP;
+    scheme_set = true;
   } else {
     return;
   }
@@ -556,6 +558,10 @@ void SnowflakeS3Client::decomposeProxyToParts(
   found = proxy.find("://");
   if (found != std::string::npos) {
     // constant value for '://'
+    if (!scheme_set) {
+      protocol = proxy.substr(pos, found - pos);
+      scheme = protocol.compare("https") == 0 ? Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
+    }
     pos = found + 3;
   }
 
