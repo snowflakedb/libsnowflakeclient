@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 
 
@@ -69,6 +70,25 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
+  Aws::String user, pwd, machine;
+  unsigned port = 0;
+  Aws::Http::Scheme scheme;
+  decomposeProxyToParts(user, pwd, machine, port, scheme);
+
+  // Set Proxy
+  if (!machine.empty()) {
+    clientConfiguration.proxyHost = machine;
+    clientConfiguration.proxyScheme = scheme;
+  }
+  if (!user.empty() && !pwd.empty()) {
+    clientConfiguration.proxyUserName = user;
+    clientConfiguration.proxyPassword = pwd;
+    pwd.clear();
+  }
+  if (port != 0) {
+    clientConfiguration.proxyPort = port;
+  }
+
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
 
   Aws::Auth::AWSCredentials credentials(
@@ -509,6 +529,57 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
   {
     return handleError(outcome.GetError());
   }
+}
+
+void SnowflakeS3Client::decomposeProxyToParts(
+  Aws::String &user, Aws::String &pwd, Aws::String &machine, unsigned &port, Aws::Http::Scheme &scheme)
+{
+  std::string proxy;
+  std::size_t found, pos;
+
+  // Get proxy string and set scheme
+  if (std::getenv("all_proxy")) {
+    proxy = std::getenv("all_proxy");
+    scheme = Aws::Http::Scheme::HTTPS;
+  } else if (std::getenv("https_proxy")) {
+    proxy = std::getenv("https_proxy");
+    scheme = Aws::Http::Scheme::HTTPS;
+  } else if (std::getenv("http_proxy")) {
+    proxy = std::getenv("http_proxy");
+    scheme = Aws::Http::Scheme::HTTP;
+  } else {
+    return;
+  }
+
+  // Proxy is in the form: "[protocol://][user:password@]machine[:port]"
+  pos = 0;
+  found = proxy.find("://");
+  if (found != std::string::npos) {
+    // constant value for '://'
+    pos = found + 3;
+  }
+
+  found = proxy.find('@', pos);
+  // If username and password exist, set them
+  if (found != std::string::npos) {
+    size_t colon_pos = proxy.find(':', pos);
+    user = Aws::String(proxy.substr(pos, colon_pos - pos));
+    pos = colon_pos + 1;
+    pwd = Aws::String(proxy.substr(pos, found - pos));
+    pos = found + 1;
+  }
+
+  found = proxy.find(':', pos);
+  if (found != std::string::npos) {
+    // port exists, set machine and port
+    machine = Aws::String(proxy.substr(pos, found - pos));
+    pos = found + 1;
+    port = (unsigned int) strtoul(proxy.substr(pos, (proxy.length()) - pos).c_str(), nullptr, 10);
+  } else {
+    // just set machine
+    machine = Aws::String(proxy.substr(pos, (proxy.length() - 1) - pos));
+  }
+
 }
 
 }
