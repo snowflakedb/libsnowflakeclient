@@ -19,6 +19,11 @@ void Snowflake::Client::Util::Proxy::stringToProxyParts(const std::string &proxy
     std::string protocol;
     std::size_t found, pos;
 
+    // Return on an empty input proxy string
+    if (proxy.empty()) {
+        return;
+    }
+
     // Proxy is in the form: "[protocol://][user:password@]machine[:port]"
     pos = 0;
     found = proxy.find("://");
@@ -47,7 +52,7 @@ void Snowflake::Client::Util::Proxy::stringToProxyParts(const std::string &proxy
         m_port = (unsigned int) strtoul(proxy.substr(pos, (proxy.length()) - pos).c_str(), nullptr, 10);
     } else {
         // just set machine
-        m_machine = std::string(proxy.substr(pos, (proxy.length() - 1) - pos));
+        m_machine = std::string(proxy.substr(pos, (proxy.length()) - pos));
     }
 }
 

@@ -47,8 +47,9 @@ SET(TESTS_CXX
         test_unit_file_type_detect
         test_unit_stream_splitter
         test_unit_thread_pool
-        test_unit_base64)
-        #test_cpp_select1)
+        test_unit_base64
+        #test_cpp_select1
+        test_unit_proxy)
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
