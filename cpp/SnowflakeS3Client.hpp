@@ -155,9 +155,6 @@ private:
   void uploadParts(MultiUploadCtx * uploadCtx);
 
   RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
-
-  void decomposeProxyToParts(Aws::String &user, Aws::String &pwd, Aws::String &machine,
-                             unsigned &port, Aws::Http::Scheme &scheme);
 };
 }
 }
