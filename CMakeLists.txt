@@ -109,19 +109,21 @@ set (SOURCE_FILES_PUT_GET
         cpp/StorageClientFactory.hpp
         cpp/StorageClientFactory.cpp
         cpp/RemoteStorageRequestOutcome.hpp
-        cpp/crypto/CryptoTypes.hpp
         cpp/util/Base64.hpp
         cpp/util/Base64.cpp
         cpp/util/ByteArrayStreamBuf.cpp
         cpp/util/ByteArrayStreamBuf.hpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
+        cpp/util/Proxy.hpp
+        cpp/util/Proxy.cpp
         cpp/util/ThreadPool.hpp
+        cpp/util/SnowflakeCommon.hpp
+        cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
         cpp/crypto/CipherContext.cpp
         cpp/crypto/Cryptor.cpp
-        cpp/util/SnowflakeCommon.hpp
         cpp/crypto/CipherStreamBuf.cpp
         cpp/crypto/CipherStreamBuf.hpp
         cpp/crypto/HashContext.cpp

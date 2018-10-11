@@ -7,6 +7,7 @@
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
+#include "util/Proxy.hpp"
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
@@ -23,6 +24,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 
 
@@ -69,6 +71,24 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
+  Util::Proxy proxy;
+  proxy.setProxyFromEnv();
+
+  // Set Proxy
+  if (!proxy.getMachine().empty()) {
+    clientConfiguration.proxyHost = Aws::String(proxy.getMachine());
+    clientConfiguration.proxyScheme = proxy.getScheme() == Snowflake::Client::Util::Proxy::Protocol::HTTPS ?
+      Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
+  }
+  if (!proxy.getUser().empty() && !proxy.getPwd().empty()) {
+    clientConfiguration.proxyUserName = proxy.getUser();
+    clientConfiguration.proxyPassword = proxy.getPwd();
+    proxy.clearPwd();
+  }
+  if (proxy.getPort() != 0) {
+    clientConfiguration.proxyPort = proxy.getPort();
+  }
+
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
 
   Aws::Auth::AWSCredentials credentials(
