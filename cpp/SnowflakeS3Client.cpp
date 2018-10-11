@@ -77,7 +77,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   // Set Proxy
   if (!proxy.getMachine().empty()) {
     clientConfiguration.proxyHost = Aws::String(proxy.getMachine());
-    clientConfiguration.proxyScheme = !proxy.getScheme().compare("http") ? Aws::Http::Scheme::HTTP : Aws::Http::Scheme::HTTPS;
+    clientConfiguration.proxyScheme = proxy.getScheme() == Snowflake::Client::Util::Proxy::Protocol::HTTPS ?
+      Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
   }
   if (!proxy.getUser().empty() && !proxy.getPwd().empty()) {
     clientConfiguration.proxyUserName = proxy.getUser();

@@ -17,11 +17,13 @@ namespace Util
 class Proxy
 {
 public:
+    enum Protocol {NONE, HTTP, HTTPS};
+
     Proxy() = default;
 
     Proxy(const std::string &proxy_str);
 
-    Proxy(std::string &user, std::string &pwd, std::string &machine, unsigned port, std::string &scheme);
+    Proxy(std::string &user, std::string &pwd, std::string &machine, unsigned port, Protocol scheme);
 
     ~Proxy() = default;
 
@@ -45,9 +47,9 @@ public:
         return this->m_port;
     }
 
-    inline const std::string& getScheme()
+    inline Protocol getScheme()
     {
-        return this->m_scheme;
+        return this->m_protocol;
     }
 
     void clearPwd();
@@ -59,7 +61,7 @@ private:
     std::string m_pwd;
     std::string m_machine;
     unsigned m_port = 0;
-    std::string m_scheme;
+    Protocol m_protocol = Protocol::NONE;
 
     void stringToProxyParts(const std::string &proxy);
 };

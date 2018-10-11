@@ -10,8 +10,8 @@ Snowflake::Client::Util::Proxy::Proxy(const std::string &proxy_str)
 }
 
 Snowflake::Client::Util::Proxy::Proxy(std::string &user, std::string &pwd,
-  std::string &machine, unsigned port, std::string &scheme) :
-  m_user(user), m_pwd(pwd), m_machine(machine), m_port(port), m_scheme(scheme) {}
+  std::string &machine, unsigned port, Snowflake::Client::Util::Proxy::Protocol scheme) :
+  m_user(user), m_pwd(pwd), m_machine(machine), m_port(port), m_protocol(scheme) {}
 
 
 void Snowflake::Client::Util::Proxy::stringToProxyParts(const std::string &proxy)
@@ -30,8 +30,15 @@ void Snowflake::Client::Util::Proxy::stringToProxyParts(const std::string &proxy
     if (found != std::string::npos) {
         // constant value for '://'
         protocol = proxy.substr(pos, found - pos);
-        m_scheme = protocol;
+        m_protocol = !protocol.compare("http") ? Snowflake::Client::Util::Proxy::Protocol::HTTP :
+                                               Snowflake::Client::Util::Proxy::Protocol::HTTPS;
+        // Set port with default value based on protocol and update
+        // below if user specifies port in proxy string
+        m_port = m_protocol == Snowflake::Client::Util::Proxy::Protocol::HTTP ? 80 : 443;
         pos = found + 3;
+    } else {
+        m_protocol = Snowflake::Client::Util::Proxy::Protocol::HTTP;
+        m_port = 80;
     }
 
     found = proxy.find('@', pos);
