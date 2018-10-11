@@ -65,6 +65,24 @@ Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
         }
     }
 
+Proxy
+^^^^^^^^^^
+
+Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
+
+- http_proxy
+- https_proxy
+- no_proxy
+
+.. code-block:: bash
+
+    export http_proxy="[protocol://][user:password@]machine[:port]"
+    export https_proxy="[protocol://][user:password@]machine[:port]"
+
+More info can be found on the `libcurl tutorial`__ page.
+
+.. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
+
 Run Tests
 ----------------------------------------------------------------------
 
