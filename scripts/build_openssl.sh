@@ -31,7 +31,7 @@ fi
 cd $OPENSSL_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC=gcc52
+    export CC="${GCC:-gcc52}"
     make distclean clean &> /dev/null || true
     ./Configure linux-x86_64 "${openssl_config_opts[@]}"
     make depend > /dev/null

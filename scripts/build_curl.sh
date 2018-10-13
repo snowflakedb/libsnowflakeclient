@@ -53,7 +53,7 @@ cd $LIBCURL_SOURCE_DIR
 echo "Building Curl with OpenSSL"
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC=gcc52
+    export CC="${GCC:-gcc52}"
     export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
     PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
     make > /dev/null
