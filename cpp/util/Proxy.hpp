@@ -6,6 +6,7 @@
 #define SNOWFLAKECLIENT_PROXY_HPP
 
 #include <cstddef>
+#include <cstdlib>
 #include <string>
 
 namespace Snowflake
