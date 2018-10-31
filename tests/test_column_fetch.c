@@ -1021,6 +1021,8 @@ void test_column_as_str(void **unused) {
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
+    free(out);
+    out = NULL;
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
