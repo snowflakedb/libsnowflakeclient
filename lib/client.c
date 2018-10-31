@@ -2379,6 +2379,9 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
         if (init_value_len == 0) {
             value = global_hooks.calloc(1, 1);
             value_len = 1;
+        } else {
+            // If we don't need to allocate a buffer, set value len to the initial value len
+            value_len = init_value_len;
         }
         strncpy(value, "", 1);
         bytes_copied = 0;
