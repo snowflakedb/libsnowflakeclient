@@ -943,103 +943,79 @@ void test_column_as_str(void **unused) {
     // Stores the result from the fetch operation
     char *out = NULL;
     size_t out_len = 0;
+    size_t bytes_copied = 0;
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Basic Case with a non-empty string
-        if (snowflake_column_as_str(sfstmt, 1, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 1, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("some string", out);
-        assert_int_equal(11, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(11, bytes_copied);
 
         // Case with an empty string
-        if (snowflake_column_as_str(sfstmt, 2, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 2, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("", out);
-        assert_int_equal(0, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(0, bytes_copied);
 
         // Case with a NULL value
-        if (snowflake_column_as_str(sfstmt, 3, &out, &out_len)) {
-            dump_error(&(sfstmt->error));
-        }
-        // No free occurs because no memory was allocated to the 'out' variable
-        assert(out == NULL);
-        assert_int_equal(0, out_len);
-
-        // Case converting a boolean false
-        if (snowflake_column_as_str(sfstmt, 4, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 3, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("", out);
-        assert_int_equal(0, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(0, bytes_copied);
+
+        // Case converting a boolean false
+        if (snowflake_column_as_str(sfstmt, 4, &out, &out_len, &bytes_copied)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_string_equal("", out);
+        assert_int_equal(0, bytes_copied);
 
         // Case converting a boolean true
-        if (snowflake_column_as_str(sfstmt, 5, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 5, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("1", out);
-        assert_int_equal(1, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(1, bytes_copied);
 
         // Case with a date type
-        if (snowflake_column_as_str(sfstmt, 6, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 6, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("2018-09-14", out);
-        assert_int_equal(10, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(10, bytes_copied);
 
         // Case with a TIMESTAMP_LTZ type
-        if (snowflake_column_as_str(sfstmt, 7, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 7, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("2014-03-20 15:30:45.493679329", out);
-        assert_int_equal(29, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(29, bytes_copied);
 
         // Case with a TIMESTAMP_NTZ type
-        if (snowflake_column_as_str(sfstmt, 8, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 8, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("2014-03-20 15:30:45.493679329", out);
-        assert_int_equal(29, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(29, bytes_copied);
 
         // Case with a TIMESTAMP_TZ type
-        if (snowflake_column_as_str(sfstmt, 9, &out, &out_len)) {
+        if (snowflake_column_as_str(sfstmt, 9, &out, &out_len, &bytes_copied)) {
             dump_error(&(sfstmt->error));
         }
         assert_string_equal("2014-03-20 15:30:45.493679329 -07:00", out);
-        assert_int_equal(36, out_len);
-        free(out);
-        out = NULL;
-        out_len = 0;
+        assert_int_equal(36, bytes_copied);
 
         // Out of bounds check
-        if (!(status = snowflake_column_as_str(sfstmt, 10, &out, &out_len))) {
+        if (!(status = snowflake_column_as_str(sfstmt, 10, &out, &out_len, &bytes_copied))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
-        if (!(status = snowflake_column_as_str(sfstmt, -1, &out, &out_len))) {
+        if (!(status = snowflake_column_as_str(sfstmt, -1, &out, &out_len, &bytes_copied))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);

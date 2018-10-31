@@ -813,10 +813,10 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
  * @param sfstmt SF_STMT context
  * @param idx Column index
  * @param value_ptr Copied Column data is stored in this pointer (if conversion was successful)
- * @param value_len_ptr
+ * @param value_len_ptr The size of value. If 
  * @return
  */
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr);
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *bytes_copied_ptr);
 
 /**
  * Returns the length of the raw column data

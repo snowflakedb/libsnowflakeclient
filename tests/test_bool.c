@@ -106,14 +106,14 @@ void test_bool(void **unused) {
 
     int64 c1 = 0;
     char *c2 = NULL;
+    size_t c2_len = 0;
+    size_t bytes_copied = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         if (v.c2in != NULL) {
-            snowflake_column_as_str(sfstmt, 2, &c2, NULL);
+            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &bytes_copied);
             assert_string_equal(v.c2out, c2);
-            free(c2);
-            c2 = NULL;
         } else {
             sf_bool is_null;
             snowflake_column_is_null(sfstmt, 2, &is_null);
@@ -131,6 +131,8 @@ void test_bool(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    free(c2);
+    c2 = NULL;
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

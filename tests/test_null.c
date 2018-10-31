@@ -23,7 +23,7 @@ typedef struct test_case_to_string {
 
 void test_null(void **unused) {
     TEST_CASE_TO_STRING test_cases[] = {
-      {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c2out = NULL, .c2_is_null = SF_BOOLEAN_TRUE, .c3out=NULL, .c3_is_null=SF_BOOLEAN_TRUE, .c4out= NULL, .c4_is_null = SF_BOOLEAN_TRUE}
+      {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c2out = "", .c2_is_null = SF_BOOLEAN_TRUE, .c3out="", .c3_is_null=SF_BOOLEAN_TRUE, .c4out= "", .c4_is_null = SF_BOOLEAN_TRUE}
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -125,21 +125,23 @@ void test_null(void **unused) {
     sf_bool is_null = SF_BOOLEAN_FALSE;
     int64 c1 = 0;
     char *null_val = NULL;
+    size_t null_val_len = 0;
+    size_t bytes_copied = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         snowflake_column_is_null(sfstmt, 2, &is_null);
-        snowflake_column_as_str(sfstmt, 2, &null_val, NULL);
+        snowflake_column_as_str(sfstmt, 2, &null_val, &null_val_len, &bytes_copied);
         assert_true(v.c2_is_null == is_null);
-        assert(v.c2out == null_val);
+        assert_string_equal(v.c2out, null_val);
         snowflake_column_is_null(sfstmt, 3, &is_null);
-        snowflake_column_as_str(sfstmt, 3, &null_val, NULL);
+        snowflake_column_as_str(sfstmt, 3, &null_val, &null_val_len, &bytes_copied);
         assert_true(v.c3_is_null == is_null);
-        assert(v.c3out == null_val);
+        assert_string_equal(v.c3out, null_val);
         snowflake_column_is_null(sfstmt, 4, &is_null);
-        snowflake_column_as_str(sfstmt, 4, &null_val, NULL);
+        snowflake_column_as_str(sfstmt, 4, &null_val, &null_val_len, &bytes_copied);
         assert_true(v.c4_is_null == is_null);
-        assert(v.c4out == null_val);
+        assert_string_equal(v.c4out, null_val);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
@@ -152,6 +154,8 @@ void test_null(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    free(null_val);
+    null_val = NULL;
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

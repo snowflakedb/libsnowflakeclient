@@ -68,7 +68,7 @@ void test_col_string_manipulate_fixed_size(void **unused) {
     size_t len;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Convert string to lowercase then discard
-        snowflake_column_as_str(sfstmt, 1, &out, NULL);
+        snowflake_column_as_str(sfstmt, 1, &out, NULL, NULL);
         char *p = out;
         while (*p) {
             *p = (char) tolower(*p);
@@ -106,7 +106,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     char *out = NULL;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Create dynamic buffer and copy over
-        snowflake_column_as_str(sfstmt, 1, &out, NULL);
+        snowflake_column_as_str(sfstmt, 1, &out, NULL, NULL);
         out_buff[row] = out;
         out = NULL;
         row++;
@@ -155,7 +155,7 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     while (snowflake_fetch(sfstmt) == SF_STATUS_SUCCESS) {
         // Set title if NULL
         if (!books[id].title) {
-            snowflake_column_as_str(sfstmt, 2, &title, NULL);
+            snowflake_column_as_str(sfstmt, 2, &title, NULL, NULL);
             books[id].title = title;
             title = NULL;
         }

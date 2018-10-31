@@ -2347,7 +2347,7 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr) {
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *bytes_copied_ptr) {
     SF_STATUS status;
     cJSON *column = NULL;
 
@@ -2362,8 +2362,26 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
 
     char *value = NULL;
     size_t value_len = 0;
+    size_t init_value_len = 0;
+    size_t bytes_copied = 0;
+    sf_bool preallocated = SF_BOOLEAN_FALSE;
+
+    // If value_ptr isn't null and value_len exists and is greater than 0,
+    // then the user passed in a buffer and we should reallocate if needed
+    if (*value_ptr != NULL && value_len_ptr != NULL && *value_len_ptr != 0) {
+        value = *value_ptr;
+        init_value_len = *value_len_ptr;
+        preallocated = SF_BOOLEAN_TRUE;
+    }
 
     if (snowflake_cJSON_IsNull(column)) {
+        // If value is NULL, allocate buffer for empty string
+        if (init_value_len == 0) {
+            value = global_hooks.calloc(1, 1);
+            value_len = 1;
+        }
+        strncpy(value, "", 1);
+        bytes_copied = 0;
         status = SF_STATUS_SUCCESS;
         goto cleanup;
     }
@@ -2374,18 +2392,27 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
     memset(&tm_obj, 0, sizeof(tm_obj));
 
     switch (sfstmt->desc[idx - 1].type) {
-        case SF_DB_TYPE_BOOLEAN:
+        case SF_DB_TYPE_BOOLEAN: ;
+            const char *bool_value;
             if (strcmp(column->valuestring, "0") == 0) {
                 /* False */
-                value_len = strlen(SF_BOOLEAN_FALSE_STR);
-                value = global_hooks.calloc(1, value_len + 1);
-                strncpy(value, SF_BOOLEAN_FALSE_STR, value_len + 1);
+                bool_value = SF_BOOLEAN_FALSE_STR;
             } else {
                 /* True */
-                value_len = strlen(SF_BOOLEAN_TRUE_STR);
-                value = global_hooks.calloc(1, value_len + 1);
-                strncpy(value, SF_BOOLEAN_TRUE_STR, value_len + 1);
+                bool_value = SF_BOOLEAN_TRUE_STR;
             }
+            bytes_copied = strlen(bool_value);
+            if (bytes_copied + 1 > init_value_len) {
+                if (preallocated) {
+                    value = global_hooks.realloc(value, bytes_copied + 1);
+                } else {
+                    value = global_hooks.calloc(1, bytes_copied + 1);
+                }
+                // If we have to allocate memory, then we need to set value_len
+                // otherwise we leave value_len as is
+                value_len = bytes_copied + 1;
+            }
+            strncpy(value, bool_value, bytes_copied + 1);
             break;
         case SF_DB_TYPE_DATE:
             sec =
@@ -2404,8 +2431,19 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 value_len = 0;
                 goto cleanup;
             }
-            value = global_hooks.calloc(1, 13);
-            value_len = strftime(value, 13, "%Y-%m-%d", &tm_obj);
+            // Max size of date string
+            bytes_copied = 12;
+            if (bytes_copied + 1 > init_value_len) {
+                if (preallocated) {
+                    value = global_hooks.realloc(value, bytes_copied + 1);
+                } else {
+                    value = global_hooks.calloc(1, bytes_copied + 1);
+                }
+                // If we have to allocate memory, then we need to set value_len
+                // otherwise we leave value_len as is
+                value_len = bytes_copied + 1;
+            }
+            bytes_copied = strftime(value, bytes_copied + 1, "%Y-%m-%d", &tm_obj);
             break;
         case SF_DB_TYPE_TIME:
         case SF_DB_TYPE_TIMESTAMP_NTZ:
@@ -2427,25 +2465,41 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 goto cleanup;
             }
             // TODO add format when format is no longer a fixed string
-            if (snowflake_timestamp_to_string(&ts, "", &value, 0, &value_len, SF_BOOLEAN_TRUE)) {
+            if (snowflake_timestamp_to_string(&ts, "", &value, value_len, &bytes_copied, SF_BOOLEAN_TRUE)) {
                 SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
                                          SF_STATUS_ERROR_CONVERSION_FAILURE,
                                          "Failed to convert a SF_TIMESTAMP value to a string.",
                                          SF_SQLSTATE_GENERAL_ERROR,
                                          sfstmt->sfqid);
-                if (value) {
+                // If the memory wasn't preallocated, then free it
+                if (!preallocated && value) {
                     global_hooks.dealloc(value);
                     value = NULL;
+                    value_len = 0;
                 }
-                value_len = 0;
+                bytes_copied = 0;
                 goto cleanup;
+            } else {
+                // If true, then we reallocated when writing the timestamp to a string
+                if (bytes_copied + 1 > init_value_len) {
+                    value_len = bytes_copied + 1;
+                }
             }
 
             break;
         default:
-            value_len = strlen(column->valuestring);
-            value = global_hooks.calloc(1, value_len + 1);
-            strncpy(value, column->valuestring, value_len + 1);
+            bytes_copied = strlen(column->valuestring);
+            if (bytes_copied + 1 > init_value_len) {
+                if (preallocated) {
+                    value = global_hooks.realloc(value, bytes_copied + 1);
+                } else {
+                    value = global_hooks.calloc(1, bytes_copied + 1);
+                }
+                // If we have to allocate memory, then we need to set value_len
+                // otherwise we leave value_len as is
+                value_len = bytes_copied + 1;
+            }
+            strncpy(value, column->valuestring, bytes_copied + 1);
             break;
     }
 
@@ -2456,6 +2510,9 @@ cleanup:
     *value_ptr = value;
     if (value_len_ptr) {
         *value_len_ptr = value_len;
+    }
+    if (bytes_copied_ptr) {
+        *bytes_copied_ptr = bytes_copied;
     }
     return status;
 }
