@@ -2411,6 +2411,8 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 // If we have to allocate memory, then we need to set value_len
                 // otherwise we leave value_len as is
                 value_len = bytes_copied + 1;
+            } else {
+                value_len = init_value_len;
             }
             strncpy(value, bool_value, bytes_copied + 1);
             break;
@@ -2442,6 +2444,8 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 // If we have to allocate memory, then we need to set value_len
                 // otherwise we leave value_len as is
                 value_len = bytes_copied + 1;
+            } else {
+                value_len = init_value_len;
             }
             bytes_copied = strftime(value, bytes_copied + 1, "%Y-%m-%d", &tm_obj);
             break;
@@ -2483,6 +2487,8 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 // If true, then we reallocated when writing the timestamp to a string
                 if (bytes_copied + 1 > init_value_len) {
                     value_len = bytes_copied + 1;
+                } else {
+                    value_len = init_value_len;
                 }
             }
 
@@ -2498,6 +2504,8 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 // If we have to allocate memory, then we need to set value_len
                 // otherwise we leave value_len as is
                 value_len = bytes_copied + 1;
+            } else {
+                value_len = init_value_len;
             }
             strncpy(value, column->valuestring, bytes_copied + 1);
             break;
