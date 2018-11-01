@@ -250,6 +250,8 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
     desc = (SF_COLUMN_DESC *) SF_CALLOC(array_size, sizeof(SF_COLUMN_DESC));
     for (i = 0; i < (int)array_size; i++) {
         column = snowflake_cJSON_GetArrayItem(rowtype, i);
+        // Index starts at 1
+        desc[i].idx = (size_t) i + 1;
         if(json_copy_string(&desc[i].name, column, "name")) {
             desc[i].name = NULL;
         }
