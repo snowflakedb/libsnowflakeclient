@@ -96,9 +96,9 @@ void test_col_conv_timestamp_type(void **unused) {
 
     char *out = NULL;
     size_t out_len = 0;
-    size_t bytes_copied = 0;
+    size_t out_max_size = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        snowflake_column_as_str(sfstmt, 1, &out, &out_len, &bytes_copied);
+        snowflake_column_as_str(sfstmt, 1, &out, &out_len, &out_max_size);
     }
 
     clock_gettime(clk_id, &end);

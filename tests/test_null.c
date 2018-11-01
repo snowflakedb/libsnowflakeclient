@@ -126,20 +126,20 @@ void test_null(void **unused) {
     int64 c1 = 0;
     char *null_val = NULL;
     size_t null_val_len = 0;
-    size_t bytes_copied = 0;
+    size_t max_null_val_len = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         snowflake_column_is_null(sfstmt, 2, &is_null);
-        snowflake_column_as_str(sfstmt, 2, &null_val, &null_val_len, &bytes_copied);
+        snowflake_column_as_str(sfstmt, 2, &null_val, &null_val_len, &max_null_val_len);
         assert_true(v.c2_is_null == is_null);
         assert_string_equal(v.c2out, null_val);
         snowflake_column_is_null(sfstmt, 3, &is_null);
-        snowflake_column_as_str(sfstmt, 3, &null_val, &null_val_len, &bytes_copied);
+        snowflake_column_as_str(sfstmt, 3, &null_val, &null_val_len, &max_null_val_len);
         assert_true(v.c3_is_null == is_null);
         assert_string_equal(v.c3out, null_val);
         snowflake_column_is_null(sfstmt, 4, &is_null);
-        snowflake_column_as_str(sfstmt, 4, &null_val, &null_val_len, &bytes_copied);
+        snowflake_column_as_str(sfstmt, 4, &null_val, &null_val_len, &max_null_val_len);
         assert_true(v.c4_is_null == is_null);
         assert_string_equal(v.c4out, null_val);
     }

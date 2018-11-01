@@ -32,12 +32,12 @@ void test_select_long_data_with_small_initial_buffer(void **unused) {
     
     char *value = NULL;
     size_t value_len = 0;
-    size_t bytes_copied = 0;
+    size_t max_value_size = 0;
     assert_int_equal(snowflake_num_rows(sfstmt), 2);
 
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        snowflake_column_as_str(sfstmt, 1, &value, &value_len, &bytes_copied);
+        snowflake_column_as_str(sfstmt, 1, &value, &value_len, &max_value_size);
         assert_int_equal(strlen(value), 100);
         ++counter;
     }
