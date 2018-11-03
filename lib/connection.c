@@ -246,7 +246,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error) ||
+                          sf->network_timeout, SF_BOOLEAN_FALSE, error, sf->insecure_mode) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -365,7 +365,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error) ||
+                          sf->network_timeout, SF_BOOLEAN_FALSE, error, sf->insecure_mode) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -770,7 +770,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              cJSON **json,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error) {
+                             SF_ERROR_STRUCT *error,
+                             sf_bool insecure_mode) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -893,7 +894,14 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
 
 #ifndef _WIN32
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, SF_OCSP_CHECK);
+        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
+        sf_bool ocsp_check;
+        if (insecure_mode) {
+            ocsp_check = SF_BOOLEAN_FALSE;
+        } else {
+            ocsp_check = SF_OCSP_CHECK;
+        }
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP check enable/disable [%s]",
                       curl_easy_strerror(res));
