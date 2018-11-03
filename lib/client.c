@@ -2437,7 +2437,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                 goto cleanup;
             }
             // Max size of date string
-            value_len = 12;
+            value_len = DATE_STRING_MAX_SIZE;
             if (value_len + 1 > init_value_len) {
                 if (preallocated) {
                     value = global_hooks.realloc(value, value_len + 1);

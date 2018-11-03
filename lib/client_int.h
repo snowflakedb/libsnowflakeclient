@@ -36,6 +36,8 @@
 #define REQUEST_TYPE_CLONE "CLONE"
 #define REQUEST_TYPE_ISSUE "ISSUE"
 
+#define DATE_STRING_MAX_SIZE 12
+
 int uuid4_generate_non_terminated(char *dst);
 int uuid4_generate(char *dst);
 
