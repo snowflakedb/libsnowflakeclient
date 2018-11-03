@@ -58,6 +58,9 @@ struct SF_CHUNK_DOWNLOADER {
 
     // Snowflake statement error
     SF_ERROR_STRUCT *sf_error;
+
+    // Snowflake connection insecure mode flag
+    sf_bool insecure_mode;
 };
 
 SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
@@ -65,7 +68,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    cJSON *chunks,
                                                    uint64 thread_count,
                                                    uint64 fetch_slots,
-                                                   SF_ERROR_STRUCT *sf_error);
+                                                   SF_ERROR_STRUCT *sf_error,
+                                                   sf_bool insecure_mode);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);

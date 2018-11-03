@@ -199,12 +199,12 @@ cleanup:
     return ret;
 }
 
-sf_bool STDCALL download_chunk(char *url, struct curl_slist *headers, cJSON **chunk, SF_ERROR_STRUCT *error) {
+sf_bool STDCALL download_chunk(char *url, struct curl_slist *headers, cJSON **chunk, SF_ERROR_STRUCT *error, sf_bool insecure_mode) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     curl = curl_easy_init();
 
-    if (!curl || !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT, SF_BOOLEAN_TRUE, error)) {
+    if (!curl || !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT, SF_BOOLEAN_TRUE, error, insecure_mode)) {
         // Error set in perform function
         goto cleanup;
     }
@@ -222,7 +222,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    cJSON *chunks,
                                                    uint64 thread_count,
                                                    uint64 fetch_slots,
-                                                   SF_ERROR_STRUCT *sf_error) {
+                                                   SF_ERROR_STRUCT *sf_error,
+                                                   sf_bool insecure_mode) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
@@ -255,6 +256,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->is_shutdown = SF_BOOLEAN_FALSE;
     chunk_downloader->has_error = SF_BOOLEAN_FALSE;
     chunk_downloader->sf_error = sf_error;
+    chunk_downloader->insecure_mode = insecure_mode;
 
     // Initialize chunk_headers or qrmk
     if (chunk_headers) {
@@ -429,7 +431,8 @@ static void * chunk_downloader_thread(void *downloader) {
         _critical_section_unlock(&chunk_downloader->queue_lock);
 
         // Download chunk
-        if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers, &chunk, &err)) {
+        if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
+                            &chunk, &err, chunk_downloader->insecure_mode)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {
                 copy_snowflake_error(chunk_downloader->sf_error, &err);
