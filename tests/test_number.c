@@ -121,29 +121,25 @@ void test_number(void **unused) {
 
     int64 c1 = 0;
     char *str = NULL;
+    size_t str_len = 0;
+    size_t max_str_len = 0;
     int64 int_val = 0;
     float64 float_val = 0.0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         snowflake_column_as_float64(sfstmt, 2, &float_val);
-        snowflake_column_as_str(sfstmt, 2, &str, NULL);
+        snowflake_column_as_str(sfstmt, 2, &str, &str_len, &max_str_len);
         assert(float_val = v.c2in);
         assert_string_equal(v.c2out, str);
-        free(str);
-        str = NULL;
         snowflake_column_as_int64(sfstmt, 3, &int_val);
-        snowflake_column_as_str(sfstmt, 3, &str, NULL);
+        snowflake_column_as_str(sfstmt, 3, &str, &str_len, &max_str_len);
         assert(int_val = v.c3in);
         assert_string_equal(v.c3out, str);
-        free(str);
-        str = NULL;
         snowflake_column_as_float64(sfstmt, 4, &float_val);
-        snowflake_column_as_str(sfstmt, 4, &str, NULL);
+        snowflake_column_as_str(sfstmt, 4, &str, &str_len, &max_str_len);
         assert(float_val = v.c4in);
         assert_string_equal(v.c4out, str);
-        free(str);
-        str = NULL;
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
@@ -156,6 +152,8 @@ void test_number(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    free(str);
+    str = NULL;
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

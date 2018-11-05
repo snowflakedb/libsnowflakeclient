@@ -113,6 +113,8 @@ void test_timestamp_ntz(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     char *c2buf = NULL;
+    size_t c2buf_len = 0;
+    size_t c2buf_max_size = 0;
     sf_bool is_null;
     assert_int_equal(snowflake_num_rows(sfstmt), no_error_test_cases);
 
@@ -130,10 +132,8 @@ void test_timestamp_ntz(void **unused) {
             assert_true(is_null);
         } else {
             // expecting not null
-            snowflake_column_as_str(sfstmt, 2, &c2buf, NULL);
+            snowflake_column_as_str(sfstmt, 2, &c2buf, &c2buf_len, &c2buf_max_size);
             assert_string_equal(v.c2out, c2buf);
-            free(c2buf);
-            c2buf = NULL;
         }
     }
     if (status != SF_STATUS_EOF) {
@@ -147,6 +147,8 @@ void test_timestamp_ntz(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    free(c2buf);
+    c2buf = NULL;
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
