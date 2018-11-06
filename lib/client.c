@@ -1699,7 +1699,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         chunks,
                         2, // thread count
                         4, // fetch slot
-                        &sfstmt->error);
+                        &sfstmt->error,
+                        sfstmt->connection->insecure_mode);
                     if (!sfstmt->chunk_downloader) {
                         // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
                         goto cleanup;

@@ -368,10 +368,12 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  *                         opening square bracket at the beginning of the text buffer and a closing square bracket
  *                         at the end of the text buffer.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
+ * @param insecure_mode Insecure mode disable OCSP check when set to true
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, struct curl_slist *header,
-                             char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader, SF_ERROR_STRUCT *error);
+                             char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
+                             SF_ERROR_STRUCT *error, sf_bool insecure_mode);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
