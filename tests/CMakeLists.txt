@@ -34,7 +34,8 @@ SET(TESTS_C
         test_timezone
         test_adjust_fetch_data
         test_issue_76
-        test_column_fetch)
+        test_column_fetch
+        test_native_timestamp)
 
 SET(TESTS_CXX
         test_unit_jwt
