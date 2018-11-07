@@ -37,6 +37,12 @@
 #define REQUEST_TYPE_ISSUE "ISSUE"
 
 #define DATE_STRING_MAX_SIZE 12
+#define SECONDS_IN_AN_HOUR 86400L
+
+/**
+ * Maximum one-directional range of offset-based timezones (24 hours)
+ */
+#define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
 
 int uuid4_generate_non_terminated(char *dst);
 int uuid4_generate(char *dst);

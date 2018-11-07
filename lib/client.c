@@ -95,11 +95,6 @@ static const int64 pow10_int64[] = {
 };
 
 /**
- * Maximum one-directional range of offset-based timezones (24 hours)
- */
-#define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
-
-/**
  * Find string size, create buffer, copy over, and return.
  * @param var output buffer
  * @param str source string
@@ -151,136 +146,6 @@ static void log_lock_func(void *udata, int lock) {
         _mutex_unlock(&log_lock);
     }
 }
-
-/**
- * Extracts a Snowflake internal representation of timestamp into
- * seconds, nanoseconds and optionally Timezone offset.
- * @param sec pointer of seconds
- * @param nsec pointer of nanoseconds
- * @param tzoffset pointer of Timezone offset.
- * @param src source buffer including a Snowflake internal timestamp
- * @param timezone Timezone for TIMESTAMP_LTZ
- * @param scale Timestamp data type scale between 0 and 9
- * @return SF_BOOLEAN_TRUE if success otherwise SF_BOOLEAN_FALSE
- */
-static sf_bool _extract_timestamp_dynamic(
-  char **result_ptr, size_t *result_len_ptr, SF_DB_TYPE sftype,
-  const char *src, const char *timezone, int64 scale) {
-    sf_bool ret = SF_BOOLEAN_FALSE;
-    time_t nsec = 0L;
-    time_t sec = 0L;
-    int64 tzoffset = 0;
-    struct tm tm_obj;
-    struct tm *tm_ptr = NULL;
-    char tzname[64];
-    char *tzptr = (char *) timezone;
-    size_t len = 0;
-    char *value = NULL;
-
-    memset(&tm_obj, 0, sizeof(tm_obj));
-
-    /* Search for a decimal point */
-    char *ptr = strchr(src, (int) '.');
-    if (ptr == NULL) {
-        ret = SF_BOOLEAN_FALSE;
-        goto cleanup;
-    }
-    sec = strtoll(src, NULL, 10);
-
-    /* Search for a space for TIMESTAMP_TZ */
-    char *sptr = strchr(ptr + 1, (int) ' ');
-    nsec = strtoll(ptr + 1, NULL, 10);
-    if (sptr != NULL) {
-        /* TIMESTAMP_TZ */
-        nsec = strtoll(ptr + 1, NULL, 10);
-        tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
-    }
-    if (sec < 0 && nsec > 0) {
-        nsec = pow10_int64[scale] - nsec;
-        sec--;
-    }
-    log_info("sec: %lld, nsec: %lld", sec, nsec);
-
-    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* make up Timezone name from the tzoffset */
-        ldiv_t dm = ldiv((long) tzoffset, 60L);
-        sprintf(tzname, "UTC%c%02ld:%02ld",
-                dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
-        tzptr = tzname;
-    }
-
-    /* replace a dot character with NULL */
-    if (sftype == SF_DB_TYPE_TIMESTAMP_NTZ ||
-        sftype == SF_DB_TYPE_TIME) {
-        tm_ptr = sf_gmtime(&sec, &tm_obj);
-    } else if (sftype == SF_DB_TYPE_TIMESTAMP_LTZ ||
-               sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* set the environment variable TZ to the session timezone
-         * so that localtime_tz honors it.
-         */
-        _mutex_lock(&gmlocaltime_lock);
-        const char *prev_tz_ptr = sf_getenv("TZ");
-        sf_setenv("TZ", tzptr);
-        sf_tzset();
-        sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
-        tm_ptr = sf_localtime(&sec, &tm_obj);
-        if (prev_tz_ptr != NULL) {
-            sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
-        } else {
-            sf_unsetenv("TZ");
-        }
-        sf_tzset();
-        _mutex_unlock(&gmlocaltime_lock);
-    }
-    if (tm_ptr == NULL) {
-        len = 0;
-        ret = SF_BOOLEAN_FALSE;
-        goto cleanup;
-    }
-    const char *fmt0;
-    size_t max_len = 1;
-    if (sftype != SF_DB_TYPE_TIME) {
-        max_len += 21;
-        fmt0 = "%Y-%m-%d %H:%M:%S";
-    } else {
-        max_len += 8;
-        fmt0 = "%H:%M:%S";
-    }
-    /* adjust scale */
-    char fmt[20];
-    sprintf(fmt, ".%%0%lldld", scale);
-
-    // Add space for scale if scale is greater than 0
-    max_len += (scale > 0) ? 1 + scale : 0;
-    // Add space for timezone if SF_DB_TYPE_TIMESTAMP_TZ is set
-    max_len += (sftype == SF_DB_TYPE_TIMESTAMP_TZ) ? 7 : 0;
-    // Allocate string buffer to store date using our calculated max length
-    value = global_hooks.calloc(1, max_len);
-    len = strftime(value, max_len, fmt0, &tm_obj);
-    if (scale > 0) {
-        len += snprintf(
-          &((char *) value)[len],
-          max_len - len, fmt,
-          nsec);
-    }
-    if (sftype == SF_DB_TYPE_TIMESTAMP_TZ) {
-        /* Timezone info */
-        ldiv_t dm = ldiv((long) tzoffset, 60L);
-        len += snprintf(
-          &((char *) value)[len],
-          max_len - len,
-          " %c%02ld:%02ld",
-          dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
-    }
-
-    ret = SF_BOOLEAN_TRUE;
-
-cleanup:
-    *result_len_ptr = len;
-    *result_ptr = value;
-    return ret;
-}
-
 
 /**
  * Reset the connection parameters with the returned parameteres
@@ -2661,20 +2526,26 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
 
     /* Search for a decimal point */
     char *ptr = strchr(str, (int) '.');
-    if (ptr == NULL) {
+    // No decimal point exists for date types
+    if (ptr == NULL && ts->ts_type != SF_DB_TYPE_DATE) {
         ret = SF_STATUS_ERROR_GENERAL;
         goto cleanup;
     }
     sec = strtoll(str, NULL, 10);
 
-    /* Search for a space for TIMESTAMP_TZ */
-    char *sptr = strchr(ptr + 1, (int) ' ');
-    nsec = strtoll(ptr + 1, NULL, 10);
-    if (sptr != NULL) {
-        /* TIMESTAMP_TZ */
+    if (ts->ts_type == SF_DB_TYPE_DATE) {
+        sec = sec * SECONDS_IN_AN_HOUR;
+    } else {
+        /* Search for a space for TIMESTAMP_TZ */
+        char *sptr = strchr(ptr + 1, (int) ' ');
         nsec = strtoll(ptr + 1, NULL, 10);
-        tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
+        if (sptr != NULL) {
+            /* TIMESTAMP_TZ */
+            nsec = strtoll(ptr + 1, NULL, 10);
+            tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
+        }
     }
+
     // If timestamp is before the epoch, we have to do some
     // math to make things work just right
     if (sec < 0 && nsec > 0) {
@@ -2696,7 +2567,8 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
 
     /* replace a dot character with NULL */
     if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_NTZ ||
-      ts->ts_type == SF_DB_TYPE_TIME) {
+        ts->ts_type == SF_DB_TYPE_TIME ||
+        ts->ts_type == SF_DB_TYPE_DATE) {
         tm_ptr = sf_gmtime(&sec, &ts->tm_obj);
     } else if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_LTZ ||
       ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
