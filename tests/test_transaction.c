@@ -47,6 +47,7 @@ void test_transaction(void **unused) {
     /* insert one row */
     int64 v = 3;
     p1.idx = 1;
+    p1.name = NULL;
     p1.c_type = SF_C_TYPE_INT64;
     p1.value = (void *) &v;
     status = snowflake_bind_param(sfstmt, &p1);
@@ -56,6 +57,7 @@ void test_transaction(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     p2.idx = 2;
+    p2.name = NULL;
     p2.c_type = SF_C_TYPE_STRING;
     p2.value = (void *) "test2";
     p2.len = strlen(p2.value);

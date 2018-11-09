@@ -102,6 +102,7 @@ void test_crud(void **unused) {
     int64 p1v = 102;
     SF_BIND_INPUT p1;
     p1.idx = 1;
+    p1.name = NULL;
     p1.c_type = SF_C_TYPE_INT64;
     p1.value = &p1v;
     p1.len = sizeof(p1v);
@@ -115,6 +116,7 @@ void test_crud(void **unused) {
     strcpy(p2v, "test2");
     SF_BIND_INPUT p2;
     p2.idx = 2;
+    p2.name = NULL;
     p2.c_type = SF_C_TYPE_STRING;
     p2.value = &p2v;
     p2.len = sizeof(p2v);

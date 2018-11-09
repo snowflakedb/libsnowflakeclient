@@ -67,6 +67,7 @@ void test_bool(void **unused) {
         SF_BIND_INPUT ic1;
         int64 ic1buf = v.c1in;
         ic1.idx = 1;
+        ic1.name = NULL;
         ic1.c_type = SF_C_TYPE_INT64;
         ic1.value = (void *) &ic1buf;
         ic1.len = sizeof(ic1buf);
@@ -78,6 +79,7 @@ void test_bool(void **unused) {
 
         SF_BIND_INPUT ic2;
         ic2.idx = 2;
+        ic2.name = NULL;
         ic2.c_type = SF_C_TYPE_BOOLEAN;
         ic2.value = (void *) v.c2in;
         ic2.len = sizeof(sf_bool);

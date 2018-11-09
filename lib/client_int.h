@@ -6,7 +6,8 @@
 #define SNOWFLAKE_CLIENT_INT_H
 
 #include "cJSON.h"
-#include "arraylist.h"
+/*#include "arraylist.h"*/
+#include "paramstore.h"
 #include "snowflake/platform.h"
 #include "snowflake/client.h"
 
@@ -114,5 +115,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
  * @return true if this is a put/get command, otherwise false
  */
 sf_bool STDCALL _is_put_get_command(char* sql_text);
+
+/**
+ * @return POSITIONAL or NAMED based on the type of params
+ */
+PARAM_TYPE STDCALL _sf_get_param_style(const SF_BIND_INPUT *input);
 
 #endif //SNOWFLAKE_CLIENT_INT_H

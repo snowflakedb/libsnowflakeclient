@@ -70,8 +70,14 @@ set(SOURCE_FILES
         lib/cJSON.h
         lib/cJSON.c
         lib/logger.c
+        lib/paramstore.c
+        lib/paramstore.h
         lib/arraylist.h
         lib/arraylist.c
+        lib/treemap.h
+        lib/treemap.c
+        lib/rbtree.h
+        lib/rbtree.c
         lib/memory.h
         lib/memory.c
         lib/connection.h

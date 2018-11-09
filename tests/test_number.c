@@ -62,6 +62,7 @@ void test_number(void **unused) {
 
         SF_BIND_INPUT ic1 = {0};
         ic1.idx = 1;
+        ic1.name = NULL;
         ic1.c_type = SF_C_TYPE_INT64;
         ic1.value = (void *) &v.c1in;
         ic1.len = sizeof(v.c1in);
@@ -73,6 +74,7 @@ void test_number(void **unused) {
 
         SF_BIND_INPUT ic2 = {0};
         ic2.idx = 2;
+        ic2.name = NULL;
         ic2.c_type = SF_C_TYPE_FLOAT64;
         ic2.value = (void *) &v.c2in;
         ic2.len = sizeof(v.c2in);
@@ -84,6 +86,7 @@ void test_number(void **unused) {
 
         SF_BIND_INPUT ic3 = {0};
         ic3.idx = 3;
+        ic3.name = NULL;
         ic3.c_type = SF_C_TYPE_INT64;
         ic3.value = (void *) &v.c3in;
         ic3.len = sizeof(v.c3in);
@@ -95,6 +98,7 @@ void test_number(void **unused) {
 
         SF_BIND_INPUT ic4 = {0};
         ic4.idx = 4;
+        ic4.name = NULL;
         ic4.c_type = SF_C_TYPE_FLOAT64;
         ic4.value = (void *) &v.c4in;
         ic4.len = sizeof(v.c4in);

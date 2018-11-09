@@ -13,6 +13,7 @@ SET(TESTS_C
         test_connect
         test_connect_negative
         test_bind_params
+        test_bind_named_params
         test_change_current
         test_select1
         test_check_ctypes
@@ -155,3 +156,4 @@ endif ()
 
 # Uncomment when you want to run the OCSP unit tests. Do not run as part of normal Travis testing
 # add_subdirectory(unit_test_ocsp)
+add_subdirectory(test_bind_datastructures)
