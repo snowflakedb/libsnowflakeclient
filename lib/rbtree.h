@@ -3,7 +3,7 @@
  */
 
 #ifndef SNOWFLAKE_RBTREE_H
-#define SNWOFLAKE_RBTREE_H
+#define SNOWFLAKE_RBTREE_H
 
 #ifdef __cplusplus
 extern "C" {
