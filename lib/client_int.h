@@ -6,7 +6,6 @@
 #define SNOWFLAKE_CLIENT_INT_H
 
 #include "cJSON.h"
-/*#include "arraylist.h"*/
 #include "paramstore.h"
 #include "snowflake/platform.h"
 #include "snowflake/client.h"

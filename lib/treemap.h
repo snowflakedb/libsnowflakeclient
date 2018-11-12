@@ -2,8 +2,8 @@
  * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
  */
 
-#ifndef SNOWFLAKE_HASHMAP_H
-#define SNOWFLAKE_HASHMAP_H
+#ifndef SNOWFLAKE_TREEMAP_H
+#define SNOWFLAKE_TREEMAP_H
 
 #ifdef __cplusplus
 extern "C" {

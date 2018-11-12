@@ -85,4 +85,5 @@ void *STDCALL sf_param_store_get(void *ps, size_t index, char *key)
         }
         return sf_treemap_get(pstore->tree_map, key);
     }
+    return NULL;
 }

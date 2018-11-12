@@ -337,11 +337,7 @@ typedef struct SF_STMT {
     int64 total_row_index;
     void *params;
     void **name_list;
-    union
-    {
-        int64 names_len;
-        int64 idx_len;
-    };
+    unsigned int params_len;
     SF_COLUMN_DESC *desc;
     void *stmt_attrs;
     sf_bool is_dml;

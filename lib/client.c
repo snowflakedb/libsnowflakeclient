@@ -964,6 +964,7 @@ static void STDCALL _snowflake_stmt_desc_reset(SF_STMT *sfstmt) {
  * @param sfstmt
  */
 static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
+
     clear_snowflake_error(&sfstmt->error);
 
     strncpy(sfstmt->sfqid, "", SF_UUID4_LEN);
@@ -990,7 +991,11 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
         sf_param_store_deallocate(sfstmt->params);
     }
     sfstmt->params = NULL;
-    sfstmt->names_len = 0;
+    if (sfstmt->params_len)
+    {
+        SF_FREE(sfstmt->name_list);
+    }
+    sfstmt->params_len = 0;
     sfstmt->name_list = NULL;
 
     _snowflake_stmt_desc_reset(sfstmt);
@@ -1090,8 +1095,6 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
     input->idx = 0;
     input->name = NULL;
     input->value = NULL;
-
-    return;
 }
 
 void STDCALL snowflake_stmt_term(SF_STMT *sfstmt) {
@@ -1164,7 +1167,7 @@ SF_STATUS STDCALL snowflake_bind_param(
     if (_sf_get_current_param_style(sfstmt) == NAMED)
     {
         sfstmt->name_list = SF_REALLOC(sfstmt->name_list,
-                                       (sizeof(void *)*(sfstmt->names_len+1)));
+                                       (sizeof(void *)*(sfstmt->params_len+1)));
         /*
          * Reusing SF_BIND_INPUT name should be fine as the
          * scope of the lifetime for SF_BIND_INPUT is the same
@@ -1172,12 +1175,12 @@ SF_STATUS STDCALL snowflake_bind_param(
          * sfbind->name will persist till the bind param exist,
          * preventing any null pointer dereferences
          */
-        sfstmt->name_list[sfstmt->names_len] = (void *)sfbind->name;
-        sfstmt->names_len += 1;
+        sfstmt->name_list[sfstmt->params_len] = (void *)sfbind->name;
+        sfstmt->params_len += 1;
     }
     else
     {
-        sfstmt->idx_len += 1;
+        sfstmt->params_len += 1;
     }
     return SF_STATUS_SUCCESS;
 }
@@ -1185,6 +1188,8 @@ SF_STATUS STDCALL snowflake_bind_param(
 SF_STATUS snowflake_bind_param_array(
     SF_STMT *sfstmt, SF_BIND_INPUT *sfbind_array, size_t size) {
     size_t i;
+    SF_RET_CODE retcode = SF_RET_CODE_ERROR;
+
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1193,9 +1198,25 @@ SF_STATUS snowflake_bind_param_array(
         sf_param_store_init(_sf_get_param_style(&sfbind_array[0]),
                             &sfstmt->params);
     }
+
+    if (_sf_get_current_param_style(sfstmt) == NAMED)
+    {
+        sfstmt->name_list = SF_REALLOC(sfstmt->name_list,
+                (sizeof(void *)*((sfstmt->params_len)+size)));
+    }
     for (i = 0; i < size; i++) {
-        sf_param_store_set(sfstmt->params, &sfbind_array[i],
+        retcode = sf_param_store_set(sfstmt->params, &sfbind_array[i],
                 sfbind_array[i].idx, sfbind_array[i].name);
+
+        if (retcode == SF_RET_CODE_DUPLICATES)
+        {
+            continue;
+        }
+        else if (retcode == SF_RET_CODE_ERROR)
+        {
+            return SF_STATUS_ERROR_OTHER;
+        }
+
         /*
          * For named parameters, populate the name list in the
          * sfstmt to help extract the params from the treemap
@@ -1203,8 +1224,8 @@ SF_STATUS snowflake_bind_param_array(
          */
         if (_sf_get_current_param_style(sfstmt) == NAMED)
         {
-            sfstmt->name_list = SF_REALLOC(sfstmt->name_list,
-                    (sizeof(void *)*(sfstmt->names_len+1)));
+            /*sfstmt->name_list = SF_REALLOC(sfstmt->name_list,
+                    (sizeof(void *)*(sfstmt->params_len+1)));*/
             /*
              * Reusing SF_BIND_INPUT name should be fine as the
              * scope of the lifetime for SF_BIND_INPUT is the same
@@ -1212,14 +1233,15 @@ SF_STATUS snowflake_bind_param_array(
              * sfbind->name will persist till the bind param exist,
              * preventing any null pointer dereferences
              */
-            sfstmt->name_list[sfstmt->names_len] = (void *)sfbind_array[i].name;
-            sfstmt->names_len += 1;
+            sfstmt->name_list[sfstmt->params_len] = (void *)sfbind_array[i].name;
+            sfstmt->params_len += 1;
         }
         else
         {
-            sfstmt->idx_len += 1;
+            sfstmt->params_len += 1;
         }
     }
+
     return SF_STATUS_SUCCESS;
 }
 
@@ -1483,7 +1505,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (_sf_get_current_param_style(sfstmt) == POSITIONAL)
     {
         bindings = snowflake_cJSON_CreateObject();
-        for (i = 0; i < sfstmt->idx_len; i++)
+        for (i = 0; i < sfstmt->params_len; i++)
         {
             cJSON *binding;
             input = (SF_BIND_INPUT *) sf_param_store_get(sfstmt->params,
@@ -1509,7 +1531,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     else if (_sf_get_current_param_style(sfstmt) == NAMED)
     {
         bindings = snowflake_cJSON_CreateObject();
-        for(i = 0; i < sfstmt->names_len; i++)
+        for(i = 0; i < sfstmt->params_len; i++)
         {
             cJSON *binding;
             input = (SF_BIND_INPUT *) sf_param_store_get(sfstmt->params,
@@ -1523,15 +1545,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             value = value_to_string(input->value, input->len, input->c_type);
             binding = snowflake_cJSON_CreateObject();
 
-            /*
-             * TODO - This may not be correct assumption for
-             * max name size
-             */
-            char name[MAX_NAME_SIZE];
-            sprintf(name, "%s", (char *)(sfstmt->name_list[i]));
             snowflake_cJSON_AddStringToObject(binding, "type", type);
             snowflake_cJSON_AddStringToObject(binding, "value", value);
-            snowflake_cJSON_AddItemToObject(bindings, name, binding);
+            snowflake_cJSON_AddItemToObject(bindings, (char *)(sfstmt->name_list[i]), binding);
             if (value)
             {
                 SF_FREE(value);

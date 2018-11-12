@@ -226,7 +226,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
         if (cmp == 0)
         {
             /* Key Exists */
-            /* Either update or throw error */
+            /* Update*/
 #ifdef SF_DEBUG
             printf("[SF_INFO] rbtree_insert: Duplicate param found, Overwrite\n");
 #endif

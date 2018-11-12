@@ -59,6 +59,7 @@ void test_set_bulk()
     }
     SF_FREE(test_param);
     SF_FREE(test_node);
+    sf_treemap_deallocate(test_map);
 }
 
 void test_get()
@@ -73,24 +74,9 @@ void test_get()
     sf_treemap_deallocate(test_map);
 }
 
-void test_deallocate()
-{
-    char *test_param1 = "Test Param1";
-    char *test_param2 = "Test Param2";
-    char *test_param3 = "Test Param3";
-    TREE_MAP *test_map = sf_treemap_init();
-    sf_treemap_set(test_map, test_param1, "test_node1");
-    sf_treemap_set(test_map, test_param2, "test_node2");
-    sf_treemap_set(test_map, test_param3, "test_node3");
-    sf_treemap_deallocate(test_map);
-    assert_null(sf_treemap_get(test_map, "test_node1"));
-    assert_null(sf_treemap_get(test_map, "test_node2"));
-    assert_null(sf_treemap_get(test_map, "test_node3"));
-}
 int main (void) {
     const struct CMUnitTest tests[] =
             {
-                    cmocka_unit_test(test_deallocate),
                     cmocka_unit_test(test_init),
                     cmocka_unit_test(test_set),
                     cmocka_unit_test(test_set_bulk),

@@ -6,12 +6,7 @@
 #include "treemap.h"
 #include "memory.h"
 
-/* 
-** Hashmap needs to be initialized
-** to a size which is sufficiently 
-** large and is a prime number
-** @return SF_STATUS 
-*/
+
 TREE_MAP * STDCALL sf_treemap_init()
 {
     TREE_MAP *tree_map = (TREE_MAP *)SF_CALLOC(TREE_MAP_MAX_SIZE, sizeof(TREE_MAP));
@@ -58,7 +53,7 @@ int STDCALL sf_treemap_hash_fxn(char *key)
 }
 
 /* 
-** Retrieves an index from the hash map
+** Retrieves an index from the tree map
 ** to store a bind param at.
 ** @return - int
 */
@@ -75,14 +70,11 @@ unsigned long STDCALL sf_treemap_get_index(char *key)
 
 /*
 ** Inserts the bind params at the right
-** index in the hash map. This also takes
+** index in the tree map. This also takes
 ** care of collisions
 ** @return - void
 */
 
-/* TODO - Potentially change this from void
-** to a return status type
-*/
 SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_map, void *param, char *key)
 {
     TREE_MAP *idx_cur;
@@ -104,11 +96,6 @@ SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_m
         idx_cur->tree = rbtree_init();
     }
 
-    /* TODO - this could potentially 
-    ** return an error if a duplicate
-    ** was found. Alternatively do a 
-    ** silent over-write
-    */
     return rbtree_insert(&idx_cur->tree, param, key);
 }
 
@@ -118,9 +105,6 @@ SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_m
 ** @return - void
 */
 
-/* TODO - Potentially change this from void to a 
-** return status type
-*/
 SF_RET_CODE STDCALL sf_treemap_extract_node(TREE_MAP *tree_map, int idx, char *key, void **ret_param)
 {
     TREE_MAP *cur_node;
@@ -163,12 +147,9 @@ done:
 ** @return- void
 */
 
-/* TODO - Potentially change this from a void
-** to a return status type
-*/
 SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
 {
-    /*SF_STATUS retval*/
+
     if (!param)
     {
         /* Handle error 
@@ -180,10 +161,6 @@ SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
         return SF_RET_CODE_ERROR;
     }
 
-    /* TODO the following call should have 
-    ** should have some return val to indicate
-    ** success or failure
-    */
     return sf_treemap_insert_node(sf_treemap_get_index(key), tree_map, param, key);
 }
 
@@ -195,7 +172,7 @@ SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
 void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
 {
     void *param = NULL;
-    if (!key)
+    if (!tree_map || !key)
     {
         return NULL;
     }

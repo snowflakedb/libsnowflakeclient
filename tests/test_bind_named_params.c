@@ -48,19 +48,16 @@ void test_bind_named_parameters(void **unused) {
         snowflake_bind_input_init(&input_array[iter]);
     }
 
-    input_array[0].idx = 0;
     input_array[0].name = "NUMBER";
     input_array[0].c_type = SF_C_TYPE_INT64;
     input_array[0].value = &input1;
     input_array[0].len = sizeof(input1);
 
-    input_array[1].idx = 0;
     input_array[1].name = "STRING";
     input_array[1].c_type = SF_C_TYPE_STRING;
     input_array[1].value = &input2;
     input_array[1].len = sizeof(input2);
 
-    input_array[2].idx = 0;
     input_array[2].name = "DOUBLE";
     input_array[2].c_type = SF_C_TYPE_FLOAT64;
     input_array[2].value = &input3;
