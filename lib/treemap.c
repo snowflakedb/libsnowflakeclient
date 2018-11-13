@@ -26,18 +26,11 @@ TREE_MAP * STDCALL sf_treemap_init()
 ** to generate index
 ** @return an index in the hashtable
 */
-int STDCALL sf_treemap_hash_fxn(char *key)
+unsigned long STDCALL sf_treemap_hash_fxn(char *key)
 {
-    unsigned int iter = 0, len = 0;
+    unsigned int iter = 0;
     unsigned long hash = 0;
-
-    if (!key)
-    {
-#ifdef SF_DEBUG
-        printf("[SF_ERROR] sf_treemap_hash_fxn: Key passed for hashing is NULL\n");
-#endif
-        return -1;
-    }
+    size_t len = 0;
 
     len = strlen(key);
 
@@ -79,13 +72,6 @@ SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_m
 {
     TREE_MAP *idx_cur;
 
-    if (index < 0)
-    {
-#ifdef SF_DEBUG
-        printf("[SF_ERROR] sf_treemap_insert_node: index is negative, no insertion will take place\n");
-#endif
-        return SF_RET_CODE_BAD_INDEX;
-    }
     idx_cur = &tree_map[index];
 
     if (!idx_cur->tree)
@@ -146,13 +132,13 @@ done:
 SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
 {
 
-    if (!param)
+    if (!tree_map || !param || !key)
     {
         /* Handle error 
         ** return or goto done;
         */
         #ifdef SF_DEBUG
-        printf("sf_treemap_set: Param passed is NULL\n");
+        printf("sf_treemap_set: Tree Map || Param || key passed is NULL\n");
         #endif
         return SF_RET_CODE_ERROR;
     }
