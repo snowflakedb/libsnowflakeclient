@@ -26,18 +26,15 @@ typedef struct sf_treemap_node
 ** Treemap needs to be initialized
 ** to a size which is sufficiently 
 ** large and is a prime number
-** @return SF_STATUS 
+** @return pointer to TREE_MAP
 */
 TREE_MAP * STDCALL sf_treemap_init(void);
 
 /* sf_treemap_set
-** insert void into treemap
-** @return- void
+** insert param into treemap
+** @return- SF_RET_CODE
 */
 
-/* TODO - Potentially change this from a void
-** to a return status type
-*/
 SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key);
 
 /*
@@ -49,7 +46,7 @@ void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key);
 
 /* sf_treemap_deallocate
 ** deallocate treemap and any chained lists.
-** @return SF_STATUS
+** @return void
 */
 void STDCALL sf_treemap_deallocate(TREE_MAP *tree_map);
 
@@ -57,4 +54,4 @@ void STDCALL sf_treemap_deallocate(TREE_MAP *tree_map);
 }
 #endif
 
-#endif /* SNOWFLAKE_HASHMAP_H */
+#endif /* SNOWFLAKE_TREEMAP_H */

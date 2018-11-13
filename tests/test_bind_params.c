@@ -15,6 +15,7 @@ void test_bind_parameters(void **unused) {
     char input2[1000];
     float64 input3;
     char str[1000];
+    unsigned int iter = 0;
 
     /* Connect with all parameters set */
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -39,6 +40,11 @@ void test_bind_parameters(void **unused) {
       .value = &str,
       .len = sizeof(str)
     };
+
+    for (iter = 0; iter < 3; iter++)
+    {
+        snowflake_bind_input_init(&input_array[iter]);
+    }
 
     input_array[0].idx = 1;
     input_array[0].c_type = SF_C_TYPE_INT64;

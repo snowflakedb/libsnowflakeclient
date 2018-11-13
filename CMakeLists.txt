@@ -70,6 +70,7 @@ set(SOURCE_FILES
         lib/cJSON.h
         lib/cJSON.c
         lib/logger.c
+        lib/lib_common.h
         lib/paramstore.c
         lib/paramstore.h
         lib/arraylist.h

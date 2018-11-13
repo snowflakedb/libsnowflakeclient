@@ -194,6 +194,7 @@ SF_RET_CODE STDCALL rbtree_fix_tree(RedBlackTree **tree, RedBlackNode *target) {
         }
     }
     (*tree)->color = BLACK;
+    return SF_RET_CODE_SUCCESS;
 }
 SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
 {

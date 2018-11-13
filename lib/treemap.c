@@ -55,7 +55,7 @@ int STDCALL sf_treemap_hash_fxn(char *key)
 /* 
 ** Retrieves an index from the tree map
 ** to store a bind param at.
-** @return - int
+** @return - unsigned long
 */
 unsigned long STDCALL sf_treemap_get_index(char *key)
 {
@@ -72,7 +72,7 @@ unsigned long STDCALL sf_treemap_get_index(char *key)
 ** Inserts the bind params at the right
 ** index in the tree map. This also takes
 ** care of collisions
-** @return - void
+** @return - SF_RET_CODE
 */
 
 SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_map, void *param, char *key)
@@ -102,7 +102,8 @@ SF_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tree_m
 /* sf_treemap_extract_node
 ** extract a node corresponding to a key
 ** from the treemap
-** @return - void
+** @return - SF_RET_CODE based on whether node
+** was successfully extracted.
 */
 
 SF_RET_CODE STDCALL sf_treemap_extract_node(TREE_MAP *tree_map, int idx, char *key, void **ret_param)
@@ -142,11 +143,6 @@ done:
     return retval;
 }
 
-/* sf_treemap_set
-** insert SF_BIND_INPUT into treemap
-** @return- void
-*/
-
 SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
 {
 
@@ -164,11 +160,6 @@ SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key)
     return sf_treemap_insert_node(sf_treemap_get_index(key), tree_map, param, key);
 }
 
-/*
-** sf_treemap_get
-** get params corresponding to a key from the treemap
-** @return void *
-*/
 void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
 {
     void *param = NULL;
@@ -187,10 +178,6 @@ void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
     return param;
 }
 
-/* sf_treemap_deallocate
-** deallocate treemap and any assoicated RedBlackTrees.
-** @return SF_STATUS
-*/
 void STDCALL sf_treemap_deallocate(TREE_MAP *tree_map)
 {
     int iter = 0;
