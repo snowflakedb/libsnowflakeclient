@@ -18,8 +18,8 @@ namespace Client
 struct EncryptionMaterial
 {
   EncryptionMaterial(char * queryStageMasterKey_,
-                   char * queryId_,
-                   long long smkId_)
+                     char * queryId_,
+                     long long smkId_)
   {
     this->queryStageMasterKey = std::string(queryStageMasterKey_);
     this->queryId = std::string(queryId_);
