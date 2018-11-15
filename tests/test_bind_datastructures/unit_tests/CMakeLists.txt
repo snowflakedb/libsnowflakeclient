@@ -7,8 +7,6 @@ endif ()
 include_directories("../../../include"
                     "../../../lib")
 
-add_definitions(-DSF_DEBUG -DSF_ERROR -DSF_INFO)
-
 add_executable(test_unit_rbtree test_unit_rbtree.c)
 add_executable(test_unit_treemap test_unit_treemap.c)
 

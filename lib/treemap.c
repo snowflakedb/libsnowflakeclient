@@ -13,7 +13,7 @@ TREE_MAP * STDCALL sf_treemap_init()
     if (!tree_map)
     {
 #ifdef SF_DEBUG
-        printf("[SF_ERROR] sf_treemap_init: Memory Allocation failed\n");
+        printf("[SF_DEBUG] sf_treemap_init: Memory Allocation failed\n");
 #endif
     }
     
@@ -113,12 +113,12 @@ SF_RET_CODE STDCALL sf_treemap_extract_node(TREE_MAP *tree_map, int idx, char *k
     {
         if (!tree_map)
         {
-            printf("[SF_ERROR] sf_treemap_extract_node: tree_map passed is NULL");
+            printf("[SF_DEBUG] sf_treemap_extract_node: tree_map passed is NULL");
             goto done;
         }
         else if (!cur_node)
         {
-            printf("[SF_ERROR] sf_treemap_extract_node: cur_node is NULL\n");
+            printf("[SF_DEBUG] sf_treemap_extract_node: cur_node is NULL\n");
             goto done;
         }
     }
@@ -171,7 +171,7 @@ void STDCALL sf_treemap_deallocate(TREE_MAP *tree_map)
     if (!tree_map)
     {
 #ifdef SF_DEBUG
-        printf("[SF_ERROR] sf_treemap_deallocate: treemap is NULL\n");
+        printf("[SF_DEBUG] sf_treemap_deallocate: treemap is NULL\n");
 #endif
         return;
     }
