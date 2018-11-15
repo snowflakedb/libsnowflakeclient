@@ -137,7 +137,7 @@ SF_RET_CODE STDCALL rbtree_fix_tree(RedBlackTree **tree, RedBlackNode *target) {
     if (!target)
     {
 #ifdef SF_DEBUG
-        printf("[SF_ERROR] rbtree_Fix_tree: tree passed was NULL\n");
+        printf("[SF DEBUG] rbtree_Fix_tree: tree passed was NULL\n");
 #endif
         return SF_RET_CODE_ERROR;
     }

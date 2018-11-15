@@ -12,7 +12,7 @@ TREE_MAP * STDCALL sf_treemap_init()
     TREE_MAP *tree_map = (TREE_MAP *)SF_CALLOC(TREE_MAP_MAX_SIZE, sizeof(TREE_MAP));
     if (!tree_map)
     {
-#ifdef SF_ERROR
+#ifdef SF_DEBUG
         printf("[SF_ERROR] sf_treemap_init: Memory Allocation failed\n");
 #endif
     }
