@@ -28,7 +28,8 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     ->source_compression;
 
   cJSON *src = (cJSON *) response->src_list;
-  for (int i = 0; i < snowflake_cJSON_GetArraySize(src); i++)
+  int src_size = snowflake_cJSON_GetArraySize(src);
+  for (int i = 0; i < src_size; i++)
   {
     cJSON *val = snowflake_cJSON_GetArrayItem(src, i);
     putGetParseResponse->srcLocations.emplace_back(val->valuestring);
@@ -46,7 +47,8 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   {
     putGetParseResponse->command = CommandType::DOWNLOAD;
     cJSON *enc_mat_array_get = (cJSON *) response->enc_mat_get;
-    for (int i=0; i< snowflake_cJSON_GetArraySize(enc_mat_array_get); i++)
+    int enc_mat_array_size = snowflake_cJSON_GetArraySize(enc_mat_array_get);
+    for (int i = 0; i < enc_mat_array_size; i++)
     {
       cJSON * enc_mat = snowflake_cJSON_GetArrayItem(enc_mat_array_get, i);
       putGetParseResponse->encryptionMaterials.emplace_back(
