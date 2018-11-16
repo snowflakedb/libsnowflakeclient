@@ -8,6 +8,7 @@ RedBlackTree * STDCALL rbtree_init(void)
 
     if (!root)
     {
+        log_error("rbtree_init : failed to allocate memory\n");
         return NULL;
     }
 
@@ -129,17 +130,15 @@ void STDCALL rbtree_rotate_right(RedBlackTree **tree, RedBlackNode *node) {
     }
 }
 
-SF_RET_CODE STDCALL rbtree_fix_tree(RedBlackTree **tree, RedBlackNode *target) {
+SF_INT_RET_CODE STDCALL rbtree_fix_tree(RedBlackTree **tree, RedBlackNode *target) {
     RedBlackNode *parent = NULL;
     RedBlackNode *temp_node = NULL;
     RedBlackNode *uncle = NULL;
 
     if (!target)
     {
-#ifdef SF_DEBUG
-        printf("[SF DEBUG] rbtree_Fix_tree: tree passed was NULL\n");
-#endif
-        return SF_RET_CODE_ERROR;
+        log_debug("rbtree_Fix_tree: tree passed is NULL\n");
+        return SF_INT_RET_CODE_ERROR;
     }
     while((target != *tree) && (rbtree_get_color(target->parent) == RED))
     {
@@ -194,13 +193,13 @@ SF_RET_CODE STDCALL rbtree_fix_tree(RedBlackTree **tree, RedBlackNode *target) {
         }
     }
     (*tree)->color = BLACK;
-    return SF_RET_CODE_SUCCESS;
+    return SF_INT_RET_CODE_SUCCESS;
 }
-SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
+SF_INT_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
 {
     int cmp = 0;
     RedBlackNode * node;
-    SF_RET_CODE retval = SF_RET_CODE_ERROR;
+    SF_INT_RET_CODE retval = SF_INT_RET_CODE_ERROR;
 
     /*
      * Tree cannot be NULL
@@ -210,7 +209,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
      */
     if (!T || !(*T) || !param || !name)
     {
-        return SF_RET_CODE_ERROR;
+        return SF_INT_RET_CODE_ERROR;
     }
     node = *T;
 
@@ -218,7 +217,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
     {
         node->elem = param;
         node->key = name;
-        retval = SF_RET_CODE_SUCCESS;
+        retval = SF_INT_RET_CODE_SUCCESS;
         goto done;
     }
     while (1)
@@ -228,12 +227,10 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
         {
             /* Key Exists */
             /* Update*/
-#ifdef SF_DEBUG
-            printf("[SF_INFO] rbtree_insert: Duplicate param found, Overwrite\n");
-#endif
+            log_info("rbtree_insert: Duplicate param found, Overwrite\n");
             node->key = name;
             node->elem = param;
-            retval = SF_RET_CODE_DUPLICATES;
+            retval = SF_INT_RET_CODE_DUPLICATES;
             goto done;
         }
 
@@ -248,7 +245,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
                 node->right = rbtree_new_node();
                 if (!node->right)
                 {
-                    retval = SF_RET_CODE_ERROR;
+                    retval = SF_INT_RET_CODE_ERROR;
                     goto done;
                 }
                 node->right->key = name;
@@ -256,7 +253,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
                 node->right->parent = node;
                 node->right->color = RED;
                 rbtree_fix_tree(T, node->right);
-                retval = SF_RET_CODE_SUCCESS;
+                retval = SF_INT_RET_CODE_SUCCESS;
                 goto done;
             }
          }
@@ -272,7 +269,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
                 node->left = rbtree_new_node();
                 if (!node->left)
                 {
-                    retval = SF_RET_CODE_ERROR;
+                    retval = SF_INT_RET_CODE_ERROR;
                     goto done;
                 }
                 node->left->key = name;
@@ -280,7 +277,7 @@ SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
                 node->left->parent = node;
                 node->left->color = RED;
                 rbtree_fix_tree(T, node->left);
-                retval = SF_RET_CODE_SUCCESS;
+                retval = SF_INT_RET_CODE_SUCCESS;
                 goto done;
             }
          }
@@ -313,7 +310,7 @@ void * STDCALL rbtree_search_node(RedBlackTree *tree, char *key)
                 return NULL;
             }
         }
-        else if (cmp > 0)
+        else
         {
             node = node->right;
             if (!node)
@@ -322,7 +319,6 @@ void * STDCALL rbtree_search_node(RedBlackTree *tree, char *key)
             }
         }
      }
-     return NULL;
  }
 
 void STDCALL rbtree_deallocate(RedBlackNode *node)

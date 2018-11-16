@@ -11,6 +11,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include "snowflake/platform.h"
+#include "snowflake/logger.h"
 #include "lib_common.h"
 #include "rbtree.h"
 
@@ -32,10 +33,10 @@ TREE_MAP * STDCALL sf_treemap_init(void);
 
 /* sf_treemap_set
 ** insert param into treemap
-** @return- SF_RET_CODE
+** @return- SF_INT_RET_CODE
 */
 
-SF_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key);
+SF_INT_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *key);
 
 /*
 ** sf_treemap_get

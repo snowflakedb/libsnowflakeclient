@@ -22,6 +22,11 @@ void test_bind_named_parameters(void **unused) {
     status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    if (status != SF_STATUS_SUCCESS)
+    {
+        goto done;
+    }
+
     /* Create a statement once and reused */
     SF_STMT *stmt = snowflake_stmt(sf);
     /* NOTE: the numeric type here should fit into int64 otherwise
@@ -97,6 +102,8 @@ void test_bind_named_parameters(void **unused) {
 
     status = snowflake_execute(stmt);
     assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    done:
 
     snowflake_stmt_term(stmt);
     snowflake_term(sf);

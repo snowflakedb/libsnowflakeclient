@@ -34,7 +34,7 @@ void STDCALL sf_param_store_init(PARAM_TYPE ptype,
 
 void STDCALL sf_param_store_deallocate(void *ps);
 
-SF_RET_CODE STDCALL sf_param_store_set(void *ps,
+SF_INT_RET_CODE STDCALL sf_param_store_set(void *ps,
                                 void *item,
                                 size_t idx,
                                 char *name);

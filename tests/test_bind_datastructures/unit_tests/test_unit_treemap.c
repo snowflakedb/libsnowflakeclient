@@ -23,8 +23,8 @@ void test_set()
 {
     char * test_param = "Test Param";
     TREE_MAP *test_map = sf_treemap_init();
-    assert_int_equal(sf_treemap_set(test_map, test_param, "test_node"), SF_RET_CODE_SUCCESS);
-    assert_int_equal(sf_treemap_set(test_map, test_param, "test_node"), SF_RET_CODE_DUPLICATES);
+    assert_int_equal(sf_treemap_set(test_map, test_param, "test_node"), SF_INT_RET_CODE_SUCCESS);
+    assert_int_equal(sf_treemap_set(test_map, test_param, "test_node"), SF_INT_RET_CODE_DUPLICATES);
     sf_treemap_deallocate(test_map);
 }
 
@@ -44,7 +44,7 @@ void test_set_bulk()
         sprintf(test_param[i],"%s%d","TEST_PARAM",i);
         sprintf(test_node[i],"%s%d","TEST_NODE",i);
         assert_int_equal(sf_treemap_set(test_map,test_param[i],test_node[i]),
-                         SF_RET_CODE_SUCCESS);
+                         SF_INT_RET_CODE_SUCCESS);
     }
     for (i = 0; i < 10000; i++)
     {

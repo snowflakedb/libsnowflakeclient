@@ -28,11 +28,11 @@ void test_insert()
 {
     char * test_param = "Test Param";
     RedBlackTree *test_tree = rbtree_init();
-    assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_RET_CODE_SUCCESS);
-    assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_RET_CODE_DUPLICATES);
-    assert_int_equal(rbtree_insert(&test_tree, test_param, NULL), SF_RET_CODE_ERROR);
-    assert_int_equal(rbtree_insert(NULL, test_param, "test_node"), SF_RET_CODE_ERROR);
-    assert_int_equal(rbtree_insert(&test_tree, NULL, "test_node"), SF_RET_CODE_ERROR);
+    assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_INT_RET_CODE_SUCCESS);
+    assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_INT_RET_CODE_DUPLICATES);
+    assert_int_equal(rbtree_insert(&test_tree, test_param, NULL), SF_INT_RET_CODE_ERROR);
+    assert_int_equal(rbtree_insert(NULL, test_param, "test_node"), SF_INT_RET_CODE_ERROR);
+    assert_int_equal(rbtree_insert(&test_tree, NULL, "test_node"), SF_INT_RET_CODE_ERROR);
     rbtree_deallocate(test_tree);
 }
 
@@ -53,7 +53,7 @@ void test_multi_insert()
         sprintf(test_param[i],"%s%d","TEST_PARAM",i);
         sprintf(test_node[i],"%s%d","TEST_NODE",i);
         assert_int_equal(rbtree_insert(&test_tree,test_param[i],test_node[i]),
-                SF_RET_CODE_SUCCESS);
+                SF_INT_RET_CODE_SUCCESS);
     }
     for (i = 0; i < 10000; i++)
     {

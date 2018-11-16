@@ -336,7 +336,7 @@ typedef struct SF_STMT {
     int64 total_fieldcount;
     int64 total_row_index;
     void *params;
-    void **name_list;
+    void *name_list;
     unsigned int params_len;
     SF_COLUMN_DESC *desc;
     void *stmt_attrs;

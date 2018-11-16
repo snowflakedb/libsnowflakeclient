@@ -11,6 +11,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include "snowflake/platform.h"
+#include "snowflake/logger.h"
 #include "constants.h"
 #include "lib_common.h"
 
@@ -34,7 +35,7 @@ typedef RedBlackNode RedBlackTree;
 
 RedBlackTree * STDCALL rbtree_init(void);
 
-SF_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *key);
+SF_INT_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *key);
 
 void * STDCALL rbtree_search_node(RedBlackTree *tree, char *key);
 

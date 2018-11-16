@@ -38,13 +38,13 @@ void STDCALL sf_param_store_deallocate(void *ps)
     SF_FREE(pstore);
 }
 
-SF_RET_CODE STDCALL sf_param_store_set(void *ps,
+SF_INT_RET_CODE STDCALL sf_param_store_set(void *ps,
                                 void *item,
                                 size_t idx,
                                 char *name)
 {
     PARAM_STORE *pstore = (PARAM_STORE *)ps;
-    SF_RET_CODE retval = SF_RET_CODE_SUCCESS;
+    SF_INT_RET_CODE retval = SF_INT_RET_CODE_SUCCESS;
 
     if (pstore->param_style == POSITIONAL)
     {
