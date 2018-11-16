@@ -12,7 +12,7 @@ TREE_MAP * STDCALL sf_treemap_init()
     TREE_MAP *tree_map = (TREE_MAP *)SF_CALLOC(TREE_MAP_MAX_SIZE, sizeof(TREE_MAP));
     if (!tree_map)
     {
-        log_debug("sf_treemap_init: Memory Allocation failed\n");
+        log_error("sf_treemap_init: Memory Allocation failed\n");
     }
     
     return tree_map;
@@ -36,7 +36,6 @@ unsigned long STDCALL sf_treemap_hash_fxn(char *key)
     {
         hash = (HASH_CONSTANT*hash)+key[iter];
     }
-    log_debug("sf_treemap_hash_fxn: hash calculated is %d",hash);
     return hash;
 }
 
@@ -50,7 +49,6 @@ unsigned long STDCALL sf_treemap_get_index(char *key)
     unsigned long hash = sf_treemap_hash_fxn(key);
 
     hash = hash % TREE_MAP_MAX_SIZE;
-    log_debug("sf_treemap_get_index: index calculated is %d",hash);
     return hash;
 }
 

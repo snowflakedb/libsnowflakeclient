@@ -246,6 +246,7 @@ SF_INT_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
                 if (!node->right)
                 {
                     retval = SF_INT_RET_CODE_ERROR;
+                    log_error("rbtree_insert : Not able to allocate new rbtree node \n")
                     goto done;
                 }
                 node->right->key = name;
