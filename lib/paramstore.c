@@ -67,9 +67,7 @@ void *STDCALL sf_param_store_get(void *ps, size_t index, char *key)
     {
         if (index < 1)
         {
-#ifdef SF_DEBUG
-            printf("[SF_ERROR] sf_param_store_get: Invalid index for POSITIONAL Params\n");
-#endif
+            log_error("sf_param_store_get: Invalid index for POSITIONAL Params\n");
             return NULL;
         }
         return sf_array_list_get(pstore->array_list,index);
@@ -78,9 +76,7 @@ void *STDCALL sf_param_store_get(void *ps, size_t index, char *key)
     {
         if (!key)
         {
-#ifdef SF_DEBUG
-            printf("[SF_ERROR] sf_param_store_get: Key NULL for named params \n");
-#endif
+            log_error("sf_param_store_get: Key NULL for named params \n");
             return NULL;
         }
         return sf_treemap_get(pstore->tree_map, key);

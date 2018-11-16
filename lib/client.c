@@ -1197,9 +1197,7 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
 {
     if (!input)
     {
-#ifdef SF_DEBUG
-        printf("[SF_ERROR] snowflake_bind_input: bad param. user is supposed to allocate memory for input\n");
-#endif
+        log_error("snowflake_bind_input: bad param. user is supposed to allocate memory for input\n");
         return;
     }
     input->idx = 0;
