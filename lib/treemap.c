@@ -36,7 +36,7 @@ unsigned long STDCALL sf_treemap_hash_fxn(char *key)
     {
         hash = (HASH_CONSTANT*hash)+key[iter];
     }
-    log_info("sf_treemap_hash_fxn: hash calculated is %d",hash);
+    log_debug("sf_treemap_hash_fxn: hash calculated is %d",hash);
     return hash;
 }
 
@@ -50,7 +50,7 @@ unsigned long STDCALL sf_treemap_get_index(char *key)
     unsigned long hash = sf_treemap_hash_fxn(key);
 
     hash = hash % TREE_MAP_MAX_SIZE;
-    log_info("sf_treemap_get_index: index calculated is %d",hash);
+    log_debug("sf_treemap_get_index: index calculated is %d",hash);
     return hash;
 }
 
@@ -69,7 +69,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tr
 
     if (!idx_cur->tree)
     {
-        log_info("sf_treemap_insert_node: tree not been initialized yet\n");
+        log_debug("sf_treemap_insert_node: tree not been initialized yet\n");
         idx_cur->tree = rbtree_init();
     }
 
@@ -92,7 +92,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_extract_node(TREE_MAP *tree_map, int idx, cha
         *ret_param = rbtree_search_node(cur_node->tree, key);
         if (!*ret_param)
         {
-            log_info("sf_treemap_extract_node: Node not found");
+            log_debug("sf_treemap_extract_node: Node not found");
             retval = SF_INT_RET_CODE_NODE_NOT_FOUND;
             goto done;
         }
@@ -124,7 +124,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *ke
         /* Handle error 
         ** return or goto done;
         */
-        log_debug("sf_treemap_set: Tree Map || Param || key passed is NULL\n");
+        log_error("sf_treemap_set: Tree Map || Param || key passed is NULL\n");
         return SF_INT_RET_CODE_ERROR;
     }
 
@@ -142,7 +142,7 @@ void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
     sf_treemap_extract_node(tree_map, sf_treemap_get_index(key), key, &param);
     if (!param)
     {
-        log_info("sf_treemap_get: param returned is NULL\n");
+        log_debug("sf_treemap_get: param returned is NULL\n");
     }
     return param;
 }

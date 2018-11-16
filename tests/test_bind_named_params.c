@@ -103,7 +103,7 @@ void test_bind_named_parameters(void **unused) {
     status = snowflake_execute(stmt);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    done:
+done:
 
     snowflake_stmt_term(stmt);
     snowflake_term(sf);

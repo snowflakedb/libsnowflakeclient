@@ -227,7 +227,7 @@ SF_INT_RET_CODE STDCALL rbtree_insert(RedBlackTree **T, void *param, char *name)
         {
             /* Key Exists */
             /* Update*/
-            log_info("rbtree_insert: Duplicate param found, Overwrite\n");
+            log_debug("rbtree_insert: Duplicate param found, Overwrite\n");
             node->key = name;
             node->elem = param;
             retval = SF_INT_RET_CODE_DUPLICATES;
