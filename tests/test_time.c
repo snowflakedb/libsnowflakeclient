@@ -64,6 +64,7 @@ void test_time(void **unused) {
 
         SF_BIND_INPUT ic1 = {0};
         ic1.idx = 1;
+        ic1.name = NULL;
         ic1.c_type = SF_C_TYPE_INT64;
         ic1.value = (void *) &v.c1in;
         ic1.len = sizeof(v.c1in);
@@ -75,6 +76,7 @@ void test_time(void **unused) {
 
         SF_BIND_INPUT ic2 = {0};
         ic2.idx = 2;
+        ic2.name = NULL;
         ic2.c_type = SF_C_TYPE_STRING;
         ic2.value = (void *) v.c2in;
         ic2.len = strlen(v.c2in);

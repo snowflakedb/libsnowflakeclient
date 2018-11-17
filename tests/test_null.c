@@ -63,6 +63,7 @@ void test_null(void **unused) {
         TEST_CASE_TO_STRING v = test_cases[i];
         SF_BIND_INPUT ic1;
         ic1.idx = 1;
+        ic1.name = NULL;
         ic1.c_type = SF_C_TYPE_INT64;
         ic1.value = (void *) &v.c1in;
         ic1.len = sizeof(v.c1in);
@@ -74,6 +75,7 @@ void test_null(void **unused) {
 
         SF_BIND_INPUT ic2;
         ic2.idx = 2;
+        ic2.name = NULL;
         ic2.c_type = SF_C_TYPE_STRING;
         ic2.value = NULL;
         ic2.len = (size_t) 0;
@@ -85,6 +87,7 @@ void test_null(void **unused) {
 
         SF_BIND_INPUT ic3;
         ic3.idx = 3;
+        ic3.name = NULL;
         ic3.c_type = SF_C_TYPE_INT64;
         ic3.value = NULL;
         ic3.len = (size_t) 0;
@@ -96,6 +99,7 @@ void test_null(void **unused) {
 
         SF_BIND_INPUT ic4;
         ic4.idx = 4;
+        ic4.name = NULL;
         ic4.c_type = SF_C_TYPE_BOOLEAN;
         ic4.value = NULL;
         ic4.len = (size_t) 0;

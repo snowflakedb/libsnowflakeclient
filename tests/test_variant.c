@@ -42,6 +42,7 @@ void test_variant(void **unused) {
     char ic1buf[1024];
     strcpy(ic1buf, "{\"test1\":1}");
     ic1.idx = 1;
+    ic1.name = NULL;
     ic1.c_type = SF_C_TYPE_STRING;
     ic1.value = (void *) ic1buf;
     ic1.len = strlen(ic1buf);
@@ -51,6 +52,7 @@ void test_variant(void **unused) {
     char ic2buf[1024];
     strcpy(ic2buf, "'[1,2,3]'");
     ic2.idx = 2;
+    ic2.name = NULL;
     ic2.c_type = SF_C_TYPE_STRING;
     ic2.value = (void *) ic2buf;
     ic2.len = strlen(ic2buf);
@@ -60,6 +62,7 @@ void test_variant(void **unused) {
     char ic3buf[1024];
     strcpy(ic3buf, "'[456,789]'");
     ic3.idx = 3;
+    ic3.name = NULL;
     ic3.c_type = SF_C_TYPE_STRING;
     ic3.value = (void *) ic3buf;
     ic3.len = strlen(ic3buf);
