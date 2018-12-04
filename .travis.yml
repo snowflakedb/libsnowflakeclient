@@ -6,16 +6,35 @@ matrix:
     addons:
       apt:
         sources:
-          - ubuntu-toolchain-r-test
+        - ubuntu-toolchain-r-test
         packages:
-          - g++-4.9
+        - g++-4.9
     env:
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+    - bash <(curl -s https://codecov.io/bash)
+    env:
+      - SF_DEPLOYMENT=AZURE
       - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
       - eval "${MATRIX_EVAL}"
       - sudo apt-get update
       - sudo apt-get install lcov
-      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
+      - openssl aes-256-cbc -k "$super_duper_secret_password" -in parameters_az.json.enc -out parameters.json -d
       - pyenv local 3.6
       - curl -O https://bootstrap.pypa.io/get-pip.py
       - python get-pip.py
@@ -25,7 +44,6 @@ matrix:
       - source env/bin/activate
     script:
       - ./scripts/run_travis.sh
-      - bash <(curl -s https://codecov.io/bash)
   - os: linux
     addons:
       apt:
@@ -33,34 +51,43 @@ matrix:
           - ubuntu-toolchain-r-test
         packages:
           - g++-4.9
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
     env:
-      - USE_VALGRIND=true
-      - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - USE_VALGRIND=true
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
-      - eval "${MATRIX_EVAL}"
-      - sudo apt-get update
-      - sudo apt-get install lcov valgrind
-      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
-      - pyenv local 3.6
-      - curl -O https://bootstrap.pypa.io/get-pip.py
-      - python get-pip.py
-      - pip --version
-      - pip install -U virtualenv
-      - virtualenv env
-      - source env/bin/activate
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov valgrind
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
     script:
-      - ./scripts/run_travis.sh
+    - "./scripts/run_travis.sh"
   - os: osx
     before_install:
-      - sw_vers
-      - brew update
-      - brew install jq
-      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
-      - python3 -m venv env
-      - source env/bin/activate
+    - sw_vers
+    - brew update
+    - brew install jq
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - python3 -m venv env
+    - source env/bin/activate
     script:
-      - ./scripts/run_travis.sh
-
+    - "./scripts/run_travis.sh"
 env:
   global:
-    secure: LC6gqcPZLnfj2cLMy7h4jjGmY3MyomTLPEg+MNq315cKadO5IgMYOmjBJtJJ3FJZQjxsxnwjM612xQXtCy2wVKizKlKLT9BXZBOE9P7gL7EfQYourwM0rpwVbf58xQTajt1QR/4jGE+l7mfjY/d4zoMOAo5VH/D8C76YpCDGFfKgdVFDj+ROjXpyt0VzdrO1WbjZ27M/4BDvKsoqfGt6aL0S00+hVgLZEJZED35hCAYVtO8VS/hk+x74GvjeLihPitpXBxeadyQnYdma7/bF1RnqKxaPv9n+fhroeIrupS+nkcGwKWS5VYOj5Ofag6vYBZ9m1VaRfV3pcsliN1xzTdBpyGKzV4RZAlxybRqQeO2g2yo+bvqWMvI2ZeSnp5x/l4/wecuNlbQag6XqE0nx21ywfqdALbiwmWhtKOGLuVBP8iBdAr2D2Jvc51cFEIR9LBWjTu0O9ZDJYRktvBHO3AUSLmg5pT8y7x3VwUM3TqseKefRT1BjiIENt3VJSrhAO9XoUZouvUgKspXhHay46uq+QjGNzSr66iDULpd+f0FGvwaA/Shvpkhjd0zJOd90ZeeGXlvnzC1a42v4fMWw1Hr75LDBgGHkQCIho9SUk1XIcjyEb9SwzjmLTcXoqcQykp544aAczSGznxBIubnqky6uhhg15lk1Z/t82327cq0=
+  - secure: LC6gqcPZLnfj2cLMy7h4jjGmY3MyomTLPEg+MNq315cKadO5IgMYOmjBJtJJ3FJZQjxsxnwjM612xQXtCy2wVKizKlKLT9BXZBOE9P7gL7EfQYourwM0rpwVbf58xQTajt1QR/4jGE+l7mfjY/d4zoMOAo5VH/D8C76YpCDGFfKgdVFDj+ROjXpyt0VzdrO1WbjZ27M/4BDvKsoqfGt6aL0S00+hVgLZEJZED35hCAYVtO8VS/hk+x74GvjeLihPitpXBxeadyQnYdma7/bF1RnqKxaPv9n+fhroeIrupS+nkcGwKWS5VYOj5Ofag6vYBZ9m1VaRfV3pcsliN1xzTdBpyGKzV4RZAlxybRqQeO2g2yo+bvqWMvI2ZeSnp5x/l4/wecuNlbQag6XqE0nx21ywfqdALbiwmWhtKOGLuVBP8iBdAr2D2Jvc51cFEIR9LBWjTu0O9ZDJYRktvBHO3AUSLmg5pT8y7x3VwUM3TqseKefRT1BjiIENt3VJSrhAO9XoUZouvUgKspXhHay46uq+QjGNzSr66iDULpd+f0FGvwaA/Shvpkhjd0zJOd90ZeeGXlvnzC1a42v4fMWw1Hr75LDBgGHkQCIho9SUk1XIcjyEb9SwzjmLTcXoqcQykp544aAczSGznxBIubnqky6uhhg15lk1Z/t82327cq0=
+  - secure: Ysj89kPMFjI27sRQJudU3FuKdXevHZihRlvzLANndABYU7GwyS6+m819D0gLwNdZjv9d5HhXUtZsqGbB+l8ha/noaITrz+SCBlkPSewC7E8T/T2qpfvY8WCI4YRzisgBMwVWS6fvY5rQy/TeDUKFMiBGtgVH06bUtKQ9SMKB41lkkJPH7UUp8sPylnPMmkPI8oZiLr0emQR0kwukC2Cal02xuPnKl26FaU0caAa7tecTKC2Ed5A4e//bQL/ZZojF4TrGBEaGdYJZlX9QnzpgyIDESEyyQsPTK/SiYytHzZclRmxWGjtrOmIwhT9Tjqjq0fQmt+FUdgbmuIuJ2Bf6VdCkwSMW+dFsAkNRo0meEJ4Oadh66vvMMjkslHVWFgzqjW9jt9w2Z6DBrJR0DprhzKhphARKCO7f0s7dw2cGVrY1BJONaIE/k5Slsf+hFzp/bRS4CO2VnLWxU0+K/ocERw3s1tupbor7vN5WJ6zLHInRX9wRIwXOKnZlvitKO98hPe0CCXQAWWxAak4sRoz0NEYeUcvzWrIjvPeup6zxOzyu1mZZaB1MooVVajslrkbGz4Dal9HJBUCq2qL395BHe22bNCitkZ8Kor2/AFXyyCPjHcgf/HrE2BBpE6/gGoHuPfSVU0hGKL47lzItawyXQoPrJzym6UmFZIOmcubTzZ4=
