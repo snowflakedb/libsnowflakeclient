@@ -233,7 +233,6 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     // We need thread_count, fetch_slots, chunks, and either qrmk or chunk_headers
     if (thread_count <= 0 ||
             fetch_slots <= 0 ||
-            !(chunk_headers || qrmk) ||
             !chunks ||
             !snowflake_cJSON_IsArray(chunks) ||
             strcmp(chunks->string, "chunks") != 0) {
