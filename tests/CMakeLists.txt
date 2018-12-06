@@ -40,9 +40,6 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_unit_jwt
-        test_include_aws
-        test_parallel_upload_download
-        test_simple_put
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_file_metadata_init
@@ -52,6 +49,11 @@ SET(TESTS_CXX
         test_unit_base64
         #test_cpp_select1
         test_unit_proxy)
+
+SET(TESTS_AWS
+        test_include_aws
+        test_parallel_upload_download
+        test_simple_put)
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
@@ -65,6 +67,11 @@ set(SOURCE_UTILS
 set(SOURCE_UTILS_CXX
         utils/TestSetup.cpp
         utils/TestSetup.hpp)
+
+# Only run PUT/GET tests on AWS deployments
+if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
+endif()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)

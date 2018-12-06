@@ -10,6 +10,7 @@ matrix:
         packages:
         - g++-4.9
     env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
     - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
     - eval "${MATRIX_EVAL}"
@@ -35,7 +36,7 @@ matrix:
         packages:
         - g++-4.9
     env:
-    - SF_DEPLOYMENT=AZURE
+    - SNOWFLAKE_CLOUD_ENV=AZURE
     - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
     - eval "${MATRIX_EVAL}"
@@ -60,6 +61,7 @@ matrix:
         packages:
         - g++-4.9
     env:
+    - SNOWFLAKE_CLOUND_ENV=AWS
     - USE_VALGRIND=true
     - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
@@ -78,6 +80,21 @@ matrix:
     script:
     - "./scripts/run_travis.sh"
   - os: osx
+    env:
+    - SNOWFLAKE_CLOUND_ENV=AWS
+    before_install:
+    - sw_vers
+    - brew update
+    - brew install jq
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - python3 -m venv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+  - os: osx
+    env:
+    - SNOWFLAKE_CLOUND_ENV=AZURE
     before_install:
     - sw_vers
     - brew update
