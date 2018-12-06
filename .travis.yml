@@ -61,7 +61,7 @@ matrix:
         packages:
         - g++-4.9
     env:
-    - SNOWFLAKE_CLOUND_ENV=AWS
+    - SNOWFLAKE_CLOUD_ENV=AWS
     - USE_VALGRIND=true
     - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     before_install:
@@ -81,7 +81,7 @@ matrix:
     - "./scripts/run_travis.sh"
   - os: osx
     env:
-    - SNOWFLAKE_CLOUND_ENV=AWS
+    - SNOWFLAKE_CLOUD_ENV=AWS
     before_install:
     - sw_vers
     - brew update
@@ -94,7 +94,7 @@ matrix:
     - "./scripts/run_travis.sh"
   - os: osx
     env:
-    - SNOWFLAKE_CLOUND_ENV=AZURE
+    - SNOWFLAKE_CLOUD_ENV=AZURE
     before_install:
     - sw_vers
     - brew update
