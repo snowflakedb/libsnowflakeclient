@@ -15,6 +15,9 @@ environment:
 
 matrix:
   fast_finish: true
+  exclude:
+    - platform: x86
+      SNOWFLAKE_CLOUD_ENV: AZURE
 
 install:
   - nuget install secure-file -ExcludeVersion
