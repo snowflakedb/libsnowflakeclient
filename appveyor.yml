@@ -3,11 +3,21 @@ platform:
   - x86
 
 environment:
-  fast_finish: true
+  global:
+    VSVER: 14
+    my_secret:
+      secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
+
   matrix:
-    - VSVER: 14
-      my_secret:
-        secure: 2C4ZZBPcUCQzpU6eH4S/3KLqe73LrUdYzetitAKZacc=
+    - SNOWFLAKE_CLOUD_ENV: AWS
+
+    - SNOWFLAKE_CLOUD_ENV: AZURE
+
+matrix:
+  fast_finish: true
+  exclude:
+    - platform: x86
+      SNOWFLAKE_CLOUD_ENV: AZURE
 
 install:
   - nuget install secure-file -ExcludeVersion

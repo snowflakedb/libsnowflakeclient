@@ -831,10 +831,12 @@ sf_bool STDCALL http_perform(CURL *curl,
             curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
-        if (res != CURLE_OK) {
-            log_error("Failed to set header [%s]", curl_easy_strerror(res));
-            break;
+        if (header) {
+            res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+            if (res != CURLE_OK) {
+                log_error("Failed to set header [%s]", curl_easy_strerror(res));
+                break;
+            }
         }
 
         // Post type stuffs
