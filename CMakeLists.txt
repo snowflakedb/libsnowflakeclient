@@ -193,22 +193,35 @@ endif()
 if (WIN32)
     # Windows
     option(DYNAMIC_RUNTIME "Dynamic runtime" ON)
+    set(VSDIR "vs15" CACHE STRING "Used to specify visual studio version of libsnowflakeclient dependecies")
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
-    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
-    find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/zlib/lib/ REQUIRED)
-    find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
-    find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
+    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/curl/lib/ REQUIRED)
+    find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/openssl/lib/ REQUIRED)
+    find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/openssl/lib/ REQUIRED)
+    find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/zlib/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
+    find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
 endif ()
 
-include_directories(
-        deps-build/${PLATFORM}/curl/include
-        deps-build/${PLATFORM}/openssl/include
-        deps-build/${PLATFORM}/zlib/include
-        deps-build/${PLATFORM}/aws/include
-        include
-        lib)
+if (UNIX)
+    include_directories(
+            deps-build/${PLATFORM}/curl/include
+            deps-build/${PLATFORM}/openssl/include
+            deps-build/${PLATFORM}/zlib/include
+            deps-build/${PLATFORM}/aws/include
+            include
+            lib)
+endif()
+
+if (WIN32)
+    include_directories(
+            deps-build/${PLATFORM}/${VSDIR}/curl/include
+            deps-build/${PLATFORM}/${VSDIR}/openssl/include
+            deps-build/${PLATFORM}/${VSDIR}/zlib/include
+            deps-build/${PLATFORM}/${VSDIR}/aws/include
+            include
+            lib)
+endif()
 
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
@@ -229,6 +242,12 @@ if(LINUX)
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
+    )
+elseif(WIN32)
+    link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/aws/lib"
     )
 elseif()
     link_directories(

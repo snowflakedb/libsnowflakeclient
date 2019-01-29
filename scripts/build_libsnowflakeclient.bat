@@ -2,26 +2,22 @@
 :: Build Snowflake Client library
 ::
 @echo off
-set CMAKE_PROFILE=Visual Studio 14 2015
 
 set platform=%1
 set build_type=%2
+set vs_version=%3
 :: for ODBC, dynamic runtime needs to be set to off
-set dynamic_runtime=%3
-set build_tests=%4
+set dynamic_runtime=%4
+set build_tests=%5
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-if not "%VisualStudioVersion%"=="14.0" (
-    echo === setting up the Visual Studio environments
-    call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-    if %ERRORLEVEL% NEQ 0 goto :error
-)
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
-if not exist %scriptdir%\..\deps-build\%arcdir%\aws\ call "%scriptdir%\build_awssdk.bat" %platform% %build_type% %dynamic_runtime%
+if not exist %scriptdir%\..\deps-build\%build_dir%\aws\lib\aws-cpp-sdk-s3.lib call "%scriptdir%\build_awssdk.bat" %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 rmdir /q /s cmake-build-%arcdir%
@@ -32,9 +28,9 @@ cd cmake-build-%arcdir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 if "%arch%"=="x86" (
-    cmake -G "%CMAKE_PROFILE%" -DDYNAMIC_RUNTIME=%dynamic_runtime% -DBUILD_TESTS=%build_tests% ..
+    cmake -G "%cmake_generator%" -DDYNAMIC_RUNTIME=%dynamic_runtime% -DBUILD_TESTS=%build_tests% -DVSDIR:STRING=%vsdir% ..
 ) else (
-    cmake -G "%CMAKE_PROFILE%" -DDYNAMIC_RUNTIME=%dynamic_runtime% -DBUILD_TESTS=%build_tests% -A %arch% ..
+    cmake -G "%cmake_generator%" -DDYNAMIC_RUNTIME=%dynamic_runtime% -DBUILD_TESTS=%build_tests% -DVSDIR:STRING=%vsdir% -A %arch% ..
 )
 if %ERRORLEVEL% NEQ 0 goto :error
 REM NOTE cmake --build doesn't work as it cannot recognize Release|Win32 profile

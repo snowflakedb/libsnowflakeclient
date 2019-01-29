@@ -6,6 +6,7 @@ echo === setting up global environment variables
 
 set platform=%1
 set build_type=%2
+set vs_version=%3
 
 set curdir=%cd%
 
@@ -39,13 +40,32 @@ if "%build_type%"=="Debug" (
     set target_name=debug
 )
 if "%build_type%"=="Release" (
-    set target_name=relese
+    set target_name=release
 )
 
 if "%target_name%"=="" (
     echo Specify the build type. [Debug, Release]
 	goto :error
 )
+
+set cmake_generator=
+set vsdir=
+if "%vs_version%"=="VS15" (
+    set cmake_generator=Visual Studio 15 2017
+    set vsdir=vs15
+)
+if "%vs_version%"=="VS14" (
+    set cmake_generator=Visual Studio 14 2015
+    set vsdir=vs14
+)
+if "%cmake_generator%"=="" (
+    echo Specify the visual studio version used. [VS15, VS14]
+    goto :error
+)
+
+set build_dir=%arcdir%\%vsdir%
+
+echo "Building with platform: %platform%, build type: %build_type%, visual studio version: %vs_version%, cmake generator: %cmake_generator%"
 
 cd "%curdir%"
 exit /b 0

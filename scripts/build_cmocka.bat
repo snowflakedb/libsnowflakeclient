@@ -3,13 +3,13 @@
 ::
 @echo off
 set CMOCKA_DIR=cmocka-1.1.1
-set CMAKE_PROFILE=Visual Studio 14 2015
 
 set platform=%1
 set build_type=%2
+set vs_version=%3
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -20,11 +20,7 @@ if "%build_type%"=="Release" (
     set target_name=cmocka_a.lib
 )
 
-if not "%VisualStudioVersion%"=="14.0" (
-    echo === setting up the Visual Studio environments
-    call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-    if %ERRORLEVEL% NEQ 0 goto :error
-)
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
 echo === building cmocka
 
@@ -37,12 +33,12 @@ rmdir /S /Q cmake-build-%arcdir%
 mkdir cmake-build-%arcdir%
 cd cmake-build-%arcdir%
 if "%arch%"=="x86" (
-    cmake -G "%CMAKE_PROFILE%" ^
+    cmake -G "%cmake_generator%" ^
     -DUNIT_TESTING=ON ^
     -DCMAKE_BUILD_TYPE=%build_type% ^
     -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
 ) else (
-    cmake -G "%CMAKE_PROFILE%" -A %arch% ^
+    cmake -G "%cmake_generator%" -A %arch% ^
     -DUNIT_TESTING=ON ^
     -DCMAKE_BUILD_TYPE=%build_type% ^
     -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
@@ -54,19 +50,19 @@ if %ERRORLEVEL% NEQ 0 goto :error
 echo === staging cmocka
 cd "%curdir%"
 rmdir /q /s ^
-    .\deps-build\%arcdir%\cmocka
-mkdir .\deps-build\%arcdir%\cmocka
-mkdir .\deps-build\%arcdir%\cmocka\include
-mkdir .\deps-build\%arcdir%\cmocka\lib
+    .\deps-build\%build_dir%\cmocka
+mkdir .\deps-build\%build_dir%\cmocka
+mkdir .\deps-build\%build_dir%\cmocka\include
+mkdir .\deps-build\%build_dir%\cmocka\lib
 copy /v /y ^
     .\deps\%CMOCKA_DIR%\include\cmocka.h ^
-	.\deps-build\%arcdir%\cmocka\include
+	.\deps-build\%build_dir%\cmocka\include
 copy /v /y ^
     .\deps\%CMOCKA_DIR%\include\cmocka_pbc.h ^
-	.\deps-build\%arcdir%\cmocka\include
+	.\deps-build\%build_dir%\cmocka\include
 copy /v /y ^
     .\deps\%CMOCKA_DIR%\cmake-build-%arcdir%\src\%build_type%\cmocka.lib ^
-	.\deps-build\%arcdir%\cmocka\lib\%target_name%
+	.\deps-build\%build_dir%\cmocka\lib\%target_name%
 
 :success
 cd "%curdir%"
