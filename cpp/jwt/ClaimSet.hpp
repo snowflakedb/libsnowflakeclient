@@ -81,6 +81,13 @@ public:
     return (long)value->valuedouble;
   }
 
+  inline double getClaimInDouble(const std::string &key) override
+  {
+    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_.get(), key.c_str());
+    if (!value || (value->type != cJSON_Number)) return 0;
+    return value->valuedouble;
+  }
+
   inline std::string serialize() override
   {
     auto json_str = CJSONOperation::serialize(json_root_.get());

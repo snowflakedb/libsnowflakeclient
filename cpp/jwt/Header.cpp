@@ -46,6 +46,13 @@ AlgorithmType CJSONHeader::getAlgorithmType()
   return AlgorithmTypeMapper::toAlgorithmType(std::string(item->valuestring));
 }
 
+std::string CJSONHeader::getCustomHeaderEntry(const std::string header_type)
+{
+  cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), header_type.c_str());
+  if (!item || (item->type != cJSON_String)) return UNSUPPORTED;
+  return std::string(item->valuestring);
+}
+
 }
 } // namespace Client
 }
