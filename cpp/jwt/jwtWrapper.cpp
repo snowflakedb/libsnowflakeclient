@@ -143,7 +143,7 @@ void CJWT_setClaimset(CJWT cjwt_obj, CLAIMSET cjwt_cset_obj)
     IJwt *ijwt_obj = NULL;
     IClaimSet *temp_obj = NULL;
 
-    if (cjwt_obj == NULL || cset_obj == NULL)
+    if (cjwt_obj == NULL || cjwt_cset_obj == NULL)
     {
         return;
     }
