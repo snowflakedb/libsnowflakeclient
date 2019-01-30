@@ -1,5 +1,5 @@
 #include "snowflake/IJwt.hpp"
-#include "snowflake/jwtWrapper.h"
+#include "snowflake/jwtWrapper.hpp"
 
 using namespace Snowflake::Client::Jwt;
 
