@@ -67,7 +67,6 @@ SF_INT_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tr
 
     if (!idx_cur->tree)
     {
-        log_debug("sf_treemap_insert_node: tree not been initialized yet\n");
         idx_cur->tree = rbtree_init();
     }
 
