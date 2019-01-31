@@ -166,10 +166,12 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Column.hpp
         include/snowflake/Param.hpp
         include/snowflake/Exceptions.hpp
+        include/snowflake/jwtWrapper.h
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
-        cpp/lib/Column.cpp)
+        cpp/lib/Column.cpp
+        cpp/jwt/jwtWrapper.cpp)
 
 if (LINUX)
     # Linux

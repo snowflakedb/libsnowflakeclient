@@ -51,13 +51,21 @@ JWTObject::JWTObject(const std::string &input)
   secret_ = remain.substr(pos + 1);
 }
 
-bool JWTObject::verify(EVP_PKEY *key)
+bool JWTObject::verify(EVP_PKEY *key, bool format)
 {
   std::unique_ptr<ISigner> signer{ISigner::buildSigner(header_->getAlgorithmType())};
+  std::string msg;
 
   if (signer == nullptr) return false;
 
-  std::string msg = header_->serialize() + '.' + claim_set_->serialize();
+  if (format)
+  {
+    msg = header_->serialize() + '.' + claim_set_->serialize();
+  }
+  else
+  {
+    msg = header_->serialize(false) + '.' + claim_set_->serialize(false);
+  }
   return signer->verify(key, msg, secret_);
 }
 

@@ -81,10 +81,23 @@ public:
     return (long)value->valuedouble;
   }
 
-  inline std::string serialize() override
+  inline double getClaimInDouble(const std::string &key) override
   {
-    auto json_str = CJSONOperation::serialize(json_root_.get());
-    return Client::Util::Base64::encodeURLNoPadding(json_str);
+    cJSON *value = snowflake_cJSON_GetObjectItemCaseSensitive(this->json_root_.get(), key.c_str());
+    if (!value || (value->type != cJSON_Number)) return 0;
+    return value->valuedouble;
+  }
+
+  inline std::string serialize(bool format=true) override
+  {
+    if (format)
+    {
+      return Client::Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(json_root_.get()));
+    }
+    else
+    {
+      return Client::Util::Base64::encodeURLNoPadding(CJSONOperation::serializeUnformatted(json_root_.get()));
+    }
   }
 
   inline void removeClaim(const std::string &key) override

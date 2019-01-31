@@ -15,6 +15,7 @@
 #define ALGORITHM "alg"
 #define TOKEN_TYPE "typ"
 #define DEFAULT_TOKEN_TYPE "JWT"
+#define UNSUPPORTED "NA"
 
 namespace Snowflake
 {
@@ -49,6 +50,15 @@ public:
   }
 
   /**
+   * Set Custom Header
+   */
+  inline void setCustomHeaderEntry(std::string header_type, std::string header_value) override
+  {
+     cJSON *item = snowflake_cJSON_CreateString(header_value.c_str());
+     CJSONOperation::addOrReplaceJSON(this->json_root_.get(), header_type, item);
+  }
+
+  /**
    * See IHeader
    */
   AlgorithmType getAlgorithmType() override;
@@ -56,9 +66,21 @@ public:
   /**
    * See IHeader
    */
-  inline std::string serialize() override
+  std::string getCustomHeaderEntry(const std::string header_type) override;
+
+  /**
+   * See IHeader
+   */
+  inline std::string serialize(bool format=true) override
   {
-    return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    if (format)
+    {
+      return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    }
+    else
+    {
+      return Util::Base64::encodeURLNoPadding(CJSONOperation::serializeUnformatted(this->json_root_.get()));
+    }
   }
 
 private:
