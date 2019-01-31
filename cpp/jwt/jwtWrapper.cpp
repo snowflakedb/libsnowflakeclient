@@ -1,5 +1,8 @@
+/*
+ * * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
 #include "snowflake/IJwt.hpp"
-#include "snowflake/jwtWrapper.hpp"
+#include "snowflake/jwtWrapper.h"
 
 using namespace Snowflake::Client::Jwt;
 
