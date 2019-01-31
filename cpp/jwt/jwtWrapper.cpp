@@ -21,7 +21,7 @@ void HDR_setAlgorithm(HEADER cjwt_header, ALGORITHM_TYPE alg)
     hdr->setAlgorithm((AlgorithmType)alg);
 }
 
-void HDR_setCustomHeaderEntry(HEADER cjwt_header, char *entry_type, char *entry_value)
+void HDR_setCustomHeaderEntry(HEADER cjwt_header, const char *entry_type, const char *entry_value)
 {
     IHeader *hdr = static_cast<IHeader *>(cjwt_header);
     hdr->setCustomHeaderEntry(std::string(entry_type), std::string(entry_value));
@@ -54,7 +54,7 @@ CLAIMSET CSET_buildClaimset()
     return static_cast<CLAIMSET>(IClaimSet::buildClaimSet());
 }
 
-int CSET_containsClaimset(CLAIMSET cjwt_cset, char *key)
+int CSET_containsClaimset(CLAIMSET cjwt_cset, const char *key)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     if (cset->containsClaim(std::string(key)))
@@ -64,13 +64,13 @@ int CSET_containsClaimset(CLAIMSET cjwt_cset, char *key)
     return 0;
 }
 
-void CSET_addStrClaimset(CLAIMSET cjwt_cset, char *key, char *val)
+void CSET_addStrClaimset(CLAIMSET cjwt_cset, const char *key, char *val)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     cset->addClaim(std::string(key), std::string(val));
 }
 
-void CSET_addIntClaimset(CLAIMSET cjwt_cset, char *key, long value)
+void CSET_addIntClaimset(CLAIMSET cjwt_cset, const char *key, long value)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     cset->addClaim(std::string(key), value);
@@ -114,7 +114,7 @@ CJWT CJWT_buildCJWT()
     return static_cast<CJWT>(IJwt::buildIJwt());
 }
 
-CJWT CJWT_buildCJWTFromString(char *text)
+CJWT CJWT_buildCJWTFromString(const char *text)
 {
     std::string cjwt_text(text);
     return static_cast<CJWT>(IJwt::buildIJwt(cjwt_text));

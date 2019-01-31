@@ -41,7 +41,7 @@ void HDR_setAlgorithm(HEADER cjwt_header, ALGORITHM_TYPE alg);
  * @param entry_type - name of entry to be added
  * @param entry_value - value of entry to be added
  */
-void HDR_setCustomHeaderEntry(HEADER cjwt_header, char *entry_type, char *entry_value);
+void HDR_setCustomHeaderEntry(HEADER cjwt_header, const char *entry_type, const char *entry_value);
 
 /**
  * Get the algorithm's type
@@ -67,7 +67,7 @@ CLAIMSET  CSET_buildClaimset();
  * @param cjwt_cset - void pointer to store claimset object
  * @param text - claimset in string that needs to be parsed
  */
-void CSET_parseClaimset(CLAIMSET cjwt_cset, char *text);
+void CSET_parseClaimset(CLAIMSET cjwt_cset, const char *text);
 
 /**
  * Check if a claim "key" is present in a ClaimSet
@@ -75,7 +75,7 @@ void CSET_parseClaimset(CLAIMSET cjwt_cset, char *text);
  * @param key
  * @return
  */
-int CSET_containsClaimset(CLAIMSET cjwt_cset, char *key);
+int CSET_containsClaimset(CLAIMSET cjwt_cset, const char *key);
 
 /**
  * Add a String value to iClaimSet Object
@@ -83,7 +83,7 @@ int CSET_containsClaimset(CLAIMSET cjwt_cset, char *key);
  * @param key
  * @param value
  */
-void CSET_addStrClaim(CLAIMSET cjwt_cset, char *key, char *value);
+void CSET_addStrClaim(CLAIMSET cjwt_cset, const char *key, const char *value);
 
 /**
  * Add an integer value to an iClaimSet Object
@@ -91,7 +91,7 @@ void CSET_addStrClaim(CLAIMSET cjwt_cset, char *key, char *value);
  * @param key
  * @param value
  */
-void CSET_addIntClaim(CLAIMSET cjwt_cset, char *key, long value);
+void CSET_addIntClaim(CLAIMSET cjwt_cset, const char *key, long value);
 
 /**
  * Extract a value of type char * from iClaimSet object
@@ -128,7 +128,7 @@ CJWT CJWT_buildCJWT();
  * @param text
  * @return
  */
-CJWT CJWT_buildCJWTFromString(char *text);
+CJWT CJWT_buildCJWTFromString(const char *text);
 
 /**
  * Delete iJwt Object
