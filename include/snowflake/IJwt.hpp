@@ -103,7 +103,7 @@ public:
   /**
    * Serialize the claim set to base64url encoded format
    */
-  virtual std::string serialize() = 0;
+  virtual std::string serialize(bool format=true) = 0;
 
   /**
    * Remove a claim from the claim set with specified key
@@ -164,7 +164,7 @@ public:
    * Serialize the header
    * @return serialized string in base64urlencoded
    */
-  virtual std::string serialize() = 0;
+  virtual std::string serialize(bool format=true) = 0;
 
 protected:
   IHeader() = default;
@@ -213,7 +213,7 @@ public:
    * Verify the JWT is valid using the public key
    * @usedBy authenticator
    */
-  virtual bool verify(EVP_PKEY *key) = 0;
+  virtual bool verify(EVP_PKEY *key, bool format) = 0;
 
   /**
    * Setter and getter functions for header and claimset

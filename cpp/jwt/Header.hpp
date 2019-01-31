@@ -71,9 +71,16 @@ public:
   /**
    * See IHeader
    */
-  inline std::string serialize() override
+  inline std::string serialize(bool format=true) override
   {
-    return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    if (format)
+    {
+      return Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(this->json_root_.get()));
+    }
+    else
+    {
+      return Util::Base64::encodeURLNoPadding(CJSONOperation::serializeUnformatted(this->json_root_.get()));
+    }
   }
 
 private:

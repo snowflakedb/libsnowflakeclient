@@ -127,7 +127,7 @@ const char * CJWT_serialize(CJWT cjwt_obj, EVP_PKEY *key)
 int CJWT_verify(CJWT cjwt_obj, EVP_PKEY *key)
 {
     IJwt *ijwt_obj = static_cast<IJwt *>(cjwt_obj);
-    if ((ijwt_obj->verify(key)))
+    if ((ijwt_obj->verify(key, false)))
     {
         return 1;
     }
