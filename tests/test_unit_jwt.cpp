@@ -125,7 +125,7 @@ void test_sign_verify(void **)
 
   assert_string_not_equal(result.c_str(), "");
 
-  assert_true(jwt.verify(pub_key.get(), true));
+  assert_true(jwt.verify(pub_key.get()));
 }
 
 int main()

@@ -75,10 +75,18 @@ public:
    *       and the secret's value are properly set already unless the object is
    *       parsed from some serialized text
    * @param key
-   * @param format - whether to format msg while verifying signature
    * @return true if the verification pass
    */
-  bool verify(EVP_PKEY *key, bool format);
+  bool verify(EVP_PKEY *key);
+
+  /**
+   * Verify the token directly without parsing it and
+   * serializing from the Header / Claimset in the JWTObject.
+   * @param key - key to verify the signature
+   * @param token - base64 encoded JWT Token
+   * @return
+   */
+  bool verify(EVP_PKEY *key, const char *token);
 
   /**
    * Serialize the JWT token to a string, the secret field would be set

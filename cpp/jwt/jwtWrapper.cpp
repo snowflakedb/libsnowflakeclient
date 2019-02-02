@@ -130,7 +130,20 @@ const char * CJWT_serialize(CJWT cjwt_obj, EVP_PKEY *key)
 int CJWT_verify(CJWT cjwt_obj, EVP_PKEY *key)
 {
     IJwt *ijwt_obj = static_cast<IJwt *>(cjwt_obj);
-    if ((ijwt_obj->verify(key, false)))
+    if ((ijwt_obj->verify(key)))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int CJWT_verify_token(CJWT cjwt_obj, EVP_PKEY *key, const char *token)
+{
+    IJwt *ijwt_obj = static_cast<IJwt *>(cjwt_obj);
+    if ((ijwt_obj->verify(key, token)))
     {
         return 1;
     }

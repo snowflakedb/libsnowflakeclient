@@ -213,7 +213,16 @@ public:
    * Verify the JWT is valid using the public key
    * @usedBy authenticator
    */
-  virtual bool verify(EVP_PKEY *key, bool format) = 0;
+  virtual bool verify(EVP_PKEY *key) = 0;
+
+  /**
+   * Verify JWT token directly without parsing
+   * header or claimset.
+   * @param key
+   * @param token
+   * @return verification status.
+   */
+  virtual bool verify(EVP_PKEY *key, const char *token) = 0;
 
   /**
    * Setter and getter functions for header and claimset

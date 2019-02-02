@@ -152,6 +152,16 @@ const char *CJWT_serialize(CJWT cjwt_obj, EVP_PKEY *key);
  */
 int CJWT_verify(CJWT c_jwt_token, EVP_PKEY *key);
 
+
+/**
+ * Verify a JWT Token Directly without parsing
+ * @param c_jwt_token
+ * @param key
+ * @param token
+ * @return
+ */
+int CJWT_verify_token(CJWT c_jwt_token, EVP_PKEY *key, const char *token);
+
 /**
  * Set claimset in a iJwt Object
  * @param c_jwt_token
