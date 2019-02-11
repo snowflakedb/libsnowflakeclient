@@ -8,9 +8,10 @@ set CURL_DIR=curl-7.58.0
 
 set platform=%1
 set build_type=%2
+set vs_version=%3
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -39,11 +40,7 @@ if "%build_type%"=="Release" (
 	set openssl_debug_option=
 )
 
-if not "%VisualStudioVersion%"=="14.0" (
-    echo === setting up the Visual Studio environments
-    call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-    if %ERRORLEVEL% NEQ 0 goto :error
-)
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl
 cd "%curdir%\deps\%OPENSSL_DIR%"
@@ -62,28 +59,28 @@ if %ERRORLEVEL% NEQ 0 goto :error
 cd "%curdir%"
 
 echo === staging openssl artifacts
-rmdir /S /Q %curdir%\deps-build\%arcdir%\openssl
+rmdir /S /Q %curdir%\deps-build\%build_dir%\openssl
 if %ERRORLEVEL% NEQ 0 goto :error
-mkdir "%curdir%\deps-build\%arcdir%\openssl"
+mkdir "%curdir%\deps-build\%build_dir%\openssl"
 if %ERRORLEVEL% NEQ 0 goto :error
-mkdir "%curdir%\deps-build\%arcdir%\openssl\bin"
+mkdir "%curdir%\deps-build\%build_dir%\openssl\bin"
 if %ERRORLEVEL% NEQ 0 goto :error
-mkdir "%curdir%\deps-build\%arcdir%\openssl\include"
+mkdir "%curdir%\deps-build\%build_dir%\openssl\include"
 if %ERRORLEVEL% NEQ 0 goto :error
-mkdir "%curdir%\deps-build\%arcdir%\openssl\include\openssl"
+mkdir "%curdir%\deps-build\%build_dir%\openssl\include\openssl"
 if %ERRORLEVEL% NEQ 0 goto :error
-mkdir "%curdir%\deps-build\%arcdir%\openssl\lib"
+mkdir "%curdir%\deps-build\%build_dir%\openssl\lib"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\libcrypto.lib" ^
-    ".\deps-build\%arcdir%\openssl\lib\%crypto_target_name%"
+    ".\deps-build\%build_dir%\openssl\lib\%crypto_target_name%"
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\libssl.lib" ^
-    ".\deps-build\%arcdir%\openssl\lib\%ssl_target_name%"
+    ".\deps-build\%build_dir%\openssl\lib\%ssl_target_name%"
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\include\openssl\*.h" ^
-    ".\deps-build\%arcdir%\openssl\include\openssl"
+    ".\deps-build\%build_dir%\openssl\include\openssl"
 
 :success
 cd "%curdir%"

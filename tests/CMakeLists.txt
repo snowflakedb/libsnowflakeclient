@@ -79,7 +79,7 @@ if (UNIX)
 endif ()
 
 if (WIN32)
-    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
+    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED)
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
@@ -105,10 +105,17 @@ endif()
 
 FOREACH (T ${TESTS_C})
     add_executable(${T} ${SOURCE_UTILS} ${T}.c)
-    target_include_directories(
-            ${T} PUBLIC
-            ../deps-build/${PLATFORM}/cmocka/include
-    )
+    if (WIN32)
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+        )
+    else()
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/cmocka/include
+        )
+    endif()
     target_link_libraries(${T} ${TESTLIB_OPTS_C})
     add_test(${T} ${T})
     # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -124,10 +131,17 @@ ENDFOREACH ()
 
 FOREACH(T ${TESTS_CXX})
     add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-    target_include_directories(
-            ${T} PUBLIC
-            ../deps-build/${PLATFORM}/cmocka/include
-    )
+    if (WIN32)
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+        )
+    else()
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/cmocka/include
+        )
+    endif()
     target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
     add_test(${T} ${T})
     # Removed to suppress false alarm: "--run-libc-freeres=no"

@@ -9,13 +9,13 @@
 ::
 @echo off
 set ZLIB_DIR=zlib-1.2.11
-set CMAKE_PROFILE=Visual Studio 14 2015
 
 set platform=%1
 set build_type=%2
+set vs_version=%3
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -27,11 +27,7 @@ if "%build_type%"=="Release" (
     set target_name=zlib_a.lib
 )
 
-if not "%VisualStudioVersion%"=="14.0" (
-    echo === setting up the Visual Studio environments
-    call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-    if %ERRORLEVEL% NEQ 0 goto :error
-)
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
 echo === building zlib
 cd %curdir%\deps\%ZLIB_DIR%
@@ -44,9 +40,9 @@ cd cmake-build-%arcdir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 if "%arch%"=="x86" (
-    cmake -G "%CMAKE_PROFILE%" ..
+    cmake -G "%cmake_generator%" ..
 ) else (
-    cmake -G "%CMAKE_PROFILE%" -A %arch% ..
+    cmake -G "%cmake_generator%" -A %arch% ..
 )
 if %ERRORLEVEL% NEQ 0 goto :error
 cmake --build . --config %build_type%
@@ -55,22 +51,22 @@ if %ERRORLEVEL% NEQ 0 goto :error
 echo === staging zlib
 cd "%curdir%"
 rmdir /q /s ^
-    .\deps-build\%arcdir%\zlib
-mkdir .\deps-build\%arcdir%\zlib
-mkdir .\deps-build\%arcdir%\zlib\include
-mkdir .\deps-build\%arcdir%\zlib\lib
+    .\deps-build\%build_dir%\zlib
+mkdir .\deps-build\%build_dir%\zlib
+mkdir .\deps-build\%build_dir%\zlib\include
+mkdir .\deps-build\%build_dir%\zlib\lib
 copy /v /y ^
     .\deps\%ZLIB_DIR%\zlib.h ^
-	.\deps-build\%arcdir%\zlib\include
+	.\deps-build\%build_dir%\zlib\include
 copy /v /y ^
     .\deps\%ZLIB_DIR%\zutil.h ^
-	.\deps-build\%arcdir%\zlib\include
+	.\deps-build\%build_dir%\zlib\include
 copy /v /y ^
     .\deps\%ZLIB_DIR%\cmake-build-%arcdir%\zconf.h ^
-	.\deps-build\%arcdir%\zlib\include
+	.\deps-build\%build_dir%\zlib\include
 copy /v /y ^
     .\deps\%ZLIB_DIR%\cmake-build-%arcdir%\%build_type%\zlibstatic.lib ^
-	.\deps-build\%arcdir%\zlib\lib\%target_name%
+	.\deps-build\%build_dir%\zlib\lib\%target_name%
 
 :success
 cd "%curdir%"
