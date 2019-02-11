@@ -12,7 +12,7 @@ set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
-OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.0g/
+OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.1a/
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl

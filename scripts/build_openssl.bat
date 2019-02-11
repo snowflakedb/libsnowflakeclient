@@ -3,7 +3,7 @@
 ::
 
 @echo off
-set OPENSSL_DIR=openssl-1.1.0g
+set OPENSSL_DIR=openssl-1.1.1a
 set CURL_DIR=curl-7.58.0
 
 set platform=%1
