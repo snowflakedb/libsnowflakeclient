@@ -154,25 +154,6 @@ FOREACH(T ${TESTS_CXX})
              ./${T})
 ENDFOREACH()
 
-FOREACH(T ${TESTS_AWS})
-    add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-    target_include_directories(
-            ${T} PUBLIC
-            ../deps-build/${PLATFORM}/cmocka/include
-    )
-    target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
-    add_test(${T} ${T})
-    # Removed to suppress false alarm: "--run-libc-freeres=no"
-    add_test(valgrind_${T}
-             valgrind
-             --tool=memcheck
-             --leak-check=full
-             --error-exitcode=1
-             --suppressions=${VALGRIND_SUPPRESSION}
-             ./${T})
-ENDFOREACH()
-
-
 # Tests only work on Unix at the moment
 if (UNIX)
     FOREACH (T ${TESTS_PERF})
