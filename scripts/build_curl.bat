@@ -24,9 +24,13 @@ if "%platform%"=="x86" (
 
 if "%build_type%"=="Debug" (
     set curl_debug_option=yes
+	set buildtype=debug
+	set LIBDEBUG=_debug
 )
 if "%build_type%"=="Release" (
     set curl_debug_option=no
+	set buildtype=release
+	set LIBDEBUG=
 )
 
 if "%vs_version%"=="VS15" (
@@ -71,7 +75,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === building curl
 cd "%curdir%"
-set install_dir=.\deps\%CURL_DIR%\builds\libcurl-vc%vc_version%-%arch%-release-static-ssl-static-zlib-static-ipv6-sspi
+set install_dir=.\deps\%CURL_DIR%\builds\libcurl-vc%vc_version%-%arch%-%buildtype%-static-ssl-static-zlib-static-ipv6-sspi
 rmdir /S /Q %install_dir%-obj
 rmdir /S /Q %install_dir%-obj-curl
 rmdir /S /Q %install_dir%-obj-lib
@@ -109,8 +113,8 @@ copy /v /y ^
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
-    %install_dir%\lib\libcurl_a.lib ^
-    .\deps-build\%build_dir%\curl\lib
+    %install_dir%\lib\libcurl_a%LIBDEBUG%.lib ^
+    .\deps-build\%build_dir%\curl\lib\libcurl_a.lib
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
