@@ -13,13 +13,7 @@ call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-if "%build_type%"=="Debug" (
-    set target_name=cmocka_debug_a.lib
-)
-if "%build_type%"=="Release" (
-    set target_name=cmocka_a.lib
-)
-
+set target_name=cmocka_a.lib
 call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
 echo === building cmocka

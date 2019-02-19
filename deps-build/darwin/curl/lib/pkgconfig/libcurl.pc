@@ -23,7 +23,7 @@
 # This should most probably benefit from getting a "Requires:" field added
 # dynamically by configure.
 #
-prefix=/Users/kristopherwagner/libsnowflakeclient/scripts/../deps-build/darwin/curl
+prefix=/Users/stakeda/git/libsnowflakeclient/scripts/../deps-build/darwin/curl
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

@@ -3,7 +3,7 @@
 ::
 
 @echo off
-set OPENSSL_DIR=openssl-1.1.0g
+set OPENSSL_DIR=openssl-1.1.1a
 set CURL_DIR=curl-7.58.0
 
 set platform=%1
@@ -28,17 +28,14 @@ set crypto_target_name=
 set ssl_target_name=
 set curl_target_name=
 if "%build_type%"=="Debug" (
-    set crypto_target_name=libcrypto_debug_a.lib
-    set ssl_target_name=libssl_debug_a.lib
-    set curl_target_name=libcurl_debug_a.lib
 	set openssl_debug_option=--debug
 )
 if "%build_type%"=="Release" (
-    set crypto_target_name=libcrypto_a.lib
-    set ssl_target_name=libssl_a.lib
-    set curl_target_name=libcurl_a.lib
 	set openssl_debug_option=
 )
+set crypto_target_name=libcrypto_a.lib
+set ssl_target_name=libssl_a.lib
+set curl_target_name=libcurl_a.lib
 
 call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 

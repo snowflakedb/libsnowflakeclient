@@ -13,19 +13,21 @@ set ZLIB_DIR=zlib-1.2.11
 set platform=%1
 set build_type=%2
 set vs_version=%3
+set source_name="source_name.lib"
 
 set scriptdir=%~dp0
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-set target_name=
+set target_name=zlib_a.lib
 if "%build_type%"=="Debug" (
-    set target_name=zlib_debug_a.lib
+#    set target_name=zlib_debug_a.lib
+	set source_name="zlibstaticd.lib"
 )
-if "%build_type%"=="Release" (
-    set target_name=zlib_a.lib
-)
+#if "%build_type%"=="Release" (
+#    set target_name=zlib_a.lib
+#)
 
 call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
@@ -65,7 +67,7 @@ copy /v /y ^
     .\deps\%ZLIB_DIR%\cmake-build-%arcdir%\zconf.h ^
 	.\deps-build\%build_dir%\zlib\include
 copy /v /y ^
-    .\deps\%ZLIB_DIR%\cmake-build-%arcdir%\%build_type%\zlibstatic.lib ^
+    .\deps\%ZLIB_DIR%\cmake-build-%arcdir%\%build_type%\%source_name% ^
 	.\deps-build\%build_dir%\zlib\lib\%target_name%
 
 :success
