@@ -1723,6 +1723,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "path");
                 json_copy_string(&sfstmt->put_get_response->stage_info->region,
                                  stage_info, "region");
+                json_copy_string(&sfstmt->put_get_response->stage_info->storageAccount,
+                                 stage_info, "storageAccount");
+                json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
+                                 stage_info, "endPoint");
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");
@@ -1732,6 +1736,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_token,
                     stage_cred, "AWS_TOKEN");
+                json_copy_string(
+                        &sfstmt->put_get_response->stage_info->stage_cred->azure_sas_token,
+                        stage_cred, "AZURE_SAS_TOKEN");
                 json_copy_string(
                     &sfstmt->put_get_response->localLocation, data,
                     "localLocation");

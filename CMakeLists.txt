@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(snowflakeclient)
 
+set (CMAKE_VERBOSE_MAKEFILE ON)
+
 # Enabling tests by Ctest. Don't use INCLUDE(Ctest) as
 # we don't need Dart and other tools.
 enable_testing()
@@ -35,7 +37,6 @@ if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
     message("Platform: Windows 32bit")
 endif ()
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -std=gnu99 -g -fPIC -Werror")
@@ -110,6 +111,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/IStorageClient.hpp
         cpp/SnowflakeS3Client.hpp
         cpp/SnowflakeS3Client.cpp
+        cpp/SnowflakeAzureClient.hpp
+        cpp/SnowflakeAzureClient.cpp
         cpp/SnowflakeTransferException.cpp
         cpp/StatementPutGet.hpp
         cpp/StatementPutGet.cpp
@@ -180,6 +183,7 @@ if (LINUX)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE libazure-storage-lite.so PATHS deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
 endif ()
 
 if (APPLE)
@@ -209,6 +213,7 @@ if (UNIX)
             deps-build/${PLATFORM}/openssl/include
             deps-build/${PLATFORM}/zlib/include
             deps-build/${PLATFORM}/aws/include
+            deps-build/${PLATFORM}/azure/include
             include
             lib)
 endif()
@@ -228,6 +233,7 @@ message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
+message("libazure-storage-lite.so is located at " ${AZURE_STORAGE_LITE})
 
 
 add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})

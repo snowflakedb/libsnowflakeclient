@@ -55,6 +55,9 @@ SET(TESTS_AWS
         test_parallel_upload_download
         test_simple_put)
 
+SET(TESTS_AZURE
+        test_simple_put)
+
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
@@ -75,6 +78,7 @@ endif()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
+    find_library(AZURE_LIB libazure-storage-lite.so PATHS ../deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
@@ -86,9 +90,9 @@ message("libcmocka is located at " ${CMOCKA_LIB})
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_LIB} -Wl,--whole-archive curl ssl crypto
             -Wl,--no-whole-archive pthread)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AZURE_LIB} -Wl,--whole-archive curl
             ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
@@ -156,13 +160,34 @@ ENDFOREACH()
 
 # Tests only work on Unix at the moment
 if (UNIX)
-    FOREACH (T ${TESTS_PERF})
+    FOREACH (T ${TESTS_PERF} )
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
         target_include_directories(
                 ${T} PUBLIC
                 ../deps-build/${PLATFORM}/cmocka/include
         )
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        add_test(valgrind_${T}
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T})
+    ENDFOREACH ()
+endif ()
+
+if (UNIX)
+    FOREACH (T ${TESTS_AZURE} )
+        add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
+        target_include_directories(
+                ${T} PUBLIC
+                ../deps-build/${PLATFORM}/cmocka/include
+                ../deps-build/${PLATFORM}/azure/include
+        )
+        target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
         add_test(valgrind_${T}
