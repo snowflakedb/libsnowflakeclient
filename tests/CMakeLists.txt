@@ -78,7 +78,7 @@ endif()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
-    find_library(AZURE_LIB libazure-storage-lite.so PATHS ../deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
@@ -87,12 +87,14 @@ if (WIN32)
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
+message("libuuid.a is located at " ${UUID_LIB})
+message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_LIB} -Wl,--whole-archive curl ssl crypto
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive curl ssl crypto
             -Wl,--no-whole-archive pthread)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AZURE_LIB} -Wl,--whole-archive curl
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive curl
             ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
@@ -186,6 +188,7 @@ if (UNIX)
                 ${T} PUBLIC
                 ../deps-build/${PLATFORM}/cmocka/include
                 ../deps-build/${PLATFORM}/azure/include
+                ../deps-build/${PLATFORM}/uuid/include
         )
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})

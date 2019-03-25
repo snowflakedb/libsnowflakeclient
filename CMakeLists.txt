@@ -5,8 +5,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(snowflakeclient)
 
-set (CMAKE_VERBOSE_MAKEFILE ON)
-
 # Enabling tests by Ctest. Don't use INCLUDE(Ctest) as
 # we don't need Dart and other tools.
 enable_testing()
@@ -14,6 +12,7 @@ enable_testing()
 add_definitions(-DLOG_USE_COLOR)
 
 option(BUILD_TESTS "True if build tests" on)
+set(OPENSSL_VERSION_NUMBER  0x11100000L)
 
 if (UNIX AND NOT APPLE)
     set(LINUX TRUE)
@@ -37,6 +36,7 @@ if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
     message("Platform: Windows 32bit")
 endif ()
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
 if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -std=gnu99 -g -fPIC -Werror")
@@ -183,7 +183,8 @@ if (LINUX)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
-    find_library(AZURE_STORAGE_LITE libazure-storage-lite.so PATHS deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
+    find_library(UUID_LIB libuuid.a PATHS deps-build/${PLATFORM}/uuid/lib/ REQUIRED)
 endif ()
 
 if (APPLE)
@@ -214,6 +215,7 @@ if (UNIX)
             deps-build/${PLATFORM}/zlib/include
             deps-build/${PLATFORM}/aws/include
             deps-build/${PLATFORM}/azure/include
+            deps-build/${PLATFORM}/uuid/include
             include
             lib)
 endif()
@@ -233,7 +235,8 @@ message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
-message("libazure-storage-lite.so is located at " ${AZURE_STORAGE_LITE})
+message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
+message("libuuid is located at " ${UUID_LIB})
 
 
 add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
@@ -248,6 +251,8 @@ if(LINUX)
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib64"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/uuid/lib"
     )
 elseif(WIN32)
     link_directories(

@@ -38,16 +38,16 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
   m_threadPool(nullptr),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
-    const std::string azuresaskey("AZURE_SAS_KEY");
+  const std::string azuresaskey("AZURE_SAS_KEY");
+  //TODO: Read the CAPATH from configuration. 
   std::string capath="/etc/pki/tls/certs";
 
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
-  std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, false, endpoint);
-  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, parallel);
-  bc->set_ca_path(capath);
+  std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
+  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, parallel, capath.c_str());
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
 
   CXX_LOG_TRACE("Successfully created Azure client. End of constructor.");
@@ -55,15 +55,6 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
 
 SnowflakeAzureClient::~SnowflakeAzureClient()
 {
-//  delete AzureClient;
-  /*
-  //TODO move this to global shutdown
-  //Aws::ShutdownAPI(options);
-  if (m_threadPool != nullptr)
-  {
-    delete m_threadPool;
-  }
-   */
 }
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::upload(FileMetadata *fileMetadata,
@@ -115,11 +106,17 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
   std::string containerName = m_stageInfo->location;
-  std::string blobName = m_stageInfo->location;
-  blobName=containerName;
-  std::string uploadFile = fileMetadata->srcFileName;
+  //Remove the trailing '/' in containerName
+  containerName.pop_back(); 
+  std::string blobName = containerName;
+  //Use same as containerName 
+  blobName=containerName; 
+  //Dummy metadata azure uses.
+  std::vector<std::pair<std::string, std::string>> metadata;
 
-  m_blobclient->upload_block_blob_from_stream(containerName, blobName, dataStream);
+  unsigned int len = (unsigned int) (fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize ;
+  m_blobclient->upload_block_blob_from_stream(containerName, blobName, *dataStream, metadata, len);
+
 /*
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
