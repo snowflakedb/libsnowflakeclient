@@ -112,21 +112,19 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 
 std::string buildEncryptionMetadataJSON(std::string iv64, std::string key64)
 {
-  char buf[1024];
- // sprintf(buf,"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", key64.c_str(), iv64.c_str());
-  sprintf(buf,"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES256\"},\"ContentEncryptionIV\":\"%s\"}", key64.c_str(), iv64.c_str());
-  printf("String length of Encryption metadata is %lu", strlen(buf));
+  char buf[512];
+  sprintf(buf,"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", key64.c_str(), iv64.c_str());
 
   return std::string(buf);
 }
 
 void SnowflakeAzureClient::addUserMetadata(std::vector<std::pair<std::string, std::string>> *userMetadata, FileMetadata *fileMetadata)
 {
-  //userMetadata->push_back(std::make_pair("key", fileMetadata->encryptionMetadata.enKekEncoded));
 
   userMetadata->push_back(std::make_pair("matdesc", fileMetadata->encryptionMetadata.matDesc));
 
   char ivEncoded[64];
+  bzero((void*)ivEncoded, 64);  //Base64::encode does not set the '\0' at the end of the string. (And this is the cause of failed decode on the server side). 
   Snowflake::Client::Util::Base64::encode(
           fileMetadata->encryptionMetadata.iv.data,
           Crypto::cryptoAlgoBlockSize(Crypto::CryptoAlgo::AES),
