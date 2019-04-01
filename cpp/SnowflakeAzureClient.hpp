@@ -114,7 +114,7 @@ private:
    * @param userMetadata
    * @param fileMetadata
    */
-  void addUserMetadata(std::map<std::string, std::string> *userMetadata,
+  void addUserMetadata(std::vector<std::pair<std::string, std::string>> *userMetadata,
                        FileMetadata *fileMetadata);
 
   /**
