@@ -42,6 +42,7 @@ void test_proxy_machine_port_scheme(void **unused)
 void test_proxy_all(void **unused)
 {
     test_proxy_parts_equality("https://someuser:somepwd@somewhere.com:5050", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS);
+    test_proxy_parts_equality("http://username:password@proxyserver.company.com:80", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP);
 }
 
 void test_proxy_empty(void **unused)

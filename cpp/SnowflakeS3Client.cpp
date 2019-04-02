@@ -79,14 +79,17 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
     clientConfiguration.proxyHost = Aws::String(proxy.getMachine());
     clientConfiguration.proxyScheme = proxy.getScheme() == Snowflake::Client::Util::Proxy::Protocol::HTTPS ?
       Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
+    CXX_LOG_DEBUG("Proxy host: %s, proxy scheme: %d", proxy.getMachine().c_str(), static_cast<int>(proxy.getScheme()));
   }
   if (!proxy.getUser().empty() && !proxy.getPwd().empty()) {
     clientConfiguration.proxyUserName = proxy.getUser();
     clientConfiguration.proxyPassword = proxy.getPwd();
+    CXX_LOG_DEBUG("Proxy user: %s, proxy password: XXXXXXXXX", proxy.getUser().c_str());
     proxy.clearPwd();
   }
   if (proxy.getPort() != 0) {
     clientConfiguration.proxyPort = proxy.getPort();
+    CXX_LOG_DEBUG("Proxy port: %d", proxy.getPort());
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
