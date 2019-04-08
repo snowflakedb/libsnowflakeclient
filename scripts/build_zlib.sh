@@ -18,7 +18,7 @@ source $DIR/_init.sh $@
 #init_environment $DIR
 
 # build
-BUILD_DIR=../deps-build/linux/zlib
+BUILD_DIR=$DEPS_DIR/../deps-build/linux/zlib
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
