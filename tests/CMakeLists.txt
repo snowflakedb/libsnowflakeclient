@@ -56,7 +56,7 @@ SET(TESTS_AWS
         test_simple_put)
 
 SET(TESTS_AZURE
-        test_simple_put)
+        test_simple_put_azure)
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
@@ -74,6 +74,11 @@ set(SOURCE_UTILS_CXX
 # Only run PUT/GET tests on AWS deployments
 if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
+endif()
+
+# Only run PUT/GET tests on Azure deployments
+if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
 endif()
 
 if (UNIX)
