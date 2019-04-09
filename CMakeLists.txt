@@ -251,7 +251,7 @@ if(LINUX)
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib64"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/uuid/lib"
     )
 elseif(WIN32)
