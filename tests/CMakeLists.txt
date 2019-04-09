@@ -73,12 +73,17 @@ set(SOURCE_UTILS_CXX
 
 # Only run PUT/GET tests on AWS deployments
 if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
+    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
 endif()
 
+
+if (LINUX)
 # Only run PUT/GET tests on Azure deployments
-if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+    if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
+        message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
+        set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+    endif()
 endif()
 
 if (UNIX)
@@ -174,28 +179,6 @@ if (UNIX)
                 ../deps-build/${PLATFORM}/cmocka/include
         )
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
-        add_test(${T} ${T})
-        # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
-                valgrind
-                --tool=memcheck
-                --leak-check=full
-                --error-exitcode=1
-                --suppressions=${VALGRIND_SUPPRESSION}
-                ./${T})
-    ENDFOREACH ()
-endif ()
-
-if (UNIX)
-    FOREACH (T ${TESTS_AZURE} )
-        add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/cmocka/include
-                ../deps-build/${PLATFORM}/azure/include
-                ../deps-build/${PLATFORM}/uuid/include
-        )
-        target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
         add_test(valgrind_${T}

@@ -5,6 +5,9 @@
 #ifndef SNOWFLAKECLIENT_SNOWFLAKEAZURECLIENT_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKEAZURECLIENT_HPP
 
+#ifndef _WIN32 
+//Azure put get is supported on Linux only.
+
 #include "snowflake/IFileTransferAgent.hpp"
 #include "IStorageClient.hpp"
 #include "snowflake/PutGetParseResponse.hpp"
@@ -140,3 +143,5 @@ private:
 }
 
 #endif //SNOWFLAKECLIENT_SNOWFLAKES3CLIENT_HPP
+
+#endif //End of _WIN32 

@@ -2,6 +2,9 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
+#ifndef _WIN32
+//Azure put get is supported in Linux only
+
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -134,29 +137,9 @@ void SnowflakeAzureClient::addUserMetadata(std::vector<std::pair<std::string, st
           Crypto::cryptoAlgoBlockSize(Crypto::CryptoAlgo::AES));
 
   userMetadata->push_back(std::make_pair("encryptiondata", buildEncryptionMetadataJSON(ivEncoded, fileMetadata->encryptionMetadata.enKekEncoded) ));
-  //userMetadata->push_back(std::make_pair("contentLength", std::to_string(fileMetadata->encryptionMetadata.cipherStreamSize)));
-
-  //userMetadata->push_back(std::make_pair(SFC_DIGEST, fileMetadata->sha256Digest));
 
 }
 
-/*
-RemoteStorageRequestOutcome SnowflakeAzureClient::handleError(
-  const Aws::Client::AWSError<Aws::S3::S3Errors> & error)
-{
-  if (error.GetExceptionName() == "ExpiredToken")
-  {
-    CXX_LOG_WARN("Token expired.");
-    return RemoteStorageRequestOutcome::TOKEN_EXPIRED;
-  }
-  else
-  {
-    CXX_LOG_ERROR("S3 request failed failed: %s",
-                 error.GetMessage().c_str());
-    return RemoteStorageRequestOutcome::FAILED;
-  }
-}
-*/
 RemoteStorageRequestOutcome SnowflakeAzureClient::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
@@ -195,3 +178,5 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
 
 }
 }
+
+#endif 
