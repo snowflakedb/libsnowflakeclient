@@ -132,6 +132,11 @@ namespace azure {  namespace storage_lite {
             m_input_stream_len=streamlen;
         }
 
+        size_t get_input_stream_length(void)
+        {
+            return m_input_stream_len;
+        }
+
         void set_is_stream_length(void)
         {
             m_input_stream_len_known=true;
@@ -140,11 +145,6 @@ namespace azure {  namespace storage_lite {
         bool get_is_stream_length(void)
         {
             return m_input_stream_len_known;
-        }
-
-        size_t get_input_stream_length(void)
-        {
-            return m_input_stream_len;
         }
 
         void reset_input_stream() override
@@ -279,7 +279,7 @@ namespace azure {  namespace storage_lite {
             curl_global_init(CURL_GLOBAL_DEFAULT);
             for (int i = 0; i < m_size; i++) {
                 CURL *h = curl_easy_init();
-                curl_easy_setopt(h, CURLOPT_CAPATH, ca_path.c_str());
+                curl_easy_setopt(h, CURLOPT_CAINFO, ca_path.c_str());
                 m_handles.push(h);
             }
         }

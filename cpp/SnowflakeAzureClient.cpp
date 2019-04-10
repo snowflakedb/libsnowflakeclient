@@ -44,15 +44,17 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
-  //TODO: Read the CAPATH from configuration. 
-  std::string capath="/etc/pki/tls/certs";
+  char caBundleFile[256] = {0};
+
+  snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+  CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
 
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
   std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
-  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, parallel, capath.c_str());
+  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, parallel, caBundleFile);
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
 
   CXX_LOG_TRACE("Successfully created Azure client. End of constructor.");
