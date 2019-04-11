@@ -166,6 +166,11 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                     strcmp(sf->timezone, value->valuestring) != 0) {
                     alloc_buffer_and_copy(&sf->timezone, value->valuestring);
                 }
+            } else if (strcmp(name->valuestring, "SERVICE_NAME") == 0) {
+                if (sf->service_name == NULL ||
+                    strcmp(sf->service_name, value->valuestring) != 0) {
+                    alloc_buffer_and_copy(&sf->service_name, value->valuestring);
+                }
             }
         }
     }
@@ -583,6 +588,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
+        sf->service_name = NULL;
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
@@ -651,6 +657,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->application_name);
     SF_FREE(sf->application_version);
     SF_FREE(sf->timezone);
+    SF_FREE(sf->service_name);
     SF_FREE(sf->master_token);
     SF_FREE(sf->token);
     SF_FREE(sf->directURL);
@@ -914,13 +921,13 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_DIR_QUERY_URL:
             alloc_buffer_and_copy(&sf->directURL, value);
-        break;
+            break;
         case SF_DIR_QUERY_URL_PARAM:
             alloc_buffer_and_copy(&sf->directURL_param, value);
-        break;
+            break;
         case SF_DIR_QUERY_TOKEN:
             alloc_buffer_and_copy(&sf->direct_query_token, value);
-        break;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -937,7 +944,88 @@ SF_STATUS STDCALL snowflake_get_attribute(
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
     clear_snowflake_error(&sf->error);
-    //TODO Implement this
+    switch (type) {
+        case SF_CON_ACCOUNT:
+            *value = sf->account;
+            break;
+        case SF_CON_REGION:
+            *value = sf->region;
+            break;
+        case SF_CON_USER:
+            *value = sf->user;
+            break;
+        case SF_CON_PASSWORD:
+            *value = sf->password;
+            break;
+        case SF_CON_DATABASE:
+            *value = sf->database;
+            break;
+        case SF_CON_SCHEMA:
+            *value = sf->schema;
+            break;
+        case SF_CON_WAREHOUSE:
+            *value = sf->warehouse;
+            break;
+        case SF_CON_ROLE:
+            *value = sf->role;
+            break;
+        case SF_CON_HOST:
+            *value = sf->host;
+            break;
+        case SF_CON_PORT:
+            *value = sf->port;
+            break;
+        case SF_CON_PROTOCOL:
+            *value = sf->protocol;
+            break;
+        case SF_CON_PASSCODE:
+            *value = sf->passcode;
+            break;
+        case SF_CON_PASSCODE_IN_PASSWORD:
+            *value = &sf->passcode_in_password;
+            break;
+        case SF_CON_APPLICATION_NAME:
+            *value = sf->application_name;
+            break;
+        case SF_CON_APPLICATION_VERSION:
+            *value = sf->application_version;
+            break;
+        case SF_CON_AUTHENTICATOR:
+            *value = sf->authenticator;
+            break;
+        case SF_CON_INSECURE_MODE:
+            *value = &sf->insecure_mode;
+            break;
+        case SF_CON_LOGIN_TIMEOUT:
+            *value = &sf->login_timeout;
+            break;
+        case SF_CON_NETWORK_TIMEOUT:
+            *value = &sf->network_timeout;
+            break;
+        case SF_CON_AUTOCOMMIT:
+            *value = &sf->autocommit;
+            break;
+        case SF_CON_TIMEZONE:
+            *value = sf->timezone;
+            break;
+        case SF_CON_SERVICE_NAME:
+            *value = sf->service_name;
+            break;
+        case SF_DIR_QUERY_URL:
+            *value = sf->directURL;
+            break;
+        case SF_DIR_QUERY_URL_PARAM:
+            *value = sf->directURL_param;
+            break;
+        case SF_DIR_QUERY_TOKEN:
+            *value = sf->direct_query_token;
+            break;
+        default:
+            SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
+                                "Invalid attribute type",
+                                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_APPLICATION_ERROR;
+    }
     return SF_STATUS_SUCCESS;
 }
 

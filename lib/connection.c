@@ -199,34 +199,84 @@ cJSON *STDCALL create_renew_session_json_body(const char *old_token) {
     return body;
 }
 
-struct curl_slist *STDCALL create_header_no_token(sf_bool use_application_json_accept_type) {
-    struct curl_slist *header = NULL;
-    header = curl_slist_append(header, HEADER_CONTENT_TYPE_APPLICATION_JSON);
-    header = curl_slist_append(header,
-                               use_application_json_accept_type ?
-                               HEADER_ACCEPT_TYPE_APPLICATION_JSON :
-                               HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
-    header = curl_slist_append(header, HEADER_C_API_USER_AGENT);
-    return header;
-}
+sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *error) {
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    size_t header_token_size;
+    size_t header_direct_query_token_size;
+    size_t header_service_name_size;
+    const char *token = header->renew_session ? sf->master_token : sf->token;
 
-struct curl_slist *STDCALL create_header_token(const char *header_token,
-                                               sf_bool use_application_json_accept_type){
-    struct curl_slist *header = NULL;
-    header = curl_slist_append(header, header_token);
-    header = curl_slist_append(header, HEADER_CONTENT_TYPE_APPLICATION_JSON);
-    header = curl_slist_append(header,
-                               use_application_json_accept_type ?
+    // Generate header tokens
+    if (token) {
+        header_token_size = strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 +
+                            strlen(token) + 1;
+        header->header_token = (char *) SF_CALLOC(1, header_token_size);
+        if (!header->header_token) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                "Ran out of memory trying to create header token",
+                                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            goto error;
+        }
+        snprintf(header->header_token, header_token_size,
+                 HEADER_SNOWFLAKE_TOKEN_FORMAT, token);
+    } else if (sf->direct_query_token) {
+        header_direct_query_token_size = strlen(HEADER_DIRECT_QUERY_TOKEN_FORMAT) - 2 +
+                                         strlen(sf->direct_query_token) + 1;
+        header->header_direct_query_token = (char *) SF_CALLOC(1, header_direct_query_token_size);
+        if (!header->header_direct_query_token) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                "Ran out of memory trying to create header direct query token",
+                                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            goto error;
+        }
+        snprintf(header->header_direct_query_token, header_direct_query_token_size,
+                 HEADER_DIRECT_QUERY_TOKEN_FORMAT, sf->direct_query_token);
+    }
+
+    // Generate service name if it exists
+    if (sf->service_name) {
+        header_service_name_size = strlen(HEADER_SERVICE_NAME_FORMAT) - 2 +
+                                         strlen(sf->service_name) + 1;
+        header->header_service_name = (char *) SF_CALLOC(1, header_service_name_size);
+        if (!header->header_service_name) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                "Ran out of memory trying to create header service name",
+                                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            goto error;
+        }
+        snprintf(header->header_service_name, header_service_name_size,
+                 HEADER_SERVICE_NAME_FORMAT, sf->service_name);
+    }
+
+    if (header->header_token) {
+        header->header = curl_slist_append(header->header, header->header_token);
+    }
+    if (header->header_direct_query_token) {
+        header->header = curl_slist_append(header->header, header->header_direct_query_token);
+    }
+    if (header->header_service_name) {
+        header->header = curl_slist_append(header->header, header->header_service_name);
+    }
+    header->header = curl_slist_append(header->header, HEADER_CONTENT_TYPE_APPLICATION_JSON);
+    header->header = curl_slist_append(header->header,
+                               header->use_application_json_accept_type ?
                                HEADER_ACCEPT_TYPE_APPLICATION_JSON :
                                HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
-    header = curl_slist_append(header, HEADER_C_API_USER_AGENT);
-    return header;
+    header->header = curl_slist_append(header->header, HEADER_C_API_USER_AGENT);
+
+    log_trace("Created header");
+
+    // All good :dancingpenguin:
+    ret = SF_BOOLEAN_TRUE;
+
+error:
+    return ret;
 }
 
 sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                CURL *curl,
                                char *url,
-                               struct curl_slist *header,
+                               SF_HEADER *header,
                                char *body,
                                cJSON **json,
                                SF_ERROR_STRUCT *error) {
@@ -235,9 +285,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
-    struct curl_slist *new_header = NULL;
-    size_t header_token_size;
-    char *header_token = NULL;
+    SF_HEADER *new_header = NULL;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool stop = SF_BOOLEAN_FALSE;
 
@@ -272,20 +320,13 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 // Error is set in renew session function
                 break;
             } else {
-                // TODO refactor creating the header token string
                 // Create new header since we have a new token
-                header_token_size = strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 +
-                                    strlen(sf->token) + 1;
-                header_token = (char *) SF_CALLOC(1, header_token_size);
-                if (!header_token) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                                        "Ran out of memory trying to create header token",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
+                new_header = sf_header_create();
+                new_header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
+                new_header->renew_session = SF_BOOLEAN_FALSE;
+                if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                snprintf(header_token, header_token_size,
-                         HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                new_header = create_header_token(header_token, SF_BOOLEAN_FALSE);
                 if (!curl_post_call(sf, curl, url, new_header, body, json,
                                     error)) {
                     // Error is set in curl call
@@ -339,8 +380,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     while (0); // Dummy loop to break out of
 
     SF_FREE(result_url);
-    SF_FREE(header_token);
-    curl_slist_free_all(new_header);
+    sf_header_destroy(new_header);
 
     return ret;
 }
@@ -348,16 +388,14 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               CURL *curl,
                               char *url,
-                              struct curl_slist *header,
+                              SF_HEADER *header,
                               cJSON **json,
                               SF_ERROR_STRUCT *error) {
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
-    struct curl_slist *new_header = NULL;
-    size_t header_token_size;
-    char *header_token = NULL;
+    SF_HEADER *new_header = NULL;
     sf_bool ret = SF_BOOLEAN_FALSE;
 
     // Set to 0
@@ -391,20 +429,13 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 // Error is set in renew session function
                 break;
             } else {
-                // TODO refactor creating the header token string
                 // Create new header since we have a new token
-                header_token_size = strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 +
-                                    strlen(sf->token) + 1;
-                header_token = (char *) SF_CALLOC(1, header_token_size);
-                if (!header_token) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                                        "Ran out of memory trying to create header token",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
+                new_header = sf_header_create();
+                new_header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
+                new_header->renew_session = SF_BOOLEAN_FALSE;
+                if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                snprintf(header_token, header_token_size,
-                         HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                new_header = create_header_token(header_token, SF_BOOLEAN_FALSE);
                 if (!curl_get_call(sf, curl, url, new_header, json, error)) {
                     // Error is set in curl call
                     break;
@@ -417,8 +448,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     while (0); // Dummy loop to break out of
 
     SF_FREE(result_url);
-    SF_FREE(header_token);
-    curl_slist_free_all(new_header);
+    sf_header_destroy(new_header);
 
     return ret;
 }
@@ -765,7 +795,7 @@ json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
 sf_bool STDCALL http_perform(CURL *curl,
                              SF_REQUEST_TYPE request_type,
                              char *url,
-                             struct curl_slist *header,
+                             SF_HEADER *header,
                              char *body,
                              cJSON **json,
                              int64 network_timeout,
@@ -832,7 +862,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
 
         if (header) {
-            res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+            res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header->header);
             if (res != CURLE_OK) {
                 log_error("Failed to set header [%s]", curl_easy_strerror(res));
                 break;
@@ -1012,18 +1042,14 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         URL_KEY_VALUE *url_params,
                         int num_url_params,
                         char *body,
-                        struct curl_slist *header,
+                        SF_HEADER *header,
                         SF_REQUEST_TYPE request_type,
                         SF_ERROR_STRUCT *error,
                         sf_bool use_application_json_accept_type) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     char *encoded_url = NULL;
-    struct curl_slist *my_header = NULL;
-    char *header_token = NULL;
-    size_t header_token_size;
-    char *header_direct_query_token = NULL;
-    size_t header_direct_query_token_size;
+    SF_HEADER *my_header = NULL;
     curl = curl_easy_init();
     if (curl) {
         // Use passed in header if one exists
@@ -1031,36 +1057,12 @@ sf_bool STDCALL request(SF_CONNECT *sf,
             my_header = header;
         } else {
             // Create header
-            if (sf->token) {
-                header_token_size = strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 +
-                                    strlen(sf->token) + 1;
-                header_token = (char *) SF_CALLOC(1, header_token_size);
-                if (!header_token) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                                        "Ran out of memory trying to create header token",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
-                    goto cleanup;
-                }
-                snprintf(header_token, header_token_size,
-                         HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
-                my_header = create_header_token(header_token, use_application_json_accept_type);
-            } else if (sf->direct_query_token) {
-                header_direct_query_token_size = strlen(HEADER_DIRECT_QUERY_TOKEN_FORMAT) - 2 +
-                                    strlen(sf->direct_query_token) + 1;
-                header_direct_query_token = (char *) SF_CALLOC(1, header_direct_query_token_size);
-                if (!header_direct_query_token) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                                        "Ran out of memory trying to create header direct query token",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
-                    goto cleanup;
-                }
-                snprintf(header_direct_query_token, header_direct_query_token_size,
-                         HEADER_DIRECT_QUERY_TOKEN_FORMAT, sf->direct_query_token);
-                my_header = create_header_token(header_direct_query_token, use_application_json_accept_type);
-            } else {
-                my_header = create_header_no_token(use_application_json_accept_type);
+            my_header = sf_header_create();
+            my_header->use_application_json_accept_type = use_application_json_accept_type;
+            my_header->renew_session = SF_BOOLEAN_FALSE;
+            if (!create_header(sf, my_header, error)) {
+                goto cleanup;
             }
-            log_trace("Created header");
         }
 
         encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
@@ -1087,10 +1089,9 @@ sf_bool STDCALL request(SF_CONNECT *sf,
 cleanup:
     // If we created our own header, then delete it
     if (!header) {
-        curl_slist_free_all(my_header);
+        sf_header_destroy(my_header);
     }
     curl_easy_cleanup(curl);
-    SF_FREE(header_token);
     SF_FREE(encoded_url);
 
     return ret;
@@ -1108,13 +1109,11 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     SF_JSON_ERROR json_error;
     const char *error_msg = NULL;
     char request_id[SF_UUID4_LEN];
-    struct curl_slist *header = NULL;
+    SF_HEADER *header = NULL;
     cJSON *body = NULL;
     cJSON *json = NULL;
     char *s_body = NULL;
     char *encoded_url = NULL;
-    char *header_token = NULL;
-    size_t header_token_size;
     sf_bool success = SF_BOOLEAN_FALSE;
     cJSON *data = NULL;
     cJSON_bool has_token = 0;
@@ -1122,29 +1121,24 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
       {.key="request_id=", .value=NULL, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
     };
     if (!curl) {
-        return ret;
+        goto cleanup;
     }
     if (is_string_empty(sf->master_token)) {
         SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
                             "Missing master token when trying to renew session. "
                               "Are you sure your connection was properly setup?",
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
-        return ret;
-    }
-    log_debug("Updating session. Master token: *****");
-    // Create header
-    header_token_size =
-      strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 + strlen(sf->master_token) + 1;
-    header_token = (char *) SF_CALLOC(1, header_token_size);
-    if (!header_token) {
-        SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                            "Ran out of memory trying to create header token",
-                            SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
     }
-    snprintf(header_token, header_token_size, HEADER_SNOWFLAKE_TOKEN_FORMAT,
-             sf->master_token);
-    header = create_header_token(header_token, SF_BOOLEAN_FALSE);
+    log_debug("Updating session. Master token: *****");
+
+    // Create header
+    header = sf_header_create();
+    header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
+    header->renew_session = SF_BOOLEAN_TRUE;
+    if (!create_header(sf, header, error)) {
+        goto cleanup;
+    }
 
     // Create body and convert to string
     body = create_renew_session_json_body(sf->token);
@@ -1202,11 +1196,10 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     ret = SF_BOOLEAN_TRUE;
 
 cleanup:
-    curl_slist_free_all(header);
+    sf_header_destroy(header);
     snowflake_cJSON_Delete(body);
     snowflake_cJSON_Delete(json);
     SF_FREE(s_body);
-    SF_FREE(header_token);
     SF_FREE(encoded_url);
 
     return ret;
@@ -1259,4 +1252,25 @@ sf_bool STDCALL set_tokens(SF_CONNECT *sf,
     }
 
     return SF_BOOLEAN_TRUE;
+}
+
+SF_HEADER* STDCALL sf_header_create() {
+    SF_HEADER *sf_header = (SF_HEADER *) SF_CALLOC(1, sizeof(SF_HEADER));
+    sf_header->header = NULL;
+    sf_header->header_direct_query_token = NULL;
+    sf_header->header_service_name = NULL;
+    sf_header->header_token = NULL;
+    return sf_header;
+}
+
+void STDCALL sf_header_destroy(SF_HEADER *sf_header) {
+    if (!sf_header) {
+        return;
+    }
+
+    SF_FREE(sf_header->header_token);
+    SF_FREE(sf_header->header_service_name);
+    SF_FREE(sf_header->header_direct_query_token);
+    curl_slist_free_all(sf_header->header);
+    SF_FREE(sf_header);
 }

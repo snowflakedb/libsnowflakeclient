@@ -114,6 +114,16 @@ typedef struct RETRY_CONTEXT {
     DECORRELATE_JITTER_BACKOFF *djb;
 } RETRY_CONTEXT;
 
+typedef struct SF_HEADER {
+    struct curl_slist *header;
+    char *header_direct_query_token;
+    char *header_service_name;
+    char *header_token;
+
+    sf_bool use_application_json_accept_type;
+    sf_bool renew_session;
+} SF_HEADER;
+
 /**
  * Debug struct from curl example. Need to update at somepoint.
  */
@@ -167,22 +177,7 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
  */
 cJSON *STDCALL create_renew_session_json_body(const char *old_token);
 
-/**
- * Creates a header to give to cURL to connect to Snowflake. Must be freed by the caller.
- *
- * @return cURL header list.
- */
-struct curl_slist * STDCALL create_header_no_token(sf_bool use_application_json_accept_type);
-
-/**
- * Creates a header to give to cURL to issue commands to Snowflake once a connection has been established. Must be
- * freed by the caller.
- *
- * @param header_token
- * @return cURL header list
- */
-struct curl_slist * STDCALL create_header_token(const char *header_token,
-                                                sf_bool use_application_json_accept_type);
+sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *error);
 
 /**
  * Used to issue a cURL POST call to Snowflake. Includes support for ping-pong and renew session. If the request was
@@ -197,7 +192,7 @@ struct curl_slist * STDCALL create_header_token(const char *header_token,
  * @param error Reference to the Snowflake Error object to set an error if one occurs
  * @return Success/failure status of post call. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, struct curl_slist *header, char *body,
+sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, char *body,
                                cJSON **json, SF_ERROR_STRUCT *error);
 
 /**
@@ -212,7 +207,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, struct cur
  * @param error Reference to the Snowflake Error object to set an error if one occurs
  * @return Success/failure status of get call. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json,
+sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, cJSON **json,
                               SF_ERROR_STRUCT *error);
 
 /**
@@ -371,7 +366,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @param insecure_mode Insecure mode disable OCSP check when set to true
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, struct curl_slist *header,
+sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error, sf_bool insecure_mode);
 
@@ -409,7 +404,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
-                        char *body, struct curl_slist *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
+                        char *body, SF_HEADER *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
                         sf_bool use_application_json_accept_type);
 
 /**
@@ -439,6 +434,10 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx);
  */
 sf_bool STDCALL set_tokens(SF_CONNECT *sf, cJSON *data, const char *session_token_str, const char *master_token_str,
                            SF_ERROR_STRUCT *error);
+
+SF_HEADER* STDCALL sf_header_create();
+
+void STDCALL sf_header_destroy(SF_HEADER *sf_header);
 
 #ifdef __cplusplus
 }
