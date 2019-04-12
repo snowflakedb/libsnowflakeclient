@@ -1260,6 +1260,8 @@ SF_HEADER* STDCALL sf_header_create() {
     sf_header->header_direct_query_token = NULL;
     sf_header->header_service_name = NULL;
     sf_header->header_token = NULL;
+    sf_header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
+    sf_header->renew_session = SF_BOOLEAN_FALSE;
     return sf_header;
 }
 

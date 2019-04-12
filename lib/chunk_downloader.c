@@ -186,7 +186,7 @@ sf_bool STDCALL create_chunk_headers(struct SF_CHUNK_DOWNLOADER *chunk_downloade
         // Type conversion is safe since we know that header_field_size must be positive
         header_item = (char *) SF_CALLOC(1, header_field_size + 1);
         snprintf(header_item, header_field_size + 1, "%s: %s", key, item->valuestring);
-        chunk_downloader->chunk_headers = curl_slist_append(chunk_downloader->chunk_headers, header_item);
+        chunk_downloader->chunk_headers->header = curl_slist_append(chunk_downloader->chunk_headers->header, header_item);
         SF_FREE(header_item);
     }
 
@@ -199,7 +199,7 @@ cleanup:
     return ret;
 }
 
-sf_bool STDCALL download_chunk(char *url, struct curl_slist *headers, cJSON **chunk, SF_ERROR_STRUCT *error, sf_bool insecure_mode) {
+sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, SF_ERROR_STRUCT *error, sf_bool insecure_mode) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     curl = curl_easy_init();
@@ -247,7 +247,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->threads = NULL;
     chunk_downloader->queue = NULL;
     chunk_downloader->qrmk = NULL;
-    chunk_downloader->chunk_headers = NULL;
+    chunk_downloader->chunk_headers = sf_header_create();
     chunk_downloader->thread_count = 0;
     chunk_downloader->queue_size = 0;
     chunk_downloader->producer_head = 0;
@@ -307,7 +307,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
 cleanup:
     if (chunk_downloader) {
         SF_FREE(chunk_downloader->qrmk);
-        curl_slist_free_all(chunk_downloader->chunk_headers);
+        sf_header_destroy(chunk_downloader->chunk_headers);
         SF_FREE(chunk_downloader->queue);
         SF_FREE(chunk_downloader->threads);
     }
@@ -384,7 +384,7 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
     }
     SF_FREE(chunk_downloader->queue);
     SF_FREE(chunk_downloader->qrmk);
-    curl_slist_free_all(chunk_downloader->chunk_headers);
+    sf_header_destroy(chunk_downloader->chunk_headers);
     _critical_section_term(&chunk_downloader->queue_lock);
     _cond_term(&chunk_downloader->producer_cond);
     _cond_term(&chunk_downloader->consumer_cond);
