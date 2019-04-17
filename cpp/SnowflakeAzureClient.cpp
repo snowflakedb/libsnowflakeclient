@@ -12,7 +12,6 @@
 #include "util/ByteArrayStreamBuf.hpp"
 #include "util/Proxy.hpp"
 #include "crypto/CipherStreamBuf.hpp"
-#include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "storage_credential.h"
