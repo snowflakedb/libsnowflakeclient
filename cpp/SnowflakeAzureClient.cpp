@@ -23,14 +23,6 @@
 #include <fstream>
 #include <string>
 
-
-
-#define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
-#define SFC_DIGEST "sfc-digest"
-#define AMZ_KEY "x-amz-key"
-#define AMZ_IV "x-amz-iv"
-#define AMZ_MATDESC "x-amz-matdesc"
-
 namespace Snowflake
 {
 namespace Client
@@ -44,11 +36,18 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
-  char caBundleFile[256] = {0};
-
-  snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
-  CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
-
+  char caBundleFile[512]={0};
+  if(transferConfig && transferConfig->caBundleFile) {
+      int len = strlen(transferConfig->caBundleFile);
+      len = (len >=511)? 511: len;
+      strncpy(caBundleFile, transferConfig->caBundleFile, len);
+      caBundleFile[511]=0;
+      CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
+  }
+  else{
+      snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+      CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
+  }
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
@@ -115,10 +114,10 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 
 }
 
-std::string buildEncryptionMetadataJSON(std::string iv64, std::string key64)
+std::string buildEncryptionMetadataJSON(std::string iv64, std::string enkek64)
 {
   char buf[512];
-  sprintf(buf,"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", key64.c_str(), iv64.c_str());
+  sprintf(buf,"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", enkek64.c_str(), iv64.c_str());
 
   return std::string(buf);
 }
@@ -174,7 +173,38 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleDownload(
 RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
   std::string *filePathFull, FileMetadata *fileMetadata)
 {
-  return RemoteStorageRequestOutcome::SUCCESS;
+    unsigned long dirSep = filePathFull->find_last_of('/');
+    std::string blob = filePathFull->substr(dirSep + 1);
+    std::string cont = filePathFull->substr(0,dirSep);
+    auto blobProperty = m_blobclient->get_blob_property(cont, blob  );
+    if(blobProperty.valid()) {
+        std::string encry = blobProperty.metadata[0].second;
+        std::string matdesc = blobProperty.metadata[1].second;
+
+        encry.erase(remove(encry.begin(), encry.end(), ' '), encry.end());  //Remove spaces from the string.
+
+        //sscanf(encry.c_str()," \"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%[^\"]\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%[^\"]\",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}\"", enkek ,iv);
+
+        //TODO: There is a better way of doing this but might complicate things. 
+        //An assumption made is the key value pair order is not going to change. 
+        //Will optimize 
+        std::size_t pos1 = encry.find("EncryptedKey")  + strlen("EncryptedKey") + 3;
+        std::size_t pos2 = encry.find("\",\"Algorithm\"");
+        fileMetadata->encryptionMetadata.enKekEncoded = encry.substr(pos1, pos2-pos1);
+
+        pos1 = encry.find("ContentEncryptionIV")  + strlen("ContentEncryptionIV") + 3;
+        pos2 = encry.find("\",\"KeyWrappingMetadata\"");
+        std::string iv = encry.substr(pos1, pos2-pos1);
+
+        Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->encryptionMetadata.iv.data);
+
+        fileMetadata->encryptionMetadata.cipherStreamSize = blobProperty.size;
+        fileMetadata->srcFileSize = blobProperty.size;
+
+        return RemoteStorageRequestOutcome::SUCCESS;
+    }
+
+    return RemoteStorageRequestOutcome::FAILED;
 
 }
 

@@ -82,6 +82,7 @@ if (LINUX)
 # Only run PUT/GET tests on Azure deployments
     if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
         message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
+        message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
         set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
     endif()
 endif()
@@ -98,7 +99,6 @@ endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
 message("libuuid.a is located at " ${UUID_LIB})
-message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
