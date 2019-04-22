@@ -12,6 +12,7 @@
 #include "util/ByteArrayStreamBuf.hpp"
 #include "util/Proxy.hpp"
 #include "crypto/CipherStreamBuf.hpp"
+#include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "storage_credential.h"
@@ -21,6 +22,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
+#define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
 
 namespace Snowflake
 {
@@ -93,6 +96,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   {
       return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
   }
+
   m_blobclient->upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
   if (errno != 0)
       return RemoteStorageRequestOutcome::FAILED;
@@ -144,6 +148,10 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
 {
+    return doSingleDownload(fileMetadata, dataStream);
+
+    // TODO:: Support Multi part download for Azure.
+
   if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
     return doMultiPartDownload(fileMetadata, dataStream);
   else
@@ -166,7 +174,15 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleDownload(
 {
   CXX_LOG_DEBUG("Start single part download for file %s",
                fileMetadata->srcFileName.c_str());
-  return RemoteStorageRequestOutcome::SUCCESS;
+  unsigned long dirSep = fileMetadata->srcFileName.find_last_of('/');
+  std::string blob = fileMetadata->srcFileName.substr(dirSep + 1);
+  std::string cont = fileMetadata->srcFileName.substr(0,dirSep);
+  unsigned long long offset=0;
+  m_blobclient->download_blob_to_stream(cont, blob, offset, fileMetadata->destFileSize, *dataStream);
+  if(errno == 0)
+    return RemoteStorageRequestOutcome::SUCCESS;
+
+  return RemoteStorageRequestOutcome ::FAILED;
 }
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
