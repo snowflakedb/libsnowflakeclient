@@ -2,7 +2,8 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#ifndef _WIN32
+#ifdef __linux__
+
 //Azure put get is supported in Linux only
 
 #include "SnowflakeAzureClient.hpp"
