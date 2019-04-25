@@ -456,7 +456,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
-    log_debug("snowflake_test_ca_bundle_file from getenv: %s", getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
 
     return SF_STATUS_SUCCESS;
 }
