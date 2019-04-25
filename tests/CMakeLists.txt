@@ -55,6 +55,9 @@ SET(TESTS_AWS
         test_parallel_upload_download
         test_simple_put)
 
+SET(TESTS_AZURE
+        test_simple_put_azure)
+
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
@@ -70,11 +73,23 @@ set(SOURCE_UTILS_CXX
 
 # Only run PUT/GET tests on AWS deployments
 if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
+    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
+endif()
+
+
+if (LINUX)
+# Only run PUT/GET tests on Azure deployments
+    if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
+        message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
+        message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
+        set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+    endif()
 endif()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib64/ REQUIRED)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
@@ -83,12 +98,13 @@ if (WIN32)
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
+message("libuuid.a is located at " ${UUID_LIB})
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl ssl crypto
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive curl ssl crypto
             -Wl,--no-whole-archive pthread)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} -Wl,--whole-archive curl
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive curl
             ssl crypto pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
@@ -156,7 +172,7 @@ ENDFOREACH()
 
 # Tests only work on Unix at the moment
 if (UNIX)
-    FOREACH (T ${TESTS_PERF})
+    FOREACH (T ${TESTS_PERF} )
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
         target_include_directories(
                 ${T} PUBLIC

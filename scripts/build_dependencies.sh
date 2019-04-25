@@ -10,8 +10,11 @@ function usage() {
 }
 set -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
+target=Debug
+source $DIR/_init.sh $@
 source $DIR/build_openssl.sh -t $target
 source $DIR/build_curl.sh    -t $target
 source $DIR/build_awssdk.sh  -t $target
 source $DIR/build_cmocka.sh  -t Debug
+source $DIR/build_uuid.sh    -t $target
+$DIR/build_azuresdk.sh -t $target

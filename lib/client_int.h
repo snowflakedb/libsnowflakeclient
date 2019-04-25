@@ -60,6 +60,7 @@ typedef struct SF_STAGE_CRED {
   char *aws_key_id;
   char *aws_secret_key;
   char *aws_token;
+  char *azure_sas_token;
 } SF_STAGE_CRED;
 
 typedef struct SF_STAGE_INFO {
@@ -67,6 +68,8 @@ typedef struct SF_STAGE_INFO {
   char *location;
   char *path;
   char *region;
+  char *storageAccount; // For Azure only
+  char *endPoint; //For Azure only.
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
 

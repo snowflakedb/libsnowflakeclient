@@ -65,20 +65,25 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
 
   putGetParseResponse->stageInfo.location = response->stage_info->location;
   putGetParseResponse->stageInfo.path = response->stage_info->path;
-  putGetParseResponse->stageInfo.region = response->stage_info->region;
-  putGetParseResponse->stageInfo.credentials = {
-    {"AWS_KEY_ID",     response->stage_info->stage_cred->aws_key_id},
-    {"AWS_SECRET_KEY", response->stage_info->stage_cred->aws_secret_key},
-    {"AWS_TOKEN",      response->stage_info->stage_cred->aws_token}
-  };
 
   if (sf_strncasecmp(response->stage_info->location_type, "s3", 2) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::S3;
-  } else if (sf_strncasecmp(response->stage_info->location_type,
-                            "azure", 5) == 0)
+    putGetParseResponse->stageInfo.region = response->stage_info->region;
+    putGetParseResponse->stageInfo.credentials = {
+            {"AWS_KEY_ID",     response->stage_info->stage_cred->aws_key_id},
+            {"AWS_SECRET_KEY", response->stage_info->stage_cred->aws_secret_key},
+            {"AWS_TOKEN",      response->stage_info->stage_cred->aws_token}
+      };
+  } else if (sf_strncasecmp(response->stage_info->location_type, "azure", 5) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::AZURE;
+    putGetParseResponse->stageInfo.storageAccount= response->stage_info->storageAccount;
+    putGetParseResponse->stageInfo.credentials = {
+            {"AZURE_SAS_KEY",     response->stage_info->stage_cred->azure_sas_token}
+      };
+    putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
+
   } else if (sf_strncasecmp(response->stage_info->location_type,
                             "local_fs", 8) == 0)
   {

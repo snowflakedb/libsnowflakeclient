@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
+source $DIR/_init.sh $@
 
 cd $DIR/..
 rm -rf cmake-build

@@ -11,8 +11,12 @@ function usage() {
 set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
-OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.1a/
+source $DIR/_init.sh $@
+
+OPENSSL_TAR_GZ=$DEPS_DIR/openssl-1.1.1b.tar.gz
+OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-1.1.1b/
+
+tar -xzf $OPENSSL_TAR_GZ -C $DEPS_DIR
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
