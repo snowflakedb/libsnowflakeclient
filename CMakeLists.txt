@@ -193,14 +193,11 @@ if (LINUX)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
-<<<<<<< HEAD
     find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/azure/lib/ REQUIRED)
     find_library(UUID_LIB libuuid.a PATHS deps-build/${PLATFORM}/uuid/lib/ REQUIRED)
-=======
     if(MOCK)
         find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
     endif()
->>>>>>> Added mock interface for http_perform to be able to test service name. Added basic mock framework and added mock helper functions. Refactored CMakeLists to only enable mock objects only for specific builds.
 endif ()
 
 if (APPLE)
@@ -236,12 +233,9 @@ if (UNIX)
             deps-build/${PLATFORM}/openssl/include
             deps-build/${PLATFORM}/zlib/include
             deps-build/${PLATFORM}/aws/include
-<<<<<<< HEAD
             deps-build/${PLATFORM}/azure/include
             deps-build/${PLATFORM}/uuid/include
-=======
             deps-build/${PLATFORM}/cmocka/include
->>>>>>> Added mock interface for http_perform to be able to test service name. Added basic mock framework and added mock helper functions. Refactored CMakeLists to only enable mock objects only for specific builds.
             include
             lib)
 endif()
@@ -262,14 +256,11 @@ message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
-<<<<<<< HEAD
 message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
 message("libuuid is located at " ${UUID_LIB})
-=======
 if (MOCK)
     message("libcmocka is located at " ${CMOCKA_LIB})
 endif ()
->>>>>>> Added mock interface for http_perform to be able to test service name. Added basic mock framework and added mock helper functions. Refactored CMakeLists to only enable mock objects only for specific builds.
 
 
 add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
