@@ -25,7 +25,9 @@ function travis_fold_end() {
 
 function finish {
     travis_fold_start drop_schema "Drop test schema"
-    python $DIR/drop_schema.py 
+    if [[ "$ENABLE_MOCK_OBJECTS" != "true" ]]; then
+        python $DIR/drop_schema.py
+    fi
     travis_fold_end
 }
 
@@ -37,13 +39,15 @@ trap finish EXIT
 
 source $DIR/env.sh
 
-travis_fold_start setup_test_data "Setting up test data"
-python $DIR/setup_test_data.py
-travis_fold_end
+if [[ "$ENABLE_MOCK_OBJECTS" != "true" ]]; then
+    travis_fold_start setup_test_data "Setting up test data"
+    python $DIR/setup_test_data.py
+    travis_fold_end
 
-travis_fold_start create_schema "Create test schema"
-python $DIR/create_schema.py 
-travis_fold_end
+    travis_fold_start create_schema "Create test schema"
+    python $DIR/create_schema.py
+    travis_fold_end
+fi
 
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     # enabling code coverage
