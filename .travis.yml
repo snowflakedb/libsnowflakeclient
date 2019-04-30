@@ -94,7 +94,7 @@ matrix:
     - eval "${MATRIX_EVAL}"
     - sudo apt-get update
     - sudo apt-get install lcov
-    - cp mock_parameters.json paramters.json
+    - cp mock_parameters.json parameters.json
     - pyenv local 3.6
     - curl -O https://bootstrap.pypa.io/get-pip.py
     - python get-pip.py
