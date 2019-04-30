@@ -17,7 +17,7 @@ set(OPENSSL_VERSION_NUMBER  0x11100000L)
 
 if (MOCK)
     set(MOCK_OBJECT_WRAPPER_FLAGS -Wl,--wrap=http_perform)
-    add_compile_definitions(MOCK_ENABLED)
+    add_definitions(-DMOCK_ENABLED)
 else()
     set(MOCK_OBJECT_WRAPPER_FLAGS )
 endif ()
