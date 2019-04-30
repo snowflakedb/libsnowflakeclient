@@ -176,12 +176,18 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
 cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id) {
     cJSON *body;
+    double submission_time;
     // Create body
+#ifdef MOCK_ENABLED
+    submission_time = 0;
+#else
+    submission_time = (double) time(NULL) * 1000;
+#endif
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
     snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
-    snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", (double) time(NULL) * 1000);
+    snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", submission_time);
     if (request_id)
     {
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
@@ -431,8 +437,6 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             } else {
                 // Create new header since we have a new token
                 new_header = sf_header_create();
-                new_header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
-                new_header->renew_session = SF_BOOLEAN_FALSE;
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
@@ -790,245 +794,6 @@ json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     // Set null terminator
     raw_json->buffer[raw_json->size] = '\0';
     return data_size;
-}
-
-sf_bool STDCALL http_perform(CURL *curl,
-                             SF_REQUEST_TYPE request_type,
-                             char *url,
-                             SF_HEADER *header,
-                             char *body,
-                             cJSON **json,
-                             int64 network_timeout,
-                             sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error,
-                             sf_bool insecure_mode) {
-    CURLcode res;
-    sf_bool ret = SF_BOOLEAN_FALSE;
-    sf_bool retry = SF_BOOLEAN_FALSE;
-    long int http_code = 0;
-    DECORRELATE_JITTER_BACKOFF djb = {
-      1,      //base
-      16      //cap
-    };
-    /* TODO: let's remove this if not used.
-    RETRY_CONTEXT retry_ctx = {
-            0,      //retry_count
-            network_timeout,
-            1,      // time to sleep
-            &djb    // Decorrelate jitter
-    };
-    */
-    RAW_JSON_BUFFER buffer = {NULL, 0};
-    struct data config;
-    config.trace_ascii = 1;
-
-    if (curl == NULL) {
-        return SF_BOOLEAN_FALSE;
-    }
-
-    //TODO set error buffer
-
-    // Find request GUID in the supplied URL
-    char *request_guid_ptr = strstr(url, "request_guid=");
-    // Set pointer to the beginning of the UUID string if request GUID exists
-    if (request_guid_ptr) {
-        request_guid_ptr = request_guid_ptr + REQUEST_GUID_KEY_SIZE;
-    }
-
-    do {
-        // Reset buffer since this may not be our first rodeo
-        SF_FREE(buffer.buffer);
-        buffer.size = 0;
-
-        // Generate new request guid, if request guid exists in url
-        if (request_guid_ptr && uuid4_generate_non_terminated(request_guid_ptr)) {
-            log_error("Failed to generate new request GUID");
-            break;
-        }
-
-        // Set parameters
-        res = curl_easy_setopt(curl, CURLOPT_URL, url);
-        if (res != CURLE_OK) {
-            log_error("Failed to set URL [%s]", curl_easy_strerror(res));
-            break;
-        }
-
-        if (DEBUG) {
-            curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
-            curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
-
-            /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-        }
-
-        if (header) {
-            res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header->header);
-            if (res != CURLE_OK) {
-                log_error("Failed to set header [%s]", curl_easy_strerror(res));
-                break;
-            }
-        }
-
-        // Post type stuffs
-        if (request_type == POST_REQUEST_TYPE) {
-            res = curl_easy_setopt(curl, CURLOPT_POST, 1);
-            if (res != CURLE_OK) {
-                log_error("Failed to set post [%s]", curl_easy_strerror(res));
-                break;
-            }
-
-            if (body) {
-                res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
-            } else {
-                res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
-            }
-            if (res != CURLE_OK) {
-                log_error("Failed to set body [%s]", curl_easy_strerror(res));
-                break;
-            }
-        }
-
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&json_resp_cb);
-        if (res != CURLE_OK) {
-            log_error("Failed to set writer [%s]", curl_easy_strerror(res));
-            break;
-        }
-
-        res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &buffer);
-        if (res != CURLE_OK) {
-            log_error("Failed to set write data [%s]", curl_easy_strerror(res));
-            break;
-        }
-
-        if (DISABLE_VERIFY_PEER) {
-            res = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            if (res != CURLE_OK) {
-                log_error("Failed to disable peer verification [%s]",
-                          curl_easy_strerror(res));
-                break;
-            }
-        }
-
-        if (CA_BUNDLE_FILE) {
-            res = curl_easy_setopt(curl, CURLOPT_CAINFO, CA_BUNDLE_FILE);
-            if (res != CURLE_OK) {
-                log_error("Unable to set certificate file [%s]",
-                          curl_easy_strerror(res));
-                break;
-            }
-        }
-
-        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, SSL_VERSION);
-        if (res != CURLE_OK) {
-            log_error("Unable to set SSL Version [%s]",
-                      curl_easy_strerror(res));
-            break;
-        }
-
-#ifndef _WIN32
-        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
-        sf_bool ocsp_check;
-        if (insecure_mode) {
-            ocsp_check = SF_BOOLEAN_FALSE;
-        } else {
-            ocsp_check = SF_OCSP_CHECK;
-        }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
-        if (res != CURLE_OK) {
-            log_error("Unable to set OCSP check enable/disable [%s]",
-                      curl_easy_strerror(res));
-            break;
-        }
-#endif
-
-        // Set chunk downloader specific stuff here
-        if (chunk_downloader) {
-            res = curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
-            if (res != CURLE_OK) {
-                log_error("Unable to set accepted content encoding",
-                          curl_easy_strerror(res));
-                break;
-            }
-
-            // Set the first character in the buffer as a bracket
-            buffer.buffer = (char *) SF_CALLOC(1,
-                                               2); // Don't forget null terminator
-            buffer.size = 1;
-            strncpy(buffer.buffer, "[", 2);
-        }
-
-        // Be optimistic
-        retry = SF_BOOLEAN_FALSE;
-
-        log_trace("Running curl call");
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK) {
-            char msg[1024];
-            if (res == CURLE_SSL_CACERT_BADFILE) {
-                snprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
-                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
-            }
-            else {
-                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-            }
-            msg[sizeof(msg)-1] = (char)0;
-            log_error(msg);
-            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                msg,
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
-        } else {
-            if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
-                CURLE_OK) {
-                log_error("Unable to get http response code [%s]",
-                          curl_easy_strerror(res));
-                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                    "Unable to get http response code",
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
-            } else if (http_code != 200) {
-                retry = is_retryable_http_code(http_code);
-                if (!retry) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_RETRY,
-                                        "Received unretryable http code",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
-                }
-            } else {
-                ret = SF_BOOLEAN_TRUE;
-            }
-        }
-
-        // Reset everything
-        reset_curl(curl);
-        http_code = 0;
-    }
-    while (retry);
-
-    // We were successful so parse JSON from text
-    if (ret) {
-        if (chunk_downloader) {
-            buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
-                                                               2); // 1 byte for closing bracket, 1 for null terminator
-            memcpy(&buffer.buffer[buffer.size], "]", 1);
-            buffer.size += 1;
-            // Set null terminator
-            buffer.buffer[buffer.size] = '\0';
-        }
-        snowflake_cJSON_Delete(*json);
-        *json = NULL;
-        *json = snowflake_cJSON_Parse(buffer.buffer);
-        if (*json) {
-            ret = SF_BOOLEAN_TRUE;
-        } else {
-            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
-                                "Unable to parse JSON text response.",
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
-            ret = SF_BOOLEAN_FALSE;
-        }
-    }
-
-    SF_FREE(buffer.buffer);
-
-    return ret;
 }
 
 sf_bool STDCALL is_retryable_http_code(long int code) {

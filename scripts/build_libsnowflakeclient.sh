@@ -32,5 +32,9 @@ if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
     cmake_opts+=("-DBUILD_TESTS=OFF")
 fi
 
+if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
+    cmake_opts+=("-DMOCK=ON")
+fi
+
 $CMAKE ${cmake_opts[@]} ..
 make

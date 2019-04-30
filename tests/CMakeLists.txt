@@ -63,13 +63,22 @@ SET(TESTS_PERF
         test_perf_column_evaluation
         test_perf_type_conversion)
 
+SET(TESTS_MOCK
+        test_mock_service_name)
+
 set(SOURCE_UTILS
         utils/test_setup.c
-        utils/test_setup.h)
+        utils/test_setup.h
+        utils/mock_endpoints.h
+        utils/mock_setup.h
+        utils/mock_setup.c)
 
 set(SOURCE_UTILS_CXX
         utils/TestSetup.cpp
-        utils/TestSetup.hpp)
+        utils/TestSetup.hpp
+        utils/mock_endpoints.h
+        utils/mock_setup.h
+        utils/mock_setup.c)
 
 # Only run PUT/GET tests on AWS deployments
 if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
@@ -119,65 +128,20 @@ if (WIN32)
 			Version.lib Userenv.lib Bcrypt.lib)
 endif()
 
-FOREACH (T ${TESTS_C})
-    add_executable(${T} ${SOURCE_UTILS} ${T}.c)
-    if (WIN32)
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
-        )
-    else()
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/cmocka/include
-        )
-    endif()
-    target_link_libraries(${T} ${TESTLIB_OPTS_C})
-    add_test(${T} ${T})
-    # Removed to suppress false alarm: "--run-libc-freeres=no"
-    add_test(valgrind_${T}
-            valgrind
-            --tool=memcheck
-            --leak-check=full
-            --error-exitcode=1
-            --suppressions=${VALGRIND_SUPPRESSION}
-            ./${T})
-ENDFOREACH ()
-
-
-FOREACH(T ${TESTS_CXX})
-    add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-    if (WIN32)
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
-        )
-    else()
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/cmocka/include
-        )
-    endif()
-    target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
-    add_test(${T} ${T})
-    # Removed to suppress false alarm: "--run-libc-freeres=no"
-    add_test(valgrind_${T}
-             valgrind
-             --tool=memcheck
-             --leak-check=full
-             --error-exitcode=1
-             --suppressions=${VALGRIND_SUPPRESSION}
-             ./${T})
-ENDFOREACH()
-
-# Tests only work on Unix at the moment
-if (UNIX)
-    FOREACH (T ${TESTS_PERF} )
-        add_executable(${T} ${SOURCE_UTILS} ${T}.c)
-        target_include_directories(
-                ${T} PUBLIC
-                ../deps-build/${PLATFORM}/cmocka/include
-        )
+if (MOCK)
+    FOREACH (T ${TESTS_MOCK})
+        add_executable(${T} ${SOURCE_UTILS} mock/${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+            )
+        else()
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -189,7 +153,81 @@ if (UNIX)
                 --suppressions=${VALGRIND_SUPPRESSION}
                 ./${T})
     ENDFOREACH ()
-endif ()
+else()
+    FOREACH (T ${TESTS_C})
+        add_executable(${T} ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+            )
+        else()
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
+        target_link_libraries(${T} ${TESTLIB_OPTS_C})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        add_test(valgrind_${T}
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T})
+    ENDFOREACH ()
+
+
+    FOREACH(T ${TESTS_CXX})
+        add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
+        if (WIN32)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+            )
+        else()
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
+        target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        add_test(valgrind_${T}
+                 valgrind
+                 --tool=memcheck
+                 --leak-check=full
+                 --error-exitcode=1
+                 --suppressions=${VALGRIND_SUPPRESSION}
+                 ./${T})
+    ENDFOREACH()
+
+    # Tests only work on Unix at the moment
+    if (UNIX)
+        FOREACH (T ${TESTS_PERF})
+            add_executable(${T} ${SOURCE_UTILS} ${T}.c)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+            target_link_libraries(${T} ${TESTLIB_OPTS_C})
+            add_test(${T} ${T})
+            # Removed to suppress false alarm: "--run-libc-freeres=no"
+            add_test(valgrind_${T}
+                    valgrind
+                    --tool=memcheck
+                    --leak-check=full
+                    --error-exitcode=1
+                    --suppressions=${VALGRIND_SUPPRESSION}
+                    ./${T})
+        ENDFOREACH ()
+    endif ()
+
+
+endif()
 
 # Uncomment when you want to run the OCSP unit tests. Do not run as part of normal Travis testing
 # add_subdirectory(unit_test_ocsp)
