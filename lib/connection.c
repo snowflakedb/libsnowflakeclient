@@ -140,7 +140,12 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     client_env = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
     snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
+#ifdef MOCK_ENABLED
+    os_version[0] = '0';
+    os_version[1] = '\0';
+#else
     sf_os_version(os_version);
+#endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
     session_parameters = snowflake_cJSON_CreateObject();

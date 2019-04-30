@@ -23,7 +23,7 @@ extern "C" {
 
 // Service name login
 #define MOCK_URL_SERVICE_NAME_LOGIN "https://servicename.snowflakecomputing.com:443/session/v1/login-request"
-#define MOCK_BODY_SERVICE_NAME_LOGIN "{\n\t\"data\":\t{\n\t\t\"CLIENT_APP_ID\":\t\"C API\",\n\t\t\"CLIENT_APP_VERSION\":\t\"0.3.2\",\n\t\t\"ACCOUNT_NAME\":\t\"servicename\",\n\t\t\"LOGIN_NAME\":\t\"servicenameuser\",\n\t\t\"PASSWORD\":\t\"secret-password\",\n\t\t\"CLIENT_ENVIRONMENT\":\t{\n\t\t\t\"APPLICATION\":\t\"C API\",\n\t\t\t\"OS\":\t\"Linux\",\n\t\t\t\"OS_VERSION\":\t\"4.6.0-1.el6.elrepo.x86_64\"\n\t\t},\n\t\t\"SESSION_PARAMETERS\":\t{\n\t\t\t\"AUTOCOMMIT\":\t\"TRUE\",\n\t\t\t\"TIMEZONE\":\t\"UTC\"\n\t\t}\n\t}\n}"
+#define MOCK_BODY_SERVICE_NAME_LOGIN "{\n\t\"data\":\t{\n\t\t\"CLIENT_APP_ID\":\t\"C API\",\n\t\t\"CLIENT_APP_VERSION\":\t\"0.3.2\",\n\t\t\"ACCOUNT_NAME\":\t\"servicename\",\n\t\t\"LOGIN_NAME\":\t\"servicenameuser\",\n\t\t\"PASSWORD\":\t\"secret-password\",\n\t\t\"CLIENT_ENVIRONMENT\":\t{\n\t\t\t\"APPLICATION\":\t\"C API\",\n\t\t\t\"OS\":\t\"Linux\",\n\t\t\t\"OS_VERSION\":\t\"0\"\n\t\t},\n\t\t\"SESSION_PARAMETERS\":\t{\n\t\t\t\"AUTOCOMMIT\":\t\"TRUE\",\n\t\t\t\"TIMEZONE\":\t\"UTC\"\n\t\t}\n\t}\n}"
 #define MOCK_REQUEST_TYPE_SERVICE_NAME_LOGIN "POST"
 #define MOCK_RESPONSE_SERVICE_NAME_LOGIN "{\n \
                   \"code\": null,\n \
