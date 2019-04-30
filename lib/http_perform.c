@@ -376,15 +376,21 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
     char *resp;
     const char *request_type_str = request_type == POST_REQUEST_TYPE ? "POST" : "GET";
 
+    // Remove request ID from URL (since it isn't deterministic
     char *found = strchr(url, '?');
     found[0] = '\0';
+    // Check that the generated URL is what we expected
     check_expected_ptr(url);
+    // Check that body is what we expected
     check_expected(body);
+    // Check request type
     check_expected_ptr(request_type_str);
+    // Check service name header
     check_expected(header->header_service_name);
+    // Check auth token header
     check_expected(header->header_token);
 
-
+    // Get back mock response (assuming all inputs checked out) and parse as JSON
     resp = mock_ptr_type(char *);
     *json = snowflake_cJSON_Parse(resp);
 

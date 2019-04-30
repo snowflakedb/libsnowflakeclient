@@ -16,10 +16,13 @@ extern "C" {
 #include <cmocka.h>
 // cmocka end
 
+// Setup mock data for service name login
 void setup_mock_login_service_name();
 
+// Setup mock data for running a service name query
 void setup_mock_query_service_name();
 
+// Setup a generic delete connection request
 void setup_mock_delete_connection();
 
 #ifdef __cplusplus

@@ -14,6 +14,8 @@ extern "C" {
 
 #ifdef MOCK_ENABLED
 
+// The parameters for this are identical to http_perform located in connection.h
+// This is just the mock interface
 sf_bool STDCALL __wrap_http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                                     char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
                                     SF_ERROR_STRUCT *error, sf_bool insecure_mode);
