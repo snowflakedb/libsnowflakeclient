@@ -94,8 +94,7 @@ matrix:
     - eval "${MATRIX_EVAL}"
     - sudo apt-get update
     - sudo apt-get install lcov
-    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
-      parameters.json -d
+    - cp mock_parameters.json paramters.json
     - pyenv local 3.6
     - curl -O https://bootstrap.pypa.io/get-pip.py
     - python get-pip.py
