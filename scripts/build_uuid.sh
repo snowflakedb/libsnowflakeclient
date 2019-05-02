@@ -46,7 +46,6 @@ if [[ "$PLATFORM" == "linux" ]]; then
     ./configure --disable-all-programs --enable-libuuid --prefix=$DEPENDENCY_DIR/uuid  || true
     echo "Compiling UUID source"
     make install  || true
-
 elif [[ "$PLATFORM" == "darwin" ]]; then
 
    export AL_OPTS="-I/usr/local/Cellar/automake/1.16.1_1/bin "
