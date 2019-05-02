@@ -11,7 +11,7 @@ extern "C" {
 
 // Common mock strings shared across tests
 #define MOCK_HEADER_AUTH_TOKEN "Authorization: Snowflake Token=\"ETMsDgAAAVHApArOABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEH6XI1dGt/WBW5OrD4pFJF0AAABwUr+kbG6lEvgdJ1unUV69p3ZQWhMXh13TrFu2OXIA19TnaNFoFe7L0GOUASskpvLxBwNjRITjaO3cDBZnZ5Kthv7Vu6wPXwPp9vtXtWKzy+B58arDdXoF7ktIjNhGZWnGlvrEM0IOUBXVmO5jHdKUZwAU1T3TJfuZgjJNs2gKQtbm2+AW7Yg=\""
-#define MOCK_HEADER_SERVICE_NAME "Service-Name: fakeservicename"
+#define MOCK_HEADER_SERVICE_NAME "X-Snowflake-Service: fakeservicename"
 #define MOCK_URL_DELETE_CONNECTION "https://servicename.snowflakecomputing.com:443/session"
 #define MOCK_REQUEST_TYPE_POST "POST"
 #define MOCK_RESPONSE_DELETE_CONNECTION "{\n \
