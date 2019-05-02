@@ -16,6 +16,7 @@
 #define HEADER_ACCEPT_TYPE_APPLICATION_JSON "accept: application/json"
 #define HEADER_C_API_USER_AGENT "User-Agent: c_api/0.1"
 #define HEADER_DIRECT_QUERY_TOKEN_FORMAT "Authorization: %s"
+#define HEADER_SERVICE_NAME_FORMAT "X-Snowflake-Service: %s"
 
 #define DEFAULT_SNOWFLAKE_BASE_URL "snowflakecomputing.com"
 #define DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT 60

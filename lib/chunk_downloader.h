@@ -18,6 +18,7 @@ extern "C" {
 #include <snowflake/client.h>
 #include "snowflake/platform.h"
 #include "cJSON.h"
+#include "connection.h"
 
 typedef struct SF_QUEUE_ITEM {
     char *url;
@@ -46,7 +47,7 @@ struct SF_CHUNK_DOWNLOADER {
 
     // Chunk downloader connection attributes
     char *qrmk;
-    struct curl_slist *chunk_headers;
+    SF_HEADER *chunk_headers;
 
     // Error/shutdown flags
     sf_bool is_shutdown;

@@ -79,6 +79,32 @@ matrix:
     - source env/bin/activate
     script:
     - "./scripts/run_travis.sh"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - ENABLE_MOCK_OBJECTS="true"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov
+    - cp mock_parameters.json parameters.json
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+    - bash <(curl -s https://codecov.io/bash)
   - os: osx
     env:
     - SNOWFLAKE_CLOUD_ENV=AWS

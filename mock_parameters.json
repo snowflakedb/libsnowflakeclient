@@ -1,0 +1,13 @@
+{
+  "testconnection": {
+    "SNOWFLAKE_TEST_ACCOUNT": "servicename",
+    "SNOWFLAKE_TEST_PROTOCOL": "https",
+    "SNOWFLAKE_TEST_USER": "servicenameuser",
+    "SNOWFLAKE_TEST_PASSWORD": "secret-password",
+    "SNOWFLAKE_TEST_ROLE": "sysadmin",
+    "SNOWFLAKE_TEST_SCHEMA": "public",
+    "SNOWFLAKE_TEST_DATABASE": "servicenamedb",
+    "SNOWFLAKE_TEST_WAREHOUSE": "servicenamewh",
+    "SNOWFLAKE_TEST_HOST": "servicename.snowflakecomputing.com"
+  }
+}

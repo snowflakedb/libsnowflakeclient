@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2017-2019 Snowflake Computing, Inc. All rights reserved.
+ */
+
+#include "mock_setup.h"
+#include "mock_endpoints.h"
+
+void setup_mock_login_service_name() {
+    expect_string(__wrap_http_perform, url, MOCK_URL_SERVICE_NAME_LOGIN);
+    expect_string(__wrap_http_perform, body, MOCK_BODY_SERVICE_NAME_LOGIN);
+    expect_string(__wrap_http_perform, request_type_str, MOCK_REQUEST_TYPE_SERVICE_NAME_LOGIN);
+    expect_value(__wrap_http_perform, header->header_service_name, NULL);
+    expect_value(__wrap_http_perform, header->header_token, NULL);
+    will_return(__wrap_http_perform, cast_ptr_to_largest_integral_type(MOCK_RESPONSE_SERVICE_NAME_LOGIN));
+}
+
+void setup_mock_query_service_name() {
+    expect_string(__wrap_http_perform, url, MOCK_URL_SERVICE_NAME_QUERY);
+    expect_string(__wrap_http_perform, body, MOCK_BODY_SERVICE_NAME_QUERY);
+    expect_string(__wrap_http_perform, request_type_str, MOCK_REQUEST_TYPE_SERVICE_NAME_QUERY);
+    expect_string(__wrap_http_perform, header->header_service_name, MOCK_HEADER_SERVICE_NAME);
+    expect_string(__wrap_http_perform, header->header_token, MOCK_HEADER_AUTH_TOKEN);
+    will_return(__wrap_http_perform, cast_ptr_to_largest_integral_type(MOCK_RESPONSE_SERVICE_NAME_QUERY));
+}
+
+void setup_mock_delete_connection() {
+    expect_string(__wrap_http_perform, url, MOCK_URL_DELETE_CONNECTION);
+    expect_value(__wrap_http_perform, body, NULL);
+    expect_string(__wrap_http_perform, request_type_str, MOCK_REQUEST_TYPE_POST);
+    expect_string(__wrap_http_perform, header->header_service_name, MOCK_HEADER_SERVICE_NAME);
+    expect_string(__wrap_http_perform, header->header_token, MOCK_HEADER_AUTH_TOKEN);
+    will_return(__wrap_http_perform, cast_ptr_to_largest_integral_type(MOCK_RESPONSE_DELETE_CONNECTION));
+}
