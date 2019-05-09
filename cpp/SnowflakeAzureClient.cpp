@@ -179,7 +179,8 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleDownload(
   std::string blob = fileMetadata->srcFileName.substr(dirSep + 1);
   std::string cont = fileMetadata->srcFileName.substr(0,dirSep);
   unsigned long long offset=0;
-  m_blobclient->download_blob_to_stream(cont, blob, offset, fileMetadata->destFileSize, *dataStream);
+  m_blobclient->download_blob_to_stream(cont, blob, offset, fileMetadata->srcFileSize, *dataStream);
+  dataStream->flush();
   if(errno == 0)
     return RemoteStorageRequestOutcome::SUCCESS;
 
@@ -194,23 +195,17 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
     std::string cont = filePathFull->substr(0,dirSep);
     auto blobProperty = m_blobclient->get_blob_property(cont, blob  );
     if(blobProperty.valid()) {
-        std::string encry = blobProperty.metadata[0].second;
-        std::string matdesc = blobProperty.metadata[1].second;
+        std::string encHdr = blobProperty.metadata[0].second;
+        fileMetadata->srcFileSize = blobProperty.size;
+        encHdr.erase(remove(encHdr.begin(), encHdr.end(), ' '), encHdr.end());  //Remove spaces from the string.
 
-        encry.erase(remove(encry.begin(), encry.end(), ' '), encry.end());  //Remove spaces from the string.
+        std::size_t pos1 = encHdr.find("EncryptedKey")  + strlen("EncryptedKey") + 3;
+        std::size_t pos2 = encHdr.find("\",\"Algorithm\"");
+        fileMetadata->encryptionMetadata.enKekEncoded = encHdr.substr(pos1, pos2-pos1);
 
-        //sscanf(encry.c_str()," \"{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%[^\"]\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%[^\"]\",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}\"", enkek ,iv);
-
-        //TODO: There is a better way of doing this but might complicate things. 
-        //An assumption made is the key value pair order is not going to change. 
-        //Will optimize 
-        std::size_t pos1 = encry.find("EncryptedKey")  + strlen("EncryptedKey") + 3;
-        std::size_t pos2 = encry.find("\",\"Algorithm\"");
-        fileMetadata->encryptionMetadata.enKekEncoded = encry.substr(pos1, pos2-pos1);
-
-        pos1 = encry.find("ContentEncryptionIV")  + strlen("ContentEncryptionIV") + 3;
-        pos2 = encry.find("\",\"KeyWrappingMetadata\"");
-        std::string iv = encry.substr(pos1, pos2-pos1);
+        pos1 = encHdr.find("ContentEncryptionIV")  + strlen("ContentEncryptionIV") + 3;
+        pos2 = encHdr.find("\",\"KeyWrappingMetadata\"");
+        std::string iv = encHdr.substr(pos1, pos2-pos1);
 
         Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->encryptionMetadata.iv.data);
 
