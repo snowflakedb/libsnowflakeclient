@@ -21,7 +21,7 @@ AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
 GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-VERSION="v0.1.2"
+VERSION="v0.1.3"
 
 if [ ! -d $AZURE_SOURCE_DIR ]; then
   n=0 
@@ -57,14 +57,14 @@ else
 fi
 azure_configure_opts+=(
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
-    "-DCMAKE_C_COMPILER=$GCC"
-    "-DCMAKE_CXX_COMPILER=$GXX"
+    "-DCMAKE_C_COMPILER=$CC"
+    "-DCMAKE_CXX_COMPILER=$CXX"
     "-DCMAKE_INSTALL_PREFIX=$AZURE_BUILD_DIR"
     "-DBUILD_SHARED_LIBS=OFF"
     "-DUSE_OPENSSL=true"
     "-DOPENSSL_VERSION_NUMBER=0x11100000L"
     "-DBUILD_SAMPLES=true"
-    "-DBUILD_TESTS=false"
+    "-DBUILD_TESTS=true"
     "-DOPENSSL_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-DOPENSSL_CRYPTO_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
     "-DOPENSSL_SSL_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libssl.a"
