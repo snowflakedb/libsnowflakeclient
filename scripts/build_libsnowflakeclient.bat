@@ -27,6 +27,9 @@ call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 if not exist %scriptdir%\..\deps-build\%build_dir%\aws\lib\aws-cpp-sdk-s3.lib call "%scriptdir%\build_awssdk.bat" %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+if not exist %scriptdir%\..\deps-build\%build_dir%\azure\lib\azure-storage-lite.lib call "%scriptdir%\build_azuresdk.bat" %platform% %build_type% %vs_version% %dynamic_runtime%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 rmdir /q /s cmake-build-%arcdir%
 if %ERRORLEVEL% NEQ 0 goto :error
 mkdir cmake-build-%arcdir%
