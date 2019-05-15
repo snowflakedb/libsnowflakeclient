@@ -21,7 +21,7 @@ AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
 GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-VERSION="v0.1.4"
+VERSION="v0.1.5"
 
 if [ ! -d $AZURE_SOURCE_DIR ]; then
   n=0 
