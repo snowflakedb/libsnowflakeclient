@@ -6,6 +6,7 @@
 set platform=%1
 set build_type=%2
 set vs_version=%3
+set force_shared_crt=%4
 
 set scriptdir=%~dp0
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
@@ -29,7 +30,7 @@ set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build
 set AZURE_INSTALL_DIR=%scriptdir%\..\deps-build\%build_dir%\%vs_version%\azure
 set GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 set CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-set VERSION="v0.1.4"
+set VERSION="v0.1.5"
 set GIT=git.exe
 
 
@@ -49,7 +50,7 @@ cd %AZURE_CMAKE_BUILD_DIR%
 cmake %AZURE_SOURCE_DIR% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
--DBUILD_WITH_MT=true ^
+-DFORCE_SHARED_CRT=%force_shared_crt% ^
 -DBUILD_SHARED_LIBS=OFF ^
 -DUSE_OPENSSL=true ^
 -DCURL_LINK_TYPE=static ^
