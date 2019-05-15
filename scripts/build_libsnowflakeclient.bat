@@ -10,6 +10,13 @@ set vs_version=%3
 set dynamic_runtime=%4
 set build_tests=%5
 
+if "%platform%"=="x64" (
+	set arcdir=win64
+)
+if "%platform%"=="x86" (
+	set arcdir=win32
+)
+
 set scriptdir=%~dp0
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -32,6 +39,7 @@ if "%arch%"=="x86" (
 ) else (
     cmake -G "%cmake_generator%" -DDYNAMIC_RUNTIME=%dynamic_runtime% -DBUILD_TESTS=%build_tests% -DVSDIR:STRING=%vsdir% -A %arch% ..
 )
+
 if %ERRORLEVEL% NEQ 0 goto :error
 REM NOTE cmake --build doesn't work as it cannot recognize Release|Win32 profile
 msbuild ALL_BUILD.vcxproj /property:Configuration=%build_type%

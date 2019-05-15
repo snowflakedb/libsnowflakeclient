@@ -222,6 +222,7 @@ if (WIN32)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/zlib/lib/ REQUIRED)
     find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
     find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
+	find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/azure/lib/ REQUIRED)
     if(MOCK)
         find_library(CMOCKA_LIB cmocka_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED)
     endif()
@@ -247,6 +248,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/zlib/include
             deps-build/${PLATFORM}/${VSDIR}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+			deps-build/${PLATFORM}/${VSDIR}/azure/include
             include
             lib)
 endif()

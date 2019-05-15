@@ -20,6 +20,8 @@ callgrind.out.*
 **/*.o
 deps/curl-7.54.1/**/*.o
 deps/curl-7.54.1/**/.dirstamp
+deps/openssl-1.1.1b/**
+deps/azure-storage-cpplite/**
 config.log
 deps-build/**
 .idea
