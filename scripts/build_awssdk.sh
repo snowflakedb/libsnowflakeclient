@@ -24,6 +24,7 @@ else
 fi
 aws_configure_opts+=(
     "-DCMAKE_C_COMPILER=$GCC"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DBUILD_ONLY=s3"
     "-DCMAKE_INSTALL_PREFIX=$AWS_BUILD_DIR"
@@ -39,7 +40,7 @@ aws_configure_opts+=(
 ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
     aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
-    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.11"
+    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.12"
 fi
 
 rm -rf $AWS_BUILD_DIR
