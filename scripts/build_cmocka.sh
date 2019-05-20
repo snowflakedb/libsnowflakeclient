@@ -4,7 +4,7 @@
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
-    echo "Build cmocka" 
+    echo "Build cmocka"
     echo "-t <Release/Debug> : Release or Debug builds"
     exit 2
 }
@@ -28,7 +28,7 @@ config_opts=(
 ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
     config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
-    ADDITIONAL_CFLAGS="-mmacosx-version-min=10.11"
+    ADDITIONAL_CFLAGS="-mmacosx-version-min=10.12"
 fi
 
 cd $SOURCE_DIR

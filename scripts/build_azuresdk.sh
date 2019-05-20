@@ -40,7 +40,7 @@ if [ ! -d $AZURE_SOURCE_DIR ]; then
   fi  
 
   cd $AZURE_SOURCE_DIR
-  git checkout tags/$VERSION -b $VERSION
+  git checkout tags/$VERSION -b $VERSION || true
 else
   cd $AZURE_SOURCE_DIR
   git fetch
