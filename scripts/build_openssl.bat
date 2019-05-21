@@ -2,8 +2,8 @@
 :: Build OpenSSL
 ::
 
-@echo off
-set OPENSSL_DIR=openssl-1.1.1a
+@echo on
+set OPENSSL_DIR=openssl-1.1.1b
 set CURL_DIR=curl-7.58.0
 
 set platform=%1
@@ -39,8 +39,10 @@ set curl_target_name=libcurl_a.lib
 
 call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 
-echo === building openssl
-cd "%curdir%\deps\%OPENSSL_DIR%"
+echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
+cd "%scriptdir%\..\deps
+tar -x -z -f openssl-1.1.1b.tar.gz
+cd "%scriptdir%\..\deps\%OPENSSL_DIR%"
 perl Configure %openssl_debug_option% %openssl_target% no-shared
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean

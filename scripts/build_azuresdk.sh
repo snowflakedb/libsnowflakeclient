@@ -21,7 +21,7 @@ AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
 GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-VERSION="v0.1.3"
+VERSION="v0.1.6"
 
 if [ ! -d $AZURE_SOURCE_DIR ]; then
   n=0 
@@ -40,7 +40,7 @@ if [ ! -d $AZURE_SOURCE_DIR ]; then
   fi  
 
   cd $AZURE_SOURCE_DIR
-  git checkout tags/$VERSION -b $VERSION
+  git checkout tags/$VERSION -b $VERSION || true
 else
   cd $AZURE_SOURCE_DIR
   git fetch
@@ -56,7 +56,7 @@ else
     azure_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
 fi
 azure_configure_opts+=(
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_C_COMPILER=$CC"
     "-DCMAKE_CXX_COMPILER=$CXX"
     "-DCMAKE_INSTALL_PREFIX=$AZURE_BUILD_DIR"
@@ -79,23 +79,29 @@ azure_configure_opts+=(
 ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
-    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.11"
+    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.12 "
 fi
 
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
 mkdir $AZURE_BUILD_DIR
 mkdir $AZURE_CMAKE_BUILD_DIR
+export CMAKE_CXX_FLAGS=$ADDITIONAL_CXXFLAGS
+export LDFLAGS+=$ADDITIONAL_CXXFLAGS
 
 export GIT_DIR=/tmp
 
 cd $AZURE_CMAKE_BUILD_DIR
-$CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a" ../
+if [ "$(uname -s)" == "Linux" ] ; then
+  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a" ../
+else
+  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS=$ADDITIONAL_CXXFLAGS LDFLAGS=$ADDITIONAL_CXXFLAGS -DEXTRA_LIBRARIES="-ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a" ../
+fi
     
 make
 make install
 
 #make install does not do much here
-cp -dfr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/
+cp -fr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/
 mkdir -p $DEPENDENCY_DIR/azure/lib
-cp -dfr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/
+cp -fr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/

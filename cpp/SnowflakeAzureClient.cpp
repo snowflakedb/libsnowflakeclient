@@ -2,10 +2,6 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#ifdef __linux__
-
-//Azure put get is supported in Linux only
-
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -107,7 +103,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
 
 void Snowflake::Client::SnowflakeAzureClient::uploadParts(MultiUploadCtx_a * uploadCtx)
 {
-
+	return;
 }
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata *fileMetadata,
@@ -115,6 +111,8 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  CXX_LOG_DEBUG("Multi part upload NOT supported on this platform.");
+  return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
 
 }
 
@@ -132,7 +130,7 @@ void SnowflakeAzureClient::addUserMetadata(std::vector<std::pair<std::string, st
   userMetadata->push_back(std::make_pair("matdesc", fileMetadata->encryptionMetadata.matDesc));
 
   char ivEncoded[64];
-  bzero((void*)ivEncoded, 64);  //Base64::encode does not set the '\0' at the end of the string. (And this is the cause of failed decode on the server side). 
+  memset((void*)ivEncoded, 0, 64);  //Base64::encode does not set the '\0' at the end of the string. (And this is the cause of failed decode on the server side). 
   Snowflake::Client::Util::Base64::encode(
           fileMetadata->encryptionMetadata.iv.data,
           Crypto::cryptoAlgoBlockSize(Crypto::CryptoAlgo::AES),
@@ -221,5 +219,3 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
 
 }
 }
-
-#endif 

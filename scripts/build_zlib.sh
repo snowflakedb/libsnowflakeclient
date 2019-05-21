@@ -14,11 +14,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE_DIR=$DIR/../deps/zlib-1.2.11
 source $DIR/_init.sh $@
 
-# init environment
-#init_environment $DIR
 
 # build
-BUILD_DIR=$DEPS_DIR/../deps-build/linux/zlib
+BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
@@ -27,7 +25,9 @@ zlib_config_opts+=(
     "--static"
     "--prefix=$BUILD_DIR"
 )
+
 cd $SOURCE_DIR
+
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC=gcc52
@@ -36,6 +36,36 @@ if [[ "$PLATFORM" == "linux" ]]; then
     fi
     ./configure ${zlib_config_opts[@]} > /dev/null || true
     make install > /dev/null || true
+
+elif [[ "$PLATFORM" == "darwin" ]]; then
+   echo "Now building for x86_64"
+   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=10.12"
+   BUILD_DIR_64=$BUILD_DIR/zlib_64
+    if [ -e "Makefile" ] ; then
+        make distclean clean > /dev/null || true
+    fi
+   ./configure -s --static --prefix=$BUILD_DIR_64 
+   make install
+
+   echo "Now building for i386"
+    if [ -e "Makefile" ] ; then
+        make distclean clean > /dev/null || true
+    fi
+   cd $SOURCE_DIR
+   CFLAGS=""
+   LDFLAGS=""
+   CXXFLAGS=""
+   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=10.12" 
+   BUILD_DIR_32=$BUILD_DIR/zlib_32
+  ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
+   make install
+
+   BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
+   mkdir -p $BUILD_DIR/lib
+   mkdir -p $BUILD_DIR/include
+   cp -fr $BUILD_DIR_32/include $BUILD_DIR/include/
+   lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
+   rm -rf $BUILD_DIR_64 $BUILD_DIR_32
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
