@@ -97,6 +97,8 @@ if [ "$(uname -s)" == "Linux" ] ; then
 else
   $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS=$ADDITIONAL_CXXFLAGS LDFLAGS=$ADDITIONAL_CXXFLAGS -DEXTRA_LIBRARIES="-ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a" ../
 fi
+
+unset GIT_DIR
     
 make
 make install

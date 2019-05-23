@@ -127,12 +127,12 @@ namespace azure {  namespace storage_lite {
             check_code(curl_easy_setopt(m_curl, CURLOPT_READDATA, this));
         }
 
-        void set_input_stream_length(size_t streamlen)
+        void set_input_stream_length(unsigned long long streamlen)
         {
             m_input_stream_len=streamlen;
         }
 
-        size_t get_input_stream_length(void)
+        unsigned long long get_input_stream_length(void)
         {
             return m_input_stream_len;
         }
@@ -201,7 +201,7 @@ namespace azure {  namespace storage_lite {
         storage_istream m_input_stream;
         storage_ostream m_output_stream;
         storage_iostream m_error_stream;
-        size_t m_input_stream_len;
+        unsigned long long m_input_stream_len;
         bool m_input_stream_len_known;
         std::function<bool(http_code)> m_switch_error_callback;
 
@@ -228,7 +228,7 @@ namespace azure {  namespace storage_lite {
         {
             REQUEST_TYPE *p = static_cast<REQUEST_TYPE *>(userdata);
             auto &s = p->m_input_stream.istream();
-            size_t streamlen = p->get_input_stream_length();
+            unsigned long long streamlen = p->get_input_stream_length();
             size_t actual_size = 0 ;
             if( ! p->get_is_stream_length() ) {
                 auto cur = s.tellg();
@@ -239,7 +239,7 @@ namespace azure {  namespace storage_lite {
             }
             else
             {
-                actual_size = std::min(streamlen, size * nitems);
+                actual_size = std::min(streamlen, (unsigned long long)size * nitems);
             }
 
             s.read(buffer, actual_size);

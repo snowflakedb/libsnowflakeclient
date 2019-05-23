@@ -52,5 +52,8 @@ export GIT_DIR=/tmp
 
 cd $AWS_CMAKE_BUILD_DIR
 $CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${aws_configure_opts[@]} ../
+
+unset GIT_DIR
+
 make
 make install

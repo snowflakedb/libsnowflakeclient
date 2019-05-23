@@ -119,7 +119,7 @@ namespace azure { namespace storage_lite {
         /// <param name="metadata">A <see cref="std::vector"> that respresents metadatas.</param>
         /// <param name="streamlen">Length of the stream. Used only when the stream does not support tellg/seekg</param>
         /// <returns>A <see cref="std::future" /> object that represents the current operation.</returns>
-        AZURE_STORAGE_API std::future<storage_outcome<void>> upload_block_blob_from_stream(const std::string &container, const std::string &blob, std::istream &is, const std::vector<std::pair<std::string, std::string>> &metadata, size_t streamlen);
+        AZURE_STORAGE_API std::future<storage_outcome<void>> upload_block_blob_from_stream(const std::string &container, const std::string &blob, std::istream &is, const std::vector<std::pair<std::string, std::string>> &metadata, unsigned long long streamlen);
 
 
         /// <summary>
@@ -413,7 +413,7 @@ namespace azure { namespace storage_lite {
         /// <param name="is">The source stream.</param>
         /// <param name="metadata">A <see cref="std::vector"> that respresents metadatas.</param>
         /// <param name="streamlen">Length of the stream. Used only when the stream does not support tellg/seekg</param>
-        void upload_block_blob_from_stream(const std::string &container, const std::string blob, std::istream &is, const std::vector<std::pair<std::string, std::string>> &metadata = std::vector<std::pair<std::string, std::string>>(), size_t streamlen = NOT_USER_DEFINED_STREAMLEN);
+        void upload_block_blob_from_stream(const std::string &container, const std::string blob, std::istream &is, const std::vector<std::pair<std::string, std::string>> &metadata = std::vector<std::pair<std::string, std::string>>(), unsigned long long streamlen = NOT_USER_DEFINED_STREAMLEN);
 
         /// <summary>
         /// Uploads the contents of a blob from a local file.
@@ -484,7 +484,7 @@ namespace azure { namespace storage_lite {
         std::mutex s_mutex;
         unsigned int m_concurrency;
         bool m_valid;
-        static const size_t NOT_USER_DEFINED_STREAMLEN = ULLONG_MAX ;
+        static const unsigned long long NOT_USER_DEFINED_STREAMLEN = ULLONG_MAX ;
     };
 
 } } // azure::storage_lite
