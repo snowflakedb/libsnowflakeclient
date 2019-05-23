@@ -46,10 +46,10 @@ mkdir -p $BUILD_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
     echo "Generating UUID build system"
-    ./autogen.sh || true
-#    Make sure the compiled binary is position independent as ODBC is a shared library
     export CFLAGS="-fPIC"
     export AL_OPTS="-I/usr/share/aclocal"
+    ./autogen.sh || true
+#    Make sure the compiled binary is position independent as ODBC is a shared library
     ./configure --disable-all-programs --enable-libuuid --prefix=$DEPENDENCY_DIR/uuid  || true
     echo "Compiling UUID source"
     make install  || true
