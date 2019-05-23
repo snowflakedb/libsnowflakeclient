@@ -10,6 +10,13 @@ function usage() {
 }
 set -o pipefail
 
+if [[ "$PLATFORM" == "linux" ]]; then
+    export GXX=g++52
+    export CXX=g++52
+    export CC=gcc52
+    export GCC=gcc52
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
 AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-1.3.50/
@@ -54,3 +61,5 @@ cd $AWS_CMAKE_BUILD_DIR
 $CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${aws_configure_opts[@]} ../
 make
 make install
+
+unset GIT_DIR

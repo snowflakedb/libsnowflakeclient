@@ -13,6 +13,13 @@ function usage() {
 
 set -o pipefail
 
+if [[ "$PLATFORM" == "linux" ]]; then
+    export GXX=g++52
+    export CXX=g++52
+    export CC=gcc52
+    export GCC=gcc52
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE_DIR=$DIR/../deps/
 source $DIR/_init.sh $@

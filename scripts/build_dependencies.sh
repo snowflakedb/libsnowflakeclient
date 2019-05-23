@@ -16,7 +16,5 @@ source $DIR/build_openssl.sh -t $target
 source $DIR/build_curl.sh    -t $target
 source $DIR/build_awssdk.sh  -t $target
 source $DIR/build_cmocka.sh  -t Debug
-if [ "$(uname -s)" == "Linux" ] ; then
-  source $DIR/build_uuid.sh -t $target
-  $DIR/build_azuresdk.sh -t $target
-fi
+$DIR/build_uuid.sh -t $target
+$DIR/build_azuresdk.sh -t $target

@@ -10,8 +10,12 @@ function usage() {
 }
 set -o pipefail
 
-export CC="/usr/lib64/ccache/gcc52 -g"
-export CXX="/usr/lib64/ccache/g++52 -g"
+if [[ "$PLATFORM" == "linux" ]]; then
+    export GXX=g++52
+    export CXX=g++52
+    export CC=gcc52
+    export GCC=gcc52
+fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -100,6 +104,8 @@ fi
     
 make
 make install
+
+unset GIT_DIR
 
 #make install does not do much here
 cp -fr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/

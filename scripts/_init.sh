@@ -16,6 +16,14 @@ else
     CMAKE="$(which cmake)"
 fi
 
+if [[ "$PLATFORM" == "linux" ]]; then
+    export GXX=g++52
+    export CXX=g++52
+    export CC=gcc52
+    export GCC=gcc52
+fi
+
+
 if [[ -z "$GCC" || -z "$GXX" ]]; then
     if [[ "$(which gcc49)" ]]; then
         GCC="$(which gcc49)"
