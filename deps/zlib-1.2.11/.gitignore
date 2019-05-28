@@ -1,2 +1,4 @@
 zconf.h.included
-cmake-build*
+cmake-build*a
+zconf.h
+Makefile
