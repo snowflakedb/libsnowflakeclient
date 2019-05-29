@@ -31,9 +31,7 @@ cd $SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC=gcc52
-    if [ -e "Makefile" ] ; then
-        make distclean clean > /dev/null || true
-    fi
+    make -f Makefile.in distclean > /dev/null || true
     ./configure ${zlib_config_opts[@]} > /dev/null || true
     make install > /dev/null || true
 
@@ -41,16 +39,12 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
    echo "Now building for x86_64"
    export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=10.12"
    BUILD_DIR_64=$BUILD_DIR/zlib_64
-    if [ -e "Makefile" ] ; then
-        make distclean clean > /dev/null || true
-    fi
+   make -f Makefile.in distclean > /dev/null || true
    ./configure -s --static --prefix=$BUILD_DIR_64 
    make install
 
    echo "Now building for i386"
-    if [ -e "Makefile" ] ; then
-        make distclean clean > /dev/null || true
-    fi
+   make -f Makefile.in distclean > /dev/null || true
    cd $SOURCE_DIR
    CFLAGS=""
    LDFLAGS=""
