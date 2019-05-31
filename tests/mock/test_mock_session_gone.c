@@ -76,13 +76,19 @@ void test_session_gone_during_delete(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 }
 
+int test_setup(void **unused) {
+    putenv("SNOWFLAKE_TEST_HOST=standard.snowflakecomputing.com");
+    putenv("SNOWFLAKE_TEST_USER=standarduser");
+    putenv("SNOWFLAKE_TEST_ACCOUNT=standard");
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_session_gone_during_query),
       cmocka_unit_test(test_session_gone_during_delete),
     };
-    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    int ret = cmocka_run_group_tests(tests, test_setup, NULL);
     snowflake_global_term();
     return ret;
 }
