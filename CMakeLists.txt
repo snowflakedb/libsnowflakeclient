@@ -14,6 +14,8 @@ add_definitions(-DLOG_USE_COLOR)
 option(BUILD_TESTS "True if build tests" on)
 option(MOCK "True if mock should be used" off)
 set(OPENSSL_VERSION_NUMBER  0x11100000L)
+# Developers can uncomment this to enable mock builds on their local VMs
+#set(MOCK TRUE)
 
 if (MOCK)
     set(MOCK_OBJECT_WRAPPER_FLAGS -Wl,--wrap=http_perform)
