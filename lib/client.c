@@ -1930,6 +1930,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         }
     } else {
         log_trace("Connection failed");
+        // Set the return status to the error code
+        // that we got from the connection layer
+        ret = sfstmt->error.error_code;
         goto cleanup;
     }
 

@@ -23,7 +23,17 @@ void setup_mock_login_service_name();
 void setup_mock_query_service_name();
 
 // Setup a generic delete connection request
-void setup_mock_delete_connection();
+void setup_mock_delete_connection_service_name();
+
+void setup_mock_login_standard();
+
+void setup_mock_query_session_gone();
+
+void setup_mock_query_standard();
+
+void setup_mock_delete_connection_session_gone();
+
+void setup_mock_delete_connection_standard();
 
 #ifdef __cplusplus
 }

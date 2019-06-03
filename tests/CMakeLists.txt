@@ -64,7 +64,8 @@ SET(TESTS_PERF
         test_perf_type_conversion)
 
 SET(TESTS_MOCK
-        test_mock_service_name)
+        test_mock_service_name
+        test_mock_session_gone)
 
 set(SOURCE_UTILS
         utils/test_setup.c
