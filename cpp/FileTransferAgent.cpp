@@ -303,7 +303,6 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   char tempDir[150]={0};
   memset(tempDir, 0, 150);
   sf_get_tmp_dir(tempDir);
-  sf_create_directory_if_not_exists(tempDir);
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 
