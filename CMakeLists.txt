@@ -209,7 +209,6 @@ if (APPLE)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
     find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/azure/lib/ REQUIRED)
-    find_library(UUID_LIB libuuid.a PATHS deps-build/${PLATFORM}/uuid/lib/ REQUIRED)
     if(MOCK)
         find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
     endif()
@@ -232,7 +231,7 @@ if (WIN32)
     endif()
 endif ()
 
-if (UNIX)
+if (LINUX)
     include_directories(
             deps-build/${PLATFORM}/curl/include
             deps-build/${PLATFORM}/openssl/include
@@ -245,6 +244,18 @@ if (UNIX)
             lib)
 endif()
 
+if (APPLE)
+    include_directories(
+            deps-build/${PLATFORM}/curl/include
+            deps-build/${PLATFORM}/openssl/include
+            deps-build/${PLATFORM}/zlib/include
+            deps-build/${PLATFORM}/aws/include
+            deps-build/${PLATFORM}/azure/include
+            deps-build/${PLATFORM}/cmocka/include
+            include
+            lib)
+endif()
+
 if (WIN32)
     include_directories(
             deps-build/${PLATFORM}/${VSDIR}/curl/include
@@ -252,7 +263,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/zlib/include
             deps-build/${PLATFORM}/${VSDIR}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/cmocka/include
-	    deps-build/${PLATFORM}/${VSDIR}/azure/include
+	        deps-build/${PLATFORM}/${VSDIR}/azure/include
             include
             lib)
 endif()
@@ -301,7 +312,6 @@ elseif()
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/uuid/lib"
     )
     if(MOCK)
         link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/cmocka/lib")

@@ -26,8 +26,22 @@ config_opts=(
 )
 
 ADDITIONAL_CXXFLAGS=
+# Check to see if we are doing a universal build or not.
+# If we are not doing a universal build, pick an arch to
+# build
 if [[ "$PLATFORM" == "darwin" ]]; then
-    config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+	if [[ "$UNIVERSAL" == "true" ]]; then
+	    echo "[INFO] Building Universal Binary"
+	    config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+	else
+	    if [[ "$ARCH" == "x86" ]]; then
+	        echo "[INFO] Building x86 Binary"
+	        config_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
+	    else
+	        echo "[INFO] Building x64 Binary"
+	        config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+	    fi
+    fi
     ADDITIONAL_CFLAGS="-mmacosx-version-min=10.12"
 fi
 

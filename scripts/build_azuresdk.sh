@@ -68,18 +68,36 @@ azure_configure_opts+=(
     "-DOPENSSL_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-DOPENSSL_CRYPTO_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
     "-DOPENSSL_SSL_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libssl.a"
-    "-DUUID_INCLUDE_DIR=$DEPENDENCY_DIR/uuid/include"
-    "-DUUID_LIBRARIES=$DEPENDENCY_DIR/uuid/lib/libuuid.a"
     "-DCURL_INCLUDE_DIRS=$DEPENDENCY_DIR/curl/include"
     "-DCURL_LIBRARIES=$DEPENDENCY_DIR/curl/lib/libcurl.a"
     "-DEXTRA_INCLUDE=$DEPENDENCY_DIR/zlib/include"
 )
 
+if [[ "$PLATFORM" == "linux" ]]; then
+  azure_configure_opts+=(
+      "-DUUID_INCLUDE_DIR=$DEPENDENCY_DIR/uuid/include"
+      "-DUUID_LIBRARIES=$DEPENDENCY_DIR/uuid/lib/libuuid.a"
+  )
+fi
 
 ADDITIONAL_CXXFLAGS=
+# Check to see if we are doing a universal build or not.
+# If we are not doing a universal build, pick an arch to
+# build
 if [[ "$PLATFORM" == "darwin" ]]; then
+  if [[ "$UNIVERSAL" == "true" ]]; then
+    echo "[INFO] Building Universal Binary"
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
-    ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.12 "
+  else
+    if [[ "$ARCH" == "x86" ]]; then
+      echo "[INFO] Building x86 Binary"
+      azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
+    else
+      echo "[INFO] Building x64 Binary"
+      azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+    fi
+  fi
+  ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.12 "
 fi
 
 rm -rf $AZURE_BUILD_DIR

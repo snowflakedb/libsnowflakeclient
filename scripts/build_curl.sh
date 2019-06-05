@@ -59,17 +59,39 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make > /dev/null
     make install> /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
-    make distclean clean &> /dev/null || true
-    export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
-    PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
-    make > /dev/null
-    make install /dev/null
+    # Check to see if we are doing a universal build or not.
+    # If we are not doing a universal build, pick an arch to
+    # build
+    if [[ "$UNIVERSAL" == "true" ]]; then
+        echo "[INFO] Building Universal Binary"
+        make distclean clean &> /dev/null || true
+        export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        make > /dev/null
+        make install /dev/null
 
-    make distclean clean &> /dev/null || true
-    export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=10.12"
-    PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
-    make > /dev/null
-    echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
-    lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a
-    mv $LIBCURL_BUILD_DIR/lib/../libcurl.a $LIBCURL_BUILD_DIR/lib/libcurl.a
+        make distclean clean &> /dev/null || true
+        export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=10.12"
+        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        make > /dev/null
+        echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
+        lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a
+        mv $LIBCURL_BUILD_DIR/lib/../libcurl.a $LIBCURL_BUILD_DIR/lib/libcurl.a
+    else 
+        if [[ "$ARCH" == "x86" ]]; then
+            echo "[INFO] Building x86 Binary"
+            make distclean clean &> /dev/null || true
+            export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=10.12"
+            PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+            make > /dev/null
+            make install /dev/null
+        else
+            echo "[INFO] Building x64 Binary"
+            make distclean clean &> /dev/null || true
+            export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+            PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+            make > /dev/null
+            make install /dev/null
+        fi
+    fi
 fi
