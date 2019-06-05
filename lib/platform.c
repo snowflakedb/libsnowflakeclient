@@ -12,6 +12,7 @@
 
 #include <sys/time.h>
 #include <errno.h>
+#include <uuid/uuid.h>
 
 #endif
 
@@ -543,17 +544,30 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 void STDCALL sf_get_tmp_dir(char * tmpDir)
 {
 #ifdef _WIN32
+  UUID uuid;
+  UuidCreate(&uuid);
+  char* uuid_cstr = nullptr;
+  UuidToString(&uuid, reinterpret_cast<RPC_CSTR*>(uuid_cstr));
+  res = std::string(uuid_cstr);
+  RpcStringFreeA(reinterpret_cast<RPC_CSTR*>(uuid_cstr));
   GetTempPath(100, tmpDir);
 #else
   const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+  uuid_t uuid;
+  char uuid_cstr[37]; // 36 byte uuid plus null.
+  uuid_generate(uuid);
+  uuid_unparse(uuid, uuid_cstr);
 
   if (!tmpEnv)
   {
     strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
+    strncpy(tmpDir+strlen(tmpDir), uuid_cstr, sizeof(uuid_cstr));
+    strcat(tmpDir,"/");
   }
   else
   {
     strncpy(tmpDir, tmpEnv, strlen(tmpEnv));
+    strncpy(tmpDir+strlen(tmpDir), uuid_cstr, sizeof(uuid_cstr));
     size_t oldLen = strlen(tmpDir);
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';
