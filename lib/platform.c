@@ -546,15 +546,14 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 void STDCALL sf_get_tmp_dir(char * tmpDir)
 {
 #ifdef _WIN32
-#pragma comment(lib, "rpcrt4.lib");
+#pragma comment(lib, "rpcrt4.lib")
   UUID uuid;
   UuidCreate(&uuid);
   unsigned char* uuid_cstr = NULL;
-  UuidToStringA(&uuid, &uuid_cstr);
-  //std::string res std::string(uuid_cstr);
+  UuidToStringA(&uuid, (RPC_CSTR*)&uuid_cstr);
   GetTempPath(100, tmpDir);
-  sprintf(tmpDir+strlen(tmpDir),"\\%s\\",uuid_cstr); 
-  RpcStringFreeA((RPC_CSTR*)(uuid_cstr));
+  sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
+  RpcStringFreeA((RPC_CSTR*)(&uuid_cstr));
 #else
   const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
   uuid_t uuid;
@@ -577,5 +576,4 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
   }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
-
 }

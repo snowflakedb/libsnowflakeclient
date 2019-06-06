@@ -53,6 +53,8 @@ if %ERRORLEVEL% NEQ 0 goto :error
 msbuild INSTALL.vcxproj	/p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+set "GIT_DIR="
+
 :success
 cd "%curdir%"
 exit /b 0
