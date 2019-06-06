@@ -575,7 +575,7 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';
   }
-  sf_create_directory_if_not_exists(tmpDir);
 #endif
+  sf_create_directory_if_not_exists(tmpDir);
 
 }
