@@ -20,10 +20,11 @@
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #endif
-
+#ifdef _WIN32
+#include <Rpc.h>
+#endif
 #ifndef _WIN32
 
-#include <Rpc.h>
 #include <regex.h>
 #include <ctype.h>
 
