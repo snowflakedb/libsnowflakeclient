@@ -24,6 +24,7 @@ typedef SRWLOCK SF_RWLOCK_HANDLE;
 typedef HANDLE SF_MUTEX_HANDLE;
 
 #define PATH_SEP '\\'
+//On windows MAX_PATH is defined as 255
 
 #else
 #define STDCALL
@@ -40,6 +41,8 @@ typedef pthread_rwlock_t SF_RWLOCK_HANDLE;
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
 
 #define PATH_SEP '/'
+//MAX PATH in linux is 4096
+#define MAX_PATH 4096
 
 #endif
 
@@ -119,6 +122,8 @@ int STDCALL sf_create_directory_if_not_exists(const char * directoryName);
 int STDCALL sf_delete_directory_if_exists(const char * directoryName);
 
 void STDCALL sf_get_tmp_dir(char * tmpDir);
+
+void STDCALL sf_get_uniq_tmp_dir(char * tmpDir);
 
 #ifdef __cplusplus
 }

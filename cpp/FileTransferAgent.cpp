@@ -300,9 +300,8 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 {
   CXX_LOG_DEBUG("Starting file compression");
   
-  char tempDir[150]={0};
-  memset(tempDir, 0, 150);
-  sf_get_tmp_dir(tempDir);
+  char tempDir[MAX_PATH]={0};
+  sf_get_uniq_tmp_dir(tempDir);
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 

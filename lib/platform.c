@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <snowflake/platform.h>
 #include <snowflake/basic_types.h>
+#include "client_int.h"
 
 #if defined(__linux__) || defined(__APPLE__)
 
 #include <sys/time.h>
 #include <errno.h>
-#include <uuid/uuid.h>
 
 #endif
 
@@ -20,9 +20,7 @@
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #endif
-#ifdef _WIN32
-#include <Rpc.h>
-#endif
+
 #ifndef _WIN32
 
 #include <regex.h>
@@ -546,24 +544,44 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 void STDCALL sf_get_tmp_dir(char * tmpDir)
 {
 #ifdef _WIN32
-#pragma comment(lib, "rpcrt4.lib")
-  UUID uuid;
-  UuidCreate(&uuid);
-  unsigned char* uuid_cstr = NULL;
-  UuidToStringA(&uuid, (RPC_CSTR*)&uuid_cstr);
   GetTempPath(100, tmpDir);
-  sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
-  RpcStringFreeA((RPC_CSTR*)(&uuid_cstr));
 #else
   const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
-  uuid_t uuid;
-  char uuid_cstr[37]; // 36 byte uuid plus null.
-  uuid_generate(uuid);
-  uuid_unparse(uuid, uuid_cstr);
+
   if (!tmpEnv)
-    sprintf(tmpDir,"/tmp/%s/",uuid_cstr);
+  {
+    strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
+  }
   else
+  {
+    strncpy(tmpDir, tmpEnv, strlen(tmpEnv));
+    size_t oldLen = strlen(tmpDir);
+    tmpDir[oldLen] = PATH_SEP;
+    tmpDir[oldLen+1] = '\0';
+  }
+#endif
+}
+
+/*Returns a unique temporary directory based on uuid string
+ */
+void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
+{
+  char uuid_cstr[37]; // 36 byte uuid plus null.
+  uuid4_generate(uuid_cstr);
+#ifdef _WIN32
+  GetTempPath(MAX_PATH, tmpDir);
+  sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
+#else
+  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+
+  if (!tmpEnv)
+  {
+    sprintf(tmpDir,"/tmp/%s/",uuid_cstr);
+  }
+  else
+  {
     sprintf(tmpDir, "%s/%s/",tmpEnv,uuid_cstr);
+  }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
 }
