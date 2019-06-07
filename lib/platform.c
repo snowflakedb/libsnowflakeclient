@@ -561,19 +561,9 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
   uuid_generate(uuid);
   uuid_unparse(uuid, uuid_cstr);
   if (!tmpEnv)
-  {
-    strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
-    strncpy(tmpDir+strlen(tmpDir), uuid_cstr, sizeof(uuid_cstr));
-    strcat(tmpDir,"/");
-  }
+    sprintf(tmpDir,"/tmp/%s/",uuid_cstr);
   else
-  {
-    strncpy(tmpDir, tmpEnv, strlen(tmpEnv));
-    strncpy(tmpDir+strlen(tmpDir), uuid_cstr, sizeof(uuid_cstr));
-    size_t oldLen = strlen(tmpDir);
-    tmpDir[oldLen] = PATH_SEP;
-    tmpDir[oldLen+1] = '\0';
-  }
+    sprintf(tmpDir, "%s/%s/",tmpEnv,uuid_cstr);
 #endif
   sf_create_directory_if_not_exists(tmpDir);
 }
