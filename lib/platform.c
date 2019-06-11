@@ -563,6 +563,8 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 }
 
 /*Returns a unique temporary directory based on uuid string
+ * tmpDir: /tmp/snowflakeTmp/<uuid-string/
+ * And tmpDir can hold upto Max path allowed on respective platforms.
  */
 void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
 {
@@ -570,17 +572,25 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
   uuid4_generate(uuid_cstr);
 #ifdef _WIN32
   GetTempPath(MAX_PATH, tmpDir);
+  strcat(tmpDir, "\\snowflakeTmp\\");
+  //sf_create_directory does not recursively create dirs in the path.
+  sf_create_directory_if_not_exists(tmpDir);
   sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
 #else
   const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
 
   if (!tmpEnv)
   {
-    sprintf(tmpDir,"/tmp/%s/",uuid_cstr);
+    strcat(tmpDir, "/tmp/snowflakeTmp/");
+    //sf_create_directory does not recursively create dirs in the path.
+    sf_create_directory_if_not_exists(tmpDir);
+    sprintf(tmpDir,"%s/%s/",tmpDir, uuid_cstr);
   }
   else
   {
-    sprintf(tmpDir, "%s/%s/",tmpEnv,uuid_cstr);
+    sprintf(tmpDir,"%s/snowflakeTmp", tmpEnv);
+    sf_create_directory_if_not_exists(tmpDir);
+    sprintf(tmpDir, "%s/%s/",tmpDir,uuid_cstr);
   }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
