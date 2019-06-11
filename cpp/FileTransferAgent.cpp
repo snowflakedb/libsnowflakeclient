@@ -254,7 +254,8 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
 
   if (fileMetadata->requireCompress)
   {
-    remove(fileMetadata->srcFileToUpload.c_str());
+    //Remove the uniq temp directory created (force remove).
+    sf_delete_uniq_dir_if_exists(fileMetadata->srcFileToUpload.c_str());
   }
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);

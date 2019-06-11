@@ -13,6 +13,7 @@
 
 #include <sys/time.h>
 #include <errno.h>
+#include <libgen.h>
 
 #endif
 
@@ -594,4 +595,42 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
   }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
+}
+
+/*
+void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
+{
+#ifdef _WIN32
+    string directory(tmpfile);
+    const size_t last_slash_idx = filename.rfind('\\');
+    if (std::string::npos != last_slash_idx)
+    {
+        directory = filename.substr(0, last_slash_idx);
+    }
+    sf_delete_directory_if_exists(directory.c_str());
+#else
+    char tfile[MAX_PATH];
+    strcpy(tfile, tmpfile);
+    char *dirpath=dirname(tfile);
+    sf_delete_directory_if_exists(dirpath);
+#endif
+}
+*/
+
+void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
+{
+    size_t i=0;
+    size_t len=0; 
+    char fpath[MAX_PATH];
+    strcpy(fpath, tmpfile);     
+    len=strlen(fpath);
+    for(i=len ; i > 0 ; i--)
+    {   
+        if(fpath[i] == PATH_SEP)
+        {
+            fpath[i]=0;
+            break;
+        }
+    }   
+    sf_delete_directory_if_exists(fpath);
 }

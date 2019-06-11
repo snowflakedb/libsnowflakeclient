@@ -125,6 +125,8 @@ void STDCALL sf_get_tmp_dir(char * tmpDir);
 
 void STDCALL sf_get_uniq_tmp_dir(char * tmpDir);
 
+void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile);
+
 #ifdef __cplusplus
 }
 #endif
