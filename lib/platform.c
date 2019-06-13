@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <snowflake/platform.h>
 #include <snowflake/basic_types.h>
+#include "client_int.h"
 
 #if defined(__linux__) || defined(__APPLE__)
 
@@ -560,3 +561,56 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
   }
 #endif
 }
+
+/*Returns a unique temporary directory based on uuid string
+ * tmpDir: /tmp/snowflakeTmp/<uuid-string/
+ * And tmpDir can hold upto Max path allowed on respective platforms.
+ */
+void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
+{
+  char uuid_cstr[37]; // 36 byte uuid plus null.
+  uuid4_generate(uuid_cstr);
+#ifdef _WIN32
+  GetTempPath(MAX_PATH, tmpDir);
+  strcat(tmpDir, "\\snowflakeTmp\\");
+  //sf_create_directory does not recursively create dirs in the path.
+  sf_create_directory_if_not_exists(tmpDir);
+  sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
+#else
+  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+
+  if (!tmpEnv)
+  {
+    strcat(tmpDir, "/tmp/snowflakeTmp/");
+    //sf_create_directory does not recursively create dirs in the path.
+    sf_create_directory_if_not_exists(tmpDir);
+    sprintf(tmpDir,"%s/%s/",tmpDir, uuid_cstr);
+  }
+  else
+  {
+    sprintf(tmpDir,"%s/snowflakeTmp", tmpEnv);
+    sf_create_directory_if_not_exists(tmpDir);
+    sprintf(tmpDir, "%s/%s/",tmpDir,uuid_cstr);
+  }
+#endif
+  sf_create_directory_if_not_exists(tmpDir);
+}
+
+void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
+{
+    size_t i=0;
+    size_t len=0; 
+    char fpath[MAX_PATH];
+    strcpy(fpath, tmpfile);     
+    len=strlen(fpath);
+    for(i=len ; i > 0 ; i--)
+    {   
+        if(fpath[i] == PATH_SEP)
+        {
+            fpath[i]=0;
+            break;
+        }
+    }   
+    sf_delete_directory_if_exists(fpath);
+}
+
