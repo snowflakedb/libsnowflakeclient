@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include "utils/test_setup.h"
