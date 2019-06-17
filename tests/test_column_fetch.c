@@ -1109,7 +1109,9 @@ int main(void) {
       cmocka_unit_test(test_column_as_uint64),
       cmocka_unit_test(test_column_as_float32),
       cmocka_unit_test(test_column_as_float64),
+#ifndef _WIN32
       cmocka_unit_test(test_column_as_timestamp),
+#endif
       cmocka_unit_test(test_column_as_const_str),
       cmocka_unit_test(test_column_is_null),
       cmocka_unit_test(test_column_strlen),
