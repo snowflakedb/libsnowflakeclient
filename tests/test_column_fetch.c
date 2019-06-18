@@ -855,7 +855,7 @@ void test_column_as_timestamp_windows(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // NULL case, should be the epoch
-        if (snowflake_column_as_timestamp(sfstmt, 4, &out[0])) {
+        if (snowflake_column_as_timestamp(sfstmt, 1, &out[0])) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(1970, snowflake_timestamp_get_year(&out[0]));
