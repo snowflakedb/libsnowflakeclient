@@ -21,6 +21,8 @@ namespace azure {  namespace storage_lite {
             file
         };
 
+        static std::shared_ptr<storage_account> development_storage_account();
+
         AZURE_STORAGE_API storage_account(const std::string &account_name, std::shared_ptr<storage_credential> credential, bool use_https = true, const std::string &blob_endpoint = std::string());
 
         std::shared_ptr<storage_credential> credential() const

@@ -35,19 +35,20 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
-  char caBundleFile[512]={0};
+  std::string caBundleFile ;
   if(transferConfig && transferConfig->caBundleFile) {
-      int len = strlen(transferConfig->caBundleFile);
-      len = (len >=511)? 511: len;
-      strncpy(caBundleFile, transferConfig->caBundleFile, len);
-      caBundleFile[511]=0;
-      CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
+      caBundleFile=transferConfig->caBundleFile;
+      CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile.c_str());
   }
   else{
-      snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
-      CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
+      snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, (char*)caBundleFile.c_str());
+      CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile.c_str());
   }
-  std::string account_name = m_stageInfo->storageAccount;
+  if( caBundleFile.empty() )
+    caBundleFile = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+    CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile.c_str());
+
+    std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
@@ -65,7 +66,11 @@ SnowflakeAzureClient::~SnowflakeAzureClient()
 RemoteStorageRequestOutcome SnowflakeAzureClient::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
-    return doSingleUpload(fileMetadata, dataStream);
+    if(fileMetadata->encryptionMetadata.cipherStreamSize <= 64*1024*1024 )
+    {
+        return doSingleUpload(fileMetadata, dataStream);
+    }
+    return doMultiPartUpload(fileMetadata, dataStream);
 }
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *fileMetadata,
@@ -111,9 +116,31 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
-  CXX_LOG_DEBUG("Multi part upload NOT supported on this platform.");
-  return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+  std::string containerName = m_stageInfo->location;
 
+    //Remove the trailing '/' in containerName
+    containerName.pop_back();
+
+    std::string blobName = fileMetadata->destFileName;
+
+    //metadata azure uses.
+    std::vector<std::pair<std::string, std::string>> userMetadata;
+    addUserMetadata(&userMetadata, fileMetadata);
+    //Calculate the length of the stream.
+    unsigned int len = (unsigned int) (fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize ;
+
+    //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
+    bool exists = m_blobclient->blob_exists(containerName, blobName);
+    if(exists)
+    {
+        return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+    }
+
+    m_blobclient->multipart_upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
+    if (errno != 0)
+        return RemoteStorageRequestOutcome::FAILED;
+
+    return RemoteStorageRequestOutcome::SUCCESS;
 }
 
 std::string buildEncryptionMetadataJSON(std::string iv64, std::string enkek64)
