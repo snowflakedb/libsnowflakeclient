@@ -11,6 +11,7 @@ typedef struct test_case_to_string {
     const char *c2in;
     const int64 *c3in;
     const sf_bool *c4in;
+    const char *c5in;
 
     const char *c2out;
     const sf_bool c2_is_null;
@@ -18,12 +19,18 @@ typedef struct test_case_to_string {
     const sf_bool c3_is_null;
     const char *c4out;
     const sf_bool c4_is_null;
+    const char *c5out;
+    const sf_bool c5_is_null;
 } TEST_CASE_TO_STRING;
 
 
 void test_null(void **unused) {
     TEST_CASE_TO_STRING test_cases[] = {
-      {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c2out = "", .c2_is_null = SF_BOOLEAN_TRUE, .c3out="", .c3_is_null=SF_BOOLEAN_TRUE, .c4out= "", .c4_is_null = SF_BOOLEAN_TRUE}
+      {
+          .c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c5in = NULL, .c2out = "",
+          .c2_is_null = SF_BOOLEAN_TRUE, .c3out="", .c3_is_null=SF_BOOLEAN_TRUE, .c4out= "",
+          .c4_is_null = SF_BOOLEAN_TRUE, .c5out= "", .c5_is_null = SF_BOOLEAN_TRUE
+      }
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -109,6 +116,18 @@ void test_null(void **unused) {
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
+        SF_BIND_INPUT ic5;
+        ic5.idx = 5;
+        ic5.name = NULL;
+        ic5.c_type = SF_C_TYPE_NULL;
+        ic5.value = NULL;
+        ic5.len = (size_t) 0;
+        status = snowflake_bind_param(sfstmt, &ic5);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
         status = snowflake_execute(sfstmt);
         if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
@@ -146,6 +165,10 @@ void test_null(void **unused) {
         snowflake_column_as_str(sfstmt, 4, &null_val, &null_val_len, &max_null_val_len);
         assert_true(v.c4_is_null == is_null);
         assert_string_equal(v.c4out, null_val);
+        snowflake_column_is_null(sfstmt, 5, &is_null);
+        snowflake_column_as_str(sfstmt, 5, &null_val, &null_val_len, &max_null_val_len);
+        assert_true(v.c5_is_null == is_null);
+        assert_string_equal(v.c5out, null_val);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
