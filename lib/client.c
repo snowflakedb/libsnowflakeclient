@@ -2909,6 +2909,11 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
         tm_ptr = sf_localtime(&sec, &ts->tm_obj);
+#if defined(__linux__) || defined(__APPLE__)
+        if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_LTZ) {
+            ts->tzoffset = (int32) (ts->tm_obj.tm_gmtoff / 60);
+        }
+#endif
         if (prev_tz_ptr != NULL) {
             sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
         } else {
@@ -3012,7 +3017,8 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, int32 
 #if defined(__linux__) || defined(__APPLE__)
     epoch_time_local += ts->tm_obj.tm_gmtoff;
 #endif
-    *epoch_time_ptr = epoch_time_local - ts->tzoffset;
+    *epoch_time_ptr = epoch_time_local - (ts->tzoffset * 60);
+
     return SF_STATUS_SUCCESS;
 }
 
