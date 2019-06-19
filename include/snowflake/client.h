@@ -79,7 +79,8 @@ typedef enum SF_DB_TYPE {
     SF_DB_TYPE_ARRAY,
     SF_DB_TYPE_BINARY,
     SF_DB_TYPE_TIME,
-    SF_DB_TYPE_BOOLEAN
+    SF_DB_TYPE_BOOLEAN,
+    SF_DB_TYPE_ANY
 } SF_DB_TYPE;
 
 /**
@@ -96,7 +97,8 @@ typedef enum SF_C_TYPE {
     SF_C_TYPE_STRING,
     SF_C_TYPE_TIMESTAMP,
     SF_C_TYPE_BOOLEAN,
-    SF_C_TYPE_BINARY
+    SF_C_TYPE_BINARY,
+    SF_C_TYPE_NULL
 } SF_C_TYPE;
 
 /**

@@ -59,6 +59,8 @@ SF_DB_TYPE string_to_snowflake_type(const char *string) {
         return SF_DB_TYPE_TIME;
     } else if (strcmp(string, "boolean") == 0) {
         return SF_DB_TYPE_BOOLEAN;
+    } else if (strcmp(string, "any") == 0) {
+        return SF_DB_TYPE_ANY;
     } else {
         // Everybody loves a string, so lets return it by default
         return SF_DB_TYPE_TEXT;
@@ -93,6 +95,8 @@ const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type) {
             return "TIME";
         case SF_DB_TYPE_BOOLEAN:
             return "BOOLEAN";
+        case SF_DB_TYPE_ANY:
+            return "ANY";
         default:
             return "TEXT";
     }
@@ -118,6 +122,8 @@ const char * STDCALL snowflake_c_type_to_string(SF_C_TYPE type) {
             return "SF_C_TYPE_TIMESTAMP";
         case SF_C_TYPE_BINARY:
             return "SF_C_TYPE_BINARY";
+        case SF_C_TYPE_NULL:
+            return "SF_C_TYPE_NULL";
         default:
             return "unknown";
     }
@@ -142,7 +148,8 @@ SF_C_TYPE snowflake_to_c_type(SF_DB_TYPE type, int64 precision, int64 scale) {
     } else if (type == SF_DB_TYPE_TEXT ||
             type == SF_DB_TYPE_VARIANT ||
             type == SF_DB_TYPE_OBJECT ||
-            type == SF_DB_TYPE_ARRAY) {
+            type == SF_DB_TYPE_ARRAY ||
+            type == SF_DB_TYPE_ANY) {
         return SF_C_TYPE_STRING;
     } else if (type == SF_DB_TYPE_BINARY) {
         return SF_C_TYPE_BINARY;
@@ -172,6 +179,8 @@ SF_DB_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_DB_TYPE tsmode) {
             return SF_DB_TYPE_BOOLEAN;
         case SF_C_TYPE_BINARY:
             return SF_DB_TYPE_BINARY;
+        case SF_C_TYPE_NULL:
+            return SF_DB_TYPE_ANY;
         default:
             return SF_DB_TYPE_TEXT;
     }
@@ -229,6 +238,8 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
         case SF_C_TYPE_TIMESTAMP:
             // TODO Add timestamp case
             return "";
+        case SF_C_TYPE_NULL:
+            return NULL;
         default:
             // TODO better default case
             // Return empty string in default case
