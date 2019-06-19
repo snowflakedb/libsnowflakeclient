@@ -428,7 +428,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         char *extracted_account = NULL;
         char *extracted_region = NULL;
         alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
-        *dot_ptr = (char) 0;
+        *dot_ptr = '\0';
+        if (strcmp(extracted_region, "global") == 0) {
+            char *dash_ptr = strrchr(sf->account, (int) '-');
+            // If there is an external ID then just remove it from account
+            if (dash_ptr) {
+                *dash_ptr = '\0';
+            }
+        }
         alloc_buffer_and_copy(&extracted_account, sf->account);
         SF_FREE(sf->account);
         SF_FREE(sf->region);
