@@ -1,0 +1,142 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+sudo: required
+language: cpp
+matrix:
+  include:
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+    - bash <(curl -s https://codecov.io/bash)
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AZURE
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov
+    - openssl aes-256-cbc -k "$super_duper_secret_password" -in parameters_az.json.enc
+      -out parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
+    - USE_VALGRIND=true
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov valgrind
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-4.9
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - ENABLE_MOCK_OBJECTS="true"
+    before_install:
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - sudo apt-get install lcov
+    - cp mock_parameters.json parameters.json
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+    - bash <(curl -s https://codecov.io/bash)
+  - os: osx
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AWS
+    before_install:
+    - sw_vers
+    - brew update
+    - brew install jq
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - python3 -m venv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+  - os: osx
+    env:
+    - SNOWFLAKE_CLOUD_ENV=AZURE
+    before_install:
+    - sw_vers
+    - brew update
+    - brew install jq
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - python3 -m venv env
+    - source env/bin/activate
+    script:
+    - "./scripts/run_travis.sh"
+env:
+  global:
+  - secure: LC6gqcPZLnfj2cLMy7h4jjGmY3MyomTLPEg+MNq315cKadO5IgMYOmjBJtJJ3FJZQjxsxnwjM612xQXtCy2wVKizKlKLT9BXZBOE9P7gL7EfQYourwM0rpwVbf58xQTajt1QR/4jGE+l7mfjY/d4zoMOAo5VH/D8C76YpCDGFfKgdVFDj+ROjXpyt0VzdrO1WbjZ27M/4BDvKsoqfGt6aL0S00+hVgLZEJZED35hCAYVtO8VS/hk+x74GvjeLihPitpXBxeadyQnYdma7/bF1RnqKxaPv9n+fhroeIrupS+nkcGwKWS5VYOj5Ofag6vYBZ9m1VaRfV3pcsliN1xzTdBpyGKzV4RZAlxybRqQeO2g2yo+bvqWMvI2ZeSnp5x/l4/wecuNlbQag6XqE0nx21ywfqdALbiwmWhtKOGLuVBP8iBdAr2D2Jvc51cFEIR9LBWjTu0O9ZDJYRktvBHO3AUSLmg5pT8y7x3VwUM3TqseKefRT1BjiIENt3VJSrhAO9XoUZouvUgKspXhHay46uq+QjGNzSr66iDULpd+f0FGvwaA/Shvpkhjd0zJOd90ZeeGXlvnzC1a42v4fMWw1Hr75LDBgGHkQCIho9SUk1XIcjyEb9SwzjmLTcXoqcQykp544aAczSGznxBIubnqky6uhhg15lk1Z/t82327cq0=
+  - secure: WqOLZoAOMpU9HMErtMRSjutjYt6T9WAmY9PnpBkqV2XB8pVkGH1h2pwT8aWZ13psHIrErJRv+ej+CDOkcXZ7/OjfdUlE5ViPynR3qJ2SKLTdBEy3WZVxPRWNGhFiMBsSZcJKLVGcMVDKyxASoQ73HMt/OrdFaTLuRI0BzPzl+XiPXBT3MrqXwrLcb1Y6ZOU8KvIUg/eLzxhG1mp57CJ0wWThy/oP+W383vJ16A2vo/FyNvAcRHRI9A61u3jWQ8JqcDWFdEC7SVpSSu8m+DdDLv3jRqg2OLw7UH+7XF+kmDXKaTA4nhdtaNA1Z4kB54o2x4tCB77ohv23HMJshoLI1z3DvbYsVKDyGdjv2okdtWRkpsnkIDM913A9Pvc7avLyiRsXlxEyH/Pm/hAEbLnMcBGGu8E169rFdfFRwj+Ra0B+9lxQY3VGvP8axQgbqhdqk1vxAo1jPjyq+i+EtEsmppDDFSmfI3ISQSywRLXuLx0ajaL6UsRfKofPgSUZYmI1ID0xo3bWKWSL3X2Y5uAiImfCukjpob/MTC8HUxL3TN4PETxiE2TNR+ZeskPLaG6ApI1QW42sliphIV/lNXziYl30w0+QNe/oYYggt9qSWDIWQmHVhiS9RGB2USFtBh3dwIj7l/z7r91BWldrxGO9TUi3xUWgi9pFCN8Zx0ck06c=
