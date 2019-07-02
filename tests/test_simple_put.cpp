@@ -170,7 +170,7 @@ void test_simple_get_data(const char *getCommand, const char *size)
     while(results && results->next())
     {
         results->getColumnAsString(1, get_status);
-        //assert_string_equal(size, get_status.c_str()); //As the file gets generated every time the file size is NOT same.
+        assert_string_equal(size, get_status.c_str()); //As the file gets generated every time the file size is NOT same.
         results->getColumnAsString(2, get_status);
         assert_string_equal("DOWNLOADED", get_status.c_str());
         results->getColumnAsString(3, get_status);
@@ -317,11 +317,11 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
-#ifdef _PUT_GET_LARGE_DATASET_TEST
+#ifdef PUT_GET_LARGE_DATASET_TEST
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
-    cmocka_unit_test_teardown(test_large_put_auto_compress, teardown),
-    cmocka_unit_test_teardown(test_large_get, teardown)
+    cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
+    cmocka_unit_test_teardown(test_large_get, donothing)
 #endif
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
