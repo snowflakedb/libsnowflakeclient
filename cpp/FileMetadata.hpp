@@ -56,6 +56,9 @@ struct FileMetadata
   /// destination file size
   long destFileSize;
 
+  /// Absolute path to the destination (including the filename. /tmp/small_test_file.csv.gz)
+  std::string destPath;
+
   /// true if require gzip compression
   bool requireCompress;
 

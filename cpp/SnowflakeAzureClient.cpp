@@ -40,20 +40,21 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int pa
       caBundleFile=transferConfig->caBundleFile;
       CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile.c_str());
   }
-  else{
+  else if( caBundleFile.empty() ) {
       snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, (char*)caBundleFile.c_str());
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile.c_str());
   }
-  if( caBundleFile.empty() )
-    caBundleFile = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-    CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile.c_str());
+  if( caBundleFile.empty() ) {
+      caBundleFile = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+      CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile.c_str());
+  }
 
-    std::string account_name = m_stageInfo->storageAccount;
+  std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
   std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
-  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, parallel, caBundleFile);
+  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile);
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
 
   CXX_LOG_TRACE("Successfully created Azure client. End of constructor.");
@@ -174,10 +175,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
 {
-    return doSingleDownload(fileMetadata, dataStream);
-
-    // TODO:: Support Multi part download for Azure.
-
   if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
     return doMultiPartDownload(fileMetadata, dataStream);
   else
@@ -186,10 +183,84 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::download(
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartDownload(
   FileMetadata *fileMetadata,
-  std::basic_iostream<char> * dataStream)
-{
-  CXX_LOG_DEBUG("Start multi part download for file %s, parallel: %d",
-               fileMetadata->srcFileName.c_str(), m_parallel);
+  std::basic_iostream<char> * dataStream) {
+
+    CXX_LOG_DEBUG("Start multi part download for file %s, parallel: %d",
+                  fileMetadata->srcFileName.c_str(), m_parallel);
+    unsigned long dirSep = fileMetadata->srcFileName.find_last_of('/');
+    std::string blob = fileMetadata->srcFileName.substr(dirSep + 1);
+    std::string cont = fileMetadata->srcFileName.substr(0,dirSep);
+
+    if (m_threadPool == nullptr)
+    {
+        m_threadPool = new Util::ThreadPool(m_parallel);
+    }
+
+    //To fetch size of file.
+    auto blobprop = m_blobclient->get_blob_property(cont, blob);
+    std::string origEtag = blobprop.etag ;
+    fileMetadata->srcFileSize = blobprop.size;
+    int partNum = (int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
+
+    Util::StreamAppender appender(dataStream, partNum, m_parallel, DATA_SIZE_THRESHOLD);
+    std::vector<MultiDownloadCtx_a> downloadParts;
+    for (unsigned int i = 0; i < partNum; i++)
+    {
+        downloadParts.emplace_back();
+        downloadParts.back().m_partNumber = i;
+        downloadParts.back().startbyte = i * DATA_SIZE_THRESHOLD ;
+    }
+
+    for (int i = 0; i < downloadParts.size(); i++)
+    {
+        MultiDownloadCtx_a &ctx = downloadParts[i];
+
+        m_threadPool->AddJob([&]()-> void {
+
+            int partSize = ctx.m_partNumber == partNum - 1 ?
+                           (int)(fileMetadata->srcFileSize -
+                                 ctx.m_partNumber * DATA_SIZE_THRESHOLD)
+                                                           : DATA_SIZE_THRESHOLD;
+            Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
+                    m_threadPool->GetThreadIdx());
+
+            CXX_LOG_DEBUG("Start downloading part %d, Start Byte: %d, part size: %d",
+                          ctx.m_partNumber, ctx.startbyte,
+                          partSize);
+            std::shared_ptr <std::stringstream> chunkbuff = std::make_shared<std::stringstream>();
+
+            m_blobclient->get_chunk(cont, blob, ctx.startbyte, partSize, origEtag, chunkbuff );
+
+            if ( ! errno)
+            {
+                chunkbuff->read(buf->getDataBuffer(), chunkbuff->str().size());
+                buf->updateSize(partSize);
+                CXX_LOG_DEBUG("Download part %d succeed, download size: %d",
+                              ctx.m_partNumber, partSize);
+                ctx.m_outcome = RemoteStorageRequestOutcome::SUCCESS;
+                appender.WritePartToOutputStream(m_threadPool->GetThreadIdx(),
+                                                 ctx.m_partNumber);
+                chunkbuff->str(std::string());
+            }
+            else
+            {
+                CXX_LOG_DEBUG("Download part %d FAILED, download size: %d",
+                              ctx.m_partNumber, partSize);
+                ctx.m_outcome = RemoteStorageRequestOutcome::FAILED;
+            }
+        });
+    }
+
+    m_threadPool->WaitAll();
+
+    for (unsigned int i = 0; i < partNum; i++)
+    {
+        if (downloadParts[i].m_outcome != RemoteStorageRequestOutcome::SUCCESS)
+        {
+            return downloadParts[i].m_outcome;
+        }
+    }
+    dataStream->flush();
 
   return RemoteStorageRequestOutcome::SUCCESS;
 }

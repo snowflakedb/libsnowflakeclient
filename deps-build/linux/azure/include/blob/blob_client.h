@@ -470,6 +470,17 @@ namespace azure { namespace storage_lite {
         void download_blob_to_file(const std::string &container, const std::string &blob, const std::string &destPath, time_t &returned_last_modified, size_t parallel = 9);
 
         /// <summary>
+        /// Downloads and validates the specified chunk into a stringstream
+        /// </summary>
+        /// <param name="container">The container name.</param>
+        /// <param name="blob">The blob name.</param>
+        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
+        /// <param name="size">The size of the data to download from the blob, in bytes.</param>
+        /// <param name="os">The target stream.</param>
+        /// <returns>A <see cref="std::future" /> object that represents the current operation.</returns>
+        void get_chunk(const std::string &container, const std::string &blob, unsigned long long offset, unsigned long long size, std::string &origEtag, std::shared_ptr<std::stringstream> str);
+
+        /// <summary>
         /// Gets the property of a blob.
         /// </summary>
         /// <param name="container">The container name.</param>
