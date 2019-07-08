@@ -107,3 +107,5 @@ make install
 cp -fr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/
 mkdir -p $DEPENDENCY_DIR/azure/lib
 cp -fr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/
+
+cd $DIR

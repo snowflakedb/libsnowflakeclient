@@ -65,6 +65,8 @@ cmake %AZURE_SOURCE_DIR% ^
 -DBUILD_TESTS=false ^
 -DBUILD_SAMPLES=false
 
+set "GIT_DIR="
+
 if %ERRORLEVEL% NEQ 0 goto :error
 
 msbuild INSTALL.vcxproj	/p:Configuration=%build_type%

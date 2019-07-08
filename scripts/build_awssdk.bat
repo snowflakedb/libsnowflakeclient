@@ -48,6 +48,8 @@ cmake %AWS_SOURCE_DIR% ^
 -DENABLE_UNITY_BUILD=on ^
 -DFORCE_SHARED_CRT=%force_shared_crt%
 
+set "GIT_DIR="
+
 if %ERRORLEVEL% NEQ 0 goto :error
 	
 msbuild INSTALL.vcxproj	/p:Configuration=%build_type%
