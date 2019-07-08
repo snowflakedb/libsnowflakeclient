@@ -33,7 +33,6 @@ set CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
 set VERSION="v0.1.8"
 set GIT=git.exe
 
-
 %GIT% clone %GIT_REPO% %AZURE_SOURCE_DIR%
 if exist %AZURE_SOURCE_DIR% (
 	%GIT% fetch
@@ -64,8 +63,6 @@ cmake %AZURE_SOURCE_DIR% ^
 -DCURL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\curl\lib\libcurl_a.lib" ^
 -DBUILD_TESTS=false ^
 -DBUILD_SAMPLES=false
-
-set "GIT_DIR="
 
 if %ERRORLEVEL% NEQ 0 goto :error
 
