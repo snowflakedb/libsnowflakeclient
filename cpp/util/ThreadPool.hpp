@@ -18,6 +18,7 @@
 #include <cstring>
 #include "snowflake/platform.h"
 #include "ByteArrayStreamBuf.hpp"
+#include "../logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -143,6 +144,12 @@ public:
 
 #ifdef _WIN32
     key = TlsAlloc();
+    if (key == TLS_OUT_OF_INDEXES)
+    {
+      CXX_LOG_ERROR("Thread pool out of TLS index");
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                               "Out of TLS index in the thread pool");
+    }
 #else
     pthread_key_create(&key, NULL);
 #endif
@@ -174,6 +181,12 @@ public:
    */
   ~ThreadPool() {
     JoinAll();
+#ifdef _WIN32
+    if (key != TLS_OUT_OF_INDEXES)
+    {
+      TlsFree(key);
+    }
+#endif
     _critical_section_term(&queue_mutex);
     _cond_term(&job_available_var);
     _cond_term(&wait_var);
