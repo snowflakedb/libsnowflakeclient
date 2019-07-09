@@ -55,10 +55,8 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
 cd "%curdir%"
-set GIT_DIR=
 exit /b 0
 
 :error
 cd "%curdir%"
-set GIT_DIR=
 exit /b 1
