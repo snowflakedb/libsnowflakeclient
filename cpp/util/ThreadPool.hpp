@@ -17,8 +17,9 @@
 #include <atomic>
 #include <cstring>
 #include "snowflake/platform.h"
-#include "ByteArrayStreamBuf.hpp"
+#include "snowflake/SnowflakeTransferException.hpp"
 #include "../logger/SFLogger.hpp"
+#include "ByteArrayStreamBuf.hpp"
 
 namespace Snowflake
 {
