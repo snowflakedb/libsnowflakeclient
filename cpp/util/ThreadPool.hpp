@@ -149,10 +149,16 @@ public:
     {
       CXX_LOG_ERROR("Thread pool out of TLS index");
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                               "Out of TLS index in the thread pool");
+                                       "Out of TLS index in the thread pool");
     }
 #else
-    pthread_key_create(&key, NULL);
+    int err = pthread_key_create(&key, NULL);
+    if (err)
+    {
+      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", strerror(err));
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                       "Thread context fail to initialize");
+    }
 #endif
 
     for( unsigned i = 0; i < threadCount; ++i )
@@ -187,6 +193,8 @@ public:
     {
       TlsFree(key);
     }
+#else
+    pthread_key_delete(key);
 #endif
     _critical_section_term(&queue_mutex);
     _cond_term(&job_available_var);
