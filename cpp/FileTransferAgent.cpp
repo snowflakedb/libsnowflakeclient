@@ -392,7 +392,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   FileMetadata *fileMetadata,
   unsigned int resultIndex)
 {
-   fileMetadata->destPath = std::string(response.localLocation) + "/" +
+   fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
 
   std::basic_fstream<char> dstFile(fileMetadata->destPath.c_str(),

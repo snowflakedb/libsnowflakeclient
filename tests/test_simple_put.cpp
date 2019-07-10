@@ -157,7 +157,6 @@ void test_simple_get_data(const char *getCommand, const char *size)
     /* query */
     sfstmt = snowflake_stmt(sf);
 
-    //std::string getCommand = "get @%test_small_put/small_file.csv.gz file:///tmp/" ;
     std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
             <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
 
@@ -170,7 +169,7 @@ void test_simple_get_data(const char *getCommand, const char *size)
     while(results && results->next())
     {
         results->getColumnAsString(1, get_status);
-        assert_string_equal(size, get_status.c_str()); //As the file gets generated every time the file size is NOT same.
+        //assert_string_equal(size, get_status.c_str()); //Compressed File sizes vary on Windows/Linux.
         results->getColumnAsString(2, get_status);
         assert_string_equal("DOWNLOADED", get_status.c_str());
         results->getColumnAsString(3, get_status);
@@ -236,12 +235,20 @@ void test_simple_put_one_byte(void **unused)
 
 void test_simple_get(void **unused)
 {
-  test_simple_get_data("get @%test_small_put/small_file.csv.gz file:///tmp/", "48"); 
+  char tempDir[MAX_PATH] = { 0 };
+  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
+  sf_get_tmp_dir(tempDir);
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "48");
 }
 
 void test_large_get(void **unused)
 {
-  test_simple_get_data("get @%test_small_put/large_file.csv.gz file:///tmp/", "5166848");
+  char tempDir[MAX_PATH] = { 0 };
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/large_file.csv.gz file://";
+  sf_get_tmp_dir(tempDir);
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "5166848");
 }
 
 static int gr_setup(void **unused)
@@ -321,7 +328,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
-    cmocka_unit_test_teardown(test_large_get, donothing)
+    cmocka_unit_test_teardown(test_large_get, teardown)
 ///#endif
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
