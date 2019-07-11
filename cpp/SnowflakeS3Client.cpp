@@ -269,11 +269,15 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     {
       m_threadPool->AddJob([&splitter, this, &uploadParts]()->void
                            {
+                             CXX_LOG_TRACE("Entering multi-part upload job");
                              int tid = m_threadPool->GetThreadIdx();
+                             CXX_LOG_TRACE("thread %d performing upload", tid);
                              int partId;
                              Util::ByteArrayStreamBuf * buf = splitter.FillAndGetBuf(tid, partId);
+                             CXX_LOG_TRACE("thread %d uploading part %d from buf address at %p", tid, partId, buf);
                              uploadParts[partId].buf = buf;
                              this->uploadParts(&uploadParts[partId]);
+                             CXX_LOG_TRACE("thread %d upload finished", tid);
                            });
     }
 
