@@ -24,6 +24,7 @@ typedef SRWLOCK SF_RWLOCK_HANDLE;
 typedef HANDLE SF_MUTEX_HANDLE;
 
 #define PATH_SEP '\\'
+#define MAX_PATH 255
 
 #else
 #define STDCALL
@@ -40,6 +41,7 @@ typedef pthread_rwlock_t SF_RWLOCK_HANDLE;
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
 
 #define PATH_SEP '/'
+#define MAX_PATH 4096
 
 #endif
 
