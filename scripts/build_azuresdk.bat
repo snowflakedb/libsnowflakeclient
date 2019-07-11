@@ -34,10 +34,6 @@ set VERSION="v0.1.8"
 set GIT=git.exe
 
 %GIT% clone %GIT_REPO% %AZURE_SOURCE_DIR%
-if exist %AZURE_SOURCE_DIR% (
-	%GIT% fetch
-	%GIT% checkout tags/%VERSION% -b %VERSION%
-	)
 
 if exist %AZURE_CMAKE_BUILD_DIR% rmdir /S /Q %AZURE_CMAKE_BUILD_DIR%
 mkdir %AZURE_CMAKE_BUILD_DIR%
@@ -45,6 +41,11 @@ mkdir %AZURE_CMAKE_BUILD_DIR%
 if not exist %AZURE_INSTALL_DIR% mkdir %AZURE_INSTALL_DIR%
 
 cd %AZURE_CMAKE_BUILD_DIR%
+
+if exist %AZURE_SOURCE_DIR% (
+	%GIT% fetch
+	%GIT% checkout tags/%VERSION% -b %VERSION%
+	)
 
 cmake %AZURE_SOURCE_DIR% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
