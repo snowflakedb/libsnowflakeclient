@@ -1,7 +1,7 @@
 ::
 :: Build Snowflake Client library
 ::
-@echo on
+@echo off
 
 set platform=%1
 set build_type=%2
