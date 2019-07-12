@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <client_int.h>

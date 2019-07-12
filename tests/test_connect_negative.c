@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include "utils/test_setup.h"
@@ -121,11 +121,9 @@ int main(void) {
       cmocka_unit_test(test_connect_account_missing),
       cmocka_unit_test(test_connect_user_missing),
       cmocka_unit_test(test_connect_password_missing),
-      /* These test cases are failing because of server side changes. Talk to Tyler
-      cmocka_unit_test(test_connect_invalid_database),
-      cmocka_unit_test(test_connect_invalid_schema),
-      cmocka_unit_test(test_connect_invalid_warehouse),
-       */
+      //cmocka_unit_test(test_connect_invalid_database),
+      //cmocka_unit_test(test_connect_invalid_schema),
+      //cmocka_unit_test(test_connect_invalid_warehouse),
       cmocka_unit_test(test_connect_invalid_role),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);

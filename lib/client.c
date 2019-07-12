@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <assert.h>
@@ -428,7 +428,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         char *extracted_account = NULL;
         char *extracted_region = NULL;
         alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
-        *dot_ptr = (char) 0;
+        *dot_ptr = '\0';
+        if (strcmp(extracted_region, "global") == 0) {
+            char *dash_ptr = strrchr(sf->account, (int) '-');
+            // If there is an external ID then just remove it from account
+            if (dash_ptr) {
+                *dash_ptr = '\0';
+            }
+        }
         alloc_buffer_and_copy(&extracted_account, sf->account);
         SF_FREE(sf->account);
         SF_FREE(sf->region);
@@ -1930,6 +1937,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         }
     } else {
         log_trace("Connection failed");
+        // Set the return status to the error code
+        // that we got from the connection layer
+        ret = sfstmt->error.error_code;
         goto cleanup;
     }
 
@@ -2906,6 +2916,11 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
         tm_ptr = sf_localtime(&sec, &ts->tm_obj);
+#if defined(__linux__) || defined(__APPLE__)
+        if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_LTZ) {
+            ts->tzoffset = (int32) (ts->tm_obj.tm_gmtoff / 60);
+        }
+#endif
         if (prev_tz_ptr != NULL) {
             sf_setenv("TZ", prev_tz_ptr); /* cannot set to NULL */
         } else {
@@ -3009,7 +3024,8 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, int32 
 #if defined(__linux__) || defined(__APPLE__)
     epoch_time_local += ts->tm_obj.tm_gmtoff;
 #endif
-    *epoch_time_ptr = epoch_time_local - ts->tzoffset;
+    *epoch_time_ptr = epoch_time_local - (ts->tzoffset * 60);
+
     return SF_STATUS_SUCCESS;
 }
 

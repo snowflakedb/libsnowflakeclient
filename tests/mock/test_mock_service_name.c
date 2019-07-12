@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string.h>
@@ -40,7 +40,7 @@ void test_service_name(void **unused) {
     assert_int_equal(status, SF_STATUS_EOF);
     snowflake_stmt_term(sfstmt);
 
-    setup_mock_delete_connection();
+    setup_mock_delete_connection_service_name();
     snowflake_term(sf);
 }
 

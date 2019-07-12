@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <memory>
@@ -254,7 +254,8 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
 
   if (fileMetadata->requireCompress)
   {
-    remove(fileMetadata->srcFileToUpload.c_str());
+    //Remove the uniq temp directory created (force remove).
+    sf_delete_uniq_dir_if_exists(fileMetadata->srcFileToUpload.c_str());
   }
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
@@ -300,8 +301,8 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 {
   CXX_LOG_DEBUG("Starting file compression");
   
-  char tempDir[100];
-  sf_get_tmp_dir(tempDir);
+  char tempDir[MAX_PATH]={0};
+  sf_get_uniq_tmp_dir(tempDir);
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 

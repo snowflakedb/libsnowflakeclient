@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #ifndef SNOWFLAKE_ERROR_H
@@ -33,6 +33,8 @@ void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 #define ERR_MSG_USER_PARAMETER_IS_MISSING "user parameter is missing"
 #define ERR_MSG_PASSWORD_PARAMETER_IS_MISSING "password parameter is missing"
 #define ERR_MSG_CONNECTION_ALREADY_EXISTS "Connection already exists."
+#define ERR_MSG_SESSION_TOKEN_INVALID "The session token is invalid. Please reconnect"
+#define ERR_MSG_GONE_SESSION "The session no longer exists on the server. Please reconnect"
 
 #ifdef __cplusplus
 }

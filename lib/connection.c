@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string.h>
@@ -160,7 +160,11 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
+#ifdef MOCK_ENABLED
+    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", "0.0.0");
+#else
     snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
+#endif
     snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
     snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
     // Add password if one exists
@@ -326,7 +330,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             break;
         }
 
-        if (strcmp(query_code, SESSION_EXPIRE_CODE) == 0) {
+        if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -344,6 +348,16 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                     break;
                 }
             }
+        }
+        else if (strcmp(query_code, SESSION_TOKEN_INVALID_CODE) == 0) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
+                                ERR_MSG_SESSION_TOKEN_INVALID, SF_SQLSTATE_CONNECTION_NOT_EXIST);
+            break;
+        }
+        else if (strcmp(query_code, GONE_SESSION_CODE) == 0) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
+                                ERR_MSG_GONE_SESSION, SF_SQLSTATE_CONNECTION_NOT_EXIST);
+            break;
         }
 
         while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
@@ -435,7 +449,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             break;
         }
 
-        if (strcmp(query_code, SESSION_EXPIRE_CODE) == 0) {
+        if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -450,6 +464,16 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                     break;
                 }
             }
+        }
+        else if (strcmp(query_code, SESSION_TOKEN_INVALID_CODE) == 0) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
+                                ERR_MSG_SESSION_TOKEN_INVALID, SF_SQLSTATE_CONNECTION_NOT_EXIST);
+            break;
+        }
+        else if (strcmp(query_code, GONE_SESSION_CODE) == 0) {
+            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
+                                ERR_MSG_GONE_SESSION, SF_SQLSTATE_CONNECTION_NOT_EXIST);
+            break;
         }
 
         ret = SF_BOOLEAN_TRUE;
