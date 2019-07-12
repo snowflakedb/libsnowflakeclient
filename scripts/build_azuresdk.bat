@@ -1,7 +1,7 @@
 ::
 :: Build Azure cpp storage light sdk
 ::
-@echo off
+@echo on
 
 set platform=%1
 set build_type=%2
@@ -33,19 +33,21 @@ set CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
 set VERSION="v0.1.9"
 set GIT=git.exe
 
+if exist %AZURE_SOURCE_DIR% rmdir /S /Q %AZURE_SOURCE_DIR%
+
 %GIT% clone %GIT_REPO% %AZURE_SOURCE_DIR%
 
-if exist %AZURE_CMAKE_BUILD_DIR% rmdir /S /Q %AZURE_CMAKE_BUILD_DIR%
+set GIT_DIR=%AZURE_SOURCE_DIR%
+
+cd %AZURE_SOURCE_DIR%
+
+%GIT% checkout tags/%VERSION% -b %VERSION%
+
 mkdir %AZURE_CMAKE_BUILD_DIR%
 
 if not exist %AZURE_INSTALL_DIR% mkdir %AZURE_INSTALL_DIR%
 
 cd %AZURE_CMAKE_BUILD_DIR%
-
-if exist %AZURE_SOURCE_DIR% (
-	%GIT% fetch
-	%GIT% checkout tags/%VERSION% -b %VERSION%
-	)
 
 cmake %AZURE_SOURCE_DIR% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
