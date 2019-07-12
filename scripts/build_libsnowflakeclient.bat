@@ -38,7 +38,7 @@ cd cmake-build-%arcdir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 ::Simlink does not work on Appveyor (mlink doesn't work either).
-del %curdir%\tests\test_simple_put_azure.cpp
+if exist  %curdir%\tests\test_simple_put_azure.cpp del %curdir%\tests\test_simple_put_azure.cpp
 copy %curdir%\tests\test_simple_put.cpp %curdir%\tests\test_simple_put_azure.cpp
 
 if "%arch%"=="x86" (
