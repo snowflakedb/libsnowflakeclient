@@ -400,7 +400,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
                                 std::ios_base::out | std::ios_base::binary );
   if( ! dstFile.is_open())
   {
-      std::cerr << "Could not open file to download. Error: " << std::strerror(errno) << std::endl;
+      CXX_LOG_DEBUG("Could not open file to downoad: %s", std::strerror(errno));
   }
 
   Crypto::CipherIOStream decryptOutputStream(
