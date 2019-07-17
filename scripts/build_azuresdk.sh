@@ -21,7 +21,7 @@ AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
 GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-VERSION="v0.1.6"
+VERSION="v0.1.9"
 
 if [ ! -d $AZURE_SOURCE_DIR ]; then
   n=0 
@@ -107,3 +107,5 @@ make install
 cp -fr $AZURE_SOURCE_DIR/include $DEPENDENCY_DIR/azure/
 mkdir -p $DEPENDENCY_DIR/azure/lib
 cp -fr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/
+
+cd $DIR

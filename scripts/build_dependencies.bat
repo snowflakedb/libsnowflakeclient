@@ -25,6 +25,9 @@ if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%\build_awssdk.bat" %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+call "%scriptdir%\build_azuresdk.bat" %platform% %build_type% %vs_version% %dynamic_runtime%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 call "%scriptdir%\build_cmocka.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 

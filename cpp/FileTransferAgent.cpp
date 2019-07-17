@@ -393,11 +393,15 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   FileMetadata *fileMetadata,
   unsigned int resultIndex)
 {
-  std::string dstNameFull = std::string(response.localLocation) + "/" +
+   fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
 
-  std::basic_fstream<char> dstFile(dstNameFull.c_str(),
-                                std::ios_base::out | std::ios_base::binary);
+  std::basic_fstream<char> dstFile(fileMetadata->destPath.c_str(),
+                                std::ios_base::out | std::ios_base::binary );
+  if( ! dstFile.is_open())
+  {
+      CXX_LOG_DEBUG("Could not open file to downoad: %s", std::strerror(errno));
+  }
 
   Crypto::CipherIOStream decryptOutputStream(
                                dstFile,
@@ -408,7 +412,6 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
 
   RemoteStorageRequestOutcome outcome = client->download(fileMetadata,
                                                          &decryptOutputStream);
-
   dstFile.close();
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
