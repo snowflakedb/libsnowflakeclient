@@ -30,17 +30,19 @@ set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build
 set AZURE_INSTALL_DIR=%scriptdir%\..\deps-build\%build_dir%\%vs_version%\azure
 set GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 set CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-set VERSION="v0.1.6"
+set VERSION="v0.1.9"
 set GIT=git.exe
 
+if exist %AZURE_SOURCE_DIR% rmdir /S /Q %AZURE_SOURCE_DIR%
 
 %GIT% clone %GIT_REPO% %AZURE_SOURCE_DIR%
-if exist %AZURE_SOURCE_DIR% (
-	%GIT% fetch
-	%GIT% checkout tags/%VERSION% -b %VERSION%
-	)
 
-if exist %AZURE_CMAKE_BUILD_DIR% rmdir /S /Q %AZURE_CMAKE_BUILD_DIR%
+set GIT_DIR=%AZURE_SOURCE_DIR%
+
+cd %AZURE_SOURCE_DIR%
+
+%GIT% checkout tags/%VERSION% -b %VERSION%
+
 mkdir %AZURE_CMAKE_BUILD_DIR%
 
 if not exist %AZURE_INSTALL_DIR% mkdir %AZURE_INSTALL_DIR%
@@ -48,6 +50,7 @@ if not exist %AZURE_INSTALL_DIR% mkdir %AZURE_INSTALL_DIR%
 cd %AZURE_CMAKE_BUILD_DIR%
 
 cmake %AZURE_SOURCE_DIR% ^
+-G %generator% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DFORCE_SHARED_CRT=%force_shared_crt% ^

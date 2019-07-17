@@ -14,6 +14,8 @@
 #include "storage_credential.h"
 #include "storage_account.h"
 #include "blob/blob_client.h"
+#include <sstream>
+#include <string>
 
 #ifdef _WIN32
  // see https://github.com/aws/aws-sdk-cpp/issues/402
@@ -56,6 +58,8 @@ struct MultiDownloadCtx_a
   /// in memory buffer used to store current part data
   Util::ByteArrayStreamBuf *buf;
 
+  ///Start byte of the chunk.
+  unsigned long long startbyte;
 
   /// part number
   unsigned int m_partNumber;

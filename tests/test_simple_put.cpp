@@ -124,6 +124,11 @@ void test_simple_put_core(const char * fileName,
   snowflake_term(sf); // purge snowflake context
 }
 
+static int donothing(void **unused)
+{
+    return 0;
+}
+
 static int teardown(void **unused)
 {
   SF_CONNECT *sf = setup_snowflake_connection();
@@ -136,6 +141,63 @@ static int teardown(void **unused)
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
   return 0;
+}
+
+void test_simple_get_data(const char *getCommand, const char *size)
+{
+    /* init */
+    SF_STATUS status;
+    SF_CONNECT *sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT *sfstmt = NULL;
+    SF_STATUS ret;
+
+    /* query */
+    sfstmt = snowflake_stmt(sf);
+
+    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+            <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+    // load first time should return uploaded
+    std::string get_status;
+    std::string getcmd(getCommand);
+    ITransferResult * results = agent.execute(&getcmd);
+    while(results && results->next())
+    {
+        results->getColumnAsString(1, get_status);
+        //Compressed File sizes vary on Windows/Linux, So not verifying size.
+        results->getColumnAsString(2, get_status);
+        assert_string_equal("DOWNLOADED", get_status.c_str());
+        results->getColumnAsString(3, get_status);
+        assert_string_equal("DECRYPTED", get_status.c_str());
+    }
+
+    snowflake_stmt_term(sfstmt);
+
+    /* close and term */
+    snowflake_term(sf); // purge snowflake context
+
+}
+
+void test_large_put_auto_compress(void **unused)
+{
+  std::string destinationfile="large_file.csv";
+  std::string destFile = TestSetup::getDataDir() + destinationfile;
+  FILE *fp =fopen(destFile.c_str(),"w");
+  char str[]="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+  for(int i=0;i<2000000;i++){
+      fprintf(fp, "%d,%s\n",i,str);
+  }
+  fclose(fp);
+  test_simple_put_core(destinationfile.c_str(), // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false // DO NOT Load data into table
+  );
 }
 
 void test_simple_put_auto_compress(void **unused)
@@ -169,6 +231,24 @@ void test_simple_put_zero_byte(void **unused)
 void test_simple_put_one_byte(void **unused)
 {
   test_simple_put_core("one_byte.csv", "auto", true, false);
+}
+
+void test_simple_get(void **unused)
+{
+  char tempDir[MAX_PATH] = { 0 };
+  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
+  sf_get_tmp_dir(tempDir);
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "48");
+}
+
+void test_large_get(void **unused)
+{
+  char tempDir[MAX_PATH] = { 0 };
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/large_file.csv.gz file://";
+  sf_get_tmp_dir(tempDir);
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "5166848");
 }
 
 static int gr_setup(void **unused)
@@ -234,6 +314,7 @@ void test_simple_put_skip(void **unused)
 
 }
 
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
@@ -242,7 +323,13 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
-    cmocka_unit_test_teardown(test_simple_put_skip, teardown)
+    cmocka_unit_test_teardown(test_simple_put_skip, teardown),
+#ifdef PUT_GET_LARGE_DATASET_TEST
+    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
+    cmocka_unit_test_teardown(test_simple_get, teardown),
+    cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
+    cmocka_unit_test_teardown(test_large_get, teardown)
+#endif
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

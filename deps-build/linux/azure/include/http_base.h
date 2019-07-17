@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 
 #include "storage_stream.h"
+#include "compare.h"
 
 namespace azure {  namespace storage_lite {
 
@@ -35,7 +36,7 @@ namespace azure {  namespace storage_lite {
         virtual void add_header(const std::string &name, const std::string &value) = 0;
 
         virtual std::string get_header(const std::string &name) const = 0;
-        virtual const std::map<std::string, std::string>& get_headers() const = 0;
+        virtual const std::map<std::string, std::string, case_insensitive_compare>& get_headers() const = 0;
 
         virtual CURLcode perform() = 0;
 
