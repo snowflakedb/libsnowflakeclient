@@ -41,7 +41,7 @@ typedef pthread_rwlock_t SF_RWLOCK_HANDLE;
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
 
 #define PATH_SEP '/'
-#define MAX_PATH 4096
+#define MAX_PATH PATH_MAX
 
 #endif
 
