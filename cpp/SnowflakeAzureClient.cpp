@@ -68,6 +68,10 @@ if( caBundleFile[0] == 0 ) {
 
 SnowflakeAzureClient::~SnowflakeAzureClient()
 {
+    if (m_threadPool != nullptr)
+    {
+        delete m_threadPool;
+    }
 }
 
 RemoteStorageRequestOutcome SnowflakeAzureClient::upload(FileMetadata *fileMetadata,
