@@ -189,13 +189,13 @@ void test_large_put_auto_compress(void **unused)
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   FILE *fp =fopen(destFile.c_str(),"w");
   char str[]="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-  for(int i=0;i<2000000;i++){
+  for(int i=0;i<6000000;i++){
       fprintf(fp, "%d,%s\n",i,str);
   }
   fclose(fp);
   test_simple_put_core(destinationfile.c_str(), // filename
-                       "auto", //source compression
-                       true, // auto compress
+                       "none", //source compression
+                       false, // auto compress
                        false // DO NOT Load data into table
   );
 }
@@ -245,7 +245,7 @@ void test_simple_get(void **unused)
 void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/large_file.csv.gz file://";
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/large_file.csv file://";
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");

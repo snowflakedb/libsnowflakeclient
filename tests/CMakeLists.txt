@@ -92,8 +92,7 @@ if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
     message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
     message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
     set(TESTS_CXX ${TESTS_CXX})
-#HOld of Azure put get until security review
-#    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
 endif()
 
 if (UNIX)
