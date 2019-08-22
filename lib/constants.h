@@ -17,6 +17,7 @@ extern char *CA_BUNDLE_FILE;
 extern int32 SSL_VERSION;
 extern sf_bool DEBUG;
 extern sf_bool SF_OCSP_CHECK;
+extern char *SF_HEADER_USER_AGENT;
 
 #ifdef __cplusplus
 }
