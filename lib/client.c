@@ -501,12 +501,14 @@ SF_STATUS STDCALL snowflake_global_init(
         goto cleanup;
     }
 
-    char platform_version[128];
-    sf_os_version(platform_version);
-    const char *platform = sf_os_name();
-    size_t len = (size_t) snprintf(NULL, 0, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version) + 1;
-    SF_HEADER_USER_AGENT = (char *) SF_CALLOC(1, len);
-    snprintf(SF_HEADER_USER_AGENT, len, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version);
+    if (SF_HEADER_USER_AGENT == NULL) {
+        char platform_version[128];
+        sf_os_version(platform_version);
+        const char *platform = sf_os_name();
+        size_t len = (size_t) snprintf(NULL, 0, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version) + 1;
+        SF_HEADER_USER_AGENT = (char *) SF_CALLOC(1, len);
+        snprintf(SF_HEADER_USER_AGENT, len, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version);
+    }
 
     ret = SF_STATUS_SUCCESS;
 
