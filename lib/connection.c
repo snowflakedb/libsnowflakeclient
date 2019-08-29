@@ -277,7 +277,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                header->use_application_json_accept_type ?
                                HEADER_ACCEPT_TYPE_APPLICATION_JSON :
                                HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
-    header->header = curl_slist_append(header->header, HEADER_C_API_USER_AGENT);
+    header->header = curl_slist_append(header->header, SF_HEADER_USER_AGENT);
 
     log_trace("Created header");
 
