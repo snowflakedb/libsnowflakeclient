@@ -263,7 +263,7 @@ static int gr_teardown(void **unused)
   return 0;
 }
 
-void test_simple_put_skip(void **unused)
+void test_simple_put_overwrite(void **unused)
 {
   /* init */
   SF_STATUS status;
@@ -299,12 +299,13 @@ void test_simple_put_skip(void **unused)
     assert_string_equal("UPLOADED", put_status.c_str());
   }
 
-  // load second time should return skipped
+  ///SNOW-81418: Support overwrite to prevent S3 Inconsistency error. Test changed from skip to overwrite
+  // load second time should return UPLOADED
   results = agent.execute(&putCommand);
   while(results->next())
   {
     results->getColumnAsString(6, put_status);
-    assert_string_equal("SKIPPED", put_status.c_str());
+    assert_string_equal("UPLOADED", put_status.c_str());
   }
 
   snowflake_stmt_term(sfstmt);
@@ -323,9 +324,9 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
-    cmocka_unit_test_teardown(test_simple_put_skip, teardown),
+    cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
 #ifdef PUT_GET_LARGE_DATASET_TEST
-    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
+    cmocka_unit_test_teardown(test_simple_put_overwrite, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, teardown)

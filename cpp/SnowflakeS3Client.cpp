@@ -120,35 +120,7 @@ SnowflakeS3Client::~SnowflakeS3Client()
 RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
-  // first call metadata request to deduplicate files
-  Aws::S3::Model::HeadObjectRequest headObjectRequest;
-
-  std::string bucket, key;
-  std::string filePathFull = m_stageInfo->location
-                             + fileMetadata->destFileName;
-  extractBucketAndKey(&filePathFull, bucket, key);
-  headObjectRequest.SetBucket(bucket);
-  headObjectRequest.SetKey(key);
-
-  Aws::S3::Model::HeadObjectOutcome outcome =
-    s3Client->HeadObject(headObjectRequest);
-
-  if (outcome.IsSuccess())
-  {
-    std::string sfcDigest = outcome.GetResult().GetMetadata().at(
-      SFC_DIGEST);
-    if (sfcDigest == fileMetadata->sha256Digest)
-    {
-      CXX_LOG_INFO("File %s with same name and sha256 existed. Skipped.",
-               fileMetadata->srcFileToUpload.c_str());
-      return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
-    }
-  }
-  else
-  {
-    CXX_LOG_WARN("Listing file metadata failed: %s",
-                outcome.GetError().GetMessage().c_str());
-  }
+  // SNOW-81418: Support overwrite of file. (Avoid s3 inconsistency)
 
   if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
     return doMultiPartUpload(fileMetadata, dataStream);
