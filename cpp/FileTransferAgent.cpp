@@ -146,6 +146,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
   {
     for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
+      m_largeFilesMeta[i].overWrite = response.overwrite;
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
@@ -172,6 +173,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     unsigned int resultIndex = i + m_largeFilesMeta.size();
     FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
+    metadata->overWrite = response.overwrite;
     tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {

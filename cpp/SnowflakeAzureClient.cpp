@@ -103,9 +103,14 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   //Calculate the length of the stream.
   unsigned int len = (unsigned int) (fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize ;
 
-  //SNOW-81418: Support overwrite of file. (Avoid s3 inconsistency)
-  //To support Uniform behavior across all cloud services removing the File exist check here.
-
+  //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
+  //Do not check if file exists if overwrite is specified.
+  if(! fileMetadata->overWrite ) {
+      bool exists = m_blobclient->blob_exists(containerName, blobName);
+      if (exists) {
+          return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+      }
+  }
   m_blobclient->upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
   if (errno != 0)
       return RemoteStorageRequestOutcome::FAILED;
@@ -135,7 +140,13 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
     addUserMetadata(&userMetadata, fileMetadata);
     //Calculate the length of the stream.
     unsigned int len = (unsigned int) (fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize ;
-
+    if(! fileMetadata->overWrite ) {
+        //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
+        bool exists = m_blobclient->blob_exists(containerName, blobName);
+        if (exists) {
+            return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+        }
+    }
     m_blobclient->multipart_upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
     if (errno != 0)
         return RemoteStorageRequestOutcome::FAILED;

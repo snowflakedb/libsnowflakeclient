@@ -62,6 +62,9 @@ struct FileMetadata
   /// true if require gzip compression
   bool requireCompress;
 
+  /// Upload and overwrite if file exists
+  bool overWrite;
+
   /// encryption metadata
   EncryptionMetadata encryptionMetadata;
 
