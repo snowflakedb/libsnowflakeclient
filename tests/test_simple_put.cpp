@@ -314,6 +314,56 @@ void test_simple_put_skip(void **unused)
 
 }
 
+void test_simple_put_overwrite(void **unused)
+{
+    /* init */
+    SF_STATUS status;
+    SF_CONNECT *sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT *sfstmt = NULL;
+    SF_STATUS ret;
+
+    /* query */
+    sfstmt = snowflake_stmt(sf);
+
+    std::string create_table("create or replace table test_small_put(c1 number"
+                             ", c2 number, c3 string)");
+    ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+    std::string dataDir = TestSetup::getDataDir();
+    std::string file = dataDir + "small_file.csv";
+    std::string putCommand = "put file://" + file + " @%test_small_put OVERWRITE=true";
+
+    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+            <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+    // load first time should return uploaded
+    std::string put_status;
+    ITransferResult * results = agent.execute(&putCommand);
+    while(results->next())
+    {
+        results->getColumnAsString(6, put_status);
+        assert_string_equal("UPLOADED", put_status.c_str());
+    }
+
+    // load second time should return UPLOADED
+    results = agent.execute(&putCommand);
+    while(results->next())
+    {
+        results->getColumnAsString(6, put_status);
+        assert_string_equal("UPLOADED", put_status.c_str());
+    }
+
+    snowflake_stmt_term(sfstmt);
+
+    /* close and term */
+    snowflake_term(sf); // purge snowflake context
+
+}
 
 int main(void) {
   const struct CMUnitTest tests[] = {
@@ -324,6 +374,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
+    cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
 #ifdef PUT_GET_LARGE_DATASET_TEST
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
