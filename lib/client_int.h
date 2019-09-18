@@ -14,7 +14,7 @@
 #define HEADER_CONTENT_TYPE_APPLICATION_JSON "Content-Type: application/json"
 #define HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE "accept: application/snowflake"
 #define HEADER_ACCEPT_TYPE_APPLICATION_JSON "accept: application/json"
-#define HEADER_C_API_USER_AGENT_FORMAT "User-Agent: %s/%s/%s/%s"
+#define HEADER_C_API_USER_AGENT_FORMAT "User-Agent: %s/%s (%s_%s) %s/%lu"
 #define HEADER_DIRECT_QUERY_TOKEN_FORMAT "Authorization: %s"
 #define HEADER_SERVICE_NAME_FORMAT "X-Snowflake-Service: %s"
 
