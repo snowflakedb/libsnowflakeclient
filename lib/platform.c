@@ -397,8 +397,8 @@ const char *STDCALL sf_os_name() {
 /**
  * Get Operating System version
  */
-void STDCALL sf_os_version(char *ret) {
-    strcpy(ret, "0.0.0"); /* unknown version */
+void STDCALL sf_os_version(char *ret, size_t size) {
+    sb_strcpy(ret, size, "0.0.0"); /* unknown version */
 #ifdef __APPLE__
     // Version  OS Name
     //  17.x.x  macOS 10.13.x High Sierra
@@ -410,7 +410,7 @@ void STDCALL sf_os_version(char *ret) {
     // Kernel version
     struct utsname envbuf;
     if (uname(&envbuf) == 0) {
-        strcpy(ret, envbuf.release);
+        sb_strcpy(ret, size, envbuf.release);
     }
 #elif _WIN32
     // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
@@ -425,7 +425,7 @@ void STDCALL sf_os_version(char *ret) {
     info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
     GetVersionEx((LPOSVERSIONINFO)&info);
 
-    sprintf(ret, "%d.%d-%s",
+    sb_sprintf(ret, size, "%d.%d-%s",
         (int)info.dwMajorVersion,
         (int)info.dwMinorVersion,
 #if _WIN64
@@ -497,17 +497,17 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     struct tm *lt = gmtime(&tmnow.tv_sec);
     char msec[10];    /* Microsecond buffer */
 
-    snprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
+    sb_sprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
 
     /* Timestamp */
     strftime(tsbuf, tsbufsize, "%Y-%m-%d %H:%M:%S", lt);
-    strcat(tsbuf, ".");
-    strcat(tsbuf, msec);
+    sb_strcat(tsbuf, tsbufsize, ".");
+    sb_strcat(tsbuf, tsbufsize, msec);
 #else /* Windows */
     SYSTEMTIME t;
     // Get the system time, which is expressed in UTC
     GetSystemTime(&t);
-    sprintf(tsbuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+    sb_sprintf(tsbuf, tsbufsize, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
         t.wYear, t.wMonth, t.wDay,
         t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
 #endif
@@ -530,13 +530,13 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {
 #ifdef _WIN32
   char rmCmd[500];
-  strcpy(rmCmd, "rd /s /q ");
-  strcat(rmCmd, directoryName);
+  sb_strcpy(rmCmd, sizeof(rmCmd), "rd /s /q ");
+  sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
   return system(rmCmd);
 #else
   char rmCmd[500];
-  strcpy(rmCmd, "rm -rf ");
-  strcat(rmCmd, directoryName);
+  sb_strcpy(rmCmd, sizeof(rmCmd), "rm -rf ");
+  sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
   return system(rmCmd);
 #endif
 }
@@ -550,11 +550,11 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 
   if (!tmpEnv)
   {
-    strncpy(tmpDir, "/tmp/", sizeof("/tmp/"));
+    sb_strncpy(tmpDir, 100, "/tmp/", sizeof("/tmp/"));
   }
   else
   {
-    strncpy(tmpDir, tmpEnv, strlen(tmpEnv));
+    sb_strncpy(tmpDir, 100, tmpEnv, strlen(tmpEnv));
     size_t oldLen = strlen(tmpDir);
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';
@@ -572,25 +572,25 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
   uuid4_generate(uuid_cstr);
 #ifdef _WIN32
   GetTempPath(MAX_PATH, tmpDir);
-  strcat(tmpDir, "\\snowflakeTmp\\");
+  sb_strcat(tmpDir, MAX_PATH, "\\snowflakeTmp\\");
   //sf_create_directory does not recursively create dirs in the path.
   sf_create_directory_if_not_exists(tmpDir);
-  sprintf(tmpDir+strlen(tmpDir),"%s\\",uuid_cstr); 
+  sb_sprintf(tmpDir+strlen(tmpDir), MAX_PATH-strlen(tmpDir), "%s\\", uuid_cstr);
 #else
   const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
 
   if (!tmpEnv)
   {
-    strcat(tmpDir, "/tmp/snowflakeTmp/");
+    sb_strcat(tmpDir, MAX_PATH, "/tmp/snowflakeTmp/");
     //sf_create_directory does not recursively create dirs in the path.
     sf_create_directory_if_not_exists(tmpDir);
-    sprintf(tmpDir,"%s/%s/",tmpDir, uuid_cstr);
+    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",tmpDir, uuid_cstr);
   }
   else
   {
-    sprintf(tmpDir,"%s/snowflakeTmp", tmpEnv);
+    sb_sprintf(tmpDir, MAX_PATH, "%s/snowflakeTmp", tmpEnv);
     sf_create_directory_if_not_exists(tmpDir);
-    sprintf(tmpDir, "%s/%s/",tmpDir,uuid_cstr);
+    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",tmpDir,uuid_cstr);
   }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
@@ -601,7 +601,7 @@ void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
     size_t i=0;
     size_t len=0; 
     char fpath[MAX_PATH];
-    strcpy(fpath, tmpfile);     
+    sb_strcpy(fpath, sizeof(fpath), tmpfile);     
     len=strlen(fpath);
     for(i=len ; i > 0 ; i--)
     {   

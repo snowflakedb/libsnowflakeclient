@@ -144,7 +144,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     os_version[0] = '0';
     os_version[1] = '\0';
 #else
-    sf_os_version(os_version);
+    sf_os_version(os_version, sizeof(os_version));
 #endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
@@ -232,7 +232,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        snprintf(header->header_token, header_token_size,
+        sb_sprintf(header->header_token, header_token_size,
                  HEADER_SNOWFLAKE_TOKEN_FORMAT, token);
     } else if (sf->direct_query_token) {
         header_direct_query_token_size = strlen(HEADER_DIRECT_QUERY_TOKEN_FORMAT) - 2 +
@@ -244,7 +244,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        snprintf(header->header_direct_query_token, header_direct_query_token_size,
+        sb_sprintf(header->header_direct_query_token, header_direct_query_token_size,
                  HEADER_DIRECT_QUERY_TOKEN_FORMAT, sf->direct_query_token);
     }
 
@@ -259,7 +259,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        snprintf(header->header_service_name, header_service_name_size,
+        sb_sprintf(header->header_service_name, header_service_name_size,
                  HEADER_SERVICE_NAME_FORMAT, sf->service_name);
     }
 
@@ -600,22 +600,22 @@ char * STDCALL encode_url(CURL *curl,
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
     }
-    snprintf(encoded_url, base_url_size, format, protocol, account, host, port,
+    sb_sprintf(encoded_url, base_url_size, format, protocol, account, host, port,
              url);
 
     // Initially add the query delimiter "?"
-    strncat(encoded_url, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
+    sb_strncat(encoded_url, encoded_url_size, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
 
     // Add encoded URL parameters to encoded_url buffer
     for (i = 0; i < num_args; i++) {
-        strncat(encoded_url, vars[i].formatted_key, vars[i].key_size);
-        strncat(encoded_url, vars[i].formatted_value, vars[i].value_size);
-        strncat(encoded_url, amp, amp_size);
+        sb_strncat(encoded_url, encoded_url_size, vars[i].formatted_key, vars[i].key_size);
+        sb_strncat(encoded_url, encoded_url_size, vars[i].formatted_value, vars[i].value_size);
+        sb_strncat(encoded_url, encoded_url_size, amp, amp_size);
     }
 
     // Add encoded request_guid to encoded_url buffer
-    strncat(encoded_url, request_guid.formatted_key, request_guid.key_size);
-    strncat(encoded_url, request_guid.formatted_value, request_guid.value_size);
+    sb_strncat(encoded_url, encoded_url_size, request_guid.formatted_key, request_guid.key_size);
+    sb_strncat(encoded_url, encoded_url_size, request_guid.formatted_value, request_guid.value_size);
 
     // Adding the extra url param (setter of extraUrlParams is responsible to make
     // sure extraUrlParams is correct)
@@ -623,9 +623,9 @@ char * STDCALL encode_url(CURL *curl,
     {
         if (num_args)
         {
-            strncat(encoded_url, URL_PARAM_DELIM, 1);
+            sb_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
         }
-        strncat(encoded_url, extraUrlParams, strlen(extraUrlParams));
+        sb_strncat(encoded_url, encoded_url_size, extraUrlParams, strlen(extraUrlParams));
     }
 
     log_debug("URL: %s", encoded_url);
@@ -661,7 +661,7 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         if (!*dest) {
             return SF_JSON_ERROR_OOM;
         }
-        strncpy(*dest, blob->valuestring, blob_size);
+        sb_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
         if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0) {
             log_debug("Item and Value; %s: ******", item);
@@ -684,7 +684,7 @@ json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
     } else if (!snowflake_cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
-        strncpy(dest, blob->valuestring, dest_size);
+        sb_strncpy(dest, dest_size, blob->valuestring, dest_size);
         // If string is not null terminated, then add the terminator yourself
         if (dest[dest_size - 1] != '\0') {
             dest[dest_size - 1] = '\0';
@@ -818,7 +818,7 @@ json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     raw_json->buffer = (char *) SF_REALLOC(raw_json->buffer,
                                            raw_json->size + data_size + 1);
     // Start copying where last null terminator existed
-    memcpy(&raw_json->buffer[raw_json->size], data, data_size);
+    sb_memcpy(&raw_json->buffer[raw_json->size], data_size, data, data_size);
     raw_json->size += data_size;
     // Set null terminator
     raw_json->buffer[raw_json->size] = '\0';

@@ -66,7 +66,7 @@ static void getRandomBytesFromFile(char *const out,
   for (size_t i = 0; i < steps; ++i)
   {
     const T rdv = rd();
-    memcpy(outT, &rdv, STEP);
+    sb_memcpy(outT, nbBytes - (outT-out), &rdv, STEP);
     outT += STEP;
   }
 
@@ -75,7 +75,7 @@ static void getRandomBytesFromFile(char *const out,
   if (rem)
   {
     const T remVal = rd();
-    memcpy(outT, &remVal, rem);
+    sb_memcpy(outT, nbBytes - (outT - out), &remVal, rem);
   }
 }
 

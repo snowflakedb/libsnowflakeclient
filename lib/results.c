@@ -192,37 +192,36 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
     if (value == NULL) {
         return NULL;
     }
+
+    // The buffer size for fixed length data types.
+    // Not necessarily to be exact length of the actual data, to avoid memory fragmentation.
+    size = 64;
+
     // TODO turn cases into macro and check to see if ret if null
     switch (c_type) {
         case SF_C_TYPE_INT8:
-            size = (size_t) snprintf( NULL, 0, "%d", *(int8 *) value) + 1;
             ret = (char *) SF_CALLOC(1, size);
-            snprintf(ret, size, "%d", *(int8 *) value);
+            sb_sprintf(ret, size, "%d", *(int8 *) value);
             return ret;
         case SF_C_TYPE_UINT8:
-            size = (size_t) snprintf( NULL, 0, "%u", *(uint8 *) value) + 1;
             ret = (char *) SF_CALLOC(1, size);
-            snprintf(ret, size, "%u", *(uint8 *) value);
+            sb_sprintf(ret, size, "%u", *(uint8 *) value);
             return ret;
         case SF_C_TYPE_INT64:
-            size = (size_t) snprintf( NULL, 0, "%lld", *(int64 *) value) + 1;
             ret = (char *) SF_CALLOC(1, size);
-            snprintf(ret, size, "%lld", *(int64 *) value);
+            sb_sprintf(ret, size, "%lld", *(int64 *) value);
             return ret;
         case SF_C_TYPE_UINT64:
-            size = (size_t) snprintf( NULL, 0, "%llu", *(uint64 *) value) + 1;
             ret = (char *) SF_CALLOC(1, size);
-            snprintf(ret, size, "%llu", *(uint64 *) value);
+            sb_sprintf(ret, size, "%llu", *(uint64 *) value);
             return ret;
         case SF_C_TYPE_FLOAT64:
-            size = (size_t) snprintf( NULL, 0, "%f", *(float64 *) value) + 1;
             ret = (char *) SF_CALLOC(1, size);
-            snprintf(ret, size, "%f", *(float64 *) value);
+            sb_sprintf(ret, size, "%f", *(float64 *) value);
             return ret;
         case SF_C_TYPE_BOOLEAN:
-            size = *(sf_bool*)value != (sf_bool)0 ? sizeof(SF_BOOLEAN_INTERNAL_TRUE_STR) : sizeof(SF_BOOLEAN_INTERNAL_FALSE_STR);
             ret = (char*) SF_CALLOC(1, size + 1);
-            strncpy(ret, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR, size + 1);
+            sb_strncpy(ret, size + 1, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR, size + 1);
             return ret;
         case SF_C_TYPE_BINARY:
             size = (size_t)len * 2 + 1;
@@ -233,7 +232,7 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
         case SF_C_TYPE_STRING:
             size = (size_t)len + 1;
             ret = (char *) SF_CALLOC(1, size);
-            strncpy(ret, (const char *) value, size);
+            sb_strncpy(ret, size, (const char *) value, size);
             return ret;
         case SF_C_TYPE_TIMESTAMP:
             // TODO Add timestamp case

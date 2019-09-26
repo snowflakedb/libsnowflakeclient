@@ -107,7 +107,7 @@ static void alloc_buffer_and_copy(char **var, const char *str) {
     if (str) {
         str_size = strlen(str) + 1; // For null terminator
         *var = (char *) SF_CALLOC(1, str_size);
-        strncpy(*var, str, str_size);
+        sb_strncpy(*var, str_size, str, str_size);
     } else {
         *var = NULL;
     }
@@ -182,7 +182,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
         cJSON *db = snowflake_cJSON_GetObjectItem(session_info, "databaseName");
         if (do_validate && sf->database && sf->database[0] != (char) 0 &&
             db->valuestring == NULL) {
-            sprintf(msg, "Specified database doesn't exists: [%s]",
+            sb_sprintf(msg, sizeof(msg), "Specified database doesn't exists: [%s]",
                     sf->database);
             SET_SNOWFLAKE_ERROR(
                 &sf->error,
@@ -199,7 +199,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                                                       "schemaName");
         if (do_validate && sf->schema && sf->schema[0] != (char) 0 &&
             schema->valuestring == NULL) {
-            sprintf(msg, "Specified schema doesn't exists: [%s]",
+            sb_sprintf(msg, sizeof(msg), "Specified schema doesn't exists: [%s]",
                     sf->schema);
             SET_SNOWFLAKE_ERROR(
                 &sf->error,
@@ -217,7 +217,7 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                                                          "warehouseName");
         if (do_validate && sf->warehouse && sf->warehouse[0] != (char) 0 &&
             warehouse->valuestring == NULL) {
-            sprintf(msg, "Specified warehouse doesn't exists: [%s]",
+            sb_sprintf(msg, sizeof(msg), "Specified warehouse doesn't exists: [%s]",
                     sf->warehouse);
             SET_SNOWFLAKE_ERROR(
                 &sf->error,
@@ -321,11 +321,11 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (sf_log_path) {
         log_path_size += strlen(sf_log_path);
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
-        snprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
+        sb_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
-        snprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
+        sb_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
     }
     if (LOG_PATH != NULL) {
@@ -415,10 +415,10 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         // construct a host parameter if not specified,
         char buf[1024];
         if (sf->region) {
-            snprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
+            sb_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
                      sf->account, sf->region);
         } else {
-            snprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
+            sb_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
                      sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
@@ -508,11 +508,10 @@ SF_STATUS STDCALL snowflake_global_init(
         long c_version = 0L;
 #endif
         char platform_version[128];
-        sf_os_version(platform_version);
+        sf_os_version(platform_version, sizeof(platform_version));
         const char *platform = sf_os_name();
-        size_t len = (size_t) snprintf(NULL, 0, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version, "STDC", c_version) + 1;
-        SF_HEADER_USER_AGENT = (char *) SF_CALLOC(1, len);
-        snprintf(SF_HEADER_USER_AGENT, len, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version, "STDC", c_version);
+        SF_HEADER_USER_AGENT = (char *) SF_CALLOC(1, HEADER_C_API_USER_AGENT_MAX_LEN);
+        sb_sprintf(SF_HEADER_USER_AGENT, HEADER_C_API_USER_AGENT_MAX_LEN, HEADER_C_API_USER_AGENT_FORMAT, SF_API_NAME, SF_API_VERSION, platform, platform_version, "STDC", c_version);
     }
 
     ret = SF_STATUS_SUCCESS;
@@ -565,14 +564,14 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
 }
 
 SF_STATUS STDCALL
-snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value) {
+snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t size) {
     switch (type) {
         case SF_GLOBAL_DISABLE_VERIFY_PEER:
             *((sf_bool *) value) = DISABLE_VERIFY_PEER;
             break;
         case SF_GLOBAL_CA_BUNDLE_FILE:
             if (CA_BUNDLE_FILE) {
-                strncpy(value, CA_BUNDLE_FILE, strlen(CA_BUNDLE_FILE) + 1);
+                sb_strncpy(value, size, CA_BUNDLE_FILE, strlen(CA_BUNDLE_FILE) + 1);
             }
             break;
         case SF_GLOBAL_SSL_VERSION:
@@ -712,7 +711,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     clear_snowflake_error(&sf->error);
 
     char os_version[128];
-    sf_os_version(os_version);
+    sf_os_version(os_version, sizeof(os_version));
 
     log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
              SF_API_VERSION,
@@ -1184,7 +1183,7 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
 
     clear_snowflake_error(&sfstmt->error);
 
-    strncpy(sfstmt->sfqid, "", SF_UUID4_LEN);
+    sb_strncpy(sfstmt->sfqid, SF_UUID4_LEN, "", sizeof(""));
     sfstmt->request_id[0] = '\0';
 
     if (sfstmt->sql_text) {
@@ -1630,7 +1629,7 @@ snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size) {
         sql_text_size += command_size;
     }
     sfstmt->sql_text = (char *) SF_CALLOC(1, sql_text_size);
-    memcpy(sfstmt->sql_text, command, sql_text_size - 1);
+    sb_memcpy(sfstmt->sql_text, sql_text_size, command, sql_text_size - 1);
     // Null terminate
     sfstmt->sql_text[sql_text_size - 1] = '\0';
 
@@ -1694,7 +1693,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             value = value_to_string(input->value, input->len, input->c_type);
             binding = snowflake_cJSON_CreateObject();
             char idxbuf[20];
-            sprintf(idxbuf, "%lu", (unsigned long) (i + 1));
+            sb_sprintf(idxbuf, sizeof(idxbuf), "%lu", (unsigned long) (i + 1));
             snowflake_cJSON_AddStringToObject(binding, "type", type);
             snowflake_cJSON_AddStringToObject(binding, "value", value);
             snowflake_cJSON_AddItemToObject(bindings, idxbuf, binding);
@@ -2082,7 +2081,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
         /* if already error is set */
         SF_FREE(sf->error.msg);
     }
-    memcpy(&sf->error, &sfstmt->error, sizeof(SF_ERROR_STRUCT));
+    sb_memcpy(&sf->error, sizeof(SF_ERROR_STRUCT), &sfstmt->error, sizeof(SF_ERROR_STRUCT));
     if (sfstmt->error.error_code) {
         /* any error */
         size_t len = strlen(sfstmt->error.msg);
@@ -2094,7 +2093,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
                 "Out of memory in creating a buffer for the error message.",
                 SF_SQLSTATE_APP_REJECT_CONNECTION);
         }
-        strncpy(sf->error.msg, sfstmt->error.msg, len);
+        sb_strncpy(sf->error.msg, len + 1, sfstmt->error.msg, len);
     }
     return SF_STATUS_SUCCESS;
 }
@@ -2601,7 +2600,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
             // If we don't need to allocate a buffer, set value len to the initial value len
             max_value_size = init_value_len;
         }
-        strncpy(value, "", 1);
+        sb_strncpy(value, max_value_size, "", 1);
         value_len = 0;
         status = SF_STATUS_SUCCESS;
         goto cleanup;
@@ -2635,7 +2634,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
             } else {
                 max_value_size = init_value_len;
             }
-            strncpy(value, bool_value, value_len + 1);
+            sb_strncpy(value, max_value_size, bool_value, value_len + 1);
             break;
         case SF_DB_TYPE_DATE:
             sec =
@@ -2728,7 +2727,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
             } else {
                 max_value_size = init_value_len;
             }
-            strncpy(value, column->valuestring, value_len + 1);
+            sb_strncpy(value, max_value_size, column->valuestring, value_len + 1);
             break;
     }
 
@@ -2911,7 +2910,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
     if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
         /* make up Timezone name from the tzoffset */
         ldiv_t dm = ldiv((long) tzoffset, 60L);
-        sprintf(tzname, "UTC%c%02ld:%02ld",
+        sb_sprintf(tzname, sizeof(tzname), "UTC%c%02ld:%02ld",
                 dm.quot > 0 ? '+' : '-', labs(dm.quot), labs(dm.rem));
         tzptr = tzname;
         ts->tzoffset = (int32) tzoffset;
@@ -2981,7 +2980,7 @@ SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fm
     }
     /* adjust scale */
     char fmt_static[20];
-    sprintf(fmt_static, ".%%0%dld", ts->scale);
+    sb_sprintf(fmt_static, sizeof(fmt_static), ".%%0%dld", ts->scale);
 
     // Add space for scale if scale is greater than 0
     max_len += (ts->scale > 0) ? 1 + ts->scale : 0;
@@ -3000,7 +2999,7 @@ SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fm
     len = strftime(buffer, buf_size, fmt0, &ts->tm_obj);
     if (ts->scale > 0) {
         int64 nsec = ts->nsec / pow10_int64[9-ts->scale];
-        len += snprintf(
+        len += sb_sprintf(
           &(buffer)[len],
           max_len - len, fmt_static,
           nsec);
@@ -3008,7 +3007,7 @@ SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fm
     if (ts->ts_type == SF_DB_TYPE_TIMESTAMP_TZ) {
         /* Timezone info */
         ldiv_t dm = ldiv((long) ts->tzoffset, 60L);
-        len += snprintf(
+        len += sb_sprintf(
           &((char *) buffer)[len],
           max_len - len,
           " %c%02ld:%02ld",

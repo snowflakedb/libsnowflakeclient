@@ -161,7 +161,7 @@ struct Base64 final
     ReverseIndex(const char index_size, const char *index) noexcept
     {
         std::memset(data, 0xFF, sizeof(data));
-        for (size_t i = 0; i < INDEX_SIZE; ++i)
+        for (size_t i = 0; i < index_size; ++i)
             data[static_cast<unsigned char>(index[i])] = i;
     }
 

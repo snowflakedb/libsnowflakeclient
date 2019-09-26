@@ -178,14 +178,16 @@ sf_bool STDCALL create_chunk_headers(struct SF_CHUNK_DOWNLOADER *chunk_downloade
         // Since I know that these keys are correct from a case sensitive view,
         // I can use the faster case sensitive version
         item = snowflake_cJSON_GetObjectItemCaseSensitive(json_headers, key);
-        if (!item || (header_field_size = snprintf(NULL, 0, "%s: %s", key, item->valuestring)) < 0) {
+        if (!item || !key || !item->valuestring) {
             SET_SNOWFLAKE_ERROR(chunk_downloader->sf_error, SF_STATUS_ERROR_BAD_JSON,
                                 "Could not find critical chunk header item", "");
             goto cleanup;
         }
+        header_field_size = strlen(key) + strlen(item->valuestring) + 2;
+
         // Type conversion is safe since we know that header_field_size must be positive
         header_item = (char *) SF_CALLOC(1, header_field_size + 1);
-        snprintf(header_item, header_field_size + 1, "%s: %s", key, item->valuestring);
+        sb_sprintf(header_item, header_field_size + 1, "%s: %s", key, item->valuestring);
         chunk_downloader->chunk_headers->header = curl_slist_append(chunk_downloader->chunk_headers->header, header_item);
         SF_FREE(header_item);
     }
@@ -265,7 +267,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     } else if (qrmk) {
         qrmk_len += strlen(qrmk);
         chunk_downloader->qrmk = (char *) SF_CALLOC(1, qrmk_len);
-        strncpy(chunk_downloader->qrmk, qrmk, qrmk_len);
+        sb_strncpy(chunk_downloader->qrmk, qrmk_len, qrmk, qrmk_len);
     }
 
     // Initialize mutexes and conditional variables
