@@ -45,6 +45,8 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 
 #endif
 
+#include "Simba_CRTFunctionSafe.h"
+
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result);
 
 struct tm *STDCALL sf_localtime(const time_t *timep, struct tm *result);
@@ -108,7 +110,7 @@ int STDCALL _mutex_term(SF_MUTEX_HANDLE *lock);
 
 const char *STDCALL sf_os_name();
 
-void STDCALL sf_os_version(char *ret);
+void STDCALL sf_os_version(char *ret, size_t size);
 
 int STDCALL sf_strncasecmp(const char *s1, const char *s2, size_t n);
 

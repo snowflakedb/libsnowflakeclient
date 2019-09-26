@@ -415,11 +415,12 @@ SF_STATUS STDCALL snowflake_global_set_attribute(
 /**
  * Get a global attribute
  * @param type a value of SF_GLOBAL_ATTRIBUTE
- * @param value a pointer to value
+ * @param value a pointer to value buffer
+ * @param buffer size
  * @return 0 if successful, errno otherise.
  */
 SF_STATUS STDCALL snowflake_global_get_attribute(
-    SF_GLOBAL_ATTRIBUTE type, void *value);
+    SF_GLOBAL_ATTRIBUTE type, void *value, size_t size);
 
 /**
  * Initializes a SNOWFLAKE connection context

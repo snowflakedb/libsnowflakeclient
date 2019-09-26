@@ -284,7 +284,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             buffer.buffer = (char *) SF_CALLOC(1,
                                                2); // Don't forget null terminator
             buffer.size = 1;
-            strncpy(buffer.buffer, "[", 2);
+            sb_strncpy(buffer.buffer, 2, "[", 2);
         }
 
         // Be optimistic
@@ -296,11 +296,11 @@ sf_bool STDCALL http_perform(CURL *curl,
         if (res != CURLE_OK) {
             char msg[1024];
             if (res == CURLE_SSL_CACERT_BADFILE) {
-                snprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
                     curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
             }
             else {
-                snprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+                sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
             }
             msg[sizeof(msg)-1] = (char)0;
             log_error(msg);
@@ -338,7 +338,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
-            memcpy(&buffer.buffer[buffer.size], "]", 1);
+            sb_memcpy(&buffer.buffer[buffer.size], 1, "]", 1);
             buffer.size += 1;
             // Set null terminator
             buffer.buffer[buffer.size] = '\0';

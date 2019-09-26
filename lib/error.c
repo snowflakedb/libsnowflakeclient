@@ -34,7 +34,7 @@ void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
     }
 
     error->error_code = error_code;
-    strncpy(error->sfqid, sfqid, SF_UUID4_LEN);
+    sb_strncpy(error->sfqid, SF_UUID4_LEN, sfqid, SF_UUID4_LEN);
     // Null terminate
     if (error->sfqid[SF_UUID4_LEN - 1] != '\0') {
         error->sfqid[SF_UUID4_LEN - 1] = '\0';
@@ -42,7 +42,7 @@ void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
 
     if (sqlstate != NULL) {
         /* set SQLState if specified */
-        strncpy(error->sqlstate, sqlstate, sizeof(error->sqlstate));
+        sb_strncpy(error->sqlstate, sizeof(error->sqlstate), sqlstate, sizeof(error->sqlstate));
         error->sqlstate[sizeof(error->sqlstate) - 1] = '\0';
     }
 
@@ -54,7 +54,7 @@ void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
     /* allocate new memory */
     error->msg = SF_CALLOC(msglen + 1, sizeof(char));
     if (error->msg != NULL) {
-        strncpy(error->msg, msg, msglen);
+        sb_strncpy(error->msg, msglen + 1, msg, msglen);
         error->msg[msglen] = '\0';
         error->is_shared_msg = SF_BOOLEAN_FALSE;
     } else {
@@ -63,7 +63,7 @@ void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
         size_t len =
           msglen > sizeof(_shared_msg) ? sizeof(_shared_msg) : msglen;
         memset(_shared_msg, 0, sizeof(_shared_msg));
-        strncpy(_shared_msg, msg, len);
+        sb_strncpy(_shared_msg, sizeof(_shared_msg), msg, len);
         _shared_msg[sizeof(_shared_msg) - 1] = '\0';
         _mutex_unlock(&mutex_shared_msg);
 
@@ -84,7 +84,7 @@ void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error) {
         /* Error already set and msg is not on shared mem */
         SF_FREE(error->msg);
     }
-    strcpy(error->sqlstate, SF_SQLSTATE_NO_ERROR);
+    sb_strcpy(error->sqlstate, sizeof(error->sqlstate), SF_SQLSTATE_NO_ERROR);
     error->error_code = SF_STATUS_SUCCESS;
     error->msg = NULL;
     error->file = NULL;

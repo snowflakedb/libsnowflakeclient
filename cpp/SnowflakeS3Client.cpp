@@ -60,8 +60,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel
   }
   else
   {
-    char caBundleFile[200] = {0};
-    snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile);
+    char caBundleFile[MAX_PATH + 1] = {0};
+    snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
     caFile = Aws::String(caBundleFile);
   }
 

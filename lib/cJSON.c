@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <float.h>
 #include <limits.h>
 #include <ctype.h>
 
@@ -57,9 +56,17 @@
 #endif
 
 #include "cJSON.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 
 /* define our own boolean type */
+#ifdef true
+#undef true
+#endif
 #define true ((cJSON_bool)1)
+
+#ifdef false
+#undef false
+#endif
 #define false ((cJSON_bool)0)
 
 typedef struct {
@@ -73,15 +80,23 @@ CJSON_PUBLIC(const char *) snowflake_cJSON_GetErrorPtr(void)
     return (const char*) (global_error.json + global_error.position);
 }
 
+CJSON_PUBLIC(char *) snowflake_cJSON_GetStringValue(cJSON *item) {
+    if (!snowflake_cJSON_IsString(item)) {
+        return NULL;
+    }
+
+    return item->valuestring;
+}
+
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
-#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 6) || (CJSON_VERSION_PATCH != 0)
+#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 7) || (CJSON_VERSION_PATCH != 12)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
 CJSON_PUBLIC(const char*) snowflake_cJSON_Version(void)
 {
     static char version[15];
-    sprintf(version, "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
+    sb_sprintf(version, sizeof(version), "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
 
     return version;
 }
@@ -112,22 +127,22 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned 
 
 typedef struct internal_hooks
 {
-    void *(*allocate)(size_t size);
-    void (*deallocate)(void *pointer);
-    void *(*reallocate)(void *pointer, size_t size);
+    void *(CJSON_CDECL *allocate)(size_t size);
+    void (CJSON_CDECL *deallocate)(void *pointer);
+    void *(CJSON_CDECL *reallocate)(void *pointer, size_t size);
 } internal_hooks;
 
 #if defined(_MSC_VER)
-/* work around MSVC error C2322: '...' address of dillimport '...' is not static */
-static void *internal_malloc(size_t size)
+/* work around MSVC error C2322: '...' address of dllimport '...' is not static */
+static void * CJSON_CDECL internal_malloc(size_t size)
 {
     return malloc(size);
 }
-static void internal_free(void *pointer)
+static void CJSON_CDECL internal_free(void *pointer)
 {
     free(pointer);
 }
-static void *internal_realloc(void *pointer, size_t size)
+static void * CJSON_CDECL internal_realloc(void *pointer, size_t size)
 {
     return realloc(pointer, size);
 }
@@ -137,9 +152,12 @@ static void *internal_realloc(void *pointer, size_t size)
 #define internal_realloc realloc
 #endif
 
+/* strlen of character literals resolved at compile time */
+#define static_strlen(string_literal) (sizeof(string_literal) - sizeof(""))
+
 static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
 
-static unsigned char* cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
+static unsigned char* snowflake_cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
 {
     size_t length = 0;
     unsigned char *copy = NULL;
@@ -155,12 +173,12 @@ static unsigned char* cJSON_strdup(const unsigned char* string, const internal_h
     {
         return NULL;
     }
-    memcpy(copy, string, length);
+    sb_memcpy(copy, length, string, length);
 
     return copy;
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_InitHooks(cJSON_Hooks *hooks)
+CJSON_PUBLIC(void) snowflake_cJSON_InitHooks(cJSON_Hooks* hooks)
 {
     if (hooks == NULL)
     {
@@ -192,7 +210,7 @@ CJSON_PUBLIC(void) snowflake_cJSON_InitHooks(cJSON_Hooks *hooks)
 }
 
 /* Internal constructor. */
-static cJSON *cJSON_New_Item(const internal_hooks * const hooks)
+static cJSON *snowflake_cJSON_New_Item(const internal_hooks * const hooks)
 {
     cJSON* node = (cJSON*)hooks->allocate(sizeof(cJSON));
     if (node)
@@ -317,7 +335,7 @@ loop_end:
     {
         item->valueint = INT_MAX;
     }
-    else if (number <= INT_MIN)
+    else if (number <= (double)INT_MIN)
     {
         item->valueint = INT_MIN;
     }
@@ -339,7 +357,7 @@ CJSON_PUBLIC(double) snowflake_cJSON_SetNumberHelper(cJSON *object, double numbe
     {
         object->valueint = INT_MAX;
     }
-    else if (number <= INT_MIN)
+    else if (number <= (double)INT_MIN)
     {
         object->valueint = INT_MIN;
     }
@@ -440,7 +458,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed)
         }
         if (newbuffer)
         {
-            memcpy(newbuffer, p->buffer, p->offset + 1);
+            sb_memcpy(newbuffer, newsize, p->buffer, p->offset + 1);
         }
         p->hooks.deallocate(p->buffer);
     }
@@ -482,29 +500,29 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
     /* This checks for NaN and Infinity */
     if ((d * 0) != 0)
     {
-        length = sprintf((char*)number_buffer, "null");
+        length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "null");
     }
     else
     {
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
-        length = sprintf((char*)number_buffer, "%1.15g", d);
+        length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.15g", d);
 
         /* Check whether the original double can be recovered */
-        if ((sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
+        if ((sb_sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
         {
             /* If not, print with 17 decimal places of precision */
-            length = sprintf((char*)number_buffer, "%1.17g", d);
+            length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.17g", d);
         }
     }
 
-    /* sprintf failed or buffer overrun occured */
+    /* sprintf failed or buffer overrun occurred */
     if ((length < 0) || (length > (int)(sizeof(number_buffer) - 1)))
     {
         return false;
     }
 
     /* reserve appropriate space in the output */
-    output_pointer = ensure(output_buffer, (size_t)length);
+    output_pointer = ensure(output_buffer, (size_t)length + sizeof(""));
     if (output_pointer == NULL)
     {
         return false;
@@ -839,7 +857,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
         {
             return false;
         }
-        strcpy((char*)output, "\"\"");
+        sb_strcpy((char*)output, sizeof("\"\""), "\"\"");
 
         return true;
     }
@@ -880,7 +898,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
     if (escape_characters == 0)
     {
         output[0] = '\"';
-        memcpy(output + 1, input, output_length);
+        sb_memcpy(output + 1, output_length, input, output_length);
         output[output_length + 1] = '\"';
         output[output_length + 2] = '\0';
 
@@ -926,7 +944,9 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                     break;
                 default:
                     /* escape and print as unicode codepoint */
-                    sprintf((char*)output_pointer, "u%04x", *input_pointer);
+                    sb_sprintf((char*)output_pointer,
+                        output_length - (output_pointer - output),
+                        "u%04x", *input_pointer);
                     output_pointer += 4;
                     break;
             }
@@ -990,9 +1010,7 @@ static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
 }
 
 /* Parse an object - create a new root, and populate. */
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithOpts(const char *value,
-                                                    const char **return_parse_end,
-                                                    cJSON_bool require_null_terminated)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
 {
     parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
     cJSON *item = NULL;
@@ -1011,7 +1029,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithOpts(const char *value,
     buffer.offset = 0;
     buffer.hooks = global_hooks;
 
-    item = cJSON_New_Item(&global_hooks);
+    item = snowflake_cJSON_New_Item(&global_hooks);
     if (item == NULL) /* memory fail */
     {
         goto fail;
@@ -1064,7 +1082,7 @@ fail:
         {
             *return_parse_end = (const char*)local_error.json + local_error.position;
         }
- 
+
         global_error = local_error;
     }
 
@@ -1081,13 +1099,15 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_Parse(const char *value)
 
 static unsigned char *print(const cJSON * const item, cJSON_bool format, const internal_hooks * const hooks)
 {
+    static const size_t default_buffer_size = 256;
     printbuffer buffer[1];
     unsigned char *printed = NULL;
 
     memset(buffer, 0, sizeof(buffer));
 
     /* create buffer */
-    buffer->buffer = (unsigned char*) hooks->allocate(256);
+    buffer->buffer = (unsigned char*) hooks->allocate(default_buffer_size);
+    buffer->length = default_buffer_size;
     buffer->format = format;
     buffer->hooks = *hooks;
     if (buffer->buffer == NULL)
@@ -1105,11 +1125,11 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
     /* check if reallocate is available */
     if (hooks->reallocate != NULL)
     {
-        printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->length);
-        buffer->buffer = NULL;
+        printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->offset + 1);
         if (printed == NULL) {
             goto fail;
         }
+        buffer->buffer = NULL;
     }
     else /* otherwise copy the JSON over to a new buffer */
     {
@@ -1118,7 +1138,7 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
         {
             goto fail;
         }
-        memcpy(printed, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1));
+        sb_memcpy(printed, buffer->offset + 1, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1));
         printed[buffer->offset] = '\0'; /* just to be sure */
 
         /* free the buffer */
@@ -1152,9 +1172,7 @@ CJSON_PUBLIC(char *) snowflake_cJSON_PrintUnformatted(const cJSON *item)
     return (char*)print(item, false, &global_hooks);
 }
 
-CJSON_PUBLIC(char *) snowflake_cJSON_PrintBuffered(const cJSON *item,
-                                                   int prebuffer,
-                                                   cJSON_bool fmt)
+CJSON_PUBLIC(char *) snowflake_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
 {
     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
 
@@ -1184,10 +1202,7 @@ CJSON_PUBLIC(char *) snowflake_cJSON_PrintBuffered(const cJSON *item,
     return (char*)p.buffer;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_PrintPreallocated(cJSON *item,
-                                                           char *buf,
-                                                           const int len,
-                                                           const cJSON_bool fmt)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_PrintPreallocated(cJSON *item, char *buf, const int len, const cJSON_bool fmt)
 {
     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
 
@@ -1279,7 +1294,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            strcpy((char*)output, "null");
+            sb_strcpy((char*)output, 5, "null");
             return true;
 
         case cJSON_False:
@@ -1288,7 +1303,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            strcpy((char*)output, "false");
+            sb_strcpy((char*)output, 6, "false");
             return true;
 
         case cJSON_True:
@@ -1297,7 +1312,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            strcpy((char*)output, "true");
+            sb_strcpy((char*)output, 5, "true");
             return true;
 
         case cJSON_Number:
@@ -1308,10 +1323,6 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             size_t raw_length = 0;
             if (item->valuestring == NULL)
             {
-                if (!output_buffer->noalloc)
-                {
-                    output_buffer->hooks.deallocate(output_buffer->buffer);
-                }
                 return false;
             }
 
@@ -1321,7 +1332,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            memcpy(output, item->valuestring, raw_length);
+            sb_memcpy(output, raw_length, item->valuestring, raw_length);
             return true;
         }
 
@@ -1378,7 +1389,7 @@ static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buf
     do
     {
         /* allocate next item */
-        cJSON *new_item = cJSON_New_Item(&(input_buffer->hooks));
+        cJSON *new_item = snowflake_cJSON_New_Item(&(input_buffer->hooks));
         if (new_item == NULL)
         {
             goto fail; /* allocation failure */
@@ -1532,7 +1543,7 @@ static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_bu
     do
     {
         /* allocate next item */
-        cJSON *new_item = cJSON_New_Item(&(input_buffer->hooks));
+        cJSON *new_item = snowflake_cJSON_New_Item(&(input_buffer->hooks));
         if (new_item == NULL)
         {
             goto fail; /* allocation failure */
@@ -1557,7 +1568,7 @@ static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_bu
         buffer_skip_whitespace(input_buffer);
         if (!parse_string(current_item, input_buffer))
         {
-            goto fail; /* faile to parse name */
+            goto fail; /* failed to parse name */
         }
         buffer_skip_whitespace(input_buffer);
 
@@ -1677,7 +1688,7 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
         update_offset(output_buffer);
 
         /* print comma if not last */
-        length = (size_t) ((output_buffer->format ? 1 : 0) + (current_item->next ? 1 : 0));
+        length = ((size_t)(output_buffer->format ? 1 : 0) + (size_t)(current_item->next ? 1 : 0));
         output_pointer = ensure(output_buffer, length + 1);
         if (output_pointer == NULL)
         {
@@ -1761,8 +1772,7 @@ static cJSON* get_array_item(const cJSON *array, size_t index)
     return current_child;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetArrayItem(const cJSON *array,
-                                                   int index)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetArrayItem(const cJSON *array, int index)
 {
     if (index < 0)
     {
@@ -1784,7 +1794,7 @@ static cJSON *get_object_item(const cJSON * const object, const char * const nam
     current_element = object->child;
     if (case_sensitive)
     {
-        while ((current_element != NULL) && (strcmp(name, current_element->string) != 0))
+        while ((current_element != NULL) && (current_element->string != NULL) && (strcmp(name, current_element->string) != 0))
         {
             current_element = current_element->next;
         }
@@ -1797,23 +1807,24 @@ static cJSON *get_object_item(const cJSON * const object, const char * const nam
         }
     }
 
+    if ((current_element == NULL) || (current_element->string == NULL)) {
+        return NULL;
+    }
+
     return current_element;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetObjectItem(const cJSON *const object,
-                                                    const char *const string)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetObjectItem(const cJSON * const object, const char * const string)
 {
     return get_object_item(object, string, false);
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetObjectItemCaseSensitive(
-  const cJSON *const object, const char *const string)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string)
 {
     return get_object_item(object, string, true);
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_HasObjectItem(const cJSON *object,
-                                                       const char *string)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_HasObjectItem(const cJSON *object, const char *string)
 {
     return snowflake_cJSON_GetObjectItem(object, string) ? 1 : 0;
 }
@@ -1834,27 +1845,26 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
         return NULL;
     }
 
-    reference = cJSON_New_Item(hooks);
+    reference = snowflake_cJSON_New_Item(hooks);
     if (reference == NULL)
     {
         return NULL;
     }
 
-    memcpy(reference, item, sizeof(cJSON));
+    sb_memcpy(reference, sizeof(cJSON), item, sizeof(cJSON));
     reference->string = NULL;
     reference->type |= cJSON_IsReference;
     reference->next = reference->prev = NULL;
     return reference;
 }
 
-/* Add item to array/object. */
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToArray(cJSON *array, cJSON *item)
+static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
 {
     cJSON *child = NULL;
 
     if ((item == NULL) || (array == NULL))
     {
-        return;
+        return false;
     }
 
     child = array->child;
@@ -1873,22 +1883,14 @@ CJSON_PUBLIC(void) snowflake_cJSON_AddItemToArray(cJSON *array, cJSON *item)
         }
         suffix_object(child, item);
     }
+
+    return true;
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObject(cJSON *object,
-                                                   const char *string,
-                                                   cJSON *item)
+/* Add item to array/object. */
+CJSON_PUBLIC(void) snowflake_cJSON_AddItemToArray(cJSON *array, cJSON *item)
 {
-    if (item == NULL)
-    {
-        return;
-    }
-
-    /* call snowflake_cJSON_AddItemToObjectCS for code reuse */
-    snowflake_cJSON_AddItemToObjectCS(object, (char *) cJSON_strdup(
-      (const unsigned char *) string, &global_hooks), item);
-    /* remove cJSON_StringIsConst flag */
-    item->type &= ~cJSON_StringIsConst;
+    add_item_to_array(array, item);
 }
 
 #if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
@@ -1897,54 +1899,193 @@ CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObject(cJSON *object,
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #endif
-
-/* Add an item to an object with constant string as key */
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObjectCS(cJSON *object,
-                                                     const char *string,
-                                                     cJSON *item)
+/* helper function to cast away const */
+static void* cast_away_const(const void* string)
 {
-    if ((item == NULL) || (string == NULL))
-    {
-        return;
-    }
-    if (!(item->type & cJSON_StringIsConst) && item->string)
-    {
-        global_hooks.deallocate(item->string);
-    }
-    item->string = (char*)string;
-    item->type |= cJSON_StringIsConst;
-  snowflake_cJSON_AddItemToArray(object, item);
+    return (void*)string;
 }
 #if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
     #pragma GCC diagnostic pop
 #endif
 
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToArray(cJSON *array,
-                                                           cJSON *item)
+
+static cJSON_bool add_item_to_object(cJSON * const object, const char * const string, cJSON * const item, const internal_hooks * const hooks, const cJSON_bool constant_key)
+{
+    char *new_key = NULL;
+    int new_type = cJSON_Invalid;
+
+    if ((object == NULL) || (string == NULL) || (item == NULL))
+    {
+        return false;
+    }
+
+    if (constant_key)
+    {
+        new_key = (char*)cast_away_const(string);
+        new_type = item->type | cJSON_StringIsConst;
+    }
+    else
+    {
+        new_key = (char*)snowflake_cJSON_strdup((const unsigned char*)string, hooks);
+        if (new_key == NULL)
+        {
+            return false;
+        }
+
+        new_type = item->type & ~cJSON_StringIsConst;
+    }
+
+    if (!(item->type & cJSON_StringIsConst) && (item->string != NULL))
+    {
+        hooks->deallocate(item->string);
+    }
+
+    item->string = new_key;
+    item->type = new_type;
+
+    return add_item_to_array(object, item);
+}
+
+CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
+{
+    add_item_to_object(object, string, item, &global_hooks, false);
+}
+
+/* Add an item to an object with constant string as key */
+CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
+{
+    add_item_to_object(object, string, item, &global_hooks, true);
+}
+
+CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 {
     if (array == NULL)
     {
         return;
     }
 
-  snowflake_cJSON_AddItemToArray(array, create_reference(item, &global_hooks));
+    add_item_to_array(array, create_reference(item, &global_hooks));
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToObject(cJSON *object,
-                                                            const char *string,
-                                                            cJSON *item)
+CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
 {
     if ((object == NULL) || (string == NULL))
     {
         return;
     }
 
-    snowflake_cJSON_AddItemToObject(object, string,
-                                    create_reference(item, &global_hooks));
+    add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemViaPointer(cJSON *parent,
-                                                           cJSON *const item)
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddNullToObject(cJSON * const object, const char * const name)
+{
+    cJSON *null = snowflake_cJSON_CreateNull();
+    if (add_item_to_object(object, name, null, &global_hooks, false))
+    {
+        return null;
+    }
+
+    snowflake_cJSON_Delete(null);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddTrueToObject(cJSON * const object, const char * const name)
+{
+    cJSON *true_item = snowflake_cJSON_CreateTrue();
+    if (add_item_to_object(object, name, true_item, &global_hooks, false))
+    {
+        return true_item;
+    }
+
+    snowflake_cJSON_Delete(true_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddFalseToObject(cJSON * const object, const char * const name)
+{
+    cJSON *false_item = snowflake_cJSON_CreateFalse();
+    if (add_item_to_object(object, name, false_item, &global_hooks, false))
+    {
+        return false_item;
+    }
+
+    snowflake_cJSON_Delete(false_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean)
+{
+    cJSON *bool_item = snowflake_cJSON_CreateBool(boolean);
+    if (add_item_to_object(object, name, bool_item, &global_hooks, false))
+    {
+        return bool_item;
+    }
+
+    snowflake_cJSON_Delete(bool_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number)
+{
+    cJSON *number_item = snowflake_cJSON_CreateNumber(number);
+    if (add_item_to_object(object, name, number_item, &global_hooks, false))
+    {
+        return number_item;
+    }
+
+    snowflake_cJSON_Delete(number_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
+{
+    cJSON *string_item = snowflake_cJSON_CreateString(string);
+    if (add_item_to_object(object, name, string_item, &global_hooks, false))
+    {
+        return string_item;
+    }
+
+    snowflake_cJSON_Delete(string_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw)
+{
+    cJSON *raw_item = snowflake_cJSON_CreateRaw(raw);
+    if (add_item_to_object(object, name, raw_item, &global_hooks, false))
+    {
+        return raw_item;
+    }
+
+    snowflake_cJSON_Delete(raw_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddObjectToObject(cJSON * const object, const char * const name)
+{
+    cJSON *object_item = snowflake_cJSON_CreateObject();
+    if (add_item_to_object(object, name, object_item, &global_hooks, false))
+    {
+        return object_item;
+    }
+
+    snowflake_cJSON_Delete(object_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddArrayToObject(cJSON * const object, const char * const name)
+{
+    cJSON *array = snowflake_cJSON_CreateArray();
+    if (add_item_to_object(object, name, array, &global_hooks, false))
+    {
+        return array;
+    }
+
+    snowflake_cJSON_Delete(array);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
 {
     if ((parent == NULL) || (item == NULL))
     {
@@ -1974,16 +2115,14 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemViaPointer(cJSON *parent,
     return item;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromArray(cJSON *array,
-                                                          int which)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromArray(cJSON *array, int which)
 {
     if (which < 0)
     {
         return NULL;
     }
 
-    return snowflake_cJSON_DetachItemViaPointer(array, get_array_item(array,
-                                                                      (size_t) which));
+    return snowflake_cJSON_DetachItemViaPointer(array, get_array_item(array, (size_t)which));
 }
 
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromArray(cJSON *array, int which)
@@ -1991,39 +2130,32 @@ CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromArray(cJSON *array, int which)
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromArray(array, which));
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObject(cJSON *object,
-                                                           const char *string)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObject(cJSON *object, const char *string)
 {
     cJSON *to_detach = snowflake_cJSON_GetObjectItem(object, string);
 
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(
-  cJSON *object, const char *string)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string)
 {
-    cJSON *to_detach = snowflake_cJSON_GetObjectItemCaseSensitive(object,
-                                                                  string);
+    cJSON *to_detach = snowflake_cJSON_GetObjectItemCaseSensitive(object, string);
 
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object,
-                                                        const char *string)
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string)
 {
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObject(object, string));
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(
-  cJSON *object, const char *string)
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
 {
-    snowflake_cJSON_Delete(
-      snowflake_cJSON_DetachItemFromObjectCaseSensitive(object, string));
+    snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObjectCaseSensitive(object, string));
 }
 
 /* Replace array/object items with new ones. */
-CJSON_PUBLIC(void) snowflake_cJSON_InsertItemInArray(cJSON *array, int which,
-                                                     cJSON *newitem)
+CJSON_PUBLIC(void) snowflake_cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
 {
     cJSON *after_inserted = NULL;
 
@@ -2035,7 +2167,7 @@ CJSON_PUBLIC(void) snowflake_cJSON_InsertItemInArray(cJSON *array, int which,
     after_inserted = get_array_item(array, (size_t)which);
     if (after_inserted == NULL)
     {
-      snowflake_cJSON_AddItemToArray(array, newitem);
+        add_item_to_array(array, newitem);
         return;
     }
 
@@ -2052,8 +2184,7 @@ CJSON_PUBLIC(void) snowflake_cJSON_InsertItemInArray(cJSON *array, int which,
     }
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemViaPointer(
-  cJSON *const parent, cJSON *const item, cJSON *replacement)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement)
 {
     if ((parent == NULL) || (replacement == NULL) || (item == NULL))
     {
@@ -2088,17 +2219,14 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemViaPointer(
     return true;
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInArray(cJSON *array, int which,
-                                                      cJSON *newitem)
+CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
 {
     if (which < 0)
     {
         return;
     }
 
-    snowflake_cJSON_ReplaceItemViaPointer(array,
-                                          get_array_item(array, (size_t) which),
-                                          newitem);
+    snowflake_cJSON_ReplaceItemViaPointer(array, get_array_item(array, (size_t)which), newitem);
 }
 
 static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJSON_bool case_sensitive)
@@ -2113,26 +2241,20 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
     {
         snowflake_cJSON_free(replacement->string);
     }
-    replacement->string = (char*)cJSON_strdup((const unsigned char*)string, &global_hooks);
+    replacement->string = (char*)snowflake_cJSON_strdup((const unsigned char*)string, &global_hooks);
     replacement->type &= ~cJSON_StringIsConst;
 
-    snowflake_cJSON_ReplaceItemViaPointer(object,
-                                          get_object_item(object, string,
-                                                          case_sensitive),
-                                          replacement);
+    snowflake_cJSON_ReplaceItemViaPointer(object, get_object_item(object, string, case_sensitive), replacement);
 
     return true;
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObject(cJSON *object,
-                                                       const char *string,
-                                                       cJSON *newitem)
+CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
 {
     replace_item_in_object(object, string, newitem, false);
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObjectCaseSensitive(
-  cJSON *object, const char *string, cJSON *newitem)
+CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem)
 {
     replace_item_in_object(object, string, newitem, true);
 }
@@ -2140,7 +2262,7 @@ CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObjectCaseSensitive(
 /* Create basic types: */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNull(void)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_NULL;
@@ -2151,7 +2273,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNull(void)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateTrue(void)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_True;
@@ -2162,7 +2284,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateTrue(void)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFalse(void)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_False;
@@ -2173,7 +2295,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFalse(void)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateBool(cJSON_bool b)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = b ? cJSON_True : cJSON_False;
@@ -2184,7 +2306,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateBool(cJSON_bool b)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNumber(double num)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_Number;
@@ -2195,7 +2317,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNumber(double num)
         {
             item->valueint = INT_MAX;
         }
-        else if (num <= INT_MIN)
+        else if (num <= (double)INT_MIN)
         {
             item->valueint = INT_MIN;
         }
@@ -2210,11 +2332,11 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNumber(double num)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateString(const char *string)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_String;
-        item->valuestring = (char*)cJSON_strdup((const unsigned char*)string, &global_hooks);
+        item->valuestring = (char*)snowflake_cJSON_strdup((const unsigned char*)string, &global_hooks);
         if(!item->valuestring)
         {
             snowflake_cJSON_Delete(item);
@@ -2225,13 +2347,46 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateString(const char *string)
     return item;
 }
 
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringReference(const char *string)
+{
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
+    if (item != NULL)
+    {
+        item->type = cJSON_String | cJSON_IsReference;
+        item->valuestring = (char*)cast_away_const(string);
+    }
+
+    return item;
+}
+
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateObjectReference(const cJSON *child)
+{
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
+    if (item != NULL) {
+        item->type = cJSON_Object | cJSON_IsReference;
+        item->child = (cJSON*)cast_away_const(child);
+    }
+
+    return item;
+}
+
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateArrayReference(const cJSON *child) {
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
+    if (item != NULL) {
+        item->type = cJSON_Array | cJSON_IsReference;
+        item->child = (cJSON*)cast_away_const(child);
+    }
+
+    return item;
+}
+
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateRaw(const char *raw)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type = cJSON_Raw;
-        item->valuestring = (char*)cJSON_strdup((const unsigned char*)raw, &global_hooks);
+        item->valuestring = (char*)snowflake_cJSON_strdup((const unsigned char*)raw, &global_hooks);
         if(!item->valuestring)
         {
             snowflake_cJSON_Delete(item);
@@ -2244,7 +2399,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateRaw(const char *raw)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateArray(void)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if(item)
     {
         item->type=cJSON_Array;
@@ -2255,7 +2410,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateArray(void)
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateObject(void)
 {
-    cJSON *item = cJSON_New_Item(&global_hooks);
+    cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
     if (item)
     {
         item->type = cJSON_Object;
@@ -2265,8 +2420,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateObject(void)
 }
 
 /* Create Arrays: */
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateIntArray(const int *numbers,
-                                                     int count)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateIntArray(const int *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
@@ -2301,8 +2455,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateIntArray(const int *numbers,
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFloatArray(const float *numbers,
-                                                       int count)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFloatArray(const float *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
@@ -2318,7 +2471,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFloatArray(const float *numbers,
 
     for(i = 0; a && (i < (size_t)count); i++)
     {
-        n = snowflake_cJSON_CreateNumber((double) numbers[i]);
+        n = snowflake_cJSON_CreateNumber((double)numbers[i]);
         if(!n)
         {
             snowflake_cJSON_Delete(a);
@@ -2338,8 +2491,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFloatArray(const float *numbers,
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateDoubleArray(const double *numbers,
-                                                        int count)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateDoubleArray(const double *numbers, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
@@ -2375,8 +2527,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateDoubleArray(const double *numbers,
     return a;
 }
 
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringArray(const char **strings,
-                                                        int count)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringArray(const char **strings, int count)
 {
     size_t i = 0;
     cJSON *n = NULL;
@@ -2413,8 +2564,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringArray(const char **strings,
 }
 
 /* Duplication */
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item,
-                                                cJSON_bool recurse)
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
 {
     cJSON *newitem = NULL;
     cJSON *child = NULL;
@@ -2427,7 +2577,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item,
         goto fail;
     }
     /* Create new item */
-    newitem = cJSON_New_Item(&global_hooks);
+    newitem = snowflake_cJSON_New_Item(&global_hooks);
     if (!newitem)
     {
         goto fail;
@@ -2438,7 +2588,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item,
     newitem->valuedouble = item->valuedouble;
     if (item->valuestring)
     {
-        newitem->valuestring = (char*)cJSON_strdup((unsigned char*)item->valuestring, &global_hooks);
+        newitem->valuestring = (char*)snowflake_cJSON_strdup((unsigned char*)item->valuestring, &global_hooks);
         if (!newitem->valuestring)
         {
             goto fail;
@@ -2446,7 +2596,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item,
     }
     if (item->string)
     {
-        newitem->string = (item->type&cJSON_StringIsConst) ? item->string : (char*)cJSON_strdup((unsigned char*)item->string, &global_hooks);
+        newitem->string = (item->type&cJSON_StringIsConst) ? item->string : (char*)snowflake_cJSON_strdup((unsigned char*)item->string, &global_hooks);
         if (!newitem->string)
         {
             goto fail;
@@ -2493,69 +2643,96 @@ fail:
     return NULL;
 }
 
+static void skip_oneline_comment(char **input)
+{
+    *input += static_strlen("//");
+
+    for (; (*input)[0] != '\0'; ++(*input))
+    {
+        if ((*input)[0] == '\n') {
+            *input += static_strlen("\n");
+            return;
+        }
+    }
+}
+
+static void skip_multiline_comment(char **input)
+{
+    *input += static_strlen("/*");
+
+    for (; (*input)[0] != '\0'; ++(*input))
+    {
+        if (((*input)[0] == '*') && ((*input)[1] == '/'))
+        {
+            *input += static_strlen("*/");
+            return;
+        }
+    }
+}
+
+static void minify_string(char **input, char **output) {
+    (*output)[0] = (*input)[0];
+    *input += static_strlen("\"");
+    *output += static_strlen("\"");
+
+
+    for (; (*input)[0] != '\0'; (void)++(*input), ++(*output)) {
+        (*output)[0] = (*input)[0];
+
+        if ((*input)[0] == '\"') {
+            (*output)[0] = '\"';
+            *input += static_strlen("\"");
+            *output += static_strlen("\"");
+            return;
+        } else if (((*input)[0] == '\\') && ((*input)[1] == '\"')) {
+            (*output)[1] = (*input)[1];
+            *input += static_strlen("\"");
+            *output += static_strlen("\"");
+        }
+    }
+}
+
 CJSON_PUBLIC(void) snowflake_cJSON_Minify(char *json)
 {
-    unsigned char *into = (unsigned char*)json;
+    char *into = json;
 
     if (json == NULL)
     {
         return;
     }
 
-    while (*json)
+    while (json[0] != '\0')
     {
-        if (*json == ' ')
+        switch (json[0])
         {
-            json++;
-        }
-        else if (*json == '\t')
-        {
-            /* Whitespace characters. */
-            json++;
-        }
-        else if (*json == '\r')
-        {
-            json++;
-        }
-        else if (*json=='\n')
-        {
-            json++;
-        }
-        else if ((*json == '/') && (json[1] == '/'))
-        {
-            /* double-slash comments, to end of line. */
-            while (*json && (*json != '\n'))
-            {
+            case ' ':
+            case '\t':
+            case '\r':
+            case '\n':
                 json++;
-            }
-        }
-        else if ((*json == '/') && (json[1] == '*'))
-        {
-            /* multiline comments. */
-            while (*json && !((*json == '*') && (json[1] == '/')))
-            {
-                json++;
-            }
-            json += 2;
-        }
-        else if (*json == '\"')
-        {
-            /* string literals, which are \" sensitive. */
-            *into++ = (unsigned char)*json++;
-            while (*json && (*json != '\"'))
-            {
-                if (*json == '\\')
+                break;
+
+            case '/':
+                if (json[1] == '/')
                 {
-                    *into++ = (unsigned char)*json++;
+                    skip_oneline_comment(&json);
                 }
-                *into++ = (unsigned char)*json++;
-            }
-            *into++ = (unsigned char)*json++;
-        }
-        else
-        {
-            /* All other characters. */
-            *into++ = (unsigned char)*json++;
+                else if (json[1] == '*')
+                {
+                    skip_multiline_comment(&json);
+                } else {
+                    json++;
+                }
+                break;
+
+            case '\"':
+                minify_string(&json, (char**)&into);
+                break;
+
+            default:
+                into[0] = json[0];
+                json++;
+                into++;
         }
     }
 
@@ -2563,7 +2740,7 @@ CJSON_PUBLIC(void) snowflake_cJSON_Minify(char *json)
     *into = '\0';
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsInvalid(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsInvalid(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2573,7 +2750,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsInvalid(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_Invalid;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsFalse(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsFalse(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2583,7 +2760,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsFalse(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_False;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsTrue(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsTrue(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2594,7 +2771,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsTrue(const cJSON *const item)
 }
 
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsBool(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsBool(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2603,7 +2780,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsBool(const cJSON *const item)
 
     return (item->type & (cJSON_True | cJSON_False)) != 0;
 }
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNull(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNull(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2613,7 +2790,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNull(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_NULL;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNumber(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNumber(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2623,7 +2800,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsNumber(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_Number;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsString(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsString(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2633,7 +2810,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsString(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_String;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsArray(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsArray(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2643,7 +2820,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsArray(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_Array;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsObject(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsObject(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2653,7 +2830,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsObject(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_Object;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsRaw(const cJSON *const item)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsRaw(const cJSON * const item)
 {
     if (item == NULL)
     {
@@ -2663,12 +2840,9 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsRaw(const cJSON *const item)
     return (item->type & 0xFF) == cJSON_Raw;
 }
 
-CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON *const a,
-                                                 const cJSON *const b,
-                                                 const cJSON_bool case_sensitive)
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
 {
-    if ((a == NULL) || (b == NULL) || ((a->type & 0xFF) != (b->type & 0xFF)) ||
-      snowflake_cJSON_IsInvalid(a))
+    if ((a == NULL) || (b == NULL) || ((a->type & 0xFF) != (b->type & 0xFF)) || snowflake_cJSON_IsInvalid(a))
     {
         return false;
     }
@@ -2731,8 +2905,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON *const a,
 
             for (; (a_element != NULL) && (b_element != NULL);)
             {
-                if (!snowflake_cJSON_Compare(a_element, b_element,
-                                             case_sensitive))
+                if (!snowflake_cJSON_Compare(a_element, b_element, case_sensitive))
                 {
                     return false;
                 }
@@ -2762,8 +2935,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON *const a,
                     return false;
                 }
 
-                if (!snowflake_cJSON_Compare(a_element, b_element,
-                                             case_sensitive))
+                if (!snowflake_cJSON_Compare(a_element, b_element, case_sensitive))
                 {
                     return false;
                 }
@@ -2779,8 +2951,7 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON *const a,
                     return false;
                 }
 
-                if (!snowflake_cJSON_Compare(b_element, a_element,
-                                             case_sensitive))
+                if (!snowflake_cJSON_Compare(b_element, a_element, case_sensitive))
                 {
                     return false;
                 }
