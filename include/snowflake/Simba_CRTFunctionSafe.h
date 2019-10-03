@@ -90,7 +90,7 @@
         const char* in_src,
         size_t in_sizeToCopy)
     {
-        if (0 == strncpy_s(out_dest, in_destSize, in_src, in_sizeToCopy))
+        if (0 == strncat_s(out_dest, in_destSize, in_src, in_sizeToCopy))
         {
             return out_dest;
         }
