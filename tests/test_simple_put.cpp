@@ -223,6 +223,12 @@ void test_simple_put_gzip(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", true);
 }
 
+void test_simple_put_gzip_caseInsensitive(void **unused)
+{
+  //AUTO_COMPRESS=FALSE SOURCE_COMPRESSION=GZIP
+  test_simple_put_core("small_file.csv.gz", "GziP", false);
+}
+
 void test_simple_put_zero_byte(void **unused)
 {
   test_simple_put_core("zero_byte.csv", "auto", true, false);
@@ -371,6 +377,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
+    cmocka_unit_test_teardown(test_simple_put_gzip_caseInsensitive, teardown),
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
