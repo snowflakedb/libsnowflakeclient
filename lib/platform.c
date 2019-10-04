@@ -569,6 +569,7 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
 {
   char uuid_cstr[37]; // 36 byte uuid plus null.
+  char dir_buf[MAX_PATH] = {0};
   uuid4_generate(uuid_cstr);
 #ifdef _WIN32
   GetTempPath(MAX_PATH, tmpDir);
@@ -581,16 +582,16 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
 
   if (!tmpEnv)
   {
-    sb_strcat(tmpDir, MAX_PATH, "/tmp/snowflakeTmp/");
+    sb_strcat(dir_buf, MAX_PATH, "/tmp/snowflakeTmp/");
     //sf_create_directory does not recursively create dirs in the path.
-    sf_create_directory_if_not_exists(tmpDir);
-    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",tmpDir, uuid_cstr);
+    sf_create_directory_if_not_exists(dir_buf);
+    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",dir_buf, uuid_cstr);
   }
   else
   {
-    sb_sprintf(tmpDir, MAX_PATH, "%s/snowflakeTmp", tmpEnv);
-    sf_create_directory_if_not_exists(tmpDir);
-    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",tmpDir,uuid_cstr);
+    sb_sprintf(dir_buf, MAX_PATH, "%s/snowflakeTmp", tmpEnv);
+    sf_create_directory_if_not_exists(dir_buf);
+    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",dir_buf,uuid_cstr);
   }
 #endif
   sf_create_directory_if_not_exists(tmpDir);
