@@ -202,7 +202,7 @@
     /// @param in_src           Null-terminated source string buffer. (NOT OWN)
     /// 
     /// @return The destination string; NULL if an error occurred. (NOT OWN)
-    inline char* sb_strcpy(
+    static inline char* sb_strcpy(
         char* out_dest,
         size_t in_destSize,
         const char* in_src)
@@ -218,7 +218,7 @@
     /// @param in_sizeToCopy    Number of characters to be copied.
     /// 
     /// @return The destination string; NULL if a truncation or error occurred. (NOT OWN)
-    inline char* sb_strncpy(
+    static inline char* sb_strncpy(
         char* out_dest,
         size_t in_destSize,
         const char* in_src,
@@ -234,7 +234,7 @@
     /// @param in_src           Null-terminated source string buffer. (NOT OWN)
     /// 
     /// @return The destination string; NULL if an error occurred. (NOT OWN)
-    inline char* sb_strcat(
+    static inline char* sb_strcat(
         char* out_dest,
         size_t in_destSize,
         const char* in_src)
@@ -250,7 +250,7 @@
     /// @param in_sizeToCopy    Number of characters to be copied.
     /// 
     /// @return The destination string; NULL if a truncation or error occurred. (NOT OWN)
-    inline char* sb_strncat(
+    static inline char* sb_strncat(
         char* out_dest,
         size_t in_destSize,
         const char* in_src,
@@ -267,7 +267,7 @@
     /// @param in_sizeToCopy    Number of bytes to copy.
     /// 
     /// @return A pointer to destination; NULL if an error occurred. (NOT OWN)
-    inline void* sb_memcpy(
+    static inline void* sb_memcpy(
         void* out_dest,
         size_t in_destSize,
         const void* in_src,
@@ -290,7 +290,7 @@
     /// 
     /// @return The number of bytes written to the buffer, not counting the terminating null 
     /// character; -1 if the truncation or error occurred.
-    inline int sb_vsnprintf(
+    static inline int sb_vsnprintf(
         char* out_buffer,
         size_t in_sizeOfBuffer,
         size_t in_sizeToWrite,
@@ -316,7 +316,7 @@
     /// 
     /// @return The number of bytes written to the buffer, not counting the terminating null 
     /// character; -1 if an error occurred.
-    inline int sb_sprintf(
+    static inline int sb_sprintf(
         char* out_buffer,
         size_t in_sizeOfBuffer,
         const char* in_format,
