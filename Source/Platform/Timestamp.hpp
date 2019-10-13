@@ -14,6 +14,7 @@
 #include "pow10.hpp"
 #include "DataTypeDefs.hpp"
 #include "Logger.hpp"
+#include "TDWExactNumericType.h"
 
 namespace sf
 {
@@ -150,6 +151,27 @@ public:
     }
   }
 
+#if (defined(WIN32) || defined(_WIN64) || defined(__i386)) && !defined(HAVE_IMPL_INT128)
+  /**
+  * Convert the fractional seconds since epoch to timestamp
+  * @param fracSeconds
+  *   number of fractional seconds
+  * @param scale
+  *   scale of fractional seconds
+  */
+  void fromFractionalSecondsSinceEpoch(TDWExactNumericType& fracSeconds, sb1 scale);
+
+  /**
+  * Convert the fractional seconds since epoch to timestamp
+  * @param fracSeconds
+  *   number of fractional seconds
+  * @param scale
+  *   scale of fractional seconds
+  * @param tzIndex
+  * time zone index
+  */
+  void fromFractionalSecondsSinceEpoch(TDWExactNumericType& fracSeconds, sb1 scale, sb4 tzIndex);
+#else // !HAVE_IMPL_INT128
   /**
    * Convert the timestamp to number of fractional seconds since Epoch
    *
@@ -179,6 +201,7 @@ public:
      * time zone index
    */
   void fromFractionalSecondsSinceEpoch(sb16 fracSeconds, sb1 scale, sb4 tzIndex);
+#endif // !HAVE_IMPL_INT128
 
   /**
    * Convert the number of day since epoch to timestamp
@@ -300,7 +323,7 @@ public:
    * @return
    *   number of days since epoch
    */
-  inline sb16 toDaysSinceEpoch() const
+  inline sb8 toDaysSinceEpoch() const
   {
     return m_secondsSinceEpoch / SECONDS_PER_DAY_CONST;
   }
