@@ -204,7 +204,7 @@ void test_large_put_auto_compress(void **unused)
   for(int i=0;i<15000000;i++){
         ln +=fprintf(fp, "%d,%d,%s\n",i,i+1,str);
         if( ln >= (32 * 1024 * 1024) ){
-          printf("wrote %d bytes\n",ln);
+          printf("wrote %ld bytes\n",ln);
           ln = 0;
         }
   }
