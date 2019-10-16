@@ -132,7 +132,7 @@ const char * STDCALL snowflake_c_type_to_string(SF_C_TYPE type) {
 
 SF_C_TYPE snowflake_to_c_type(SF_DB_TYPE type, int64 precision, int64 scale) {
     if (type == SF_DB_TYPE_FIXED) {
-        if (scale > 0 || precision >= 19) {
+        if (scale > 0) {
             return SF_C_TYPE_FLOAT64;
         } else {
             return SF_C_TYPE_INT64;
