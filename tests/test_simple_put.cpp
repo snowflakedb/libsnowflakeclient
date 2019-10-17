@@ -382,12 +382,10 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-#ifdef PUT_GET_LARGE_DATASET_TEST
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, teardown)
-#endif
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
