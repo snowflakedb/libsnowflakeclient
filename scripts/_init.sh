@@ -44,6 +44,27 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     export CXX=clang++
     export GCC=$CC
     export GXX=$CXX
+    # Check to see if we are doing a universal build
+    # By default we do want universal binaries
+    if [[ "$UNIVERSAL" == "" ]]; then
+        export UNIVERSAL=true
+    else
+        export UNIVERSAL="${UNIVERSAL}"
+    fi
+
+    # Check which arch we are building for if we are not
+    # building universal binaries. Note: If UNIVERSAL is 
+    # not equal to true, then this parameter has no effect
+    if [[ "$ARCH" == "" ]]; then
+        export ARCH=x64
+    else
+        # Ensure that the user specifies the right arch, so 
+        # we can skip this check in other scripts
+        if [[ "$ARCH" != "x64" && "$ARCH" != "x86" ]]; then
+            echo "Invalid arch: $ARCH [Needs to be x86 or x64]"; exit 1;
+        fi
+        export ARCH="${ARCH}"
+    fi
 fi
 
 export BUILD_WITH_PROFILE_OPTION=

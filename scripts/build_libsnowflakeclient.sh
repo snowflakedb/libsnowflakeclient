@@ -28,8 +28,22 @@ cmake_opts=(
     "-DCMAKE_BUILD_TYPE=$target"
 )
 
+# Check to see if we are doing a universal build or not.
+# If we are not doing a universal build, pick an arch to
+# build
 if [[ "$PLATFORM" == "darwin" ]]; then
-    cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+    if [[ "$UNIVERSAL" == "true" ]]; then
+        echo "[INFO] Building Universal Binary"
+        cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+    else
+        if [[ "$ARCH" == "x86" ]]; then
+            echo "[INFO] Building x86 Binary"
+            cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
+        else
+            echo "[INFO] Building x64 Binary"
+            cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+        fi
+    fi
 fi
 
 if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
