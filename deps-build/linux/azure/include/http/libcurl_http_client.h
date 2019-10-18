@@ -26,7 +26,7 @@ namespace azure {  namespace storage_lite {
 
     class CurlEasyClient;
 
-    class CurlEasyRequest : public http_base
+    class CurlEasyRequest final : public http_base
     {
 
         using REQUEST_TYPE = CurlEasyRequest;
@@ -127,24 +127,31 @@ namespace azure {  namespace storage_lite {
             check_code(curl_easy_setopt(m_curl, CURLOPT_READDATA, this));
         }
 
-        void set_input_stream_length(unsigned long long streamlen)
+        void set_input_buffer(char* buff) override
         {
-            m_input_stream_len=streamlen;
+            m_input_buffer = buff;
+            check_code(curl_easy_setopt(m_curl, CURLOPT_READFUNCTION, read));
+            check_code(curl_easy_setopt(m_curl, CURLOPT_READDATA, this));
         }
 
-        unsigned long long get_input_stream_length(void)
+        void set_input_content_length(size_t content_length)
         {
-            return m_input_stream_len;
+            m_input_content_length=content_length;
         }
 
-        void set_is_stream_length(void)
+        size_t get_input_content_length(void)
         {
-            m_input_stream_len_known=true;
+            return m_input_content_length;
         }
 
-        bool get_is_stream_length(void)
+        void set_is_input_length_known(void)
         {
-            return m_input_stream_len_known;
+            m_is_input_length_known=true;
+        }
+
+        bool get_is_input_length_known(void)
+        {
+            return m_is_input_length_known;
         }
 
         void reset_input_stream() override
@@ -198,11 +205,13 @@ namespace azure {  namespace storage_lite {
 
         http_method m_method;
         std::string m_url;
+        char* m_input_buffer = NULL;
+        int m_input_buffer_pos = 0;
         storage_istream m_input_stream;
         storage_ostream m_output_stream;
         storage_iostream m_error_stream;
-        unsigned long long m_input_stream_len;
-        bool m_input_stream_len_known;
+        size_t m_input_content_length;
+        bool m_is_input_length_known;
         std::function<bool(http_code)> m_switch_error_callback;
 
         http_code m_code;
@@ -228,9 +237,9 @@ namespace azure {  namespace storage_lite {
         {
             REQUEST_TYPE *p = static_cast<REQUEST_TYPE *>(userdata);
             auto &s = p->m_input_stream.istream();
-            unsigned long long streamlen = p->get_input_stream_length();
+            size_t contentlen = p->get_input_content_length();
             size_t actual_size = 0 ;
-            if( ! p->get_is_stream_length() ) {
+            if( ! p->get_is_input_length_known() ) {
                 auto cur = s.tellg();
                 s.seekg(0, std::ios_base::end);
                 auto end = s.tellg();
@@ -239,14 +248,22 @@ namespace azure {  namespace storage_lite {
             }
             else
             {
-                actual_size = std::min(streamlen, (unsigned long long)size * nitems);
+                actual_size = std::min(contentlen, size * nitems);
             }
 
-            s.read(buffer, actual_size);
+            if (p->m_input_buffer != NULL)
+            {
+                memcpy(buffer, p->m_input_buffer + p->m_input_buffer_pos, actual_size);
+                p->m_input_buffer_pos += actual_size;
+            }
+            else
+            {
+                s.read(buffer, actual_size);
+            }
 
-            if(p->get_is_stream_length()) {
-                streamlen -= actual_size;
-                p->set_input_stream_length(streamlen);
+            if(p->get_is_input_length_known()) {
+                contentlen -= actual_size;
+                p->set_input_content_length(contentlen);
             }
 
             return actual_size;
@@ -280,7 +297,7 @@ namespace azure {  namespace storage_lite {
             for (int i = 0; i < m_size; i++) {
                 CURL *h = curl_easy_init();
                 curl_easy_setopt(h, CURLOPT_CAINFO, ca_path.c_str());
-                //curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
+                curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
                 m_handles.push(h);
             }
         }

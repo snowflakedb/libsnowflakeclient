@@ -3,7 +3,13 @@
 #ifdef __linux__
 #include <string.h>
 #else
+#include <cstring>
 #include <string>
+#endif
+
+#ifdef _MSC_VER 
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
 #endif
 
 namespace azure { namespace storage_lite {
