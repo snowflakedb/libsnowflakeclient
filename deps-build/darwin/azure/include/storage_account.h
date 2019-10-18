@@ -10,7 +10,7 @@
 
 namespace azure {  namespace storage_lite {
 
-    class storage_account
+    class storage_account final
     {
     public:
         enum class service
