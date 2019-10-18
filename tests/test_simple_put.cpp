@@ -22,7 +22,9 @@ using namespace ::Snowflake::Client;
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
                           bool autoCompress,
-                          bool copyUploadFile=true)
+                          bool copyUploadFile=true,
+                          bool verifyCopyUploadFile=true,
+                          bool copyTableToStaging=false)
 {
   /* init */
   SF_STATUS status;
@@ -93,29 +95,38 @@ void test_simple_put_core(const char * fileName,
     std::string copyCommand = "copy into test_small_put from @%test_small_put";
     ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
     assert_int_equal(SF_STATUS_SUCCESS, ret);
+    if(verifyCopyUploadFile) {
+        std::string selectCommand = "select * from test_small_put";
+        ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
+        assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    std::string selectCommand = "select * from test_small_put";
-    ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
-    assert_int_equal(SF_STATUS_SUCCESS, ret);
+        const char *out_c1;
+        const char *out_c2;
+        const char *out_c3;
+        assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-    const char *out_c1;
-    const char *out_c2;
-    const char *out_c3;
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+        ret = snowflake_fetch(sfstmt);
+        assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    ret = snowflake_fetch(sfstmt);
-    assert_int_equal(SF_STATUS_SUCCESS, ret);
-    
-    snowflake_column_as_const_str(sfstmt, 1, &out_c1);
-    snowflake_column_as_const_str(sfstmt, 2, &out_c2);
-    snowflake_column_as_const_str(sfstmt, 3, &out_c3);
+        snowflake_column_as_const_str(sfstmt, 1, &out_c1);
+        snowflake_column_as_const_str(sfstmt, 2, &out_c2);
+        snowflake_column_as_const_str(sfstmt, 3, &out_c3);
 
-    assert_string_equal(out_c1, "1");
-    assert_string_equal(out_c2, "2");
-    assert_string_equal(out_c3, "test_string");
+        assert_string_equal(out_c1, "1");
+        assert_string_equal(out_c2, "2");
+        assert_string_equal(out_c3, "test_string");
 
-    ret = snowflake_fetch(sfstmt);
-    assert_int_equal(SF_STATUS_EOF, ret);
+        ret = snowflake_fetch(sfstmt);
+        assert_int_equal(SF_STATUS_EOF, ret);
+    }
+
+  }
+
+  if(copyTableToStaging)
+  {
+      std::string copyCommand = "copy into @%test_small_put/bigFile.csv.gz from test_small_put ";
+      ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
+      assert_int_equal(SF_STATUS_SUCCESS, ret);
   }
 
   snowflake_stmt_term(sfstmt);
@@ -189,14 +200,16 @@ void test_large_put_auto_compress(void **unused)
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   FILE *fp =fopen(destFile.c_str(),"w");
   char str[]="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-  for(int i=0;i<6000000;i++){
-      fprintf(fp, "%d,%s\n",i,str);
+  for(int i=0;i<15000000;i++){
+        fprintf(fp, "%d,%d,%s\n",i,i+1,str);
   }
   fclose(fp);
   test_simple_put_core(destinationfile.c_str(), // filename
                        "none", //source compression
-                       false, // auto compress
-                       false // DO NOT Load data into table
+                       true,   // auto compress
+                       true,   // Load data into table
+                       false,  // Run select * on loaded table (Not good for large data set)
+                       true    // copy data from Table to Staging.
   );
 }
 
@@ -251,7 +264,7 @@ void test_simple_get(void **unused)
 void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/large_file.csv file://";
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");
