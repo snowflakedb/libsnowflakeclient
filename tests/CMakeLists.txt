@@ -57,6 +57,7 @@ SET(TESTS_AWS
 
 SET(TESTS_AZURE
         test_simple_put_azure)
+set_tests_properties(TESSTS_AZURE PROPERTIES TIMEOUT 2400) 
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
