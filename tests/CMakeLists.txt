@@ -57,7 +57,6 @@ SET(TESTS_AWS
 
 SET(TESTS_AZURE
         test_simple_put_azure)
-set_tests_properties(TESSTS_AZURE PROPERTIES TIMEOUT 2400) 
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
@@ -94,6 +93,7 @@ if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
     message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
     set(TESTS_CXX ${TESTS_CXX})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+    set_tests_properties(TESSTS_AZURE PROPERTIES TIMEOUT 2400) 
 endif()
 
 if (UNIX)
