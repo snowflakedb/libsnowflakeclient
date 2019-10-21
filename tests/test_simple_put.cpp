@@ -200,13 +200,8 @@ void test_large_put_auto_compress(void **unused)
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   FILE *fp =fopen(destFile.c_str(),"w");
   char str[]="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-  size_t ln=0;
   for(int i=0;i<15000000;i++){
-        ln +=fprintf(fp, "%d,%d,%s\n",i,i+1,str);
-        if( ln >= (32 * 1024 * 1024) ){
-          printf("wrote %ld bytes\n",ln);
-          ln = 0;
-        }
+        fprintf(fp, "%d,%d,%s\n",i,i+1,str);
   }
   fclose(fp);
   test_simple_put_core(destinationfile.c_str(), // filename
