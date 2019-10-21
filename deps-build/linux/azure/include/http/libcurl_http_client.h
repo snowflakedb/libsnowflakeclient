@@ -269,6 +269,9 @@ namespace azure {  namespace storage_lite {
 
             totalBytes += actual_size;
             printf("\nRead %ld bytes\n", totalBytes);
+            fprintf(stderr,"\nRead %ld bytes\n", totalBytes);
+            fflush(stdout);
+            fflush(stderr);
 
             return actual_size;
         }
@@ -301,7 +304,7 @@ namespace azure {  namespace storage_lite {
             for (int i = 0; i < m_size; i++) {
                 CURL *h = curl_easy_init();
                 curl_easy_setopt(h, CURLOPT_CAINFO, ca_path.c_str());
-                //curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
+                curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
                 m_handles.push(h);
             }
         }
