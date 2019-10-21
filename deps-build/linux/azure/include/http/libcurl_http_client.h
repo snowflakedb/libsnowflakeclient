@@ -25,6 +25,7 @@
 namespace azure {  namespace storage_lite {
 
     class CurlEasyClient;
+    static size_t totalBytes=0;
 
     class CurlEasyRequest final : public http_base
     {
@@ -265,6 +266,9 @@ namespace azure {  namespace storage_lite {
                 contentlen -= actual_size;
                 p->set_input_content_length(contentlen);
             }
+
+            totalBytes += actual_size;
+            printf("\nRead %ld bytes\n", totalBytes);
 
             return actual_size;
         }
