@@ -266,7 +266,7 @@ void test_large_get(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 
