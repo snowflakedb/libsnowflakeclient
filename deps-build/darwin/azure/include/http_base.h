@@ -23,6 +23,8 @@ namespace azure {  namespace storage_lite {
             put
         };
 
+        virtual ~http_base() {}
+
         using http_code = int;
 
         virtual void set_method(http_method method) = 0;
@@ -47,6 +49,8 @@ namespace azure {  namespace storage_lite {
         virtual http_code status_code() const = 0;
 
         virtual void set_input_stream(storage_istream s) = 0;
+
+        virtual void set_input_buffer(char* buff) = 0;
 
         virtual void reset_input_stream() = 0;
 
