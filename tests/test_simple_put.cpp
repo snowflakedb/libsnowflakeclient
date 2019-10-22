@@ -196,17 +196,11 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-  std::string destinationfile="large_file.csv";
+  std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
-  FILE *fp =fopen(destFile.c_str(),"w");
-  char str[]="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-  for(int i=0;i<15000000;i++){
-        fprintf(fp, "%d,%d,%s\n",i,i+1,str);
-  }
-  fclose(fp);
   test_simple_put_core(destinationfile.c_str(), // filename
-                       "none", //source compression
-                       true,   // auto compress
+                       "gzip", //source compression
+                       false,   // auto compress
                        true,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
                        true    // copy data from Table to Staging.
