@@ -18,12 +18,7 @@ namespace azure { namespace storage_lite {
     {
         bool operator()(const std::string &lhs, const std::string &rhs) const 
         {
-#ifdef _WIN32
-            return _stricmp(lhs.c_str(), rhs.c_str()) < 0;
-#else
             return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
-#endif
-
         }
     };
 }} // azure::storage_lite
