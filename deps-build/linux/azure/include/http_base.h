@@ -56,6 +56,8 @@ namespace azure {  namespace storage_lite {
 
         virtual void reset_output_stream() = 0;
 
+        virtual void reset_input_buffer() = 0;
+
         virtual void set_output_stream(storage_ostream s) = 0;
 
         virtual void set_error_stream(std::function<bool(http_code)> f, storage_iostream s) = 0;

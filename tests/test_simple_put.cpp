@@ -3,6 +3,7 @@
  */
 
 #include <aws/core/Aws.h>
+#include <vector>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -19,12 +20,17 @@
 
 using namespace ::Snowflake::Client;
 
+//File list to be made available to re-upload.
+static std::vector<std::string> fileList;
+static bool createOnlyOnce = true;
+
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
                           bool autoCompress,
                           bool copyUploadFile=true,
                           bool verifyCopyUploadFile=true,
-                          bool copyTableToStaging=false)
+                          bool copyTableToStaging=false,
+                          bool createDupTable=false)
 {
   /* init */
   SF_STATUS status;
@@ -38,14 +44,29 @@ void test_simple_put_core(const char * fileName,
   /* query */
   sfstmt = snowflake_stmt(sf);
 
-  std::string create_table("create or replace table test_small_put(c1 number"
-                             ", c2 number, c3 string)");
-  ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
-  assert_int_equal(SF_STATUS_SUCCESS, ret);
+  std::string create_table;
+  if(createDupTable && createOnlyOnce) {
+      std::string create_table_temp("create or replace table test_small_put_dup(c1 number"
+                                    ", c2 number, c3 string)");
+      create_table = create_table_temp ;
+      createOnlyOnce = false;
+  } else if(! createDupTable  ){
+      std::string create_table_temp("create or replace table test_small_put(c1 number"
+                                    ", c2 number, c3 string)");
+      create_table = create_table_temp ;
+  }
+  if(! create_table.empty()) {
+      ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
+      assert_int_equal(SF_STATUS_SUCCESS, ret);
+  }
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
   std::string putCommand = "put file://" + file + " @%test_small_put";
+  if(createDupTable)
+  {
+      putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
+  }
   if (!autoCompress)
   {
     putCommand += " auto_compress=false";
@@ -65,13 +86,13 @@ void test_simple_put_core(const char * fileName,
   {
     std::string value;
     results->getColumnAsString(0, value); // source
-    assert_string_equal(fileName, value.c_str());
+    assert_string_equal( sf_filename_from_path(fileName), value.c_str());
 
     std::string expectedTarget = (autoCompress && !strstr(fileName, ".gz")) ?
                                  std::string(fileName) + ".gz" :
                                  std::string(fileName);
     results->getColumnAsString(1, value); // get target
-    assert_string_equal(expectedTarget.c_str(), value.c_str());
+    assert_string_equal(sf_filename_from_path(expectedTarget.c_str()), value.c_str());
 
     std::string expectedSourceCompression = !strstr(fileName, ".gz") ?
                                             "none" : "gzip";
@@ -93,6 +114,9 @@ void test_simple_put_core(const char * fileName,
   if (copyUploadFile)
   {
     std::string copyCommand = "copy into test_small_put from @%test_small_put";
+    if(createDupTable){
+        copyCommand = "copy into test_small_put_dup from @%test_small_put_dup";
+    }
     ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
     assert_int_equal(SF_STATUS_SUCCESS, ret);
     if(verifyCopyUploadFile) {
@@ -124,9 +148,27 @@ void test_simple_put_core(const char * fileName,
 
   if(copyTableToStaging)
   {
+      const char* f=NULL;
       std::string copyCommand = "copy into @%test_small_put/bigFile.csv.gz from test_small_put ";
       ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
       assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+      //GS splits the file into multiple pieces.
+      std::string listFiles="list @%test_small_put pattern='bigFile.*'";
+      ret = snowflake_query(sfstmt, listFiles.c_str(), listFiles.size());
+      assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+      int nsplits = snowflake_num_rows(sfstmt);
+      //Get the list of those pieces
+      for(int i=0; i<nsplits; i++) {
+          ret = snowflake_fetch(sfstmt);
+          assert_int_equal(SF_STATUS_SUCCESS, ret);
+          snowflake_column_as_const_str(sfstmt, 1, &f);
+          fileList.emplace_back(f);
+      }
+      ret = snowflake_fetch(sfstmt);
+      assert_int_equal(SF_STATUS_EOF, ret);
+
   }
 
   snowflake_stmt_term(sfstmt);
@@ -196,6 +238,11 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
+    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+  if ( ! strncmp(cenv, "AWS", 6) ) {
+      errno = 0;
+      return;
+  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -205,6 +252,93 @@ void test_large_put_auto_compress(void **unused)
                        false,  // Run select * on loaded table (Not good for large data set)
                        true    // copy data from Table to Staging.
   );
+}
+
+void test_large_reupload(void **unused)
+{
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
+    //Before re-upload delete the already existing staged files.
+    SF_STATUS status;
+    SF_CONNECT *sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT *sfstmt = NULL;
+    SF_STATUS ret;
+
+    /* query */
+    sfstmt = snowflake_stmt(sf);
+
+    //This deletes all the files on the stage.
+    std::string deleteStagedFiles("REMOVE @%test_small_put/ ;");
+    ret = snowflake_query(sfstmt, deleteStagedFiles.c_str(), deleteStagedFiles.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+    char tempDir[MAX_PATH] = { 0 };
+    char tempFile[MAX_PATH + 256] ={0};
+    sf_get_tmp_dir(tempDir);
+
+    for(const std::string s : fileList) {
+        tempFile[0] = 0;
+        sprintf(tempFile, "%s%c%s", tempDir, PATH_SEP, s.c_str());
+        test_simple_put_core(tempFile, // filename
+                             "gzip", //source compression
+                             false,   // auto compress
+                             true,   // Load data into table
+                             false,  // Run select * on loaded table (Not good for large data set)
+                             false,    // copy data from Table to Staging.
+                             true       //Creates a dup table to compare uploaded data.
+        );
+    }
+
+}
+
+/*
+ * Create Table
+ * Upload large file to Table Staging Area
+ * Copy from staging area into table
+ * Copy from Table to Staging area
+ * Download files from Staging Area
+ * Create Dup Table
+ * Upload just downloaded files to Staging Area
+ * Copy from Staging area into dup table
+ * Make sure TableA - TableB == TableB - TableA == 0
+ */
+void test_verify_upload(void **unused)
+{
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
+    /* init */
+    SF_STATUS status;
+    SF_CONNECT *sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT *sfstmt = NULL;
+    SF_STATUS ret;
+
+    /* query */
+    sfstmt = snowflake_stmt(sf);
+
+    //This verifies test_put_get - test_put_get_dup
+    std::string VerifyTable("select * from TEST_SMALL_PUT MINUS select * from TEST_SMALL_PUT_DUP;");
+    ret = snowflake_query(sfstmt, VerifyTable.c_str(), VerifyTable.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    //As both the tables must have the same data Minus should return 0 rows.
+    assert_int_equal(snowflake_num_rows(sfstmt), 0);
+
+    //This verifies test_put_get_dup - test_put_get
+    VerifyTable=("select * from TEST_SMALL_PUT_DUP MINUS select * from TEST_SMALL_PUT;");
+    ret = snowflake_query(sfstmt, VerifyTable.c_str(), VerifyTable.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+    assert_int_equal(snowflake_num_rows(sfstmt), 0);
+
 }
 
 void test_simple_put_auto_compress(void **unused)
@@ -259,6 +393,10 @@ void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");
@@ -379,6 +517,7 @@ void test_simple_put_overwrite(void **unused)
 }
 
 int main(void) {
+
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -391,10 +530,10 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
-#ifndef __linux__
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
-    cmocka_unit_test_teardown(test_large_get, teardown)
-#endif
+    cmocka_unit_test_teardown(test_large_get, donothing),
+    cmocka_unit_test_teardown(test_large_reupload, donothing),
+    cmocka_unit_test_teardown(test_verify_upload, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
