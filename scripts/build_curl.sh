@@ -12,7 +12,7 @@ set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
-LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.58.0/
+LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-7.66.0/
 
 # build libcurl
 curl_configure_opts=()
