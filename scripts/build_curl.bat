@@ -2,7 +2,7 @@
 :: Build Curl
 ::
 @echo off
-set CURL_DIR=curl-7.58.0
+set CURL_DIR=curl-7.66.0
 
 set platform=%1
 set build_type=%2

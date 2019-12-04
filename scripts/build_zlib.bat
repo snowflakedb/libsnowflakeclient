@@ -13,7 +13,7 @@ set ZLIB_DIR=zlib-1.2.11
 set platform=%1
 set build_type=%2
 set vs_version=%3
-set source_name="source_name.lib"
+set source_name="zlibstatic.lib"
 
 set scriptdir=%~dp0
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
