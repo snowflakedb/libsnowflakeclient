@@ -133,6 +133,24 @@ void test_connection_parameters_for_global_url_full(void **unused) {
     SF_FREE(sf);
 }
 
+void test_connection_parameters_for_global_with_account_dashes(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+
+    // allocate here, because it will be rewritten
+    sf->account = (char *) SF_CALLOC(1, 128);
+    strcpy(sf->account, "test-account-hfdw89q748ew9gqf48w9qgf.global");
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    assert_int_equal(
+      _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(sf->host,
+                        "test-account-hfdw89q748ew9gqf48w9qgf.global.snowflakecomputing.com");
+    assert_string_equal(sf->account, "test-account");
+    assert_string_equal(sf->region, "global");
+    SF_FREE(sf->account);
+    SF_FREE(sf);
+}
+
 
 int main(void) {
     const struct CMUnitTest tests[] = {
