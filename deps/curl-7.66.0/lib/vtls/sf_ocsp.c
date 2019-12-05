@@ -1501,8 +1501,9 @@ void initOCSPCacheServer(struct Curl_easy *data)
     // if specified, always use the special retry url
     int use_ssl;
     char *host = NULL, *port = NULL, *path = NULL;
-    snprintf(ocsp_cache_server_url, sizeof(ocsp_cache_server_url),
-            ocsp_cache_server_url_env);
+    strncpy(ocsp_cache_server_url, ocsp_cache_server_url_env,
+            sizeof(ocsp_cache_server_url));
+    ocsp_cache_server_url[sizeof(ocsp_cache_server_url) - 1] = '\0';
     OCSP_parse_url(
         ocsp_cache_server_url_env, &host, &port, &path, &use_ssl);
     snprintf(ocsp_cache_server_retry_url_pattern,

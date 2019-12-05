@@ -12,7 +12,7 @@
 #define STATUS_ERROR "ERROR"
 #define ENCRYPTION_ENCRYPTED "ENCRYPTED"
 #define ENCRYPTION_DECRYPTED "DECRYPTED"
-#define MESSAGE_SKIPPED "File with same name and checksum already exists. SKIPPED"
+#define MESSAGE_SKIPPED "File with same name already exists. SKIPPED"
 
 namespace Snowflake
 {
