@@ -136,13 +136,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
               s3Client->HeadObject(headObjectRequest);
 
       if (outcome.IsSuccess()) {
-          std::string sfcDigest = outcome.GetResult().GetMetadata().at(
-                  SFC_DIGEST);
-          if (sfcDigest == fileMetadata->sha256Digest) {
-              CXX_LOG_INFO("File %s with same name and sha256 existed. Skipped.",
-                           fileMetadata->srcFileToUpload.c_str());
-              return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
-          }
+          return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
       } else {
           CXX_LOG_WARN("Listing file metadata failed: %s",
                        outcome.GetError().GetMessage().c_str());
