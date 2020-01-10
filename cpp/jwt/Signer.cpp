@@ -51,6 +51,7 @@ std::string AlgorithmTypeMapper::toString(AlgorithmType type)
     case AlgorithmType::ES512:
       return ES_512;
     case AlgorithmType::UNKNOWN:
+    default:
       return unknown;
   }
 }

@@ -247,7 +247,7 @@ size_t CipherContext::next(void *const out,
 
   // Continue current operation.
   auto &impl = *m_pimpl;
-  bool success = false;
+  int success = 0;
   int nbBytesOut;
   switch (impl.op)
   {
@@ -257,7 +257,7 @@ size_t CipherContext::next(void *const out,
                                   static_cast<unsigned char *>(out),
                                   &nbBytesOut,
                                   static_cast<const unsigned char *>(in),
-                                  len);
+                                  (int)len);
       break;
 
     case CryptoOperation::DECRYPT:
@@ -265,7 +265,7 @@ size_t CipherContext::next(void *const out,
                                   static_cast<unsigned char *>(out),
                                   &nbBytesOut,
                                   static_cast<const unsigned char *>(in),
-                                  len);
+                                  (int)len);
       break;
 
     default:
@@ -303,7 +303,7 @@ size_t CipherContext::finalize(void *const out)
 
   // Finalize current operation.
   auto &impl = *m_pimpl;
-  bool success;
+  int success;
   int nbBytesOut;
   switch (impl.op)
   {

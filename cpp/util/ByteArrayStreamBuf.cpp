@@ -39,7 +39,7 @@ Snowflake::Client::Util::StreamSplitter::StreamSplitter(
   m_currentPartIndex(-1)
 {
   _critical_section_init(&streamMutex);
-  for (int i=0; i<numOfBuffer; i++)
+  for (unsigned int i=0; i<numOfBuffer; i++)
   {
     buffers.push_back(new ByteArrayStreamBuf(partMaxSize));
   }
@@ -53,7 +53,7 @@ Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(
   ByteArrayStreamBuf * buf = buffers[bufIndex];
   memset(buf->getDataBuffer(), 0, m_partMaxSize);
   m_inputStream->read(buf->getDataBuffer(), m_partMaxSize);
-  buf->updateSize(m_inputStream->gcount());
+  buf->updateSize((long)m_inputStream->gcount());
   m_currentPartIndex ++;
   partIndex = m_currentPartIndex;
   _critical_section_unlock(&streamMutex);
@@ -72,7 +72,7 @@ Snowflake::Client::Util::StreamSplitter::~StreamSplitter()
 unsigned int Snowflake::Client::Util::StreamSplitter::getTotalParts(
   long long int streamSize)
 {
-  return streamSize/m_partMaxSize + 1;
+  return (unsigned int)(streamSize/m_partMaxSize + 1);
 }
 
 Snowflake::Client::Util::StreamAppender::StreamAppender(

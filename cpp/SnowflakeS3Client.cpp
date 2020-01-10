@@ -385,7 +385,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
 
   std::string bucket, key;
   extractBucketAndKey(&fileMetadata->srcFileName, bucket, key);
-  int partNum = (int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
+  unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
   CXX_LOG_DEBUG("Construct get object request: bucket: %s, key: %s, ",
                bucket.c_str(), key.c_str());
 
@@ -507,7 +507,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 
   if (outcome.IsSuccess())
   {
-    fileMetadata->srcFileSize = outcome.GetResult().GetContentLength();
+    fileMetadata->srcFileSize = (long)outcome.GetResult().GetContentLength();
     CXX_LOG_INFO("Remote file %s content length: %ld.",
                   key.c_str(), fileMetadata->srcFileSize);
 

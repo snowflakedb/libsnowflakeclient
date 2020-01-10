@@ -14,7 +14,7 @@
 #ifdef _WIN32
 #  include <fcntl.h>
 #  include <io.h>
-#  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+#  define SET_BINARY_MODE(file) _setmode(_fileno(file), O_BINARY)
 #else
 #  define SET_BINARY_MODE(file)
 #endif
@@ -45,7 +45,7 @@ int Snowflake::Client::Util::CompressionUtil::compressWithGzip(FILE *source,
   /* compress until end of file */
   do
   {
-    strm.avail_in = fread(in, 1, CHUNK, source);
+    strm.avail_in = (unsigned int)fread(in, 1, CHUNK, source);
     if (ferror(source))
     {
       (void) deflateEnd(&strm);
@@ -109,7 +109,7 @@ int Snowflake::Client::Util::CompressionUtil::decompressWithGzip(FILE *source,
 
   /* decompress until deflate stream ends or end of file */
   do {
-    strm.avail_in = fread(in, 1, CHUNK, source);
+    strm.avail_in = (unsigned int)fread(in, 1, CHUNK, source);
     if (ferror(source)) {
       (void)inflateEnd(&strm);
       return Z_ERRNO;

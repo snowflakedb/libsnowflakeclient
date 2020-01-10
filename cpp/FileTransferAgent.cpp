@@ -170,7 +170,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
   Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
   for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
-    unsigned int resultIndex = i + m_largeFilesMeta.size();
+    size_t resultIndex = i + m_largeFilesMeta.size();
     FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
     metadata->overWrite = response.overwrite;
@@ -222,7 +222,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
 RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
   IStorageClient *client,
   FileMetadata *fileMetadata,
-  unsigned int resultIndex)
+  size_t resultIndex)
 {
   // compress if required
   if (fileMetadata->requireCompress)
@@ -364,7 +364,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
   Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
   for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
-    unsigned int resultIndex = i + m_largeFilesMeta.size();
+    size_t resultIndex = i + m_largeFilesMeta.size();
     FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
     tp.AddJob([metadata, resultIndex, command, this]()->void {
@@ -393,7 +393,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
 RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingleFile(
   IStorageClient *client,
   FileMetadata *fileMetadata,
-  unsigned int resultIndex)
+  size_t resultIndex)
 {
    fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;

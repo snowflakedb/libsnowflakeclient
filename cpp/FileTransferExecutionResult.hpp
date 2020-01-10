@@ -26,29 +26,29 @@ class FileTransferExecutionResult : public ITransferResult
 {
 public:
   FileTransferExecutionResult(CommandType commandType,
-                              unsigned int resultEntryNum);
+                              size_t resultEntryNum);
 
   ~FileTransferExecutionResult();
 
-  void SetTransferOutCome(RemoteStorageRequestOutcome outcome, unsigned int index)
+  void SetTransferOutCome(RemoteStorageRequestOutcome outcome, size_t index)
   {
     m_outcomes[index] = outcome;
   }
 
-  void SetFileMetadata(FileMetadata *fileMetadata, unsigned int index)
+  void SetFileMetadata(FileMetadata *fileMetadata, size_t index)
   {
     m_fileMetadatas[index] = fileMetadata;
   }
 
   bool next();
 
-  int getResultSize();
+  size_t getResultSize();
 
   unsigned int getColumnSize();
 
-  const char * getColumnName(int columnIndex);
+  const char * getColumnName(unsigned int columnIndex);
 
-  void getColumnAsString(int columnIndex, std::string &value);
+  void getColumnAsString(unsigned int columnIndex, std::string &value);
 
   CommandType getCommandType();
 
@@ -65,7 +65,7 @@ private:
   RemoteStorageRequestOutcome * m_outcomes;
 
   /// result size
-  unsigned int m_resultEntryNum;
+  size_t m_resultEntryNum;
 
   /// current index already consumed
   int m_currentIndex;

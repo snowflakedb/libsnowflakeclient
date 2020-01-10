@@ -166,7 +166,7 @@ cleanup:
 
 sf_bool STDCALL create_chunk_headers(struct SF_CHUNK_DOWNLOADER *chunk_downloader, cJSON *json_headers) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    int header_field_size;
+    size_t header_field_size;
     size_t i;
     cJSON *item = NULL;
     char *header_item = NULL;

@@ -56,7 +56,7 @@ int CipherStreamBuf::underflow()
     ::std::streamsize bytesRead = m_streambuf->sgetn(m_srcBuffer,
                                                      m_blockSize);
 
-    m_readReachEnds = bytesRead < m_blockSize;
+    m_readReachEnds = (size_t)bytesRead < m_blockSize;
     size_t nextSize = m_cipherCtx.next(m_resultBuffer, m_srcBuffer,
                                 (size_t) bytesRead);
 
@@ -89,7 +89,7 @@ int CipherStreamBuf::overflow(int_type ch)
 
     std::streamsize written = m_streambuf->sputn(m_resultBuffer,
                                                  nextSize + finalSize);
-    if (written < nextSize)
+    if ((size_t)written < nextSize)
     {
       return traits_type::eof();
     }
