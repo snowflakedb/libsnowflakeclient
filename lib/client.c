@@ -1443,7 +1443,6 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
-    int64 i;
     uint64 index;
     if (sfstmt->cur_row != NULL) {
         snowflake_cJSON_Delete(sfstmt->cur_row);
@@ -2058,7 +2057,7 @@ SF_STATUS STDCALL snowflake_stmt_set_attr(
     clear_snowflake_error(&sfstmt->error);
     switch(type) {
         case SF_STMT_USER_REALLOC_FUNC:
-            sfstmt->user_realloc_func = value;
+            sfstmt->user_realloc_func = (void*(*)(void*, size_t))value;
             break;
         default:
             SET_SNOWFLAKE_ERROR(

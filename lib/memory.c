@@ -7,7 +7,7 @@
 #include "snowflake/platform.h"
 
 // Basic hashing function. Works well for memory addresses
-#define sf_ptr_hash(p, t) (((unsigned long) (p) >> 3) & (sizeof (t)/sizeof ((t)[0]) - 1))
+#define sf_ptr_hash(p, t) (((unsigned long) ((unsigned long long)p) >> 3) & (sizeof (t)/sizeof ((t)[0]) - 1))
 #define SF_ALLOC_MAP_SIZE 2048
 
 static SF_MUTEX_HANDLE allocation_lock;

@@ -80,12 +80,12 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
     if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
     {
       std::string fileFullPath = std::string(fdd.cFileName);
-      unsigned long dirSep = sourceLocation.find_last_of(PATH_SEP);
+      size_t dirSep = sourceLocation.find_last_of(PATH_SEP);
       std::string dirPath = sourceLocation.substr(0, dirSep + 1);
       LARGE_INTEGER fileSize;
       fileSize.LowPart = fdd.nFileSizeLow;
       fileSize.HighPart = fdd.nFileSizeHigh;
-      initFileMetadata(dirPath, (char *)fdd.cFileName, fileSize.QuadPart);
+      initFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart);
     }
   } while (FindNextFile(hFind, &fdd) != 0);
 
@@ -216,7 +216,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
     encryptionBlockSize * encryptionBlockSize);
-  fileMetadata->destFileSize = fileMetadata->encryptionMetadata.cipherStreamSize;
+  fileMetadata->destFileSize = (long)(fileMetadata->encryptionMetadata.cipherStreamSize);
 }
 
 Snowflake::Client::RemoteStorageRequestOutcome
@@ -227,7 +227,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                EncryptionMaterial *encMat)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
-  unsigned long dirSep = fullPath.find_last_of('/');
+  size_t dirSep = fullPath.find_last_of('/');
   std::string dstFileName = fullPath.substr(dirSep + 1);
 
   FileMetadata fileMetadata;

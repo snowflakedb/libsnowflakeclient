@@ -49,7 +49,7 @@ enum GET_COLUMN
 
 FileTransferExecutionResult::FileTransferExecutionResult(
   CommandType commandType,
-  unsigned int resultEntryNum) :
+  size_t resultEntryNum) :
   m_commandType(commandType),
   m_resultEntryNum(resultEntryNum),
   m_currentIndex(-1)
@@ -67,7 +67,7 @@ FileTransferExecutionResult::~FileTransferExecutionResult()
 bool FileTransferExecutionResult::next()
 {
   m_currentIndex ++;
-  return m_currentIndex < m_resultEntryNum;
+  return (unsigned int)m_currentIndex < m_resultEntryNum;
 }
 
 const char* FileTransferExecutionResult::fromOutcomeToStr(
@@ -104,7 +104,7 @@ unsigned int FileTransferExecutionResult::getColumnSize()
   }
 }
 
-const char * FileTransferExecutionResult::getColumnName(int columnIndex)
+const char * FileTransferExecutionResult::getColumnName(unsigned int columnIndex)
 {
   if (columnIndex < getColumnSize())
   {
@@ -125,12 +125,12 @@ const char * FileTransferExecutionResult::getColumnName(int columnIndex)
   }
 }
 
-int FileTransferExecutionResult::getResultSize()
+size_t FileTransferExecutionResult::getResultSize()
 {
   return m_resultEntryNum;
 }
 
-void FileTransferExecutionResult::getColumnAsString(int columnIndex,
+void FileTransferExecutionResult::getColumnAsString(unsigned int columnIndex,
                                                     std::string & value)
 {
   if (columnIndex < getColumnSize())

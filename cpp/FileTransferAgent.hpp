@@ -23,7 +23,7 @@ namespace Client
 
 class IStorageClient;
 
-struct FileTransferExecutionResult;
+class FileTransferExecutionResult;
 
 /**
  * This is the main class to external component (c api or ODBC)
@@ -63,7 +63,7 @@ private:
    * Upload single file.
    */
   RemoteStorageRequestOutcome uploadSingleFile(IStorageClient *client,
-    FileMetadata *fileMetadata, unsigned int resultIndex);
+    FileMetadata *fileMetadata, size_t resultIndex);
 
   /**
    * Given file name, calculate sha256 message digest. The digest is
@@ -93,7 +93,7 @@ private:
    * Download single file.
    */
   RemoteStorageRequestOutcome downloadSingleFile(IStorageClient *client,
-                                                 FileMetadata *fileMetadata, unsigned int resultIndex);
+                                                 FileMetadata *fileMetadata, size_t resultIndex);
 
   /**
    * compress source file into a temporary file if required by
