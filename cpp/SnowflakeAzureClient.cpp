@@ -77,7 +77,7 @@ SnowflakeAzureClient::~SnowflakeAzureClient()
 RemoteStorageRequestOutcome SnowflakeAzureClient::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
-    if(fileMetadata->encryptionMetadata.cipherStreamSize <= 64*1024*1024 )
+    if(fileMetadata->encryptionMetadata.cipherStreamSize <= UPLOAD_DATA_SIZE_THRESHOLD)
     {
         return doSingleUpload(fileMetadata, dataStream);
     }
@@ -185,7 +185,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
 {
-  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+  if (fileMetadata->srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD)
     return doMultiPartDownload(fileMetadata, dataStream);
   else
     return doSingleDownload(fileMetadata, dataStream);
@@ -210,15 +210,15 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartDownload(
     auto blobprop = m_blobclient->get_blob_property(cont, blob);
     std::string origEtag = blobprop.etag ;
     fileMetadata->srcFileSize = (long)blobprop.size;
-    unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
+    unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DOWNLOAD_DATA_SIZE_THRESHOLD) + 1;
 
-    Util::StreamAppender appender(dataStream, partNum, m_parallel, DATA_SIZE_THRESHOLD);
+    Util::StreamAppender appender(dataStream, partNum, m_parallel, DOWNLOAD_DATA_SIZE_THRESHOLD);
     std::vector<MultiDownloadCtx_a> downloadParts;
     for (unsigned int i = 0; i < partNum; i++)
     {
         downloadParts.emplace_back();
         downloadParts.back().m_partNumber = i;
-        downloadParts.back().startbyte = i * DATA_SIZE_THRESHOLD ;
+        downloadParts.back().startbyte = i * DOWNLOAD_DATA_SIZE_THRESHOLD ;
     }
 
     for (int i = 0; i < downloadParts.size(); i++)
@@ -229,8 +229,8 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartDownload(
 
             int partSize = ctx.m_partNumber == partNum - 1 ?
                            (int)(fileMetadata->srcFileSize -
-                                 ctx.m_partNumber * DATA_SIZE_THRESHOLD)
-                                                           : DATA_SIZE_THRESHOLD;
+                                 ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
+                                                           : DOWNLOAD_DATA_SIZE_THRESHOLD;
             Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
                     m_threadPool->GetThreadIdx());
 

@@ -31,12 +31,12 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 {
 }
 
-void Snowflake::Client::FileMetadataInitializer::initFileMetadata(
-  std::string &fileDir, char *fileName, long fileSize)
+void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(
+    std::string &fileDir, char *fileName, long fileSize)
 {
 
   std::vector<FileMetadata> *metaListToPush =
-    fileSize > DATA_SIZE_THRESHOLD ?
+    fileSize > UPLOAD_DATA_SIZE_THRESHOLD ?
     m_largeFileMetadata : m_smallFileMetadata;
   
   std::string fileNameFull = fileDir;
@@ -117,8 +117,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
         if (!ret)
         {
           if (S_ISREG(fileStatus.st_mode)) {
-            initFileMetadata(dirPath, dir_entry->d_name,
-                             (long) fileStatus.st_size);
+            initUploadFileMetadata(dirPath, dir_entry->d_name,
+                                   (long) fileStatus.st_size);
           }
         }
         else
@@ -238,7 +238,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
   {
     CXX_LOG_DEBUG("Success on getting remote file metadata");
     std::vector<FileMetadata> *metaListToPush =
-      fileMetadata.srcFileSize > DATA_SIZE_THRESHOLD ?
+      fileMetadata.srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD ?
       m_largeFileMetadata : m_smallFileMetadata;
 
     metaListToPush->push_back(fileMetadata);

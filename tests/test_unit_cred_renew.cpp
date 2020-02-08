@@ -180,7 +180,7 @@ public:
       Snowflake::Client::Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
         encryptionMetadata.iv.data);
       fileMetadata->encryptionMetadata.enKekEncoded = "rgANWKrHN14aKoHRxoIh9GtjXYScNdjseX4kmLZRnEc=";
-      fileMetadata->srcFileSize = DATA_SIZE_THRESHOLD + 1;
+      fileMetadata->srcFileSize = DOWNLOAD_DATA_SIZE_THRESHOLD + 1;
     }
 
     return shouldReturnExpire ? TOKEN_EXPIRED : SUCCESS;

@@ -142,7 +142,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
                        outcome.GetError().GetMessage().c_str());
       }
   }
-  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+  if (fileMetadata->srcFileSize > UPLOAD_DATA_SIZE_THRESHOLD)
     return doMultiPartUpload(fileMetadata, dataStream);
   else
     return doSingleUpload(fileMetadata, dataStream);
@@ -243,7 +243,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     CXX_LOG_DEBUG("Create multi part upload request succeed, uploadId: %s",
                   uploadId.c_str());
 
-    Util::StreamSplitter splitter(dataStream, m_parallel, DATA_SIZE_THRESHOLD);
+    Util::StreamSplitter splitter(dataStream, m_parallel, UPLOAD_DATA_SIZE_THRESHOLD);
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
     CXX_LOG_INFO("Total file size: %d, split into %d parts.",
@@ -365,7 +365,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
 {
-  if (fileMetadata->srcFileSize > DATA_SIZE_THRESHOLD)
+  if (fileMetadata->srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD)
     return doMultiPartDownload(fileMetadata, dataStream);
   else
     return doSingleDownload(fileMetadata, dataStream);
@@ -385,18 +385,18 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
 
   std::string bucket, key;
   extractBucketAndKey(&fileMetadata->srcFileName, bucket, key);
-  unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DATA_SIZE_THRESHOLD) + 1;
+  unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DOWNLOAD_DATA_SIZE_THRESHOLD) + 1;
   CXX_LOG_DEBUG("Construct get object request: bucket: %s, key: %s, ",
                bucket.c_str(), key.c_str());
 
-  Util::StreamAppender appender(dataStream, partNum, m_parallel, DATA_SIZE_THRESHOLD);
+  Util::StreamAppender appender(dataStream, partNum, m_parallel, DOWNLOAD_DATA_SIZE_THRESHOLD);
   std::vector<MultiDownloadCtx> downloadParts;
   for (unsigned int i = 0; i < partNum; i++)
   {
     std::stringstream rangeStream;
-    rangeStream << "bytes=" << i * DATA_SIZE_THRESHOLD << '-' <<
+    rangeStream << "bytes=" << i * DOWNLOAD_DATA_SIZE_THRESHOLD << '-' <<
       ((i == partNum - 1) ? fileMetadata->srcFileSize - 1
-                          : ((i+1)*DATA_SIZE_THRESHOLD-1));
+                          : ((i+1)*DOWNLOAD_DATA_SIZE_THRESHOLD-1));
 
     downloadParts.emplace_back();
     downloadParts.back().m_partNumber = i;
@@ -413,8 +413,8 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
     m_threadPool->AddJob([&]()-> void {
       int partSize = ctx.m_partNumber == partNum - 1 ?
                      (int)(fileMetadata->srcFileSize -
-                       ctx.m_partNumber * DATA_SIZE_THRESHOLD)
-                     : DATA_SIZE_THRESHOLD;
+                       ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
+                     : DOWNLOAD_DATA_SIZE_THRESHOLD;
       Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
         m_threadPool->GetThreadIdx());
 
