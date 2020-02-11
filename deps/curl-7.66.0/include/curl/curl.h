@@ -1930,6 +1930,9 @@ typedef enum {
   /* Snowflake options. True if enabling ocsp check */
   CINIT(SSL_SF_OCSP_CHECK, LONG, 290),
 
+  /* Snowflake options. True if soft fail is enabled */
+  CINIT(SSL_SF_OCSP_FAIL_OPEN, LONG, 291),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
