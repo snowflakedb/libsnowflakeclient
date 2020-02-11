@@ -85,7 +85,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
       LARGE_INTEGER fileSize;
       fileSize.LowPart = fdd.nFileSizeLow;
       fileSize.HighPart = fdd.nFileSizeHigh;
-      initFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart);
+      initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart);
     }
   } while (FindNextFile(hFind, &fdd) != 0);
 
