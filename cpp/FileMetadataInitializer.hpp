@@ -11,7 +11,8 @@
 #include "IStorageClient.hpp"
 
 // used to decide whether to upload in sequence or in parallel
-#define DATA_SIZE_THRESHOLD 5242880
+#define UPLOAD_DATA_SIZE_THRESHOLD 67108864 // 64MB
+#define DOWNLOAD_DATA_SIZE_THRESHOLD 5242880 // 5MB
 
 namespace Snowflake
 {
@@ -65,7 +66,7 @@ private:
    * Given file name, populate metadata
    * @param fileName
    */
-  void initFileMetadata(std::string &fileDir, char *fileName, long fileSize);
+  void initUploadFileMetadata(std::string &fileDir, char *fileName, long fileSize);
 
   /**
    * init compression metadata
