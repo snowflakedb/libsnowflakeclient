@@ -201,6 +201,7 @@ public:
      * time zone index
    */
   void fromFractionalSecondsSinceEpoch(sb16 fracSeconds, sb1 scale, sb4 tzIndex);
+  void fromFractionalSecondsSinceEpoch(sb16 fracSeconds,sb8 secSinceEpoch, sb1 scale, sb4 tzIndex);
 #endif // !HAVE_IMPL_INT128
 
   /**
