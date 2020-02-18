@@ -12,18 +12,18 @@ goto :EOF
     echo ===
     dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019"
     echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community"
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise"
     echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC"
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC"
     echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary"
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary"
     echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build"
 
     if /I "%~1"=="VS16" (
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments
-            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
         goto :EOF
