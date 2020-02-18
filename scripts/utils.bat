@@ -26,6 +26,7 @@ goto :EOF
             call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
+        goto :EOF
     )
     if /I "%~1"=="VS15" (
         if not "%VisualStudioVersion%"=="15.0" (
@@ -33,6 +34,7 @@ goto :EOF
             call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
+        goto :EOF
     )
     if /I "%~1"=="VS14" (
         if not "%VisualStudioVersion%"=="14.0" (
@@ -40,6 +42,7 @@ goto :EOF
             call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
+        goto :EOF
     )
     echo off
     goto :EOF
