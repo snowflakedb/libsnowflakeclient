@@ -28,11 +28,11 @@ set curdir=%cd%
 
 if /I "%platform%"=="x64" (    
     set engine_dir=Program Files
-    set generator="%cmake_generator% -A %arch%"
+    set cmake_architecture=x64
 )
 if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-    set generator="%cmake_generator%"
+    set cmake_architecture=Win32
 )
 
 set AWS_SOURCE_DIR=%scriptdir%\..\deps\aws-sdk-cpp-%aws_version%\
@@ -48,7 +48,8 @@ cd %AWS_CMAKE_BUILD_DIR%
 REM https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
--G %generator% ^
+-G "%cmake_generator%" ^
+-A "%cmake_architecture%" ^
 -DBUILD_ONLY=s3 ^
 -DFORCE_CURL=on ^
 -DCURL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
