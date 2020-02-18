@@ -75,8 +75,8 @@ goto :EOF
     del artifacts\%zip_file_name%
     set curdir=%cd%
     pushd deps-build\%build_dir%
-    7z a %curdir%\artifacts\%zip_file_name% %component_name%
-    7z l %curdir%\artifacts\%zip_file_name%
+        7z a %curdir%\artifacts\%zip_file_name% %component_name%
+        7z l %curdir%\artifacts\%zip_file_name%
     popd
     if %ERRORLEVEL% NEQ 0 goto :error
     if defined GITHUB_ACTIONS (
