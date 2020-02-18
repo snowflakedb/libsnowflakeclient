@@ -27,11 +27,11 @@ set curdir=%cd%
 
 if "%platform%"=="x64" (
     set engine_dir=Program Files
-    set generator=%cmake_generator% -A %arch%
+    set cmake_architecture=x64
 )
 if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-    set generator=%cmake_generator%
+    set cmake_architecture=Win32
 )
 
 set AZURE_SOURCE_DIR=%scriptdir%\..\deps\azure-storage-cpplite
@@ -57,7 +57,8 @@ md %AZURE_INSTALL_DIR%
 cd %AZURE_CMAKE_BUILD_DIR%
 
 cmake %AZURE_SOURCE_DIR% ^
--G %generator% ^
+-G "%cmake_generator%" ^
+-A "%cmake_architecture%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DBUILD_WITH_MD=%build_with_md% ^
