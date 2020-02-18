@@ -44,6 +44,10 @@ endif ()
 if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
     set(PLATFORM win32)
     message("Platform: Windows 32bit")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        set (WIN32_DEBUG ON)
+        message("WIN32_DEBUG: ${WIN32_DEBUG}")
+    endif ()
 endif ()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -216,18 +220,18 @@ endif()
 
 if (WIN32)
     # Windows
-    option(DYNAMIC_RUNTIME "Dynamic runtime" ON)
+    option(DYNAMIC_RUNTIME "Dynamic runtime" OFF)
     set(VSDIR "vs15" CACHE STRING "Used to specify visual studio version of libsnowflakeclient dependecies")
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
-    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/curl/lib/ REQUIRED)
-    find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/openssl/lib/ REQUIRED)
-    find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/openssl/lib/ REQUIRED)
-    find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/zlib/lib/ REQUIRED)
-    find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
-    find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/aws/lib/ REQUIRED)
-    find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/azure/lib/ REQUIRED)
+    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
+    find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
+    find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED)
     if(MOCK)
-        find_library(CMOCKA_LIB cmocka_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED)
+        find_library(CMOCKA_LIB cmocka_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
     endif()
 endif ()
 
@@ -238,8 +242,8 @@ if (LINUX)
             deps-build/${PLATFORM}/zlib/include
             deps-build/${PLATFORM}/aws/include
             deps-build/${PLATFORM}/azure/include
-            deps-build/${PLATFORM}/uuid/include
             deps-build/${PLATFORM}/cmocka/include
+            deps-build/${PLATFORM}/uuid/include
             include
             lib)
 endif()
@@ -258,12 +262,12 @@ endif()
 
 if (WIN32)
     include_directories(
-            deps-build/${PLATFORM}/${VSDIR}/curl/include
-            deps-build/${PLATFORM}/${VSDIR}/openssl/include
-            deps-build/${PLATFORM}/${VSDIR}/zlib/include
-            deps-build/${PLATFORM}/${VSDIR}/aws/include
-            deps-build/${PLATFORM}/${VSDIR}/cmocka/include
-	        deps-build/${PLATFORM}/${VSDIR}/azure/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
+	        deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             include
             lib)
 endif()
@@ -274,7 +278,9 @@ message("libcrypto is located at " ${CRYPTO_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
-message("libuuid is located at " ${UUID_LIB})
+if (LINUX)
+    message("libuuid is located at " ${UUID_LIB})
+endif ()
 if (MOCK)
     message("libcmocka is located at " ${CMOCKA_LIB})
 endif ()
@@ -299,12 +305,12 @@ if(LINUX)
     endif()
 elseif(WIN32)
     link_directories(
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/curl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/openssl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/aws/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib"
     )
     if(MOCK)
-        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/cmocka/lib")
+        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib")
     endif()
 elseif()
     link_directories(
