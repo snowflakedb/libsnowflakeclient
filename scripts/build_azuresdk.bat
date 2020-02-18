@@ -27,11 +27,11 @@ set curdir=%cd%
 
 if "%platform%"=="x64" (
     set engine_dir=Program Files
-    set generator="%cmake_generator% Win64"
+    set generator=%cmake_generator% -A %arch%
 )
 if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-    set generator="%cmake_generator%"
+    set generator=%cmake_generator%
 )
 
 set AZURE_SOURCE_DIR=%scriptdir%\..\deps\azure-storage-cpplite
