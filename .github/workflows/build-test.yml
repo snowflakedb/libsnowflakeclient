@@ -11,14 +11,24 @@ jobs:
                 cloud: [ 'AWS' ]
         steps:
             - uses: actions/checkout@v1
-            - uses: actions/setup-python@v1
-              with:
-                python-version: '3.x'
-                architecture: 'x64'
-            - name: Build
+            - name: Build zlib
               shell: cmd
               env:
                   PLATFORM: x64
                   BUILD_TYPE: Debug
                   VS_VERSION: VS16
-              run: ci\\build.bat
+              run: scripts\build_zlib.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build openssl
+              shell: cmd
+              env:
+                  PLATFORM: x64
+                  BUILD_TYPE: Debug
+                  VS_VERSION: VS16
+              run: scripts\build_openssl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build curl
+              shell: cmd
+              env:
+                  PLATFORM: x64
+                  BUILD_TYPE: Debug
+                  VS_VERSION: VS16
+              run: scripts\build_curl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%

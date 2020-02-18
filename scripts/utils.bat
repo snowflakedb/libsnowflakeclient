@@ -6,19 +6,33 @@ call %*
 goto :EOF
 
 :setup_visual_studio
-    if "%~1"=="VS15" (
+    @echo on
+    dir c:\Program Files (x86)
+    dir c:\Program Files
+    dir C:\Program Files (x86)\Microsoft Visual Studio\
+
+    if /I "%~1"=="VS16" (
+        if not "%VisualStudioVersion%"=="16.0" (
+            echo === setting up the Visual Studio 16 environments
+            call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+            if %ERRORLEVEL% NEQ 0 goto :error
+        )
+    )
+    if /I "%~1"=="VS15" (
         if not "%VisualStudioVersion%"=="15.0" (
             echo === setting up the Visual Studio 15 environments
             call "c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
-    ) else (
+    )
+    if /I "%~%1"=="VS14" (
         if not "%VisualStudioVersion%"=="14.0" (
             echo === setting up the Visual Studio 14 environments
             call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
     )
+    echo off
     goto :EOF
 
 :get_zip_file_name
@@ -53,10 +67,11 @@ goto :EOF
 :zip_file
     set component_name=%~1
     set component_version=%~2
+    md artifacts
     call :get_zip_file_name %component_name% %component_version%
-    del .\artifacts\%zip_file_name%
-    7z a .\artifacts\%zip_file_name% .\deps-build\%build_dir%\%component_name%
-    7z l .\artifacts\%zip_file_name%
+    del artifacts\%zip_file_name%
+    7z a artifacts\%zip_file_name% deps-build\%build_dir%\%component_name%
+    7z l artifacts\%zip_file_name%
     if %ERRORLEVEL% NEQ 0 goto :error
     goto :EOF
 
