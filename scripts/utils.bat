@@ -74,9 +74,10 @@ goto :EOF
     call :get_zip_file_name %component_name% %component_version%
     del artifacts\%zip_file_name%
     set curdir=%cd%
-    7z a %currdir%\artifacts\%zip_file_name% %component_name%
+    pushd deps-build\%build_dir%
+    7z a %curdir%\artifacts\%zip_file_name% %component_name%
     7z l %curdir%\artifacts\%zip_file_name%
-    cd %curdir%
+    popd
     if %ERRORLEVEL% NEQ 0 goto :error
     goto :EOF
 
