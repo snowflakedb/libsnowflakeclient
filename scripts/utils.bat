@@ -5,21 +5,9 @@
 call %*
 goto :EOF
 
+:: VC16 is for Github Workflow windows-2019 virtual machine
 :setup_visual_studio
     @echo on
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio"
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019"
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise"
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC"
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary"
-    echo ===
-    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build"
-
     if /I "%~1"=="VS16" (
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments
@@ -77,13 +65,16 @@ goto :EOF
     goto :EOF
 
 :zip_file
+    setlocal
     set component_name=%~1
     set component_version=%~2
     md artifacts
     call :get_zip_file_name %component_name% %component_version%
     del artifacts\%zip_file_name%
-    7z a artifacts\%zip_file_name% deps-build\%build_dir%\%component_name%
-    7z l artifacts\%zip_file_name%
+    set curdir=%cd%
+    7z a %currdir%\artifacts\%zip_file_name% %component_name%
+    7z l %curdir%\artifacts\%zip_file_name%
+    cd %curdir%
     if %ERRORLEVEL% NEQ 0 goto :error
     goto :EOF
 
