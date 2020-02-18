@@ -57,8 +57,7 @@ md %AZURE_INSTALL_DIR%
 cd %AZURE_CMAKE_BUILD_DIR%
 
 cmake %AZURE_SOURCE_DIR% ^
--G "%cmake_generator%" ^
--A "%cmake_architecture%" ^
+-G "%cmake_generator%" -A "%cmake_architecture%" ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
 -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF ^
 -DBUILD_WITH_MD=%build_with_md% ^

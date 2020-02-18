@@ -27,13 +27,17 @@ if defined arch (
 
 set arch=
 set arcdir=
+set cmake_architecture=
+
 if /I "%platform%"=="x64" (
     set arch=x64
     set arcdir=win64
+    set cmake_architecture=x64
 )
 if /I "%platform%"=="x86" (
     set arch=x86
     set arcdir=win32
+    set cmake_architecture=Win32
 )
 if "%arch%"=="" (
     echo Specify PLATFORM to [x86, x64]
