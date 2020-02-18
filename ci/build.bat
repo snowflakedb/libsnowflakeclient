@@ -69,7 +69,6 @@ goto :EOF
     cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
     if %ERRORLEVEL% NEQ 0 (
         call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
-        call %upload_artifact_script% :sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
         if "%GIT_BRANCH%"=="origin/master" (
             :: upload the artifacts only for main
             call %upload_artifact_script% :sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
@@ -95,6 +94,7 @@ goto :EOF
     call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
     if %ERRORLEVEL% NEQ 0 goto :error
 
+    echo === uploading ...
     call %build_script% :get_version
     call %upload_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
     if %ERRORLEVEL% NEQ 0 goto :error

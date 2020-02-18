@@ -23,6 +23,7 @@ goto :EOF
     exit /b 0
     
 :sfc_jenkins
+    @echo on
     setlocal
     set platform=%1
     set build_type=%2
