@@ -2,51 +2,56 @@
 :: Build Azure cpp storage light sdk
 ::
 @echo off
+set azure_version=0.1.16
+call %*
+goto :EOF
 
+:get_version
+    set version=%azure_version%
+    goto :EOF
+
+:build
+setlocal
 set platform=%1
 set build_type=%2
 set vs_version=%3
 set build_with_md=%4
 
 set scriptdir=%~dp0
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
-set build_dir=""
 
 if "%platform%"=="x64" (
-	set engine_dir=Program Files
-	set generator="%cmake_generator% Win64"
-	set build_dir=win64
+    set engine_dir=Program Files
+    set generator="%cmake_generator% Win64"
 )
 if "%platform%"=="x86" (
-	set engine_dir=Program Files (x86^)
-	set generator="%cmake_generator%"
-	set build_dir=win32
+    set engine_dir=Program Files (x86^)
+    set generator="%cmake_generator%"
 )
 
 set AZURE_SOURCE_DIR=%scriptdir%\..\deps\azure-storage-cpplite
-set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build
-set AZURE_INSTALL_DIR=%scriptdir%\..\deps-build\%build_dir%\%vs_version%\azure
+set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
+set AZURE_INSTALL_DIR=%scriptdir%\..\deps-build\%build_dir%\azure
+
 set GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 set CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-set VERSION="v0.1.16"
+set VERSION="v%azure_version%"
 set GIT=git.exe
 
 if exist %AZURE_SOURCE_DIR% rmdir /S /Q %AZURE_SOURCE_DIR%
 
 %GIT% clone %GIT_REPO% %AZURE_SOURCE_DIR%
-
 set GIT_DIR=%AZURE_SOURCE_DIR%
-
 cd %AZURE_SOURCE_DIR%
-
 %GIT% checkout tags/%VERSION% -b %VERSION%
 
-mkdir %AZURE_CMAKE_BUILD_DIR%
-
-if not exist %AZURE_INSTALL_DIR% mkdir %AZURE_INSTALL_DIR%
-
+rd /S /Q %AZURE_CMAKE_BUILD_DIR%
+md %AZURE_CMAKE_BUILD_DIR%
+rd /S /Q %AZURE_INSTALL_DIR%
+md %AZURE_INSTALL_DIR%
 cd %AZURE_CMAKE_BUILD_DIR%
 
 cmake %AZURE_SOURCE_DIR% ^
@@ -59,23 +64,30 @@ cmake %AZURE_SOURCE_DIR% ^
 -DCURL_LINK_TYPE=static ^
 -DOPENSSL_LINK_TYPE=static ^
 -DOPENSSL_VERSION_NUMBER=0x11100000L ^
--DOPENSSL_INCLUDE_DIR="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\openssl\include" ^
--DOPENSSL_CRYPTO_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\openssl\lib\libcrypto_a.lib" ^
--DOPENSSL_SSL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\openssl\lib\libssl_a.lib" ^
--DCURL_INCLUDE_DIR="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\curl\include" ^
--DCURL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\%vs_version%\curl\lib\libcurl_a.lib" ^
+-DOPENSSL_INCLUDE_DIR="%scriptdir%\..\deps-build\%build_dir%\openssl\include" ^
+-DOPENSSL_CRYPTO_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\openssl\lib\libcrypto_a.lib" ^
+-DOPENSSL_SSL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\openssl\lib\libssl_a.lib" ^
+-DCURL_INCLUDE_DIR="%scriptdir%\..\deps-build\%build_dir%\curl\include" ^
+-DCURL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
 -DBUILD_TESTS=false ^
 -DBUILD_SAMPLES=false
 
 if %ERRORLEVEL% NEQ 0 goto :error
 
-msbuild INSTALL.vcxproj	/p:Configuration=%build_type%
+msbuild INSTALL.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-:success
 cd "%curdir%"
 xcopy /S /E /I /Y /Q  %AZURE_CMAKE_BUILD_DIR%\%build_type%\azure-storage-lite.lib %AZURE_INSTALL_DIR%\lib\
 xcopy /S /E /I /Y /Q  %AZURE_SOURCE_DIR%\include %AZURE_INSTALL_DIR%\include
+
+echo === archiving the library
+call "%scriptdir%\utils.bat" :zip_file azure %azure_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+
+goto :success
+
+:success
 exit /b 0
 
 :error

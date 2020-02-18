@@ -7,10 +7,21 @@ import sys
 
 def get_test_schema():
     travis_job_id = os.getenv('TRAVIS_JOB_ID')
+    if travis_job_id:
+        return 'TRAVIS_JOB_{0}'.format(travis_job_id).replace('-','_')
+
     appveyor_job_id = os.getenv('APPVEYOR_BUILD_ID')
-    if not travis_job_id and not appveyor_job_id:
-        print("[WARN] The environment variable TRAVIS_JOB_ID or APPVEYOR_BUILD_ID is not set. No test schema will be created.")
-        sys.exit(1)
+    if appveyor_job_id:
+        return 'APPVEYOR_BUILD_{0}'.format(appveyor_job_id).replace('-','_')
+
+    build_number = os.getenv('BUILD_NUMBER')
+    job_name = os.getenv('JOB_NAME')
+    if build_number and job_name:
+        return 'JENKINS_{0}_{1}'.format(job_name, build_number).replace('-','_')
+    
+    print("[WARN] The environment variable TRAVIS_JOB_ID, APPVEYOR_BUILD_ID, Jenkins (JOB_NAME or BUILD_NUMBER) is not set. No test schema will be created.")
+    sys.exit(1)
+        
 
     return 'TRAVIS_JOB_{0}'.format(travis_job_id) if travis_job_id else 'APPVEYOR_BUILD_{0}'.format(appveyor_job_id)
 

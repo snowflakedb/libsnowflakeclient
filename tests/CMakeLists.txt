@@ -102,13 +102,14 @@ if (UNIX)
 endif ()
 
 if (WIN32)
-    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED)
+    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
-message("libuuid.a is located at " ${UUID_LIB})
+if (LINUX)
+    message("libuuid.a is located at " ${UUID_LIB})
+endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
-
 if (LINUX)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive curl ssl crypto
             -Wl,--no-whole-archive pthread)
@@ -123,7 +124,7 @@ if (APPLE)
 endif()
 if (WIN32)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
-	set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} ${AZURE_STORAGE_LITE_LIB}
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} ${AZURE_STORAGE_LITE_LIB}
 			Version.lib Userenv.lib Bcrypt.lib)
 endif()
 
@@ -133,7 +134,7 @@ if (MOCK)
         if (WIN32)
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         else()
             target_include_directories(
@@ -158,8 +159,10 @@ else()
         if (WIN32)
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
+            set_target_properties(
+		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -179,13 +182,18 @@ else()
     ENDFOREACH ()
 
 
+    if (NOT WIN32_DEBUG)
+    # Skip building CXX tests for Win32 Debug. The build fails
+    # with error LNK2001: unresolved external symbol __CrtDbgReportW
     FOREACH(T ${TESTS_CXX})
         add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
         if (WIN32)
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/cmocka/include
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
+            set_target_properties(
+		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -203,6 +211,7 @@ else()
                  --suppressions=${VALGRIND_SUPPRESSION}
                  ./${T})
     ENDFOREACH()
+    ENDIF ()
 
     # Tests only work on Unix at the moment
     if (UNIX)

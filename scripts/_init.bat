@@ -2,6 +2,7 @@
 :: Initialize variables
 ::
 
+@echo off
 echo === setting up global environment variables
 
 set platform=%1
@@ -22,50 +23,54 @@ if defined arch (
 
 set arch=
 set arcdir=
-if "%platform%"=="x64" (
+if /I "%platform%"=="x64" (
     set arch=x64
     set arcdir=win64
 )
-if "%platform%"=="x86" (
+if /I "%platform%"=="x86" (
     set arch=x86
     set arcdir=win32
 )
 if "%arch%"=="" (
-    echo Specify the architecture. [x86, x64]
+    echo Specify PLATFORM to [x86, x64]
 	goto :error
 )
 
 set target_name=
-if "%build_type%"=="Debug" (
+if /I "%build_type%"=="Debug" (
     set target_name=debug
 )
-if "%build_type%"=="Release" (
+if /I "%build_type%"=="Release" (
     set target_name=release
 )
 
 if "%target_name%"=="" (
-    echo Specify the build type. [Debug, Release]
+    echo Specify BUILD_TYPE to [Debug, Release]
 	goto :error
 )
 
 set cmake_generator=
 set vsdir=
-if "%vs_version%"=="VS15" (
+if /I "%vs_version%"=="VS15" (
     set cmake_generator=Visual Studio 15 2017
     set vsdir=vs15
 )
-if "%vs_version%"=="VS14" (
+if /I "%vs_version%"=="VS14" (
     set cmake_generator=Visual Studio 14 2015
     set vsdir=vs14
 )
 if "%cmake_generator%"=="" (
-    echo Specify the visual studio version used. [VS15, VS14]
+    echo Specify the VS_VERSION to the Visual Studio Version [VS15, VS14]
     goto :error
 )
 
-set build_dir=%arcdir%\%vsdir%
+if "%dynamic_runtime%"=="" (
+	set dynamic_runtime=OFF
+)
 
-echo "Building with platform: %platform%, build type: %build_type%, visual studio version: %vs_version%, cmake generator: %cmake_generator%"
+set build_dir=%arcdir%\%vsdir%\%build_type%
+
+echo Building with platform: %platform%, build type: %build_type%, visual studio version: %vs_version%, cmake generator: %cmake_generator%
 
 cd "%curdir%"
 exit /b 0
