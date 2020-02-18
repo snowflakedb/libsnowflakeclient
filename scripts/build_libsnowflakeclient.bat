@@ -36,7 +36,6 @@ if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
-@echo on
 
 if not exist %scriptdir%..\deps-build\%build_dir%\aws\lib\aws-cpp-sdk-s3.lib call "%scriptdir%build_awssdk.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
