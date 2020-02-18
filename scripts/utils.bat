@@ -7,14 +7,23 @@ goto :EOF
 
 :setup_visual_studio
     @echo on
-    dir %ProgramFiles(x86)%
-    dir %ProgramFiles%
+    echo ===
     dir "%ProgramFiles(x86)%\Microsoft Visual Studio"
+    echo ===
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019"
+    echo ===
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community"
+    echo ===
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC"
+    echo ===
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary"
+    echo ===
+    dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
 
     if /I "%~1"=="VS16" (
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments
-            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Preview\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+            call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
         )
     )
