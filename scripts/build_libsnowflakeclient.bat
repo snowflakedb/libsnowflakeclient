@@ -95,9 +95,6 @@ call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_ver
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :get_zip_file_name libsnowflakeclient %libsnowflakeclient_version%
 if not "%build_tests%"=="OFF" (
-    @echo on
-    echo === current dir: %zip_cmake_file_name%, %cmake_dir%
-    echo %cd%
     7z a artifacts\%zip_cmake_file_name% %cmake_dir%
     if %ERRORLEVEL% NEQ 0 goto :error
     7z l artifacts\%zip_cmake_file_name%
