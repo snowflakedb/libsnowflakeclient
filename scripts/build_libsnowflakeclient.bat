@@ -94,8 +94,10 @@ echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 if not "%build_tests%"=="OFF" (
-    7z a .\artifacts\%zip_cmake_file_name% %cmake_dir%
-    7z l .\artifacts\%zip_cmake_file_name%
+    call :get_zip_file_name %component_name% %component_version%
+    7z a artifacts\%zip_cmake_file_name% %cmake_dir%
+    if %ERRORLEVEL% NEQ 0 goto :error
+    7z l artifacts\%zip_cmake_file_name%
     if %ERRORLEVEL% NEQ 0 goto :error
 )
 :success
