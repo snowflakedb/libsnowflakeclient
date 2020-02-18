@@ -26,6 +26,10 @@ if defined GITHUB_ACTIONS (
 ) else (
     set PERL_EXE=perl
 )
+echo === PERL_EXE: %PERL_EXE%
+where %PERL_EXE%
+echo === 
+where perl
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -64,7 +68,7 @@ echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%\..\deps
 7z x openssl-1.1.1b.zip
 cd "%scriptdir%\..\deps\%OPENSSL_DIR%"
-perl Configure %openssl_debug_option% %openssl_target% no-shared
+%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean
 if %ERRORLEVEL% NEQ 0 goto :error
