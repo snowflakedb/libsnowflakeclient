@@ -29,6 +29,7 @@ goto :EOF
             echo === setting up the Visual Studio 14 environments
             call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
             if %ERRORLEVEL% NEQ 0 goto :error
+            echo === Done
         )
         goto :EOF
     )
