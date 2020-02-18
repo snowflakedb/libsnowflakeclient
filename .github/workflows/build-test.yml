@@ -22,7 +22,7 @@ jobs:
               uses: actions/upload-artifact@v1
               with:
                 name: zlib_artifacts
-                path: artifacts\*.zip
+                path: zlib_artifacts
             - name: Build openssl
               shell: cmd
               env:

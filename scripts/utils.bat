@@ -79,6 +79,10 @@ goto :EOF
     7z l %curdir%\artifacts\%zip_file_name%
     popd
     if %ERRORLEVEL% NEQ 0 goto :error
+    if defined GITHUB_ACTIONS (
+        md %component_name%_artifacts
+        copy /v /y artifacts\%zip_file_name% %component_name%_artifacts
+    )
     goto :EOF
 
 :check_directory
