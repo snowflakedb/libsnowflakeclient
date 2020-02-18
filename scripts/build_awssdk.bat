@@ -21,6 +21,7 @@ set force_shared_crt=%4
 set scriptdir=%~dp0
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
+@echo on
 call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
