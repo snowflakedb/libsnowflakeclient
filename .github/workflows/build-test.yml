@@ -18,6 +18,11 @@ jobs:
                   BUILD_TYPE: Debug
                   VS_VERSION: VS16
               run: scripts\build_zlib.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Upload zlib.zip
+              uses: actions/upload-artifact@v1
+              with:
+                name: zlib_artifacts
+                path: artifacts\*.zip
             - name: Build openssl
               shell: cmd
               env:
