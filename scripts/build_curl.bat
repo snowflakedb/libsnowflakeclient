@@ -18,7 +18,7 @@ goto :EOF
     goto :EOF
 
 :build
-@echo on
+@echo off
 setlocal
 set CURL_DIR=curl-7.66.0
 
@@ -56,6 +56,9 @@ if "%dynamic_runtime%"=="OFF" (
     set rtlibcfg=static
 )
 
+if "%vs_version%"=="VS16" (
+    set vc_version=16
+)
 if "%vs_version%"=="VS15" (
     set vc_version=15
 )
