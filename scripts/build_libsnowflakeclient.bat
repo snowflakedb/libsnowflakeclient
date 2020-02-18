@@ -74,7 +74,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 
 cd "%curdir%"
-rmdir /s /q .\deps-build\%build_dir%\libsnowflakeclient
+rd /s /q .\deps-build\%build_dir%\libsnowflakeclient
 if %ERRORLEVEL% NEQ 0 goto :error
 
 md .\deps-build\%build_dir%\libsnowflakeclient\lib
@@ -93,17 +93,17 @@ copy /v /y ^
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_version%
 if %ERRORLEVEL% NEQ 0 goto :error
+call "%scriptdir%utils.bat" :get_zip_file_name libsnowflakeclient %libsnowflakeclient_version%
 if not "%build_tests%"=="OFF" (
-    echo === before get_zip_file_name
-    call "%scriptdir%utils.bat" :get_zip_file_name libsnowflakeclient %libsnowflakeclient_version%
     @echo on
-    echo === current dir
+    echo === current dir: %zip_cmake_file_name%, %cmake_dir%
     echo %cd%
     7z a artifacts\%zip_cmake_file_name% %cmake_dir%
     if %ERRORLEVEL% NEQ 0 goto :error
     7z l artifacts\%zip_cmake_file_name%
     if %ERRORLEVEL% NEQ 0 goto :error
 )
+godo :success
 :success
 cd "%curdir%"
 exit /b 0
