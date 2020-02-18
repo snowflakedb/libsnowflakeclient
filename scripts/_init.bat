@@ -9,6 +9,10 @@ set platform=%1
 set build_type=%2
 set vs_version=%3
 
+:: normalize
+if /I "%platform%"=="x64" set platform=x64
+if /I "%platform%"=="x86" set platform=x86
+
 set curdir=%cd%
 
 if defined arch (
