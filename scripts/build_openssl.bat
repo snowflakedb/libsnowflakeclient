@@ -21,6 +21,11 @@ goto :EOF
 setlocal
 set OPENSSL_DIR=openssl-%OPENSSL_VERSION%
 
+if defined GITHUB_ACTIONS (
+    set PERL_EXE=C:\Strawberry\perl\bin\perl
+) else (
+    set PERL_EXE=perl
+)
 set platform=%1
 set build_type=%2
 set vs_version=%3
