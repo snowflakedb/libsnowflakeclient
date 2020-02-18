@@ -27,9 +27,7 @@ if defined GITHUB_ACTIONS (
     set PERL_EXE=perl
 )
 echo === PERL_EXE: %PERL_EXE%
-where %PERL_EXE%
-echo === 
-where perl
+
 set platform=%1
 set build_type=%2
 set vs_version=%3

@@ -8,32 +8,64 @@ jobs:
         runs-on: windows-2019
         strategy:
             matrix:
-                cloud: [ 'AWS' ]
+                platform: [ 'x64' ]
+                build_type: [ 'Debug' ]
+                vs_version: [ 'VS16' ]
         steps:
             - uses: actions/checkout@v1
             - name: Build zlib
               shell: cmd
               env:
-                  PLATFORM: x64
-                  BUILD_TYPE: Debug
-                  VS_VERSION: VS16
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
               run: scripts\build_zlib.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Upload zlib.zip
-              uses: actions/upload-artifact@v1
-              with:
-                name: zlib_artifacts
-                path: zlib_artifacts
             - name: Build openssl
               shell: cmd
               env:
-                  PLATFORM: x64
-                  BUILD_TYPE: Debug
-                  VS_VERSION: VS16
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
               run: scripts\build_openssl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
             - name: Build curl
               shell: cmd
               env:
-                  PLATFORM: x64
-                  BUILD_TYPE: Debug
-                  VS_VERSION: VS16
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
               run: scripts\build_curl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build curl
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: scripts\build_curl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build awssdk
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: scripts\build_awssdk.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build azuresdk
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: scripts\build_azuresdk.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build cmocka
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: scripts\build_cmocka.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+            - name: Build libsnowflakeclient
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: scripts\build_libsnowflakeclient.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION% OFF
