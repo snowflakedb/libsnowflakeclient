@@ -67,11 +67,13 @@ goto :EOF
     goto :EOF
 
 :zip_file
+    @echo on
     setlocal
     set component_name=%~1
     set component_version=%~2
     md artifacts
     call :get_zip_file_name %component_name% %component_version%
+    @echo on
     del artifacts\%zip_file_name%
     set curdir=%cd%
     pushd deps-build\%build_dir%
