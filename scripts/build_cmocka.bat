@@ -42,21 +42,12 @@ set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
 rd /S /Q %cmake_dir%
 md %cmake_dir%
 cd %cmake_dir%
-if "%arch%"=="x86" (
-    cmake -G "%cmake_generator%" ^
-    -DUNIT_TESTING=ON ^
-    -DCMAKE_BUILD_TYPE=%build_type% ^
-    -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
-    -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
-    -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
-) else (
-    cmake -G "%cmake_generator%" -A %arch% ^
-    -DUNIT_TESTING=ON ^
-    -DCMAKE_BUILD_TYPE=%build_type% ^
-    -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
-    -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
-    -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
-)
+cmake -G "%cmake_generator%" -A %cmake_architecture% ^
+-DUNIT_TESTING=ON ^
+-DCMAKE_BUILD_TYPE=%build_type% ^
+-DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
+-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
+-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
 if %ERRORLEVEL% NEQ 0 goto :error
 cmake --build . --config %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error

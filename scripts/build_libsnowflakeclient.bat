@@ -53,19 +53,11 @@ if %ERRORLEVEL% NEQ 0 goto :error
 if exist  %curdir%\tests\test_simple_put_azure.cpp del %curdir%\tests\test_simple_put_azure.cpp
 copy %curdir%\tests\test_simple_put.cpp %curdir%\tests\test_simple_put_azure.cpp
 
-if "%arch%"=="x86" (
-    cmake -G "%cmake_generator%" ^
-	    -DDYNAMIC_RUNTIME=%dynamic_runtime% ^
-		-DBUILD_TESTS=%build_tests% ^
-		-DCMAKE_BUILD_TYPE=%build_type% ^
-		-DVSDIR:STRING=%vsdir% ..
-) else (
-    cmake -G "%cmake_generator%" ^
-		-DDYNAMIC_RUNTIME=%dynamic_runtime% ^
-		-DBUILD_TESTS=%build_tests% ^
-		-DCMAKE_BUILD_TYPE=%build_type% ^
-		-DVSDIR:STRING=%vsdir% -A %arch% ..
-)
+cmake -G "%cmake_generator%" -A %cmake_architecture% ^
+    -DDYNAMIC_RUNTIME=%dynamic_runtime% ^
+    -DBUILD_TESTS=%build_tests% ^
+    -DCMAKE_BUILD_TYPE=%build_type% ^
+    -DVSDIR:STRING=%vsdir% ..
 
 if %ERRORLEVEL% NEQ 0 goto :error
 :: cmake --build doesn't work as it cannot recognize Release|Win32 profile

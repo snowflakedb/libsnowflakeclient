@@ -58,17 +58,10 @@ md %cmake_dir%
 cd %cmake_dir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-if "%arch%"=="x86" (
-    cmake -G "%cmake_generator%" ^
-        -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
-        -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
-        ..
-) else (
-    cmake -G "%cmake_generator%" -A %arch% ^
-        -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
-        -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
-        ..
-)
+cmake -G "%cmake_generator%" -A %cmake_architecture% ^
+    -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
+    -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
+    ..
 if %ERRORLEVEL% NEQ 0 goto :error
 cmake --build . --config %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
