@@ -25,7 +25,7 @@ goto :EOF
             if %ERRORLEVEL% NEQ 0 goto :error
         )
     )
-    if /I "%~%1"=="VS14" (
+    if /I "%~1"=="VS14" (
         if not "%VisualStudioVersion%"=="14.0" (
             echo === setting up the Visual Studio 14 environments
             call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
