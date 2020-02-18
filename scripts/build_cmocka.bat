@@ -21,9 +21,11 @@ set vs_version=%3
 set dynamic_runtime=%4
 
 set scriptdir=%~dp0
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
+call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 set curdir=%cd%
 
 set target_name=cmocka_a.lib
