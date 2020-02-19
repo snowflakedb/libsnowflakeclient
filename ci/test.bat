@@ -62,12 +62,12 @@ exit /b 0
     set build_script=%~2
     
     set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
+    call %utils_script% :get_zip_file_name %component_name% %component_version%
+    call %build_script% :get_version
     if not defined GITHUB_ACTIONS (
-        call %build_script% :get_version
         call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if %ERRORLEVEL% NEQ 0 goto :error
         dir artifacts
-        call %utils_script% :get_zip_file_name %component_name% %component_version%
 
         7z x "%curdir%\artifacts\%zip_cmake_file_name%"
         if %ERRORLEVEL% NEQ 0 goto :error
