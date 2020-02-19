@@ -27,11 +27,9 @@ set curdir=%cd%
 
 if "%platform%"=="x64" (
     set engine_dir=Program Files
-    set cmake_architecture=x64
 )
 if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-    set cmake_architecture=Win32
 )
 
 set AZURE_SOURCE_DIR=%scriptdir%\..\deps\azure-storage-cpplite

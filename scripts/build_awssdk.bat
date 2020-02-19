@@ -28,11 +28,9 @@ set curdir=%cd%
 
 if /I "%platform%"=="x64" (    
     set engine_dir=Program Files
-    set cmake_architecture=x64
 )
 if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-    set cmake_architecture=Win32
 )
 
 set AWS_SOURCE_DIR=%scriptdir%\..\deps\aws-sdk-cpp-%aws_version%\
