@@ -60,7 +60,7 @@ exit /b 0
 
 :test_component
     @echo off
-    setlocal
+    setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
     
