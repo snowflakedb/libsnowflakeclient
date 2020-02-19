@@ -227,6 +227,7 @@ goto :EOF
     ) else (
         echo === No CLOUD_PROVIDER is set.
     )
+    goto :EOF
 
 :error
 exit /b 1
