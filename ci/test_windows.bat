@@ -9,6 +9,7 @@ set platform=%1
 set build_type=%2
 set vs_version=%3
 
+set scriptdir=%~dp0
 call "%scriptdir%..\scripts\_init.bat" %platform% %build_type% %vs_version%
 @echo on
 
