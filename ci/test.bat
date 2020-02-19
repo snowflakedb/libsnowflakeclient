@@ -4,8 +4,10 @@
 
 @echo off
 setlocal
-set path=C:\Program Files\7-Zip;%path%
-set path=C:\Python37;C:\python37\scripts;%path%
+if not defined GITHUB_ACTIONS (
+    set path=C:\Program Files\7-Zip;%path%
+    set path=C:\Python37;C:\python37\scripts;%path%
+)
 set scriptdir=%~dp0
 set curdir=%cd%
 set utils_script="%scriptdir%..\scripts\utils.bat"
@@ -16,6 +18,22 @@ if %ERRORLEVEL% NEQ 0 goto :error
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
 set download_artifact_script="%scriptdir%container\download_artifact.bat"
 set env_script="%scriptdir%..\scripts\env.bat"
+
+if "%CLOUD_PROVIDER%"=="AWS" (
+    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+      --output %scriptdir%../parameters.json ^
+      %scriptdir%../.github/workflows/parameters_aws_capi.json.gpg
+)
+if "%CLOUD_PROVIDER%"=="AZURE" (
+    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+      --output %scriptdir%../parameters.json ^
+      %scriptdir%../.github/workflows/parameters_azure_capi.json.gpg
+)
+if "%CLOUD_PROVIDER%"=="GCP" (
+    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+      --output %scriptdir%../parameters.json ^
+      %scriptdir%../.github/workflows/parameters_gcp_capi.json.gpg
+)
 
 call %env_script%
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -57,16 +75,18 @@ exit /b 0
     setlocal
     set component_name=%~1
     set build_script=%~2
-
-    call %build_script% :get_version
     
-    call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
-    if %ERRORLEVEL% NEQ 0 goto :error
-    dir artifacts
-    call %utils_script% :get_zip_file_name %component_name% %component_version%
-
     set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
-    7z x "%curdir%\artifacts\%zip_cmake_file_name%"
+    if not defined GITHUB_ACTIONS (
+        call %build_script% :get_version
+        call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
+        if %ERRORLEVEL% NEQ 0 goto :error
+        dir artifacts
+        call %utils_script% :get_zip_file_name %component_name% %component_version%
+
+        7z x "%curdir%\artifacts\%zip_cmake_file_name%"
+        if %ERRORLEVEL% NEQ 0 goto :error
+    )
     pushd %cmake_dir%
          ctest -V -E "valgrind.*"
     popd

@@ -11,6 +11,7 @@ jobs:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
                 vs_version: [ 'VS16' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v1
             - name: Build zlib
@@ -72,4 +73,5 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
-              run: ci\test_windows.bat %PLATFORM% %BUILD_TYPE% %VS_VERSION%
+                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+              run: ci\test.bat
