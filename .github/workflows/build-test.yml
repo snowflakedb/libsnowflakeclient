@@ -64,7 +64,7 @@ jobs:
               run: scripts\build_libsnowflakeclient.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION% OFF ON
             - uses: actions/setup-python@v1
               with:
-                python-version: '3.x'
+                python-version: '3.7'
                 architecture: 'x64'
             - name: Test
               shell: cmd
