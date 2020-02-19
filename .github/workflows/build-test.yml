@@ -74,4 +74,5 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci\test.bat
