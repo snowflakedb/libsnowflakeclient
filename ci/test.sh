@@ -1,0 +1,26 @@
+#!/bin/bash -e
+#
+# Test libsnowflakeclient for Linux
+#
+# - TEST_IMAGE_NAME - the target Docker image key. It must be registered in _init.sh
+#
+
+set -o pipefail
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $THIS_DIR/_init.sh
+
+#aws s3 cp s3://sfc-jenkins/repository/libsnowflakeclient/linux/test/cmake-build $THIS_DIR/../cmake-build --recursive
+
+docker pull "${TEST_IMAGE_NAME}"
+
+docker run \
+        -t \
+        -p 7777:22 \
+        -p 8084:8084 \
+        -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
+        -v $WORKSPACE:/mnt/workspace \
+        -e LOCAL_USER_ID=$(id -u $USER) \
+        -e AWS_ACCESS_KEY_ID \
+        -e AWS_SECRET_ACCESS_KEY \
+        "${TEST_IMAGE_NAME}" \
+        "/mnt/host/scripts/run_tests.sh"
