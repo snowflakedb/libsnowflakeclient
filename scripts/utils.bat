@@ -196,7 +196,7 @@ goto :EOF
     goto :EOF
 
 :set_parameters
-    setlocal
+    setlocal EnableDelayedExpansion
     @echo off
     set scriptdir=%~dp0
 
@@ -205,18 +205,21 @@ goto :EOF
         gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
+        if !ERRORLEVEL! NEQ 0 goto :error
     )
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
         gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
+        if !ERRORLEVEL! NEQ 0 goto :error
     )
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
         gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
+        if !ERRORLEVEL! NEQ 0 goto :error
     )
     if defined CLOUD_PROVIDER (
         echo === Cloud Provider: %CLOUD_PROVIDER%
