@@ -2,7 +2,7 @@
 :: Test libsnowflake
 ::
 
-@echo off
+@echo on
 setlocal
 if not defined GITHUB_ACTIONS (
     set path=C:\Program Files\7-Zip;%path%
@@ -19,22 +19,7 @@ set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakecli
 set download_artifact_script="%scriptdir%container\download_artifact.bat"
 set env_script="%scriptdir%..\scripts\env.bat"
 
-if "%CLOUD_PROVIDER%"=="AWS" (
-    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-      --output %scriptdir%../parameters.json ^
-      %scriptdir%../.github/workflows/parameters_aws_capi.json.gpg
-)
-if "%CLOUD_PROVIDER%"=="AZURE" (
-    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-      --output %scriptdir%../parameters.json ^
-      %scriptdir%../.github/workflows/parameters_azure_capi.json.gpg
-)
-if "%CLOUD_PROVIDER%"=="GCP" (
-    gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-      --output %scriptdir%../parameters.json ^
-      %scriptdir%../.github/workflows/parameters_gcp_capi.json.gpg
-)
-
+call %scriptdir%scripts\set_parameters.bat
 call %env_script%
 if %ERRORLEVEL% NEQ 0 goto :error
 
