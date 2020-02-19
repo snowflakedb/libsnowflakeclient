@@ -72,4 +72,4 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
-              run: ci\test0.bat
+              run: ci\test_windows.bat %PLATFORM% %BUILD_TYPE% %VS_VERSION%
