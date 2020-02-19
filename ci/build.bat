@@ -53,7 +53,7 @@ goto :EOF
 
 :downloand_build_component
     @echo off
-    setlocal
+    setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
     set dynamic_runtime=%~3
@@ -71,7 +71,8 @@ goto :EOF
         call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
         if "%GIT_BRANCH%"=="origin/master" (
             :: upload the artifacts only for main
-            call %upload_artifact_script% :sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
+            call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
+            if !ERRORLEVEL! NEQ 0 goto :error
         )
     ) else (
         md deps-build\%arcdir%\%vsdir%\%build_type%
@@ -96,10 +97,10 @@ goto :EOF
 
     echo === uploading ...
     call %build_script% :get_version
-    call %upload_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
+    call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
     if %ERRORLEVEL% NEQ 0 goto :error
     if "%GIT_BRANCH%"=="origin/master" (
-        call %upload_artifact_script% :sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
+        call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
         if %ERRORLEVEL% NEQ 0 goto :error
     )
     exit /b 0

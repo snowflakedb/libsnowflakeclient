@@ -76,7 +76,7 @@ nmake
 if %ERRORLEVEL% NEQ 0 goto :error
 rd /S /Q _install
 if %ERRORLEVEL% NEQ 0 goto :error
-md _install
+if not exist _install md _install
 if %ERRORLEVEL% NEQ 0 goto :error
 REM no doc build
 nmake install_sw install_ssldirs DESTDIR=.\_install

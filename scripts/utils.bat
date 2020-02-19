@@ -68,9 +68,13 @@ goto :EOF
 
 :zip_file
     setlocal
+    if defined GITHUB_ACTIONS (
+        echo === No zip file is created for Github Actions
+        goto: EOF
+    )
     set component_name=%~1
     set component_version=%~2
-    md artifacts
+    if not exist artifacts md artifacts
     call :get_zip_file_name %component_name% %component_version%
     del artifacts\%zip_file_name%
     set curdir=%cd%
@@ -88,11 +92,11 @@ goto :EOF
 :check_directory
     setlocal
     set component_name=%~1
-    If exist .\deps-build\%build_dir%\%component_name% (
-        echo Exist .\deps-build\%build_dir%\%component_name%
+    If exist deps-build\%build_dir%\%component_name% (
+        echo Exist deps-build\%build_dir%\%component_name%
         exit /b 0
     ) else (
-        echo Not Exist .\deps-build\%build_dir%\%component_name%
+        echo Not Exist deps-build\%build_dir%\%component_name%
         exit /b 1
     )
     goto :EOF
@@ -113,6 +117,116 @@ goto :EOF
     )
     echo GIT_BRANCH: %GIT_BRANCH%, GIT_COMMIT: %GIT_COMMIT%
     goto :EOF
+
+:upload_to_sfc_dev1_data
+    setlocal
+    set platform=%1
+    set build_type=%2
+    set vs_version=%3
+
+    set component_name=%4
+    set component_version=%5
+
+    set scriptdir=%~dp0
+
+    call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+    call :get_zip_file_name %component_name% %component_version%
+
+    echo === uploading %component_name% to s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
+    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-dev1-data/dependency/%component_name%/
+    if %ERRORLEVEL% NEQ 0 goto :error
+    cd "%curdir%"
+    exit /b 0
     
+:upload_to_sfc_jenkins
+    @echo on
+    setlocal
+    set platform=%1
+    set build_type=%2
+    set vs_version=%3
+
+    set component_name=%4
+    set component_version=%5
+
+    set scriptdir=%~dp0
+
+    for /f "tokens=2 delims=/" %%a in ("%GIT_BRANCH%") do (
+      set git_branch_base_name=%%a
+    )
+
+    call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+    call :get_zip_file_name %component_name% %component_version%
+
+    set target_path=s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    echo === uploading artifacts\%zip_file_name% to %target_path%
+    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% %target_path%
+    if %ERRORLEVEL% NEQ 0 goto :error
+    echo === uploading artifacts\%zip_cmake_file_name% to %target_path%
+    cmd /c aws s3 cp --only-show-errors artifacts\%zip_cmake_file_name% %target_path%
+    if %ERRORLEVEL% NEQ 0 goto :error
+    set parent_target_path=s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/
+    echo === uploading latest_commit to %parent_target_path%
+    echo %GIT_COMMIT%>latest_commit
+    cmd /c aws s3 cp --only-show-errors latest_commit %parent_target_path%
+    cd "%curdir%"
+    exit /b 0
+
+:download_from_sfc_jenkins
+    setlocal
+    set platform=%1
+    set build_type=%2
+    set vs_version=%3
+
+    set component_name=%4
+    set component_version=%5
+
+    set scriptdir=%~dp0
+    for /f "tokens=2 delims=/" %%a in ("%GIT_BRANCH%") do (
+      set git_branch_base_name=%%a
+    )
+
+    call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+    call :get_zip_file_name %component_name% %component_version%
+
+    @echo on
+    md artfacts
+    echo === downloading %zip_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
+    if %ERRORLEVEL% NEQ 0 goto :error
+    echo === downloading %zip_cmake_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_cmake_file_name% artifacts\
+    if %ERRORLEVEL% NEQ 0 goto :error
+    cd "%curdir%"
+    goto :EOF
+
+:set_parameters
+    setlocal
+    @echo off
+    set scriptdir=%~dp0
+
+    if /I "%CLOUD_PROVIDER%"=="AWS" (
+        echo == AWS
+        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+          --output %scriptdir%..\parameters.json ^
+          %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
+    )
+    if /I "%CLOUD_PROVIDER%"=="AZURE" (
+        echo == AZURE
+        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+          --output %scriptdir%..\parameters.json ^
+          %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
+    )
+    if /I "%CLOUD_PROVIDER%"=="GCP" (
+        echo === GCP
+        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
+          --output %scriptdir%..\parameters.json ^
+          %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
+    )
+    if defined CLOUD_PROVIDER (
+        echo === Cloud Provider: %CLOUD_PROVIDER%
+    ) else (
+        echo === No CLOUD_PROVIDER is set.
+    )
+
 :error
 exit /b 1

@@ -2,7 +2,7 @@
 :: Test libsnowflake
 ::
 
-@echo on
+@echo off
 setlocal
 echo == %GITHUB_ACTIONS%
 if not defined GITHUB_ACTIONS (
@@ -16,10 +16,11 @@ call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
-set download_artifact_script="%scriptdir%container\download_artifact.bat"
 set env_script="%scriptdir%..\scripts\env.bat"
 
-call %scriptdir%scripts\set_parameters.bat
+call %utils_script% :set_parameters
+if %ERRORLEVEL% NEQ 0 goto :error
+
 call %env_script%
 if %ERRORLEVEL% NEQ 0 goto :error
 
@@ -68,10 +69,8 @@ exit /b 0
     call %utils_script% :get_zip_file_name %component_name% %component_version%
     call %build_script% :get_version
     if not defined GITHUB_ACTIONS (
-        call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
-        echo == 5
+        call %utils_script% :download_from_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
-        echo == 6
         dir artifacts
 
         7z x "%curdir%\artifacts\%zip_cmake_file_name%"
@@ -108,5 +107,4 @@ exit /b 0
     exit /b 0
 
 :error
-echo == 7
 exit /b 1
