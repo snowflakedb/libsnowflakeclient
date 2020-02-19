@@ -1,4 +1,5 @@
 setlocal
+@echo on
 set scriptdir=%cd%
 
 if "%CLOUD_PROVIDER%"=="AWS" (
