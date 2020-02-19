@@ -1,6 +1,6 @@
 setlocal
 @echo on
-set scriptdir=%cd%
+set scriptdir=%~dp0
 
 if "%CLOUD_PROVIDER%"=="AWS" (
     gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
