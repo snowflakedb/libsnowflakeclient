@@ -4,9 +4,10 @@
 
 @echo on
 setlocal
+echo == %GITHUB_ACTIONS%
 if not defined GITHUB_ACTIONS (
-    set path=C:\Program Files\7-Zip;%path%
-    set path=C:\Python37;C:\python37\scripts;%path%
+    set "path=C:\Program Files\7-Zip;%path%"
+    set "path=C:\Python37;C:\python37\scripts;%path%"
 )
 set scriptdir=%~dp0
 set curdir=%cd%
