@@ -27,10 +27,13 @@ goto :EOF
     echo === downloading %zip_cmake_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
     cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_cmake_file_name% artifacts\
     if %ERRORLEVEL% NEQ 0 goto :error
-
+    echo == 1
     cd "%curdir%"
+    echo == 2
     exit /b 0
 
 :error
+echo == 3
 cd "%curdir%"
+echo == 4
 exit /b 1

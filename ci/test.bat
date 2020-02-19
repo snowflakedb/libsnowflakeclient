@@ -69,7 +69,9 @@ exit /b 0
     call %build_script% :get_version
     if not defined GITHUB_ACTIONS (
         call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
+        echo == 5
         if %ERRORLEVEL% NEQ 0 goto :error
+        echo == 6
         dir artifacts
 
         7z x "%curdir%\artifacts\%zip_cmake_file_name%"
@@ -106,4 +108,5 @@ exit /b 0
     exit /b 0
 
 :error
+echo == 7
 exit /b 1
