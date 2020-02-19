@@ -70,12 +70,12 @@ exit /b 0
     if not defined GITHUB_ACTIONS (
         call %download_artifact_script% :sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         echo == 5
-        if %ERRORLEVEL% NEQ 0 goto :error
+        if !ERRORLEVEL! NEQ 0 goto :error
         echo == 6
         dir artifacts
 
         7z x "%curdir%\artifacts\%zip_cmake_file_name%"
-        if %ERRORLEVEL% NEQ 0 goto :error
+        if !ERRORLEVEL! NEQ 0 goto :error
     )
     pushd %cmake_dir%
          ctest -V -E "valgrind.*"
