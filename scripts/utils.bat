@@ -11,8 +11,6 @@ goto :EOF
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments
             call "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %arch%
-            if %ERRORLEVEL% NEQ 0 goto :error
-            echo === Done
         )
         goto :EOF
     )
@@ -20,8 +18,6 @@ goto :EOF
         if not "%VisualStudioVersion%"=="15.0" (
             echo === setting up the Visual Studio 15 environments
             call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %arch%
-            if %ERRORLEVEL% NEQ 0 goto :error
-            echo === Done
         )
         goto :EOF
     )
@@ -29,12 +25,13 @@ goto :EOF
         if not "%VisualStudioVersion%"=="14.0" (
             echo === setting up the Visual Studio 14 environments
             call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-            if %ERRORLEVEL% NEQ 0 goto :error
-            echo === Done
         )
         goto :EOF
     )
-    echo off
+    if not defined VisualStudioVersion (
+        echo === ERROR: no VisualStudioVersion is set. %~1
+        goto :error
+    )
     goto :EOF
 
 :get_zip_file_name
@@ -94,7 +91,7 @@ goto :EOF
     set component_name=%~1
     If exist deps-build\%build_dir%\%component_name% (
         echo Exist deps-build\%build_dir%\%component_name%
-        exit /b 0
+        goto :EOF
     ) else (
         echo Not Exist deps-build\%build_dir%\%component_name%
         exit /b 1
@@ -136,10 +133,10 @@ goto :EOF
     cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-dev1-data/dependency/%component_name%/
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
-    exit /b 0
+    goto :EOF
     
 :upload_to_sfc_jenkins
-    @echo on
+    @echo off
     setlocal
     set platform=%1
     set build_type=%2
@@ -169,7 +166,7 @@ goto :EOF
     echo %GIT_COMMIT%>latest_commit
     cmd /c aws s3 cp --only-show-errors latest_commit %parent_target_path%
     cd "%curdir%"
-    exit /b 0
+    goto :EOF
 
 :download_from_sfc_jenkins
     setlocal
@@ -188,7 +185,6 @@ goto :EOF
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
-    @echo on
     md artfacts
     echo === downloading %zip_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
     cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
