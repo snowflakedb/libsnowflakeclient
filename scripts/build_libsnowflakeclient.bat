@@ -92,7 +92,6 @@ if not "%build_tests%"=="OFF" (
     7z l artifacts\%zip_cmake_file_name%
     if %ERRORLEVEL% NEQ 0 goto :error
 )
-godo :success
 :success
 cd "%curdir%"
 exit /b 0
