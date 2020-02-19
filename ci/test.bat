@@ -27,6 +27,9 @@ echo === setting test schema
 if defined JOB_NAME (
     set SNOWFLAKE_TEST_SCHEMA=JENKINS_%JOB_NAME:-=_%_%BUILD_NUMBER%
 )
+if defined GITHUB_ACTIONS (
+    set SNOWFLAKE_TEST_SCHEMA=%RUNNER_TRACKING_ID:-=_%_%GITHUB_SHA%
+)
 
 if %ERRORLEVEL% NEQ 0 goto :error
 call :init_python

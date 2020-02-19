@@ -1,4 +1,4 @@
-@echo on
+@echo off
 call %*
 goto :EOF
 
@@ -19,6 +19,7 @@ goto :EOF
     call "%scriptdir%..\..\scripts\_init.bat" %platform% %build_type% %vs_version%
     call "%scriptdir%..\..\scripts\utils.bat" :get_zip_file_name %component_name% %component_version%
 
+    @echo on
     md artfacts
     echo === downloading %zip_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
     cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
