@@ -3,8 +3,8 @@ name: Build and Test
 on: push
 
 jobs:
-    build:
-        name: Build
+    build-test:
+        name: Build-Test
         runs-on: windows-2019
         strategy:
             matrix:
@@ -62,3 +62,14 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
               run: scripts\build_libsnowflakeclient.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION% OFF ON
+            - uses: actions/setup-python@v1
+              with:
+                python-version: '3.x'
+                architecture: 'x64'
+            - name: Test
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: ci\test0.bat
