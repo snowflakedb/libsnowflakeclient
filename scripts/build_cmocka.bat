@@ -21,15 +21,15 @@ set vs_version=%3
 set dynamic_runtime=%4
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set curdir=%cd%
 
 set target_name=cmocka_a.lib
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building cmocka
 
@@ -68,7 +68,7 @@ copy /v /y ^
     .\deps-build\%build_dir%\cmocka\lib\%target_name%
 
 echo === archiving the library
-call "%scriptdir%\utils.bat" :zip_file cmocka %cmocka_version%
+call "%scriptdir%utils.bat" :zip_file cmocka %cmocka_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success

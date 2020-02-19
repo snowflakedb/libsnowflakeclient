@@ -3,13 +3,13 @@ name: Build and Test
 on: push
 
 jobs:
-    build-win64:
-        name: Build for Wiin64
+    build:
+        name: Build
         runs-on: windows-2019
         strategy:
             matrix:
-                platform: [ 'x64' ]
-                build_type: [ 'Debug' ]
+                platform: [ 'x64', 'x86' ]
+                build_type: [ 'Debug', 'Release' ]
                 vs_version: [ 'VS16' ]
         steps:
             - uses: actions/checkout@v1

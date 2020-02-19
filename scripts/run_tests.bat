@@ -8,11 +8,11 @@ set build_type=%2
 set vs_version=%3
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-call "%scriptdir%\env.bat"
+call "%scriptdir%env.bat"
 
 if defined APPVEYOR_BUILD_ID (
     REM use the job specific schema

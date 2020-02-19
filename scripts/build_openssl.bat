@@ -36,7 +36,7 @@ set dynamic_runtime=%4
 set scriptdir=%~dp0
 set path=%scriptdir%..\ci\tools;%path%
 
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -60,13 +60,13 @@ if "%build_type%"=="Release" (
 set crypto_target_name=libcrypto_a.lib
 set ssl_target_name=libssl_a.lib
 
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
-cd "%scriptdir%\..\deps
+cd "%scriptdir%..\deps
 rd /s /q %OPENSSL_DIR%
 7z x openssl-1.1.1b.zip
-cd "%scriptdir%\..\deps\%OPENSSL_DIR%"
+cd "%scriptdir%..\deps\%OPENSSL_DIR%"
 echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
 %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -101,7 +101,7 @@ copy /v /y ^
     ".\deps-build\%build_dir%\openssl\include\openssl"
 
 echo === archiving the library
-call "%scriptdir%\utils.bat" :zip_file openssl %openssl_version%
+call "%scriptdir%utils.bat" :zip_file openssl %openssl_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success

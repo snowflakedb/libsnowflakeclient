@@ -28,7 +28,7 @@ set vs_version=%3
 set dynamic_runtime=%4
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -66,7 +66,7 @@ if "%vs_version%"=="VS14" (
     set vc_version=14
 )
 
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === staging openssl and zlib for curl
 set curl_dep=%TMP%\curl_dep
@@ -130,7 +130,7 @@ copy /v /y ^
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === archiving the library
-call "%scriptdir%\utils.bat" :zip_file curl %curl_version%
+call "%scriptdir%utils.bat" :zip_file curl %curl_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success

@@ -19,9 +19,9 @@ set vs_version=%3
 set force_shared_crt=%4
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set curdir=%cd%
@@ -33,9 +33,9 @@ if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
-set AWS_SOURCE_DIR=%scriptdir%\..\deps\aws-sdk-cpp-%aws_version%\
+set AWS_SOURCE_DIR=%scriptdir%..\deps\aws-sdk-cpp-%aws_version%\
 set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
-set AWS_INSTALL_DIR=%scriptdir%\..\deps-build\%build_dir%\aws\
+set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
 md %AWS_CMAKE_BUILD_DIR%
@@ -50,8 +50,8 @@ cmake %AWS_SOURCE_DIR% ^
 -A "%cmake_architecture%" ^
 -DBUILD_ONLY=s3 ^
 -DFORCE_CURL=on ^
--DCURL_LIBRARY="%scriptdir%\..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
--DCURL_INCLUDE_DIR="%scriptdir%\..\deps-build\%build_dir%\curl\include" ^
+-DCURL_LIBRARY="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
+-DCURL_INCLUDE_DIR="%scriptdir%..\deps-build\%build_dir%\curl\include" ^
 -DENABLE_TESTING=off ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
 -DBUILD_SHARED_LIBS=off ^
@@ -67,7 +67,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 cd "%curdir%"
 
 echo === archiving the library
-call "%scriptdir%\utils.bat" :zip_file aws %aws_version%
+call "%scriptdir%utils.bat" :zip_file aws %aws_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success

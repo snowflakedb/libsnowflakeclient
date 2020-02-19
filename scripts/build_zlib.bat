@@ -33,7 +33,7 @@ set dynamic_runtime=%4
 set source_name="zlibstatic.lib"
 
 set scriptdir=%~dp0
-call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
+call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -45,7 +45,7 @@ if "%build_type%"=="Release" (
     set target_name=zlib_a.lib
 )
 
-call "%scriptdir%\utils.bat" :setup_visual_studio %vs_version%
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building zlib
 echo %curdir%\deps\%ZLIB_DIR%
@@ -79,7 +79,7 @@ copy /v /y .\deps\%ZLIB_DIR%\%cmake_dir%\zconf.h .\deps-build\%build_dir%\zlib\i
 copy /v /y .\deps\%ZLIB_DIR%\%cmake_dir%\%build_type%\%source_name% .\deps-build\%build_dir%\zlib\lib\%target_name%
 
 echo === archiving the library
-call "%scriptdir%\utils.bat" :zip_file zlib %zlib_version%
+call "%scriptdir%utils.bat" :zip_file zlib %zlib_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
