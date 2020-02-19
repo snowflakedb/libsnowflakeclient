@@ -67,7 +67,7 @@ goto :EOF
     setlocal
     if defined GITHUB_ACTIONS (
         echo === No zip file is created for Github Actions
-        goto: EOF
+        goto :EOF
     )
     set component_name=%~1
     set component_version=%~2
