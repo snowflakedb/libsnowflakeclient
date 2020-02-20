@@ -14,55 +14,13 @@ jobs:
                 cloud_provider: [ 'AWS' ]
         steps:
             - uses: actions/checkout@v1
-            - name: Build zlib
+            - name: Build
               shell: cmd
               env:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_zlib.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build openssl
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_openssl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build curl
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_curl.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build awssdk
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_awssdk.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build azuresdk
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_azuresdk.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build cmocka
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_cmocka.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION%
-            - name: Build libsnowflakeclient
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: scripts\build_libsnowflakeclient.bat :build %PLATFORM% %BUILD_TYPE% %VS_VERSION% OFF ON
+              run: ci\build.bat
             - uses: actions/setup-python@v1
               with:
                 python-version: '3.7'
