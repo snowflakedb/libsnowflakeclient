@@ -13,7 +13,7 @@ goto :EOF
 	goto :EOF
 
 :build
-setlocal
+setlocal EnableDelayedExpansion
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -86,11 +86,13 @@ echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :get_zip_file_name libsnowflakeclient %libsnowflakeclient_version%
-if not "%build_tests%"=="OFF" (
-    7z a artifacts\%zip_cmake_file_name% %cmake_dir%
-    if %ERRORLEVEL% NEQ 0 goto :error
-    7z l artifacts\%zip_cmake_file_name%
-    if %ERRORLEVEL% NEQ 0 goto :error
+if not defined GITHUB_ACTIONS (
+    if not "%build_tests%"=="OFF" (
+        7z a artifacts\%zip_cmake_file_name% %cmake_dir%
+        if !ERRORLEVEL! NEQ 0 goto :error
+        7z l artifacts\%zip_cmake_file_name%
+        if !ERRORLEVEL! NEQ 0 goto :error
+    )
 )
 :success
 cd "%curdir%"
