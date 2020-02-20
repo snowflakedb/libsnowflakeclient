@@ -58,28 +58,33 @@ goto :EOF
     set build_script=%~2
     set dynamic_runtime=%~3
 
-    echo === download or build: %component_name% ===
-    call %utils_script% :check_directory %component_name%
     if %ERRORLEVEL% EQU 0 (
         echo Skip download or build.
         exit /b 0
     )
     call %build_script% :get_version
     call %utils_script% :get_zip_file_name %component_name% %version%
-    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
-    if %ERRORLEVEL% NEQ 0 (
-        call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
-        if "%GIT_BRANCH%"=="origin/master" (
-            :: upload the artifacts only for main
-            call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
-            if !ERRORLEVEL! NEQ 0 goto :error
-        )
+    if defined GITHUB_ACTIONS (
+        call :build_component %component_name% %build_script% %dynamic_runtime%
     ) else (
-        md deps-build\%arcdir%\%vsdir%\%build_type%
-        cd deps-build\%arcdir%\%vsdir%\%build_type%
-        if %ERRORLEVEL% NEQ 0 goto :error
-        rd /s /q %component_name%
-        7z x "%curdir%\artifacts\%zip_file_name%"
+        echo === download or build: %component_name% ===
+        call %utils_script% :check_directory %component_name%
+        cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
+        if !ERRORLEVEL! NEQ 0 (
+            call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
+            if "%GIT_BRANCH%"=="origin/master" (
+                :: upload the artifacts only for main
+                call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
+                if !ERRORLEVEL! NEQ 0 goto :error
+            )
+        ) else (
+            if not exist deps-build\%arcdir%\%vsdir%\%build_type% md deps-build\%arcdir%\%vsdir%\%build_type%
+            pushd deps-build\%arcdir%\%vsdir%\%build_type%
+                if !ERRORLEVEL! NEQ 0 goto :error
+                rd /s /q %component_name%
+                7z x "%curdir%\artifacts\%zip_file_name%"
+            popd
+        )
     )
     exit /b 0
     
