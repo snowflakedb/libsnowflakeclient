@@ -27,7 +27,7 @@ call :build %platform% %build_type% %vs_version% OFF
 goto :EOF
 
 :build
-    @echo off
+    @echo on
     setlocal
     set platform=%~1
     set build_type=%~2
@@ -58,10 +58,6 @@ goto :EOF
     set build_script=%~2
     set dynamic_runtime=%~3
 
-    if %ERRORLEVEL% EQU 0 (
-        echo Skip download or build.
-        exit /b 0
-    )
     call %build_script% :get_version
     call %utils_script% :get_zip_file_name %component_name% %version%
     if defined GITHUB_ACTIONS (
@@ -69,6 +65,10 @@ goto :EOF
     ) else (
         echo === download or build: %component_name% ===
         call %utils_script% :check_directory %component_name%
+        if %ERRORLEVEL% EQU 0 (
+            echo Skip download or build.
+            exit /b 0
+        )
         cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
         if !ERRORLEVEL! NEQ 0 (
             call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
