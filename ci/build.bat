@@ -66,7 +66,7 @@ goto :EOF
     ) else (
         echo === download or build: %component_name% ===
         call %utils_script% :check_directory %component_name%
-        if %ERRORLEVEL% EQU 0 (
+        if !ERRORLEVEL! EQU 0 (
             echo Skip download or build.
             exit /b 0
         )
