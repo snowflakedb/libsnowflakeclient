@@ -4,7 +4,9 @@
 
 @echo off
 setlocal
-set path=C:\Program Files\7-Zip;%path%
+if not defined GITHUB_ACTIONS (
+    set "path=C:\Program Files\7-Zip;C:\Python37;C:\python37\scripts;%path%"
+)
 set scriptdir=%~dp0
 set curdir=%cd%
 set utils_script="%scriptdir%..\scripts\utils.bat"
