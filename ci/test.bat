@@ -77,32 +77,43 @@ exit /b 0
         if !ERRORLEVEL! NEQ 0 goto :error
     )
     pushd %cmake_dir%
-         ctest -V -E "valgrind.*"
+        ctest -V -E "valgrind.*"
+        if %ERRORLEVEL% NEQ 0 (
+            call :drop_schema
+            goto :error
+        )
     popd
     exit /b 0
 
 :init_python
     @echo off
+    setlocal EnableDelayedExpansion
     echo === creating venv
     python -m venv venv
     call venv\scripts\activate
     python -m pip install -U pip > nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto :error
     pip install snowflake-connector-python > nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
 :create_schema
     @echo off
+    setlocal EnableDelayedExpansion
     echo === creating schema
     pushd scripts
         python create_schema.py
+        if %ERRORLEVEL% NEQ 0 goto :error
     popd
     exit /b 0
 
 :drop_schema
     @echo off
+    setlocal EnableDelayedExpansion
     echo === dropping schema
     pushd scripts
         python drop_schema.py
+        if %ERRORLEVEL% NEQ 0 goto :error
     popd
     exit /b 0
 
