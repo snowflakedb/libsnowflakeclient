@@ -102,7 +102,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version
-    if defined GITHUB_ACTIONS (
+    if not defined GITHUB_ACTIONS (
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
