@@ -87,7 +87,6 @@ exit /b 0
 
 :init_python
     @echo off
-    setlocal EnableDelayedExpansion
     echo === creating venv
     python -m venv venv
     call venv\scripts\activate
@@ -99,7 +98,6 @@ exit /b 0
 
 :create_schema
     @echo off
-    setlocal EnableDelayedExpansion
     echo === creating schema
     pushd scripts
         python create_schema.py
@@ -109,7 +107,6 @@ exit /b 0
 
 :drop_schema
     @echo off
-    setlocal EnableDelayedExpansion
     echo === dropping schema
     pushd scripts
         python drop_schema.py
