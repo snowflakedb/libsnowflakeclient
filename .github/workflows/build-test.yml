@@ -8,10 +8,10 @@ jobs:
         runs-on: windows-2019
         strategy:
             matrix:
-                platform: [ 'x64' ]
-                build_type: [ 'Debug' ]
+                platform: [ 'x64', 'x86' ]
+                build_type: [ 'Debug', 'Release' ]
                 vs_version: [ 'VS16' ]
-                cloud_provider: [ 'AWS' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v1
             - name: Build
