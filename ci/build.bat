@@ -61,7 +61,8 @@ goto :EOF
     call %build_script% :get_version
     call %utils_script% :get_zip_file_name %component_name% %version%
     if defined GITHUB_ACTIONS (
-        call :build_component %component_name% %build_script% %dynamic_runtime%
+        call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
+        if !ERRORLEVEL! NEQ 0 goto :error
     ) else (
         echo === download or build: %component_name% ===
         call %utils_script% :check_directory %component_name%
@@ -91,7 +92,7 @@ goto :EOF
 
 :build_component
     @echo off
-    setlocal
+    setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
     set dynamic_runtime=%~3
@@ -106,7 +107,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     if "%GIT_BRANCH%"=="origin/master" (
         call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
-        if %ERRORLEVEL% NEQ 0 goto :error
+        if !ERRORLEVEL! NEQ 0 goto :error
     )
     exit /b 0
     
