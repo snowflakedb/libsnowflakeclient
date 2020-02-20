@@ -1,0 +1,36 @@
+name: Build and Test
+
+on: push
+
+jobs:
+    build-test:
+        name: Build-Test
+        runs-on: windows-2019
+        strategy:
+            matrix:
+                platform: [ 'x64', 'x86' ]
+                build_type: [ 'Debug', 'Release' ]
+                vs_version: [ 'VS16' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+        steps:
+            - uses: actions/checkout@v1
+            - name: Build
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+              run: ci\build.bat
+            - uses: actions/setup-python@v1
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Test
+              shell: cmd
+              env:
+                  PLATFORM: ${{ matrix.platform }}
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  VS_VERSION: ${{ matrix.vs_version }}
+                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci\test.bat
