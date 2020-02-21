@@ -86,13 +86,15 @@ echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :get_zip_file_name libsnowflakeclient %libsnowflakeclient_version%
-if not defined GITHUB_ACTIONS (
+if defined JENKINS_URL (
     if not "%build_tests%"=="OFF" (
         7z a artifacts\%zip_cmake_file_name% %cmake_dir%
         if !ERRORLEVEL! NEQ 0 goto :error
         7z l artifacts\%zip_cmake_file_name%
         if !ERRORLEVEL! NEQ 0 goto :error
     )
+) else (
+    echo === No zip file is created.
 )
 :success
 cd "%curdir%"
