@@ -41,7 +41,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
 
 elif [[ "$PLATFORM" == "darwin" ]]; then
    echo "Now building for x86_64"
-   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=10.12"
+   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
    BUILD_DIR_64=$BUILD_DIR/zlib_64
    make -f Makefile.in distclean > /dev/null || true
    ./configure -s --static --prefix=$BUILD_DIR_64 
@@ -53,7 +53,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
    CFLAGS=""
    LDFLAGS=""
    CXXFLAGS=""
-   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=10.12" 
+   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
    BUILD_DIR_32=$BUILD_DIR/zlib_32
   ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
    make install

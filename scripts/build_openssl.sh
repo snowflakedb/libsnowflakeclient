@@ -48,7 +48,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make -j 4 > /dev/null
     make install_sw install_ssldirs > /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
-    openssl_config_opts+=("-mmacosx-version-min=10.12")
+    openssl_config_opts+=("-mmacosx-version-min=${MACOSX_VERSION_MIN}")
     # Check to see if we are doing a universal build or not.
     # If we are not doing a universal build, pick an arch to
     # build

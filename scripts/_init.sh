@@ -44,6 +44,8 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     export CXX=clang++
     export GCC=$CC
     export GXX=$CXX
+    export MACOSX_VERSION_MIN=10.12
+    
     # Check to see if we are doing a universal build
     # By default we do want universal binaries
     if [[ "$UNIVERSAL" == "" ]]; then

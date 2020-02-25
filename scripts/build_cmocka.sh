@@ -42,7 +42,7 @@ if [[ "$PLATFORM" == "darwin" ]]; then
 	        config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
 	    fi
     fi
-    ADDITIONAL_CFLAGS="-mmacosx-version-min=10.12"
+    ADDITIONAL_CFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN}"
 fi
 
 cd $SOURCE_DIR

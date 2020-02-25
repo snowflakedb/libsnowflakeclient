@@ -97,7 +97,7 @@ if [[ "$PLATFORM" == "darwin" ]]; then
       azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     fi
   fi
-  ADDITIONAL_CXXFLAGS="-mmacosx-version-min=10.12 "
+  ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN} "
 fi
 
 rm -rf $AZURE_BUILD_DIR
