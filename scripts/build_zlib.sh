@@ -15,6 +15,7 @@ ZLIB_VERSION=1.2.11
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
+source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $ZLIB_VERSION && exit 0
 
@@ -67,3 +68,5 @@ else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
 fi
+echo === zip_file "zlib" "$ZLIB_VERSION" "$target"
+zip_file "zlib" "$ZLIB_VERSION" "$target"
