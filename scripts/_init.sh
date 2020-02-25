@@ -69,13 +69,15 @@ fi
 
 export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
+export GET_VERSION=
 target=Release
-while getopts ":hpt:s" opt; do
+while getopts ":hvpt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;
     p) export BUILD_WITH_PROFILE_OPTION=true ;;
     h) usage;;
     s) export BUILD_SOURCE_ONLY=true ;;
+    v) export GET_VERSION=true ;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
   esac
@@ -84,9 +86,11 @@ done
 [[ "$target" != "Debug" && "$target" != "Release" ]] && \
     echo "target must be either Debug/Release." && usage
 
-echo "Options:"
-echo "  target       = $target"
-echo "PATH="$PATH
+if [[ -z "$GET_VERSION" ]]; then
+    echo "Options:"
+    echo "  target       = $target"
+    echo "PATH="$PATH
+fi
 
-DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM
+export DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM/$target
 mkdir -p $DEPENDENCY_DIR

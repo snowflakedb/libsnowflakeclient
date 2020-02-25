@@ -6,17 +6,21 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Builds zlib"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v: return version"
     exit 2
 }
 set -o pipefail
 
+ZLIB_VERSION=1.2.11
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SOURCE_DIR=$DIR/../deps/zlib-1.2.11
+SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
 source $DIR/_init.sh $@
 
+[[ -n "$GET_VERSION" ]] && echo $ZLIB_VERSION && exit 0
 
 # build
-BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
+BUILD_DIR=$DEPENDENCY_DIR/zlib
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
