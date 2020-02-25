@@ -32,4 +32,4 @@ aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz s3://s
 aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz
 aws s3 cp $WORKSPACE/latest_commit s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/latest_commit
 
-echo "PARAM:<b>${branch} , ${git_revision} </b>"
+echo "PARAM: ${branch} , ${git_revision} "
