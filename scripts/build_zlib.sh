@@ -58,10 +58,9 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
    make install
 
-   BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
    mkdir -p $BUILD_DIR/lib
    mkdir -p $BUILD_DIR/include
-   cp -fr $BUILD_DIR_32/include $BUILD_DIR/include/
+   cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
    lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
    rm -rf $BUILD_DIR_64 $BUILD_DIR_32
 else
