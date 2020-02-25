@@ -6,7 +6,7 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
 
-export git_revision=`git rev-parse HEAD`
+export GIT_COMMIT=`git rev-parse HEAD`
 libsnowflake_ver='0.4.5'
 
 
@@ -25,16 +25,16 @@ docker run \
 cd $WORKSPACE
 tar zcvf libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz cmake-build
 tar zcvf libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz -C $WORKSPACE/include $WORKSPACE/cmake-build 
-echo $git_revision > latest_commit
+echo $GIT_COMMIT > latest_commit
 
-aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz
-aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz
-aws s3 cp $WORKSPACE/latest_commit s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/latest_commit
+aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${GIT_BRANCH}/${GIT_COMMIT}/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz
+aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${GIT_BRANCH}/${GIT_COMMIT}/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz
+aws s3 cp $WORKSPACE/latest_commit s3://sfc-jenkins/repository/libsnowflakeclient/linux/${GIT_BRANCH}/latest_commit
 
-echo "PARAM: ${branch} , ${git_revision} "
+echo "PARAM: ${GIT_BRANCH} , ${GIT_COMMIT} "
 
 cat <<PARAMS > $WORKSPACE/build_properties.txt
-branch=$branch
-git_revision=$git_revision
+GIT_BRANCH=$GIT_BRANCH
+GIT_COMMIT=$GIT_COMMIT
 libsnowflake_version=$libsnowflake_ver
 PARAMS
