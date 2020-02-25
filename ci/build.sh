@@ -6,6 +6,9 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
 
+export git_revision=`git rev-parse HEAD`
+libsnowflake_ver='0.4.5'
+
 
 docker pull "${BUILD_IMAGE_NAME}"
 
@@ -19,3 +22,12 @@ docker run \
         -e AWS_SECRET_ACCESS_KEY \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/scripts/build_libsnowflakeclient.sh"
+
+cd $WORKSPACE
+tar zcvf libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz cmake-build
+tar zcvf libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz -C $WORKSPACE/include $WORKSPACE/cmake-build 
+echo $git_revision > latest_commit
+
+aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Debug_$libsnowflake_ver.tgz
+aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz
+aws s3 cp $WORKSPACE/latest_commit s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/latest_commit
