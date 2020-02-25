@@ -28,3 +28,5 @@ docker run \
         -e AWS_SECRET_ACCESS_KEY \
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/scripts/run_tests.sh"
+
+echo "PARAM: ${branch} , ${git_revision} , ${libsnowflake_version}"
