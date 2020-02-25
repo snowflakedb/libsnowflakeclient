@@ -57,11 +57,11 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
         ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
-        make -j 4 build_libs #> /dev/null
+        make -j 4 build_libs > /dev/null
         make install_sw install_ssldirs > /dev/null
         make distclean clean &> /dev/null || true
         ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
-        make -j 4 build_libs #> /dev/null
+        make -j 4 build_libs > /dev/null
         lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    ./libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a ./libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
         mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
