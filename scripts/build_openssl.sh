@@ -66,6 +66,8 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a ./libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
         mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
         mv $OPENSSL_BUILD_DIR/lib/../libcrypto.a $OPENSSL_BUILD_DIR/lib/libcrypto.a
+        lipo -info $OPENSSL_BUILD_DIR/lib/libssl.a
+        lipo -info $OPENSSL_BUILD_DIR/lib/libcrypto.a
     else
         make distclean clean &> /dev/null || true
         if [[ "$ARCH" == "x86" ]]; then
