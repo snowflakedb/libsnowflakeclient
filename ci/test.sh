@@ -9,7 +9,13 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
 
-#aws s3 cp s3://sfc-jenkins/repository/libsnowflakeclient/linux/test/cmake-build $THIS_DIR/../cmake-build --recursive
+echo $git_revision
+echo $branch
+echo $libsnowflake_version
+
+cd $WORKSPACE
+aws s3 cp s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/${git_revision}/libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz
+tar zxvf libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz
 
 docker pull "${TEST_IMAGE_NAME}"
 
