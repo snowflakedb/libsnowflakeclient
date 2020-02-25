@@ -33,3 +33,9 @@ aws s3 cp $WORKSPACE/libsnowflakeclient_linux_Release_$libsnowflake_ver.tgz s3:/
 aws s3 cp $WORKSPACE/latest_commit s3://sfc-jenkins/repository/libsnowflakeclient/linux/${branch}/latest_commit
 
 echo "PARAM: ${branch} , ${git_revision} "
+
+cat <<PARAMS > $WORKSPACE/build_properties.txt
+branch=$branch
+git_revision=$git_revision
+libsnowflake_version=$libsnowflake_ver
+PARAMS
