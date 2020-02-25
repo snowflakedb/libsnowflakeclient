@@ -21,7 +21,6 @@ docker pull "${TEST_IMAGE_NAME}"
 
 docker run \
         -t \
-        -p 7777:22 \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
