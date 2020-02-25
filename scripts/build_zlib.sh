@@ -6,7 +6,7 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Builds zlib"
     echo "-t <Release/Debug> : Release or Debug builds"
-    echo "-v: return version"
+    echo "-v                 : Version"
     exit 2
 }
 set -o pipefail
@@ -14,7 +14,6 @@ set -o pipefail
 ZLIB_VERSION=1.2.11
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
 source $DIR/_init.sh $@
 
 [[ -n "$GET_VERSION" ]] && echo $ZLIB_VERSION && exit 0
@@ -30,6 +29,7 @@ zlib_config_opts+=(
     "--prefix=$BUILD_DIR"
 )
 
+SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
 cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
