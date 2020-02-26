@@ -15,20 +15,21 @@ namespace Client
 
 IStorageClient * StorageClientFactory::injectedClient = nullptr;
 
-IStorageClient * StorageClientFactory::getClient(
-  StageInfo *stageInfo, unsigned int parallel,
-  TransferConfig * transferConfig)
+IStorageClient * StorageClientFactory::getClient(StageInfo *stageInfo,
+                                                 unsigned int parallel,
+                                                 size_t uploadThreshold,
+                                                 TransferConfig *transferConfig)
 {
   switch (stageInfo->stageType)
   {
     case StageType::S3:
       CXX_LOG_INFO("Creating S3 client");
-      return new SnowflakeS3Client(stageInfo, parallel, transferConfig);
+      return new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig);
     case StageType::MOCKED_STAGE_TYPE:
       return injectedClient;
     case StageType::AZURE:
       CXX_LOG_INFO("Creating Azure client");
-      return new SnowflakeAzureClient(stageInfo, parallel, transferConfig);
+      return new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold, transferConfig);
     default:
       // invalid stage type
       throw SnowflakeTransferException(TransferError::UNSUPPORTED_FEATURE,

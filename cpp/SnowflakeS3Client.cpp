@@ -44,10 +44,13 @@ namespace Client
 {
 
 
-SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel,
-  TransferConfig * transferConfig):
+SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
+                                     unsigned int parallel,
+                                     size_t uploadThreshold,
+                                     TransferConfig *transferConfig) :
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
+  m_uploadThreshold(uploadThreshold),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   Aws::Utils::Logging::InitializeAWSLogging(
@@ -142,7 +145,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
                        outcome.GetError().GetMessage().c_str());
       }
   }
-  if (fileMetadata->srcFileSize > UPLOAD_DATA_SIZE_THRESHOLD)
+  if (fileMetadata->srcFileSize > m_uploadThreshold)
     return doMultiPartUpload(fileMetadata, dataStream);
   else
     return doSingleUpload(fileMetadata, dataStream);
@@ -243,7 +246,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     CXX_LOG_DEBUG("Create multi part upload request succeed, uploadId: %s",
                   uploadId.c_str());
 
-    Util::StreamSplitter splitter(dataStream, m_parallel, UPLOAD_DATA_SIZE_THRESHOLD);
+    Util::StreamSplitter splitter(dataStream, m_parallel, m_uploadThreshold);
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
     CXX_LOG_INFO("Total file size: %d, split into %d parts.",

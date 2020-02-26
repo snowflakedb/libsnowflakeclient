@@ -76,7 +76,9 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   // init storage client
   m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
-    (unsigned int)response.parallel, m_transferConfig);
+                                                    (unsigned int) response.parallel,
+                                                    response.threshold,
+                                                    m_transferConfig);
 
   // init file metadata
   initFileMetadata(command);
@@ -112,7 +114,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
     {
       case CommandType::UPLOAD:
         m_FileMetadataInitializer.populateSrcLocUploadMetadata(
-          sourceLocations->at(i));
+            sourceLocations->at(i), response.threshold);
         break;
       case CommandType::DOWNLOAD:
         {
@@ -212,9 +214,15 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
   if (now - m_lastRefreshTokenSec > 10 * 60)
   {
     CXX_LOG_INFO("Renew aws token");
-    m_stmtPutGet->parsePutGetCommand(command, &response);
+    if (!m_stmtPutGet->parsePutGetCommand(command, &response))
+    {
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                       "Failed to parse response.");
+    }
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
-      (unsigned int) response.parallel, m_transferConfig);
+                                                      (unsigned int) response.parallel,
+                                                      response.threshold,
+                                                      m_transferConfig);
     m_lastRefreshTokenSec = now;
   }
 }

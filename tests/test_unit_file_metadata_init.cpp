@@ -39,7 +39,7 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
   
   std::string testDir = getTestFileMatchDir();
   std::string fullFilePattern = testDir + filePattern;
-  initializer.populateSrcLocUploadMetadata(fullFilePattern);
+  initializer.populateSrcLocUploadMetadata(fullFilePattern, 64*1024*1024);
 
   std::unordered_set<std::string> actualFiles;
   for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++)

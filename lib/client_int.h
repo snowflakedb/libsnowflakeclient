@@ -86,6 +86,8 @@ typedef struct SF_STAGE_INFO {
 struct SF_PUT_GET_RESPONSE {
   void *src_list;
   int64 parallel;
+  // put threshold only
+  int64 threshold;
   sf_bool auto_compress;
   sf_bool overwrite;
   char source_compression[SF_SOURCE_COMPRESSION_TYPE_LEN];

@@ -76,6 +76,8 @@ struct PutGetParseResponse
 {
   int parallel;
 
+  size_t threshold;
+
   bool autoCompress;
 
   bool overwrite;

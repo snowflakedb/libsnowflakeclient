@@ -87,8 +87,10 @@ struct MultiDownloadCtx
 class SnowflakeS3Client : public Snowflake::Client::IStorageClient
 {
 public:
-  SnowflakeS3Client(StageInfo *stageInfo, unsigned int parallel,
-                    TransferConfig * transferConfig);
+  SnowflakeS3Client(StageInfo *stageInfo,
+                    unsigned int parallel,
+                    size_t uploadThreshold,
+                    TransferConfig *transferConfig);
 
   ~SnowflakeS3Client();
 
@@ -124,6 +126,8 @@ private:
   StageInfo * m_stageInfo;
 
   Util::ThreadPool * m_threadPool;
+
+  const size_t m_uploadThreshold;
 
   unsigned int m_parallel;
 

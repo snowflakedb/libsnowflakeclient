@@ -31,12 +31,13 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 {
 }
 
-void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(
-    std::string &fileDir, char *fileName, long fileSize)
+void
+Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(std::string &fileDir, char *fileName, long fileSize,
+                                                                   size_t threshold)
 {
 
   std::vector<FileMetadata> *metaListToPush =
-    fileSize > UPLOAD_DATA_SIZE_THRESHOLD ?
+    fileSize > threshold ?
     m_largeFileMetadata : m_smallFileMetadata;
   
   std::string fileNameFull = fileDir;
@@ -51,8 +52,8 @@ void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(
   initCompressionMetadata(&metaListToPush->back());
 }
 
-void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
-  std::string &sourceLocation)
+void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(std::string &sourceLocation,
+                                                                              size_t putThreshold)
 {
 // looking for files on disk. 
 #ifdef _WIN32
@@ -118,7 +119,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(
         {
           if (S_ISREG(fileStatus.st_mode)) {
             initUploadFileMetadata(dirPath, dir_entry->d_name,
-                                   (long) fileStatus.st_size);
+                                   (long) fileStatus.st_size, putThreshold);
           }
         }
         else

@@ -28,10 +28,13 @@ namespace Client
 {
 
 
-SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel,
-  TransferConfig * transferConfig):
+SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
+                                           unsigned int parallel,
+                                           size_t uploadThreshold,
+                                           TransferConfig *transferConfig) :
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
+  m_uploadThreshold(uploadThreshold),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
@@ -77,7 +80,7 @@ SnowflakeAzureClient::~SnowflakeAzureClient()
 RemoteStorageRequestOutcome SnowflakeAzureClient::upload(FileMetadata *fileMetadata,
                                           std::basic_iostream<char> *dataStream)
 {
-    if(fileMetadata->encryptionMetadata.cipherStreamSize <= UPLOAD_DATA_SIZE_THRESHOLD)
+    if(fileMetadata->encryptionMetadata.cipherStreamSize <= m_uploadThreshold)
     {
         return doSingleUpload(fileMetadata, dataStream);
     }

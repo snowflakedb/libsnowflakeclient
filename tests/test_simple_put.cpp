@@ -30,7 +30,9 @@ void test_simple_put_core(const char * fileName,
                           bool copyUploadFile=true,
                           bool verifyCopyUploadFile=true,
                           bool copyTableToStaging=false,
-                          bool createDupTable=false)
+                          bool createDupTable=false,
+                          bool setCustomThreshold=false,
+                          size_t customThreshold=64*1024*1024)
 {
   /* init */
   SF_STATUS status;
@@ -74,6 +76,13 @@ void test_simple_put_core(const char * fileName,
 
   putCommand += " source_compression=";
   putCommand += sourceCompression;
+
+
+  if (setCustomThreshold)
+  {
+    putCommand += " threshold=";
+    putCommand += customThreshold;
+  }
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
@@ -254,6 +263,26 @@ void test_large_put_auto_compress(void **unused)
   );
 }
 
+void test_large_put_threshold(void **unused)
+{
+    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+  if ( ! strncmp(cenv, "AWS", 6) ) {
+      errno = 0;
+      return;
+  }
+  std::string destinationfile="large_file.csv.gz";
+  std::string destFile = TestSetup::getDataDir() + destinationfile;
+  test_simple_put_core(destinationfile.c_str(), // filename
+                       "gzip", //source compression
+                       false,   // auto compress
+                       true,   // Load data into table
+                       false,  // Run select * on loaded table (Not good for large data set)
+                       true,    // copy data from Table to Staging.
+                       true,
+                       20*1024*1024
+  );
+}
+
 void test_large_reupload(void **unused)
 {
     if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
@@ -378,6 +407,11 @@ void test_simple_put_zero_byte(void **unused)
 void test_simple_put_one_byte(void **unused)
 {
   test_simple_put_core("one_byte.csv", "auto", true, false);
+}
+
+void test_simple_put_threshold(void **unused)
+{
+  test_simple_put_core("small_file.csv.gz", "none", false, false, false, false, false, true, 100*1024*1024);
 }
 
 void test_simple_get(void **unused)
@@ -524,6 +558,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip_caseInsensitive, teardown),
+    cmocka_unit_test_teardown(test_simple_put_threshold, teardown),
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
@@ -531,6 +566,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
+    cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown)

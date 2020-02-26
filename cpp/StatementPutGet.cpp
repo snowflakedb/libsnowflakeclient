@@ -16,7 +16,10 @@ StatementPutGet::StatementPutGet(SF_STMT *stmt) :
 bool StatementPutGet::parsePutGetCommand(std::string *sql,
                                          PutGetParseResponse *putGetParseResponse)
 {
-  snowflake_query(m_stmt, sql->c_str(), 0);
+  if (snowflake_query(m_stmt, sql->c_str(), 0) != SF_STATUS_SUCCESS)
+  {
+    return false;
+  }
 
   SF_PUT_GET_RESPONSE *response = m_stmt->put_get_response;
   putGetParseResponse->parallel = (int)response->parallel;
@@ -39,6 +42,7 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   {
     putGetParseResponse->command = CommandType::UPLOAD;
 
+    putGetParseResponse->threshold = (size_t)response->threshold;
     putGetParseResponse->encryptionMaterials.emplace_back(
       response->enc_mat_put->query_stage_master_key,
       response->enc_mat_put->query_id,
