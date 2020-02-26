@@ -30,7 +30,7 @@ if [[ "$skip_env_args" == "false" ]]; then
 fi
 
 
-cd $DIR/cmake-build
+cd $BUILD_LOC/cmake-build
 if [[ "$use_valgrind" == "true" ]]; then
     # run valgrind tests
     ctest3 -V -R "valgrind.*"

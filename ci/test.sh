@@ -26,6 +26,7 @@ docker run \
         -e LOCAL_USER_ID=$(id -u $USER) \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
+        -e BUILD_LOC='/mnt/host'
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/scripts/run_tests.sh"
 
