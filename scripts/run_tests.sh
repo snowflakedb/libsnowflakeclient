@@ -30,13 +30,8 @@ if [[ "$skip_env_args" == "false" ]]; then
     source $DIR/env.sh
 fi
 
-ls /mnt/host/
 
-cd /mnt/host
-aws s3 cp s3://sfc-jenkins/repository/libsnowflakeclient/linux/test/cmake.tgz cmake.tgz
-tar zxvf cmake.tgz
-
-cd /mnt/host/cmake-build
+cd cmake-build
 if [[ "$use_valgrind" == "true" ]]; then
     # run valgrind tests
     ctest3 -V -R "valgrind.*"
@@ -45,4 +40,3 @@ else
     ctest3 -V -E "valgrind.*"
 fi
 cd ..
-#while true; do sleep 10000; done
