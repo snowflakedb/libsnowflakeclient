@@ -102,3 +102,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         fi
     fi
 fi
+echo === zip_file "curl" "$CURL_VERSION" "$target"
+zip_file "curl" "$CURL_VERSION" "$target"

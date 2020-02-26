@@ -10,18 +10,23 @@ function usage() {
 }
 set -o pipefail
 
+AZURE_VERSION=0.1.17
+
 export CC="/usr/lib64/ccache/gcc52 -g"
 export CXX="/usr/lib64/ccache/g++52 -g"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
+source $DIR/utils.sh
+
+[[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
+
 AZURE_SOURCE_DIR=$DEPS_DIR/azure-storage-cpplite
 AZURE_BUILD_DIR=$DEPENDENCY_DIR/azure
 AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 
 GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
 CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-VERSION="v0.1.16"
 
 if [ ! -d $AZURE_SOURCE_DIR ]; then
   n=0 
@@ -40,11 +45,11 @@ if [ ! -d $AZURE_SOURCE_DIR ]; then
   fi  
 
   cd $AZURE_SOURCE_DIR
-  git checkout tags/$VERSION -b $VERSION || true
+  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
 else
   cd $AZURE_SOURCE_DIR
   git fetch
-  git checkout tags/$VERSION -b $VERSION || true
+  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
 fi
 
 
@@ -127,3 +132,6 @@ mkdir -p $DEPENDENCY_DIR/azure/lib
 cp -fr $AZURE_CMAKE_BUILD_DIR/libazure-storage-lite.a $DEPENDENCY_DIR/azure/lib/
 
 cd $DIR
+
+echo === zip_file "azure" "$AZURE_VERSION" "$target"
+zip_file "azure" "$AZURE_VERSION" "$target"

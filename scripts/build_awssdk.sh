@@ -6,14 +6,21 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Build AWS SDK"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
     exit 2
 }
 set -o pipefail
 
+AWS_VERSION=1.3.50
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
-AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-1.3.50/
-AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build
+source $DIR/_init.sh $@
+source $DIR/utils.sh
+
+[[ -n "$GET_VERSION" ]] && echo $AWS_VERSION && exit 0
+
+AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-${AWS_VERSION}
+AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 
 aws_configure_opts=()
@@ -62,6 +69,7 @@ rm -rf $AWS_CMAKE_BUILD_DIR
 mkdir $AWS_BUILD_DIR
 mkdir $AWS_CMAKE_BUILD_DIR
 
+# Keep GIT_DIR for the issue https://github.com/aws/aws-sdk-cpp/issues/383
 export GIT_DIR=/tmp
 
 cd $AWS_CMAKE_BUILD_DIR
@@ -71,3 +79,6 @@ unset GIT_DIR
 
 make
 make install
+
+echo === zip_file "aws" "$AWS_VERSION" "$target"
+zip_file "aws" "$AWS_VERSION" "$target"

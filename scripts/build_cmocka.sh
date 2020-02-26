@@ -6,14 +6,17 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Build cmocka"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
     exit 2
 }
 
 set -o pipefail
 
+CMOCKA_VERSION=1.1.1
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
-SOURCE_DIR=$DEPS_DIR/cmocka-1.1.1
+SOURCE_DIR=$DEPS_DIR/cmocka-${CMOCKA_VERSION}
 
 INSTALL_DIR=/tmp/cmocka
 rm -rf $INSTALL_DIR
@@ -46,9 +49,9 @@ if [[ "$PLATFORM" == "darwin" ]]; then
 fi
 
 cd $SOURCE_DIR
-rm -rf cmake-build
-mkdir cmake-build
-cd cmake-build
+rm -rf cmake-build-$target
+mkdir cmake-build-$target
+cd cmake-build-$target
 echo cmake ${config_opts[@]} ..
 $CMAKE -E env CFLAGS=$ADDITIONAL_CFLAGS $CMAKE ${config_opts[@]} ..
 make
@@ -62,3 +65,6 @@ mkdir -p $DEPENDENCY_DIR/cmocka/{include,lib}
 
 cd $INSTALL_DIR
 cp -p -r * $DEPENDENCY_DIR/cmocka/
+
+echo === zip_file "mocka" "$CMOCKA_VERSION" "$target"
+zip_file "mocka" "$CMOCKA_VERSION" "$target"
