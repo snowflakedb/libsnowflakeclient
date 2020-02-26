@@ -91,7 +91,7 @@ function upload_to_sfc_jenkins()
     local component_version=$2
     local build_type=$3
 
-    echo $GIT_BRANCH
+    local git_branch_base_name=$(echo $GIT_BRANCH | awk -F/ '{print $2}')
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     local target_path=s3://sfc-jenkins/repository/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
@@ -101,9 +101,9 @@ function upload_to_sfc_jenkins()
     echo "=== uploading artifacts/$cmake_file_name to $target_path"
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$cmake_file_name $target_path
     local parent_target_path=$(dirname $target_path)
-    echo "=== uploading latest_commit to $parent_target_path"
+    echo "=== uploading latest_commit to $parent_target_path/"
     local latest_commit=$($MKTEMP)
     echo $GIT_COMMIT > $latest_commit
-    aws s3 cp --only-show-errors $latest_commit $parent_target_path
+    aws s3 cp --only-show-errors $latest_commit $parent_target_path/latest_commit
     rm -f $latest_commit
 }
