@@ -3,34 +3,53 @@ name: Build and Test
 on: push
 
 jobs:
-    build-test:
-        name: Build-Test
-        runs-on: windows-2019
+#    build-test-win:
+#        name: Build-Test-Win
+#        runs-on: windows-2019
+#        strategy:
+#            matrix:
+#                platform: [ 'x64', 'x86' ]
+#                build_type: [ 'Debug', 'Release' ]
+#                vs_version: [ 'VS16' ]
+#                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+#        steps:
+#            - uses: actions/checkout@v1
+#            - name: Build
+#              shell: cmd
+#              env:
+#                  PLATFORM: ${{ matrix.platform }}
+#                  BUILD_TYPE: ${{ matrix.build_type }}
+#                  VS_VERSION: ${{ matrix.vs_version }}
+#              run: ci\build.bat
+#            - uses: actions/setup-python@v1
+#              with:
+#                python-version: '3.7'
+#                architecture: 'x64'
+#            - name: Test
+#              shell: cmd
+#              env:
+#                  PLATFORM: ${{ matrix.platform }}
+#                  BUILD_TYPE: ${{ matrix.build_type }}
+#                  VS_VERSION: ${{ matrix.vs_version }}
+#                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+#                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#              run: ci\test.bat
+    build-test-mac:
+        name: Build-Test-Mac
+        runs-on: macos-10.15
         strategy:
             matrix:
-                platform: [ 'x64', 'x86' ]
-                build_type: [ 'Debug', 'Release' ]
-                vs_version: [ 'VS16' ]
-                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+                build_type: [ 'Debug' ]
+                cloud_provider: [ 'AWS' ]
         steps:
             - uses: actions/checkout@v1
+            - name: Install Homebrew Bash
+              shell: bash
+              run: brew install bash
             - name: Build
-              shell: cmd
+              shell: bash
               env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: ci\build.bat
-            - uses: actions/setup-python@v1
-              with:
-                python-version: '3.7'
-                architecture: 'x64'
-            - name: Test
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
-                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-              run: ci\test.bat
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                BUILD_TYPE: ${{ matrix.build_type }}
+                CLOUD_PROVIDER: ${{ matrix.cloud }}
+              run: /usr/local/bin/bash ./ci/build_mac.sh
