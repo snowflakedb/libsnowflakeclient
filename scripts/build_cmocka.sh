@@ -16,6 +16,10 @@ CMOCKA_VERSION=1.1.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
+source $DIR/utils.sh
+
+[[ -n "$GET_VERSION" ]] && echo $CMOCKA_VERSION && exit 0
+
 SOURCE_DIR=$DEPS_DIR/cmocka-${CMOCKA_VERSION}
 
 INSTALL_DIR=/tmp/cmocka
@@ -59,12 +63,11 @@ make
 # make test
 make install
 
-DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM
 rm -rf $DEPENDENCY_DIR/cmocka
 mkdir -p $DEPENDENCY_DIR/cmocka/{include,lib}
 
 cd $INSTALL_DIR
 cp -p -r * $DEPENDENCY_DIR/cmocka/
 
-echo === zip_file "mocka" "$CMOCKA_VERSION" "$target"
-zip_file "mocka" "$CMOCKA_VERSION" "$target"
+echo === zip_file "cmocka" "$CMOCKA_VERSION" "$target"
+zip_file "cmocka" "$CMOCKA_VERSION" "$target"

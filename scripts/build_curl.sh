@@ -16,6 +16,7 @@ CURL_VERSION=${CURL_DIR}.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
+source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
 
