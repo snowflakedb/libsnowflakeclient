@@ -51,7 +51,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   # Check to see if we are doing a universal build or not.
   # If we are not doing a universal build, pick an arch to
   # build
-  if [[ "$UNIVERSAL" == "true" ]]; then
+  if [[ "$ARCH" == "universal" ]]; then
     echo "[INFO] Building Universal Binary"
     BUILD_DIR_64=$BUILD_DIR/uuid_64
     make distclean > /dev/null 2>&1

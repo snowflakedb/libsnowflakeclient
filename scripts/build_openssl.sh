@@ -53,7 +53,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     # Check to see if we are doing a universal build or not.
     # If we are not doing a universal build, pick an arch to
     # build
-    if [[ "$UNIVERSAL" == "true" ]]; then
+    if [[ "$ARCH" == "universal" ]]; then
         # OSX/macos 32 and 64 bit universal
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true

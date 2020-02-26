@@ -49,17 +49,15 @@ ADDITIONAL_CXXFLAGS=
 # If we are not doing a universal build, pick an arch to
 # build
 if [[ "$PLATFORM" == "darwin" ]]; then
-    if [[ "$UNIVERSAL" == "true" ]]; then
+    if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
         aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+    elif [[ "$ARCH" == "x86" ]]; then
+        echo "[INFO] Building x86 Binary"
+        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
     else
-        if [[ "$ARCH" == "x86" ]]; then
-            echo "[INFO] Building x86 Binary"
-            aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
-        else
-            echo "[INFO] Building x64 Binary"
-            aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
-        fi
+        echo "[INFO] Building x64 Binary"
+        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     fi
     ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN}"
 fi
