@@ -57,6 +57,3 @@ fi
 $CMAKE ${cmake_opts[@]} ..
 make
 
-cd ..
-#tar zcvf cmake.tgz cmake-build 
-#aws s3 cp /mnt/host/cmake.tgz s3://sfc-jenkins/repository/libsnowflakeclient/linux/test/cmake.tgz
