@@ -11,6 +11,7 @@ set -o pipefail
 
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 source $SCRIPTS_DIR/utils.sh
+init_git_variables
 
 function download_build_component()
 {
@@ -44,9 +45,28 @@ function download_build_component()
     fi
 }
 
+function build_component()
+{
+    local component_name=$1
+    local component_script=$2
+    local build_type=$3
+
+    echo "=== build: $component_name ==="
+    "$component_script" -t "$build_type"
+    local component_version=$("$component_script" -v)
+    if [[ -z "$GITHUB_ACTIONS" ]]; then
+        echo "=== upload ..."
+        upload_to_sfc_jenkins $component_name $component_version $build_type
+        #if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+            upload_to_sfc_dev1_data $component_name $component_version $build_type
+        #fi
+    fi
+}
+
 download_build_component zlib "$SCRIPTS_DIR/build_zlib.sh" "$target"
 download_build_component openssl "$SCRIPTS_DIR/build_openssl.sh" "$target"
 download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
+build_componet libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"

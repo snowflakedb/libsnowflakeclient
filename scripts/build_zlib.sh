@@ -59,8 +59,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
    make install
 
-   mkdir -p $BUILD_DIR/lib
-   mkdir -p $BUILD_DIR/include
+   mkdir -p $BUILD_DIR/{lib,include}
    cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
    lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
    rm -rf $BUILD_DIR_64 $BUILD_DIR_32

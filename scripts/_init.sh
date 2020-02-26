@@ -47,6 +47,7 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     export GCC=$CC
     export GXX=$CXX
     export MACOSX_VERSION_MIN=10.12
+    export MKTEMP="mktemp -t snowflake"
     
     # Check to see if we are doing a universal build
     # By default we do want universal binaries
@@ -69,6 +70,8 @@ if [[ "$PLATFORM" == "darwin" ]]; then
         fi
         export ARCH="${ARCH}"
     fi
+else
+    export MKTEMP="mktemp"
 fi
 
 export BUILD_WITH_PROFILE_OPTION=
