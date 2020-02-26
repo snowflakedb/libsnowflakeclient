@@ -36,8 +36,7 @@ cmake_opts=(
 )
 
 # Check to see if we are doing a universal build or not.
-# If we are not doing a universal build, pick an arch to
-# build
+# If we are not doing a universal build, pick an arch to build
 if [[ "$PLATFORM" == "darwin" ]]; then
     cmake_opts+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_VERSION_MIN}")
     if [[ "$UNIVERSAL" == "true" ]]; then
@@ -68,14 +67,13 @@ make
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
-echo "OK"
 set -x
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
-cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKE_VERSION" "$target")
+cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")
 if [[ -z "$GITHUB_ACTIONS" ]] && [[ -z "$BUILD_SOURCE_ONLY" ]]; then
     pushd $DIR/.. >&/dev/null
         tar cvfz artifacts/$cmake_file_name $CMAKE_DIR
