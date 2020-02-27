@@ -102,7 +102,6 @@ goto :EOF
     echo === set GIT environment variables
     if "%GIT_URL%"=="" (
         set GIT_URL=https://github.com/snowflakedb/libsnowflakeclient.git
-        if %ERRORLEVEL% NEQ 0 goto :error
     )
     if "%GIT_BRANCH%"=="" (
         for /f "delims=" %%A in ('git rev-parse --abbrev-ref HEAD') do @set GIT_BRANCH=origin/%%A

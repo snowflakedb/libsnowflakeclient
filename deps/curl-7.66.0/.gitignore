@@ -1,1 +1,7 @@
 builds/
+config.status
+curl-config
+docs/Makefile
+libtool
+libcurl.pc
+Makefile

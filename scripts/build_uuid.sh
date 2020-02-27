@@ -51,7 +51,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   # Check to see if we are doing a universal build or not.
   # If we are not doing a universal build, pick an arch to
   # build
-  if [[ "$UNIVERSAL" == "true" ]]; then
+  if [[ "$ARCH" == "universal" ]]; then
     echo "[INFO] Building Universal Binary"
     BUILD_DIR_64=$BUILD_DIR/uuid_64
     make distclean > /dev/null 2>&1
@@ -59,7 +59,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        make distclean > /dev/null || true
     fi
     echo "Generating UUID build system for 64 bit"
-    export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+    export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR_64  || true
     echo "Compiling UUID source"
@@ -71,7 +71,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        make distclean > /dev/null || true
     fi
     echo "Generating UUID build system"
-    export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=10.12" 
+    export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR  || true
     echo "Compiling UUID source for 32 bit"
@@ -87,10 +87,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     fi
     if [[ "$ARCH" == "x86" ]]; then
       echo "Generating UUID build system for 32 bit"
-      export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=10.12" 
+      export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
     else
       echo "Generating UUID build system for 64 bit"
-      export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+      export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     fi
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR  || true

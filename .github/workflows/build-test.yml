@@ -3,8 +3,8 @@ name: Build and Test
 on: push
 
 jobs:
-    build-test:
-        name: Build-Test
+    build-test-win:
+        name: Build-Test-Win
         runs-on: windows-2019
         strategy:
             matrix:
@@ -34,3 +34,22 @@ jobs:
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci\test.bat
+#    build-test-mac:
+#        name: Build-Test-Mac
+#        runs-on: macos-10.15
+#        strategy:
+#            matrix:
+#                build_type: [ 'Debug' ]
+#                cloud_provider: [ 'AWS' ]
+#        steps:
+#            - uses: actions/checkout@v1
+#            - name: Install Homebrew Bash
+#              shell: bash
+#              run: brew install bash
+#            - name: Build
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                BUILD_TYPE: ${{ matrix.build_type }}
+#                CLOUD_PROVIDER: ${{ matrix.cloud }}
+#              run: /usr/local/bin/bash ./ci/build_mac.sh
