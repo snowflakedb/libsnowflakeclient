@@ -56,3 +56,4 @@ fi
 
 $CMAKE ${cmake_opts[@]} ..
 make
+
