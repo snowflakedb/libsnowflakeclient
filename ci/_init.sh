@@ -2,9 +2,9 @@
 INTERNAL_REPO=nexus.int.snowflakecomputing.com:8086
 INTERNAL_CLIENT_REPO=$INTERNAL_REPO/docker/client
 BUILD_IMAGE_VERSION=1
-BUILD_IMAGE_NAME=$INTERNAL_CLIENT_REPO/libsnowflakeclient/linux/centos6/build:$BUILD_IMAGE_VERSION
+BUILD_IMAGE_NAME=$INTERNAL_CLIENT_REPO/libsnowflakeclient-linux-centos6-build:$BUILD_IMAGE_VERSION
 TEST_IMAGE_VERSION=1
-TEST_IMAGE_NAME=$INTERNAL_CLIENT_REPO/libsnowflakeclient/linux/centos6/build:$BUILD_IMAGE_VERSION
+TEST_IMAGE_NAME=$INTERNAL_CLIENT_REPO/libsnowflakeclient-linux-centos6-build:$BUILD_IMAGE_VERSION
 
 NEXUS_USER=${USERNAME:-jenkins}
 if [[ -z "$NEXUS_PASSWORD" ]]; then
