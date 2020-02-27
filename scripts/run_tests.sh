@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Run C API tests
 #
@@ -8,7 +8,7 @@ function usage() {
     exit 2
 }
 
-#set -o pipefail
+set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
