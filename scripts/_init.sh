@@ -13,9 +13,11 @@ PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
 # Find cmake, gcc and g++ on target machine. Need cmake 3.0+, gcc/g++ 4.9+
 if [[ "$(which cmake3)" ]]; then
-    CMAKE="$(which cmake3)"
+    export CMAKE="$(which cmake3)"
+    export CTEST="$(which ctest3)"
 else
-    CMAKE="$(which cmake)"
+    export CMAKE="$(which cmake)"
+    export CTEST="$(which ctest)"
 fi
 
 if [[ -z "$GCC" || -z "$GXX" ]]; then
