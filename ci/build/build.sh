@@ -7,7 +7,7 @@ CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
 set -o pipefail
 
-[[ -z "$BUILD_TYPE" ]] && export BUILD_TYPE=Release
+[[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 source $SCRIPTS_DIR/utils.sh

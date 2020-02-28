@@ -107,3 +107,43 @@ function upload_to_sfc_jenkins()
     aws s3 cp --only-show-errors $latest_commit $parent_target_path/latest_commit
     rm -f $latest_commit
 }
+
+function download_from_sfc_jenkins()
+{
+    local component_name=$1
+    local component_version=$2
+    local build_type=$3
+
+    local git_branch_base_name=$(echo $GIT_BRANCH | awk -F/ '{print $2}')
+    
+    mkdir -p $UTILS_DIR/../artifacts
+    echo "$component_name $component_version $build_type"
+    local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
+    local source_path=s3://sfc-jenkins/repository/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
+    echo "=== downloading $zip_file_name from $source_path/"
+    aws s3 cp --only-show-errors $source_path/$zip_file_name $UTILS_DIR/../artifacts/
+    local cmake_file_name=$(get_cmake_file_name $component_name $component_version $build_type)
+    echo "=== downloading $cmake_file_name from $source_path/"
+    aws s3 cp --only-show-errors $source_path/$cmake_file_name $UTILS_DIR/../artifacts/
+}
+
+function set_parameters()
+{
+    local cloud_provider=$(echo $1 | tr '[:upper:]' '[:lower:]')
+    cloud_provider=${cloud_provider:-aws}
+
+    [[ -z "$PARAMETERS_SECRET" ]] && echo "Set PARAMETERS_SECRET" && exit 1
+
+    if [[ "$cloud_provider" == "aws" ]]; then
+        echo "== AWS"
+        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_aws_capi.json.gpg
+    elif [[ "$cloud_provider" == "azure" ]]; then
+        echo "== Azure"
+        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_azure_capi.json.gpg
+    elif [[ "$cloud_provider" == "gcp" ]]; then
+        echo "== GCP"
+        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_gcp_capi.json.gpg
+        echo "Set cloud_provider environment variable: [aws, azure, gcp]"
+        exit 1
+    fi
+}
