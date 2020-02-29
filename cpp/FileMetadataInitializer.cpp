@@ -47,6 +47,8 @@ Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::st
 
   std::vector<FileMetadata> &metaListToPush = fileSize > threshold ?
     m_largeFileMetadata : m_smallFileMetadata;
+
+  metaListToPush.push_back(fileMetadata);
 }
 
 void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(std::string &sourceLocation,
