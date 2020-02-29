@@ -23,8 +23,8 @@
 
 
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
-  std::vector<FileMetadata> * smallFileMetadata,
-  std::vector<FileMetadata> * largeFileMetadata) :
+  std::vector<FileMetadata> &smallFileMetadata,
+  std::vector<FileMetadata> &largeFileMetadata) :
   m_smallFileMetadata(smallFileMetadata),
   m_largeFileMetadata(largeFileMetadata),
   m_autoCompress(true)
@@ -32,24 +32,21 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 }
 
 void
-Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(std::string &fileDir, char *fileName, long fileSize,
-                                                                   size_t threshold)
+Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileDir, const char *fileName,
+                                                                   long fileSize, size_t threshold)
 {
-
-  std::vector<FileMetadata> *metaListToPush =
-    fileSize > threshold ?
-    m_largeFileMetadata : m_smallFileMetadata;
-  
   std::string fileNameFull = fileDir;
   fileNameFull += fileName;
 
-  metaListToPush->emplace_back();
-  metaListToPush->back().srcFileName = fileNameFull;
-  metaListToPush->back().srcFileSize = fileSize;
-  metaListToPush->back().destFileName = std::string(fileName);
-
+  FileMetadata fileMetadata;
+  fileMetadata.srcFileName = fileNameFull;
+  fileMetadata.srcFileSize = fileSize;
+  fileMetadata.destFileName = std::string(fileName);
   // process compression type
-  initCompressionMetadata(&metaListToPush->back());
+  initCompressionMetadata(fileMetadata);
+
+  std::vector<FileMetadata> &metaListToPush = fileSize > threshold ?
+    m_largeFileMetadata : m_smallFileMetadata;
 }
 
 void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(std::string &sourceLocation,
@@ -144,10 +141,10 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
 }
 
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
-  FileMetadata *fileMetadata)
+  FileMetadata &fileMetadata)
 {
   CXX_LOG_DEBUG("Init compression metadata for file %s",
-                fileMetadata->srcFileName.c_str());
+                fileMetadata.srcFileName.c_str());
 
   if(!sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
                   sizeof(COMPRESSION_AUTO_DETECT)) ||
@@ -156,23 +153,23 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   {
     // guess
     CXX_LOG_INFO("Auto detect on compression type");
-    fileMetadata->sourceCompression = FileCompressionType::guessCompressionType(
-      fileMetadata->srcFileName);
+    fileMetadata.sourceCompression = FileCompressionType::guessCompressionType(
+      fileMetadata.srcFileName);
   }
   else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
                         sizeof(COMPRESSION_NONE)))
   {
     CXX_LOG_INFO("No compression in source file");
-    fileMetadata->sourceCompression = &FileCompressionType::NONE;
+    fileMetadata.sourceCompression = &FileCompressionType::NONE;
   }
   else
   {
     // look up
     CXX_LOG_INFO("Compression type lookup by name.");
-    fileMetadata->sourceCompression = FileCompressionType::lookUpByName(
+    fileMetadata.sourceCompression = FileCompressionType::lookUpByName(
       m_sourceCompression);
 
-    if (!fileMetadata->sourceCompression)
+    if (!fileMetadata.sourceCompression)
     {
       // no compression found
       CXX_LOG_INFO("Compression type %s not found.", m_sourceCompression);
@@ -181,25 +178,25 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
     }
   }
 
-  if (fileMetadata->sourceCompression == &FileCompressionType::NONE)
+  if (fileMetadata.sourceCompression == &FileCompressionType::NONE)
   {
-    fileMetadata->targetCompression = m_autoCompress ?
+    fileMetadata.targetCompression = m_autoCompress ?
       &FileCompressionType::GZIP : &FileCompressionType::NONE;
-    fileMetadata->requireCompress = m_autoCompress;
-    fileMetadata->destFileName = m_autoCompress ?
-      fileMetadata->destFileName + fileMetadata->targetCompression->
+    fileMetadata.requireCompress = m_autoCompress;
+    fileMetadata.destFileName = m_autoCompress ?
+      fileMetadata.destFileName + fileMetadata.targetCompression->
         getFileExtension() :
-      fileMetadata->destFileName;
+      fileMetadata.destFileName;
   }
   else
   {
-    if (!fileMetadata->sourceCompression->getIsSupported())
+    if (!fileMetadata.sourceCompression->getIsSupported())
     {
       throw;
     }
 
-    fileMetadata->requireCompress = false;
-    fileMetadata->targetCompression = fileMetadata->sourceCompression;
+    fileMetadata.requireCompress = false;
+    fileMetadata.targetCompression = fileMetadata.sourceCompression;
   }
 }
 
@@ -238,14 +235,14 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
     CXX_LOG_DEBUG("Success on getting remote file metadata");
-    std::vector<FileMetadata> *metaListToPush =
+    std::vector<FileMetadata> &metaListToPush =
       fileMetadata.srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD ?
       m_largeFileMetadata : m_smallFileMetadata;
 
-    metaListToPush->push_back(fileMetadata);
-    metaListToPush->back().srcFileName = fullPath;
-    metaListToPush->back().destFileName = dstFileName;
-    EncryptionProvider::decryptFileKey(&(metaListToPush->back()), encMat);
+    metaListToPush.push_back(fileMetadata);
+    metaListToPush.back().srcFileName = fullPath;
+    metaListToPush.back().destFileName = dstFileName;
+    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat);
   }
 
   return outcome;

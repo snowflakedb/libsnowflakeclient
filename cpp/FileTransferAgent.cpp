@@ -30,7 +30,7 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement,
   TransferConfig *transferConfig) :
   m_stmtPutGet(statement),
-  m_FileMetadataInitializer(&m_smallFilesMeta, &m_largeFilesMeta),
+  m_FileMetadataInitializer(m_smallFilesMeta, m_largeFilesMeta),
   m_executionResults(nullptr),
   m_storageClient(nullptr),
   m_lastRefreshTokenSec(0),
