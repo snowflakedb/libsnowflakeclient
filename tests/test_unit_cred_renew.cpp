@@ -108,6 +108,7 @@ public:
     putGetParseResponse->command = CommandType::UPLOAD;
     putGetParseResponse->sourceCompression = (char *)"NONE";
     putGetParseResponse->srcLocations = m_srcLocations;
+    putGetParseResponse->threshold = DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD;
     putGetParseResponse->autoCompress = false;
     putGetParseResponse->parallel = 4;
     putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
