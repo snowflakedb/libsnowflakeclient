@@ -37,24 +37,24 @@ goto :EOF
     set dynamic_runtime=%~4
     call "%scriptdir%..\scripts\_init.bat" %platform% %build_type% %vs_version%
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component zlib "%zlib_build_script%" "%dynamic_runtime%"
+    call :download_build_component zlib "%zlib_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component openssl "%openssl_build_script%" "%dynamic_runtime%"
+    call :download_build_component openssl "%openssl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component curl "%curl_build_script%" "%dynamic_runtime%"
+    call :download_build_component curl "%curl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component aws "%aws_build_script%" "%dynamic_runtime%"
+    call :download_build_component aws "%aws_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component azure "%azure_build_script%" "%dynamic_runtime%"
+    call :download_build_component azure "%azure_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :downloand_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
+    call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
-:downloand_build_component
-    @echo off
+:download_build_component
+    @echo on
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
