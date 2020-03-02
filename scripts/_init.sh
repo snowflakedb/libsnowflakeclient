@@ -83,6 +83,9 @@ done
 [[ "$target" != "Debug" && "$target" != "Release" ]] && \
     echo "target must be either Debug/Release." && usage
 
+export PATH=/usr/local/bin:$PATH
+export TERM=vt100
+
 if [[ -z "$GET_VERSION" ]]; then
     echo "Options:"
     echo "  target       = $target"
