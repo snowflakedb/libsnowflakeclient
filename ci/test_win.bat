@@ -4,7 +4,6 @@
 
 @echo off
 setlocal
-echo == %GITHUB_ACTIONS%
 if not defined GITHUB_ACTIONS (
     set "path=C:\Program Files\7-Zip;C:\Python37;C:\python37\scripts;%path%"
 )
@@ -25,7 +24,7 @@ call %env_script%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === setting test schema
-if defined JOB_NAME (
+if defined JENKINS_URL (
     set SNOWFLAKE_TEST_SCHEMA=JENKINS_%JOB_NAME:-=_%_%BUILD_NUMBER%
 )
 if defined GITHUB_ACTIONS (
@@ -68,7 +67,7 @@ exit /b 0
     set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
     call %utils_script% :get_zip_file_name %component_name% %component_version%
     call %build_script% :get_version
-    if not defined GITHUB_ACTIONS (
+    if defined JENKINS_URL (
         call %utils_script% :download_from_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
         dir artifacts

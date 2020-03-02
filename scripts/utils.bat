@@ -65,8 +65,8 @@ goto :EOF
 
 :zip_file
     setlocal
-    if defined GITHUB_ACTIONS (
-        echo === No zip file is created for Github Actions
+    if not defined JENKINS_URL (
+        echo === No zip file is created if not Jenkins
         goto :EOF
     )
     set component_name=%~1
@@ -80,10 +80,6 @@ goto :EOF
         7z l %curdir%\artifacts\%zip_file_name%
     popd
     if %ERRORLEVEL% NEQ 0 goto :error
-    if defined GITHUB_ACTIONS (
-        md %component_name%_artifacts
-        copy /v /y artifacts\%zip_file_name% %component_name%_artifacts
-    )
     goto :EOF
 
 :check_directory

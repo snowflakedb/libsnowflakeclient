@@ -11,7 +11,7 @@ goto :EOF
     goto :EOF
 
 :build
-@echo on
+@echo off
 setlocal
 set platform=%1
 set build_type=%2

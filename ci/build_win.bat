@@ -29,7 +29,7 @@ call :build %platform% %build_type% %vs_version% OFF
 goto :EOF
 
 :build
-    @echo on
+    @echo off
     setlocal
     set platform=%~1
     set build_type=%~2
@@ -104,7 +104,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version
-    if not defined GITHUB_ACTIONS (
+    if defined JENKINS_URL (
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error

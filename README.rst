@@ -34,17 +34,14 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Add x64 or x86 for 64 bit or 32 bit Windows:
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16] and run the script.
 
 .. code-block:: bash
 
-    .\scripts\build_libsnowflakeclient.bat x64 Release
-
-or
-
-.. code-block:: bash
-
-    .\scripts\build_libsnowflakeclient.bat x86 Release
+    set platform=x64
+    set build_type=Debug
+    set vs_version=VS14
+    ci\build.bat
 
 Prepare for Test
 ----------------------------------------------------------------------
@@ -98,17 +95,14 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Add x64 or x86 for 64 bit or 32 bit Windows:
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16] and run the script.
 
 .. code-block:: bash
 
-    ./scripts/run_tests.bat x64 Release
-
-or
-
-.. code-block:: bash
-
-    ./scripts/run_tests.bat x86 Release
+    set platform=x64
+    set build_type=Debug
+    set vs_version=VS14
+    ci\test.bat
 
 	
 Profiling (Linux and OSX)
