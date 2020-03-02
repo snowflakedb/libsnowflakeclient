@@ -19,6 +19,7 @@ else
     export CMAKE="$(which cmake)"
     export CTEST="$(which ctest)"
 fi
+echo "CMAKE: $CMAKE, CTEST: $CTEST"
 
 if [[ -z "$GCC" || -z "$GXX" ]]; then
     if [[ "$(which gcc49)" ]]; then
