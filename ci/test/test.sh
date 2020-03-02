@@ -9,6 +9,7 @@ set -o pipefail
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
+echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
 
 init_git_variables
