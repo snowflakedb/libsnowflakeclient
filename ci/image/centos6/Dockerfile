@@ -59,3 +59,7 @@ RUN yum install -y re2-devel &&\
 RUN yum install -y which
 
 RUN yum install -y jq
+
+RUN yum install -y tar.x86_64
+
+RUN yum install -y libtool
