@@ -34,12 +34,12 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
   std::vector<FileMetadata> smallFileMetadata;
   std::vector<FileMetadata> largeFileMetadata;
 
-  FileMetadataInitializer initializer(&smallFileMetadata, &largeFileMetadata);
+  FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
   initializer.setSourceCompression((char *)"none");
   
   std::string testDir = getTestFileMatchDir();
   std::string fullFilePattern = testDir + filePattern;
-  initializer.populateSrcLocUploadMetadata(fullFilePattern);
+  initializer.populateSrcLocUploadMetadata(fullFilePattern, DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD);
 
   std::unordered_set<std::string> actualFiles;
   for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++)

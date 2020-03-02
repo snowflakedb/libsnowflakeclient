@@ -29,9 +29,9 @@ public:
    * @param stageInfo
    * @return
    */
-  static IStorageClient *getClient(StageInfo *stageInfo,
-                                   unsigned int parallel,
-                                   TransferConfig * transferConfig = nullptr);
+  static IStorageClient *
+  getClient(StageInfo *stageInfo, unsigned int parallel, size_t uploadThreshold,
+            TransferConfig *transferConfig = nullptr);
 
   /**
    * Testing method. Used to inject a mocked remote storage client.

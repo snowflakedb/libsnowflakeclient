@@ -74,8 +74,8 @@ struct MultiDownloadCtx_a
 class SnowflakeAzureClient : public Snowflake::Client::IStorageClient
 {
 public:
-  SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel,
-                    TransferConfig * transferConfig);
+  SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel, size_t uploadThreshold,
+                       TransferConfig *transferConfig);
 
   ~SnowflakeAzureClient();
 
@@ -109,6 +109,7 @@ private:
   Util::ThreadPool * m_threadPool;
   azure::storage_lite::blob_client_wrapper *m_blobclient;
 
+  const size_t m_uploadThreshold;
   unsigned int m_parallel;
 
   /**

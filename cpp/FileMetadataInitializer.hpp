@@ -11,7 +11,7 @@
 #include "IStorageClient.hpp"
 
 // used to decide whether to upload in sequence or in parallel
-#define UPLOAD_DATA_SIZE_THRESHOLD 67108864 // 64MB
+#define DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD 67108864 //64Mb
 #define DOWNLOAD_DATA_SIZE_THRESHOLD 5242880 // 5MB
 
 namespace Snowflake
@@ -24,14 +24,14 @@ namespace Client
 class FileMetadataInitializer
 {
 public:
-  FileMetadataInitializer(std::vector<FileMetadata> *smallFileMetadata,
-                          std::vector<FileMetadata> *largeFileMetadata);
+  FileMetadataInitializer(std::vector<FileMetadata> &smallFileMetadata,
+                          std::vector<FileMetadata> &largeFileMetadata);
 
   /**
    * Given a source locations, find all files that match the location pattern,
    * init file metadata, and divide them into different vector according to size
    */
-  void populateSrcLocUploadMetadata(std::string &sourceLocation);
+  void populateSrcLocUploadMetadata(std::string &sourceLocation, size_t putThreshold);
 
   /**
    * Given a source location, find out file size to determine use parallel
@@ -66,18 +66,18 @@ private:
    * Given file name, populate metadata
    * @param fileName
    */
-  void initUploadFileMetadata(std::string &fileDir, char *fileName, long fileSize);
+  void initUploadFileMetadata(const std::string &fileDir, const char *fileName, long fileSize, size_t threshold);
 
   /**
    * init compression metadata
    */
-  void initCompressionMetadata(FileMetadata *fileMetadata);
+  void initCompressionMetadata(FileMetadata &fileMetadata);
 
   /// small file metadata
-  std::vector<FileMetadata> *m_smallFileMetadata;
+  std::vector<FileMetadata> &m_smallFileMetadata;
 
   /// large file metadata
-  std::vector<FileMetadata> *m_largeFileMetadata;
+  std::vector<FileMetadata> &m_largeFileMetadata;
 
   /// auto compress
   bool m_autoCompress;

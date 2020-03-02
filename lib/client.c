@@ -1781,6 +1781,11 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                           data, "command", SF_COMMAND_LEN);
                 json_copy_int(&sfstmt->put_get_response->parallel, data,
                               "parallel");
+                if (sf_strncasecmp(sfstmt->put_get_response->command, "UPLOAD", 6) == 0)
+                {
+                  json_copy_int(&sfstmt->put_get_response->threshold, data,
+                                "threshold");
+                }
                 json_copy_bool(&sfstmt->put_get_response->auto_compress, data,
                                "autoCompress");
                 json_copy_bool(&sfstmt->put_get_response->overwrite, data,
