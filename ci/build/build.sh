@@ -9,6 +9,7 @@ set -o pipefail
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
+
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 source $SCRIPTS_DIR/utils.sh
 init_git_variables
@@ -67,6 +68,9 @@ download_build_component zlib "$SCRIPTS_DIR/build_zlib.sh" "$target"
 download_build_component openssl "$SCRIPTS_DIR/build_openssl.sh" "$target"
 download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
+if [[ "$PLATFORM" == "linux" ]]; then
+        download_build_component uuid "$SCRIPTS_DIR/build_uuid.sh" "$target"
+fi
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
