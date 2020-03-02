@@ -1,7 +1,7 @@
 ::
 :: Functions to use for building
 ::
-@echo off
+@echo on
 call %*
 goto :EOF
 
