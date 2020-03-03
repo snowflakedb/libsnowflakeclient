@@ -10,6 +10,7 @@ if not defined GITHUB_ACTIONS (
 set scriptdir=%~dp0
 set curdir=%cd%
 
+set utils_script="%scriptdir%..\scripts\utils.bat"
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
 
@@ -20,7 +21,6 @@ set aws_build_script="%scriptdir%..\scripts\build_awssdk.bat"
 set azure_build_script="%scriptdir%..\scripts\build_azuresdk.bat"
 set cmocka_build_script="%scriptdir%..\scripts\build_cmocka.bat"
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
-set utils_script="%scriptdir%..\scripts\utils.bat"
 
 set upload_artifact_script="%scriptdir%container\upload_artifact.bat"
 
@@ -49,7 +49,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%utils_script%" "%dynamic_runtime%"
+    call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
@@ -97,15 +97,14 @@ goto :EOF
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
-    set utils_script=%~3
-    set dynamic_runtime=%~4
+    set dynamic_runtime=%~3
 
     echo === build: %component_name% ===
     call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version
-    if defined JENKINS_URL (
+    if "%JENKINS_URL%"=="" (
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
