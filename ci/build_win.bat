@@ -49,7 +49,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
+    call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%utils_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
@@ -97,7 +97,8 @@ goto :EOF
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
-    set dynamic_runtime=%~3
+    set utils_script=%~3;
+    set dynamic_runtime=%~4
 
     echo === build: %component_name% ===
     call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
