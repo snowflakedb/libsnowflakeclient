@@ -104,7 +104,7 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version
-    if "%JENKINS_URL%"=="" (
+    if not "%JENKINS_URL%"=="" (
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
