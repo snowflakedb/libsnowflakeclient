@@ -130,6 +130,7 @@ goto :EOF
     cd "%curdir%"
     goto :EOF
 
+:upload_to_sfc
 :upload_to_sfc_jenkins
     @echo off
     setlocal
