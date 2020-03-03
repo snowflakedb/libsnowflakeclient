@@ -4,5 +4,6 @@
 #
 set -o pipefail
 
+env | sort
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 $CI_DIR/build/build.sh
