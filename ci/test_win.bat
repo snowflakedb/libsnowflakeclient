@@ -9,13 +9,13 @@ if not defined GITHUB_ACTIONS (
 )
 set scriptdir=%~dp0
 set curdir=%cd%
-set utils_script="%scriptdir%..\scripts\utils.bat"
 
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
 set env_script="%scriptdir%..\scripts\env.bat"
+set utils_script="%scriptdir%..\scripts\utils.bat"
 
 call %utils_script% :set_parameters
 if %ERRORLEVEL% NEQ 0 goto :error

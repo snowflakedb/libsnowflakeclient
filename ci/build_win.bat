@@ -9,7 +9,6 @@ if not defined GITHUB_ACTIONS (
 )
 set scriptdir=%~dp0
 set curdir=%cd%
-set utils_script="%scriptdir%..\scripts\utils.bat"
 
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -21,6 +20,7 @@ set aws_build_script="%scriptdir%..\scripts\build_awssdk.bat"
 set azure_build_script="%scriptdir%..\scripts\build_azuresdk.bat"
 set cmocka_build_script="%scriptdir%..\scripts\build_cmocka.bat"
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
+set utils_script="%scriptdir%..\scripts\utils.bat"
 
 set upload_artifact_script="%scriptdir%container\upload_artifact.bat"
 
@@ -97,7 +97,7 @@ goto :EOF
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
-    set utils_script=%~3;
+    set utils_script=%~3
     set dynamic_runtime=%~4
 
     echo === build: %component_name% ===
