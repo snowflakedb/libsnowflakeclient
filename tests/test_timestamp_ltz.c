@@ -20,12 +20,11 @@ void test_timestamp_ltz(void** unused) {
       {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 -04:00", .c2out = "2014-05-03 13:56:46.12300"},
       {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123 -05:00", .c2out = "1969-11-21 05:17:23.01230"},
       {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00.00000"},
+#ifndef __APPLE__
       // Must run the tests High Sierra (10.13) or newer OS.
       {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:00.00000"},
-#ifdef __APPLE__
       // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
       {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
-#else
       {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00.00000"},
 #endif // __APPLE__
       {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000"},
