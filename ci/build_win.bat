@@ -103,6 +103,7 @@ goto :EOF
     call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
     if %ERRORLEVEL% NEQ 0 goto :error
 
+    set utils_script="%scriptdir%..\scripts\utils.bat"
     call %build_script% :get_version
     if not "%JENKINS_URL%"=="" (
         echo === uploading ...
