@@ -24,7 +24,7 @@ void test_timestamp_ltz(void** unused) {
       // Must run the tests High Sierra (10.13) or newer OS.
       {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:00.00000"},
       // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
-      {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
+      // {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
       {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00.00000"},
 #endif // __APPLE__
       {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000"},
