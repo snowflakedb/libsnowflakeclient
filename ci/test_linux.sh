@@ -8,14 +8,7 @@
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
-
-echo $GIT_COMMIT
-echo $GIT_BRANCH
-echo $libsnowflake_version
-
-cd $WORKSPACE
-aws s3 cp s3://sfc-jenkins/repository/libsnowflakeclient/linux/${GIT_BRANCH}/${GIT_COMMIT}/libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz
-tar zxvf libsnowflakeclient_linux_Debug_$libsnowflake_version.tgz
+CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 docker pull "${TEST_IMAGE_NAME}"
 
@@ -23,11 +16,13 @@ docker run \
         -t \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
+        -e BUILD_TYPE=Debug \
+        -e JOB_NAME \
+        -e BUILD_NUMBER \
         -e LOCAL_USER_ID=$(id -u $USER) \
+        -e PARAMETERS_SECRET \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
-        -e BUILD_LOC='/mnt/host' \
-        "${TEST_IMAGE_NAME}" \
-        "/mnt/host/scripts/run_tests.sh"
-
-echo "PARAM: ${GIT_BRANCH , ${GIT_COMMIT} , ${libsnowflake_version}"
+        -w /mnt/host \
+        "${BUILD_IMAGE_NAME}" \
+        "ci/test/test.sh"
