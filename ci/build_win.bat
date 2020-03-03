@@ -54,7 +54,7 @@ goto :EOF
     exit /b 0
 
 :download_build_component
-    @echo on
+    @echo off
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
@@ -93,7 +93,7 @@ goto :EOF
     
 
 :build_component
-    @echo on
+    @echo off
     setlocal EnableDelayedExpansion
     set component_name=%~1
     set build_script=%~2
