@@ -5,6 +5,9 @@
 set -x
 set -o pipefail
 
+export PATH=/usr/local/bin:$PATH
+export TERM=vt100
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPS_DIR=$(cd $DIR/../deps && pwd)
 ARTIFACTS_DIR=$DIR/../artifacts
@@ -83,9 +86,6 @@ done
 
 [[ "$target" != "Debug" && "$target" != "Release" ]] && \
     echo "target must be either Debug/Release." && usage
-
-export PATH=/usr/local/bin:$PATH
-export TERM=vt100
 
 if [[ -z "$GET_VERSION" ]]; then
     echo "Options:"
