@@ -29,19 +29,24 @@ function download_build_component()
         ret="$(check_directory $component_name $build_type)"
         if [[ "$(check_directory $component_name $build_type)" == "EXIST" ]]; then
             echo "Skip download or build."
-        else
+        elif [[ -z "$GITHUB_ACTIONS" ]]; then
             if ! aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/$component_name/$zip_file_name $ARTIFACTS_DIR; then
+                echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                #if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+                if [[ "$GIT_BRANCH" == "origin/master" ]]; then
                     echo "=== upload $component_name"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
-                #fi
+                fi
             else
+                echo "=== download and extract: $component_name"
                 rm -rf $DEPENDENCY_DIR/$component_name
                 pushd $DEPENDENCY_DIR >& /dev/null
                     tar xvfz $ARTIFACTS_DIR/$zip_file_name
                 popd >& /dev/null
             fi
+        else
+            echo "=== build: $component_name ==="
+            "$component_script" -t "$build_type"
         fi
     fi
 }
@@ -58,9 +63,9 @@ function build_component()
     if [[ -z "$GITHUB_ACTIONS" ]]; then
         echo "=== upload ..."
         upload_to_sfc_jenkins $component_name $component_version $build_type
-        #if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+        if [[ "$GIT_BRANCH" == "origin/master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
-        #fi
+        fi
     fi
 }
 
