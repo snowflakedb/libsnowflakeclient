@@ -10,9 +10,9 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-[[ -z "$BUILD_TYPE" ]] && echo "Specify BUILD_TYPE. [Debug, Release]" && exit 1
-
-TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$DRIVER_NAME-centos6-default]}"
+[[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE. [Debug, Release]" && exit 1
+TARGET_DOCKER_TEST_IMAGE=${TARGET_DOCKER_TEST_IMAGE:-$DRIVER_NAME-centos6-default}
+TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$TARGET_DOCKER_TEST_IMAGE]}"
 docker pull "${TEST_IMAGE_NAME}"
 docker run \
         -t \
