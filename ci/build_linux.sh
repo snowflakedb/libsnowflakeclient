@@ -19,6 +19,7 @@ docker run \
         -e LOCAL_USER_ID=$(id -u $USER) \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
+        -e GITHUB_ACTIONS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
         "ci/build/build.sh"
