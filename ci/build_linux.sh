@@ -5,23 +5,35 @@
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/_init.sh
+source $THIS_DIR/scripts/login_internal_docker.sh
 
-export GIT_COMMIT=`git rev-parse HEAD`
-libsnowflake_ver='0.4.5'
+[[ -z "$BUILD_TYPE" ]] && echo "Specify BUILD_TYPE. [Debug, Release]" && exit 1
 
-echo $THIS_DIR
+if [[ -z "$GITHUB_ACTIONS" ]]; then
+    export GIT_URL=${GIT_URL:-https://github.com/snowflakedb/libsnowflakeclient.git}
+    export GIT_BRANCH=${GIT_BRANCH:-origin/$(git rev-parse --abbrev-ref HEAD)}
+    export GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}
+else
+    export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
+    export GIT_BRANCH=origin/$(basename ${GITHUB_REF})
+    export GIT_COMMIT=${GITHUB_SHA}
+fi
 
+BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-centos6-default]}"
+echo $BUILD_IMAGE_NAME
 docker pull "${BUILD_IMAGE_NAME}"
-
 docker run \
-        -t \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
-        -e BUILD_TYPE=Debug \
         -e LOCAL_USER_ID=$(id -u $USER) \
+        -e GIT_URL \
+        -e GIT_BRANCH \
+        -e GIT_COMMIT \
+        -e BUILD_TYPE \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
+        -e GITHUB_ACTIONS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
-        "ci/build/build.sh"
+        "/mnt/host/ci/build/build.sh"
 

@@ -1,0 +1,1 @@
+FROM nexus.int.snowflakecomputing.com:8086/docker/client-libsnowflakeclient-centos6-default-build:1

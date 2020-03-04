@@ -2,7 +2,6 @@
 #
 # Initialize varizbles
 
-set -x
 set -o pipefail
 
 export PATH=/usr/local/bin:$PATH

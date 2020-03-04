@@ -1,4 +1,4 @@
-FROM centos:6.7
+FROM centos:6.10
 
 RUN mkdir -p /usr/lib64/ccache
 ENV PATH="/usr/lib64/ccache:${PATH}"
@@ -6,7 +6,7 @@ ENV PATH="/usr/lib64/ccache:${PATH}"
 RUN yum -y update
 RUN yum -y install epel-release
 RUN yum install -y centos-release-scl
-RUN yum install -y yum-utils;
+RUN yum install -y yum-utils
 
 # gnu toolsets
 RUN yum-config-manager --add-repo http://repo.int.snowflakecomputing.com:81/repos/centos-sclo-rh \
@@ -63,3 +63,17 @@ RUN yum install -y jq
 RUN yum install -y tar.x86_64
 
 RUN yum install -y libtool
+
+# gosu
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64"
+RUN chmod +x /usr/local/bin/gosu
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# workspace
+
+RUN mkdir -p /home/user
+RUN chmod 777 /home/user
+WORKDIR /home/user
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

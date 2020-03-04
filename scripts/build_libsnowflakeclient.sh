@@ -65,7 +65,6 @@ make
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
-set -x
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 

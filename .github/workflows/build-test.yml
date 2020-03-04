@@ -8,10 +8,34 @@ on:
             - v*
     pull_request:
         branches:
-            - master
-            - prep-**
+            - '**'
 
 jobs:
+    build-test-linux:
+        name: Build-Test-Linux
+        runs-on: ubuntu-16.04
+        strategy:
+            matrix:
+                build_type: [ 'Debug', 'Release' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+        steps:
+            - uses: actions/checkout@v1
+            - name: Build
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+              run: ci/build_linux.sh
+            - uses: actions/setup-python@v1
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Test
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci/test_linux.sh
     build-test-win:
         name: Build-Test-Win
         runs-on: windows-2019

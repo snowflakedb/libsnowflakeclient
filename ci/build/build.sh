@@ -2,6 +2,8 @@
 #
 # Build libsnowflake and its dependencies
 #
+set +x
+set +v
 
 CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
@@ -31,12 +33,14 @@ function download_build_component()
             echo "Skip download or build."
         else
             if ! aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/$component_name/$zip_file_name $ARTIFACTS_DIR; then
+                echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                #if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+                if [[ "$GIT_BRANCH" == "origin/master" ]]; then
                     echo "=== upload $component_name"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
-                #fi
+                fi
             else
+                echo "=== download and extract: $component_name"
                 rm -rf $DEPENDENCY_DIR/$component_name
                 pushd $DEPENDENCY_DIR >& /dev/null
                     tar xvfz $ARTIFACTS_DIR/$zip_file_name
@@ -58,9 +62,9 @@ function build_component()
     if [[ -z "$GITHUB_ACTIONS" ]]; then
         echo "=== upload ..."
         upload_to_sfc_jenkins $component_name $component_version $build_type
-        #if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+        if [[ "$GIT_BRANCH" == "origin/master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
-        #fi
+        fi
     fi
 }
 
