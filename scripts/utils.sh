@@ -53,6 +53,7 @@ function zip_file()
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
 
+    echo "GITHUB_ACTIONS: $GITHUB_ACTIONS"
     if [[ -z "$GITHUB_ACTIONS" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
         rm -f $f

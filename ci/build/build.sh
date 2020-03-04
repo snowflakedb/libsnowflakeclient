@@ -60,7 +60,7 @@ function build_component()
     echo "=== build: $component_name ==="
     "$component_script" -t "$build_type"
     local component_version=$("$component_script" -v)
-    if [[ -z "$GITHUB_ACTIONS" ]]; then
+    if [[ -n "$GITHUB_ACTIONS" ]]; then
         echo "=== upload ..."
         upload_to_sfc_jenkins $component_name $component_version $build_type
         if [[ "$GIT_BRANCH" == "origin/master" ]]; then
