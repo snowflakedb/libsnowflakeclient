@@ -25,6 +25,9 @@ docker run \
         -e PARAMETERS_SECRET \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
+        -e GITHUB_ACTIONS \
+        -e GITHUB_SHA \
+        -e RUNNER_TRACKING_ID \
         -w /mnt/host \
         "${TEST_IMAGE_NAME}" \
         "ci/test/test.sh"
