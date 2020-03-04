@@ -2,17 +2,11 @@
 Snowflake Connector for C/C++
 ********************************************************************************
 
-.. image:: https://travis-ci.org/snowflakedb/libsnowflakeclient.svg?branch=master
-    :target: https://travis-ci.org/snowflakedb/libsnowflakeclient
-
-.. image:: https://codecov.io/gh/snowflakedb/libsnowflakeclient/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/snowflakedb/libsnowflakeclient
+.. image:: https://github.com/snowflakedb/libsnowflakeclient/workflows/Build%20and%20Test/badge.svg?branch=master
+    :target: https://github.com/snowflakedb/libsnowflakeclient/actions?query=workflow%3A%22Build+and+Test%22+branch%3Amaster
 
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
-
-.. image:: https://ci.appveyor.com/api/projects/status/i1rkda42xeg2bodv/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/smtakeda/libsnowflakeclient/branch/master
 
 *Under development. No functionality works. Suggestion is welcome at any time.*
 
