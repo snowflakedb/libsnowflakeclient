@@ -2,17 +2,11 @@
 Snowflake Connector for C/C++
 ********************************************************************************
 
-.. image:: https://travis-ci.org/snowflakedb/libsnowflakeclient.svg?branch=master
-    :target: https://travis-ci.org/snowflakedb/libsnowflakeclient
-
-.. image:: https://codecov.io/gh/snowflakedb/libsnowflakeclient/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/snowflakedb/libsnowflakeclient
+.. image:: https://github.com/snowflakedb/libsnowflakeclient/workflows/Build%20and%20Test/badge.svg?branch=master
+    :target: https://github.com/snowflakedb/libsnowflakeclient/actions?query=workflow%3A%22Build+and+Test%22+branch%3Amaster
 
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
-
-.. image:: https://ci.appveyor.com/api/projects/status/i1rkda42xeg2bodv/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/smtakeda/libsnowflakeclient/branch/master
 
 *Under development. No functionality works. Suggestion is welcome at any time.*
 
@@ -34,17 +28,14 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Add x64 or x86 for 64 bit or 32 bit Windows:
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16] and run the script.
 
 .. code-block:: bash
 
-    .\scripts\build_libsnowflakeclient.bat x64 Release
-
-or
-
-.. code-block:: bash
-
-    .\scripts\build_libsnowflakeclient.bat x86 Release
+    set platform=x64
+    set build_type=Debug
+    set vs_version=VS14
+    ci\build.bat
 
 Prepare for Test
 ----------------------------------------------------------------------
@@ -98,17 +89,14 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Add x64 or x86 for 64 bit or 32 bit Windows:
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16] and run the script.
 
 .. code-block:: bash
 
-    ./scripts/run_tests.bat x64 Release
-
-or
-
-.. code-block:: bash
-
-    ./scripts/run_tests.bat x86 Release
+    set platform=x64
+    set build_type=Debug
+    set vs_version=VS14
+    ci\test.bat
 
 	
 Profiling (Linux and OSX)

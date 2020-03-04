@@ -8,14 +8,19 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Builds libuuid"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
     exit 2
 }
 
 set -o pipefail
+UUID_VERSION=2.33.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SOURCE_DIR=$DIR/../deps/
-source $DIR/_init.sh $@
+#SOURCE_DIR=$DIR/../deps/
+source $DIR/_init.sh
+source $DIR/utils.sh
+[[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
+#SOURCE_DIR=$DEPS_DIR/uuid-${UUID_VERSION}
 
 # init environment
 #init_environment $DIR
@@ -27,13 +32,13 @@ SOURCE_DIR=$DEPS_DIR/util-linux
 tar -xzf $UTIL_LINUX_TAR_GZ -C $DEPS_DIR
 
 if [ ! -d "$SOURCE_DIR" ] ; then
-    echo "Could not extract $UTIL_LINUX_TAR_GZ" 
+    echo "Could not extract $UTIL_LINUX_TAR_GZ"
     exit 1
 fi
 
 cd $SOURCE_DIR
 
-BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/uuid
+BUILD_DIR=$DEPENDENCY_DIR/uuid
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
@@ -51,15 +56,15 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   # Check to see if we are doing a universal build or not.
   # If we are not doing a universal build, pick an arch to
   # build
-  if [[ "$UNIVERSAL" == "true" ]]; then
+  if [[ "$ARCH" == "universal" ]]; then
     echo "[INFO] Building Universal Binary"
     BUILD_DIR_64=$BUILD_DIR/uuid_64
     make distclean > /dev/null 2>&1
-    if [ -e "Makefile" ] ; then 
+    if [ -e "Makefile" ] ; then
        make distclean > /dev/null || true
     fi
     echo "Generating UUID build system for 64 bit"
-    export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+    export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR_64  || true
     echo "Compiling UUID source"
@@ -67,30 +72,30 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
 
 
     make distclean > /dev/null 2>&1
-    if [ -e "Makefile" ] ; then 
+    if [ -e "Makefile" ] ; then
        make distclean > /dev/null || true
     fi
     echo "Generating UUID build system"
-    export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=10.12" 
+    export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR  || true
     echo "Compiling UUID source for 32 bit"
     make install  || true
     mv $BUILD_DIR/lib/libuuid.a $BUILD_DIR/lib/libuuid_32.a
 
-    lipo -create $BUILD_DIR_64/lib/libuuid.a $BUILD_DIR/lib/libuuid_32.a -output $BUILD_DIR/lib/libuuid.a 
-    rm -rf $BUILD_DIR_64 
+    lipo -create $BUILD_DIR_64/lib/libuuid.a $BUILD_DIR/lib/libuuid_32.a -output $BUILD_DIR/lib/libuuid.a
+    rm -rf $BUILD_DIR_64
   else
     make distclean > /dev/null 2>&1
-    if [ -e "Makefile" ] ; then 
+    if [ -e "Makefile" ] ; then
        make distclean > /dev/null || true
     fi
     if [[ "$ARCH" == "x86" ]]; then
       echo "Generating UUID build system for 32 bit"
-      export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=10.12" 
+      export CFLAGS="-fPIC -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     else
       echo "Generating UUID build system for 64 bit"
-      export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=10.12"
+      export CFLAGS="-fPIC -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     fi
     ./autogen.sh || true
     ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR  || true
@@ -103,3 +108,5 @@ else
     exit 1
 fi
 
+echo === zip_file "uuid" "$UUID_VERSION" "$target"
+zip_file "uuid" "$UUID_VERSION" "$target"

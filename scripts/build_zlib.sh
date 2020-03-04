@@ -6,17 +6,21 @@ function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
     echo "Builds zlib"
     echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
     exit 2
 }
 set -o pipefail
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SOURCE_DIR=$DIR/../deps/zlib-1.2.11
-source $DIR/_init.sh $@
+ZLIB_VERSION=1.2.11
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/_init.sh $@
+source $DIR/utils.sh
+
+[[ -n "$GET_VERSION" ]] && echo $ZLIB_VERSION && exit 0
 
 # build
-BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
+BUILD_DIR=$DEPENDENCY_DIR/zlib
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
@@ -26,6 +30,7 @@ zlib_config_opts+=(
     "--prefix=$BUILD_DIR"
 )
 
+SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
 cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
@@ -37,7 +42,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
 
 elif [[ "$PLATFORM" == "darwin" ]]; then
    echo "Now building for x86_64"
-   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=10.12"
+   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
    BUILD_DIR_64=$BUILD_DIR/zlib_64
    make -f Makefile.in distclean > /dev/null || true
    ./configure -s --static --prefix=$BUILD_DIR_64 
@@ -49,18 +54,18 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
    CFLAGS=""
    LDFLAGS=""
    CXXFLAGS=""
-   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=10.12" 
+   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
    BUILD_DIR_32=$BUILD_DIR/zlib_32
   ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
    make install
 
-   BUILD_DIR=$DEPS_DIR/../deps-build/$PLATFORM/zlib
-   mkdir -p $BUILD_DIR/lib
-   mkdir -p $BUILD_DIR/include
-   cp -fr $BUILD_DIR_32/include $BUILD_DIR/include/
+   mkdir -p $BUILD_DIR/{lib,include}
+   cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
    lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
    rm -rf $BUILD_DIR_64 $BUILD_DIR_32
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
 fi
+echo === zip_file "zlib" "$ZLIB_VERSION" "$target"
+zip_file "zlib" "$ZLIB_VERSION" "$target"

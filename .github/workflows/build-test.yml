@@ -1,10 +1,43 @@
 name: Build and Test
 
-on: push
+on:
+    push:
+        branches:
+            - master
+        tags:
+            - v*
+    pull_request:
+        branches:
+            - '**'
 
 jobs:
-    build-test:
-        name: Build-Test
+    build-test-linux:
+        name: Build-Test-Linux
+        runs-on: ubuntu-16.04
+        strategy:
+            matrix:
+                build_type: [ 'Debug', 'Release' ]
+                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+        steps:
+            - uses: actions/checkout@v1
+            - name: Build
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+              run: ci/build_linux.sh
+            - uses: actions/setup-python@v1
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Test
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci/test_linux.sh
+    build-test-win:
+        name: Build-Test-Win
         runs-on: windows-2019
         strategy:
             matrix:
@@ -20,7 +53,7 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
-              run: ci\build.bat
+              run: ci\build_win.bat
             - uses: actions/setup-python@v1
               with:
                 python-version: '3.7'
@@ -33,4 +66,23 @@ jobs:
                   VS_VERSION: ${{ matrix.vs_version }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-              run: ci\test.bat
+              run: ci\test_win.bat
+#    build-test-mac:
+#        name: Build-Test-Mac
+#        runs-on: macos-10.15
+#        strategy:
+#            matrix:
+#                build_type: [ 'Debug' ]
+#                cloud_provider: [ 'AWS' ]
+#        steps:
+#            - uses: actions/checkout@v1
+#            - name: Install Homebrew Bash
+#              shell: bash
+#              run: brew install bash
+#            - name: Build
+#              shell: bash
+#              env:
+#                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+#                BUILD_TYPE: ${{ matrix.build_type }}
+#                CLOUD_PROVIDER: ${{ matrix.cloud }}
+#              run: /usr/local/bin/bash ./ci/build_mac.sh

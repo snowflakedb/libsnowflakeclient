@@ -34,7 +34,6 @@ if (LINUX)
 endif ()
 if (APPLE)
     set(PLATFORM darwin)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
     message("Platform: Apple OSX")
 endif ()
 if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
@@ -194,28 +193,28 @@ set(SOURCE_FILES_CPP_WRAPPER
 
 if (LINUX)
     # Linux
-    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
-    find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
-    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib64/ REQUIRED)
-    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/azure/lib/ REQUIRED)
-    find_library(UUID_LIB libuuid.a PATHS deps-build/${PLATFORM}/uuid/lib/ REQUIRED)
-    if(MOCK)
-        find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
-    endif()
+    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
+    find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib64/ REQUIRED)
+    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib64/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED)
+    find_library(UUID_LIB libuuid.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/lib/ REQUIRED)
+    #if(MOCK)
+        find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
+    #endif()
 endif ()
 
 if (APPLE)
-    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/curl/lib/ REQUIRED)
-    find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/openssl/lib/ REQUIRED)
-    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
-    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/aws/lib/ REQUIRED)
-    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/azure/lib/ REQUIRED)
-    if(MOCK)
-        find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
-    endif()
+    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
+    find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
+    find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
+    find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED)
+    #if(MOCK)
+        find_library(CMOCKA_LIB libcmocka.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
+    #endif()
 endif()
 
 if (WIN32)
@@ -237,25 +236,25 @@ endif ()
 
 if (LINUX)
     include_directories(
-            deps-build/${PLATFORM}/curl/include
-            deps-build/${PLATFORM}/openssl/include
-            deps-build/${PLATFORM}/zlib/include
-            deps-build/${PLATFORM}/aws/include
-            deps-build/${PLATFORM}/azure/include
-            deps-build/${PLATFORM}/cmocka/include
-            deps-build/${PLATFORM}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
             include
             lib)
 endif()
 
 if (APPLE)
     include_directories(
-            deps-build/${PLATFORM}/curl/include
-            deps-build/${PLATFORM}/openssl/include
-            deps-build/${PLATFORM}/zlib/include
-            deps-build/${PLATFORM}/aws/include
-            deps-build/${PLATFORM}/azure/include
-            deps-build/${PLATFORM}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             include
             lib)
 endif()
@@ -293,15 +292,15 @@ set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 
 if(LINUX)
     link_directories(
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/zlib/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib64"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/uuid/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib64"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/lib"
     )
     if(MOCK)
-        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/cmocka/lib")
+        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/lib")
     endif()
 elseif(WIN32)
     link_directories(
@@ -314,13 +313,13 @@ elseif(WIN32)
     endif()
 elseif()
     link_directories(
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/curl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/openssl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/aws/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/azure/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib"
     )
     if(MOCK)
-        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/cmocka/lib")
+        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/lib")
     endif()
 endif()
 

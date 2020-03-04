@@ -65,8 +65,8 @@ goto :EOF
 
 :zip_file
     setlocal
-    if defined GITHUB_ACTIONS (
-        echo === No zip file is created for Github Actions
+    if not defined JENKINS_URL (
+        echo === No zip file is created if not Jenkins
         goto :EOF
     )
     set component_name=%~1
@@ -80,10 +80,6 @@ goto :EOF
         7z l %curdir%\artifacts\%zip_file_name%
     popd
     if %ERRORLEVEL% NEQ 0 goto :error
-    if defined GITHUB_ACTIONS (
-        md %component_name%_artifacts
-        copy /v /y artifacts\%zip_file_name% %component_name%_artifacts
-    )
     goto :EOF
 
 :check_directory
@@ -102,7 +98,6 @@ goto :EOF
     echo === set GIT environment variables
     if "%GIT_URL%"=="" (
         set GIT_URL=https://github.com/snowflakedb/libsnowflakeclient.git
-        if %ERRORLEVEL% NEQ 0 goto :error
     )
     if "%GIT_BRANCH%"=="" (
         for /f "delims=" %%A in ('git rev-parse --abbrev-ref HEAD') do @set GIT_BRANCH=origin/%%A
@@ -134,7 +129,8 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF
-    
+
+:upload_to_sfc
 :upload_to_sfc_jenkins
     @echo off
     setlocal

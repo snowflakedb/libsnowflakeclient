@@ -11,6 +11,7 @@ function usage() {
 set -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/_init.sh $@
 
 use_valgrind=false
 skip_env_args=false
@@ -28,12 +29,13 @@ if [[ "$skip_env_args" == "false" ]]; then
     source $DIR/env.sh
 fi
 
-cd "./cmake-build"
+
+cd $BUILD_LOC/cmake-build
 if [[ "$use_valgrind" == "true" ]]; then
     # run valgrind tests
-    ctest -V -R "valgrind.*"
+    ctest3 -V -R "valgrind.*"
 else
     # run non-valgrind tests
-    ctest -V -E "valgrind.*"
+    ctest3 -V -E "valgrind.*"
 fi
 cd ..
