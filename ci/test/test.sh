@@ -40,10 +40,12 @@ function test_component()
         pushd $CI_TEST_DIR/../..
             rm -rf $cmake_dir
             tar xvfz artifacts/$cmake_file_name
-            cd $cmake_dir
-            $CTEST -V -E "valgrind.*"
         popd
     fi
+    pushd $CI_TEST_DIR/../..
+        cd $cmake_dir
+        $CTEST -V -E "valgrind.*"
+    popd
 }
 
 function init_python()
