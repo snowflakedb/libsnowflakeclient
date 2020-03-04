@@ -2,6 +2,8 @@
 #
 # Build libsnowflake and its dependencies
 #
+set +x
+set +v
 
 CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
