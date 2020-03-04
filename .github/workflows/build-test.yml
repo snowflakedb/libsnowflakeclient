@@ -30,7 +30,7 @@ jobs:
                 python-version: '3.7'
                 architecture: 'x64'
             - name: Test
-              shell: cmd
+              shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
