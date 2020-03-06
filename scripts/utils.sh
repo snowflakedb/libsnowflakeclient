@@ -10,11 +10,16 @@ function init_git_variables()
         export GIT_URL=https://github.com/snowflakedb/libsnowflakeclient.git
     fi
     if [[ -z "$GIT_BRANCH" ]]; then
-        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-        export GIT_BRANCH=origin/$BRANCH_NAME
+        if BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD); then
+            export GIT_BRANCH=origin/$BRANCH_NAME
+        else
+            echo "[WARN] No GIT_BRANCH is retrieved."
+        fi
     fi
     if [[ -z "$GIT_COMMIT" ]]; then
-        export GIT_COMMIT=$(git rev-parse HEAD)
+        if ! export GIT_COMMIT=$(git rev-parse HEAD); then
+            echo "[WARN} No GIT_COMMIT is retrieved."
+        fi
     fi
     echo "GIT_BRANCH: $GIT_BRANCH, GIT_COMMIT: $GIT_COMMIT"
 }
@@ -45,16 +50,13 @@ function get_cmake_file_name()
 
 function zip_file()
 {
-    set +x
-    set +v
     local component_name=$1
     local component_version=$2
     local build_type=$3
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
 
-    echo "GITHUB_ACTIONS: $GITHUB_ACTIONS"
-    if [[ -z "$GITHUB_ACTIONS" ]]; then
+    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
         rm -f $f
         pushd $DEPENDENCY_DIR/
