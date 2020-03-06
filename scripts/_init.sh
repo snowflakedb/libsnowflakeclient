@@ -15,7 +15,7 @@ mkdir -p $ARTIFACTS_DIR
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 
 # Find cmake, gcc and g++ on target machine. Need cmake 3.0+, gcc/g++ 4.9+
-if [[ "$(which cmake3)" ]]; then
+if which cmake3 >& /dev/null; then
     export CMAKE="$(which cmake3)"
     export CTEST="$(which ctest3)"
 else
@@ -24,19 +24,19 @@ else
 fi
 
 if [[ -z "$GCC" || -z "$GXX" ]]; then
-    if [[ "$(which gcc49)" ]]; then
+    if which gcc49 >& /dev/null; then
         GCC="$(which gcc49)"
         GXX="$(which g++49)"
-    elif [[ "$(which gcc-4.9)" ]]; then
+    elif which gcc-4.9 >& /dev/null; then
         GCC="$(which gcc-4.9)"
         GXX="$(which g++-4.9)"
-    elif [[ "$(which gcc52)" ]]; then
+    elif which gcc52 >& /dev/null; then
         GCC="$(which gcc52)"
         GXX="$(which g++52)"
-    elif [[ "$(which gcc62)" ]]; then
+    elif which gcc62 >& /dev/null; then
         GCC="$(which gcc62)"
         GXX="$(which g++62)"
-    elif [[ "$(which gcc72)" ]]; then
+    elif which gcc72 >& /dev/null; then
         GCC="$(which gcc72)"
         GXX="$(which g++72)"
     else
