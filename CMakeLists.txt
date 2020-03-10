@@ -193,6 +193,7 @@ set(SOURCE_FILES_CPP_WRAPPER
 
 if (LINUX)
     # Linux
+    find_library(OOB_LIB libtelemetry.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED)
     find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
@@ -206,6 +207,7 @@ if (LINUX)
 endif ()
 
 if (APPLE)
+    find_library(OOB_LIB libtelemetry.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED)
     find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
@@ -222,6 +224,7 @@ if (WIN32)
     option(DYNAMIC_RUNTIME "Dynamic runtime" OFF)
     set(VSDIR "vs15" CACHE STRING "Used to specify visual studio version of libsnowflakeclient dependecies")
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+    find_library(OOB_LIB libtelemetry_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED)
     find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED)
     find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
     find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED)
@@ -236,6 +239,7 @@ endif ()
 
 if (LINUX)
     include_directories(
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
@@ -249,6 +253,7 @@ endif()
 
 if (APPLE)
     include_directories(
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
@@ -261,6 +266,7 @@ endif()
 
 if (WIN32)
     include_directories(
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/include
@@ -271,6 +277,7 @@ if (WIN32)
             lib)
 endif()
 
+message("libtelemetry is located at " ${OOB_LIB})
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
@@ -292,6 +299,7 @@ set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
 
 if(LINUX)
     link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/lib"
@@ -304,6 +312,7 @@ if(LINUX)
     endif()
 elseif(WIN32)
     link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib"
@@ -313,6 +322,7 @@ elseif(WIN32)
     endif()
 elseif()
     link_directories(
+            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/lib"

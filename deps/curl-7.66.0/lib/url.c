@@ -1597,12 +1597,15 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
   conn->ssl_config.verifypeer = data->set.ssl.primary.verifypeer;
   conn->ssl_config.verifyhost = data->set.ssl.primary.verifyhost;
   conn->ssl_config.sf_ocsp_check = data->set.ssl.primary.sf_ocsp_check;
+  conn->ssl_config.sf_ocsp_failopen = data->set.ssl.primary.sf_ocsp_failopen;
   conn->proxy_ssl_config.verifystatus =
     data->set.proxy_ssl.primary.verifystatus;
   conn->proxy_ssl_config.verifypeer = data->set.proxy_ssl.primary.verifypeer;
   conn->proxy_ssl_config.verifyhost = data->set.proxy_ssl.primary.verifyhost;
   conn->proxy_ssl_config.sf_ocsp_check =
     data->set.proxy_ssl.primary.sf_ocsp_check;
+  conn->proxy_ssl_config.sf_ocsp_failopen =
+          data->set.proxy_ssl.primary.sf_ocsp_failopen;
   conn->ip_version = data->set.ipver;
   conn->bits.connect_only = data->set.connect_only;
   conn->transport = TRNSPRT_TCP; /* most of them are TCP streams */

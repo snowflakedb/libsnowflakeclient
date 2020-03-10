@@ -3495,7 +3495,7 @@ static CURLcode servercert(struct connectdata *conn,
       return CURLE_SSL_INVALIDCERTSTATUS;
     }
 
-    result = checkCertOCSP(conn, ch, st);
+    result = checkCertOCSP(conn, ch, st, SSL_CONN_CONFIG(sf_ocsp_failopen));
     if (result)
     {
       X509_free(BACKEND->server_cert);
