@@ -67,7 +67,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
-    PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" ./configure ${curl_configure_opts[@]}
+    PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
     make > /dev/null
     make install> /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
