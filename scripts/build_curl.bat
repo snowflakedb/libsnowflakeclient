@@ -22,6 +22,7 @@ goto :EOF
 setlocal
 set CURL_DIR=curl-7.66.0
 
+
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -85,6 +86,10 @@ if %ERRORLEVEL% NEQ 0 goto :error
 copy /v /y .\deps-build\%build_dir%\openssl\lib\libssl_a.lib %curl_dep%\lib\libssl.lib
 if %ERRORLEVEL% NEQ 0 goto :error
 copy /v /y .\deps-build\%build_dir%\openssl\include\openssl\*.h %curl_dep%\include\openssl
+if %ERRORLEVEL% NEQ 0 goto :error
+copy /v /y .\deps-build\%build_dir%\oob\lib\libtelemetry_a.lib %curl_dep%\lib\libtelemetry_a.lib
+if %ERRORLEVEL% NEQ 0 goto :error
+copy /v /y .\deps-build\%build_dir%\oob\include\*.h %curl_dep%\include
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === building curl

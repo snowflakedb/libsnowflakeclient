@@ -23,7 +23,7 @@ set scriptdir=%~dp0
 
 set CURL_VERSION=7.66.0
 
-call "%scriptdir%\_init.bat" %platform% %build_type%
+call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
@@ -36,36 +36,36 @@ if "%platform%"=="x86" (
 
 if "%build_type%"=="Debug" (
     set oob_debug_option=yes
-        set oob_lib_name=libtelemetry_a_debug.lib
+    set oob_lib_name=libtelemetry_a_debug.lib
 )
 if "%build_type%"=="Release" (
     set oob_debug_option=no
-        set oob_lib_name=libtelemetry_a.lib
-)
-
-if not "%VisualStudioVersion%"=="14.0" (
-    echo === setting up the Visual Studio environments
-    call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-    if %ERRORLEVEL% NEQ 0 goto :error
+    set oob_lib_name=libtelemetry_a.lib
 )
 
 set target_name=libtelemetry_a.lib
 
+call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 @echo ====== Building oob
-set OOB_DIR=%scriptdir%..\Source\oobTelemetry
-cd %scriptdir%\..\Source\oobTelemetry
+set OOB_SOURCE_DIR=%curdir%\deps\%OOB_DIR%
+
+cd %OOB_SOURCE_DIR%
+set CURL_DIR=curl-%CURL_VERSION%
 nmake -f Makefile.msc clean
-nmake -f Makefile.msc CURL_DEP=%scriptdir%..\Source\curl-%CURL_VERSION% ODBC_SOURCE=%scriptdir%..\Source
+nmake -f Makefile.msc
 
-set dependency=%scriptdir%..\Dependencies\%arcdir%\oob
+echo === Staging oob
+cd "%curdir%"
+rd /q /s .\deps-build\%build_dir%\oob
+md .\deps-build\%build_dir%\oob\include
+md .\deps-build\%build_dir%\oob\lib
+if %ERRORLEVEL% NEQ 0 goto :error
 
-del /q /s %dependency%
-mkdir  "%dependency%\include"
-mkdir  "%dependency%\lib"
-
-copy /v /y %OOB_DIR%\*.h %dependency%\include
-copy /v /y %scriptdir%\..\Source\curl-%CURL_VERSION%\lib\vtls\sf_ocsp_telemetry_data.h %dependency%\include
-copy /v /y %OOB_DIR%\libtelemetry_a.lib %dependency%\lib\%target_name%
+copy /v /y %OOB_SOURCE_DIR%\*.h .\deps-build\%build_dir%\oob\include
+copy /v /y %OOB_SOURCE_DIR%\..\curl-%CURL_VERSION%\lib\vtls\sf_ocsp_telemetry_data.h .\deps-build\%build_dir%\oob\include
+copy /v /y %OOB_SOURCE_DIR%\libtelemetry_a.lib .\deps-build\%build_dir%\oob\lib\%target_name%
 
 goto :success
 

@@ -17,6 +17,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 set zlib_build_script="%scriptdir%..\scripts\build_zlib.bat"
 set openssl_build_script="%scriptdir%..\scripts\build_openssl.bat"
 set curl_build_script="%scriptdir%..\scripts\build_curl.bat"
+set oob_build_script="%scriptdir%..\scripts\build_oob.bat"
 set aws_build_script="%scriptdir%..\scripts\build_awssdk.bat"
 set azure_build_script="%scriptdir%..\scripts\build_azuresdk.bat"
 set cmocka_build_script="%scriptdir%..\scripts\build_cmocka.bat"
@@ -40,6 +41,8 @@ goto :EOF
     call :download_build_component zlib "%zlib_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component openssl "%openssl_build_script%" "%dynamic_runtime%"
+    if %ERRORLEVEL% NEQ 0 goto :error
+    call :download_build_component oob "%oob_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component curl "%curl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
