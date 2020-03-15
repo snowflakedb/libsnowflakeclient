@@ -19,10 +19,11 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
 
-OPENSSL_TAR_GZ=$DEPS_DIR/openssl-${OPENSSL_VERSION}.tar.gz
+OPENSSL_ZIP=$DEPS_DIR/openssl-${OPENSSL_VERSION}.zip
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-${OPENSSL_VERSION}/
 
-tar -xzf $OPENSSL_TAR_GZ -C $DEPS_DIR
+rm -rf $OPENSSL_SOURCE_DIR
+unzip $OPENSSL_ZIP -d $DEPS_DIR
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
