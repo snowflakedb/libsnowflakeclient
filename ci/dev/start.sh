@@ -23,14 +23,13 @@ IP_ADDR=$(ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' |
 [[ $(docker ps | grep "$CONTAINER_NAME") ]] && docker container stop "$CONTAINER_NAME"
 docker image build -t $IMAGE_NAME \
  --build-arg BASE_IMAGE_NAME=${BUILD_IMAGE_NAMES[@]} \
- --build-arg GDB_PORT=${GDB_PORT} .
+ --build-arg LOCAL_USER_ID=$(id -u $USER) .
 
 docker container run \
  --rm -d \
  -v $(cd $THIS_DIR/../.. && pwd):/mnt/host \
  -p $SSH_PORT:22 \
  -p $GDB_PORT:7777 \
- -e LOCAL_USER_ID=$(id -u $USER) \
  -e AWS_ACCESS_KEY_ID \
  -e AWS_SECRET_ACCESS_KEY \
  --security-opt seccomp=unconfined \

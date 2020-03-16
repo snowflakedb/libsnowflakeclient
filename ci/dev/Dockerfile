@@ -1,5 +1,6 @@
 ARG BASE_IMAGE_NAME
 FROM $BASE_IMAGE_NAME
+ARG LOCAL_USER_ID
 # setup ssh server for debugging
 RUN yum install -y openssh-server
 
@@ -19,7 +20,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 # 22 for ssh server. 7777 for gdb server.
 EXPOSE 22 7777
 
-RUN useradd -ms /bin/bash debugger
+RUN useradd --shell /bin/bash -c "" -m debugger
 RUN echo 'debugger:pwd' | chpasswd
 
 # let cmake link to cmake3

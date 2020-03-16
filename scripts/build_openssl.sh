@@ -19,10 +19,11 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
 
-OPENSSL_TAR_GZ=$DEPS_DIR/openssl-${OPENSSL_VERSION}.tar.gz
+OPENSSL_ZIP=$DEPS_DIR/openssl-${OPENSSL_VERSION}.zip
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-${OPENSSL_VERSION}/
 
-tar -xzf $OPENSSL_TAR_GZ -C $DEPS_DIR
+rm -rf $OPENSSL_SOURCE_DIR
+unzip $OPENSSL_ZIP -d $DEPS_DIR
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
@@ -44,7 +45,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC="${GCC:-gcc52}"
     make distclean clean &> /dev/null || true
-    ./Configure linux-x86_64 "${openssl_config_opts[@]}"
+    perl ./Configure linux-x86_64 "${openssl_config_opts[@]}"
     make depend > /dev/null
     make -j 4 > /dev/null
     make install_sw install_ssldirs > /dev/null
@@ -57,11 +58,11 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         # OSX/macos 32 and 64 bit universal
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
-        ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
+        perl ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
         make -j 4 build_libs > /dev/null
         make install_sw install_ssldirs > /dev/null
         make distclean clean &> /dev/null || true
-        ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
+        perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
         make -j 4 build_libs > /dev/null
         lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    ./libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a ./libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
@@ -73,11 +74,11 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make distclean clean &> /dev/null || true
         if [[ "$ARCH" == "x86" ]]; then
             echo "[INFO] Building x86 binary"
-            ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
+            perl ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
             
         else
             echo "[INFO] Building x64 binary"
-            ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
+            perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
         fi
         make -j 4 > /dev/null
         make install_sw install_ssldirs > /dev/null

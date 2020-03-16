@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2018 Snowflake Computing
+* Copyright (c) 2017-2019 Snowflake Computing
 */
 
 #ifndef HEADER_CURL_SF_OCSP_H
@@ -15,7 +15,8 @@
 #endif
 
 SF_PUBLIC(CURLcode) initCertOCSP();
-SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, X509_STORE *st);
+SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, X509_STORE *st, int ocsp_failopen);
+
 
 #endif
 

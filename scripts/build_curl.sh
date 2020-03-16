@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 CURL_DIR=7.66.0
-CURL_VERSION=${CURL_DIR}.1
+CURL_VERSION=${CURL_DIR}.2
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
@@ -21,6 +21,8 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
 
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl-${CURL_DIR}/
+OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
+UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
 
 # build libcurl
 curl_configure_opts=()
@@ -63,7 +65,9 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC="${GCC:-gcc52}"
     export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
-    PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+    export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
+    export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
+    PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
     make > /dev/null
     make install> /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
@@ -74,13 +78,17 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
+        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null
 
         make distclean clean &> /dev/null || true
         export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
+        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
         lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a
@@ -89,14 +97,18 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         echo "[INFO] Building x86 Binary"
         make distclean clean &> /dev/null || true
         export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
+        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null
     else
         echo "[INFO] Building x64 Binary"
         make distclean clean &> /dev/null || true
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-        PKG_CONFIG="pkg-config -static" LIBS="-ldl" ./configure ${curl_configure_opts[@]}
+        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
+        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null
     fi

@@ -1,0 +1,45 @@
+
+# The toplevel directory of the source tree.
+#
+TOP = .
+
+# optional build flags
+LOC =
+
+# variables
+STATICLIB = libtelemetry_a.lib
+
+CC = cl
+AS = ml
+LD = link
+AR = lib
+RC = rc
+CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Zi -Fd"oob" $(LOC) -I$(OOB_SOURCE_DIR)\..\$(CURL_DIR)\include -I$(OOB_SOURCE_DIR)\..\$(CURL_DIR)\lib\vtls -I$(OOB_SOURCE_DIR)\..\..\include
+WFLAGS  = -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
+ASFLAGS = -coff -Zi $(LOC)
+LDFLAGS = -nologo -debug -incremental:no -opt:ref
+ARFLAGS = -nologo
+RCFLAGS = /dWIN32 /r
+
+OBJS = oobtelemetry.obj jsonutil.obj
+
+OBJA =
+
+
+# targets
+all: $(STATICLIB) 
+
+
+$(STATICLIB): $(OBJS)
+	$(AR) $(ARFLAGS) -out:$@ $(OBJS)
+
+
+{$(TOP)}.c.obj:
+	$(CC) -c $(WFLAGS) $(CFLAGS) $<
+
+# cleanup
+clean:
+	-del /q $(STATICLIB)
+	-del /q *.obj
+	-del /q *.pdb
+	-del /q *.manifest
