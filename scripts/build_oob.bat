@@ -67,6 +67,10 @@ copy /v /y %OOB_SOURCE_DIR%\*.h .\deps-build\%build_dir%\oob\include
 copy /v /y %OOB_SOURCE_DIR%\..\curl-%CURL_VERSION%\lib\vtls\sf_ocsp_telemetry_data.h .\deps-build\%build_dir%\oob\include
 copy /v /y %OOB_SOURCE_DIR%\libtelemetry_a.lib .\deps-build\%build_dir%\oob\lib\%target_name%
 
+echo === archiving the library
+call "%scriptdir%utils.bat" :zip_file oob %oob_version%
+if %ERRORLEVEL% NEQ 0 goto :error
+
 goto :success
 
 
