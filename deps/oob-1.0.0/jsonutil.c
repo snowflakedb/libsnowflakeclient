@@ -328,7 +328,7 @@ void copyString(const char *src, char *dst, int dstlen)
 {
   //Care has been taken that src always fits in dst.
   long long len = strlen(src);
-  len = (dstlen-1 > strlen(src))? (dstlen-1):len;
+  len = (dstlen-1 > len)? len:(dstlen-1);
   sb_strncpy(dst, dstlen, src, len);
   dst[len]=0;
   return;
