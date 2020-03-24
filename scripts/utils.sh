@@ -146,6 +146,7 @@ function set_parameters()
     elif [[ "$cloud_provider" == "gcp" ]]; then
         echo "== GCP"
         gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_gcp_capi.json.gpg
+    else
         echo "Set cloud_provider environment variable: [aws, azure, gcp]"
         exit 1
     fi
