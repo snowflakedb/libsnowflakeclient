@@ -29,6 +29,7 @@ docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
+        -e cloud_provider \
         -e GIT_COMMIT \
         -e GIT_BRANCH \
         -e GIT_URL \
