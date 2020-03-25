@@ -9,7 +9,7 @@
 :: - vs14 / vs15
 ::
 @echo off
-set ZLIB_VERSION=1.2.11
+set ZLIB_VERSION=1.2.11.1
 call %*
 goto :EOF
 
