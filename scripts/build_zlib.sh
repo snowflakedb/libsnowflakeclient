@@ -11,7 +11,7 @@ function usage() {
 }
 set -o pipefail
 
-ZLIB_VERSION=1.2.11
+ZLIB_VERSION=1.2.11.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -36,6 +36,7 @@ cd $SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC=gcc52
+    export CFLAGS="-fPIC"
     make -f Makefile.in distclean > /dev/null || true
     ./configure ${zlib_config_opts[@]} > /dev/null || true
     make install > /dev/null || true
