@@ -16,14 +16,9 @@ set -o pipefail
 UUID_VERSION=2.33.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#SOURCE_DIR=$DIR/../deps/
 source $DIR/_init.sh
 source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
-#SOURCE_DIR=$DEPS_DIR/uuid-${UUID_VERSION}
-
-# init environment
-#init_environment $DIR
 
 # build
 UTIL_LINUX_TAR_GZ=$DEPS_DIR/util-linux.tar.gz

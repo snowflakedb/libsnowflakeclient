@@ -1614,7 +1614,7 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
   conn->proxy_ssl_config.sf_ocsp_check =
     data->set.proxy_ssl.primary.sf_ocsp_check;
   conn->proxy_ssl_config.sf_ocsp_failopen =
-    data->set.proxy_ssl.primary.sf_ocsp_failopen;	
+    data->set.proxy_ssl.primary.sf_ocsp_failopen;
   conn->ip_version = data->set.ipver;
   conn->bits.connect_only = data->set.connect_only;
   conn->transport = TRNSPRT_TCP; /* most of them are TCP streams */

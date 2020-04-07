@@ -77,7 +77,7 @@ via: 1.1 nghttpx
 -foo-
 </stdout>
 <stripfile>
-s/^server:.*/server: cut-out/
+s/^server:.*/server: cut-out/
 </stripfile>
 </verify>
 </testcase>

@@ -25,9 +25,10 @@ docker image build -t $IMAGE_NAME \
  --build-arg BASE_IMAGE_NAME=${BUILD_IMAGE_NAMES[@]} \
  --build-arg LOCAL_USER_ID=$(id -u $USER) .
 
+# -v $(cd $THIS_DIR/../.. && pwd):/mnt/host 
+
 docker container run \
  --rm -d \
- -v $(cd $THIS_DIR/../.. && pwd):/mnt/host \
  -p $SSH_PORT:22 \
  -p $GDB_PORT:7777 \
  -e AWS_ACCESS_KEY_ID \

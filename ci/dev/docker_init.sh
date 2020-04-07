@@ -8,4 +8,5 @@ SOURCE_ROOT="$( cd $THIS_DIR/../.. && pwd )"
 
 chmod +x ${SOURCE_ROOT}/*/*.sh
 chmod +x ${SOURCE_ROOT}/*/*/*.sh
+chmod +x ${SOURCE_ROOT}/deps/*/configure
 
