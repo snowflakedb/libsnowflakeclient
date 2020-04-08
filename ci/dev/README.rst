@@ -32,6 +32,8 @@ Setup
 
         $ ./ci/dev/start.sh
 
+    Type `pwd` if the password is asked.
+
 - Ensure the docker container is up and running.
 
     .. code-block:: bash

@@ -11,8 +11,8 @@ function usage() {
 }
 set -o pipefail
 
-CURL_DIR=7.66.0
-CURL_VERSION=${CURL_DIR}.2
+CURL_DIR=7.68.0
+CURL_VERSION=${CURL_DIR}.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
@@ -68,8 +68,8 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
     PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
-    make > /dev/null
-    make install> /dev/null
+    make
+    make install
 elif [[ "$PLATFORM" == "darwin" ]]; then
     # Check to see if we are doing a universal build or not.
     # If we are not doing a universal build, pick an arch to
