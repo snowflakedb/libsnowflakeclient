@@ -4,6 +4,23 @@
 #include <curl/curl.h>
 #include "snowflake/Simba_CRTFunctionSafe.h"
 
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+ 
+static size_t
+WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+  size_t realsize = size * nmemb;
+
+  /*Response from server like {"statusCode": 200, "message": "SUCCESS"} are received here.
+   * printf("Contents are %s\n",(char*)contents);
+   */
+ 
+  return realsize;
+}
+
 #define NUM_END_POINTS 3
 
 struct WriteThis {
@@ -23,13 +40,13 @@ static endPoint endPoints[]={
     "sfc-test",
     "https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
     "x-api-key: rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6",
-    "dev reg"
+    "dev"
   },
   {
     "sfc-dev",
     "https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
     "x-api-key: kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf",
-    "qa1 prepod2"
+    "qa1"
   },
   {
     "sfc-va-prod",
@@ -49,6 +66,9 @@ void getdeploymenttype(const char* event, char *dep, int depSize)
   int len=0;
   const char *depStart = NULL; 
   const char *del = NULL; 
+
+  if(event == NULL || event[0] == 0) return;
+
   depStart = strstr(event, "telemetryServerDeployment");
   if(depStart) {
     del = strstr(depStart, ":");
@@ -62,25 +82,27 @@ void getdeploymenttype(const char* event, char *dep, int depSize)
   return ;
 }
 
-/*Default endpoint is dev deplyment*/
+/*Default endpoint is production deplyment*/
 endPoint* getendPoint(const char* event)
 {
   int i=0;
   char deployment[25]={0};
   getdeploymenttype(event, deployment, 25);
-  if( deployment[0] != 0 )
+  if( strcmp( deployment, "Ignore") == 0 || deployment[0] == 0 )
   {
-    for(i = 0 ; i < NUM_END_POINTS ; i++ )
-    {
-      //haystack needle search with case insensitive
-      if( strstr(endPoints[i].deployment, deployment) != NULL ) {
-        return &(endPoints[i]);
-      }
+    //If the host information is NULL we ignore such OOB messages.
+    return NULL;
+  }
+
+  for(i = 0 ; i < NUM_END_POINTS ; i++ )
+  {
+    //haystack needle search with case insensitive
+    if( strstr(endPoints[i].deployment, deployment) != NULL ) {
+      return &(endPoints[i]);
     }
   }
 
-  fprintf(stderr, "OOB sending event to default dev deployment.\n") ;
-  return &(endPoints[0]);
+  return &(endPoints[2]);
 }
 
 static size_t read_callback(void *dest, size_t size, size_t nmemb, void *userp)
@@ -124,6 +146,12 @@ int sendOOBevent(char *event)
 
   ep = getendPoint(event);
 
+  if( ep == NULL || event == NULL)
+  {
+    cleanup(curl, headers);
+    return -1;
+  }
+
   wt.readptr = event;
   wt.sizeleft = strlen(event);
 
@@ -140,6 +168,8 @@ int sendOOBevent(char *event)
   /* get a curl handle */ 
   curl = curl_easy_init();
   if(curl) {
+    struct MemoryStruct chunk;
+
     /* First set the URL that is about to receive our POST. */ 
     curl_easy_setopt(curl, CURLOPT_URL, ep->enqendpoint);
 
@@ -151,6 +181,16 @@ int sendOOBevent(char *event)
 
     /* pointer to pass to our read function */ 
     curl_easy_setopt(curl, CURLOPT_READDATA, &wt);
+
+    /* send all data to this function  */ 
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+    /* we pass our 'chunk' struct to the callback function */ 
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+    /* some servers don't like requests that are made without a user-agent
+       field, so we provide one */ 
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
     /* complete within 10 seconds */
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
