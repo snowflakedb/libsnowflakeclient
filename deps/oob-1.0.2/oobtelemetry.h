@@ -21,8 +21,6 @@ extern char *prepareOOBevent(oobOcspData *ocspevent);
 
 extern void setOOBeventdata(enum OOBINFO id, const char *data, long num);
 
-extern void getCabundle(char *cabundle, int maxlen);
-
 extern void setoobConnectioninfo(const char* host,
     const char* port,
     const char* account,

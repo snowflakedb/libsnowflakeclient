@@ -14,5 +14,18 @@ clean:
 	@ rm -f *.o sampleoobevent
 
 sample: 
-	$(CC) $(CFLAGS) -g sample.c  $(OOB_SOURCE_DIR)/../../lib/cJSON.c  -I$(OOB_SOURCE_DIR)/../../lib/ -I$(OOB_SOURCE_DIR)/../$(CURL_DIR)/lib/vtls -I$(OOB_SOURCE_DIR)/../../include -I$(OOB_SOURCE_DIR)/../$(CURL_DIR)/include libtelemetry.a -o sampleoobevent $(LDFLAGS) $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/curl/lib/libcurl.a $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/openssl/lib/libssl.a $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/openssl/lib/libcrypto.a -lpthread $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/zlib/lib/libz.a -ldl -luuid -lrt
+	$(CC) $(CFLAGS) -g sample.c $(OOB_SOURCE_DIR)/../../lib/cJSON.c  \
+          -I$(OOB_SOURCE_DIR)/../../lib/ \
+          -I$(OOB_SOURCE_DIR)/../$(CURL_DIR)/lib/vtls \
+          -I$(OOB_SOURCE_DIR)/../../include \
+          -I$(OOB_SOURCE_DIR)/../$(CURL_DIR)/include \
+          libtelemetry.a \
+          -o sampleoobevent \
+          $(LDFLAGS) $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/curl/lib/libcurl.a \
+          $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/openssl/lib/libssl.a \
+          $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/openssl/lib/libcrypto.a \
+          -lpthread \
+          $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/zlib/lib/libz.a \
+          $(OOB_SOURCE_DIR)/../../deps-build/linux/Debug/uuid/lib/libuuid.a \
+          -ldl -lrt
 

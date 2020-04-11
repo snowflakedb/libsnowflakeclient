@@ -36,7 +36,14 @@ void getuuid(char *buffer);
 
 char* getConnectionInfo(enum OOBINFO id);
 
+void getCabundle(char *cabundle, int maxlen);
+
 static void freeAll(void);
+
+char* getOOBDeployment()
+{
+    return connectionInfo.dep;
+}
 
 void maskSecrets(char *str)
 {

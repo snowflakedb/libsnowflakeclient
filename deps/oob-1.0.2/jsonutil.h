@@ -50,6 +50,11 @@ void setoobConnectioninfo(const char* host,
     const char* role,
     short ssl
     );
+
+extern char* getOOBDeployment();
+
+extern void getCabundle(char *cabundle, int maxlen);
+
 #ifdef __cplusplus
 }
 #endif
