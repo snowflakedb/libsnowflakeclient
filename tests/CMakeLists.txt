@@ -48,7 +48,8 @@ SET(TESTS_CXX
         test_unit_thread_pool
         test_unit_base64
         #test_cpp_select1
-        test_unit_proxy)
+        test_unit_proxy
+        test_unit_oob)
 
 SET(TESTS_AWS
         test_include_aws
@@ -191,6 +192,7 @@ else()
             target_include_directories(
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             )
             set_target_properties(
 		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
@@ -198,6 +200,7 @@ else()
             target_include_directories(
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/cmocka/include
+                    ../deps-build/${PLATFORM}/openssl/include
             )
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
@@ -223,6 +226,7 @@ else()
             )
             target_link_libraries(${T} ${TESTLIB_OPTS_C})
             add_test(${T} ${T})
+            set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${CABUNDLE_PATH})
             # Removed to suppress false alarm: "--run-libc-freeres=no"
             add_test(valgrind_${T}
                     valgrind

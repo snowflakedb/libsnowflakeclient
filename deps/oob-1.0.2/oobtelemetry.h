@@ -6,6 +6,10 @@
 #include <curl/curl.h>
 #include "jsonutil.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //event will be Freed by the callee
 //We will modify event to mask passwords/secrets
 extern int sendOOBevent(char *event);
@@ -16,8 +20,6 @@ extern void setConnectionString(char const* connStr);
 extern char *prepareOOBevent(oobOcspData *ocspevent);
 
 extern void setOOBeventdata(enum OOBINFO id, const char *data, long num);
-
-extern void getCabundle(char *cabundle, int maxlen);
 
 extern void setoobConnectioninfo(const char* host,
     const char* port,
@@ -31,5 +33,9 @@ extern void setoobConnectioninfo(const char* host,
     const char* role,
     short ssl
     );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

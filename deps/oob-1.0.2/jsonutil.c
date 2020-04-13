@@ -21,6 +21,8 @@ static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
+void setdeployment(const char *host);
+
 int sendOOBevent(char *event);
 
 //connStr will be copied into another string
@@ -34,7 +36,14 @@ void getuuid(char *buffer);
 
 char* getConnectionInfo(enum OOBINFO id);
 
+void getCabundle(char *cabundle, int maxlen);
+
 static void freeAll(void);
+
+char* getOOBDeployment()
+{
+    return connectionInfo.dep;
+}
 
 void maskSecrets(char *str)
 {
@@ -182,11 +191,8 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     key = cJSON_CreateString( connectionInfo.dep );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
-    key = cJSON_CreateString( connectionInfo.dep );
-    if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "snowhouseSchema", key);
   }else {
-    key = cJSON_CreateString( "dev" );
+    key = cJSON_CreateString( "prod" );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
   }
@@ -297,13 +303,13 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     maskSecrets(oobevent.request);
     key = cJSON_CreateString( oobevent.request);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(list, "request", key);
+    cJSON_AddItemToObject(vals, "request", key);
   }
 
   if(connectionInfo.sqlstate[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.sqlstate);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(list, "sqlState", key);
+    cJSON_AddItemToObject(vals, "sqlState", key);
   }
 
   if (root)
@@ -360,7 +366,7 @@ void setOOBeventdata(enum OOBINFO id, const char *data, long num)
       copyString(data, connectionInfo.sqlstate, 64);
       break;
     case CTX_STR:
-      copyString(data, connectionInfo.ctxStr, 1024);
+      copyString(data, connectionInfo.ctxStr, 4096);
       break;
     case URGENCY:
       oobevent.urgent = num;
@@ -384,6 +390,7 @@ void setoobConnectioninfo(const char* host,
     )
 {
   copyString(host, connectionInfo.host, 512);
+  setdeployment(host);
   copyString(port, connectionInfo.port, 10);
   copyString(account, connectionInfo.account, 256);
   copyString(user, connectionInfo.user, 256);
@@ -403,24 +410,21 @@ void setoobConnectioninfo(const char* host,
 void setdeployment(const char *host)
 {
   const char *tmp=NULL;
-  if( !host ) {
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "dev");
+  if( !host || host[0] == 0) {
+    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Ignore");
     return;
   }
 
-  if( (strstr(host, "dev") != NULL) || (strstr(host, "reg") != NULL) ){
+  if( (strstr(host, "local") != NULL) || (strstr(host, "reg") != NULL) ){
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "dev");
   }
 
-  else if( (strstr(host, "qa1") != NULL) || (strstr(host, "prepod2") != NULL) ){
+  else if( (strstr(host, "qa1") != NULL) || (strstr(host, "preprod") != NULL)){
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "qa1");
   }
 
-  else if( strstr(host, "Production") != NULL ) {
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Production");
-  }
   else 
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "dev");
+    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "prod");
 }
 
 void setConnectionString(char const *connStr)
@@ -428,7 +432,6 @@ void setConnectionString(char const *connStr)
   if(connStr && connStr[0] != 0 )
   {
     sb_strcpy(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), connStr);
-    setdeployment(connStr); //Extract deployment type from connectionString
   }
 }
 

@@ -2,10 +2,14 @@
 #define __JSONUTIL_H_
 #include "sf_ocsp_telemetry_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum OOBINFO { CTX_ACCOUNT, CTX_HOST, CTX_PORT, CTX_USER, CTX_STR, CTX_PROTOCOL, CTX_DEPLOYMENT, OOBEVENTNAME,  EXCPMSG, EXCPMSGTRC, REQUESTURL, RESPSTATUSCODE, ERRORCODE, OOBSQLSTATE, URGENCY, OOBCABUNDLE };
 
 struct conStr{
-  char ctxStr[1024];
+  char ctxStr[4096];
   char dep[256];
   char host[512];
   char port[10];
@@ -47,4 +51,11 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
+extern char* getOOBDeployment();
+
+extern void getCabundle(char *cabundle, int maxlen);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
