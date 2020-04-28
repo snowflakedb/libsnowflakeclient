@@ -39,7 +39,8 @@ public:
    */
   RemoteStorageRequestOutcome populateSrcLocDownloadMetadata(
     std::string &sourceLocation, std::string *remoteLocations,
-    IStorageClient *storageClient, EncryptionMaterial *encMat);
+    IStorageClient *storageClient, EncryptionMaterial *encMat,
+    std::string const& presignedUrl);
 
   /**
    * Init encryption metadata in file metadata

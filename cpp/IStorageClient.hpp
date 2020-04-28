@@ -39,6 +39,16 @@ public:
    */
   virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
     std::string * filePathFull, FileMetadata *fileMetadata) = 0;
+
+  /**
+  * @return Whether this client requires the use of presigned URLs for upload
+  * and download instead of credentials that work for all files uploaded/
+  * downloaded to a stage path. True for GCS.
+  */
+  virtual bool requirePresignedUrl()
+  {
+    return false;
+  }
 };
 }
 }

@@ -76,6 +76,9 @@ struct FileMetadata
   
   /// target compression
   const FileCompressionType * targetCompression;
+
+  /// pre-signed url
+  std::string presignedUrl;
 };
 
 }

@@ -16,6 +16,8 @@
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/platform.h"
 
+#define FILE_ENCRYPTION_BLOCK_SIZE 128
+
 namespace Snowflake
 {
 namespace Client
@@ -106,6 +108,21 @@ private:
    * Reset private members between two consecutive put/get command
    */
   void reset();
+
+  void getPresignedUrlForUploading(FileMetadata& io_fileMetadata,
+                                   const std::string& command);
+
+  /**
+  * Parses out the local file path from the command. We need this to get the
+  * file paths to expand wildcards and make sure the paths GS returns are
+  * correct
+  *
+  * @param command  The GET/PUT command we send to GS
+  * @param unescape True to unescape backslashes coming from GS
+  * @return Path to the local file
+  */
+  std::string getLocalFilePathFromCommand(std::string const& command,
+                                          bool unescape);
 
   /// interface to communicate with server
   IStatementPutGet *m_stmtPutGet;

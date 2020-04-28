@@ -224,13 +224,15 @@ Snowflake::Client::FileMetadataInitializer::
 populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                std::string *remoteLocation,
                                IStorageClient *storageClient,
-                               EncryptionMaterial *encMat)
+                               EncryptionMaterial *encMat,
+                               std::string const& presignedUrl)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
   size_t dirSep = fullPath.find_last_of('/');
   std::string dstFileName = fullPath.substr(dirSep + 1);
 
   FileMetadata fileMetadata;
+  fileMetadata.presignedUrl = presignedUrl;
   RemoteStorageRequestOutcome outcome = storageClient->GetRemoteFileMetadata(
     &fullPath, &fileMetadata);
 
