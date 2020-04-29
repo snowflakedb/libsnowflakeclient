@@ -62,7 +62,9 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_executionResults(nullptr),
   m_storageClient(nullptr),
   m_lastRefreshTokenSec(0),
-  m_transferConfig(transferConfig)
+  m_transferConfig(transferConfig),
+  m_uploadStream(nullptr),
+  m_uploadStreamSize(0)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -135,6 +137,30 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   m_FileMetadataInitializer.setAutoCompress(response.autoCompress);
   m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
   m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
+
+  // Upload data from stream in memory
+  if ((m_uploadStream) && (CommandType::UPLOAD == response.command))
+  {
+    // Only single file uploading supported, the data must be pre-compressed with gzip
+    if ((response.srcLocations.size() != 1) || response.autoCompress ||
+        sf_strncasecmp(response.sourceCompression, "gzip", sizeof("gzip")))
+    {
+      CXX_LOG_FATAL(CXX_LOG_NS, "Invalid stream uploading.");
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+        "Invalid stream uploading.");
+    }
+
+    FileMetadata fileMeta;
+    fileMeta.srcFileName = response.srcLocations.at(0);
+    fileMeta.srcFileSize = m_uploadStreamSize;
+    fileMeta.destFileName = fileMeta.srcFileName;
+    fileMeta.sourceCompression = &FileCompressionType::GZIP;
+    fileMeta.requireCompress = false;
+    fileMeta.targetCompression = &FileCompressionType::GZIP;
+    m_largeFilesMeta.push_back(fileMeta);
+
+    return;
+  }
 
   vector<string> *sourceLocations = &response.srcLocations;
   for (size_t i = 0; i < sourceLocations->size(); i++)
@@ -291,13 +317,24 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   // calculate digest
   updateFileDigest(fileMetadata);
 
-  ::std::fstream originalFileStream(fileMetadata->srcFileToUpload.c_str(),
-                                    ::std::ios_base::in |
-                                    ::std::ios_base::binary);
-
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
 
-  Crypto::CipherIOStream inputEncryptStream(originalFileStream,
+  std::basic_iostream<char> *srcFileStream;
+  ::std::fstream fs;
+
+  if (m_uploadStream)
+  {
+    srcFileStream = m_uploadStream;
+  }
+  else
+ {
+    fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+      ::std::ios_base::in |
+      ::std::ios_base::binary);
+    srcFileStream = &fs;
+  }
+
+  Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
     Crypto::CryptoOperation::ENCRYPT,
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.iv,
@@ -306,7 +343,10 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   // upload stream
   RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
                                                        &inputEncryptStream);
-  originalFileStream.close();
+  if (fs.is_open())
+  {
+    fs.close();
+  }
 
   if (fileMetadata->requireCompress)
   {
@@ -323,8 +363,19 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 {
   const int CHUNK_SIZE = 16 * 4 * 1024;
 
-  ::std::fstream fs(fileMetadata->srcFileToUpload,
-                    ::std::ios_base::in | ::std::ios_base::binary);
+  std::basic_iostream<char> *srcFileStream;
+  ::std::fstream fs;
+
+  if (m_uploadStream)
+  {
+    srcFileStream = m_uploadStream;
+  }
+  else
+  {
+    fs = ::std::fstream(fileMetadata->srcFileToUpload,
+      ::std::ios_base::in | ::std::ios_base::binary);
+    srcFileStream = &fs;
+  }
 
   Crypto::HashContext hashContext(Crypto::Cryptor::getInstance()
                                     .createHashContext(
@@ -337,11 +388,21 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   hashContext.initialize();
 
   char sourceFileBuffer[CHUNK_SIZE];
-  while (fs.read(sourceFileBuffer, CHUNK_SIZE))
+  while (srcFileStream->read(sourceFileBuffer, CHUNK_SIZE))
   {
     hashContext.next(sourceFileBuffer, CHUNK_SIZE);
   }
-  fs.close();
+
+  if (fs.is_open())
+  {
+    fs.close();
+  }
+  
+  if (m_uploadStream)
+  {
+    m_uploadStream->clear();
+    m_uploadStream->seekg(0, std::ios::beg);
+  }
 
   hashContext.finalize(digest);
 

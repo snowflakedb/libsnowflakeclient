@@ -34,6 +34,13 @@ public:
   virtual ITransferResult *execute(std::string *command) = 0;
 
   /**
+  * Set upload stream to enable upload file from stream in memory.
+  * @param uploadStream The stream to be uploaded.
+  * @param dataSize The data size of the stream.
+  */
+  virtual void setUploadStream(std::basic_iostream<char>* uploadStream,
+                               size_t dataSize) = 0;
+  /**
    * Static method to instantiate a IFileTransferAgent class
    * @return a newly allocated IFileTransferAgent, caller need to delete instance
    */

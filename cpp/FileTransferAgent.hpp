@@ -47,6 +47,18 @@ public:
    */
   virtual ITransferResult *execute(std::string *command);
 
+  /**
+  * Set upload stream to enable upload file from stream in memory.
+  * @param uploadStream The stream to be uploaded.
+  * @param dataSize The data size of the stream.
+  */
+  virtual void setUploadStream(std::basic_iostream<char>* uploadStream,
+                               size_t dataSize)
+  {
+    m_uploadStream = uploadStream;
+    m_uploadStreamSize = dataSize;
+  }
+
 private:
   /**
    * Populate file metadata, (Get source file name)
@@ -153,6 +165,12 @@ private:
 
   /// config struct that is passed in.
   TransferConfig * m_transferConfig;
+
+  // The stream for uploading data from memory. (NOT OWN)
+  std::basic_iostream<char>* m_uploadStream;
+
+  // The data size of upload stream.
+  size_t m_uploadStreamSize;
 };
 }
 }
