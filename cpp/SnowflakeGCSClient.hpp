@@ -44,13 +44,13 @@ public:
    * @return
    */
   RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
-                         std::basic_iostream<char> *dataStream);
+                         std::basic_iostream<char> *dataStream) override;
 
   RemoteStorageRequestOutcome download(FileMetadata *fileMetadata,
-    std::basic_iostream<char>* dataStream);
+    std::basic_iostream<char>* dataStream) override;
 
   RemoteStorageRequestOutcome GetRemoteFileMetadata(
-    std::string * filePathFull, FileMetadata *fileMetadata);
+    std::string * filePathFull, FileMetadata *fileMetadata) override;
 
   virtual bool requirePresignedUrl() override
   {
@@ -89,4 +89,4 @@ private:
 }
 }
 
-#endif //SNOWFLAKECLIENT_SNOWFLAKEGCSCLIENT_HPP
+#endif //SNOWFLAKECLIENT_SNOWFLAKES3CLIENT_HPP
