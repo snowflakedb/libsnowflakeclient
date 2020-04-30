@@ -83,14 +83,14 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.c)
 
 # Only run PUT/GET tests on AWS deployments
-if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
-    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
+if ("$ENV{CLOUD_PROVIDER}" STREQUAL "AWS")
+    message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
 endif()
 
 # Only run PUT/GET tests on Azure deployments
-if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
-    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
+if ("$ENV{CLOUD_PROVIDER}" STREQUAL "AZURE")
+    message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
     message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
     set(TESTS_CXX ${TESTS_CXX})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
