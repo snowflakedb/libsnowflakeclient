@@ -81,7 +81,7 @@ void test_simple_put_core(const char * fileName,
   if (setCustomThreshold)
   {
     putCommand += " threshold=";
-    putCommand += customThreshold;
+    putCommand += std::to_string(customThreshold);
   }
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
@@ -570,9 +570,9 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
-    cmocka_unit_test_teardown(test_simple_get, teardown)
+    cmocka_unit_test_teardown(test_simple_get, teardown),
 #if 0
-    , cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
+    cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
