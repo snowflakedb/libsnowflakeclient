@@ -40,6 +40,7 @@ enum StageType
   S3,
   AZURE,
   LOCAL_FS,
+  GCS,
 
   /// This is used to create MOCKED storage client and is for testing purpose
   MOCKED_STAGE_TYPE,
@@ -59,6 +60,8 @@ struct StageInfo
   std::string storageAccount; //Required by Azure
 
   std::string endPoint;       //Required by Azure
+
+  std::string presignedUrl;   //Required by GCS for uploading
 
   std::unordered_map<std::string, char *> credentials;
 };
@@ -95,6 +98,9 @@ struct PutGetParseResponse
   /// for put command, size is always 1, while for get,
   /// encryption mat can be a list
   std::vector<EncryptionMaterial> encryptionMaterials;
+
+  // Presigned URLs for downloading
+  std::vector<std::string> presignedUrls;
 
   StageInfo stageInfo;
 };

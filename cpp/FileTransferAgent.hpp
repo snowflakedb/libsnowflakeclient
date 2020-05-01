@@ -16,6 +16,8 @@
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/platform.h"
 
+#define FILE_ENCRYPTION_BLOCK_SIZE 128
+
 namespace Snowflake
 {
 namespace Client
@@ -44,6 +46,18 @@ public:
    * @return a fixed view result set representing upload/download result
    */
   virtual ITransferResult *execute(std::string *command);
+
+  /**
+  * Set upload stream to enable upload file from stream in memory.
+  * @param uploadStream The stream to be uploaded.
+  * @param dataSize The data size of the stream.
+  */
+  virtual void setUploadStream(std::basic_iostream<char>* uploadStream,
+                               size_t dataSize)
+  {
+    m_uploadStream = uploadStream;
+    m_uploadStreamSize = dataSize;
+  }
 
 private:
   /**
@@ -107,6 +121,21 @@ private:
    */
   void reset();
 
+  void getPresignedUrlForUploading(FileMetadata& io_fileMetadata,
+                                   const std::string& command);
+
+  /**
+  * Parses out the local file path from the command. We need this to get the
+  * file paths to expand wildcards and make sure the paths GS returns are
+  * correct
+  *
+  * @param command  The GET/PUT command we send to GS
+  * @param unescape True to unescape backslashes coming from GS
+  * @return Path to the local file
+  */
+  std::string getLocalFilePathFromCommand(std::string const& command,
+                                          bool unescape);
+
   /// interface to communicate with server
   IStatementPutGet *m_stmtPutGet;
 
@@ -136,6 +165,12 @@ private:
 
   /// config struct that is passed in.
   TransferConfig * m_transferConfig;
+
+  // The stream for uploading data from memory. (NOT OWN)
+  std::basic_iostream<char>* m_uploadStream;
+
+  // The data size of upload stream.
+  size_t m_uploadStreamSize;
 };
 }
 }

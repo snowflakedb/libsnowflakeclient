@@ -20,11 +20,39 @@
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
 
-#define FILE_ENCRYPTION_BLOCK_SIZE 128
-
 using ::std::string;
 using ::std::vector;
 using ::Snowflake::Client::RemoteStorageRequestOutcome;
+
+namespace
+{
+  const std::string FILE_PROTOCOL = "file://";
+
+  void replaceStrAll(std::string& stringToReplace,
+                  std::string const& oldValue,
+                  std::string const& newValue)
+  {
+    size_t oldValueLen = oldValue.length();
+    size_t newValueLen = newValue.length();
+    if (0 == oldValueLen)
+    {
+      return;
+    }
+
+    size_t index = 0;
+    while (true) {
+      /* Locate the substring to replace. */
+      index = stringToReplace.find(oldValue, index);
+      if (index == std::string::npos) break;
+
+      /* Make the replacement. */
+      stringToReplace.replace(index, oldValueLen, newValue);
+
+      /* Advance index forward so the next iteration doesn't pick it up as well. */
+      index += newValueLen;
+    }
+  }
+}
 
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement,
@@ -34,7 +62,9 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_executionResults(nullptr),
   m_storageClient(nullptr),
   m_lastRefreshTokenSec(0),
-  m_transferConfig(transferConfig)
+  m_transferConfig(transferConfig),
+  m_uploadStream(nullptr),
+  m_uploadStreamSize(0)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -78,7 +108,8 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
                                                     (unsigned int) response.parallel,
                                                     response.threshold,
-                                                    m_transferConfig);
+                                                    m_transferConfig,
+                                                    m_stmtPutGet);
 
   // init file metadata
   initFileMetadata(command);
@@ -107,6 +138,30 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
   m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
 
+  // Upload data from stream in memory
+  if ((m_uploadStream) && (CommandType::UPLOAD == response.command))
+  {
+    // Only single file uploading supported, the data must be pre-compressed with gzip
+    if ((response.srcLocations.size() != 1) || response.autoCompress ||
+        sf_strncasecmp(response.sourceCompression, "gzip", sizeof("gzip")))
+    {
+      CXX_LOG_FATAL(CXX_LOG_NS, "Invalid stream uploading.");
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+        "Invalid stream uploading.");
+    }
+
+    FileMetadata fileMeta;
+    fileMeta.srcFileName = response.srcLocations.at(0);
+    fileMeta.srcFileSize = m_uploadStreamSize;
+    fileMeta.destFileName = fileMeta.srcFileName;
+    fileMeta.sourceCompression = &FileCompressionType::GZIP;
+    fileMeta.requireCompress = false;
+    fileMeta.targetCompression = &FileCompressionType::GZIP;
+    m_largeFilesMeta.push_back(fileMeta);
+
+    return;
+  }
+
   vector<string> *sourceLocations = &response.srcLocations;
   for (size_t i = 0; i < sourceLocations->size(); i++)
   {
@@ -118,10 +173,14 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
         break;
       case CommandType::DOWNLOAD:
         {
+        std::string presignedUrl =
+          (m_storageClient->requirePresignedUrl() && (response.presignedUrls.size() > i)) ?
+            response.presignedUrls.at(i) : "";
           RemoteStorageRequestOutcome outcome =
             m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
               sourceLocations->at(i), &response.stageInfo.location,
-              m_storageClient, &response.encryptionMaterials.at(i));
+              m_storageClient, &response.encryptionMaterials.at(i),
+              presignedUrl);
 
           if (outcome == TOKEN_EXPIRED)
           {
@@ -150,6 +209,11 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
     {
       m_largeFilesMeta[i].overWrite = response.overwrite;
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
+
+      if (m_storageClient->requirePresignedUrl())
+      {
+        getPresignedUrlForUploading(m_largeFilesMeta[i], *command);
+      }
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
 
@@ -163,6 +227,14 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
 
   if (m_smallFilesMeta.size() > 0)
   {
+    if (m_storageClient->requirePresignedUrl())
+    {
+      for (size_t i = 0; i < m_smallFilesMeta.size(); i++)
+      {
+        std::string localCommand = *command;
+        getPresignedUrlForUploading(m_smallFilesMeta[i], localCommand);
+      }
+    }
     uploadFilesInParallel(command);
   }
 }
@@ -245,13 +317,24 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   // calculate digest
   updateFileDigest(fileMetadata);
 
-  ::std::fstream originalFileStream(fileMetadata->srcFileToUpload.c_str(),
-                                    ::std::ios_base::in |
-                                    ::std::ios_base::binary);
-
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
 
-  Crypto::CipherIOStream inputEncryptStream(originalFileStream,
+  std::basic_iostream<char> *srcFileStream;
+  ::std::fstream fs;
+
+  if (m_uploadStream)
+  {
+    srcFileStream = m_uploadStream;
+  }
+  else
+ {
+    fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+      ::std::ios_base::in |
+      ::std::ios_base::binary);
+    srcFileStream = &fs;
+  }
+
+  Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
     Crypto::CryptoOperation::ENCRYPT,
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.iv,
@@ -260,7 +343,10 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   // upload stream
   RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
                                                        &inputEncryptStream);
-  originalFileStream.close();
+  if (fs.is_open())
+  {
+    fs.close();
+  }
 
   if (fileMetadata->requireCompress)
   {
@@ -277,8 +363,19 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 {
   const int CHUNK_SIZE = 16 * 4 * 1024;
 
-  ::std::fstream fs(fileMetadata->srcFileToUpload,
-                    ::std::ios_base::in | ::std::ios_base::binary);
+  std::basic_iostream<char> *srcFileStream;
+  ::std::fstream fs;
+
+  if (m_uploadStream)
+  {
+    srcFileStream = m_uploadStream;
+  }
+  else
+  {
+    fs = ::std::fstream(fileMetadata->srcFileToUpload,
+      ::std::ios_base::in | ::std::ios_base::binary);
+    srcFileStream = &fs;
+  }
 
   Crypto::HashContext hashContext(Crypto::Cryptor::getInstance()
                                     .createHashContext(
@@ -291,11 +388,21 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   hashContext.initialize();
 
   char sourceFileBuffer[CHUNK_SIZE];
-  while (fs.read(sourceFileBuffer, CHUNK_SIZE))
+  while (srcFileStream->read(sourceFileBuffer, CHUNK_SIZE))
   {
     hashContext.next(sourceFileBuffer, CHUNK_SIZE);
   }
-  fs.close();
+
+  if (fs.is_open())
+  {
+    fs.close();
+  }
+  
+  if (m_uploadStream)
+  {
+    m_uploadStream->clear();
+    m_uploadStream->seekg(0, std::ios::beg);
+  }
 
   hashContext.finalize(digest);
 
@@ -426,4 +533,79 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
   return outcome;
+}
+
+void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
+                               FileMetadata& fileMetadata,
+                               const std::string& command)
+{
+  // need to replace file://mypath/myfile?.csv with file://mypath/myfile1.csv.gz
+  std::string presignedUrlCommand = command;
+  std::string localFilePath = getLocalFilePathFromCommand(command, false);
+  replaceStrAll(presignedUrlCommand, localFilePath, fileMetadata.destFileName);
+  // then hand that to GS to get the actual presigned URL we'll use
+  PutGetParseResponse rsp;
+  if (!m_stmtPutGet->parsePutGetCommand(&presignedUrlCommand, &rsp))
+  {
+    throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+      "Failed to parse response.");
+  }
+  CXX_LOG_INFO("Parse response succeed");
+
+  fileMetadata.presignedUrl = rsp.stageInfo.presignedUrl;
+}
+
+std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
+                               std::string const& command,
+                               bool unescape)
+{
+  if (std::string::npos == command.find(FILE_PROTOCOL))
+  {
+    CXX_LOG_ERROR("file:// prefix not found in command %s", command.c_str());
+    throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+      "file:// prefix not found in command.");
+  }
+
+  int localFilePathBeginIdx = command.find(FILE_PROTOCOL) +
+    FILE_PROTOCOL.length();
+  bool isLocalFilePathQuoted =
+    (localFilePathBeginIdx > FILE_PROTOCOL.length()) &&
+    (command.at(localFilePathBeginIdx - 1 - FILE_PROTOCOL.length()) == '\'');
+
+  // the ending index is exclusive
+  int localFilePathEndIdx = 0;
+  std::string localFilePath = "";
+
+  if (isLocalFilePathQuoted)
+  {
+    // look for the matching quote
+    localFilePathEndIdx = command.find("'", localFilePathBeginIdx);
+    if (localFilePathEndIdx > localFilePathBeginIdx)
+    {
+      localFilePath = command.substr(localFilePathBeginIdx,
+        localFilePathEndIdx - localFilePathBeginIdx);
+    }
+    // unescape backslashes to match the file name from GS
+    if (unescape)
+    {
+      replaceStrAll(localFilePath, "\\\\\\\\", "\\\\");
+    }
+  }
+  else
+  {
+    // look for the first space or new line or semi colon
+    localFilePathEndIdx = command.find_first_of(" \n;", localFilePathBeginIdx);
+
+    if (localFilePathEndIdx > localFilePathBeginIdx)
+    {
+      localFilePath = command.substr(localFilePathBeginIdx,
+        localFilePathEndIdx - localFilePathBeginIdx);
+    }
+    else if (std::string::npos == localFilePathEndIdx)
+    {
+      localFilePath = command.substr(localFilePathBeginIdx);
+    }
+  }
+
+  return localFilePath;
 }

@@ -128,6 +128,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/SnowflakeS3Client.cpp
         cpp/SnowflakeAzureClient.hpp
         cpp/SnowflakeAzureClient.cpp
+        cpp/SnowflakeGCSClient.hpp
+        cpp/SnowflakeGCSClient.cpp
         cpp/SnowflakeTransferException.cpp
         cpp/StatementPutGet.hpp
         cpp/StatementPutGet.cpp
