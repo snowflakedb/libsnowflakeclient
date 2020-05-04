@@ -564,7 +564,6 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip_caseInsensitive, teardown),
-    cmocka_unit_test_teardown(test_simple_put_threshold, teardown),
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
@@ -572,6 +571,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
 #if 0
+    cmocka_unit_test_teardown(test_simple_put_threshold, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
