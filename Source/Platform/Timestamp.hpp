@@ -160,7 +160,6 @@ public:
   *   scale of fractional seconds
   */
   void fromFractionalSecondsSinceEpoch(TDWExactNumericType& fracSeconds, sb1 scale);
-
   /**
   * Convert the fractional seconds since epoch to timestamp
   * @param fracSeconds
@@ -171,6 +170,21 @@ public:
   * time zone index
   */
   void fromFractionalSecondsSinceEpoch(TDWExactNumericType& fracSeconds, sb1 scale, sb4 tzIndex);
+
+  /** 
+  * Simplified version of two functions above where sb8 is enough for the
+  * actual data and TDWExactNumericType is not necessary to be involved.
+  */
+  inline void fromFractionalSecondsSinceEpoch(sb8 fracSeconds, sb1 scale)
+  {
+    TDWExactNumericType seconds(fracSeconds, scale);
+    fromFractionalSecondsSinceEpoch(seconds, scale);
+  }
+  inline void fromFractionalSecondsSinceEpoch(sb8 fracSeconds, sb1 scale, sb4 tzIndex)
+  {
+    TDWExactNumericType seconds(fracSeconds, scale);
+    fromFractionalSecondsSinceEpoch(seconds, scale, tzIndex);
+  }
 #else // !HAVE_IMPL_INT128
   /**
    * Convert the timestamp to number of fractional seconds since Epoch
@@ -201,8 +215,9 @@ public:
      * time zone index
    */
   void fromFractionalSecondsSinceEpoch(sb16 fracSeconds, sb1 scale, sb4 tzIndex);
-  void fromFractionalSecondsSinceEpoch(sb16 fracSeconds,sb8 secSinceEpoch, sb1 scale, sb4 tzIndex);
 #endif // !HAVE_IMPL_INT128
+
+  void fromFractionalSecondsSinceEpoch(sb8 fracSeconds, sb8 secSinceEpoch, sb1 scale, sb4 tzIndex);
 
   /**
    * Convert the number of day since epoch to timestamp
