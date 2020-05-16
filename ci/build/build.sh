@@ -3,11 +3,10 @@
 # Build libsnowflake and its dependencies
 #
 set -x
-set +v
+set -o pipefail
 
 CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
-set -o pipefail
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
