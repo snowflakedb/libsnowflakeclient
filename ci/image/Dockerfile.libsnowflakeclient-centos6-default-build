@@ -72,6 +72,9 @@ RUN chmod +x /usr/local/bin/gosu
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Java
+RUN yum -y install java-1.8.0-openjdk-devel
+
 # workspace
 
 RUN mkdir -p /home/user

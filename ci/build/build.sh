@@ -81,4 +81,4 @@ download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
 
-[[ -n "$WHITESOURCE_API_KEY" ]] && $THIS_DIR/wss.sh
+[[ -n "$WHITESOURCE_API_KEY" ]] && $CI_BUILD_DIR/wss.sh
