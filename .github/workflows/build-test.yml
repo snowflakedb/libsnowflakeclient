@@ -24,6 +24,7 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
+                  WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ci/build_linux.sh
             - uses: actions/setup-python@v1
               with:

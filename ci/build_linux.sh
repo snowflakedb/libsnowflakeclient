@@ -26,6 +26,7 @@ docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
+        -e WHITESOURCE_API_KEY \
         -e GIT_URL \
         -e GIT_BRANCH \
         -e GIT_COMMIT \

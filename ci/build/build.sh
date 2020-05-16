@@ -2,7 +2,7 @@
 #
 # Build libsnowflake and its dependencies
 #
-set +x
+set -x
 set +v
 
 CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -80,3 +80,5 @@ download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
+
+[[ -n "$WHITESOURCE_API_KEY" ]] && $THIS_DIR/wss.sh
