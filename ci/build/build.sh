@@ -2,12 +2,11 @@
 #
 # Build libsnowflake and its dependencies
 #
-set +x
-set +v
+set -x
+set -o pipefail
 
 CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
-set -o pipefail
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
@@ -80,3 +79,5 @@ download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
+
+[[ -n "$WHITESOURCE_API_KEY" ]] && $CI_BUILD_DIR/wss.sh || true

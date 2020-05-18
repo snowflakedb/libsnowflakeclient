@@ -27,3 +27,6 @@ config.log
 artifacts/
 latest_commit
 venv/
+wss-*-agent.config
+wss-unified-agent.jar
+whitesource/
