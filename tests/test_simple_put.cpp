@@ -81,15 +81,24 @@ void test_simple_put_core(const char * fileName,
   if (setCustomThreshold)
   {
     putCommand += " threshold=";
-    putCommand += customThreshold;
+    putCommand += std::to_string(customThreshold);
   }
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
-  ITransferResult * results = agent.execute(&putCommand);
-  assert_int_equal(1, results->getResultSize());
+  ITransferResult * results = NULL;
+  //catch exception to continue with other test cases if query fails.
+  try
+  {
+    results = agent.execute(&putCommand);
+    assert_int_equal(1, results->getResultSize());
+  }
+  catch (...)
+  {
+    assert_string_equal("", sfstmt->error.msg);
+  }
 
   while(results->next())
   {
@@ -411,7 +420,7 @@ void test_simple_put_one_byte(void **unused)
 
 void test_simple_put_threshold(void **unused)
 {
-  test_simple_put_core("small_file.csv.gz", "none", false, false, false, false, false, true, 100*1024*1024);
+  test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, true, 100*1024*1024);
 }
 
 void test_simple_get(void **unused)
@@ -484,12 +493,26 @@ void test_simple_put_skip(void **unused)
     assert_string_equal("UPLOADED", put_status.c_str());
   }
 
+  // Skip is not available on GCP
+  bool canSkip = true;
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if(cloud_provider && ( strcmp(cloud_provider, "GCP") == 0 ) ) {
+    canSkip = false;
+  }
+
   // load second time should return skipped
   results = agent.execute(&putCommand);
   while(results->next())
   {
     results->getColumnAsString(6, put_status);
-    assert_string_equal("SKIPPED", put_status.c_str());
+    if (canSkip)
+    {
+      assert_string_equal("SKIPPED", put_status.c_str());
+    }
+    else
+    {
+      assert_string_equal("UPLOADED", put_status.c_str());
+    }
   }
 
   snowflake_stmt_term(sfstmt);

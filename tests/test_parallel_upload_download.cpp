@@ -180,6 +180,12 @@ int main(void) {
     cmocka_unit_test_teardown(test_small_file_concurrent_upload_download, teardown),
     cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
   };
-  int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
-  return ret;
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if( cloud_provider && (( strcmp(cloud_provider,"AWS") == 0 ) || ( strcmp(cloud_provider,"GCP") == 0 )) ) {
+    std::cout << "parallel_upload_download running on cloud provider " << cloud_provider << std::endl;
+    int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
+    return ret;
+  }
+  std::cout << "parallel_upload_download not running on cloud provider " << cloud_provider << std::endl;
+  return 0;
 }
