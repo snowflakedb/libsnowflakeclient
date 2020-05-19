@@ -1267,11 +1267,15 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
     SF_FREE(put_get_response->stage_info->stage_cred->aws_key_id);
     SF_FREE(put_get_response->stage_info->stage_cred->aws_secret_key);
     SF_FREE(put_get_response->stage_info->stage_cred->aws_token);
+    SF_FREE(put_get_response->stage_info->stage_cred->azure_sas_token);
     SF_FREE(put_get_response->stage_info->stage_cred);
     SF_FREE(put_get_response->stage_info->location_type);
     SF_FREE(put_get_response->stage_info->location);
     SF_FREE(put_get_response->stage_info->path);
     SF_FREE(put_get_response->stage_info->region);
+    SF_FREE(put_get_response->stage_info->storageAccount);
+    SF_FREE(put_get_response->stage_info->endPoint);
+    SF_FREE(put_get_response->stage_info->presignedUrl);
     SF_FREE(put_get_response->stage_info);
     SF_FREE(put_get_response->enc_mat_put->query_stage_master_key);
     SF_FREE(put_get_response->enc_mat_put);
@@ -1279,6 +1283,7 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
 
     snowflake_cJSON_Delete((cJSON *) put_get_response->src_list);
     snowflake_cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
+    snowflake_cJSON_Delete((cJSON *) put_get_response->presignedUrls);
 
     SF_FREE(put_get_response);
 }
@@ -1823,6 +1828,17 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                   enc_mat, "smkId");
                 }
 
+                cJSON *presignedUrls = snowflake_cJSON_GetObjectItem(data,
+                  "presignedUrls");
+
+                // In get command response for GCS, presignedUrl is an array
+                if (snowflake_cJSON_IsArray(presignedUrls))
+                {
+                  json_detach_array_from_object(
+                    (cJSON **)(&sfstmt->put_get_response->presignedUrls),
+                    data, "presignedUrls");
+                }
+
                 cJSON *stage_info = snowflake_cJSON_GetObjectItem(data,
                                                                   "stageInfo");
                 cJSON *stage_cred = snowflake_cJSON_GetObjectItem(stage_info,
@@ -1842,6 +1858,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "storageAccount");
                 json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
                                  stage_info, "endPoint");
+                json_copy_string(&sfstmt->put_get_response->stage_info->presignedUrl,
+                                 stage_info, "presignedUrl");
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");

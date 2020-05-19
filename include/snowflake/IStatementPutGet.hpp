@@ -75,6 +75,14 @@ public:
   {
 
   }
+
+  void setCaBundle(std::string const& caBundle)
+  {
+    m_caBundle = caBundle;
+  }
+
+protected:
+  std::string m_caBundle;
 };
 }
 }
