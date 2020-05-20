@@ -256,11 +256,13 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if((!cloud_provider) ||
+     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
       errno = 0;
       return;
   }
+
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -274,8 +276,9 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if((!cloud_provider) ||
+     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
       errno = 0;
       return;
   }
@@ -294,7 +297,9 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+    const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+    if((!cloud_provider) ||
+       ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
         errno = 0;
         return;
     }
@@ -347,7 +352,9 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+    const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+    if((!cloud_provider) ||
+       ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
         errno = 0;
         return;
     }

@@ -174,15 +174,6 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
         snowflake_cJSON_GetObjectItem(enc_mat, "queryId")->valuestring,
         snowflake_cJSON_GetObjectItem(enc_mat, "smkId")->valueint);
     }
-
-    cJSON *presignedUrls = (cJSON *)response->presignedUrls;
-    int presignedUrlArraySize = presignedUrls ? 
-                                snowflake_cJSON_GetArraySize(presignedUrls) : 0;
-    for (int i = 0; i < presignedUrlArraySize; i++)
-    {
-      cJSON * url = snowflake_cJSON_GetArrayItem(presignedUrls, i);
-      putGetParseResponse->presignedUrls.emplace_back(url->valuestring);
-    }
   } else
   {
     putGetParseResponse->command = CommandType::UNKNOWN;
@@ -215,6 +206,16 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   else if (sf_strncasecmp(response->stage_info->location_type, "gcs", 3) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::GCS;
+
+    cJSON *presignedUrls = (cJSON *)response->presignedUrls;
+    int presignedUrlArraySize = presignedUrls ?
+      snowflake_cJSON_GetArraySize(presignedUrls) : 0;
+    for (int i = 0; i < presignedUrlArraySize; i++)
+    {
+      cJSON * url = snowflake_cJSON_GetArrayItem(presignedUrls, i);
+      putGetParseResponse->presignedUrls.emplace_back(url->valuestring);
+    }
+
     if (response->stage_info->presignedUrl)
     {
       putGetParseResponse->stageInfo.presignedUrl = response->stage_info->presignedUrl;

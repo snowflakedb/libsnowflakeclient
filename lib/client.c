@@ -1838,6 +1838,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     (cJSON **)(&sfstmt->put_get_response->presignedUrls),
                     data, "presignedUrls");
                 }
+                else
+                {
+                  sfstmt->put_get_response->presignedUrls = NULL;
+                }
 
                 cJSON *stage_info = snowflake_cJSON_GetObjectItem(data,
                                                                   "stageInfo");
