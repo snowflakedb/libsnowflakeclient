@@ -443,10 +443,12 @@ void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if((!cloud_provider) ||
+     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+      errno = 0;
+      return;
+  }
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");
