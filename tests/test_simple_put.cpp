@@ -24,6 +24,31 @@ using namespace ::Snowflake::Client;
 static std::vector<std::string> fileList;
 static bool createOnlyOnce = true;
 
+void replaceStrAll(std::string& stringToReplace,
+                std::string const& oldValue,
+                std::string const& newValue)
+{
+  size_t oldValueLen = oldValue.length();
+  size_t newValueLen = newValue.length();
+  if (0 == oldValueLen)
+  {
+    return;
+  }
+
+  size_t index = 0;
+  while (true) {
+    /* Locate the substring to replace. */
+    index = stringToReplace.find(oldValue, index);
+    if (index == std::string::npos) break;
+
+    /* Make the replacement. */
+    stringToReplace.replace(index, oldValueLen, newValue);
+
+    /* Advance index forward so the next iteration doesn't pick it up as well. */
+    index += newValueLen;
+  }
+}
+
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
                           bool autoCompress,
@@ -64,10 +89,13 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
-  std::string putCommand = "put file://" + file + " @%test_small_put";
+  replaceStrAll(file, "\\", "\\\\");
+  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
   if(createDupTable)
   {
-      putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
+      std::string fileNameStr(fileName);
+      replaceStrAll(fileNameStr, "\\", "\\\\");
+      putCommand = "put 'file://" + fileNameStr + "' @%test_small_put_dup";
   }
   if (!autoCompress)
   {
@@ -439,23 +467,29 @@ void test_simple_put_threshold(void **unused)
 void test_simple_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
+  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz 'file://";
   sf_get_tmp_dir(tempDir);
-  strcat(tempPath, tempDir);
+  std::string tempDirStr = tempDir;
+  replaceStrAll(tempDirStr, "\\", "\\\\");
+  strcat(tempPath, tempDirStr.c_str());
+  strcat(tempPath, "'");
   test_simple_get_data(tempPath, "48");
 }
 
 void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz 'file://";
   const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
   if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
       errno = 0;
       return;
   }
   sf_get_tmp_dir(tempDir);
-  strcat(tempPath, tempDir);
+  std::string tempDirStr = tempDir;
+  replaceStrAll(tempDirStr, "\\", "\\\\");
+  strcat(tempPath, tempDirStr.c_str());
+  strcat(tempPath, "'");
   test_simple_get_data(tempPath, "5166848");
 }
 
@@ -492,7 +526,8 @@ void test_simple_put_skip(void **unused)
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + "small_file.csv";
-  std::string putCommand = "put file://" + file + " @%test_small_put";
+  replaceStrAll(file, "\\", "\\\\");
+  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
@@ -575,7 +610,8 @@ void test_simple_put_overwrite(void **unused)
 
     std::string dataDir = TestSetup::getDataDir();
     std::string file = dataDir + "small_file.csv";
-    std::string putCommand = "put file://" + file + " @%test_small_put OVERWRITE=true";
+    replaceStrAll(file, "\\", "\\\\");
+    std::string putCommand = "put 'file://" + file + "' @%test_small_put OVERWRITE=true";
 
     std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
             <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
