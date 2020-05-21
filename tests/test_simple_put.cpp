@@ -236,7 +236,17 @@ void test_simple_get_data(const char *getCommand, const char *size)
     // load first time should return uploaded
     std::string get_status;
     std::string getcmd(getCommand);
-    ITransferResult * results = agent.execute(&getcmd);
+    
+    ITransferResult * results = NULL;
+    try
+    {
+      results = agent.execute(&getcmd);
+    }
+    catch (...)
+    {
+      assert_string_equal("", sfstmt->error.msg);
+    }
+
     while(results && results->next())
     {
         results->getColumnAsString(1, get_status);
@@ -495,7 +505,17 @@ void test_simple_put_skip(void **unused)
 
   // load first time should return uploaded
   std::string put_status;
-  ITransferResult * results = agent.execute(&putCommand);
+
+  ITransferResult * results = NULL;
+  try
+  {
+    results = agent.execute(&putCommand);
+  }
+  catch (...)
+  {
+    assert_string_equal("", sfstmt->error.msg);
+  }
+
   while(results->next())
   {
     results->getColumnAsString(6, put_status);
@@ -510,7 +530,15 @@ void test_simple_put_skip(void **unused)
   }
 
   // load second time should return skipped
-  results = agent.execute(&putCommand);
+  try
+  {
+    results = agent.execute(&putCommand);
+  }
+  catch (...)
+  {
+    assert_string_equal("", sfstmt->error.msg);
+  }
+
   while(results->next())
   {
     results->getColumnAsString(6, put_status);
@@ -560,7 +588,15 @@ void test_simple_put_overwrite(void **unused)
 
     // load first time should return uploaded
     std::string put_status;
-    ITransferResult * results = agent.execute(&putCommand);
+    ITransferResult * results = NULL;
+    try
+    {
+      results = agent.execute(&putCommand);
+    }
+    catch (...)
+    {
+      assert_string_equal("", sfstmt->error.msg);
+    }
     while(results->next())
     {
         results->getColumnAsString(6, put_status);
@@ -568,7 +604,14 @@ void test_simple_put_overwrite(void **unused)
     }
 
     // load second time should return UPLOADED
-    results = agent.execute(&putCommand);
+    try
+    {
+      results = agent.execute(&putCommand);
+    }
+    catch (...)
+    {
+      assert_string_equal("", sfstmt->error.msg);
+    }
     while(results->next())
     {
         results->getColumnAsString(6, put_status);
