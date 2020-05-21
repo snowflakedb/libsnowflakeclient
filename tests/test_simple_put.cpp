@@ -267,8 +267,7 @@ void test_simple_get_data(const char *getCommand, const char *size)
 void test_large_put_auto_compress(void **unused)
 {
   const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-  if((!cloud_provider) ||
-     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+  if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
       errno = 0;
       return;
   }
@@ -287,8 +286,7 @@ void test_large_put_auto_compress(void **unused)
 void test_large_put_threshold(void **unused)
 {
   const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-  if((!cloud_provider) ||
-     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+  if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
       errno = 0;
       return;
   }
@@ -308,8 +306,7 @@ void test_large_put_threshold(void **unused)
 void test_large_reupload(void **unused)
 {
     const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-    if((!cloud_provider) ||
-       ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+    if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
         errno = 0;
         return;
     }
@@ -363,8 +360,7 @@ void test_large_reupload(void **unused)
 void test_verify_upload(void **unused)
 {
     const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-    if((!cloud_provider) ||
-       ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+    if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
         errno = 0;
         return;
     }
@@ -454,8 +450,7 @@ void test_large_get(void **unused)
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
   const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-  if((!cloud_provider) ||
-     ((strcmp(cloud_provider, "GCP") != 0) && (strcmp(cloud_provider, "AWS") != 0))) {
+  if(cloud_provider && (strcmp(cloud_provider, "AWS") == 0)) {
       errno = 0;
       return;
   }
