@@ -77,7 +77,6 @@ typedef struct SF_STAGE_INFO {
   char *region;
   char *storageAccount; // For Azure only
   char *endPoint; //For Azure only.
-  char *presignedUrl; //For GCS only.
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
 
@@ -98,8 +97,6 @@ struct SF_PUT_GET_RESPONSE {
   // enc_mat
   SF_ENC_MAT *enc_mat_put;
   void * enc_mat_get;
-  // presinged Urls for get command on GCS
-  void * presignedUrls;
   SF_STAGE_INFO *stage_info;
   char *localLocation;
 };
