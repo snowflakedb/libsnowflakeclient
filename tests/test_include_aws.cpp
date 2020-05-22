@@ -18,12 +18,6 @@ int main(void) {
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_include_aws),
     };
-    const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-    if(cloud_provider && (strcmp(cloud_provider,"AWS") == 0) ) {
-      std::cout << "Aws Include test running on AWS cloud provider" << std::endl;
-      int ret = cmocka_run_group_tests(tests, NULL, NULL);
-      return ret;
-    }
-    std::cout << "Not running aws Include test. Cloud provider is " << cloud_provider << std::endl;
-    return 0;
+    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    return ret;
 }
