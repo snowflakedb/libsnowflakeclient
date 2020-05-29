@@ -12,12 +12,12 @@ set -o pipefail
 
 AZURE_VERSION=0.1.17
 
-export CC="/usr/lib64/ccache/gcc52 -g"
-export CXX="/usr/lib64/ccache/g++52 -g"
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
+
+export CC="${GCC:-/usr/lib64/ccache/gcc52} -g"
+export CXX="${GXX:-/usr/lib64/ccache/g++52} -g"
 
 [[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
 
