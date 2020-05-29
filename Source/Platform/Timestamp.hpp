@@ -160,6 +160,7 @@ public:
   *   scale of fractional seconds
   */
   void fromFractionalSecondsSinceEpoch(TDWExactNumericType& fracSeconds, sb1 scale);
+
   /**
   * Convert the fractional seconds since epoch to timestamp
   * @param fracSeconds
