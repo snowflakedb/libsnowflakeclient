@@ -36,7 +36,7 @@ cd $OOB_SOURCE_DIR
 export CURL_DIR=curl-7.68.0
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC=gcc52
+    export CC="${GCC:-gcc52}"
     export AR=ar
     export AROPTIONS=rcs
     make distclean clean > /dev/null || true
