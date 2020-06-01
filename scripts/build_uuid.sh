@@ -43,7 +43,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
 #    Make sure the compiled binary is position independent as ODBC is a shared library
     export CFLAGS="-fPIC"
     export AL_OPTS="-I/usr/share/aclocal"
-    ./configure --disable-all-programs --enable-libuuid --prefix=$DEPENDENCY_DIR/uuid  || true
+    ./configure --disable-all-programs --enable-libuuid --prefix=$BUILD_DIR  || true
     echo "Compiling UUID source"
     make install  || true
 elif [[ "$PLATFORM" == "darwin" ]]; then
@@ -102,6 +102,10 @@ else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
 fi
+
+# Move header files to build dir
+mkdir -p $BUILD_DIR/include/uuid
+cp $SOURCE_DIR/libuuid/src/*.h $BUILD_DIR/include/uuid
 
 echo === zip_file "uuid" "$UUID_VERSION" "$target"
 zip_file "uuid" "$UUID_VERSION" "$target"
