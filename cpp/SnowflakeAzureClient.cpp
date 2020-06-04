@@ -49,14 +49,16 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
-if( caBundleFile[0] == 0 ) {
+  else if( caBundleFile[0] == 0 ) {
       const char* capath = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
       int len = std::min((int)strlen(capath), MAX_PATH - 1);
       sb_strncpy(caBundleFile, sizeof(caBundleFile), capath, len);
       caBundleFile[len]=0;
       CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
- 
+  if(caBundleFile[0] == 0) {
+    CXX_LOG_ERROR("CA bundle file is empty.");
+  }
 
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
@@ -92,6 +94,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
 {
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->printPutGetTimestamp("Start single part upload");
 
   std::string containerName = m_stageInfo->location;
 
@@ -118,6 +121,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   if (errno != 0)
       return RemoteStorageRequestOutcome::FAILED;
 
+  fileMetadata->printPutGetTimestamp("End single part upload", true);
   return RemoteStorageRequestOutcome::SUCCESS;
 }
 
@@ -131,6 +135,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->printPutGetTimestamp("Start multipart upload");
   std::string containerName = m_stageInfo->location;
 
     //Remove the trailing '/' in containerName
@@ -154,7 +159,8 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
     if (errno != 0)
         return RemoteStorageRequestOutcome::FAILED;
 
-    return RemoteStorageRequestOutcome::SUCCESS;
+  fileMetadata->printPutGetTimestamp("End multipart upload", true);
+  return RemoteStorageRequestOutcome::SUCCESS;
 }
 
 std::string buildEncryptionMetadataJSON(std::string iv64, std::string enkek64)

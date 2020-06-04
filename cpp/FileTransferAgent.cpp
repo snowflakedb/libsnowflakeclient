@@ -179,10 +179,12 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
+          CXX_LOG_DEBUG("PutGetTimeStamp Parallel upload %s", metadata->srcFileToUpload);
           RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
                                                      resultIndex);
           if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
           {
+            CXX_LOG_DEBUG("Token expired, Renewing token.")
             _mutex_lock(&m_parallelTokRenewMutex);
             this->renewToken(command);
             _mutex_unlock(&m_parallelTokRenewMutex);
@@ -235,7 +237,9 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   // compress if required
   if (fileMetadata->requireCompress)
   {
+    fileMetadata->printPutGetTimestamp("Start compression");
     compressSourceFile(fileMetadata);
+    fileMetadata->printPutGetTimestamp("End compression");
   } else
   {
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
@@ -257,10 +261,12 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->encryptionMetadata.iv,
     FILE_ENCRYPTION_BLOCK_SIZE);
 
+  fileMetadata->printPutGetTimestamp("Start uploading");
   // upload stream
   RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
                                                        &inputEncryptStream);
   originalFileStream.close();
+  fileMetadata->printPutGetTimestamp("End uploading", true);
 
   if (fileMetadata->requireCompress)
   {
@@ -318,8 +324,15 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 
   fileMetadata->srcFileToUpload = stagingFile;
   FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
+  if( !sourceFile ){
+    CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName, errno);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, -1);
+  }
   FILE *destFile = fopen(fileMetadata->srcFileToUpload.c_str(), "w");
-
+  if ( !destFile) {
+    CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", fileMetadata->srcFileToUpload, errno);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR,-1);
+  }
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize);
   if (ret != 0)

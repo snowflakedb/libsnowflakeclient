@@ -9,6 +9,8 @@
 #include "snowflake/PutGetParseResponse.hpp"
 #include "crypto/CryptoTypes.hpp"
 #include "FileCompressionType.hpp"
+#include <chrono>
+#include "logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -76,6 +78,29 @@ struct FileMetadata
   
   /// target compression
   const FileCompressionType * targetCompression;
+
+  /// pre-signed url
+  std::string presignedUrl;
+
+  /// To estimate put/get performance.
+  std::chrono::steady_clock::time_point startTime;
+
+  FileMetadata(){
+    startTime = std::chrono::steady_clock::now();
+  }
+  inline void printPutGetTimestamp(const char *debugmsg, bool rate=false)
+  {
+    auto curTime = std::chrono::steady_clock::now();
+    auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(curTime - startTime).count();
+    CXX_LOG_DEBUG("PutGetTimeStamp %s, elapsed time:%ld milli seconds, srcFilename:%s, srcFileSize:%ld.",
+      debugmsg, timeDiff, srcFileName.c_str(), srcFileSize );
+    if(rate)
+    {
+      long speed = ((srcFileSize*1000)/(timeDiff*1024)) ; //Speed in KiloBytes/Seconds
+      CXX_LOG_DEBUG("PutGetTimeStamp: Rate of transfer is approximately %ld KiloBytes/Seconds.", speed);
+    }
+  }
+
 };
 
 }

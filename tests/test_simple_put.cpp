@@ -10,6 +10,7 @@
 #include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
+#include <exception>
 
 #define COLUMN_STATUS "STATUS"
 #define COLUMN_SOURCE "SOURCE"
@@ -200,6 +201,9 @@ static int teardown(void **unused)
   std::string truncate = "drop table if exists test_small_put";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
 
+  truncate = "drop table if exists test_small_put_dup";
+  snowflake_query(sfstmt, truncate.c_str(), truncate.size());
+
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
   return 0;
@@ -247,11 +251,6 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -265,30 +264,21 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
                        "gzip", //source compression
                        false,   // auto compress
-                       true,   // Load data into table
+                       false,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
-                       true,    // copy data from Table to Staging.
-                       true,
+                       false,    // copy data from Table to Staging.
+                       false,
                        20*1024*1024
   );
 }
 
 void test_large_reupload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     //Before re-upload delete the already existing staged files.
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -338,10 +328,6 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -416,6 +402,11 @@ void test_simple_put_threshold(void **unused)
 
 void test_simple_get(void **unused)
 {
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true // auto compress
+  );
+
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
   sf_get_tmp_dir(tempDir);
@@ -427,10 +418,6 @@ void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");
@@ -568,16 +555,13 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
-#if 0
     cmocka_unit_test_teardown(test_simple_put_threshold, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
-    cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
-    cmocka_unit_test_teardown(test_verify_upload, teardown)
-#endif
+    cmocka_unit_test_teardown(test_verify_upload, teardown),
+    cmocka_unit_test_teardown(test_large_put_threshold, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
