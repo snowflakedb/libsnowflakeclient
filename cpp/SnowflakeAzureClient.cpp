@@ -49,14 +49,16 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
-if( caBundleFile[0] == 0 ) {
+  else if( caBundleFile[0] == 0 ) {
       const char* capath = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
       int len = std::min((int)strlen(capath), MAX_PATH - 1);
       sb_strncpy(caBundleFile, sizeof(caBundleFile), capath, len);
       caBundleFile[len]=0;
       CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
- 
+  if(caBundleFile[0] == 0) {
+    CXX_LOG_ERROR("CA bundle file is empty.");
+  }
 
   std::string account_name = m_stageInfo->storageAccount;
   std::string sas_key = m_stageInfo->credentials[azuresaskey];
@@ -92,6 +94,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
 {
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   std::string containerName = m_stageInfo->location;
 
@@ -111,13 +114,25 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   if(! fileMetadata->overWrite ) {
       bool exists = m_blobclient->blob_exists(containerName, blobName);
       if (exists) {
+        CXX_LOG_DEBUG("File already exists skipping the file upload %s",
+                      fileMetadata->srcFileToUpload.c_str());
           return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
       }
   }
   m_blobclient->upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
-  if (errno != 0)
-      return RemoteStorageRequestOutcome::FAILED;
+  auto erno = errno;
 
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+
+  if (errno != 0)
+  {
+    CXX_LOG_DEBUG("%s single part upload failed.",
+                  fileMetadata->srcFileToUpload.c_str());
+      return RemoteStorageRequestOutcome::FAILED;
+  }
+
+  CXX_LOG_DEBUG("%s single part upload successful.",
+                fileMetadata->srcFileToUpload.c_str());
   return RemoteStorageRequestOutcome::SUCCESS;
 }
 
@@ -131,6 +146,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
   std::string containerName = m_stageInfo->location;
 
     //Remove the trailing '/' in containerName
@@ -147,13 +163,20 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
         //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
         bool exists = m_blobclient->blob_exists(containerName, blobName);
         if (exists) {
+          CXX_LOG_DEBUG("File already exists skipping the file upload %s",
+                        fileMetadata->srcFileToUpload.c_str());
             return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
         }
     }
     m_blobclient->multipart_upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
-    if (errno != 0)
+    auto erno = errno;
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+    if (erno != 0)
+    {
+      CXX_LOG_DEBUG("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
         return RemoteStorageRequestOutcome::FAILED;
-
+    }
+  CXX_LOG_DEBUG("%s file upload success.", fileMetadata->srcFileToUpload.c_str());
     return RemoteStorageRequestOutcome::SUCCESS;
 }
 

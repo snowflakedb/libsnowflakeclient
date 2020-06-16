@@ -67,7 +67,9 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
     caFile = Aws::String(caBundleFile);
   }
-
+  if(caFile.empty()){
+    CXX_LOG_ERROR("CA Bundle file empty.");
+  }
   //TODO move this to global init
   Aws::InitAPI(options);
   clientConfiguration.region = stageInfo->region;
@@ -139,6 +141,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
               s3Client->HeadObject(headObjectRequest);
 
       if (outcome.IsSuccess()) {
+          CXX_LOG_DEBUG("File %s already exists in the staging area. skip upload", fileMetadata->srcFileToUpload);
           return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
       } else {
           CXX_LOG_WARN("Listing file metadata failed: %s",
@@ -156,6 +159,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 {
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
@@ -178,11 +182,14 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
   if (outcome.IsSuccess())
   {
+    CXX_LOG_DEBUG("%s file uploaded successfully.", fileMetadata->srcFileToUpload.c_str());
     return RemoteStorageRequestOutcome::SUCCESS;
   } else
   {
+    CXX_LOG_WARN("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
     return handleError(outcome.GetError());
   }
 }
@@ -220,6 +227,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
+  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   if (m_threadPool == nullptr)
   {
@@ -301,18 +309,22 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     Aws::S3::Model::CompleteMultipartUploadOutcome outcome =
       s3Client->CompleteMultipartUpload(completeRequest);
 
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+
     if (outcome.IsSuccess())
     {
-      CXX_LOG_DEBUG("Complete multi part upload request succeed.");
+      CXX_LOG_DEBUG("%s file uploaded successfully.", fileMetadata->srcFileToUpload.c_str());
       return RemoteStorageRequestOutcome::SUCCESS;
     }
     else
     {
+      CXX_LOG_DEBUG("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
       return handleError(outcome.GetError());
     }
   }
   else
   {
+    CXX_LOG_DEBUG("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
     return handleError(createMultiPartResp.GetError());
   }
 }

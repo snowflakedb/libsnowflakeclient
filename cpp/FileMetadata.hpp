@@ -9,6 +9,8 @@
 #include "snowflake/PutGetParseResponse.hpp"
 #include "crypto/CryptoTypes.hpp"
 #include "FileCompressionType.hpp"
+#include <chrono>
+#include "logger/SFLogger.hpp"
 
 namespace Snowflake
 {
@@ -79,6 +81,39 @@ struct FileMetadata
 
   /// pre-signed url
   std::string presignedUrl;
+
+  /// To estimate put/get performance.
+  std::chrono::steady_clock::time_point tstamps[10] ;
+
+  /// Enum for different timestamps
+  enum putGetTimestamp{PUTGET_START=0,COMP_START, COMP_END, PUT_START, PUT_END, PUTGET_END, GET_START, GET_END};
+
+  inline void recordPutGetTimestamp(putGetTimestamp ts=PUTGET_START)
+  {
+    tstamps[ts] = std::chrono::steady_clock::now();
+  }
+
+  FileMetadata() {
+    recordPutGetTimestamp();
+  }
+
+  inline void printPutGetTimestamp(void)
+  {
+    auto compTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[COMP_END] - tstamps[COMP_START]).count();
+    auto putTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUT_END] - tstamps[PUT_START]).count();
+    auto putgetTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUTGET_END] - tstamps[PUTGET_START]).count();
+
+    CXX_LOG_DEBUG("Time took for compression: %ld milli seconds, srcFilename:%s, srcFileSize:%ld.",
+        compTime, srcFileName.c_str(), srcFileSize );
+    CXX_LOG_DEBUG("Time took for put: %ld milli seconds.", putTime );
+    //Speed in KiloBytes/Seconds SourceFilesize is in bytes and putTime is in milliseconds
+    long speed = ((srcFileSize*1000)/(putTime*1024)) ; 
+    CXX_LOG_DEBUG("Upload speed: %ld kilobytes/sec.", speed);
+    speed = ((srcFileSize*1000)/((compTime+putTime)*1024)) ; 
+    CXX_LOG_DEBUG("Upload speed including compression time: %ld kilobytes/sec.", speed);
+    speed = ((srcFileSize*1000)/(putgetTime*1024)) ; 
+    CXX_LOG_DEBUG("Upload speed end to end: %ld kilobytes/sec.", speed);
+  }
 };
 
 }

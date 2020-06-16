@@ -20,7 +20,8 @@ enum TransferError
   UNSUPPORTED_FEATURE,
   COLUMN_INDEX_OUT_OF_RANGE,
   DIR_OPEN_ERROR,
-  COMPRESSION_NOT_SUPPORTED
+  COMPRESSION_NOT_SUPPORTED,
+  FILE_OPEN_ERROR
 };
 
 class SnowflakeTransferException : public std::exception
