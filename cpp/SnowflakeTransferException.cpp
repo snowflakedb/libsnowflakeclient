@@ -17,7 +17,7 @@ static const char * errorMsgFmts[] = {
   "Column index %d out of range. Total column count: %d", // COLUMN_INDEX_OUT_OF_RANGE
   "Failed to read directory structure on disk, directory %s, code %d", // DIR_OPEN_ERROR
   "Compression type %s is either not supported.", //COMPRESSION_NOT_SUPPORTED
-  "Failed to read file on disk, code %d", // FILE_OPEN_ERROR
+  "Failed to read %s file on disk, code %d", // FILE_OPEN_ERROR
 };
 
 Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(

@@ -159,7 +159,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 {
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   Aws::S3::Model::PutObjectRequest putObjectRequest;
 
@@ -182,7 +181,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
 
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
   if (outcome.IsSuccess())
   {
     CXX_LOG_DEBUG("%s file uploaded successfully.", fileMetadata->srcFileToUpload.c_str());
@@ -227,7 +225,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   if (m_threadPool == nullptr)
   {
@@ -308,8 +305,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
 
     Aws::S3::Model::CompleteMultipartUploadOutcome outcome =
       s3Client->CompleteMultipartUpload(completeRequest);
-
-    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
 
     if (outcome.IsSuccess())
     {

@@ -276,11 +276,6 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -294,11 +289,6 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -314,10 +304,6 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     //Before re-upload delete the already existing staged files.
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -367,10 +353,6 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -473,7 +455,7 @@ void test_large_get(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 
@@ -588,7 +570,7 @@ void test_simple_put_overwrite(void **unused)
 int main(void) {
 
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
+    cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown)
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
@@ -598,13 +580,12 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
-    cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
-    cmocka_unit_test_teardown(test_verify_upload, teardown)
+    cmocka_unit_test_teardown(test_verify_upload, teardown),
+    cmocka_unit_test_teardown(test_large_put_threshold, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

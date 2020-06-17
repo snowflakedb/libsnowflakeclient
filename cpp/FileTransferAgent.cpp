@@ -214,6 +214,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       {
         getPresignedUrlForUploading(m_largeFilesMeta[i], *command);
       }
+      CXX_LOG_DEBUG("Putget serial upload, %s file", m_largeFilesMeta[i].srcFileName.c_str());
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
 
@@ -221,6 +222,11 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       {
         renewToken(command);
         i--;
+      }
+      else if( outcome == RemoteStorageRequestOutcome::FAILED)
+      {
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                         "Failed to upload file.");
       }
     }
   }
@@ -251,7 +257,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
-          CXX_LOG_DEBUG("PutGetTimeStamp Parallel upload %s", metadata->srcFileName);
+          CXX_LOG_DEBUG("Putget Parallel upload %s", metadata->srcFileName.c_str());
           RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
                                                      resultIndex);
           if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
@@ -263,6 +269,11 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           }
           else
           {
+            if( outcome == RemoteStorageRequestOutcome::FAILED)
+            {
+              throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                               "Failed to upload file.");
+            }
             break;
           }
         } while (true);
@@ -362,6 +373,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
+  fileMetadata->printPutGetTimestamp();
   return outcome;
 }
 
@@ -433,12 +445,12 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   fileMetadata->srcFileToUpload = stagingFile;
   FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
   if( !sourceFile ){
-    CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName, errno);
+    CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, -1);
   }
   FILE *destFile = fopen(fileMetadata->srcFileToUpload.c_str(), "w");
   if ( !destFile) {
-    CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", fileMetadata->srcFileToUpload, errno);
+    CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", fileMetadata->srcFileToUpload.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR,-1);
   }
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,

@@ -103,16 +103,25 @@ struct FileMetadata
     auto putTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUT_END] - tstamps[PUT_START]).count();
     auto putgetTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUTGET_END] - tstamps[PUTGET_START]).count();
 
+    unsigned long fssize = (srcFileToUploadSize > 0)? srcFileToUploadSize : srcFileSize ;
+
     CXX_LOG_DEBUG("Time took for compression: %ld milli seconds, srcFilename:%s, srcFileSize:%ld.",
         compTime, srcFileName.c_str(), srcFileSize );
-    CXX_LOG_DEBUG("Time took for put: %ld milli seconds.", putTime );
+    CXX_LOG_DEBUG("Time took to upload %ld bytes : %ld milli seconds.", fssize, putTime );
     //Speed in KiloBytes/Seconds SourceFilesize is in bytes and putTime is in milliseconds
-    long speed = ((srcFileSize*1000)/(putTime*1024)) ; 
-    CXX_LOG_DEBUG("Upload speed: %ld kilobytes/sec.", speed);
-    speed = ((srcFileSize*1000)/((compTime+putTime)*1024)) ; 
-    CXX_LOG_DEBUG("Upload speed including compression time: %ld kilobytes/sec.", speed);
-    speed = ((srcFileSize*1000)/(putgetTime*1024)) ; 
-    CXX_LOG_DEBUG("Upload speed end to end: %ld kilobytes/sec.", speed);
+    unsigned long speed;
+    if(putTime > 0) {
+      speed = ((fssize*1000) /(putTime*1024));
+      CXX_LOG_DEBUG("Upload speed: %ld kilobytes/sec.", speed);
+    }
+    if(compTime > 0 || putTime > 0 ) {
+      speed = ((fssize*1000) / ((compTime + putTime)*1024));
+      CXX_LOG_DEBUG("Upload speed including compression time: %ld kilobytes/sec.", speed);
+    }
+    if(putgetTime > 0) {
+      speed = ((fssize*1000) / (putgetTime*1024));
+      CXX_LOG_DEBUG("Upload speed end to end: %ld kilobytes/sec.", speed);
+    }
   }
 };
 

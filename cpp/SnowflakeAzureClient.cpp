@@ -94,7 +94,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
 {
   CXX_LOG_DEBUG("Start single part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
 
   std::string containerName = m_stageInfo->location;
 
@@ -120,10 +119,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
       }
   }
   m_blobclient->upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
-  auto erno = errno;
-
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
-
   if (errno != 0)
   {
     CXX_LOG_DEBUG("%s single part upload failed.",
@@ -146,7 +141,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 {
   CXX_LOG_DEBUG("Start multi part upload for file %s",
                fileMetadata->srcFileToUpload.c_str());
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
   std::string containerName = m_stageInfo->location;
 
     //Remove the trailing '/' in containerName
@@ -169,14 +163,12 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
         }
     }
     m_blobclient->multipart_upload_block_blob_from_stream(containerName, blobName, *dataStream, userMetadata, len);
-    auto erno = errno;
-    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
-    if (erno != 0)
+    if (errno != 0)
     {
       CXX_LOG_DEBUG("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
         return RemoteStorageRequestOutcome::FAILED;
     }
-  CXX_LOG_DEBUG("%s file upload success.", fileMetadata->srcFileToUpload.c_str());
+    CXX_LOG_DEBUG("%s file upload success.", fileMetadata->srcFileToUpload.c_str());
     return RemoteStorageRequestOutcome::SUCCESS;
 }
 
