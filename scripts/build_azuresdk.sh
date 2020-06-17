@@ -10,7 +10,7 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_VERSION=0.1.17
+AZURE_VERSION=0.1.18
 
 export CC="/usr/lib64/ccache/gcc52 -g"
 export CXX="/usr/lib64/ccache/g++52 -g"

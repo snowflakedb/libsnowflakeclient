@@ -34,6 +34,9 @@ docker run \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
         -e GITHUB_ACTIONS \
+        -e GITHUB_SHA \
+        -e GITHUB_EVENT_NAME \
+        -e GITHUB_REF \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/ci/build/build.sh"
