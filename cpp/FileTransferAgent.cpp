@@ -242,6 +242,10 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
     }
     uploadFilesInParallel(command);
   }
+  if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
+  {
+    throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, "source file does not exist.");
+  }
 }
 
 void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *command)
@@ -350,9 +354,16 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   }
   else
  {
-    fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
-      ::std::ios_base::in |
-      ::std::ios_base::binary);
+    try {
+      fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+                          ::std::ios_base::in |
+                          ::std::ios_base::binary);
+    }
+    catch(...)
+    {
+      std::string err= "Could not open source file " + fileMetadata->srcFileToUpload ;
+      throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+    }
     srcFileStream = &fs;
   }
 
@@ -453,12 +464,12 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
   if( !sourceFile ){
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
-    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, -1);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileToUpload.c_str(), -1);
   }
   FILE *destFile = fopen(fileMetadata->srcFileToUpload.c_str(), "w");
   if ( !destFile) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", fileMetadata->srcFileToUpload.c_str(), errno);
-    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR,-1);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileToUpload.c_str(), -1);
   }
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize);
