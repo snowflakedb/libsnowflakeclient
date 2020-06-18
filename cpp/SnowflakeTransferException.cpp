@@ -18,6 +18,7 @@ static const char * errorMsgFmts[] = {
   "Failed to read directory structure on disk, directory %s, code %d", // DIR_OPEN_ERROR
   "Compression type %s is either not supported.", //COMPRESSION_NOT_SUPPORTED
   "Failed to read %s file on disk, code %d", // FILE_OPEN_ERROR
+  "Failed to upload file %s",  //FAILED_TO_TRANSFER
 };
 
 Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(

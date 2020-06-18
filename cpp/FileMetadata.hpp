@@ -107,16 +107,16 @@ struct FileMetadata
 
     CXX_LOG_DEBUG("Time took for compression: %ld milli seconds, srcFilename:%s, srcFileSize:%ld.",
         compTime, srcFileName.c_str(), srcFileSize );
-    CXX_LOG_DEBUG("Time took to upload %ld bytes : %ld milli seconds.", fssize, putTime );
+    CXX_LOG_DEBUG("Time took to upload + Encryption %ld bytes : %ld milli seconds.", fssize, putTime );
     //Speed in KiloBytes/Seconds SourceFilesize is in bytes and putTime is in milliseconds
     unsigned long speed;
     if(putTime > 0) {
       speed = ((fssize*1000) /(putTime*1024));
-      CXX_LOG_DEBUG("Upload speed: %ld kilobytes/sec.", speed);
+      CXX_LOG_INFO("Upload speed with encryption: %ld kilobytes/sec.", speed);
     }
     if(compTime > 0 || putTime > 0 ) {
       speed = ((fssize*1000) / ((compTime + putTime)*1024));
-      CXX_LOG_DEBUG("Upload speed including compression time: %ld kilobytes/sec.", speed);
+      CXX_LOG_INFO("Upload speed with encryption and compression: %ld kilobytes/sec.", speed);
     }
     if(putgetTime > 0) {
       speed = ((fssize*1000) / (putgetTime*1024));

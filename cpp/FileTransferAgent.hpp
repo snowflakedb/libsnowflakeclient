@@ -160,6 +160,9 @@ private:
   /// mutex to prevent from multiple thread renewing token same time
   SF_MUTEX_HANDLE m_parallelTokRenewMutex;
 
+  /// mutex to prevent from multiple thread appending failed transfer file at the same time
+  SF_MUTEX_HANDLE m_parallelFailedMsgMutex;
+
   /// seconds in unix time for last time token is refreshed
   long m_lastRefreshTokenSec;
 

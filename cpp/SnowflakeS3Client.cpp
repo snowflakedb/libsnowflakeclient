@@ -69,6 +69,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   }
   if(caFile.empty()){
     CXX_LOG_ERROR("CA Bundle file empty.");
+    throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                     "CA bundle file is empty.");
   }
   //TODO move this to global init
   Aws::InitAPI(options);
@@ -187,7 +189,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
     return RemoteStorageRequestOutcome::SUCCESS;
   } else
   {
-    CXX_LOG_WARN("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
+    CXX_LOG_ERROR("%s file upload failed.", fileMetadata->srcFileToUpload.c_str());
     return handleError(outcome.GetError());
   }
 }
@@ -365,7 +367,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::handleError(
   }
   else
   {
-    CXX_LOG_ERROR("S3 request failed failed: %s",
+    CXX_LOG_ERROR("S3 request failed: %s",
                  error.GetMessage().c_str());
     return RemoteStorageRequestOutcome::FAILED;
   }

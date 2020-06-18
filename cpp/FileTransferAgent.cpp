@@ -225,8 +225,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       }
       else if( outcome == RemoteStorageRequestOutcome::FAILED)
       {
-        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                         "Failed to upload file.");
+        throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, m_largeFilesMeta[i].srcFileName.c_str());
       }
     }
   }
@@ -248,13 +247,15 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
 void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *command)
 {
   Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
+  std::string failedTransfers;
   for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
     size_t resultIndex = i + m_largeFilesMeta.size();
     FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
     metadata->overWrite = response.overwrite;
-    tp.AddJob([metadata, resultIndex, command, this]()->void {
+
+    tp.AddJob([metadata, resultIndex, command, &failedTransfers, this]()->void {
         do
         {
           CXX_LOG_DEBUG("Putget Parallel upload %s", metadata->srcFileName.c_str());
@@ -271,8 +272,10 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           {
             if( outcome == RemoteStorageRequestOutcome::FAILED)
             {
-              throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                               "Failed to upload file.");
+              //Cannot throw and catch error from a thread.
+              _mutex_lock(&m_parallelFailedMsgMutex);
+              failedTransfers.append(metadata->srcFileName) + ", ";
+              _mutex_unlock(&m_parallelFailedMsgMutex);
             }
             break;
           }
@@ -282,6 +285,10 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
 
   // wait till all jobs have been finished
   tp.WaitAll();
+  if(!failedTransfers.empty())
+  {
+    throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
+  }
 }
 
 void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
