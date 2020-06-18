@@ -24,29 +24,6 @@ using namespace ::Snowflake::Client;
 static std::vector<std::string> fileList;
 static bool createOnlyOnce = true;
 
-void replaceStrAll(std::string &stringToReplace,
-                   std::string const &oldValue,
-                   std::string const &newValue) {
-  size_t oldValueLen = oldValue.length();
-  size_t newValueLen = newValue.length();
-  if (0 == oldValueLen) {
-    return;
-  }
-
-  size_t index = 0;
-  while (true) {
-    /* Locate the substring to replace. */
-    index = stringToReplace.find(oldValue, index);
-    if (index == std::string::npos) break;
-
-    /* Make the replacement. */
-    stringToReplace.replace(index, oldValueLen, newValue);
-
-    /* Advance index forward so the next iteration doesn't pick it up as well. */
-    index += newValueLen;
-  }
-}
-
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
                           bool autoCompress,
@@ -87,13 +64,10 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
-  replaceStrAll(file, "\\", "\\\\");
-  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
+  std::string putCommand = "put file://" + file + " @%test_small_put";
   if(createDupTable)
   {
-    std::string fileNameStr(fileName);
-    replaceStrAll(fileNameStr, "\\", "\\\\");
-    putCommand = "put 'file://" + fileNameStr + "' @%test_small_put_dup";
+      putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
   }
   if (!autoCompress)
   {
@@ -107,7 +81,7 @@ void test_simple_put_core(const char * fileName,
   if (setCustomThreshold)
   {
     putCommand += " threshold=";
-    putCommand += std::to_string(customThreshold);
+    putCommand += customThreshold;
   }
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
@@ -226,9 +200,6 @@ static int teardown(void **unused)
   std::string truncate = "drop table if exists test_small_put";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
 
-  truncate = "drop table if exists test_small_put_dup";
-  snowflake_query(sfstmt, truncate.c_str(), truncate.size());
-
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
   return 0;
@@ -276,6 +247,11 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
+    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+  if ( ! strncmp(cenv, "AWS", 6) ) {
+      errno = 0;
+      return;
+  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -289,6 +265,11 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
+    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+  if ( ! strncmp(cenv, "AWS", 6) ) {
+      errno = 0;
+      return;
+  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -304,6 +285,10 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
     //Before re-upload delete the already existing staged files.
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -353,6 +338,10 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -422,40 +411,34 @@ void test_simple_put_one_byte(void **unused)
 
 void test_simple_put_threshold(void **unused)
 {
-  test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, true, 100*1024*1024);
+  test_simple_put_core("small_file.csv.gz", "none", false, false, false, false, false, true, 100*1024*1024);
 }
 
 void test_simple_get(void **unused)
 {
-  test_simple_put_core("small_file.csv", // filename
-                       "auto", //source compression
-                       true // auto compress
-  );
-
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/small_file.csv.gz 'file://";
-  std::string tempDirStr = tempDir;
+  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
   sf_get_tmp_dir(tempDir);
-  replaceStrAll(tempDirStr, "\\", "\\\\");
-  strcat(tempPath, tempDirStr.c_str());
-  strcat(tempPath, "'");
+  strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "48");
 }
 
 void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz 'file://";
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
+    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
   sf_get_tmp_dir(tempDir);
-  std::string tempDirStr = tempDir;
-  replaceStrAll(tempDirStr, "\\", "\\\\");
-  strcat(tempPath, tempDirStr.c_str());
-  strcat(tempPath, "'");  test_simple_get_data(tempPath, "5166848");
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "5166848");
 }
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
   return 0;
 }
 
@@ -486,8 +469,8 @@ void test_simple_put_skip(void **unused)
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + "small_file.csv";
-  replaceStrAll(file, "\\", "\\\\");
-  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
+  std::string putCommand = "put file://" + file + " @%test_small_put";
+
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
@@ -537,8 +520,8 @@ void test_simple_put_overwrite(void **unused)
 
     std::string dataDir = TestSetup::getDataDir();
     std::string file = dataDir + "small_file.csv";
-    replaceStrAll(file, "\\", "\\\\");
-    std::string putCommand = "put 'file://" + file + "' @%test_small_put OVERWRITE=true";
+    std::string putCommand = "put file://" + file + " @%test_small_put OVERWRITE=true";
+
     std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
             <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
     Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
@@ -580,12 +563,13 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
+    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
+    cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
-    cmocka_unit_test_teardown(test_verify_upload, teardown),
-    cmocka_unit_test_teardown(test_large_put_threshold, teardown)
+    cmocka_unit_test_teardown(test_verify_upload, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
