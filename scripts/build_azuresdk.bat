@@ -2,7 +2,7 @@
 :: Build Azure cpp storage light sdk
 ::
 @echo off
-set azure_version=0.1.17
+set azure_version=0.1.18
 call %*
 goto :EOF
 
