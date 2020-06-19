@@ -71,6 +71,7 @@ if( caBundleFile[0] == 0 ) {
 
 SnowflakeAzureClient::~SnowflakeAzureClient()
 {
+    delete m_blobclient;
     if (m_threadPool != nullptr)
     {
         delete m_threadPool;
