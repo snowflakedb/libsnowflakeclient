@@ -65,6 +65,11 @@ void test_detect_orc(void **unused)
   test_file_type_detect_core(&FileCompressionType::ORC, "TestOrcFile.test1.orc");
 }
 
+void test_detect_noextension(void **unused)
+{
+  test_file_type_detect_core(&FileCompressionType::NONE, "small_file");
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_detect_gzip),
@@ -76,6 +81,7 @@ int main(void) {
     cmocka_unit_test(test_detect_brotli),
     cmocka_unit_test(test_detect_parquet),
     cmocka_unit_test(test_detect_orc),
+    cmocka_unit_test(test_detect_noextension),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
