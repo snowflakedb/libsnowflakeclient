@@ -81,11 +81,17 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     {
       std::string fileFullPath = std::string(fdd.cFileName);
       size_t dirSep = sourceLocation.find_last_of(PATH_SEP);
-      std::string dirPath = sourceLocation.substr(0, dirSep + 1);
-      LARGE_INTEGER fileSize;
-      fileSize.LowPart = fdd.nFileSizeLow;
-      fileSize.HighPart = fdd.nFileSizeHigh;
-      initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart, putThreshold);
+	  if (dirSep == std::string::npos) 
+	  {
+		  dirSep = sourceLocation.find_last_of(ALTER_PATH_SEP);
+	  }
+	  if (dirSep != std::string::npos) {
+		  std::string dirPath = sourceLocation.substr(0, dirSep + 1);
+		  LARGE_INTEGER fileSize;
+		  fileSize.LowPart = fdd.nFileSizeLow;
+		  fileSize.HighPart = fdd.nFileSizeHigh;
+		  initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart, putThreshold);
+	  }
     }
   } while (FindNextFile(hFind, &fdd) != 0);
 
