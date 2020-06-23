@@ -189,10 +189,14 @@ const FileCompressionType *FileCompressionType::
     // https://github.com/madler/brotli/blob/master/br-format-v3.txt
     if (types.at(i) == &FileCompressionType::BROTLI)
     {
-      std::string file_ext = fileFullPath.substr(fileFullPath.find_last_of('.'));
-      if (!strcmp(file_ext.c_str(), types.at(i)->getFileExtension()))
+      auto pos = fileFullPath.find_last_of('.');
+      if( pos != std::string::npos) 
       {
-        return types.at(i);
+        std::string file_ext = fileFullPath.substr(pos);
+        if (!strcmp(file_ext.c_str(), types.at(i)->getFileExtension())) 
+        {
+          return types.at(i);
+        }
       }
     }
   }
