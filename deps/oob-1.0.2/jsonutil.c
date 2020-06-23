@@ -17,7 +17,7 @@
 #endif
 
 //static struct conStr connectionInfo ;
-static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0} };
+static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0} };
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
@@ -373,6 +373,8 @@ void setOOBeventdata(enum OOBINFO id, const char *data, long num)
       break;
     case OOBCABUNDLE:
       copyString(data, connectionInfo.cabundle, 512);
+    case OOBTRACING:
+      copyString(data, connectionInfo.tracing, 8)
   }
 }
 

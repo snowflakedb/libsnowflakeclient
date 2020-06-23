@@ -155,6 +155,7 @@ void test_oob(void **) {
         setOOBeventdata(OOBSQLSTATE, "HY000", 0);
         setOOBeventdata(OOBCABUNDLE, CABundlePath.c_str(), 0);
         setOOBeventdata(URGENCY, "", 1);
+        setOOBeventdata(OOBTRACING, "", 1)
         char *oobevent = prepareOOBevent(nullptr);
         int rc = sendOOBevent(oobevent);
         assert_true(oobevent);

@@ -1482,6 +1482,7 @@ static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)
   }
   setOOBeventdata(OOBEVENTNAME, "OCSPException", 0);
   setOOBeventdata(URGENCY, NULL, 1);
+  setOOBeventdata(OOBTRACING, NULL, 1)
   oobevent = prepareOOBevent(ocsp_log);
   FREE_OCSP_LOG(ocsp_log);
   ocsp_log = NULL;
