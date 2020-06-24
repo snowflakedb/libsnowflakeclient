@@ -70,30 +70,30 @@ std::vector<std::string> getListOfTestFileMatchDir()
 void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
                                   const char *filePattern)
 {
-	std::vector<std::string> listTestDir = getListOfTestFileMatchDir();
-	for (auto testDir : listTestDir)
-	{
-		std::vector<FileMetadata> smallFileMetadata;
-		std::vector<FileMetadata> largeFileMetadata;
+  std::vector<std::string> listTestDir = getListOfTestFileMatchDir();
+  for (auto testDir : listTestDir)
+  {
+    std::vector<FileMetadata> smallFileMetadata;
+    std::vector<FileMetadata> largeFileMetadata;
 
-		FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
-		initializer.setSourceCompression((char *)"none");
-  
-		std::string fullFilePattern = testDir + filePattern;
-		initializer.populateSrcLocUploadMetadata(fullFilePattern, DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD);
+    FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
+    initializer.setSourceCompression((char *)"none");
 
-		std::unordered_set<std::string> actualFiles;
-		for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++) {
-		  actualFiles.insert(i->srcFileName);
-		}
+    std::string fullFilePattern = testDir + filePattern;
+    initializer.populateSrcLocUploadMetadata(fullFilePattern, DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD);
 
-		std::unordered_set<std::string> expectedFilesFull;
-		for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++) {
-		  std::string expectedFileFull = testDir + *i;
-		  expectedFilesFull.insert(expectedFileFull);
-		}
+    std::unordered_set<std::string> actualFiles;
+    for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++) {
+      actualFiles.insert(i->srcFileName);
+    }
 
-		assert_true(expectedFilesFull == actualFiles);
+    std::unordered_set<std::string> expectedFilesFull;
+    for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++) {
+      std::string expectedFileFull = testDir + *i;
+      expectedFilesFull.insert(expectedFileFull);
+    }
+
+    assert_true(expectedFilesFull == actualFiles);
   }
 }
 
