@@ -14,7 +14,7 @@
 #include <map>
 
 #define FILES_IN_DIR "file1.csv", "file2.csv", "file3.csv", "file4.csv", "file1.gz"
-char tempDir[MAX_PATH+1]={0};
+
 
 typedef ::Snowflake::Client::FileCompressionType FileCompressionType;
 
