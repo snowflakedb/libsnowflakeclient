@@ -54,11 +54,10 @@ void replaceStrAll(std::string &stringToReplace,
 std::vector<std::string> getListOfTestFileMatchDir()
 {
   std::vector<std::string> listOfTestDirs; 
-  sf_get_uniq_tmp_dir(tempDir);
-  std::string srcLocation (tempDir);
   #ifdef _WIN32
+  std::string srcLocation = getTestFileMatchDir();
   replaceStrAll(srcLocation,"\\","/");
-  // Directory path is looks like C:/Users/vreddy/App/Temp/adkf-kasdfk-adsfl/
+  // Directory path looks like C:/Users/vreddy/App/Temp/adkf-kasdfk-adsfl/
   // Testing forward slash for put/get support
   listOfTestDirs.push_back(srcLocation);
   #endif
@@ -71,30 +70,30 @@ std::vector<std::string> getListOfTestFileMatchDir()
 void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
                                   const char *filePattern)
 {
-  std::vector<FileMetadata> smallFileMetadata;
-  std::vector<FileMetadata> largeFileMetadata;
+	std::vector<std::string> listTestDir = getListOfTestFileMatchDir();
+	for (auto testDir : listTestDir)
+	{
+		std::vector<FileMetadata> smallFileMetadata;
+		std::vector<FileMetadata> largeFileMetadata;
 
-  FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
-  initializer.setSourceCompression((char *)"none");
+		FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
+		initializer.setSourceCompression((char *)"none");
   
-  std::vector<std::string> listTestDir = getListOfTestFileMatchDir();
-  for(auto testDir : listTestDir)
-  {
-    std::string fullFilePattern = testDir + filePattern;
-    initializer.populateSrcLocUploadMetadata(fullFilePattern, DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD);
+		std::string fullFilePattern = testDir + filePattern;
+		initializer.populateSrcLocUploadMetadata(fullFilePattern, DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD);
 
-    std::unordered_set<std::string> actualFiles;
-    for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++) {
-      actualFiles.insert(i->srcFileName);
-    }
+		std::unordered_set<std::string> actualFiles;
+		for (auto i = smallFileMetadata.begin(); i != smallFileMetadata.end(); i++) {
+		  actualFiles.insert(i->srcFileName);
+		}
 
-    std::unordered_set<std::string> expectedFilesFull;
-    for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++) {
-      std::string expectedFileFull = testDir + *i;
-      expectedFilesFull.insert(expectedFileFull);
-    }
+		std::unordered_set<std::string> expectedFilesFull;
+		for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++) {
+		  std::string expectedFileFull = testDir + *i;
+		  expectedFilesFull.insert(expectedFileFull);
+		}
 
-    assert_true(expectedFilesFull == actualFiles);
+		assert_true(expectedFilesFull == actualFiles);
   }
 }
 
