@@ -75,6 +75,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
 
 SnowflakeAzureClient::~SnowflakeAzureClient()
 {
+    delete m_blobclient;
     if (m_threadPool != nullptr)
     {
         delete m_threadPool;
