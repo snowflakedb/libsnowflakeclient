@@ -310,7 +310,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
 
     if (outcome.IsSuccess())
     {
-      CXX_LOG_DEBUG("%s file uploaded successfully.", fileMetadata->srcFileToUpload.c_str());
+      CXX_LOG_DEBUG("Complete multi part upload request succeed. %s file uploaded successfully.", fileMetadata->srcFileToUpload.c_str());
       return RemoteStorageRequestOutcome::SUCCESS;
     }
     else

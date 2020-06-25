@@ -628,6 +628,11 @@ void test_simple_put_uploadfail(void **unused) {
   replaceStrAll(str, "\\", "/");
   replaceStrAll(str, "//", "/");
   putFilePath.push_back(str);
+
+  str = putFilePath[2];
+  replaceStrAll(str, "\\", "/");
+  replaceStrAll(str, "//", "/");
+  putFilePath.push_back(str);
 #endif
 
   for (auto f : putFilePath) {
@@ -648,12 +653,16 @@ void test_simple_put_uploadfail(void **unused) {
     { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @~/temp/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
   //  { std::string("put file://") + putFilePath[2] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+#ifndef _WIN32
+    { std::string("put 'file://") + putFilePath[2] + std::string("' @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+#endif
     { std::string("put file://") + putFilePath[3] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[4] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
 #ifdef _WIN32
     { std::string("put file://") + putFilePath[5] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
     { std::string("put file://") + putFilePath[6] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
     { std::string("put file://") + putFilePath[7] + std::string(" @~/temp/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
+    { std::string("put 'file://") + putFilePath[8] + std::string("' @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
 #endif
   };
 
@@ -663,7 +672,6 @@ void test_simple_put_uploadfail(void **unused) {
 
   for(auto putCommand : testCases)
   {
-    std::cout << "Testing : " << putCommand.putcmd << std::endl;
     std::string put_status = "FAILED";
     try
     {
