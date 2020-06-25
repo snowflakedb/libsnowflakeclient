@@ -24,6 +24,7 @@ typedef SRWLOCK SF_RWLOCK_HANDLE;
 typedef HANDLE SF_MUTEX_HANDLE;
 
 #define PATH_SEP '\\'
+#define ALTER_PATH_SEP '/'
 //On windows MAX_PATH is defined as 255
 
 #else
