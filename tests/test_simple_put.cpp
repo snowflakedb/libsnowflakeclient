@@ -647,12 +647,13 @@ void test_simple_put_uploadfail(void **unused) {
     { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
     { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
     { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv.gz @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + putFilePath[0] + std::string(" @STAGE_NOT_EXIST AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
     { std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
-  //  { std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+  //{ std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @~/temp/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
-  //  { std::string("put file://") + putFilePath[2] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+  //{ std::string("put file://") + putFilePath[2] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
 #ifndef _WIN32
     { std::string("put 'file://") + putFilePath[2] + std::string("' @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
 #endif
@@ -686,7 +687,6 @@ void test_simple_put_uploadfail(void **unused) {
     {
       assert_string_equal(putCommand.result, put_status.c_str());
     }
-    break;
   }
   create_table = "DROP STAGE IF EXISTS TEST_ODBC_FILE_URIS";
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
