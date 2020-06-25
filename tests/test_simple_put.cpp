@@ -550,6 +550,146 @@ void test_simple_put_overwrite(void **unused)
 
 }
 
+void replaceStrAll(std::string &stringToReplace,
+                   std::string const &oldValue,
+                   std::string const &newValue) {
+  size_t oldValueLen = oldValue.length();
+  size_t newValueLen = newValue.length();
+  if (0 == oldValueLen) {
+    return;
+  }
+
+  size_t index = 0;
+  while (true) {
+    /* Locate the substring to replace. */
+    index = stringToReplace.find(oldValue, index);
+    if (index == std::string::npos) break;
+
+    /* Make the replacement. */
+    stringToReplace.replace(index, oldValueLen, newValue);
+
+    /* Advance index forward so the next iteration doesn't pick it up as well. */
+    index += newValueLen;
+  }
+}
+
+void createFile(const char *file) {
+  FILE *fp = fopen(file, "w");
+  if (fp != NULL) {
+    fprintf(fp, "1,2\n3,4\n5,6");
+    fclose(fp);
+  } else {
+    std::cerr << "Could not open file " << file << " to write" << std::endl;
+    return;
+  }
+  return;
+}
+
+void test_simple_put_uploadfail(void **unused) {
+  /* init */
+  SF_STATUS status;
+  SF_CONNECT *sf = setup_snowflake_connection();
+  status = snowflake_connect(sf);
+  assert_int_equal(SF_STATUS_SUCCESS, status);
+
+  SF_STMT *sfstmt = NULL;
+  SF_STATUS ret;
+
+  /* query */
+  sfstmt = snowflake_stmt(sf);
+
+  std::string create_table("CREATE OR REPLACE STAGE TEST_ODBC_FILE_URIS");
+  ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
+  assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+  char tmpDir[2048] = {0};
+  sf_get_tmp_dir(tmpDir);
+  sf_get_uniq_tmp_dir(tmpDir);
+
+  std::vector<std::string> putFilePath = {
+    std::string(tmpDir) + PATH_SEP + "fileExist.csv",
+    std::string(tmpDir) + PATH_SEP + "fileExist",
+    std::string(tmpDir) + PATH_SEP + "file with space.csv",
+    std::string(tmpDir) + PATH_SEP + "file%20with%20percent20.csv",
+    std::string(tmpDir) + PATH_SEP + "fileExistDat.dat",
+  };
+#ifdef _WIN32
+  std::string str = putFilePath[0];
+  replaceStrAll(str,"\\","/");
+  replaceStrAll(str, "//", "/");
+  putFilePath.push_back(str);
+
+  str = putFilePath[3];
+  replaceStrAll(str, "\\", "/");
+  replaceStrAll(str, "//", "/");
+  putFilePath.push_back(str);
+
+  str = putFilePath[4];
+  replaceStrAll(str, "\\", "/");
+  replaceStrAll(str, "//", "/");
+  putFilePath.push_back(str);
+#endif
+
+  for (auto f : putFilePath) {
+    createFile(f.c_str());
+  }
+  typedef struct tcases {
+    std::string putcmd;
+    const char *result;
+  } tcases;
+
+  std::vector<tcases> testCases = {
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv.gz @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+  //  { std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+    { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+    { std::string("put file://") + putFilePath[1] + std::string(" @~/temp/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+  //  { std::string("put file://") + putFilePath[2] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+    { std::string("put file://") + putFilePath[3] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+    { std::string("put file://") + putFilePath[4] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
+#ifdef _WIN32
+    { std::string("put file://") + putFilePath[5] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
+    { std::string("put file://") + putFilePath[6] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
+    { std::string("put file://") + putFilePath[7] + std::string(" @~/temp/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED" },
+#endif
+  };
+
+  std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+    <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+  Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+  for(auto putCommand : testCases)
+  {
+    std::cout << "Testing : " << putCommand.putcmd << std::endl;
+    std::string put_status = "FAILED";
+    try
+    {
+      ITransferResult *results = agent.execute(&putCommand.putcmd);
+      if (results->next())
+      {
+        results->getColumnAsString(6, put_status);
+        assert_string_equal(putCommand.result, put_status.c_str());
+      }
+    }
+    catch (...)
+    {
+      assert_string_equal(putCommand.result, put_status.c_str());
+    }
+    break;
+  }
+  create_table = "DROP STAGE IF EXISTS TEST_ODBC_FILE_URIS";
+  ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
+  snowflake_stmt_term(sfstmt);
+
+  /* close and term */
+  snowflake_term(sf); // purge snowflake context
+  sf_delete_directory_if_exists(tmpDir);
+
+}
+
 int main(void) {
 
   const struct CMUnitTest tests[] = {
@@ -569,7 +709,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
-    cmocka_unit_test_teardown(test_verify_upload, teardown)
+    cmocka_unit_test_teardown(test_verify_upload, teardown),
+    cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
