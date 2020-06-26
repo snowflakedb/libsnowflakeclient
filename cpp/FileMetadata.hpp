@@ -97,6 +97,14 @@ struct FileMetadata
     recordPutGetTimestamp();
   }
 
+  ~FileMetadata()
+  {
+	if (requireCompress && !srcFileToUpload.empty())
+	{
+	  sf_delete_uniq_dir_if_exists(srcFileToUpload.c_str());
+	}
+  }
+
   inline void printPutGetTimestamp(void)
   {
     auto compTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[COMP_END] - tstamps[COMP_START]).count();

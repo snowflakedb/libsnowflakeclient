@@ -81,7 +81,7 @@ void test_simple_put_core(const char * fileName,
   if (setCustomThreshold)
   {
     putCommand += " threshold=";
-    putCommand += customThreshold;
+    putCommand += std::to_string(customThreshold);
   }
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
@@ -278,7 +278,7 @@ void test_large_put_threshold(void **unused)
                        true,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
                        true,    // copy data from Table to Staging.
-                       true,
+                       false,
                        20*1024*1024
   );
 }
@@ -411,13 +411,18 @@ void test_simple_put_one_byte(void **unused)
 
 void test_simple_put_threshold(void **unused)
 {
-  test_simple_put_core("small_file.csv.gz", "none", false, false, false, false, false, true, 100*1024*1024);
+  test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, false, 100*1024*1024);
 }
 
 void test_simple_get(void **unused)
 {
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true // auto compress
+  );
+
   char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] ="get @%test_small_put/small_file.csv.gz file://";
+  char tempPath[MAX_PATH + 256] = "get @%test_small_put/small_file.csv.gz file://";
   sf_get_tmp_dir(tempDir);
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "48");
@@ -711,13 +716,12 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-    cmocka_unit_test_teardown(test_simple_put_skip, donothing),
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
-    cmocka_unit_test_teardown(test_large_put_threshold, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown),
+    cmocka_unit_test_teardown(test_large_put_threshold, teardown),
     cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);

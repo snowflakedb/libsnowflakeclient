@@ -80,11 +80,13 @@ void Snowflake::Client::FileTransferAgent::reset()
   if (m_executionResults != nullptr)
   {
     delete m_executionResults;
+    m_executionResults = nullptr;
   }
 
   if (m_storageClient != nullptr)
   {
     delete m_storageClient;
+    m_storageClient = nullptr;
   }
 
   m_largeFilesMeta.clear();
@@ -388,12 +390,6 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   if (fs.is_open())
   {
     fs.close();
-  }
-
-  if (fileMetadata->requireCompress)
-  {
-    //Remove the uniq temp directory created (force remove).
-    sf_delete_uniq_dir_if_exists(fileMetadata->srcFileToUpload.c_str());
   }
 
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
