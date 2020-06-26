@@ -51,13 +51,10 @@ SET(TESTS_CXX
         test_unit_proxy
         test_unit_oob)
 
-SET(TESTS_AWS
+SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
         test_simple_put)
-
-SET(TESTS_AZURE
-        test_simple_put_azure)
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
@@ -83,18 +80,7 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.c)
 
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
-if ("$ENV{CLOUD_PROVIDER}" STREQUAL "GCP")
-    message("Put Get running against GCP")
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
-elseif ("$ENV{CLOUD_PROVIDER}" STREQUAL "AWS")
-    message("Put Get running against AWS")
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
-elseif ("$ENV{CLOUD_PROVIDER}" STREQUAL "AZURE")
-    message("Put Get running against AZURE")
-    message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
-    set(TESTS_CXX ${TESTS_CXX})
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
-endif ()
+set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)

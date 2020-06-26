@@ -21,9 +21,6 @@ source $DIR/utils.sh $@
 [[ -n "$GET_VERSION" ]] && echo $LIBSNOWFLAKECLIENT_VERSION && exit 0
 
 cd $DIR/..
-#Symlink wont work on Appveyor Windows.
-rm -f tests/test_simple_put_azure.cpp
-cp -f tests/test_simple_put.cpp tests/test_simple_put_azure.cpp
 
 CMAKE_DIR=cmake-build-$target
 rm -rf $CMAKE_DIR
