@@ -644,12 +644,12 @@ void test_simple_put_uploadfail(void **unused) {
   } tcases;
 
   std::vector<tcases> testCases = {
-    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
-    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
-    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv.gz @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "FAILED"},
-    { std::string("put file://") + putFilePath[0] + std::string(" @STAGE_NOT_EXIST AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "ERROR"},
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "ERROR"},
+    { std::string("put file://") + std::string(tmpDir) + std::string("filedoesnotexist.csv.gz @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "ERROR"},
+    { std::string("put file://") + putFilePath[0] + std::string(" @STAGE_NOT_EXIST AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "ERROR"},
     { std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
-  //{ std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "FAILED"},
+  //{ std::string("put file://") + putFilePath[0] + std::string(" @TEST_ODBC_FILE_URIS/bucket AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "ERROR"},
     { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @TEST_ODBC_FILE_URIS/bucket/ AUTO_COMPRESS=FALSE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
     { std::string("put file://") + putFilePath[1] + std::string(" @~/temp/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE PARALLEL=8 OVERWRITE=true"), "UPLOADED"},
@@ -673,11 +673,11 @@ void test_simple_put_uploadfail(void **unused) {
 
   for(auto putCommand : testCases)
   {
-    std::string put_status = "FAILED";
+    std::string put_status = "ERROR";
     try
     {
       ITransferResult *results = agent.execute(&putCommand.putcmd);
-      if (results->next())
+      while (results->next())
       {
         results->getColumnAsString(6, put_status);
         assert_string_equal(putCommand.result, put_status.c_str());

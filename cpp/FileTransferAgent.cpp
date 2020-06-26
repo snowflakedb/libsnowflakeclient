@@ -117,7 +117,13 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   switch (response.command)
   {
     case CommandType::UPLOAD:
-      upload(command);
+      try {
+        upload(command);
+      }
+      catch(...)
+      {
+        //ITransferResult has the outcome.
+      }
       break;
 
     case CommandType::DOWNLOAD:
@@ -265,6 +271,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           CXX_LOG_DEBUG("Putget Parallel upload %s", metadata->srcFileName.c_str());
           RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
                                                      resultIndex);
+          m_executionResults->SetTransferOutCome(outcome, resultIndex);
           if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
           {
             CXX_LOG_DEBUG("Token expired, Renewing token.")
