@@ -247,7 +247,7 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+    char *cenv = getenv("CLOUD_PROVIDER");
   if ( ! strncmp(cenv, "AWS", 6) ) {
       errno = 0;
       return;
@@ -265,7 +265,7 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-    char *cenv = getenv("SNOWFLAKE_CLOUD_ENV");
+    char *cenv = getenv("CLOUD_PROVIDER");
   if ( ! strncmp(cenv, "AWS", 6) ) {
       errno = 0;
       return;
@@ -275,9 +275,10 @@ void test_large_put_threshold(void **unused)
   test_simple_put_core(destinationfile.c_str(), // filename
                        "gzip", //source compression
                        false,   // auto compress
-                       true,   // Load data into table
+                       false,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
-                       true,    // copy data from Table to Staging.
+                       false,    // copy data from Table to Staging.
+                       false,
                        false,
                        20*1024*1024
   );
@@ -285,7 +286,7 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
     }
@@ -338,7 +339,7 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
     }
@@ -432,7 +433,7 @@ void test_large_get(void **unused)
 {
   char tempDir[MAX_PATH] = { 0 };
   char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("SNOWFLAKE_CLOUD_ENV"), "AWS", 6) ) {
+    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
     }
