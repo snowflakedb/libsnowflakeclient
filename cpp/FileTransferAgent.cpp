@@ -208,8 +208,10 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
 
 void Snowflake::Client::FileTransferAgent::upload(string *command)
 {
-  m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD,
-    m_largeFilesMeta.size() + m_smallFilesMeta.size());
+	//If source file does not exist then we need at least one m_executionResults.m_outcomes to save the outcome.
+  int numFiles = m_largeFilesMeta.size() + m_smallFilesMeta.size();
+  numFiles = (numFiles > 0) ? numFiles : 1;
+  m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD, numFiles);
 
   if (m_largeFilesMeta.size() > 0)
   {
@@ -225,6 +227,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       CXX_LOG_DEBUG("Putget serial upload, %s file", m_largeFilesMeta[i].srcFileName.c_str());
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
+      m_executionResults->SetTransferOutCome(outcome, i);
 
       if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
       {
@@ -252,6 +255,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
   }
   if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
   {
+    m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, 0);
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, "source file does not exist.");
   }
 }

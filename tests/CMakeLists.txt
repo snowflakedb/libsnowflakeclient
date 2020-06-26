@@ -82,19 +82,19 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.h
         utils/mock_setup.c)
 
-# Only run PUT/GET tests on AWS deployments
-if ("$ENV{CLOUD_PROVIDER}" STREQUAL "AWS")
-    message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
-endif()
-
-# Only run PUT/GET tests on Azure deployments
-if ("$ENV{CLOUD_PROVIDER}" STREQUAL "AZURE")
-    message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
+message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
+if ("$ENV{CLOUD_PROVIDER}" STREQUAL "GCP")
+    message("Put Get running against GCP")
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
+elseif ("$ENV{CLOUD_PROVIDER}" STREQUAL "AZURE")
+    message("Put Get running against AZURE")
     message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
     set(TESTS_CXX ${TESTS_CXX})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
-endif()
+else ()
+    message("Default Put Get running against AWS")
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
+endif ()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
