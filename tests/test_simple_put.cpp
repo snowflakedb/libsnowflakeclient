@@ -200,6 +200,9 @@ static int teardown(void **unused)
   std::string truncate = "drop table if exists test_small_put";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
 
+  truncate = "drop table if exists test_small_put_dup";
+  snowflake_query(sfstmt, truncate.c_str(), truncate.size());
+
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
   return 0;
@@ -247,8 +250,8 @@ void test_simple_get_data(const char *getCommand, const char *size)
 
 void test_large_put_auto_compress(void **unused)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
       errno = 0;
       return;
   }
@@ -265,8 +268,8 @@ void test_large_put_auto_compress(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-  if ( ! strncmp(cenv, "AWS", 6) ) {
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
       errno = 0;
       return;
   }
@@ -286,7 +289,8 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
+	char *cenv = getenv("CLOUD_PROVIDER");
+	if (cenv && !strncmp(cenv, "AWS", 4)) {
         errno = 0;
         return;
     }

@@ -143,7 +143,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
               s3Client->HeadObject(headObjectRequest);
 
       if (outcome.IsSuccess()) {
-          CXX_LOG_DEBUG("File %s already exists in the staging area. skip upload", fileMetadata->srcFileToUpload);
+          CXX_LOG_DEBUG("File %s already exists in the staging area. skip upload", fileMetadata->srcFileToUpload.c_str());
           return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
       } else {
           CXX_LOG_WARN("Listing file metadata failed: %s",
