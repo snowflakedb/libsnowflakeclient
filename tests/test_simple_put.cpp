@@ -448,7 +448,7 @@ void test_large_get(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
   return 0;
 }
 
@@ -718,7 +718,7 @@ int main(void) {
   }
 
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
+    /*cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
@@ -728,7 +728,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-    /*cmocka_unit_test_teardown(test_simple_get, teardown),
+    cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
