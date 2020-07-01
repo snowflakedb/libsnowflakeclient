@@ -60,6 +60,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   cJSON *root = NULL;
   cJSON *list = NULL;
   cJSON *tags = NULL;
+  cJSON *dsn = NULL;
   cJSON *vals = NULL; 
   cJSON *key  = NULL;
   char *str = NULL;
