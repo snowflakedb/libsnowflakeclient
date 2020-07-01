@@ -727,12 +727,12 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
     cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
-    cmocka_unit_test_teardown(test_simple_get, teardown),
+    /*cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown),
-    cmocka_unit_test_teardown(test_large_put_threshold, teardown),
+    cmocka_unit_test_teardown(test_large_put_threshold, teardown),*/
     cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
