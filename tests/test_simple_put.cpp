@@ -18,6 +18,8 @@
 #define COLUMN_TARGET_COMPRESSION "TARGET_COMPRESSION"
 #define COLUMN_ENCRYPTION "encryption"
 
+#define MAX_BUF_SIZE 4096
+
 using namespace ::Snowflake::Client;
 
 //File list to be made available to re-upload.
@@ -612,9 +614,20 @@ void test_simple_put_uploadfail(void **unused) {
   ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-  char tmpDir[2048] = {0};
+  char tmpDir[MAX_BUF_SIZE] = {0};
   sf_get_tmp_dir(tmpDir);
   sf_get_uniq_tmp_dir(tmpDir);
+#ifdef _WIN32
+  char longtmpDir[MAX_BUF_SIZE] = { 0 };
+  int retL = GetLongPathNameA(tmpDir, longtmpDir, MAX_BUF_SIZE);
+  if (retL == 0)
+  {
+	  std::cout << "GetLongPathName failed: \n" << GetLastError() << std::endl;
+  }
+  std::cout << "Short path is : " << tmpDir << std::endl;
+  std::cout << "Long  path is : " << longtmpDir << std::endl;
+  sb_strncpy(tmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
+#endif
 
   std::vector<std::string> putFilePath = {
     std::string(tmpDir) + PATH_SEP + "fileExist.csv",
