@@ -51,13 +51,10 @@ SET(TESTS_CXX
         test_unit_proxy
         test_unit_oob)
 
-SET(TESTS_AWS
+SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
         test_simple_put)
-
-SET(TESTS_AZURE
-        test_simple_put_azure)
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes
@@ -82,19 +79,11 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.h
         utils/mock_setup.c)
 
-# Only run PUT/GET tests on AWS deployments
-if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AWS")
-    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AWS})
-endif()
-
-# Only run PUT/GET tests on Azure deployments
-if ("$ENV{SNOWFLAKE_CLOUD_ENV}" STREQUAL "AZURE")
-    message("SNOWFLAKE_CLOUD_ENV is set to " $ENV{SNOWFLAKE_CLOUD_ENV})
-    message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
-    set(TESTS_CXX ${TESTS_CXX})
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_AZURE})
-endif()
+message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
+#Due to docker issue the tests are failing on linux.
+if (APPLE OR WIN32)
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
+endif ()
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)

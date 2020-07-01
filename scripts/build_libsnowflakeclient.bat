@@ -49,10 +49,6 @@ md %cmake_dir%
 cd %cmake_dir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-:: Simlink does not work on Appveyor (mlink doesn't work either).
-if exist  %curdir%\tests\test_simple_put_azure.cpp del %curdir%\tests\test_simple_put_azure.cpp
-copy %curdir%\tests\test_simple_put.cpp %curdir%\tests\test_simple_put_azure.cpp
-
 cmake -G "%cmake_generator%" -A %cmake_architecture% ^
     -DDYNAMIC_RUNTIME=%dynamic_runtime% ^
     -DBUILD_TESTS=%build_tests% ^
