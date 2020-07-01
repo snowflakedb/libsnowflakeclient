@@ -119,13 +119,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   switch (response.command)
   {
     case CommandType::UPLOAD:
-      try {
-        upload(command);
-      }
-      catch(...)
-      {
-        //ITransferResult has the outcome.
-      }
+      upload(command);
       break;
 
     case CommandType::DOWNLOAD:
