@@ -265,6 +265,29 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
     metadata->overWrite = response.overwrite;
 
+    // workaround for incident 00212627
+    // Do not use thread pool when parallel = 1
+    if ((unsigned int)response.parallel <= 1)
+    {
+      do
+      {
+        RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
+          resultIndex);
+        if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+        {
+          _mutex_lock(&m_parallelTokRenewMutex);
+          this->renewToken(command);
+          _mutex_unlock(&m_parallelTokRenewMutex);
+        }
+        else
+        {
+          break;
+        }
+      } while (true);
+
+      continue;
+    }
+
     tp.AddJob([metadata, resultIndex, command, &failedTransfers, this]()->void {
         do
         {
@@ -527,6 +550,30 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
     size_t resultIndex = i + m_largeFilesMeta.size();
     FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
+
+    // workaround for incident 00212627
+    // Do not use thread pool when parallel = 1
+    if ((unsigned int)response.parallel <= 1)
+    {
+      do
+      {
+        RemoteStorageRequestOutcome outcome = downloadSingleFile(m_storageClient, metadata,
+          resultIndex);
+        if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+        {
+          _mutex_lock(&m_parallelTokRenewMutex);
+          this->renewToken(command);
+          _mutex_unlock(&m_parallelTokRenewMutex);
+        }
+        else
+        {
+          break;
+        }
+      } while (true);
+
+      continue;
+    }
+
     tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
