@@ -683,6 +683,7 @@ void test_simple_put_uploadfail(void **unused) {
 
   for(auto putCommand : testCases)
   {
+    std::cout << "TesteCase: " << putCommand.putcmd << std::endl;
     std::string put_status = "ERROR";
     try
     {
