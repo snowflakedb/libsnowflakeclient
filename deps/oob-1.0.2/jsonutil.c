@@ -98,6 +98,10 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   if( ! tags ) goto end;
   cJSON_AddItemToObject(list, "Tags", tags);
 
+  dsn = cJSON_CreateObject();
+  if (! dsn ) goto end;
+  cJSON_AddItemToObject(list, "DSN", dsn);
+
   getuuid(uuid);
   key = cJSON_CreateString(uuid);
   if( ! key ) goto end;
@@ -125,24 +129,28 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     key = cJSON_CreateString( connectionInfo.account );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_account", key);
+    cJSON_AddItemToObject(dsn, "account", key);
   }
 
   if( connectionInfo.host[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.host );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_host", key);
+    cJSON_AddItemToObject(dsn, "host", key);
   }
 
   if( connectionInfo.port[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.port );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_port", key);
+    cJSON_AddItemToObject(dsn, "port", key);
   }
 
   if( connectionInfo.protocol[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.protocol );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_protocol", key);
+    cJSON_AddItemToObject(dsn, "protocol", key);
   }
 
   if( connectionInfo.user[0] != 0 ){
@@ -195,6 +203,30 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     key = cJSON_CreateString( "prod" );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
+  }
+
+  if (connectionInfo.role[0] != 0) {
+      key = cJSON_CreateString(connectionInfo.role);
+      if (!key) goto end;
+      cJSON_AddItemToObject(dsn, "role", key);
+  }
+
+  if (connectionInfo.warehouse[0] != 0) {
+      key = cJSON_CreateString( connectionInfo.warehouse);
+      if ( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "warehouse", key);
+  }
+
+  if (connectionInfo.dbName[0] != 0) {
+      key = cJSON_CreateString( connectionInfo.dbName);
+      if ( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "database", key);
+  }
+
+  if (connectionInfo.schema[0] != 0) {
+      key = cJSON_CreateString( connectionInfo.schema);
+      if ( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "schema", key);
   }
 
   key = cJSON_CreateString("Log");
