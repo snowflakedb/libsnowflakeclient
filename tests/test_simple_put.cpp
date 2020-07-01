@@ -457,8 +457,8 @@ void test_simple_get(void **unused)
 
 void test_large_get(void **unused)
 {
-  char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/bigFile.csv.gz file://";
+  char tempDir[MAX_BUF_SIZE] = { 0 };
+  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
     if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
