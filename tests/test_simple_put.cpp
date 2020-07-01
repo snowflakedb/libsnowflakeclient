@@ -26,6 +26,21 @@ using namespace ::Snowflake::Client;
 static std::vector<std::string> fileList;
 static bool createOnlyOnce = true;
 
+#ifdef _WIN32
+void getLongTempPath(char *buffTmpDir)
+{
+	char longtmpDir[MAX_BUF_SIZE] = { 0 };
+	int retL = GetLongPathNameA(buffTmpDir, longtmpDir, MAX_BUF_SIZE);
+	if (retL == 0)
+	{
+		std::cout << "GetLongPathName failed: \n" << GetLastError() << std::endl;
+	}
+	std::cout << "Short path is : " << buffTmpDir << std::endl;
+	std::cout << "Long  path is : " << longtmpDir << std::endl;
+	sb_strncpy(buffTmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
+}
+#endif
+
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
                           bool autoCompress,
@@ -313,10 +328,12 @@ void test_large_reupload(void **unused)
     ret = snowflake_query(sfstmt, deleteStagedFiles.c_str(), deleteStagedFiles.size());
     assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    char tempDir[MAX_PATH] = { 0 };
-    char tempFile[MAX_PATH + 256] ={0};
+    char tempDir[MAX_BUF_SIZE] = { 0 };
+    char tempFile[MAX_BUF_SIZE] ={0};
     sf_get_tmp_dir(tempDir);
-
+#ifdef _WIN32
+	getLongTempPath(tempDir);
+#endif
     for(const std::string s : fileList) {
         tempFile[0] = 0;
         sprintf(tempFile, "%s%c%s", tempDir, PATH_SEP, s.c_str());
@@ -428,9 +445,12 @@ void test_simple_get(void **unused)
                        true // auto compress
   );
 
-  char tempDir[MAX_PATH] = { 0 };
-  char tempPath[MAX_PATH + 256] = "get @%test_small_put/small_file.csv.gz file://";
+  char tempDir[MAX_BUF_SIZE] = { 0 };
+  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/small_file.csv.gz file://";
   sf_get_tmp_dir(tempDir);
+#ifdef _WIN32
+  getLongTempPath(tempDir);
+#endif
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "48");
 }
@@ -444,13 +464,16 @@ void test_large_get(void **unused)
         return;
     }
   sf_get_tmp_dir(tempDir);
+#ifdef _WIN32
+  getLongTempPath(tempDir);
+#endif
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848");
 }
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
   return 0;
 }
 
@@ -618,15 +641,7 @@ void test_simple_put_uploadfail(void **unused) {
   sf_get_tmp_dir(tmpDir);
   sf_get_uniq_tmp_dir(tmpDir);
 #ifdef _WIN32
-  char longtmpDir[MAX_BUF_SIZE] = { 0 };
-  int retL = GetLongPathNameA(tmpDir, longtmpDir, MAX_BUF_SIZE);
-  if (retL == 0)
-  {
-	  std::cout << "GetLongPathName failed: \n" << GetLastError() << std::endl;
-  }
-  std::cout << "Short path is : " << tmpDir << std::endl;
-  std::cout << "Long  path is : " << longtmpDir << std::endl;
-  sb_strncpy(tmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
+  getLongTempPath(tmpDir);
 #endif
 
   std::vector<std::string> putFilePath = {
@@ -731,7 +746,7 @@ int main(void) {
   }
 
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
+    /*cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
@@ -740,7 +755,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_zero_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_one_byte, teardown),
     cmocka_unit_test_teardown(test_simple_put_skip, teardown),
-    cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),
+    cmocka_unit_test_teardown(test_simple_put_overwrite, teardown),*/
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
