@@ -16,10 +16,11 @@
 #define TMP_BUF_LEN 40
 #endif
 
-//static struct conStr connectionInfo ;
 static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0} };
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
+
+static struct dsnStr dsnInfo = {{0},{0},{0},{0},{0},{0},{0}};
 
 void setdeployment(const char *host);
 
@@ -130,34 +131,72 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     key = cJSON_CreateString( connectionInfo.account );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_account", key);
-    cJSON_AddItemToObject(dsn, "account", key);
   }
 
   if( connectionInfo.host[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.host );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_host", key);
-    cJSON_AddItemToObject(dsn, "host", key);
   }
 
   if( connectionInfo.port[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.port );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_port", key);
-    cJSON_AddItemToObject(dsn, "port", key);
   }
 
   if( connectionInfo.protocol[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.protocol );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_protocol", key);
-    cJSON_AddItemToObject(dsn, "protocol", key);
   }
 
   if( connectionInfo.user[0] != 0 ){
     key = cJSON_CreateString( connectionInfo.user );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "ctx_user", key);
+  }
+
+  if( dsnInfo.host[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.host );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "host", key);
+  }
+
+  if( dsnInfo.port[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.port );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "port", key);
+  }
+
+  if( dsnInfo.account[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.account );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "account", key);
+  }
+
+  if( dsnInfo.database[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.database );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "database", key);
+  }
+
+  if( dsnInfo.schema[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.schema );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "schema", key);
+  }
+
+  if( dsnInfo.warehouse[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.warehouse );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "warehouse", key);
+  }
+
+  if( dsnInfo.role[0] != 0 ){
+      key = cJSON_CreateString( dsnInfo.role );
+      if( ! key ) goto end;
+      cJSON_AddItemToObject(dsn, "role", key);
   }
 
   driver_name = getenv("SF_DRIVER_NAME");
@@ -437,7 +476,24 @@ void setoobConnectioninfo(const char* host,
     copyString("https", connectionInfo.protocol, 8);
   else
     copyString("http", connectionInfo.protocol, 8);
+}
 
+void setoobDSNinfo(const char* host,
+    const char* port,
+    const char* account,
+    const char* database,
+    const char* schema,
+    const char* warehouse,
+    const char* role)
+{
+    copyString(host, dsnInfo.host, 512);
+    setdeployment(host);
+    copyString(port, dsnInfo.port, 10);
+    copyString(account, dsnInfo.account, 256);
+    copyString(database, dsnInfo.database, 256);
+    copyString(schema, dsnInfo.schema, 256);
+    copyString(warehouse, dsnInfo.warehouse, 256);
+    copyString(role, dsnInfo.role, 256);
 }
 
 void setdeployment(const char *host)

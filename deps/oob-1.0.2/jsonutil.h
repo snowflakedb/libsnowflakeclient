@@ -36,6 +36,16 @@ struct logDetails{
   int urgent;
 };
 
+struct dsnStr{
+    char host[512];
+    char port[10];
+    char account[256];
+    char database[256];
+    char schema[256];
+    char warehouse[256];
+    char role[256];
+};
+
 typedef struct ocsp_telemetry_data oobOcspData;
 
 void setoobConnectioninfo(const char* host,
@@ -49,6 +59,15 @@ void setoobConnectioninfo(const char* host,
     const char* warehouse,
     const char* role,
     short ssl
+    );
+
+void setoobDSNinfo(const char* host,
+    const char* port,
+    const char* account,
+    const char* database,
+    const char* schema,
+    const char* warehouse,
+    const char* role
     );
 
 extern char* getOOBDeployment();

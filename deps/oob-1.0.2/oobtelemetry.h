@@ -34,6 +34,15 @@ extern void setoobConnectioninfo(const char* host,
     short ssl
     );
 
+extern void setoobDSNinfo(const char* host,
+    const char* port,
+    const char* account,
+    const char* databse,
+    const char* schema,
+    const char* warehouse,
+    const char* role
+);
+
 #ifdef __cplusplus
 }
 #endif
