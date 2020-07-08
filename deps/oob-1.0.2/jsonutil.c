@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,7 +21,9 @@ static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
-static struct dsnStr dsnInfo = {{0},{0},{0},{0},{0},{0},{0}};
+static struct dsnKey dsnKeys = {{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0}};
+
+static struct dsnVal dsnValues = {{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0}};
 
 void setdeployment(const char *host);
 
@@ -29,13 +32,15 @@ int sendOOBevent(char *event);
 //connStr will be copied into another string
 void setConnectionString(char const* connStr);
 
-char * getConnectionString(void);
+char* getConnectionString(void);
 
 void gettime( char *buffer);
 
 void getuuid(char *buffer);
 
 char* getConnectionInfo(enum OOBINFO id);
+
+void upper(char* caps, const char* word);
 
 void getCabundle(char *cabundle, int maxlen);
 
@@ -63,7 +68,8 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   cJSON *tags = NULL;
   cJSON *dsn = NULL;
   cJSON *vals = NULL; 
-  cJSON *key  = NULL;
+  cJSON *key = NULL;
+  cJSON *val = NULL;
   char *str = NULL;
   char buffer[TMP_BUF_LEN]={0};
   char uuid[TMP_BUF_LEN]={0};
@@ -157,46 +163,118 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     cJSON_AddItemToObject(tags, "ctx_user", key);
   }
 
-  if( dsnInfo.host[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.host );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "host", key);
+  if( dsnValues.description[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.description );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.description, val);
   }
 
-  if( dsnInfo.port[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.port );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "port", key);
+  if( dsnValues.driver[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.driver );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.driver, val);
   }
 
-  if( dsnInfo.account[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.account );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "account", key);
+  if( dsnValues.locale[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.locale );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.locale, val);
   }
 
-  if( dsnInfo.database[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.database );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "database", key);
+  if( dsnValues.host[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.host );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.host, val);
   }
 
-  if( dsnInfo.schema[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.schema );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "schema", key);
+  if( dsnValues.port[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.port );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.port, val);
   }
 
-  if( dsnInfo.warehouse[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.warehouse );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "warehouse", key);
+  if( dsnValues.account[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.account );
+    if( !val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.account, val);
   }
 
-  if( dsnInfo.role[0] != 0 ){
-      key = cJSON_CreateString( dsnInfo.role );
-      if( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "role", key);
+  if( dsnValues.user[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.user );
+    if( !val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.user, val);
+  }
+
+  if( dsnValues.password[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.password );
+    if( !val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.password, cJSON_CreateString(""));
+  }
+
+  if( dsnValues.token[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.token );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.token, val);
+  }
+
+  if( dsnValues.authenticator[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.authenticator );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.authenticator, val);
+  }
+
+  if( dsnValues.database[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.database );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.database, val);
+  }
+
+  if( dsnValues.schema[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.schema );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.schema, val);
+  }
+
+  if( dsnValues.warehouse[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.warehouse );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.warehouse, val);
+  }
+
+  if( dsnValues.role[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.role );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.role, val);
+  }
+
+  if( dsnValues.ssl[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.ssl );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.ssl, val);
+  }
+
+  if( dsnValues.tracing[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.tracing );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.tracing, val);
+  }
+
+  if( dsnValues.jwtTimeout[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.jwtTimeout );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.jwtTimeout, val);
+  }
+
+  if( dsnValues.timezone[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.timezone );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.timezone, val);
+  }
+
+  if( dsnValues.privKey[0] != 0 ){
+    val = cJSON_CreateString( dsnValues.privKey );
+    if( ! val ) goto end;
+    cJSON_AddItemToObject(dsn, dsnKeys.privKey, val);
   }
 
   driver_name = getenv("SF_DRIVER_NAME");
@@ -280,7 +358,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   if(oobevent.urgent) {
     key = cJSON_CreateTrue();
   }
-  else {
+  else
     key = cJSON_CreateFalse();
   }
   if( ! key ) goto end;
@@ -478,22 +556,83 @@ void setoobConnectioninfo(const char* host,
     copyString("http", connectionInfo.protocol, 8);
 }
 
-void setoobDSNinfo(const char* host,
-    const char* port,
-    const char* account,
-    const char* database,
-    const char* schema,
-    const char* warehouse,
-    const char* role)
-{
-    copyString(host, dsnInfo.host, 512);
-    setdeployment(host);
-    copyString(port, dsnInfo.port, 10);
-    copyString(account, dsnInfo.account, 256);
-    copyString(database, dsnInfo.database, 256);
-    copyString(schema, dsnInfo.schema, 256);
-    copyString(warehouse, dsnInfo.warehouse, 256);
-    copyString(role, dsnInfo.role, 256);
+void setoobdsninfo(const char *key, const char *val) {
+    char* caps = malloc(strlen(key));
+    upper(caps, key);
+
+    if (!strcmp(caps, "DESCRIPTION")) {
+        copyString(key, dsnKeys.description, 16);
+        copyString(val, dsnValues.description, 4096);
+    } else if (!strcmp(caps, "DRIVER")) {
+        copyString(key, dsnKeys.driver, 8);
+        copyString(val, dsnValues.driver, 64);
+    } else if (!strcmp(caps, "LOCALE")) {
+        copyString(key, dsnKeys.locale, 8);
+        copyString(val, dsnValues.locale, 64);
+    } else if (!strcmp(caps, "SERVER")) {
+        copyString(key, dsnKeys.host, 8);
+        copyString(val, dsnValues.host, 512);
+    } else if (!strcmp(caps, "PORT")) {
+        copyString(key, dsnKeys.port, 8);
+        copyString(val, dsnValues.port, 10);
+    } else if (!strcmp(caps, "ACCOUNT")) {
+        copyString(key, dsnKeys.account, 8);
+        copyString(val, dsnValues.account, 256);
+    } else if (!strcmp(caps, "UID")) {
+        copyString(key, dsnKeys.user, 8);
+        copyString(val, dsnValues.user, 256);
+    } else if (!strcmp(caps, "PWD")) {
+        copyString(key, dsnKeys.password, 8);
+        copyString(val, dsnValues.password, 8);
+    } else if (!strcmp(caps, "TOKEN")) {
+        copyString(key, dsnKeys.token, 8);
+        copyString(val, dsnValues.token, 1024);
+    } else if (!strcmp(caps, "AUTHENTICATOR")) {
+        copyString(key, dsnKeys.authenticator, 16);
+        copyString(val, dsnValues.authenticator, 1024);
+    } else if (!strcmp(caps, "DATABASE")) {
+        copyString(key, dsnKeys.database, 16);
+        copyString(val, dsnValues.database, 256);
+    } else if (!strcmp(caps, "SCHEMA")) {
+        copyString(key, dsnKeys.schema, 8);
+        copyString(val, dsnValues.schema, 256);
+    } else if (!strcmp(caps, "WAREHOUSE")) {
+        copyString(key, dsnKeys.warehouse, 16);
+        copyString(val, dsnValues.warehouse, 256);
+    } else if (!strcmp(caps, "ROLE")) {
+        copyString(key, dsnKeys.role, 8);
+        copyString(val, dsnValues.role, 256);
+    } else if (!strcmp(caps, "SSL")) {
+        copyString(key, dsnKeys.ssl, 8);
+        copyString(val, dsnValues.ssl, 10);
+    } else if (!strcmp(caps, "TRACING")) {
+        copyString(key, dsnKeys.tracing, 8);
+        copyString(val, dsnValues.tracing, 10);
+    } else if (!strcmp(caps, "JWT_TIME_OUT")) {
+        copyString(key, dsnKeys.jwtTimeout, 16);
+        copyString(val, dsnValues.jwtTimeout, 256);
+    } else if (!strcmp(caps, "TIMEZONE")) {
+        copyString(key, dsnKeys.timezone, 16);
+        copyString(val, dsnValues.timezone, 64);
+    } else if (!strcmp(caps, "PRIV_KEY_FILE")) {
+        copyString(key, dsnKeys.privKey, 16);
+        copyString(val, dsnValues.privKey, 1024);
+    } else {
+        // TODO handle error/misc cases
+        free(caps);
+        return;
+    }
+    free(caps);
+    return;
+}
+
+void upper(char* caps, const char* word){
+    int i = 0;
+    while (word[i]) {
+        caps[i] = toupper(word[i]);
+        i++;
+    }
+    return;
 }
 
 void setdeployment(const char *host)
