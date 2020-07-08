@@ -215,7 +215,7 @@ else()
             )
             target_link_libraries(${T} ${TESTLIB_OPTS_C})
             add_test(${T} ${T})
-            set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${CABUNDLE_PATH})
+            set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${SNOWFLAKE_TEST_CA_BUNDLE_FILE})
             # Removed to suppress false alarm: "--run-libc-freeres=no"
             add_test(valgrind_${T}
                     valgrind
