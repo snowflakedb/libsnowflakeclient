@@ -34,7 +34,7 @@ extern void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-extern void void setoobdsninfo(const char *key, const char *val);
+extern void setoobdsninfo(const char *key, const char *val);
 
 #ifdef __cplusplus
 }
