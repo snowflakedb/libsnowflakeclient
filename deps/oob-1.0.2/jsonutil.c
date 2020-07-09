@@ -208,7 +208,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   if( dsnValues.password[0] != 0 ){
     val = cJSON_CreateString( dsnValues.password );
     if( !val ) goto end;
-    cJSON_AddItemToObject(dsn, dsnKeys.password, cJSON_CreateString(""));
+    cJSON_AddItemToObject(dsn, dsnKeys.password, cJSON_CreateString("***"));
   }
 
   if( dsnValues.token[0] != 0 ){
