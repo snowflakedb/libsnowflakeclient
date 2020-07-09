@@ -323,30 +323,6 @@ char *prepareOOBevent(oobOcspData *ocspevent)
     cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
   }
 
-  if (connectionInfo.role[0] != 0) {
-      key = cJSON_CreateString(connectionInfo.role);
-      if (!key) goto end;
-      cJSON_AddItemToObject(dsn, "role", key);
-  }
-
-  if (connectionInfo.warehouse[0] != 0) {
-      key = cJSON_CreateString( connectionInfo.warehouse);
-      if ( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "warehouse", key);
-  }
-
-  if (connectionInfo.dbName[0] != 0) {
-      key = cJSON_CreateString( connectionInfo.dbName);
-      if ( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "database", key);
-  }
-
-  if (connectionInfo.schema[0] != 0) {
-      key = cJSON_CreateString( connectionInfo.schema);
-      if ( ! key ) goto end;
-      cJSON_AddItemToObject(dsn, "schema", key);
-  }
-
   key = cJSON_CreateString("Log");
   if( ! key ) goto end;
   cJSON_AddItemToObject(list, "Type", key);
@@ -358,7 +334,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   if(oobevent.urgent) {
     key = cJSON_CreateTrue();
   }
-  else
+  else {
     key = cJSON_CreateFalse();
   }
   if( ! key ) goto end;
@@ -618,7 +594,6 @@ void setoobdsninfo(const char *key, const char *val) {
         copyString(key, dsnKeys.privKey, 16);
         copyString(val, dsnValues.privKey, 1024);
     } else {
-        // TODO handle error/misc cases
         free(caps);
         return;
     }
