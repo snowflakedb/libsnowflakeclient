@@ -21,9 +21,7 @@ static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
-static struct dnsKey dnsKeys = {{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0}};
-
-static struct dnsVal dnsValues = {{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0}};
+cJSON *dsn = NULL;
 
 void setdeployment(const char *host);
 
@@ -67,9 +65,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   cJSON *list = NULL;
   cJSON *tags = NULL;
   cJSON *vals = NULL;
-  cJSON *dns = NULL;
   cJSON *key = NULL;
-  cJSON *val = NULL;
   char *str = NULL;
   char buffer[TMP_BUF_LEN]={0};
   char uuid[TMP_BUF_LEN]={0};
@@ -225,123 +221,7 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   vals = cJSON_CreateObject();
   cJSON_AddItemToObject(list, "Value", vals);
 
-  dns = cJSON_CreateObject();
-  if (! dns ) goto end;
-  cJSON_AddItemToObject(vals, "DNS", dns);
-
-  if( dnsValues.description[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.description );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.description, val);
-  }
-
-  if( dnsValues.driver[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.driver );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.driver, val);
-  }
-
-  if( dnsValues.locale[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.locale );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.locale, val);
-  }
-
-  if( dnsValues.host[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.host );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.host, val);
-  }
-
-  if( dnsValues.port[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.port );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.port, val);
-  }
-
-  if( dnsValues.account[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.account );
-      if( !val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.account, val);
-  }
-
-  if( dnsValues.user[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.user );
-      if( !val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.user, val);
-  }
-
-  if( dnsValues.password[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.password );
-      if( !val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.password, cJSON_CreateString("***"));
-  }
-
-  if( dnsValues.token[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.token );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.token, val);
-  }
-
-  if( dnsValues.authenticator[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.authenticator );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.authenticator, val);
-  }
-
-  if( dnsValues.database[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.database );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.database, val);
-  }
-
-  if( dnsValues.schema[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.schema );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.schema, val);
-  }
-
-  if( dnsValues.warehouse[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.warehouse );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.warehouse, val);
-  }
-
-  if( dnsValues.role[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.role );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.role, val);
-  }
-
-  if( dnsValues.ssl[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.ssl );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.ssl, val);
-  }
-
-  if( dnsValues.tracing[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.tracing );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.tracing, val);
-  }
-
-  if( dnsValues.jwtTimeout[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.jwtTimeout );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.jwtTimeout, val);
-  }
-
-  if( dnsValues.timezone[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.timezone );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.timezone, val);
-  }
-
-  if( dnsValues.privKey[0] != 0 ){
-      val = cJSON_CreateString( dnsValues.privKey );
-      if( ! val ) goto end;
-      cJSON_AddItemToObject(dns, dnsKeys.privKey, val);
-  }
+  cJSON_AddItemToObject(vals, "DSN", dsn);
 
   if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
     key = cJSON_CreateString(ocspevent->sfc_peer_host);
@@ -532,70 +412,18 @@ void setoobConnectioninfo(const char* host,
     copyString("http", connectionInfo.protocol, 8);
 }
 
-void setoobdnsinfo(const char *key, const char *val) {
+void setoobDsninfo(const char *key, const char *val) {
     char* caps = malloc(strlen(key));
     upper(caps, key);
 
-    if (!strcmp(caps, "DESCRIPTION")) {
-        copyString(key, dnsKeys.description, 16);
-        copyString(val, dnsValues.description, 4096);
-    } else if (!strcmp(caps, "DRIVER")) {
-        copyString(key, dnsKeys.driver, 8);
-        copyString(val, dnsValues.driver, 64);
-    } else if (!strcmp(caps, "LOCALE")) {
-        copyString(key, dnsKeys.locale, 8);
-        copyString(val, dnsValues.locale, 64);
-    } else if (!strcmp(caps, "SERVER")) {
-        copyString(key, dnsKeys.host, 8);
-        copyString(val, dnsValues.host, 512);
-    } else if (!strcmp(caps, "PORT")) {
-        copyString(key, dnsKeys.port, 8);
-        copyString(val, dnsValues.port, 10);
-    } else if (!strcmp(caps, "ACCOUNT")) {
-        copyString(key, dnsKeys.account, 8);
-        copyString(val, dnsValues.account, 256);
-    } else if (!strcmp(caps, "UID")) {
-        copyString(key, dnsKeys.user, 8);
-        copyString(val, dnsValues.user, 256);
-    } else if (!strcmp(caps, "PWD")) {
-        copyString(key, dnsKeys.password, 8);
-        copyString(val, dnsValues.password, 8);
-    } else if (!strcmp(caps, "TOKEN")) {
-        copyString(key, dnsKeys.token, 8);
-        copyString(val, dnsValues.token, 1024);
-    } else if (!strcmp(caps, "AUTHENTICATOR")) {
-        copyString(key, dnsKeys.authenticator, 16);
-        copyString(val, dnsValues.authenticator, 1024);
-    } else if (!strcmp(caps, "DATABASE")) {
-        copyString(key, dnsKeys.database, 16);
-        copyString(val, dnsValues.database, 256);
-    } else if (!strcmp(caps, "SCHEMA")) {
-        copyString(key, dnsKeys.schema, 8);
-        copyString(val, dnsValues.schema, 256);
-    } else if (!strcmp(caps, "WAREHOUSE")) {
-        copyString(key, dnsKeys.warehouse, 16);
-        copyString(val, dnsValues.warehouse, 256);
-    } else if (!strcmp(caps, "ROLE")) {
-        copyString(key, dnsKeys.role, 8);
-        copyString(val, dnsValues.role, 256);
-    } else if (!strcmp(caps, "SSL")) {
-        copyString(key, dnsKeys.ssl, 8);
-        copyString(val, dnsValues.ssl, 10);
-    } else if (!strcmp(caps, "TRACING")) {
-        copyString(key, dnsKeys.tracing, 8);
-        copyString(val, dnsValues.tracing, 10);
-    } else if (!strcmp(caps, "JWT_TIME_OUT")) {
-        copyString(key, dnsKeys.jwtTimeout, 16);
-        copyString(val, dnsValues.jwtTimeout, 256);
-    } else if (!strcmp(caps, "TIMEZONE")) {
-        copyString(key, dnsKeys.timezone, 16);
-        copyString(val, dnsValues.timezone, 64);
-    } else if (!strcmp(caps, "PRIV_KEY_FILE")) {
-        copyString(key, dnsKeys.privKey, 16);
-        copyString(val, dnsValues.privKey, 1024);
+    if (dsn == NULL) {
+        dsn = cJSON_CreateObject();
+    }
+    cJSON *value = cJSON_CreateString(val);
+    if (strcmp(caps, "PWD")) {
+        cJSON_AddItemToObject(dsn, key, value);
     } else {
-        free(caps);
-        return;
+        cJSON_AddItemToObject(dsn, key, cJSON_CreateString("***"));
     }
     free(caps);
     return;

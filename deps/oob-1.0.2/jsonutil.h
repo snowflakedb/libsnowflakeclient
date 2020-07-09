@@ -36,50 +36,6 @@ struct logDetails{
   int urgent;
 };
 
-struct dnsKey{
-    char description[16];
-    char driver[8];
-    char locale[8];
-    char host[8];
-    char port[8];
-    char account[8];
-    char user[8];
-    char password[8];
-    char token[8];
-    char authenticator[16];
-    char database[16];
-    char schema[8];
-    char warehouse[16];
-    char role[8];
-    char ssl[8];
-    char tracing[8];
-    char jwtTimeout[16];
-    char timezone[16];
-    char privKey[16];
-};
-
-struct dnsVal{
-    char description[4096];
-    char driver[64];
-    char locale[64];
-    char host[512];
-    char port[10];
-    char account[256];
-    char user[256];
-    char password[8];
-    char token[1024];
-    char authenticator[1024];
-    char database[256];
-    char schema[256];
-    char warehouse[256];
-    char role[256];
-    char ssl[10];
-    char tracing[10];
-    char jwtTimeout[256];
-    char timezone[64];
-    char privKey[1024];
-};
-
 typedef struct ocsp_telemetry_data oobOcspData;
 
 void setoobConnectioninfo(const char* host,
@@ -95,7 +51,7 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-void setoobdnsinfo(const char *key, const char *val);
+void setoobDsninfo(const char *key, const char *val);
 
 extern char* getOOBDeployment();
 
