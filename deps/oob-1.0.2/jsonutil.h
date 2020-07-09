@@ -36,7 +36,7 @@ struct logDetails{
   int urgent;
 };
 
-struct dsnKey{
+struct dnsKey{
     char description[16];
     char driver[8];
     char locale[8];
@@ -58,7 +58,7 @@ struct dsnKey{
     char privKey[16];
 };
 
-struct dsnVal{
+struct dnsVal{
     char description[4096];
     char driver[64];
     char locale[64];
@@ -95,7 +95,7 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-void setoobdsninfo(const char *key, const char *val);
+void setoobdnsinfo(const char *key, const char *val);
 
 extern char* getOOBDeployment();
 
