@@ -12,12 +12,12 @@ extern "C" {
 
 //event will be Freed by the callee
 //We will modify event to mask passwords/secrets
-extern int sendOOBevent(char *event);
+extern int sendOOBevent(char* event);
 
 //connStr will be copied into another string
 extern void setConnectionString(char const* connStr);
 
-extern char *prepareOOBevent(oobOcspData *ocspevent);
+extern char* prepareOOBevent(oobOcspData* ocspevent);
 
 extern void setOOBeventdata(enum OOBINFO id, const char *data, long num);
 
@@ -34,7 +34,7 @@ extern void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-extern void setoobDsninfo(const char *key, const char *val);
+extern void setOOBDsninfo(const char* key, const char* val);
 
 #ifdef __cplusplus
 }

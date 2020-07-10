@@ -9,6 +9,7 @@
 #ifdef _WIN32
 #include <combaseapi.h>
 #include <objbase.h>
+#define strcasecmp _stricmp
 #else 
 #include "uuid.h"
 #endif
@@ -21,26 +22,24 @@ static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
-cJSON *dsn = NULL;
+cJSON* dsn = NULL;
 
-void setdeployment(const char *host);
+void setdeployment(const char* host);
 
-int sendOOBevent(char *event);
+int sendOOBevent(char* event);
 
 //connStr will be copied into another string
 void setConnectionString(char const* connStr);
 
 char* getConnectionString(void);
 
-void gettime( char *buffer);
+void gettime(char* buffer);
 
-void getuuid(char *buffer);
+void getuuid(char* buffer);
 
 char* getConnectionInfo(enum OOBINFO id);
 
-void upper(char* caps, const char* word);
-
-void getCabundle(char *cabundle, int maxlen);
+void getCabundle(char* cabundle, int maxlen);
 
 static void freeAll(void);
 
@@ -49,7 +48,7 @@ char* getOOBDeployment()
     return connectionInfo.dep;
 }
 
-void maskSecrets(char *str)
+void maskSecrets(char* str)
 {
   //Look for Azure SAS key. 
   char *mask = strstr(str, "sig=");
@@ -59,18 +58,18 @@ void maskSecrets(char *str)
   return;
 }
 
-char *prepareOOBevent(oobOcspData *ocspevent)
+char* prepareOOBevent(oobOcspData* ocspevent)
 {
-  cJSON *root = NULL;
-  cJSON *list = NULL;
-  cJSON *tags = NULL;
-  cJSON *vals = NULL;
-  cJSON *key = NULL;
-  char *str = NULL;
+  cJSON* root = NULL;
+  cJSON* list = NULL;
+  cJSON* tags = NULL;
+  cJSON* vals = NULL;
+  cJSON* key = NULL;
+  char* str = NULL;
   char buffer[TMP_BUF_LEN]={0};
   char uuid[TMP_BUF_LEN]={0};
-  char *driver_name = NULL;
-  char *driver_version = NULL;
+  char* driver_name = NULL;
+  char* driver_version = NULL;
 
   root = cJSON_CreateArray();
 
@@ -336,7 +335,7 @@ end:
 
 }
 
-void copyString(const char *src, char *dst, int dstlen)
+void copyString(const char* src, char* dst, int dstlen)
 {
   //Care has been taken that src always fits in dst.
   long long len = strlen(src);
@@ -346,7 +345,7 @@ void copyString(const char *src, char *dst, int dstlen)
   return;
 }
 
-void setOOBeventdata(enum OOBINFO id, const char *data, long num)
+void setOOBeventdata(enum OOBINFO id, const char* data, long num)
 {
   switch(id)
   {
@@ -412,38 +411,21 @@ void setoobConnectioninfo(const char* host,
     copyString("http", connectionInfo.protocol, 8);
 }
 
-void setoobDsninfo(const char *key, const char *val) {
-    char* caps = calloc(strlen(key), sizeof(char));
-    upper(caps, key);
-
+void setOOBDsninfo(const char* key, const char* val) {
     if (dsn == NULL) {
         dsn = cJSON_CreateObject();
     }
-    cJSON *value = cJSON_CreateString(val);
-    if (strcmp(caps, "PWD")) {
-        if (!strcmp(caps, "SERVER")) {
-            setdeployment(val);
-        }
-        cJSON_AddItemToObject(dsn, key, value);
-    } else {
-        cJSON_AddItemToObject(dsn, key, cJSON_CreateString("***"));
+    cJSON* value = cJSON_CreateString(val);
+    if (strcasecmp(key, "server")) {
+        setdeployment(val);
     }
-    free(caps);
-    return;
-}
-
-void upper(char* caps, const char* word){
-    int i = 0;
-    while (word[i]) {
-        caps[i] = toupper(word[i]);
-        i++;
-    }
+    cJSON_AddItemToObject(dsn, key, value);
     return;
 }
 
 void setdeployment(const char *host)
 {
-  const char *tmp=NULL;
+  const char* tmp=NULL;
   if( !host || host[0] == 0) {
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Ignore");
     return;
@@ -461,7 +443,7 @@ void setdeployment(const char *host)
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "prod");
 }
 
-void setConnectionString(char const *connStr)
+void setConnectionString(char const* connStr)
 {
   if(connStr && connStr[0] != 0 )
   {
@@ -469,7 +451,7 @@ void setConnectionString(char const *connStr)
   }
 }
 
-char * getConnectionString(void)
+char* getConnectionString(void)
 {
   return connectionInfo.ctxStr;
 }
@@ -502,7 +484,7 @@ void getCabundle(char *cabundle, int maxlen)
   return;
 }
 
-void getuuid(char *guid)
+void getuuid(char* guid)
 {
 #ifdef _WIN32
   GUID out = {0} ;

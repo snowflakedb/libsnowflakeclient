@@ -51,11 +51,11 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-void setoobDsninfo(const char *key, const char *val);
+void setOOBDsninfo(const char* key, const char* val);
 
 extern char* getOOBDeployment();
 
-extern void getCabundle(char *cabundle, int maxlen);
+extern void getCabundle(char* cabundle, int maxlen);
 
 #ifdef __cplusplus
 }

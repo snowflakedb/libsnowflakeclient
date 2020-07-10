@@ -6,8 +6,12 @@
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include "utils/test_setup.h"
 #include "oobtelemetry.h"
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
 
 std::string getCABundleFile() {
     const char *cabundle_path = getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
@@ -171,10 +175,13 @@ void test_oob(void **) {
     }
 }
 
+// Tests DSN logging in OOB
 void test_dsn(void **) {
     int evnt = 0;
 
     std::string CABundlePath = getCABundleFile();
+
+    const std::vector<std::string> SF_SENSITIVE_KEYS = std::vector<std::string>{"UID", "PWD", "TOKEN", "PASSCODE", "PRIV_KEY_FILE_PWD"};
 
     SF_DSN dsnParameters[] = {
             {"SERVER", "snowflake.local.snowflakecomputing.com"},
@@ -192,7 +199,13 @@ void test_dsn(void **) {
     };
 
     for (evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_DSN); ++evnt) {
-        setoobDsninfo(dsnParameters[evnt].key, dsnParameters[evnt].val);
+        for (int i = 0; i < SF_SENSITIVE_KEYS.size(); ++i) {
+            if (!strcasecmp(dsnParameters[evnt].key, SF_SENSITIVE_KEYS[i].c_str())) {
+                setOOBDsninfo(dsnParameters[evnt].key, "***");
+                break;
+            }
+        }
+        setOOBDsninfo(dsnParameters[evnt].key, dsnParameters[evnt].val);
     }
 
     char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
@@ -218,7 +231,13 @@ void test_dsn(void **) {
         }
         idx += strlen("\"");
         int cmp = -1;
-        if (!strcmp(dsnParameters[evnt].key, "PWD")) {
+        bool isSensitive = false;
+        for (int i = 0; i < SF_SENSITIVE_KEYS.size(); ++i) {
+            if (!strcasecmp(dsnParameters[evnt].key, SF_SENSITIVE_KEYS[i].c_str())) {
+                isSensitive = true;
+            }
+        }
+        if (isSensitive) {
             cmp = payload.compare(idx, 3, "***");
         } else {
             cmp = payload.compare(idx, strlen(dsnParameters[evnt].val), dsnParameters[evnt].val);
