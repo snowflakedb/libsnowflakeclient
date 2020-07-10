@@ -413,7 +413,7 @@ void setoobConnectioninfo(const char* host,
 }
 
 void setoobDsninfo(const char *key, const char *val) {
-    char* caps = malloc(strlen(key));
+    char* caps = calloc(strlen(key), sizeof(char));
     upper(caps, key);
 
     if (dsn == NULL) {
@@ -421,6 +421,9 @@ void setoobDsninfo(const char *key, const char *val) {
     }
     cJSON *value = cJSON_CreateString(val);
     if (strcmp(caps, "PWD")) {
+        if (!strcmp(caps, "SERVER")) {
+            setdeployment(val);
+        }
         cJSON_AddItemToObject(dsn, key, value);
     } else {
         cJSON_AddItemToObject(dsn, key, cJSON_CreateString("***"));
