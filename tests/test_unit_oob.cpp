@@ -199,18 +199,18 @@ void test_dsn(void **) {
     };
 
     int count = sizeof(dsnParameters)/sizeof(SF_DSN);
-    struct dsnKeyValue* kvPairs = (struct dsnKeyValue*) malloc(sizeof(struct dsnKeyValue)*count);
+    struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
 
     for (int i = 0; i < count; ++i) {
-        kvPairs[i] = dsnKeyValue{dsnParameters[i].key, dsnParameters[i].val};
+        kvPairs[i] = KeyValuePair{dsnParameters[i].key, dsnParameters[i].val};
         for (int j = 0; j < SF_SENSITIVE_KEYS.size(); ++j) {
             if (!strcasecmp(dsnParameters[i].key, SF_SENSITIVE_KEYS[j].c_str())) {
-                kvPairs[i] = dsnKeyValue{dsnParameters[i].key, "***"};
+                kvPairs[i] = KeyValuePair{dsnParameters[i].key, "***"};
                 break;
             }
         }
     }
-    setOOBDsninfo(kvPairs, count);
+    setOOBDsnInfo(kvPairs, count);
 
     char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
     char url[1024] = {0};

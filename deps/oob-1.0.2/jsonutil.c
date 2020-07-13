@@ -410,11 +410,10 @@ void setoobConnectioninfo(const char* host,
     copyString("http", connectionInfo.protocol, 8);
 }
 
-void setOOBDsninfo(struct dsnKeyValue kvPair[], int num) {
+void setOOBDsnInfo(KeyValuePair kvPair[], int num) {
     dsn = cJSON_CreateObject();
-    cJSON* val;
     for (int i = 0; i < num; ++i) {
-        val = cJSON_CreateString(kvPair[i].val);
+        cJSON* val = cJSON_CreateString(kvPair[i].val);
         cJSON_AddItemToObject(dsn, kvPair[i].key, val);
         if (!strcasecmp(kvPair[i].key, "server")) {
             setdeployment(kvPair[i].val);

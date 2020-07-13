@@ -34,7 +34,7 @@ extern void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-extern void setOOBDsninfo(struct dsnKeyValue kvPair[], int num);
+extern void setOOBDsnInfo(KeyValuePair kvPair[], int num);
 
 #ifdef __cplusplus
 }
