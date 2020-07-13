@@ -6,8 +6,12 @@
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include "utils/test_setup.h"
 #include "oobtelemetry.h"
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
 
 std::string getCABundleFile() {
     const char *cabundle_path = getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
@@ -33,6 +37,11 @@ typedef struct {
     const char *deployment; // the deployment OOB was sent to
     const char *rc; // return code
 } SF_SETTINGS;
+
+typedef struct {
+    const char *key;
+    const char *val;
+} SF_DSN;
 
 void test_oob(void **) {
     int evnt = 0;
@@ -166,9 +175,89 @@ void test_oob(void **) {
     }
 }
 
+// Tests DSN logging in OOB
+void test_dsn(void **) {
+    int evnt = 0;
+
+    std::string CABundlePath = getCABundleFile();
+
+    const std::vector<std::string> SF_SENSITIVE_KEYS = std::vector<std::string>{"UID", "PWD", "TOKEN", "PASSCODE", "PRIV_KEY_FILE_PWD"};
+
+    SF_DSN dsnParameters[] = {
+            {"SERVER", "snowflake.local.snowflakecomputing.com"},
+            {"PORT", "443"},
+            {"ACCOUNT", "testaccount"},
+            {"Uid", "snowman"},
+            {"PWD", "dummy"},
+            {"Token", "TOKEN"},
+            {"Authenticator", "snowflake"},
+            {"DATABASE", "TestDB"},
+            {"SCHEMA", "TestSchema"},
+            {"WAREHOUSE", "Regress"},
+            {"ROLE", "AccountAdmin"},
+            {"SSL", "1"},
+    };
+
+    int count = sizeof(dsnParameters)/sizeof(SF_DSN);
+    struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
+
+    for (int i = 0; i < count; ++i) {
+        kvPairs[i] = KeyValuePair{dsnParameters[i].key, dsnParameters[i].val};
+        for (int j = 0; j < SF_SENSITIVE_KEYS.size(); ++j) {
+            if (!strcasecmp(dsnParameters[i].key, SF_SENSITIVE_KEYS[j].c_str())) {
+                kvPairs[i] = KeyValuePair{dsnParameters[i].key, "***"};
+                break;
+            }
+        }
+    }
+    setOOBDsnInfo(kvPairs, count);
+
+    char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
+    char url[1024] = {0};
+    sprintf(url, "%s:%s%s", dsnParameters[0].val, dsnParameters[1].val, connStr);
+    setConnectionString((char const *) url);
+
+    setOOBeventdata(OOBEVENTNAME, (const char*)"ConnectionDSNConfig", 0);
+    setOOBeventdata(ERRORCODE, NULL, 0);
+    setOOBeventdata(EXCPMSG, "", 0);
+    setOOBeventdata(REQUESTURL, url, 0);
+    setOOBeventdata(OOBSQLSTATE, (const char*)"", 0);
+    setOOBeventdata(OOBCABUNDLE, CABundlePath.c_str(), 0);
+    char *oobevent = prepareOOBevent(nullptr);
+
+    std::string payload = std::string(oobevent);
+    for (evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_DSN); ++evnt) {
+        int idx = payload.find(dsnParameters[evnt].key);
+        assert_int_not_equal(idx, std::string::npos);
+        idx += strlen(dsnParameters[evnt].key)+strlen("\":");
+        while (payload[idx] && payload[idx] != '\"') ++idx;
+        idx += strlen("\"");
+        int cmp = -1;
+        bool isSensitive = false;
+        for (int i = 0; i < SF_SENSITIVE_KEYS.size(); ++i) {
+            if (!strcasecmp(dsnParameters[evnt].key, SF_SENSITIVE_KEYS[i].c_str())) {
+                isSensitive = true;
+            }
+        }
+        if (isSensitive) {
+            cmp = payload.compare(idx, 3, "***");
+        } else {
+            cmp = payload.compare(idx, strlen(dsnParameters[evnt].val), dsnParameters[evnt].val);
+        }
+        assert_int_equal(cmp, 0);
+    }
+    free(kvPairs);
+    int rc = sendOOBevent(oobevent);
+    assert_true(oobevent);
+    free(oobevent);
+    oobevent = nullptr;
+    assert_int_equal(rc, 0);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_oob),
+            cmocka_unit_test(test_dsn),
     };
     return cmocka_run_group_tests(tests, nullptr, nullptr);
 }

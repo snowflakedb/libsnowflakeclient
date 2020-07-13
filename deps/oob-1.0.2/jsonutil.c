@@ -8,6 +8,7 @@
 #ifdef _WIN32
 #include <combaseapi.h>
 #include <objbase.h>
+#define strcasecmp _stricmp
 #else 
 #include "uuid.h"
 #endif
@@ -16,27 +17,28 @@
 #define TMP_BUF_LEN 40
 #endif
 
-//static struct conStr connectionInfo ;
 static struct conStr connectionInfo = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0} };
 
 static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
-void setdeployment(const char *host);
+cJSON* dsn = NULL;
 
-int sendOOBevent(char *event);
+void setdeployment(const char* host);
+
+int sendOOBevent(char* event);
 
 //connStr will be copied into another string
 void setConnectionString(char const* connStr);
 
-char * getConnectionString(void);
+char* getConnectionString(void);
 
-void gettime( char *buffer);
+void gettime(char* buffer);
 
-void getuuid(char *buffer);
+void getuuid(char* buffer);
 
 char* getConnectionInfo(enum OOBINFO id);
 
-void getCabundle(char *cabundle, int maxlen);
+void getCabundle(char* cabundle, int maxlen);
 
 static void freeAll(void);
 
@@ -45,7 +47,7 @@ char* getOOBDeployment()
     return connectionInfo.dep;
 }
 
-void maskSecrets(char *str)
+void maskSecrets(char* str)
 {
   //Look for Azure SAS key. 
   char *mask = strstr(str, "sig=");
@@ -55,18 +57,18 @@ void maskSecrets(char *str)
   return;
 }
 
-char *prepareOOBevent(oobOcspData *ocspevent)
+char* prepareOOBevent(oobOcspData* ocspevent)
 {
-  cJSON *root = NULL;
-  cJSON *list = NULL;
-  cJSON *tags = NULL;
-  cJSON *vals = NULL; 
-  cJSON *key  = NULL;
-  char *str = NULL;
+  cJSON* root = NULL;
+  cJSON* list = NULL;
+  cJSON* tags = NULL;
+  cJSON* vals = NULL;
+  cJSON* key = NULL;
+  char* str = NULL;
   char buffer[TMP_BUF_LEN]={0};
   char uuid[TMP_BUF_LEN]={0};
-  char *driver_name = NULL;
-  char *driver_version = NULL;
+  char* driver_name = NULL;
+  char* driver_version = NULL;
 
   root = cJSON_CreateArray();
 
@@ -217,6 +219,8 @@ char *prepareOOBevent(oobOcspData *ocspevent)
   vals = cJSON_CreateObject();
   cJSON_AddItemToObject(list, "Value", vals);
 
+  cJSON_AddItemToObject(vals, "DSN", dsn);
+
   if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
     key = cJSON_CreateString(ocspevent->sfc_peer_host);
     if( ! key ) goto end;
@@ -330,7 +334,7 @@ end:
 
 }
 
-void copyString(const char *src, char *dst, int dstlen)
+void copyString(const char* src, char* dst, int dstlen)
 {
   //Care has been taken that src always fits in dst.
   long long len = strlen(src);
@@ -340,7 +344,7 @@ void copyString(const char *src, char *dst, int dstlen)
   return;
 }
 
-void setOOBeventdata(enum OOBINFO id, const char *data, long num)
+void setOOBeventdata(enum OOBINFO id, const char* data, long num)
 {
   switch(id)
   {
@@ -404,12 +408,23 @@ void setoobConnectioninfo(const char* host,
     copyString("https", connectionInfo.protocol, 8);
   else
     copyString("http", connectionInfo.protocol, 8);
+}
 
+void setOOBDsnInfo(KeyValuePair kvPair[], int num) {
+    dsn = cJSON_CreateObject();
+    for (int i = 0; i < num; ++i) {
+        cJSON* val = cJSON_CreateString(kvPair[i].val);
+        cJSON_AddItemToObject(dsn, kvPair[i].key, val);
+        if (!strcasecmp(kvPair[i].key, "server")) {
+            setdeployment(kvPair[i].val);
+        }
+    }
+    return;
 }
 
 void setdeployment(const char *host)
 {
-  const char *tmp=NULL;
+  const char* tmp=NULL;
   if( !host || host[0] == 0) {
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Ignore");
     return;
@@ -427,7 +442,7 @@ void setdeployment(const char *host)
     sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "prod");
 }
 
-void setConnectionString(char const *connStr)
+void setConnectionString(char const* connStr)
 {
   if(connStr && connStr[0] != 0 )
   {
@@ -435,7 +450,7 @@ void setConnectionString(char const *connStr)
   }
 }
 
-char * getConnectionString(void)
+char* getConnectionString(void)
 {
   return connectionInfo.ctxStr;
 }
@@ -468,7 +483,7 @@ void getCabundle(char *cabundle, int maxlen)
   return;
 }
 
-void getuuid(char *guid)
+void getuuid(char* guid)
 {
 #ifdef _WIN32
   GUID out = {0} ;

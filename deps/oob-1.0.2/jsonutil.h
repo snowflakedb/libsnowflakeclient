@@ -36,6 +36,11 @@ struct logDetails{
   int urgent;
 };
 
+typedef struct KeyValuePair{
+  const char* key;
+  const char* val;
+} KeyValuePair;
+
 typedef struct ocsp_telemetry_data oobOcspData;
 
 void setoobConnectioninfo(const char* host,
@@ -51,9 +56,11 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
+void setOOBDsnInfo(KeyValuePair kvPair[], int num);
+
 extern char* getOOBDeployment();
 
-extern void getCabundle(char *cabundle, int maxlen);
+extern void getCabundle(char* cabundle, int maxlen);
 
 #ifdef __cplusplus
 }
