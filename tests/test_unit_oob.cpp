@@ -198,15 +198,19 @@ void test_dsn(void **) {
             {"SSL", "1"},
     };
 
-    for (evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_DSN); ++evnt) {
-        for (int i = 0; i < SF_SENSITIVE_KEYS.size(); ++i) {
-            if (!strcasecmp(dsnParameters[evnt].key, SF_SENSITIVE_KEYS[i].c_str())) {
-                setOOBDsninfo(dsnParameters[evnt].key, "***");
+    int count = sizeof(dsnParameters)/sizeof(SF_DSN);
+    struct dsnKeyValue* kvPairs = (struct dsnKeyValue*) malloc(sizeof(struct dsnKeyValue)*count);
+
+    for (int i = 0; i < count; ++i) {
+        kvPairs[i] = dsnKeyValue{dsnParameters[i].key, dsnParameters[i].val};
+        for (int j = 0; j < SF_SENSITIVE_KEYS.size(); ++j) {
+            if (!strcasecmp(dsnParameters[i].key, SF_SENSITIVE_KEYS[j].c_str())) {
+                kvPairs[i] = dsnKeyValue{dsnParameters[i].key, "***"};
                 break;
             }
         }
-        setOOBDsninfo(dsnParameters[evnt].key, dsnParameters[evnt].val);
     }
+    setOOBDsninfo(kvPairs, count);
 
     char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
     char url[1024] = {0};
@@ -226,9 +230,7 @@ void test_dsn(void **) {
         int idx = payload.find(dsnParameters[evnt].key);
         assert_int_not_equal(idx, std::string::npos);
         idx += strlen(dsnParameters[evnt].key)+strlen("\":");
-        while (payload[idx] && payload[idx] != '\"'){
-            ++idx;
-        }
+        while (payload[idx] && payload[idx] != '\"') ++idx;
         idx += strlen("\"");
         int cmp = -1;
         bool isSensitive = false;
@@ -244,6 +246,7 @@ void test_dsn(void **) {
         }
         assert_int_equal(cmp, 0);
     }
+    free(kvPairs);
     int rc = sendOOBevent(oobevent);
     assert_true(oobevent);
     free(oobevent);

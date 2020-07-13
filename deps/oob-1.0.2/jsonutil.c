@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -411,15 +410,16 @@ void setoobConnectioninfo(const char* host,
     copyString("http", connectionInfo.protocol, 8);
 }
 
-void setOOBDsninfo(const char* key, const char* val) {
-    if (dsn == NULL) {
-        dsn = cJSON_CreateObject();
+void setOOBDsninfo(struct dsnKeyValue kvPair[], int num) {
+    dsn = cJSON_CreateObject();
+    cJSON* val;
+    for (int i = 0; i < num; ++i) {
+        val = cJSON_CreateString(kvPair[i].val);
+        cJSON_AddItemToObject(dsn, kvPair[i].key, val);
+        if (!strcasecmp(kvPair[i].key, "server")) {
+            setdeployment(kvPair[i].val);
+        }
     }
-    cJSON* value = cJSON_CreateString(val);
-    if (strcasecmp(key, "server")) {
-        setdeployment(val);
-    }
-    cJSON_AddItemToObject(dsn, key, value);
     return;
 }
 

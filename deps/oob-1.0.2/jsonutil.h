@@ -36,6 +36,11 @@ struct logDetails{
   int urgent;
 };
 
+typedef struct dsnKeyValue{
+  const char* key;
+  const char* val;
+} dsnKeyValue;
+
 typedef struct ocsp_telemetry_data oobOcspData;
 
 void setoobConnectioninfo(const char* host,
@@ -51,7 +56,7 @@ void setoobConnectioninfo(const char* host,
     short ssl
     );
 
-void setOOBDsninfo(const char* key, const char* val);
+void setOOBDsninfo(struct dsnKeyValue kvPair[], int num);
 
 extern char* getOOBDeployment();
 
