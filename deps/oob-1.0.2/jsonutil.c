@@ -23,6 +23,9 @@ static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
 cJSON* dsn = NULL;
 
+// stores simba.snowflake.ini key value pairs
+cJSON* simba = NULL;
+
 void setdeployment(const char* host);
 
 int sendOOBevent(char* event);
@@ -220,6 +223,7 @@ char* prepareOOBevent(oobOcspData* ocspevent)
   cJSON_AddItemToObject(list, "Value", vals);
 
   cJSON_AddItemToObject(vals, "DSN", dsn);
+  cJSON_AddItemToObject(vals, "Simba", simba);
 
   if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
     key = cJSON_CreateString(ocspevent->sfc_peer_host);
@@ -422,6 +426,15 @@ void setOOBDsnInfo(KeyValuePair kvPair[], int num) {
     return;
 }
 
+void setOOBSimbaInfo(KeyValuePair kvPair[], int num) {
+    simba = cJSON_CreateObject();
+    for (int i = 0; i < num; ++i) {
+        cJSON* val = cJSON_CreateString(kvPair[i].val);
+        cJSON_AddItemToObject(simba, kvPair[i].key, val);
+    }
+    return;
+}
+
 void setdeployment(const char *host)
 {
   const char* tmp=NULL;
@@ -510,4 +523,6 @@ static void freeAll(void)
   memset(connectionInfo.sqlstate,0, 64);
   oobevent.errorCode = 0;
   oobevent.urgent = 0;
+  dsn = NULL;
+  simba = NULL;
 }

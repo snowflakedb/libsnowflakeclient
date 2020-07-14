@@ -58,6 +58,8 @@ void setoobConnectioninfo(const char* host,
 
 void setOOBDsnInfo(KeyValuePair kvPair[], int num);
 
+void setOOBSimbaInfo(KeyValuePair kvPair[], int num);
+
 extern char* getOOBDeployment();
 
 extern void getCabundle(char* cabundle, int maxlen);
