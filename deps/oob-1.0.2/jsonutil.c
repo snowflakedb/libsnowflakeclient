@@ -522,4 +522,6 @@ static void freeAll(void)
   memset(connectionInfo.sqlstate,0, 64);
   oobevent.errorCode = 0;
   oobevent.urgent = 0;
+  dsn = NULL;
+  simba = NULL;
 }

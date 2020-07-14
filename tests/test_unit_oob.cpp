@@ -274,8 +274,7 @@ void test_simba(void **) {
         kvPairs[i] = KeyValuePair{simbaParameters[i].key, simbaParameters[i].val};
     }
     setOOBSimbaInfo(kvPairs, count);
-    KeyValuePair dsnInfo[] = {{"server", "snowflake.local.snowflakecomputing.com"}};
-    setOOBDsnInfo(dsnInfo, 1);
+    setoobConnectioninfo("snowflake.local.snowflakecomputing.com","","","","","","","","","",0);
 
     char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
     char url[1024] = {0};
