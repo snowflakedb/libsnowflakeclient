@@ -36,6 +36,8 @@ extern void setoobConnectioninfo(const char* host,
 
 extern void setOOBDsnInfo(KeyValuePair kvPair[], int num);
 
+extern void setOOBSimbaInfo(KeyValuePair kvPair[], int num);
+
 #ifdef __cplusplus
 }
 #endif

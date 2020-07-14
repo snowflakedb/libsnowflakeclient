@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     const char *key;
     const char *val;
-} SF_DSN;
+} SF_KEY_VAL;
 
 void test_oob(void **) {
     int evnt = 0;
@@ -177,13 +177,11 @@ void test_oob(void **) {
 
 // Tests DSN logging in OOB
 void test_dsn(void **) {
-    int evnt = 0;
-
     std::string CABundlePath = getCABundleFile();
 
     const std::vector<std::string> SF_SENSITIVE_KEYS = std::vector<std::string>{"UID", "PWD", "TOKEN", "PASSCODE", "PRIV_KEY_FILE_PWD"};
 
-    SF_DSN dsnParameters[] = {
+    SF_KEY_VAL dsnParameters[] = {
             {"SERVER", "snowflake.local.snowflakecomputing.com"},
             {"PORT", "443"},
             {"ACCOUNT", "testaccount"},
@@ -198,7 +196,7 @@ void test_dsn(void **) {
             {"SSL", "1"},
     };
 
-    int count = sizeof(dsnParameters)/sizeof(SF_DSN);
+    int count = sizeof(dsnParameters)/sizeof(SF_KEY_VAL);
     struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
 
     for (int i = 0; i < count; ++i) {
@@ -226,7 +224,7 @@ void test_dsn(void **) {
     char *oobevent = prepareOOBevent(nullptr);
 
     std::string payload = std::string(oobevent);
-    for (evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_DSN); ++evnt) {
+    for (int evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_KEY_VAL); ++evnt) {
         int idx = payload.find(dsnParameters[evnt].key);
         assert_int_not_equal(idx, std::string::npos);
         idx += strlen(dsnParameters[evnt].key)+strlen("\":");
@@ -254,10 +252,67 @@ void test_dsn(void **) {
     assert_int_equal(rc, 0);
 }
 
+void test_simba(void **) {
+    std::string CABundlePath = getCABundleFile();
+
+    SF_KEY_VAL simbaParameters[] = {
+            {"DriverManagerEncoding","UTF-16"},
+            {"DriverLocale", "en-US"},
+            {"ErrorMessagesPath", "/home/debugger/snowflake-odbc/ErrorMessages"},
+            {"LogNamespace", ""},
+            {"LogPath", "/tmp"},
+            {"ODBCInstLib", "libodbcinst.so"},
+            {"CURLVerboseMode", "true"},
+            {"LogLevel", "6"},
+            {"CABundleFile", "/home/debugger/snowflake-odbc/Dependencies/CABundle/cacert.pem"},
+    };
+
+    int count = sizeof(simbaParameters)/sizeof(SF_KEY_VAL);
+    struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
+
+    for (int i = 0; i < count; ++i) {
+        kvPairs[i] = KeyValuePair{simbaParameters[i].key, simbaParameters[i].val};
+    }
+    setOOBSimbaInfo(kvPairs, count);
+    KeyValuePair dsnInfo[] = {{"server", "snowflake.local.snowflakecomputing.com"}};
+    setOOBDsnInfo(dsnInfo, 1);
+
+    char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
+    char url[1024] = {0};
+    sprintf(url, "snowflake.local.snowflakecomputing.com:443:%s", connStr);
+    setConnectionString((char const *) url);
+
+    setOOBeventdata(OOBEVENTNAME, (const char*)"SimbaIniConfig", 0);
+    setOOBeventdata(ERRORCODE, NULL, 0);
+    setOOBeventdata(EXCPMSG, "", 0);
+    setOOBeventdata(REQUESTURL, url, 0);
+    setOOBeventdata(OOBSQLSTATE, (const char*)"", 0);
+    setOOBeventdata(OOBCABUNDLE, CABundlePath.c_str(), 0);
+    char *oobevent = prepareOOBevent(nullptr);
+
+    std::string payload = std::string(oobevent);
+    for (int i = 0; i < sizeof(simbaParameters)/sizeof(SF_KEY_VAL); ++i) {
+        int idx = payload.find(simbaParameters[i].key);
+        assert_int_not_equal(idx, std::string::npos);
+        idx += strlen(simbaParameters[i].key)+strlen("\":");
+        while (payload[idx] && payload[idx] != '\"') ++idx;
+        idx += strlen("\"");
+        int cmp = payload.compare(idx, strlen(simbaParameters[i].val), simbaParameters[i].val);
+        assert_int_equal(cmp, 0);
+    }
+    free(kvPairs);
+    int rc = sendOOBevent(oobevent);
+    assert_true(oobevent);
+    free(oobevent);
+    oobevent = nullptr;
+    assert_int_equal(rc, 0);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_oob),
             cmocka_unit_test(test_dsn),
+            cmocka_unit_test(test_simba),
     };
     return cmocka_run_group_tests(tests, nullptr, nullptr);
 }
