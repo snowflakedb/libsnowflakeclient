@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     const char *key;
     const char *val;
-} SF_KEY_VAL;
+} SF_PAIR;
 
 void test_oob(void **) {
     int evnt = 0;
@@ -181,7 +181,7 @@ void test_dsn(void **) {
 
     const std::vector<std::string> SF_SENSITIVE_KEYS = std::vector<std::string>{"UID", "PWD", "TOKEN", "PASSCODE", "PRIV_KEY_FILE_PWD"};
 
-    SF_KEY_VAL dsnParameters[] = {
+    SF_PAIR dsnParameters[] = {
             {"SERVER", "snowflake.local.snowflakecomputing.com"},
             {"PORT", "443"},
             {"ACCOUNT", "testaccount"},
@@ -196,7 +196,7 @@ void test_dsn(void **) {
             {"SSL", "1"},
     };
 
-    int count = sizeof(dsnParameters)/sizeof(SF_KEY_VAL);
+    int count = sizeof(dsnParameters)/sizeof(SF_PAIR);
     struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
 
     for (int i = 0; i < count; ++i) {
@@ -224,7 +224,7 @@ void test_dsn(void **) {
     char *oobevent = prepareOOBevent(nullptr);
 
     std::string payload = std::string(oobevent);
-    for (int evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_KEY_VAL); ++evnt) {
+    for (int evnt = 0; evnt < sizeof(dsnParameters)/sizeof(SF_PAIR); ++evnt) {
         int idx = payload.find(dsnParameters[evnt].key);
         assert_int_not_equal(idx, std::string::npos);
         idx += strlen(dsnParameters[evnt].key)+strlen("\":");
@@ -255,7 +255,7 @@ void test_dsn(void **) {
 void test_simba(void **) {
     std::string CABundlePath = getCABundleFile();
 
-    SF_KEY_VAL simbaParameters[] = {
+    SF_PAIR simbaParameters[] = {
             {"DriverManagerEncoding","UTF-16"},
             {"DriverLocale", "en-US"},
             {"ErrorMessagesPath", "/home/debugger/snowflake-odbc/ErrorMessages"},
@@ -267,7 +267,7 @@ void test_simba(void **) {
             {"CABundleFile", "/home/debugger/snowflake-odbc/Dependencies/CABundle/cacert.pem"},
     };
 
-    int count = sizeof(simbaParameters)/sizeof(SF_KEY_VAL);
+    int count = sizeof(simbaParameters)/sizeof(SF_PAIR);
     struct KeyValuePair* kvPairs = (struct KeyValuePair*) malloc(sizeof(struct KeyValuePair)*count);
 
     for (int i = 0; i < count; ++i) {
@@ -290,7 +290,7 @@ void test_simba(void **) {
     char *oobevent = prepareOOBevent(nullptr);
 
     std::string payload = std::string(oobevent);
-    for (int i = 0; i < sizeof(simbaParameters)/sizeof(SF_KEY_VAL); ++i) {
+    for (int i = 0; i < sizeof(simbaParameters)/sizeof(SF_PAIR); ++i) {
         int idx = payload.find(simbaParameters[i].key);
         assert_int_not_equal(idx, std::string::npos);
         idx += strlen(simbaParameters[i].key)+strlen("\":");

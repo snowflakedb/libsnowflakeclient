@@ -23,6 +23,7 @@ static struct logDetails oobevent = {{0}, {0}, {0}, {0}, 0, 0};
 
 cJSON* dsn = NULL;
 
+// stores simba.snowflake.ini key value pairs
 cJSON* simba = NULL;
 
 void setdeployment(const char* host);

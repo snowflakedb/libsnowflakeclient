@@ -36,6 +36,7 @@ extern void setoobConnectioninfo(const char* host,
 
 extern void setOOBDsnInfo(KeyValuePair kvPair[], int num);
 
+// setOOBSimbaInfo takes in an array of key value pairs containing the simba.snowflake.ini and adds it to OOB telemetry
 extern void setOOBSimbaInfo(KeyValuePair kvPair[], int num);
 
 #ifdef __cplusplus
