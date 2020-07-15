@@ -11,7 +11,7 @@ function usage() {
 }
 set -o pipefail
 
-OOB_VERSION=1.0.2
+OOB_VERSION=1.0.3
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
