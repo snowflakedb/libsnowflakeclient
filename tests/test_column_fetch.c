@@ -743,7 +743,7 @@ void test_column_as_timestamp(void **unused) {
             assert_int_equal(52, snowflake_timestamp_get_seconds(&out[i]));
             assert_int_equal(968746000, snowflake_timestamp_get_nanoseconds(&out[i]));
             assert_int_equal(9, snowflake_timestamp_get_scale(&out[i]));
-            int32 epoch_time = 0;
+            time_t epoch_time = 0;
             snowflake_timestamp_get_epoch_seconds(&out[i], &epoch_time);
             assert_int_equal(1527864052, epoch_time);
         }
@@ -759,7 +759,7 @@ void test_column_as_timestamp(void **unused) {
         assert_int_equal(0, snowflake_timestamp_get_minutes(&out[3]));
         assert_int_equal(0, snowflake_timestamp_get_seconds(&out[3]));
         assert_int_equal(0, snowflake_timestamp_get_nanoseconds(&out[3]));
-        int32 epoch_time = 0;
+        time_t epoch_time = 0;
         snowflake_timestamp_get_epoch_seconds(&out[3], &epoch_time);
         assert_int_equal(0, epoch_time);
 
@@ -865,7 +865,7 @@ void test_column_as_timestamp_windows(void **unused) {
         assert_int_equal(0, snowflake_timestamp_get_minutes(&out[0]));
         assert_int_equal(0, snowflake_timestamp_get_seconds(&out[0]));
         assert_int_equal(0, snowflake_timestamp_get_nanoseconds(&out[0]));
-        int32 epoch_time = 0;
+        time_t epoch_time = 0;
         snowflake_timestamp_get_epoch_seconds(&out[0], &epoch_time);
         assert_int_equal(0, epoch_time);
 

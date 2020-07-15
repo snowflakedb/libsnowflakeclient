@@ -590,8 +590,7 @@ char * STDCALL encode_url(CURL *curl,
 
 
     encoded_url_size += extraUrlParams ?
-                        num_args > 0 ? strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : strlen(extraUrlParams)
-                                       : 0;
+                        strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : 0;
 
     encoded_url = (char *) SF_CALLOC(1, encoded_url_size);
     if (!encoded_url) {
@@ -621,11 +620,8 @@ char * STDCALL encode_url(CURL *curl,
     // sure extraUrlParams is correct)
     if (extraUrlParams && !is_string_empty(extraUrlParams))
     {
-        if (num_args)
-        {
-            sb_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
-        }
-        sb_strncat(encoded_url, encoded_url_size, extraUrlParams, strlen(extraUrlParams));
+      strncat(encoded_url, URL_PARAM_DELIM, 1);
+      strncat(encoded_url, extraUrlParams, strlen(extraUrlParams));
     }
 
     log_debug("URL: %s", encoded_url);
