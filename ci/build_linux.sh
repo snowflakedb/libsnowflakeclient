@@ -31,6 +31,7 @@ docker run \
         -e GIT_BRANCH \
         -e GIT_COMMIT \
         -e BUILD_TYPE \
+        -e BUILD_CLEAN \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
         -e GITHUB_ACTIONS \
