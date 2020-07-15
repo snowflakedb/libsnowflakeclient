@@ -72,9 +72,12 @@ goto :EOF
         echo === download or build: %component_name% ===
         call %utils_script% :check_directory %component_name%
         if !ERRORLEVEL! EQU 0 (
-            echo Skip download or build.
-            exit /b 0
+            if "%build_clean%"=="false" (
+                echo Skip download or build.
+                exit /b 0
+            )
         )
+        rd /s /q deps-build\%arcdir%\%vsdir%\%build_type%\%component_name%
         cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
         if !ERRORLEVEL! NEQ 0 (
             call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%

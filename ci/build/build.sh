@@ -10,7 +10,6 @@ SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
-
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 source $SCRIPTS_DIR/utils.sh
 init_git_variables
@@ -28,9 +27,10 @@ function download_build_component()
     else
         echo "=== download or build $component_name ==="
         ret="$(check_directory $component_name $build_type)"
-        if [[ "$(check_directory $component_name $build_type)" == "EXIST" ]]; then
+        if [[ "$ret" == "EXIST" ]] && [[ "$BUILD_CLEAN" == "false" ]]; then
             echo "Skip download or build."
         else
+            rm -rf $DEPENDENCY_DIR/$component_name
             if ! aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/$component_name/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
@@ -42,7 +42,6 @@ function download_build_component()
                 fi
             else
                 echo "=== download and extract: $component_name"
-                rm -rf $DEPENDENCY_DIR/$component_name
                 pushd $DEPENDENCY_DIR >& /dev/null
                     tar xvfz $ARTIFACTS_DIR/$zip_file_name
                 popd >& /dev/null
