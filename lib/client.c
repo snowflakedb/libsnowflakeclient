@@ -3047,7 +3047,6 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts,
 
     ts->tm_obj.tm_isdst = -1;
     epoch_time_local = (time_t) mktime(&ts->tm_obj);
-
     // mktime takes into account tm_gmtoff which is a Linux and OS X ONLY field
 #if defined(__linux__) || defined(__APPLE__)
     epoch_time_local += ts->tm_obj.tm_gmtoff;
