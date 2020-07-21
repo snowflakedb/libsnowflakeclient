@@ -274,7 +274,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     // Do not use thread pool when parallel = 1
     if ((unsigned int)response.parallel <= 1)
     {
-      CXX_LOG_DEBUG("%d. Sequential upload file %s start", i, metadata->srcFileName.c_str());
+      CXX_LOG_DEBUG("Sequential upload %d th file %s start", i, metadata->srcFileName.c_str());
       do
       {
         RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
@@ -294,7 +294,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           break;
         }
       } while (true);
-      CXX_LOG_DEBUG("%d. Sequential upload file %s End.",i, metadata->srcFileName.c_str());
+      CXX_LOG_DEBUG("Sequential upload %d th file %s Done.",i, metadata->srcFileName.c_str());
 
       continue;
     }
@@ -325,12 +325,13 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             break;
           }
         } while (true);
-        CXX_LOG_DEBUG("Putget Parallel upload %s thread exit.", metadata->srcFileName.c_str());
+        CXX_LOG_DEBUG("Putget Parallel upload %s Done.", metadata->srcFileName.c_str());
     });
   }
 
   // wait till all jobs have been finished
   tp.WaitAll();
+  CXX_LOG_DEBUG("End of uploadFilesInParallel, All threads exited.");
   if(!failedTransfers.empty())
   {
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
@@ -382,8 +383,10 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
   }
 
+  CXX_LOG_DEBUG("Starting file digest");
   // calculate digest
   updateFileDigest(fileMetadata);
+  CXX_LOG_DEBUG("End file digest");
 
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
 
@@ -408,12 +411,13 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     }
     srcFileStream = &fs;
   }
-
+  CXX_LOG_DEBUG("open file encryption stream");
   Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
     Crypto::CryptoOperation::ENCRYPT,
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.iv,
     FILE_ENCRYPTION_BLOCK_SIZE);
+  CXX_LOG_DEBUG("file encryption stream opened.");
 
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
   // upload stream
