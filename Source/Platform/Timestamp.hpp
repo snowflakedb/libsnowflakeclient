@@ -78,6 +78,11 @@ public:
     return m_fractionalSeconds;
   }
 
+  inline sb4 getNanoFractionalSeconds() const
+  {
+    return m_fractionalSeconds * power10_ub4[9 - m_fractionalScale];
+  }
+
   inline void setFractionalSeconds(sb4 fractionalSeconds)
   {
     this->m_fractionalSeconds = fractionalSeconds;
