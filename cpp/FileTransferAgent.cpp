@@ -19,6 +19,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
+#include <chrono>
 
 using ::std::string;
 using ::std::vector;
@@ -118,10 +119,14 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   switch (response.command)
   {
-    case CommandType::UPLOAD:
+    case CommandType::UPLOAD: {
+      auto putStart = std::chrono::steady_clock::now();
       upload(command);
+      auto putEnd = std::chrono::steady_clock::now();
+      auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
+      CXX_LOG_DEBUG("Time took for %s: %ld milli seconds.", command->c_str(), totalTime);
       break;
-
+    }
     case CommandType::DOWNLOAD:
       download(command);
       break;
@@ -269,6 +274,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     // Do not use thread pool when parallel = 1
     if ((unsigned int)response.parallel <= 1)
     {
+      CXX_LOG_DEBUG("%d. Sequential upload file %s start", i, metadata->srcFileName.c_str());
       do
       {
         RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
@@ -281,9 +287,14 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         }
         else
         {
+          if (outcome == RemoteStorageRequestOutcome::FAILED) {
+            CXX_LOG_DEBUG("upload file %s Failed.", metadata->srcFileName.c_str());
+            failedTransfers.append(metadata->srcFileName) + ", ";
+          }
           break;
         }
       } while (true);
+      CXX_LOG_DEBUG("%d. Sequential upload file %s End.",i, metadata->srcFileName.c_str());
 
       continue;
     }
@@ -314,6 +325,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             break;
           }
         } while (true);
+        CXX_LOG_DEBUG("Putget Parallel upload %s thread exit.", metadata->srcFileName.c_str());
     });
   }
 
