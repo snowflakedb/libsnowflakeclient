@@ -372,6 +372,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   size_t resultIndex)
 {
   // compress if required
+  CXX_LOG_DEBUG("Entrance uploadSingleFile");
   if (fileMetadata->requireCompress)
   {
     fileMetadata->recordPutGetTimestamp(FileMetadata::COMP_START);
@@ -389,6 +390,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   CXX_LOG_DEBUG("End file digest");
 
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
+  CXX_LOG_DEBUG("Encryption metadata init done");
 
   std::basic_iostream<char> *srcFileStream;
   ::std::fstream fs;
@@ -417,13 +419,14 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.iv,
     FILE_ENCRYPTION_BLOCK_SIZE);
-  CXX_LOG_DEBUG("file encryption stream opened.");
+  CXX_LOG_DEBUG("file encryption stream opened And starting to upload.");
 
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
   // upload stream
   RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
                                                        &inputEncryptStream);
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+  CXX_LOG_DEBUG("File upload done.");
   if (fs.is_open())
   {
     fs.close();
@@ -432,6 +435,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
   fileMetadata->printPutGetTimestamp();
+  CXX_LOG_DEBUG("Exit UploadSingleFile");
   return outcome;
 }
 
@@ -453,7 +457,7 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
       ::std::ios_base::in | ::std::ios_base::binary);
     srcFileStream = &fs;
   }
-
+  CXX_LOG_DEBUG("hashContext Get");
   Crypto::HashContext hashContext(Crypto::Cryptor::getInstance()
                                     .createHashContext(
                                       Crypto::CryptoHashFunc::SHA256));
@@ -461,15 +465,15 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   const size_t digestSize = Crypto::cryptoHashDigestSize(
     Crypto::CryptoHashFunc::SHA256);
   char digest[digestSize];
-
+  CXX_LOG_DEBUG("hashContext init");
   hashContext.initialize();
-
+  CXX_LOG_DEBUG("Read sourceFileBuffer 1024 bytes");
   char sourceFileBuffer[CHUNK_SIZE];
   while (srcFileStream->read(sourceFileBuffer, CHUNK_SIZE))
   {
     hashContext.next(sourceFileBuffer, CHUNK_SIZE);
   }
-
+  CXX_LOG_DEBUG("Read into sourceFileBuffer and has calculated");
   if (fs.is_open())
   {
     fs.close();
@@ -485,9 +489,11 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 
   const size_t digestEncodeSize = Util::Base64::encodedLength(digestSize);
   char digestEncode[digestEncodeSize];
+  CXX_LOG_DEBUG("base64 encode file digest");
   Util::Base64::encode(digest, digestSize, digestEncode);
 
   fileMetadata->sha256Digest = string(digestEncode, digestEncodeSize);
+  CXX_LOG_DEBUG("End file update digest.");
 }
 
 void Snowflake::Client::FileTransferAgent::compressSourceFile(

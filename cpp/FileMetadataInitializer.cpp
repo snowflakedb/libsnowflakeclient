@@ -240,8 +240,10 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
 
   FileMetadata fileMetadata;
   fileMetadata.presignedUrl = presignedUrl;
+  CXX_LOG_DEBUG("populateSrcLocDownloadMetadata Get remote file metadata");
   RemoteStorageRequestOutcome outcome = storageClient->GetRemoteFileMetadata(
     &fullPath, &fileMetadata);
+  CXX_LOG_DEBUG("populateSrcLocDownloadMetadata End remote file metadata");
 
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
