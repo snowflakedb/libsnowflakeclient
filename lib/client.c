@@ -2544,7 +2544,6 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
                                                       column->valuestring,
                                                       sfstmt->connection->timezone,
                                                       (int32) sfstmt->desc[idx - 1].scale,
-                                                      (int32) sfstmt->desc[idx - 1].precision,
                                                       db_type);
     } else {
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
@@ -2683,7 +2682,6 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
                                                         column->valuestring,
                                                         sfstmt->connection->timezone,
                                                         (int32) sfstmt->desc[idx - 1].scale,
-                                                        (int32) sfstmt->desc[idx - 1].precision,
                                                         sfstmt->desc[idx - 1].type)) {
                 SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
                                          SF_STATUS_ERROR_CONVERSION_FAILURE,
@@ -2862,7 +2860,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanosec
 }
 
 SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
-                                                         int32 scale, int32 precision, SF_DB_TYPE ts_type) {
+                                                         int32 scale, SF_DB_TYPE ts_type) {
     if (!ts) {
         return SF_STATUS_ERROR_NULL_POINTER;
     }
@@ -2883,7 +2881,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
 
     /* Search for a decimal point if precision > 0
      * When precision == 0, str will look like e.g. "1593586800 2040"*/
-    const char *ptr = precision > 0 ? strchr(str, (int) '.') : str;
+    const char *ptr = scale > 0 ? strchr(str, (int) '.') : str;
     // No decimal point exists for date types
     if (ptr == NULL && ts->ts_type != SF_DB_TYPE_DATE) {
         ret = SF_STATUS_ERROR_GENERAL;
@@ -2895,14 +2893,13 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
     if (ts->ts_type == SF_DB_TYPE_DATE) {
         sec = sec * SECONDS_IN_AN_HOUR;
     } else {
-        if (precision > 0) {
+        if (scale > 0) {
           nsec = strtoll(ptr + 1, NULL, 10);
         }
         /* Search for a space for TIMESTAMP_TZ */
         char *sptr = strchr(ptr + 1, (int) ' ');
         if (sptr != NULL) {
             /* TIMESTAMP_TZ */
-            nsec = strtoll(ptr + 1, NULL, 10);
             tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
         }
     }
