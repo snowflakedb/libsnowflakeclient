@@ -907,7 +907,6 @@ SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanosec
  * @param str
  * @param timezone
  * @param scale
- * @param precision
  * @param ts_type
  * @return
  */

@@ -2879,8 +2879,8 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
     ts->ts_type = ts_type;
     ts->tzoffset = 0;
 
-    /* Search for a decimal point if precision > 0
-     * When precision == 0, str will look like e.g. "1593586800 2040"*/
+    /* Search for a decimal point if scale > 0
+     * When scale == 0, str will look like e.g. "1593586800 2040"*/
     const char *ptr = scale > 0 ? strchr(str, (int) '.') : str;
     // No decimal point exists for date types
     if (ptr == NULL && ts->ts_type != SF_DB_TYPE_DATE) {
