@@ -933,7 +933,7 @@ SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fm
  * @param epoch_time Pointer to store the number of seconds since the epoch
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, int32 *epoch_time);
+SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, time_t *epoch_time);
 
 /**
  * Extracts the part of the timestamp that contains the number of nanoseconds
