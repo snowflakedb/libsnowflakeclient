@@ -277,7 +277,14 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                header->use_application_json_accept_type ?
                                HEADER_ACCEPT_TYPE_APPLICATION_JSON :
                                HEADER_ACCEPT_TYPE_APPLICATION_SNOWFLAKE);
-    header->header = curl_slist_append(header->header, SF_HEADER_USER_AGENT);
+
+    if (SF_HEADER_USER_AGENT != NULL){
+      header->header = curl_slist_append(header->header, SF_HEADER_USER_AGENT);
+    }
+    else
+    {
+      log_trace("SF_HEADER_USER_AGENT is null");
+    }
 
     log_trace("Created header");
 
@@ -590,8 +597,7 @@ char * STDCALL encode_url(CURL *curl,
 
 
     encoded_url_size += extraUrlParams ?
-                        num_args > 0 ? strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : strlen(extraUrlParams)
-                                       : 0;
+                        strlen(extraUrlParams) + strlen(URL_PARAM_DELIM) : 0;
 
     encoded_url = (char *) SF_CALLOC(1, encoded_url_size);
     if (!encoded_url) {
@@ -621,11 +627,8 @@ char * STDCALL encode_url(CURL *curl,
     // sure extraUrlParams is correct)
     if (extraUrlParams && !is_string_empty(extraUrlParams))
     {
-        if (num_args)
-        {
-            sb_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
-        }
-        sb_strncat(encoded_url, encoded_url_size, extraUrlParams, strlen(extraUrlParams));
+      strncat(encoded_url, URL_PARAM_DELIM, 1);
+      strncat(encoded_url, extraUrlParams, strlen(extraUrlParams));
     }
 
     log_debug("URL: %s", encoded_url);
