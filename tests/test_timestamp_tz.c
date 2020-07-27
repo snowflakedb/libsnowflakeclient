@@ -16,31 +16,51 @@ typedef struct test_case_to_string {
 
 #define USER_TZ "America/New_York"
 
-void test_timestamp_tz(void **unused) {
-    TEST_CASE_TO_STRING test_cases[] = {
+void test_timestamp_tz_helper(sf_bool useZeroPrecision){
+  TEST_CASE_TO_STRING test_cases[] = {
 #ifndef _WIN32
-      {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 +09:00", .c2out = "2014-05-03 13:56:46.12300 +09:00"},
-      {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123 -01:00", .c2out = "1969-11-21 05:17:23.01230 -01:00"},
-      {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00.00000 -05:00"},
-      // timestamp before 1600 doesn't work properly.
-      {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:02.00000 -04:56"},
+          {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 +09:00", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "2014-05-03 13:56:46 +09:00" : "2014-05-03 13:56:46.12300 +09:00"},
+          {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123 -01:00", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "1969-11-21 05:17:23 -01:00" : "1969-11-21 05:17:23.01230 -01:00"},
+          {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "1960-01-01 00:00:00 -05:00" : "1960-01-01 00:00:00.00000 -05:00"},
+          // timestamp before 1600 doesn't work properly.
+          {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "1500-01-01 00:00:02 -04:56" : "1500-01-01 00:00:02.00000 -04:56"},
 #ifdef __APPLE__
-      {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:02.00000 -04:56"},
+          {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE ?
+          "0001-01-01 00:00:02 -04:56" : "0001-01-01 00:00:02.00000 -04:56"},
 #else
-      {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:02.00000 -04:56"},
+          {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE ? "1-01-01 00:00:02 -04:56"
+                                              : "1-01-01 00:00:02.00000 -04:56"},
 #endif // __APPLE__
-      {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000 -05:00"},
-      {.c1in = 7, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
-      {.c1in = 8, .c2in = NULL, .c2out = NULL},
-      {.c1in = 9, .c2in = "2030-07-16 09:01:12.0987 +04:30", .c2out = "2030-07-16 09:01:12.09870 +04:30"},
-      {.c1in = 10, .c2in = "1804-10-23 13:08:48.8765 +04:30", .c2out = "1804-10-23 13:08:48.87650 +04:30"},
-      {.c1in = 11, .c2in = "1969-11-21 08:19:34.123 -02:30", .c2out = "1969-11-21 08:19:34.12300 -02:30"},
+          {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "9999-01-01 00:00:00 -05:00" : "9999-01-01 00:00:00.00000 -05:00"},
+          {.c1in = 7, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
+          {.c1in = 8, .c2in = NULL, .c2out = NULL},
+          {.c1in = 9, .c2in = "2030-07-16 09:01:12.0987 +04:30", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "2030-07-16 09:01:12 +04:30" : "2030-07-16 09:01:12.09870 +04:30"},
+          {.c1in = 10, .c2in = "1804-10-23 13:08:48.8765 +04:30", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "1804-10-23 13:08:48 +04:30" : "1804-10-23 13:08:48.87650 +04:30"},
+          {.c1in = 11, .c2in = "1969-11-21 08:19:34.123 -02:30", .c2out =
+          useZeroPrecision == SF_BOOLEAN_TRUE
+          ? "1969-11-21 08:19:34 -02:30" : "1969-11-21 08:19:34.12300 -02:30"},
 #endif // _WIN32
-      {.c1in = 12, .c2in = NULL, .c2out = NULL},
-      /*
-      {.c1in = 11, .c2in = "9999-12-31 23:59:59.9999", .c2out = "9999-12-31 23:59:59.99990 -05:00"},
-       */
-    };
+          {.c1in = 12, .c2in = NULL, .c2out = NULL},
+          /*
+          {.c1in = 11, .c2in = "9999-12-31 23:59:59.9999", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE ? "9999-12-31 23:59:59.99990 -05:00"},
+           */
+  };
     SF_CONNECT *sf = setup_snowflake_connection_with_autocommit(
       USER_TZ, SF_BOOLEAN_TRUE); // set the session timezone
 
@@ -54,7 +74,9 @@ void test_timestamp_tz(void **unused) {
     SF_STMT *sfstmt = snowflake_stmt(sf);
     status = snowflake_query(
       sfstmt,
-      "create or replace table t (c1 int, c2 timestamp_tz(5))",
+      useZeroPrecision == SF_BOOLEAN_TRUE
+      ? "create or replace table t (c1 int, c2 timestamp_tz(0))"
+      : "create or replace table t (c1 int, c2 timestamp_tz(5))",
       0
     );
     if (status != SF_STATUS_SUCCESS) {
@@ -162,6 +184,10 @@ void test_timestamp_tz(void **unused) {
     snowflake_term(sf);
 }
 
+void test_timestamp_tz(void** unused) {
+  test_timestamp_tz_helper(SF_BOOLEAN_TRUE);
+  test_timestamp_tz_helper(SF_BOOLEAN_FALSE);
+}
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);

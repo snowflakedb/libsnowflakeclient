@@ -2879,24 +2879,27 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
     ts->ts_type = ts_type;
     ts->tzoffset = 0;
 
-    /* Search for a decimal point */
-    char *ptr = strchr(str, (int) '.');
+    /* Search for a decimal point if scale > 0
+     * When scale == 0, str will look like e.g. "1593586800 2040"*/
+    const char *ptr = scale > 0 ? strchr(str, (int) '.') : str;
     // No decimal point exists for date types
     if (ptr == NULL && ts->ts_type != SF_DB_TYPE_DATE) {
         ret = SF_STATUS_ERROR_GENERAL;
         goto cleanup;
     }
+
     sec = strtoll(str, NULL, 10);
 
     if (ts->ts_type == SF_DB_TYPE_DATE) {
         sec = sec * SECONDS_IN_AN_HOUR;
     } else {
+        if (scale > 0) {
+          nsec = strtoll(ptr + 1, NULL, 10);
+        }
         /* Search for a space for TIMESTAMP_TZ */
         char *sptr = strchr(ptr + 1, (int) ' ');
-        nsec = strtoll(ptr + 1, NULL, 10);
         if (sptr != NULL) {
             /* TIMESTAMP_TZ */
-            nsec = strtoll(ptr + 1, NULL, 10);
             tzoffset = strtoll(sptr + 1, NULL, 10) - TIMEZONE_OFFSET_RANGE;
         }
     }
