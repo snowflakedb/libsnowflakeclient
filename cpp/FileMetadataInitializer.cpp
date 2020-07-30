@@ -213,12 +213,16 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   FileMetadata *fileMetadata)
 {
   EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)));
+  CXX_LOG_DEBUG("EncryptionProvider::populateFileKeyAndIV");
   EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)));
+  CXX_LOG_DEBUG("EncryptionProvider::encryptFileKey");
   EncryptionProvider::serializeEncMatDecriptor(fileMetadata, &(m_encMat->at(0)));
+  CXX_LOG_DEBUG("EncryptionProvider::serializeEncMatDecriptor");
 
   // update encrypted stream size
   size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
     Crypto::CryptoAlgo::AES);
+  CXX_LOG_DEBUG("encryptionBlockSize");
 
   fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /

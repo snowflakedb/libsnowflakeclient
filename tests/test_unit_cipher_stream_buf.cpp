@@ -20,9 +20,9 @@ void test_cipher_stream_core(int blockSize, const char * testData, int dataSize)
   std::stringstream ss(testData);
 
   CryptoIV iv;
-  Cryptor::generateIV(iv, CryptoRandomDevice::DEV_RANDOM);
+  Cryptor::generateIV(iv, CryptoRandomDevice::DEV_URANDOM);
   CryptoKey key;
-  Cryptor::generateKey(key, 256, CryptoRandomDevice::DEV_RANDOM);
+  Cryptor::generateKey(key, 256, CryptoRandomDevice::DEV_URANDOM);
 
   CipherIOStream encryptedInputStream(ss, CryptoOperation::ENCRYPT, key, iv, blockSize);
 
