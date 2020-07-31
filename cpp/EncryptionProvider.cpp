@@ -9,12 +9,12 @@
 #include "util/Base64.hpp"
 
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
-  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
 {
   char encryptedFileKey[32];
   Crypto::CryptoIV iv;
   Crypto::CryptoKey queryStageMasterKey;
-  Crypto::Cryptor::generateIV(iv, Crypto::CryptoRandomDevice::DEV_URANDOM);
+  Crypto::Cryptor::generateIV(iv, randomDevice);
 
   ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
 
@@ -49,7 +49,7 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
 }
 
 void Snowflake::Client::EncryptionProvider::decryptFileKey(
-  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
 {
   const char *encryptedFileKeyEncoded = fileMetadata
     ->encryptionMetadata.enKekEncoded.c_str();
@@ -66,7 +66,7 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
   Crypto::CryptoIV iv;
   Crypto::CryptoKey queryStageMasterKey;
   Crypto::CryptoKey &fileKey = fileMetadata->encryptionMetadata.fileKey;
-  Crypto::Cryptor::generateIV(iv, Crypto::CryptoRandomDevice::DEV_URANDOM);
+  Crypto::Cryptor::generateIV(iv, randomDevice);
 
   ::std::string &qsmkEncoded = encryptionMaterial->queryStageMasterKey;
 
@@ -91,11 +91,11 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
 }
 
 void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
-  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial)
+  FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
 {
   // populate iv
   Crypto::Cryptor::getInstance().generateIV(fileMetadata->encryptionMetadata.iv,
-                                            Crypto::CryptoRandomDevice::DEV_URANDOM);
+                                            randomDevice);
 
   // populate file key
   fileMetadata->encryptionMetadata.fileKey.nbBits =
@@ -106,7 +106,7 @@ void Snowflake::Client::EncryptionProvider::populateFileKeyAndIV(
   Crypto::Cryptor::getInstance().generateKey(
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.fileKey.nbBits,
-    Crypto::CryptoRandomDevice::DEV_URANDOM);
+    randomDevice);
 }
 
 void Snowflake::Client::EncryptionProvider::serializeEncMatDecriptor(

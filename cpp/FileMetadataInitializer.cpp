@@ -212,17 +212,13 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   FileMetadata *fileMetadata)
 {
-  EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)));
-  CXX_LOG_DEBUG("EncryptionProvider::populateFileKeyAndIV");
-  EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)));
-  CXX_LOG_DEBUG("EncryptionProvider::encryptFileKey");
+  EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)), getRandomDev());
+  EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)), getRandomDev());
   EncryptionProvider::serializeEncMatDecriptor(fileMetadata, &(m_encMat->at(0)));
-  CXX_LOG_DEBUG("EncryptionProvider::serializeEncMatDecriptor");
 
   // update encrypted stream size
   size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
     Crypto::CryptoAlgo::AES);
-  CXX_LOG_DEBUG("encryptionBlockSize");
 
   fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
@@ -244,10 +240,8 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
 
   FileMetadata fileMetadata;
   fileMetadata.presignedUrl = presignedUrl;
-  CXX_LOG_DEBUG("populateSrcLocDownloadMetadata Get remote file metadata");
   RemoteStorageRequestOutcome outcome = storageClient->GetRemoteFileMetadata(
     &fullPath, &fileMetadata);
-  CXX_LOG_DEBUG("populateSrcLocDownloadMetadata End remote file metadata");
 
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
@@ -259,7 +253,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush.push_back(fileMetadata);
     metaListToPush.back().srcFileName = fullPath;
     metaListToPush.back().destFileName = dstFileName;
-    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat);
+    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
   }
 
   return outcome;

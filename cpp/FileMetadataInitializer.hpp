@@ -62,6 +62,16 @@ public:
     m_encMat = encMat;
   }
 
+  inline void setRandomDev(bool useUrand)
+  {
+    m_randDevice = (useUrand) ? Crypto::CryptoRandomDevice::DEV_URANDOM : Crypto::CryptoRandomDevice::DEV_RANDOM ;
+  }
+
+  Crypto::CryptoRandomDevice getRandomDev(void)
+  {
+    return m_randDevice;
+  }
+
 private:
   /**
    * Given file name, populate metadata
@@ -88,6 +98,9 @@ private:
 
   /// encryption material
   std::vector<EncryptionMaterial> * m_encMat;
+
+  /// Random device for crytpo random num generator.
+  Crypto::CryptoRandomDevice m_randDevice;
 };
 }
 }

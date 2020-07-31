@@ -59,6 +59,11 @@ public:
     m_uploadStreamSize = dataSize;
   }
 
+  inline void setRandomDevice(bool useUrand)
+  {
+    m_useDevUrand = useUrand;
+  }
+
 private:
   /**
    * Populate file metadata, (Get source file name)
@@ -174,6 +179,9 @@ private:
 
   // The data size of upload stream.
   size_t m_uploadStreamSize;
+
+  /// Whether to use /dev/urandom or /dev/random;
+  bool m_useDevUrand;
 };
 }
 }

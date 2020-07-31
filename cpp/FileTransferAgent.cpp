@@ -65,7 +65,8 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_lastRefreshTokenSec(0),
   m_transferConfig(transferConfig),
   m_uploadStream(nullptr),
-  m_uploadStreamSize(0)
+  m_uploadStreamSize(0),
+  m_useDevUrand(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -124,7 +125,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
       upload(command);
       auto putEnd = std::chrono::steady_clock::now();
       auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
-      CXX_LOG_DEBUG("Time took for %s: %ld milli seconds.", command->c_str(), totalTime);
+      CXX_LOG_DEBUG("Time took to upload %s: %ld milli seconds.", command->c_str(), totalTime);
       break;
     }
     case CommandType::DOWNLOAD:
@@ -144,6 +145,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   m_FileMetadataInitializer.setAutoCompress(response.autoCompress);
   m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
   m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
+  m_FileMetadataInitializer.setRandomDev(m_useDevUrand);
 
   // Upload data from stream in memory
   if ((m_uploadStream) && (CommandType::UPLOAD == response.command))
@@ -288,13 +290,15 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         else
         {
           if (outcome == RemoteStorageRequestOutcome::FAILED) {
-            CXX_LOG_DEBUG("upload file %s Failed.", metadata->srcFileName.c_str());
+            CXX_LOG_DEBUG("Failed to upload %s ", metadata->srcFileName.c_str());
             failedTransfers.append(metadata->srcFileName) + ", ";
+          }
+          else if (outcome == RemoteStorageRequestOutcome::SUCCESS) {
+            CXX_LOG_DEBUG("Sequential upload %d th file %s SUCCESS.", i, metadata->srcFileName.c_str());
           }
           break;
         }
       } while (true);
-      CXX_LOG_DEBUG("Sequential upload %d th file %s Done.",i, metadata->srcFileName.c_str());
 
       continue;
     }
@@ -322,16 +326,19 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
               failedTransfers.append(metadata->srcFileName) + ", ";
               _mutex_unlock(&m_parallelFailedMsgMutex);
             }
+            else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
+            {
+              CXX_LOG_DEBUG("Putget Parallel upload %s SUCCESS.", metadata->srcFileName.c_str());
+            }
             break;
           }
         } while (true);
-        CXX_LOG_DEBUG("Putget Parallel upload %s Done.", metadata->srcFileName.c_str());
     });
   }
 
   // wait till all jobs have been finished
   tp.WaitAll();
-  CXX_LOG_DEBUG("End of uploadFilesInParallel, All threads exited.");
+  CXX_LOG_DEBUG("All threads exited, Parallel put done.");
   if(!failedTransfers.empty())
   {
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
@@ -383,14 +390,13 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
   }
+  CXX_LOG_TRACE("Update File digest metadata start");
 
-  CXX_LOG_DEBUG("Starting file digest");
   // calculate digest
   updateFileDigest(fileMetadata);
-  CXX_LOG_DEBUG("End file digest");
-
+  CXX_LOG_TRACE("Encryption metadata init start");
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
-  CXX_LOG_DEBUG("Encryption metadata init done");
+  CXX_LOG_TRACE("Encryption metadata init done");
 
   std::basic_iostream<char> *srcFileStream;
   ::std::fstream fs;
@@ -413,13 +419,12 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     }
     srcFileStream = &fs;
   }
-  CXX_LOG_DEBUG("open file encryption stream");
+
   Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
     Crypto::CryptoOperation::ENCRYPT,
     fileMetadata->encryptionMetadata.fileKey,
     fileMetadata->encryptionMetadata.iv,
     FILE_ENCRYPTION_BLOCK_SIZE);
-  CXX_LOG_DEBUG("file encryption stream opened And starting to upload.");
 
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
   // upload stream
@@ -457,7 +462,7 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
       ::std::ios_base::in | ::std::ios_base::binary);
     srcFileStream = &fs;
   }
-  CXX_LOG_DEBUG("hashContext Get");
+
   Crypto::HashContext hashContext(Crypto::Cryptor::getInstance()
                                     .createHashContext(
                                       Crypto::CryptoHashFunc::SHA256));
@@ -465,15 +470,15 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   const size_t digestSize = Crypto::cryptoHashDigestSize(
     Crypto::CryptoHashFunc::SHA256);
   char digest[digestSize];
-  CXX_LOG_DEBUG("hashContext init");
+
   hashContext.initialize();
-  CXX_LOG_DEBUG("Read sourceFileBuffer 1024 bytes");
+
   char sourceFileBuffer[CHUNK_SIZE];
   while (srcFileStream->read(sourceFileBuffer, CHUNK_SIZE))
   {
     hashContext.next(sourceFileBuffer, CHUNK_SIZE);
   }
-  CXX_LOG_DEBUG("Read into sourceFileBuffer and has calculated");
+
   if (fs.is_open())
   {
     fs.close();
@@ -489,11 +494,9 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 
   const size_t digestEncodeSize = Util::Base64::encodedLength(digestSize);
   char digestEncode[digestEncodeSize];
-  CXX_LOG_DEBUG("base64 encode file digest");
   Util::Base64::encode(digest, digestSize, digestEncode);
 
   fileMetadata->sha256Digest = string(digestEncode, digestEncodeSize);
-  CXX_LOG_DEBUG("End file update digest.");
 }
 
 void Snowflake::Client::FileTransferAgent::compressSourceFile(
