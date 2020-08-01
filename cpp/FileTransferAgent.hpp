@@ -59,7 +59,12 @@ public:
     m_uploadStreamSize = dataSize;
   }
 
-  inline void setRandomDevice(bool useUrand)
+  /**
+   * Set useUrand to true to use /dev/urandom device
+   * Set it to false to use /dev/random device
+   * @param useUrand
+   */
+  virtual void setRandomDevice(bool useUrand)
   {
     m_useDevUrand = useUrand;
   }

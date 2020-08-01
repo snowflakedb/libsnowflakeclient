@@ -54,6 +54,14 @@ public:
    * will be used.
    */
   static void injectExternalLogger(ISFLogger * logger);
+
+  /**
+   * Set useUrand to true to use /dev/urandom device
+   * Set it to false to use /dev/random device
+   * @param useUrand
+   */
+  virtual void setRandomDevice(bool useUrand){};
+
 };
 
 }

@@ -40,6 +40,7 @@ void getLongTempPath(char *buffTmpDir)
 	sb_strncpy(buffTmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
 }
 #endif
+void test_large_get(void **);
 
 void test_simple_put_core(const char * fileName,
                           const char * sourceCompression,
@@ -49,7 +50,8 @@ void test_simple_put_core(const char * fileName,
                           bool copyTableToStaging=false,
                           bool createDupTable=false,
                           bool setCustomThreshold=false,
-                          size_t customThreshold=64*1024*1024)
+                          size_t customThreshold=64*1024*1024,
+                          bool useDevUrand=false)
 {
   /* init */
   SF_STATUS status;
@@ -104,6 +106,10 @@ void test_simple_put_core(const char * fileName,
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+  if(useDevUrand){
+    agent.setRandomDevice(true);
+  }
 
   ITransferResult * results = agent.execute(&putCommand);
   assert_int_equal(1, results->getResultSize());
@@ -392,6 +398,30 @@ void test_verify_upload(void **unused)
 
     assert_int_equal(snowflake_num_rows(sfstmt), 0);
 
+}
+
+void test_simple_put_use_dev_urandom(void **unused)
+{
+  std::string dataDir = TestSetup::getDataDir();
+  std::string file = dataDir + "medium_file.csv";
+                       FILE *fp = fopen(file.c_str(), "w") ;
+  for(int i = 0; i < 200000 ; ++i)
+  {
+    fprintf(fp, "%d,%d,ABCDEFGHIJKLMNOPQRSTUVWXYZ\n",i,i+1);
+  }
+  fclose(fp);
+
+  test_simple_put_core("medium_file.csv", // filename
+                       "none", //source compression
+                       true,   // auto compress
+                       true,   // Load data into table
+                       false,  // Run select * on loaded table (Not good for large data set)
+                       true    // copy data from Table to Staging.
+  );
+
+  test_large_get(unused);
+  test_large_reupload(unused);
+  test_verify_upload(unused);
 }
 
 void test_simple_put_auto_compress(void **unused)
@@ -766,7 +796,10 @@ int main(void) {
     std::cout << "GCP put/get feature is not available in libsnowflakeclient." << std::endl;
     return 0;
   }
-
+  void **unused=NULL;
+  gr_setup(unused);
+  test_simple_put_use_dev_urandom(unused);
+  return 0;
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -784,7 +817,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_large_reupload, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_large_put_threshold, teardown),
-    cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown)
+    cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown),
+    cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
