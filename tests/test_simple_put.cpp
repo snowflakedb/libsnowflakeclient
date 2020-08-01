@@ -796,10 +796,7 @@ int main(void) {
     std::cout << "GCP put/get feature is not available in libsnowflakeclient." << std::endl;
     return 0;
   }
-  void **unused=NULL;
-  gr_setup(unused);
-  test_simple_put_use_dev_urandom(unused);
-  return 0;
+
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
