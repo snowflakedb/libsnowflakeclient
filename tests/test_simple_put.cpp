@@ -108,7 +108,7 @@ void test_simple_put_core(const char * fileName,
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
 
   if(useDevUrand){
-    agent.setRandomDevice(true);
+    agent.setRandomDeviceAsUrand(true);
   }
 
   ITransferResult * results = agent.execute(&putCommand);
@@ -404,24 +404,91 @@ void test_simple_put_use_dev_urandom(void **unused)
 {
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + "medium_file.csv";
-                       FILE *fp = fopen(file.c_str(), "w") ;
+
+  FILE *fp = fopen(file.c_str(), "w") ;
   for(int i = 0; i < 200000 ; ++i)
   {
     fprintf(fp, "%d,%d,ABCDEFGHIJKLMNOPQRSTUVWXYZ\n",i,i+1);
   }
   fclose(fp);
 
-  test_simple_put_core("medium_file.csv", // filename
-                       "none", //source compression
-                       true,   // auto compress
-                       true,   // Load data into table
-                       false,  // Run select * on loaded table (Not good for large data set)
-                       true    // copy data from Table to Staging.
-  );
+  /* init */
+  SF_STATUS status;
+  SF_CONNECT *sf = setup_snowflake_connection();
+  status = snowflake_connect(sf);
+  assert_int_equal(SF_STATUS_SUCCESS, status);
 
-  test_large_get(unused);
-  test_large_reupload(unused);
-  test_verify_upload(unused);
+  SF_STMT *sfstmt = NULL;
+  SF_STATUS ret;
+
+  /* query */
+  sfstmt = snowflake_stmt(sf);
+  std::string create_table = "create or replace table test_small_put(c1 number, c2 number, c3 string)" ;
+  ret = snowflake_query(sfstmt, create_table.c_str(), create_table.size());
+  assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+  std::string putCommand = "put file://" + file + " @%test_small_put auto_compress=true overwrite=true";
+
+  std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+	  <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+
+  Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());  
+  agent.setRandomDeviceAsUrand(true);
+
+  ITransferResult * results = agent.execute(&putCommand);
+  assert_int_equal(1, results->getResultSize());
+
+  while (results->next())
+  {
+	  std::string value;
+	  results->getColumnAsString(0, value); // source
+	  assert_string_equal(sf_filename_from_path(file.c_str()), value.c_str());
+
+	  results->getColumnAsString(1, value); // get target
+	  assert_string_equal("medium_file.csv.gz", value.c_str());
+
+	  results->getColumnAsString(4, value); // get source_compression
+	  assert_string_equal("none", value.c_str());
+
+	  results->getColumnAsString(6, value); // get encryption
+	  assert_string_equal("UPLOADED", value.c_str());
+
+	  results->getColumnAsString(7, value); // get encryption
+	  assert_string_equal("ENCRYPTED", value.c_str());
+  }
+
+  std::string copyCommand = "copy into test_small_put from @%test_small_put";
+  ret = snowflake_query(sfstmt, copyCommand.c_str(), copyCommand.size());
+  assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+  std::string selectCommand = "select * from test_small_put";
+  ret = snowflake_query(sfstmt, selectCommand.c_str(), selectCommand.size());
+  assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+  const char *out_c1;
+  const char *out_c2;
+  const char *out_c3;
+  assert_int_equal(snowflake_num_rows(sfstmt), 200000);
+
+  for(int i = 0; i < 200000; ++i)
+  {
+	  ret = snowflake_fetch(sfstmt);
+	  assert_int_equal(SF_STATUS_SUCCESS, ret);
+	  snowflake_column_as_const_str(sfstmt, 1, &out_c1);
+	  snowflake_column_as_const_str(sfstmt, 2, &out_c2);
+	  snowflake_column_as_const_str(sfstmt, 3, &out_c3);
+	  std::string c1 = std::to_string(i);
+	  std::string c2 = std::to_string(i + 1);
+	  assert_string_equal(out_c1, c1.c_str());
+	  assert_string_equal(out_c2, c2.c_str());
+	  assert_string_equal(out_c3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	  out_c1 = NULL;
+	  out_c2 = NULL;
+	  out_c3 = NULL;
+  }
+  ret = snowflake_fetch(sfstmt);
+  assert_int_equal(SF_STATUS_EOF, ret);
+
 }
 
 void test_simple_put_auto_compress(void **unused)

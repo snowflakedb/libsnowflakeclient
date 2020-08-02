@@ -60,7 +60,7 @@ public:
    * Set it to false to use /dev/random device
    * @param useUrand
    */
-  virtual void setRandomDevice(bool useUrand){};
+  virtual void setRandomDeviceAsUrand(bool useUrand){};
 
 };
 
