@@ -37,7 +37,8 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
-        test_row_metadata)
+#        test_row_metadata
+        )
 
 SET(TESTS_CXX
         test_unit_jwt
