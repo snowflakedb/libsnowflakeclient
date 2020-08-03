@@ -295,3 +295,29 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
 
     return desc;
 }
+
+SF_ROW_METADATA * set_row_metadata(const cJSON *rowMetadata) {
+    cJSON *column;
+    SF_ROW_METADATA *metadata = NULL;
+    size_t array_size = (size_t) snowflake_cJSON_GetArraySize(rowMetadata);
+    if (rowMetadata == NULL || array_size == 0) {
+        return metadata;
+    }
+    if (array_size == 1) {
+        metadata = (SF_ROW_METADATA *) SF_MALLOC(sizeof(SF_ROW_METADATA));
+        column = snowflake_cJSON_GetArrayItem(rowMetadata, 0);
+        if(json_copy_int(&metadata->num_rows_inserted, column, "numRowsInserted")) {
+            metadata->num_rows_inserted = 0;
+        }
+        if(json_copy_int(&metadata->num_rows_updated, column, "numRowsUpdated")) {
+            metadata->num_rows_updated = 0;
+        }
+        if(json_copy_int(&metadata->num_rows_deleted, column, "numRowsDeleted")) {
+            metadata->num_rows_deleted = 0;
+        }
+        if(json_copy_int(&metadata->num_multi_joined_rows_updated, column, "numDmlDuplicates")) {
+            metadata->num_multi_joined_rows_updated = 0;
+        }
+    }
+    return metadata;
+}

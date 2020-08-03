@@ -1069,6 +1069,17 @@ static void STDCALL _snowflake_stmt_desc_reset(SF_STMT *sfstmt) {
 }
 
 /**
+ * Resets SF_ROW_METADATA in SF_STMT
+ * @param sfstmt
+ */
+static void STDCALL _snowflake_stmt_row_metadata_reset(SF_STMT *sfstmt) {
+    if (sfstmt->row_metadata) {
+        SF_FREE(sfstmt->row_metadata);
+    }
+    sfstmt->row_metadata = NULL;
+}
+
+/**
  * Returns what kind of params are being bound - Named / Positional
  * based on the first bind input entry. Should be used only if
  * sfstmt->params is NULL;
@@ -1654,6 +1665,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     cJSON *body = NULL;
     cJSON *data = NULL;
     cJSON *rowtype = NULL;
+    cJSON *rowMetadata = NULL;
     cJSON *resp = NULL;
     cJSON *chunks = NULL;
     cJSON *chunk_headers = NULL;
@@ -1878,6 +1890,13 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                       rowtype);
                     _snowflake_stmt_desc_reset(sfstmt);
                     sfstmt->desc = set_description(rowtype);
+                }
+                rowMetadata = snowflake_cJSON_GetObjectItem(data, "rowMetadata");
+                if (snowflake_cJSON_IsArray(rowMetadata)) {
+                    _snowflake_stmt_row_metadata_reset(sfstmt);
+                    sfstmt->row_metadata = set_row_metadata(rowMetadata);
+                } else {
+                    sfstmt->row_metadata = NULL;
                 }
                 // Set results array
                 if (json_detach_array_from_object(

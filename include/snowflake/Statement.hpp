@@ -32,6 +32,8 @@ namespace Snowflake {
 
             SF_COLUMN_DESC *desc();
 
+            SF_ROW_METADATA *rowMetadata();
+
             void prepare(const std::string &command_);
 
             void setAttribute(SF_STMT_ATTRIBUTE type_,

@@ -18,6 +18,7 @@ SF_C_TYPE snowflake_to_c_type(SF_DB_TYPE type, int64 precision, int64 scale);
 SF_DB_TYPE c_type_to_snowflake(SF_C_TYPE c_type, SF_DB_TYPE tsmode);
 char *value_to_string(void *value, size_t len, SF_C_TYPE c_type);
 SF_COLUMN_DESC * set_description(const cJSON *rowtype);
+SF_ROW_METADATA * set_row_metadata(const cJSON *rowtype);
 
 #ifdef __cplusplus
 }
