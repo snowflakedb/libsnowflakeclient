@@ -19,6 +19,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
+#include <chrono>
 
 using ::std::string;
 using ::std::vector;
@@ -64,7 +65,8 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_lastRefreshTokenSec(0),
   m_transferConfig(transferConfig),
   m_uploadStream(nullptr),
-  m_uploadStreamSize(0)
+  m_uploadStreamSize(0),
+  m_useDevUrand(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -118,10 +120,14 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   switch (response.command)
   {
-    case CommandType::UPLOAD:
+    case CommandType::UPLOAD: {
+      auto putStart = std::chrono::steady_clock::now();
       upload(command);
+      auto putEnd = std::chrono::steady_clock::now();
+      auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
+      CXX_LOG_DEBUG("Time took to upload %s: %ld milli seconds.", command->c_str(), totalTime);
       break;
-
+    }
     case CommandType::DOWNLOAD:
       download(command);
       break;
@@ -139,6 +145,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   m_FileMetadataInitializer.setAutoCompress(response.autoCompress);
   m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
   m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
+  m_FileMetadataInitializer.setRandomDev(m_useDevUrand);
 
   // Upload data from stream in memory
   if ((m_uploadStream) && (CommandType::UPLOAD == response.command))
@@ -269,6 +276,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     // Do not use thread pool when parallel = 1
     if ((unsigned int)response.parallel <= 1)
     {
+      CXX_LOG_DEBUG("Sequential upload %d th file %s start", i, metadata->srcFileName.c_str());
       do
       {
         RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
@@ -281,6 +289,13 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         }
         else
         {
+          if (outcome == RemoteStorageRequestOutcome::FAILED) {
+            CXX_LOG_DEBUG("Failed to upload %s ", metadata->srcFileName.c_str());
+            failedTransfers.append(metadata->srcFileName) + ", ";
+          }
+          else if (outcome == RemoteStorageRequestOutcome::SUCCESS) {
+            CXX_LOG_DEBUG("Sequential upload %d th file %s SUCCESS.", i, metadata->srcFileName.c_str());
+          }
           break;
         }
       } while (true);
@@ -311,6 +326,10 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
               failedTransfers.append(metadata->srcFileName) + ", ";
               _mutex_unlock(&m_parallelFailedMsgMutex);
             }
+            else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
+            {
+              CXX_LOG_DEBUG("Putget Parallel upload %s SUCCESS.", metadata->srcFileName.c_str());
+            }
             break;
           }
         } while (true);
@@ -319,6 +338,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
 
   // wait till all jobs have been finished
   tp.WaitAll();
+  CXX_LOG_DEBUG("All threads exited, Parallel put done.");
   if(!failedTransfers.empty())
   {
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
@@ -359,6 +379,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   size_t resultIndex)
 {
   // compress if required
+  CXX_LOG_DEBUG("Entrance uploadSingleFile");
   if (fileMetadata->requireCompress)
   {
     fileMetadata->recordPutGetTimestamp(FileMetadata::COMP_START);
@@ -369,11 +390,13 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
   }
+  CXX_LOG_TRACE("Update File digest metadata start");
 
   // calculate digest
   updateFileDigest(fileMetadata);
-
+  CXX_LOG_TRACE("Encryption metadata init start");
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
+  CXX_LOG_TRACE("Encryption metadata init done");
 
   std::basic_iostream<char> *srcFileStream;
   ::std::fstream fs;
@@ -408,6 +431,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
                                                        &inputEncryptStream);
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+  CXX_LOG_DEBUG("File upload done.");
   if (fs.is_open())
   {
     fs.close();
@@ -416,6 +440,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   m_executionResults->SetTransferOutCome(outcome, resultIndex);
   fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
   fileMetadata->printPutGetTimestamp();
+  CXX_LOG_DEBUG("Exit UploadSingleFile");
   return outcome;
 }
 

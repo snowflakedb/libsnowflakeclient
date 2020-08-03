@@ -212,8 +212,10 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   FileMetadata *fileMetadata)
 {
-  EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)));
-  EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)));
+  std::string randDev = (getRandomDev() == Crypto::CryptoRandomDevice::DEV_RANDOM)? "DEV_RANDOM" : "DEV_URANDOM";
+  CXX_LOG_INFO("Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata using random device %s.", randDev.c_str());
+  EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)), getRandomDev());
+  EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)), getRandomDev());
   EncryptionProvider::serializeEncMatDecriptor(fileMetadata, &(m_encMat->at(0)));
 
   // update encrypted stream size
@@ -253,7 +255,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush.push_back(fileMetadata);
     metaListToPush.back().srcFileName = fullPath;
     metaListToPush.back().destFileName = dstFileName;
-    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat);
+    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
   }
 
   return outcome;

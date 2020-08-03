@@ -23,18 +23,18 @@ public:
    * Generate file key and iv
    */
   static void populateFileKeyAndIV(FileMetadata *fileMetadata,
-                                   EncryptionMaterial *encryptionMaterial);
+                                   EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice);
 
   /**
    * Encrypt file key with query stage master key using AES EBC mode
    */
   static void encryptFileKey(FileMetadata *fileMetadata,
-                             EncryptionMaterial *encryptionMaterial);
+                             EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice);
   /**
    * Encrypt file key with query stage master key using AES EBC mode
    */
   static void decryptFileKey(FileMetadata *fileMetadata,
-                             EncryptionMaterial *encryptionMaterial);
+                             EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice);
 
   /**
    * Serialize Encryption Material descriptor to json string

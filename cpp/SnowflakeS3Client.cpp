@@ -129,8 +129,10 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
 {
   // first call metadata request to deduplicate files
   // If overWrite is true we do not perform file exist check.
+  CXX_LOG_DEBUG("Entrance S3 upload.");
   if(! fileMetadata->overWrite ) {
-      Aws::S3::Model::HeadObjectRequest headObjectRequest;
+    CXX_LOG_DEBUG("Check if File already exists");
+    Aws::S3::Model::HeadObjectRequest headObjectRequest;
 
       std::string bucket, key;
       std::string filePathFull = m_stageInfo->location
@@ -149,6 +151,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata
           CXX_LOG_WARN("Listing file metadata failed: %s",
                        outcome.GetError().GetMessage().c_str());
       }
+    CXX_LOG_DEBUG("End check file already exists.");
   }
   if (fileMetadata->srcFileSize > m_uploadThreshold)
     return doMultiPartUpload(fileMetadata, dataStream);
