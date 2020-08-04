@@ -22,6 +22,9 @@ deps/curl-7.54.1/**/*.o
 deps/curl-7.54.1/**/.dirstamp
 deps/openssl-1.1.1b/**
 deps/azure-storage-cpplite/**
+deps/arrow.mk
+deps/downloaded_src_url
+deps/src/**
 config.log
 .idea
 artifacts/
