@@ -1073,10 +1073,10 @@ static void STDCALL _snowflake_stmt_desc_reset(SF_STMT *sfstmt) {
  * @param sfstmt
  */
 static void STDCALL _snowflake_stmt_row_metadata_reset(SF_STMT *sfstmt) {
-    if (sfstmt->row_metadata) {
-        SF_FREE(sfstmt->row_metadata);
+    if (sfstmt->stats) {
+        SF_FREE(sfstmt->stats);
     }
-    sfstmt->row_metadata = NULL;
+    sfstmt->stats = NULL;
 }
 
 /**
@@ -1665,7 +1665,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     cJSON *body = NULL;
     cJSON *data = NULL;
     cJSON *rowtype = NULL;
-    cJSON *rowMetadata = NULL;
+    cJSON *stats = NULL;
     cJSON *resp = NULL;
     cJSON *chunks = NULL;
     cJSON *chunk_headers = NULL;
@@ -1891,12 +1891,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     _snowflake_stmt_desc_reset(sfstmt);
                     sfstmt->desc = set_description(rowtype);
                 }
-                rowMetadata = snowflake_cJSON_GetObjectItem(data, "rowMetadata");
-                if (snowflake_cJSON_IsArray(rowMetadata)) {
+                stats = snowflake_cJSON_GetObjectItem(data, "stats");
+                if (snowflake_cJSON_IsObject(stats)) {
                     _snowflake_stmt_row_metadata_reset(sfstmt);
-                    sfstmt->row_metadata = set_row_metadata(rowMetadata);
+                    sfstmt->stats = set_stats(stats);
                 } else {
-                    sfstmt->row_metadata = NULL;
+                    sfstmt->stats = NULL;
                 }
                 // Set results array
                 if (json_detach_array_from_object(

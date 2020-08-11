@@ -32,7 +32,7 @@ namespace Snowflake {
 
             SF_COLUMN_DESC *desc();
 
-            SF_ROW_METADATA *rowMetadata();
+            SF_STATS *stats();
 
             void prepare(const std::string &command_);
 
