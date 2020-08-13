@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "utils/test_setup.h"
 
-void test_row_metadata(void **unused) {
+void test_stats(void **unused) {
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -25,7 +25,7 @@ void test_row_metadata(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert(sfstmt->row_metadata == NULL);
+    assert(sfstmt->stats == NULL);
 
     status = snowflake_query(
         sfstmt,
@@ -38,11 +38,11 @@ void test_row_metadata(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     assert(sfstmt->is_dml);
-    assert(sfstmt->row_metadata);
-    assert_int_equal(sfstmt->row_metadata->num_rows_inserted, 2);
-    assert_int_equal(sfstmt->row_metadata->num_rows_updated, 0);
-    assert_int_equal(sfstmt->row_metadata->num_rows_deleted, 0);
-    assert_int_equal(sfstmt->row_metadata->num_multi_joined_rows_updated, 0);
+    assert(sfstmt->stats);
+    assert_int_equal(sfstmt->stats->num_rows_inserted, 2);
+    assert_int_equal(sfstmt->stats->num_rows_updated, 0);
+    assert_int_equal(sfstmt->stats->num_rows_deleted, 0);
+    assert_int_equal(sfstmt->stats->num_duplicate_rows_updated, 0);
 
     status = snowflake_query(
         sfstmt,
@@ -57,11 +57,11 @@ void test_row_metadata(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     assert(sfstmt->is_dml);
-    assert(sfstmt->row_metadata);
-    assert_int_equal(sfstmt->row_metadata->num_rows_inserted, 0);
-    assert_int_equal(sfstmt->row_metadata->num_rows_updated, 1);
-    assert_int_equal(sfstmt->row_metadata->num_rows_deleted, 0);
-    assert_int_equal(sfstmt->row_metadata->num_multi_joined_rows_updated, 1);
+    assert(sfstmt->stats);
+    assert_int_equal(sfstmt->stats->num_rows_inserted, 0);
+    assert_int_equal(sfstmt->stats->num_rows_updated, 1);
+    assert_int_equal(sfstmt->stats->num_rows_deleted, 0);
+    assert_int_equal(sfstmt->stats->num_duplicate_rows_updated, 1);
 
     status = snowflake_query(
         sfstmt,
@@ -74,18 +74,18 @@ void test_row_metadata(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     assert(sfstmt->is_dml);
-    assert(sfstmt->row_metadata);
-    assert_int_equal(sfstmt->row_metadata->num_rows_inserted, 0);
-    assert_int_equal(sfstmt->row_metadata->num_rows_updated, 0);
-    assert_int_equal(sfstmt->row_metadata->num_rows_deleted, 2);
-    assert_int_equal(sfstmt->row_metadata->num_multi_joined_rows_updated, 0);
+    assert(sfstmt->stats);
+    assert_int_equal(sfstmt->stats->num_rows_inserted, 0);
+    assert_int_equal(sfstmt->stats->num_rows_updated, 0);
+    assert_int_equal(sfstmt->stats->num_rows_deleted, 2);
+    assert_int_equal(sfstmt->stats->num_duplicate_rows_updated, 0);
 
     status = snowflake_query(sfstmt, "drop table if exists t", 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert(sfstmt->row_metadata == NULL);
+    assert(sfstmt->stats == NULL);
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
@@ -94,7 +94,7 @@ void test_row_metadata(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_row_metadata),
+        cmocka_unit_test(test_stats),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

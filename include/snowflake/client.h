@@ -313,12 +313,12 @@ typedef struct SF_COLUMN_DESC {
     sf_bool null_ok;
 } SF_COLUMN_DESC;
 
-typedef struct SF_ROW_METADATA {
+typedef struct SF_STATS {
     int64 num_rows_inserted;
     int64 num_rows_updated;
     int64 num_rows_deleted;
-    int64 num_multi_joined_rows_updated;
-} SF_ROW_METADATA;
+    int64 num_duplicate_rows_updated;
+} SF_STATS;
 
 /**
  * Chunk downloader context
@@ -350,7 +350,7 @@ typedef struct SF_STMT {
     void *name_list;
     unsigned int params_len;
     SF_COLUMN_DESC *desc;
-    SF_ROW_METADATA *row_metadata;
+    SF_STATS *stats;
     void *stmt_attrs;
     sf_bool is_dml;
 
