@@ -86,6 +86,7 @@ message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 if (APPLE OR WIN32)
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 endif ()
+set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 
 if (UNIX)
     find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)

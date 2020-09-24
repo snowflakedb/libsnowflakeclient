@@ -20,6 +20,7 @@
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
 #include <chrono>
+#include <unistd.h>
 
 using ::std::string;
 using ::std::vector;
@@ -398,48 +399,62 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
   CXX_LOG_TRACE("Encryption metadata init done");
 
-  std::basic_iostream<char> *srcFileStream;
-  ::std::fstream fs;
-
-  if (m_uploadStream)
+  int retry = 0;
+  RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
+  do
   {
-    srcFileStream = m_uploadStream;
-  }
-  else
- {
-    try {
-      fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
-                          ::std::ios_base::in |
-                          ::std::ios_base::binary);
-    }
-    catch(...)
+    if (retry > 0)
     {
-      std::string err= "Could not open source file " + fileMetadata->srcFileToUpload ;
-      throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+      CXX_LOG_DEBUG("Retry count %d, Retrying put file %s.", retry, fileMetadata->srcFileName.c_str());
+      CXX_LOG_DEBUG("Sleepin for %ld micro seconds", retry * 10)
+      usleep(retry * 10);
     }
-    srcFileStream = &fs;
-  }
+    std::basic_iostream<char> *srcFileStream;
+    ::std::fstream fs;
 
-  Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
-    Crypto::CryptoOperation::ENCRYPT,
-    fileMetadata->encryptionMetadata.fileKey,
-    fileMetadata->encryptionMetadata.iv,
-    FILE_ENCRYPTION_BLOCK_SIZE);
+    if (m_uploadStream) {
+      srcFileStream = m_uploadStream;
+    } else {
+      try {
+        fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+                            ::std::ios_base::in |
+                            ::std::ios_base::binary);
+      }
+      catch (...) {
+        std::string err = "Could not open source file " + fileMetadata->srcFileToUpload;
+        throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+      }
+      srcFileStream = &fs;
+    }
 
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
-  // upload stream
-  RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
-                                                       &inputEncryptStream);
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
-  CXX_LOG_DEBUG("File upload done.");
-  if (fs.is_open())
+    Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
+                                              Crypto::CryptoOperation::ENCRYPT,
+                                              fileMetadata->encryptionMetadata.fileKey,
+                                              fileMetadata->encryptionMetadata.iv,
+                                              FILE_ENCRYPTION_BLOCK_SIZE);
+
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
+    // upload stream
+    outcome = client->upload(fileMetadata, &inputEncryptStream);
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+    CXX_LOG_DEBUG("File upload done.");
+    if (fs.is_open())
+    {
+      fs.close();
+    }
+
+    m_executionResults->SetTransferOutCome(outcome, resultIndex);
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
+    fileMetadata->printPutGetTimestamp();
+  } while ( (++retry < PUT_FILE_MAX_RETRIES) &&
+      (outcome != RemoteStorageRequestOutcome::SUCCESS) &&
+      (outcome != RemoteStorageRequestOutcome::TOKEN_EXPIRED)  //Token renewal is done in upper layers.
+      );
+  if(retry > 1 && outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
-    fs.close();
+    // If put fails in first normal attempt and successful in next attempt its counted as 1 retry.
+    CXX_LOG_DEBUG("In %d retry put %s success.", retry-1, fileMetadata->srcFileName.c_str());
   }
-
-  m_executionResults->SetTransferOutCome(outcome, resultIndex);
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
-  fileMetadata->printPutGetTimestamp();
   CXX_LOG_DEBUG("Exit UploadSingleFile");
   return outcome;
 }

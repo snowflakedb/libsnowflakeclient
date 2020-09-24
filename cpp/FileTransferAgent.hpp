@@ -17,7 +17,7 @@
 #include "snowflake/platform.h"
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
-
+#define PUT_FILE_MAX_RETRIES 3
 namespace Snowflake
 {
 namespace Client
