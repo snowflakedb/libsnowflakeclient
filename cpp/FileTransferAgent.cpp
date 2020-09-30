@@ -20,8 +20,11 @@
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
 #include <chrono>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
-
+#endif
 using ::std::string;
 using ::std::vector;
 using ::Snowflake::Client::RemoteStorageRequestOutcome;
@@ -379,6 +382,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   FileMetadata *fileMetadata,
   size_t resultIndex)
 {
+  int retry = 0;
   // compress if required
   CXX_LOG_DEBUG("Entrance uploadSingleFile");
   if (fileMetadata->requireCompress)
@@ -399,15 +403,19 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
   CXX_LOG_TRACE("Encryption metadata init done");
 
-  int retry = 0;
   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
   do
   {
     if (retry > 0)
     {
+      unsigned long waitInMicroSecs = (retry << 1) * 100000 ; //First retry 200ms, Second retry 400ms, Third retry 800ms
       CXX_LOG_DEBUG("Retry count %d, Retrying put file %s.", retry, fileMetadata->srcFileName.c_str());
-      CXX_LOG_DEBUG("Sleepin for %ld micro seconds", retry * 10)
-      usleep(retry * 10);
+      CXX_LOG_DEBUG("Sleeping for %ld micro seconds", waitInMicroSecs );
+#ifdef _WIN32
+      Sleep(waitInMicroSecs/1000);  // sleep time is in milliseconds for windows
+#else
+      usleep(waitInMicroSecs); // sleep time is in microseconds for linux and Mac
+#endif
     }
     std::basic_iostream<char> *srcFileStream;
     ::std::fstream fs;
@@ -446,7 +454,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     m_executionResults->SetTransferOutCome(outcome, resultIndex);
     fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
     fileMetadata->printPutGetTimestamp();
-  } while ( (++retry < PUT_FILE_MAX_RETRIES) &&
+  } while ( (++retry <= PUT_FILE_MAX_RETRIES) &&
       (outcome != RemoteStorageRequestOutcome::SUCCESS) &&
       (outcome != RemoteStorageRequestOutcome::TOKEN_EXPIRED)  //Token renewal is done in upper layers.
       );
