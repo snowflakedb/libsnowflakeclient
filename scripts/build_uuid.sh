@@ -13,7 +13,7 @@ function usage() {
 }
 
 set -o pipefail
-UUID_VERSION=2.36.1
+UUID_VERSION=2.33.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
