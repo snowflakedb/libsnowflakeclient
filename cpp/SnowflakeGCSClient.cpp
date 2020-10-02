@@ -147,7 +147,7 @@ std::string SnowflakeGCSClient::buildEncryptionMetadataJSON(std::string key64,
     + "{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":"
     + "\"AES_CBC_256\"},\"ContentEncryptionIV\":\"" + iv64 + "\""
     + ",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":"
-    + "\"openssl 1.1.1g\"}}";
+    + "\"openssl 1.1.1b\"}}";
 
   return jsonStr;
 }
