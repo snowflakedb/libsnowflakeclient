@@ -404,19 +404,11 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   CXX_LOG_TRACE("Encryption metadata init done");
 
   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
+  RetryContext putRetryCtx(fileMetadata->srcFileName);
   do
   {
-    if (retry > 0)
-    {
-      unsigned long waitInMicroSecs = (retry << 1) * 100000 ; //First retry 200ms, Second retry 400ms, Third retry 800ms
-      CXX_LOG_DEBUG("Retry count %d, Retrying put file %s.", retry, fileMetadata->srcFileName.c_str());
-      CXX_LOG_DEBUG("Sleeping for %ld micro seconds", waitInMicroSecs );
-#ifdef _WIN32
-      Sleep(waitInMicroSecs/1000);  // sleep time is in milliseconds for windows
-#else
-      usleep(waitInMicroSecs); // sleep time is in microseconds for linux and Mac
-#endif
-    }
+    //Sleeps only when its a retry
+    putRetryCtx.waitForNextRetry();
     std::basic_iostream<char> *srcFileStream;
     ::std::fstream fs;
 
@@ -454,15 +446,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     m_executionResults->SetTransferOutCome(outcome, resultIndex);
     fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
     fileMetadata->printPutGetTimestamp();
-  } while ( (++retry <= PUT_FILE_MAX_RETRIES) &&
-      (outcome != RemoteStorageRequestOutcome::SUCCESS) &&
-      (outcome != RemoteStorageRequestOutcome::TOKEN_EXPIRED)  //Token renewal is done in upper layers.
-      );
-  if(retry > 1 && outcome == RemoteStorageRequestOutcome::SUCCESS)
-  {
-    // If put fails in first normal attempt and successful in next attempt its counted as 1 retry.
-    CXX_LOG_DEBUG("In %d retry put %s success.", retry-1, fileMetadata->srcFileName.c_str());
-  }
+  } while (putRetryCtx.isRetryable(outcome));
   CXX_LOG_DEBUG("Exit UploadSingleFile");
   return outcome;
 }
