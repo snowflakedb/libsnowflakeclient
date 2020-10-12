@@ -33,7 +33,7 @@ class IStorageClient;
 
 class FileTransferExecutionResult;
 
-constexpr unsigned long MILL_SECONDS_IN_SECOND = 1000;
+constexpr unsigned long MILLI_SECONDS_IN_SECOND = 1000;
 
 class RetryContext
 {
@@ -42,9 +42,9 @@ class RetryContext
     m_retryCount(0),
     m_putFileName(fileName),
     m_maxRetryCount(10),
-    m_minSleepTimeInSecs(3), //3 seconds
-    m_maxSleepTimeInSecs(180), //180 seconds is the max sleep time
-    m_timeoutInSecs(600) // timeout 600 seconds.
+    m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
+    m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
+    m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
     {
         m_startTime = (ulong)time(NULL);
     }
@@ -54,37 +54,38 @@ class RetryContext
      * And retry count is in the limits
      * And total elapsed time is less than the timeout value specified.
      *
-     * @param outcome: Put upload status.
+     * @param putStatus: Put upload status.
      * @return whether to retry or not.
      */
-    bool isRetryable(RemoteStorageRequestOutcome outcome)
+    bool isRetryable(RemoteStorageRequestOutcome putStatus)
     {
-        bool outcomeStatus = ((outcome != RemoteStorageRequestOutcome::SUCCESS) &&
-        (outcome != RemoteStorageRequestOutcome::TOKEN_EXPIRED)) ; //Token renewal is done in upper layers.
+        //If putStatus is not SUCCESS and not TOKEN_EXPIRED then put is retryable
+        bool isPutInRetryableState = ((putStatus != RemoteStorageRequestOutcome::SUCCESS) &&
+                (putStatus != RemoteStorageRequestOutcome::TOKEN_EXPIRED)) ;
         //If file upload is successful in a retry log it
-        if(outcome == RemoteStorageRequestOutcome::SUCCESS && m_retryCount > 1)
+        if(putStatus == RemoteStorageRequestOutcome::SUCCESS && m_retryCount > 1)
         {
             CXX_LOG_DEBUG("After %d retry put %s successfully uploaded.", m_retryCount-1, m_putFileName.c_str());
         }
         ulong elapsedTime = time(NULL) - m_startTime;
-        return outcomeStatus && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInSecs;
+        return isPutInRetryableState && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInMs;
     }
 
     /**
      * get's next sleep time and sleeps
-     * sleep time in seconds.
+     * sleep time in milli seconds.
      */
     void waitForNextRetry()
     {
-        ulong sleepTime = retrySleepTimeInSecs();
+        ulong sleepTime = retrySleepTimeInMs();
         if(sleepTime > 0) // Sleep only in the retries.
         {
 #ifdef _WIN32
-            Sleep(sleepTime * 1000);  // Sleep for sleepTime seconds (Sleep(<time in milliseconds>) in windows)
+            Sleep(sleepTime);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
-            sleep(sleepTime); // sleep time is in seconds for linux and Mac
+            usleep(sleepTime * 1000); // usleep takes micro seconds as input param and sleepTime is in milli's
 #endif
-            CXX_LOG_DEBUG("Retry count %d, Retrying after %ld seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
+            CXX_LOG_DEBUG("Retry count %d, Retrying after %ld milli seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
         }
         ++m_retryCount;
     }
@@ -92,32 +93,36 @@ class RetryContext
   private:
     unsigned long m_retryCount;
     unsigned long m_maxRetryCount;
-    unsigned long m_minSleepTimeInSecs;
-    unsigned long m_maxSleepTimeInSecs;
-    unsigned long m_timeoutInSecs;
+    unsigned long m_minSleepTimeInMs;
+    unsigned long m_maxSleepTimeInMs;
+    unsigned long m_timeoutInMs;
     unsigned long m_startTime;
     std::string m_putFileName;
 /**
  * When retryCount is 0 its the initial try for put and not a retry so return 0
- * Using XP backoff time strategy
- * Jitter factor 0.5
- * The first 10 sleep time in second will be like
- * 3, 6, 12, 24, 48, 96, 192, 300, 300, 300,
- * @return returns sleep time in seconds.
+ * XP’s backoff strategy (exponential backoff time with jitter).
+ * start sleep time 3 second
+ * max sleep time is 180 second,
+ * Jitter factor is 0.5.
+ * For example, the expected_sleep_time is 3, 6, 12, 24, etc
+ * The sleep time is (expected_sleep_time/2 + a random number between [0, expected_sleep_time/2))
+ * expected_sleep_time = 6
+ * return's (6/2 + (rand() % 3) )
+ * @return returns sleep time in milli seconds.
  */
-    unsigned long retrySleepTimeInSecs()
+    unsigned long retrySleepTimeInMs()
     {
         if(m_retryCount == 0 ) return 0; //When its initial put (and not a retry)
 
-        unsigned long expectedSleepTimeInSecs = m_minSleepTimeInSecs * pow(2, (m_retryCount-1));
+        unsigned long expectedSleepTimeInMs = m_minSleepTimeInMs * pow(2, (m_retryCount-1));
 
-        expectedSleepTimeInSecs = (std::min)(expectedSleepTimeInSecs, m_maxSleepTimeInSecs);
+        expectedSleepTimeInMs = (std::min)(expectedSleepTimeInMs, m_maxSleepTimeInMs);
 
-        unsigned long jitterInSecs = (unsigned long)(rand() % (expectedSleepTimeInSecs/2));
+        unsigned long jitterInMs = (unsigned long)(rand() % (expectedSleepTimeInMs/2));
 
-        expectedSleepTimeInSecs = (unsigned long)((expectedSleepTimeInSecs/2) + jitterInSecs);
+        expectedSleepTimeInMs = (unsigned long)((expectedSleepTimeInMs/2) + jitterInMs);
 
-        return expectedSleepTimeInSecs ;
+        return expectedSleepTimeInMs ;
     }
 };
 
