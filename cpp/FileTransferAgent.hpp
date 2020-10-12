@@ -44,11 +44,19 @@ class RetryContext
     m_maxRetryCount(10),
     m_minSleepTimeInSecs(3), //3 seconds
     m_maxSleepTimeInSecs(180), //180 seconds is the max sleep time
-    m_timeoutInSecs(500) // timeout 500 seconds.
+    m_timeoutInSecs(600) // timeout 600 seconds.
     {
         m_startTime = (ulong)time(NULL);
     }
 
+    /**
+     * It is retryable if put file status is failed
+     * And retry count is in the limits
+     * And total elapsed time is less than the timeout value specified.
+     *
+     * @param outcome: Put upload status.
+     * @return whether to retry or not.
+     */
     bool isRetryable(RemoteStorageRequestOutcome outcome)
     {
         bool outcomeStatus = ((outcome != RemoteStorageRequestOutcome::SUCCESS) &&
@@ -62,6 +70,10 @@ class RetryContext
         return outcomeStatus && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInSecs;
     }
 
+    /**
+     * get's next sleep time and sleeps
+     * sleep time in seconds.
+     */
     void waitForNextRetry()
     {
         ulong sleepTime = retrySleepTimeInSecs();
@@ -91,7 +103,7 @@ class RetryContext
  * Jitter factor 0.5
  * The first 10 sleep time in second will be like
  * 3, 6, 12, 24, 48, 96, 192, 300, 300, 300,
- * @return returns sleep time in milli seconds.
+ * @return returns sleep time in seconds.
  */
     unsigned long retrySleepTimeInSecs()
     {
