@@ -46,7 +46,7 @@ class RetryContext
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
     m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
     {
-        m_startTime = (ulong)time(NULL);
+        m_startTime = (unsigned long)time(NULL);
     }
 
     /**
@@ -67,7 +67,7 @@ class RetryContext
         {
             CXX_LOG_DEBUG("After %d retry put %s successfully uploaded.", m_retryCount-1, m_putFileName.c_str());
         }
-        ulong elapsedTime = time(NULL) - m_startTime;
+        unsigned long elapsedTime = time(NULL) - m_startTime;
         return isPutInRetryableState && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInMs;
     }
 
@@ -77,7 +77,7 @@ class RetryContext
      */
     void waitForNextRetry()
     {
-        ulong sleepTime = retrySleepTimeInMs();
+        unsigned long sleepTime = retrySleepTimeInMs();
         if(sleepTime > 0) // Sleep only in the retries.
         {
 #ifdef _WIN32
@@ -112,7 +112,9 @@ class RetryContext
  */
     unsigned long retrySleepTimeInMs()
     {
-        if(m_retryCount == 0 ) return 0; //When its initial put (and not a retry)
+        if(m_retryCount == 0 ) {
+            return 0; //When its initial put (and not a retry)
+        }
 
         unsigned long expectedSleepTimeInMs = m_minSleepTimeInMs * pow(2, (m_retryCount-1));
 

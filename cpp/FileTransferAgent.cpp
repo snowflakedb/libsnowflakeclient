@@ -382,7 +382,6 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   FileMetadata *fileMetadata,
   size_t resultIndex)
 {
-  int retry = 0;
   // compress if required
   CXX_LOG_DEBUG("Entrance uploadSingleFile");
   if (fileMetadata->requireCompress)
