@@ -15,6 +15,12 @@
 #include "FileMetadata.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/platform.h"
+#include <algorithm>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
 
@@ -26,6 +32,101 @@ namespace Client
 class IStorageClient;
 
 class FileTransferExecutionResult;
+
+constexpr unsigned long MILLI_SECONDS_IN_SECOND = 1000;
+
+class RetryContext
+{
+  public:
+    RetryContext(std::string &fileName):
+    m_retryCount(0),
+    m_putFileName(fileName),
+    m_maxRetryCount(10),
+    m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
+    m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
+    m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
+    {
+        m_startTime = (unsigned long)time(NULL);
+    }
+
+    /**
+     * It is retryable if put file status is failed
+     * And retry count is in the limits
+     * And total elapsed time is less than the timeout value specified.
+     *
+     * @param putStatus: Put upload status.
+     * @return whether to retry or not.
+     */
+    bool isRetryable(RemoteStorageRequestOutcome putStatus)
+    {
+        //If putStatus is not SUCCESS and not TOKEN_EXPIRED then put is retryable
+        bool isPutInRetryableState = ((putStatus != RemoteStorageRequestOutcome::SUCCESS) &&
+                (putStatus != RemoteStorageRequestOutcome::TOKEN_EXPIRED)) ;
+        //If file upload is successful in a retry log it
+        if(putStatus == RemoteStorageRequestOutcome::SUCCESS && m_retryCount > 1)
+        {
+            CXX_LOG_DEBUG("After %d retry put %s successfully uploaded.", m_retryCount-1, m_putFileName.c_str());
+        }
+        unsigned long elapsedTime = time(NULL) - m_startTime;
+        return isPutInRetryableState && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInMs;
+    }
+
+    /**
+     * get's next sleep time and sleeps
+     * sleep time in milli seconds.
+     */
+    void waitForNextRetry()
+    {
+        unsigned long sleepTime = retrySleepTimeInMs();
+        if(sleepTime > 0) // Sleep only in the retries.
+        {
+#ifdef _WIN32
+            Sleep(sleepTime);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+#else
+            usleep(sleepTime * 1000); // usleep takes micro seconds as input param and sleepTime is in milli's
+#endif
+            CXX_LOG_DEBUG("Retry count %d, Retrying after %ld milli seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
+        }
+        ++m_retryCount;
+    }
+
+  private:
+    unsigned long m_retryCount;
+    unsigned long m_maxRetryCount;
+    unsigned long m_minSleepTimeInMs;
+    unsigned long m_maxSleepTimeInMs;
+    unsigned long m_timeoutInMs;
+    unsigned long m_startTime;
+    std::string m_putFileName;
+/**
+ * When retryCount is 0 its the initial try for put and not a retry so return 0
+ * XP’s backoff strategy (exponential backoff time with jitter).
+ * start sleep time 3 second
+ * max sleep time is 180 second,
+ * Jitter factor is 0.5.
+ * For example, the expected_sleep_time is 3, 6, 12, 24, etc
+ * The sleep time is (expected_sleep_time/2 + a random number between [0, expected_sleep_time/2))
+ * expected_sleep_time = 6
+ * return's (6/2 + (rand() % 3) )
+ * @return returns sleep time in milli seconds.
+ */
+    unsigned long retrySleepTimeInMs()
+    {
+        if(m_retryCount == 0 ) {
+            return 0; //When its initial put (and not a retry)
+        }
+
+        unsigned long expectedSleepTimeInMs = m_minSleepTimeInMs * pow(2, (m_retryCount-1));
+
+        expectedSleepTimeInMs = (std::min)(expectedSleepTimeInMs, m_maxSleepTimeInMs);
+
+        unsigned long jitterInMs = (unsigned long)(rand() % (expectedSleepTimeInMs/2));
+
+        expectedSleepTimeInMs = (unsigned long)((expectedSleepTimeInMs/2) + jitterInMs);
+
+        return expectedSleepTimeInMs ;
+    }
+};
 
 /**
  * This is the main class to external component (c api or ODBC)
