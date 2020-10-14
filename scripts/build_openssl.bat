@@ -9,7 +9,7 @@
 :: - vs14 / vs15
 
 @echo off
-set OPENSSL_VERSION=1.1.1b
+set OPENSSL_VERSION=1.1.1g
 call %*
 goto :EOF
 
@@ -65,7 +65,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps
 rd /s /q %OPENSSL_DIR%
-7z x openssl-1.1.1b.zip
+7z x openssl-1.1.1g.zip
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
 echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
 %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared

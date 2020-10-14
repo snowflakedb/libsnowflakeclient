@@ -20,7 +20,11 @@
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
 #include <chrono>
-
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 using ::std::string;
 using ::std::vector;
 using ::Snowflake::Client::RemoteStorageRequestOutcome;
@@ -398,48 +402,50 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
   CXX_LOG_TRACE("Encryption metadata init done");
 
-  std::basic_iostream<char> *srcFileStream;
-  ::std::fstream fs;
-
-  if (m_uploadStream)
+  RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
+  RetryContext putRetryCtx(fileMetadata->srcFileName);
+  do
   {
-    srcFileStream = m_uploadStream;
-  }
-  else
- {
-    try {
-      fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
-                          ::std::ios_base::in |
-                          ::std::ios_base::binary);
+    //Sleeps only when its a retry
+    putRetryCtx.waitForNextRetry();
+    std::basic_iostream<char> *srcFileStream;
+    ::std::fstream fs;
+
+    if (m_uploadStream) {
+      srcFileStream = m_uploadStream;
+    } else {
+      try {
+        fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+                            ::std::ios_base::in |
+                            ::std::ios_base::binary);
+      }
+      catch (...) {
+        std::string err = "Could not open source file " + fileMetadata->srcFileToUpload;
+        throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+      }
+      srcFileStream = &fs;
     }
-    catch(...)
+
+    Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
+                                              Crypto::CryptoOperation::ENCRYPT,
+                                              fileMetadata->encryptionMetadata.fileKey,
+                                              fileMetadata->encryptionMetadata.iv,
+                                              FILE_ENCRYPTION_BLOCK_SIZE);
+
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
+    // upload stream
+    outcome = client->upload(fileMetadata, &inputEncryptStream);
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
+    CXX_LOG_DEBUG("File upload done.");
+    if (fs.is_open())
     {
-      std::string err= "Could not open source file " + fileMetadata->srcFileToUpload ;
-      throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+      fs.close();
     }
-    srcFileStream = &fs;
-  }
 
-  Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
-    Crypto::CryptoOperation::ENCRYPT,
-    fileMetadata->encryptionMetadata.fileKey,
-    fileMetadata->encryptionMetadata.iv,
-    FILE_ENCRYPTION_BLOCK_SIZE);
-
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
-  // upload stream
-  RemoteStorageRequestOutcome outcome = client->upload(fileMetadata,
-                                                       &inputEncryptStream);
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
-  CXX_LOG_DEBUG("File upload done.");
-  if (fs.is_open())
-  {
-    fs.close();
-  }
-
-  m_executionResults->SetTransferOutCome(outcome, resultIndex);
-  fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
-  fileMetadata->printPutGetTimestamp();
+    m_executionResults->SetTransferOutCome(outcome, resultIndex);
+    fileMetadata->recordPutGetTimestamp(FileMetadata::PUTGET_END);
+    fileMetadata->printPutGetTimestamp();
+  } while (putRetryCtx.isRetryable(outcome));
   CXX_LOG_DEBUG("Exit UploadSingleFile");
   return outcome;
 }
