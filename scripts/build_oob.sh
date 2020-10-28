@@ -58,7 +58,6 @@ else
 fi
 
 cp $OOB_SOURCE_DIR/*.h $OOB_BUILD_DIR/include
-cp $OOB_SOURCE_DIR/../$CURL_DIR/lib/vtls/sf_ocsp_telemetry_data.h $OOB_BUILD_DIR/include
 cp $OOB_SOURCE_DIR/libtelemetry.a $OOB_BUILD_DIR/lib
 
 echo === zip_file "oob" "$OOB_VERSION" "$target"
