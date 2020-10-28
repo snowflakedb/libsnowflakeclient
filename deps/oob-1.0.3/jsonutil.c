@@ -95,6 +95,12 @@ char* prepareOOBevent(oobOcspData* ocspevent)
     cJSON_AddItemToObject(list, "Name", key);
   }
 
+  if (ocspevent && ocspevent->event_sub_type[0] != 0) {
+    key = cJSON_CreateString(ocspevent->event_sub_type);
+    if ( ! key ) goto end;
+    cJSON_AddItemToObject(list, "SubCategory", key);
+  }
+
   key = cJSON_CreateNumber(1);
   if( ! key ) goto end;
   cJSON_AddItemToObject(list, "SchemaVersion", key);
