@@ -216,7 +216,9 @@ curl_easy_strerror(CURLcode error)
     return "Couldn't use specified SSL cipher";
 
   case CURLE_PEER_FAILED_VERIFICATION:
-    return "SSL peer certificate or SSH remote key was not OK";
+    return "SSL peer certificate or SSH remote key was not OK. "
+           "This is likely due to a firewall or proxy "
+           "that terminates the connection";
 
   case CURLE_SSL_CACERT_BADFILE:
     return "Problem with the SSL CA cert (path? access rights?)";
