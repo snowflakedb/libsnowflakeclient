@@ -229,19 +229,27 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       {
         getPresignedUrlForUploading(m_largeFilesMeta[i], *command);
       }
-      CXX_LOG_DEBUG("Putget serial upload, %s file", m_largeFilesMeta[i].srcFileName.c_str());
+      CXX_LOG_DEBUG("Putget serial large file upload, %s file", m_largeFilesMeta[i].srcFileName.c_str());
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
                                                  &m_largeFilesMeta[i], i);
       m_executionResults->SetTransferOutCome(outcome, i);
 
       if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
       {
+        CXX_LOG_DEBUG("Putget serial large file upload, %s file renewToken", m_largeFilesMeta[i].srcFileName.c_str());
         renewToken(command);
         i--;
       }
       else if( outcome == RemoteStorageRequestOutcome::FAILED)
       {
+        CXX_LOG_DEBUG("Putget serial large file upload, %s file upload FAILED.",
+                m_largeFilesMeta[i].srcFileName.c_str());
         throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, m_largeFilesMeta[i].srcFileName.c_str());
+      }
+      else if( outcome == RemoteStorageRequestOutcome::SUCCESS)
+      {
+        CXX_LOG_DEBUG("Putget serial large file upload, %s file upload SUCCESS.",
+                m_largeFilesMeta[i].srcFileName.c_str());
       }
     }
   }
@@ -260,6 +268,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
   }
   if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
   {
+    CXX_LOG_DEBUG("No files to upload, source files do not exist. put command %s FAILED.", *command->c_str());
     m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, 0);
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, "source file does not exist.");
   }
@@ -287,6 +296,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           resultIndex);
         if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
         {
+          CXX_LOG_DEBUG("Sequential upload %d th file %s renewToken", i, metadata->srcFileName.c_str());
           _mutex_lock(&m_parallelTokRenewMutex);
           this->renewToken(command);
           _mutex_unlock(&m_parallelTokRenewMutex);
@@ -294,8 +304,14 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         else
         {
           if (outcome == RemoteStorageRequestOutcome::FAILED) {
-            CXX_LOG_DEBUG("Failed to upload %s ", metadata->srcFileName.c_str());
+            CXX_LOG_DEBUG("Sequential upload %s FAILED.", metadata->srcFileName.c_str());
             failedTransfers.append(metadata->srcFileName) + ", ";
+            //Fast fail, return when the first file fails to upload.
+            if(isPutFastFailEnabled())
+            {
+              CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Stop uploading rest of the files.");
+              return;
+            }
           }
           else if (outcome == RemoteStorageRequestOutcome::SUCCESS) {
             CXX_LOG_DEBUG("Sequential upload %d th file %s SUCCESS.", i, metadata->srcFileName.c_str());
@@ -311,6 +327,12 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         do
         {
           CXX_LOG_DEBUG("Putget Parallel upload %s", metadata->srcFileName.c_str());
+          if(isPutFastFailEnabled() && !failedTransfers.empty())
+          {
+              CXX_LOG_DEBUG("Fast fail enabled, One of the threads failed to upload file, "
+                            "Quitting uploading rest of the files.");
+              break;
+          }
           RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
                                                      resultIndex);
           m_executionResults->SetTransferOutCome(outcome, resultIndex);
@@ -326,6 +348,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             if( outcome == RemoteStorageRequestOutcome::FAILED)
             {
               //Cannot throw and catch error from a thread.
+              CXX_LOG_DEBUG("Parallel upload %s FAILED", metadata->srcFileName.c_str());
               _mutex_lock(&m_parallelFailedMsgMutex);
               failedTransfers.append(metadata->srcFileName) + ", ";
               _mutex_unlock(&m_parallelFailedMsgMutex);
@@ -345,6 +368,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
   CXX_LOG_DEBUG("All threads exited, Parallel put done.");
   if(!failedTransfers.empty())
   {
+    CXX_LOG_DEBUG("%s command FAILED.")
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
   }
 }
@@ -531,7 +555,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   if (ret != 0)
   {
     CXX_LOG_ERROR("Failed to compress source file. Error code: %d", ret);
-    throw SnowflakeTransferException(TransferError::COMPRESSION_ERROR, ret);
+    throw SnowflakeTransferException(TransferError::COMPRESSION_ERROR, "Failed to compress source file", ret);
   }
 
   fclose(sourceFile);

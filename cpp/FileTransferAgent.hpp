@@ -20,6 +20,8 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <thread>
+
 #endif
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
@@ -80,11 +82,7 @@ class RetryContext
         unsigned long sleepTime = retrySleepTimeInMs();
         if(sleepTime > 0) // Sleep only in the retries.
         {
-#ifdef _WIN32
-            Sleep(sleepTime);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
-#else
-            usleep(sleepTime * 1000); // usleep takes micro seconds as input param and sleepTime is in milli's
-#endif
+            std::this_thread::sleep_for(std::chrono::milliseconds (std::chrono::milliseconds(sleepTime)));
             CXX_LOG_DEBUG("Retry count %d, Retrying after %ld milli seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
         }
         ++m_retryCount;
@@ -168,6 +166,17 @@ public:
   virtual void setRandomDeviceAsUrand(bool useUrand)
   {
     m_useDevUrand = useUrand;
+  }
+
+  virtual void setPutFastFail(bool fastFail)
+  {
+    CXX_LOG_DEBUG("Enabling put fast fail.");
+    m_fastFail = fastFail;
+  }
+
+  virtual bool isPutFastFailEnabled(void)
+  {
+    return m_fastFail;
   }
 
 private:
@@ -280,14 +289,17 @@ private:
   /// config struct that is passed in.
   TransferConfig * m_transferConfig;
 
-  // The stream for uploading data from memory. (NOT OWN)
+  /// The stream for uploading data from memory. (NOT OWN)
   std::basic_iostream<char>* m_uploadStream;
 
-  // The data size of upload stream.
+  /// The data size of upload stream.
   size_t m_uploadStreamSize;
 
   /// Whether to use /dev/urandom or /dev/random;
   bool m_useDevUrand;
+
+  /// fastFail, fail all the puts if one of the put fails in the wild char put upload.
+  bool m_fastFail;
 };
 }
 }
