@@ -40,10 +40,10 @@ constexpr unsigned long MILLI_SECONDS_IN_SECOND = 1000;
 class RetryContext
 {
   public:
-    RetryContext(std::string &fileName):
+    RetryContext(const std::string &fileName, int maxRetries):
     m_retryCount(0),
     m_putFileName(fileName),
-    m_maxRetryCount(10),
+    m_maxRetryCount(maxRetries),
     m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
     m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
@@ -179,6 +179,11 @@ public:
     return m_fastFail;
   }
 
+  virtual void setPutMaxRetries(int maxRetries)
+  {
+     m_maxPutRetries = maxRetries;
+  }
+
 private:
   /**
    * Populate file metadata, (Get source file name)
@@ -300,6 +305,8 @@ private:
 
   /// fastFail, fail all the puts if one of the put fails in the wild char put upload.
   bool m_fastFail;
+
+  int m_maxPutRetries;
 };
 }
 }

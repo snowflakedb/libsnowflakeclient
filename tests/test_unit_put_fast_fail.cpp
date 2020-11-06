@@ -22,15 +22,39 @@
 #include "utils/TestSetup.hpp"
 
 using namespace ::Snowflake::Client;
+int parallelThreads = 1;
+std::vector<std::string> fileList;
 
 std::string getTestFileMatchDir()
 {
   std::string srcLocation = TestSetup::getDataDir();
-  srcLocation += "test_file_match_dir";
+  srcLocation += "test_put_fast_fail";
   srcLocation += PATH_SEP;
   return srcLocation;
 }
 
+void createTestFiles(void)
+{
+  std::string testDir = getTestFileMatchDir();
+#ifdef _WIN32
+  _mkdir(testDir.c_str());
+#else
+  mkdir(testDir.c_str(), 0755);
+#endif
+  for(int count = 0; count < 10 ; count++)
+  {
+    char file[1024];
+    sprintf(file, "%sfile%d.csv", testDir.c_str(),count);
+    FILE *fp = fopen(file, "w");
+    if(fp == NULL)
+    {
+      perror("Fopen: ");
+      std::cout << "Could not create file." << std::endl;
+    }
+    fprintf(fp, "Test data Test data Test data\n");
+    fclose(fp);
+  }
+}
 class MockedFailedParseStmt : public Snowflake::Client::IStatementPutGet
 {
 public:
@@ -68,7 +92,7 @@ public:
     putGetParseResponse->sourceCompression = (char *)"NONE";
     putGetParseResponse->srcLocations = m_srcLocations;
     putGetParseResponse->autoCompress = false;
-    putGetParseResponse->parallel = 1;
+    putGetParseResponse->parallel = parallelThreads;
     putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
     putGetParseResponse->localLocation = (char *)"/tmp\0";
 
@@ -107,7 +131,7 @@ public:
     putGetParseResponse->srcLocations = m_srcLocations;
     putGetParseResponse->threshold = DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD;
     putGetParseResponse->autoCompress = false;
-    putGetParseResponse->parallel = 1;
+    putGetParseResponse->parallel = parallelThreads;
     putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
 
     return true;
@@ -134,8 +158,8 @@ public:
   }
 
   /**
-   * Initially returns put failed.
-   * And this triggers retry and then returns success.
+   * The upload mimics the failed behavior of single file
+   * during the parallel and sequential file uploads.
    * @param fileMetadata
    * @param dataStream
    * @return put command status
@@ -146,10 +170,12 @@ public:
     std::size_t found = fileMetadata->srcFileName.find_last_of("/\\");
     std::string fileName = fileMetadata->srcFileName.substr(found+1);
     if(fileName.compare("file2.csv") == 0)
+    {
       return FAILED;
+    }
     //Lets make succesful files wait
     //So the failed ones can catch up with retries and set fastFail.
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     return SUCCESS;
   }
 
@@ -185,9 +211,12 @@ void test_put_fast_fail_core()
 
   agent.setPutFastFail(true);
 
+  agent.setPutMaxRetries(2);
+
   try
   {
     ITransferResult *result = agent.execute(&cmd);
+
     assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
   }
   catch(SnowflakeTransferException &ex)
@@ -195,22 +224,58 @@ void test_put_fast_fail_core()
     assert_int_equal(ex.getCode(), TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS);
   }
 }
-void test_put_fast_fail(void **unused)
+
+/**
+ * This test tests fast fail with single thread.
+ * There are 10 files to upload and if when one of the files fail to upload
+ * then we skip uploading rest of the files and throw file transfer exception with approriate error code.
+ * @param unused
+ */
+void test_put_fast_fail_sequential(void **unused)
 {
+  parallelThreads = 1;
   test_put_fast_fail_core();
+}
+
+/**
+ * This test tests fast fail with 3 threads.
+ * There are 10 files to upload. When three threads start uploading three files initially
+ * and (we fail one of them) two other files which are already in process will upload
+ * but the remaining files wont be uploaded. And file transfer exception with appropriate error code is thrown.
+ */
+void test_put_fast_fail_parallel(void **unused)
+{
+  parallelThreads = 3;
+  test_put_fast_fail_core();
+}
+
+static int gr_teardown(void **unused)
+{
+  std::string testDir = getTestFileMatchDir();
+  char rmCmd[500];
+#ifdef _WIN32
+  sprintf(rmCmd, "rd /s /q %s", testDir.c_str());
+  system(rmCmd);
+#else
+  sprintf(rmCmd, "rm -rf %s", testDir.c_str());
+  system(rmCmd);
+#endif
 }
 
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
+  createTestFiles();
   return 0;
 }
 
 int main(void) {
+  void **unused;
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_put_fast_fail),
+    cmocka_unit_test(test_put_fast_fail_sequential),
+    cmocka_unit_test(test_put_fast_fail_parallel),
   };
-  int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
+  int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }
 
