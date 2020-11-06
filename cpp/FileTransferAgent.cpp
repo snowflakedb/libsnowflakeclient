@@ -71,7 +71,7 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_uploadStream(nullptr),
   m_uploadStreamSize(0),
   m_useDevUrand(false),
-  m_maxPutRetries(10)
+  m_maxPutRetries(5)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
