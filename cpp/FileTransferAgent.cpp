@@ -70,7 +70,8 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_transferConfig(transferConfig),
   m_uploadStream(nullptr),
   m_uploadStreamSize(0),
-  m_useDevUrand(false)
+  m_useDevUrand(false),
+  m_maxPutRetries(10)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -403,7 +404,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   CXX_LOG_TRACE("Encryption metadata init done");
 
   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
-  RetryContext putRetryCtx(fileMetadata->srcFileName);
+  RetryContext putRetryCtx(fileMetadata->srcFileName, m_maxPutRetries);
   do
   {
     //Sleeps only when its a retry
