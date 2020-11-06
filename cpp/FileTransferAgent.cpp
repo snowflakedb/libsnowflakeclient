@@ -292,8 +292,15 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
       CXX_LOG_DEBUG("Sequential upload %d th file %s start", i, metadata->srcFileName.c_str());
       do
       {
-        RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
-          resultIndex);
+        RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
+        if(isPutFastFailEnabled() && !failedTransfers.empty())
+        {
+          outcome = RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+          m_executionResults->SetTransferOutCome(outcome, resultIndex);
+          CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Skipping file.");
+          break;
+        }
+        outcome = uploadSingleFile(m_storageClient, metadata, resultIndex);
         if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
         {
           CXX_LOG_DEBUG("Sequential upload %d th file %s renewToken", i, metadata->srcFileName.c_str());
@@ -309,8 +316,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             //Fast fail, return when the first file fails to upload.
             if(isPutFastFailEnabled())
             {
-              CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Stop uploading rest of the files.");
-              return;
+              CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Skip uploading rest of the files.");
             }
           }
           else if (outcome == RemoteStorageRequestOutcome::SUCCESS) {
@@ -326,16 +332,16 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
     tp.AddJob([metadata, resultIndex, command, &failedTransfers, this]()->void {
         do
         {
+          RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
           CXX_LOG_DEBUG("Putget Parallel upload %s", metadata->srcFileName.c_str());
           if(isPutFastFailEnabled() && !failedTransfers.empty())
           {
               CXX_LOG_DEBUG("Fast fail enabled, One of the threads failed to upload file, "
                             "Quitting uploading rest of the files.");
+              m_executionResults->SetTransferOutCome(outcome, resultIndex);
               break;
           }
-          RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient, metadata,
-                                                     resultIndex);
-          m_executionResults->SetTransferOutCome(outcome, resultIndex);
+          outcome = uploadSingleFile(m_storageClient, metadata, resultIndex);
           if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
           {
             CXX_LOG_DEBUG("Token expired, Renewing token.")
@@ -368,7 +374,11 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
   CXX_LOG_DEBUG("All threads exited, Parallel put done.");
   if(!failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.")
+    CXX_LOG_DEBUG("%s command FAILED.");
+    if(isPutFastFailEnabled())
+    {
+      throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS, failedTransfers.c_str());
+    }
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, failedTransfers.c_str());
   }
 }
