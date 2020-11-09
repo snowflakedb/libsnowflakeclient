@@ -175,7 +175,11 @@ public:
     }
     //Lets make succesful files wait
     //So the failed ones can catch up with retries and set fastFail.
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+#ifdef _WIN32
+	Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+#else
+	std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+#endif
     return SUCCESS;
   }
 
@@ -260,6 +264,7 @@ static int gr_teardown(void **unused)
   sprintf(rmCmd, "rm -rf %s", testDir.c_str());
   system(rmCmd);
 #endif
+  return 0;
 }
 
 static int gr_setup(void **unused)

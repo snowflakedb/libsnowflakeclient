@@ -82,7 +82,11 @@ class RetryContext
         unsigned long sleepTime = retrySleepTimeInMs();
         if(sleepTime > 0) // Sleep only in the retries.
         {
+#ifdef _WIN32
+            Sleep(sleepTime);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+#else
             std::this_thread::sleep_for(std::chrono::milliseconds (std::chrono::milliseconds(sleepTime)));
+#endif
             CXX_LOG_DEBUG("Retry count %d, Retrying after %ld milli seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
         }
         ++m_retryCount;
@@ -170,7 +174,10 @@ public:
 
   virtual void setPutFastFail(bool fastFail)
   {
-    CXX_LOG_DEBUG("Enabling put fast fail.");
+    if(fastFail)
+    {
+      CXX_LOG_DEBUG("Enabling put fast fail.");
+    }
     m_fastFail = fastFail;
   }
 

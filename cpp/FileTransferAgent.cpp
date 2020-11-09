@@ -71,7 +71,7 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_uploadStream(nullptr),
   m_uploadStreamSize(0),
   m_useDevUrand(false),
-  m_maxPutRetries(10)
+  m_maxPutRetries(5)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -269,7 +269,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
   }
   if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
   {
-    CXX_LOG_DEBUG("No files to upload, source files do not exist. put command %s FAILED.", *command->c_str());
+    CXX_LOG_DEBUG("No files to upload, source files do not exist. put command %s FAILED.", command->c_str());
     m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, 0);
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, "source file does not exist.");
   }
@@ -296,8 +296,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
         if(isPutFastFailEnabled() && !failedTransfers.empty())
         {
-          outcome = RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
-          m_executionResults->SetTransferOutCome(outcome, resultIndex);
+          m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE, resultIndex);
           CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Skipping file.");
           break;
         }
@@ -338,8 +337,8 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
           if(isPutFastFailEnabled() && !failedTransfers.empty())
           {
               CXX_LOG_DEBUG("Fast fail enabled, One of the threads failed to upload file, "
-                            "Quitting uploading rest of the files.");
-              m_executionResults->SetTransferOutCome(outcome, resultIndex);
+                            "Quit uploading rest of the files.");
+              m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE, resultIndex);
               break;
           }
           outcome = uploadSingleFile(m_storageClient, metadata, resultIndex);
@@ -375,7 +374,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
   CXX_LOG_DEBUG("All threads exited, Parallel put done.");
   if(!failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.");
+    CXX_LOG_DEBUG("%s command FAILED.",command);
     if(isPutFastFailEnabled())
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS, failedTransfers.c_str());
