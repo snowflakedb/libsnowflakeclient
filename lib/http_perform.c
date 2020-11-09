@@ -131,10 +131,13 @@ sf_bool STDCALL http_perform(CURL *curl,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
-                             sf_bool insecure_mode) {
+                             sf_bool insecure_mode,
+                             sf_bool retry_on_curle_couldnt_connect,
+                             int8 retry_on_curle_couldnt_connect_count) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
+    int8 retry_count = 0;
     long int http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
       1,      //base
@@ -255,21 +258,21 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-#ifndef _WIN32
-        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
-        sf_bool ocsp_check;
-        if (insecure_mode) {
-            ocsp_check = SF_BOOLEAN_FALSE;
-        } else {
-            ocsp_check = SF_OCSP_CHECK;
-        }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
-        if (res != CURLE_OK) {
-            log_error("Unable to set OCSP check enable/disable [%s]",
-                      curl_easy_strerror(res));
-            break;
-        }
-#endif
+//#ifndef _WIN32
+//        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
+//        sf_bool ocsp_check;
+//        if (insecure_mode) {
+//            ocsp_check = SF_BOOLEAN_FALSE;
+//        } else {
+//            ocsp_check = SF_OCSP_CHECK;
+//        }
+//        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
+//        if (res != CURLE_OK) {
+//            log_error("Unable to set OCSP check enable/disable [%s]",
+//                      curl_easy_strerror(res));
+//            break;
+//        }
+//#endif
 
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
@@ -294,19 +297,27 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-            char msg[1024];
-            if (res == CURLE_SSL_CACERT_BADFILE) {
+          if (retry_on_curle_couldnt_connect && res == CURLE_COULDNT_CONNECT &&
+              retry_count < retry_on_curle_couldnt_connect_count)
+            {
+              log_error("curl_easy_perform() failed connecting to server, will retry");
+              retry = SF_BOOLEAN_TRUE;
+            } else {
+              char msg[1024];
+              if (res == CURLE_SSL_CACERT_BADFILE) {
                 sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
-                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
-            }
-            else {
+                        curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
+                }
+                else {
                 sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+                }
+                msg[sizeof(msg)-1] = (char)0;
+                log_error(msg);
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
-            msg[sizeof(msg)-1] = (char)0;
-            log_error(msg);
-            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                msg,
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
+
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
                 CURLE_OK) {
@@ -330,6 +341,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Reset everything
         reset_curl(curl);
         http_code = 0;
+        retry_count += retry;
     }
     while (retry);
 

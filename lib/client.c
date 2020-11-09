@@ -630,6 +630,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL_param = NULL;
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
+        sf->retry_on_curle_couldnt_connect = SF_BOOLEAN_FALSE;
+        sf->retry_on_curle_couldnt_connect_count = 0;
     }
 
     return sf;
@@ -951,6 +953,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_DIR_QUERY_TOKEN:
             alloc_buffer_and_copy(&sf->direct_query_token, value);
             break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT:
+            sf->retry_on_curle_couldnt_connect = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
+            sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1043,6 +1051,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_DIR_QUERY_TOKEN:
             *value = sf->direct_query_token;
             break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT:
+          *value = &sf->retry_on_curle_couldnt_connect;
+          break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
+          *value = &sf->retry_on_curle_couldnt_connect_count;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
