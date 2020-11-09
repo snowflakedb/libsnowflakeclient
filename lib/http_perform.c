@@ -317,7 +317,6 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
-
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
                 CURLE_OK) {
@@ -341,7 +340,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Reset everything
         reset_curl(curl);
         http_code = 0;
-        retry_count += retry;
+        retry_count += 1;
     }
     while (retry);
 
