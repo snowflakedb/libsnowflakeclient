@@ -62,6 +62,12 @@ public:
    */
   virtual void setRandomDeviceAsUrand(bool useUrand){};
 
+  /**
+   * Set max number of retries for put fails
+   * @param maxRetries: max number of retries.
+   */
+  virtual void setPutMaxRetries(int maxRetries){};
+
 };
 
 }
