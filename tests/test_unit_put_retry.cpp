@@ -193,6 +193,26 @@ void test_simple_put_retry(void ** unused)
   test_simple_put_retry_core("small_file.csv.gz");
 }
 
+void test_set_max_retry_core()
+{
+  int maxRetries = 2;
+
+  Snowflake::Client::RetryContext retry_context("dummyFile.csv", maxRetries);
+  int retryCount = 0;
+  do
+  {
+    retry_context.waitForNextRetry();
+    ++retryCount;
+  }while(retry_context.isRetryable(FAILED));
+
+  //The first run is not a retry.
+  assert_int_equal(retryCount-1, maxRetries);
+}
+void test_set_max_retry(void **unused)
+{
+  test_set_max_retry_core();
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -202,6 +222,7 @@ static int gr_setup(void **unused)
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_simple_put_retry),
+    cmocka_unit_test(test_set_max_retry),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
