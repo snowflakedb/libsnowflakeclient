@@ -845,6 +845,32 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
 SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr);
 
 /**
+ * Given the raw value as a string, returns the string representation
+ *
+ * @param sfstmt (can be null) SF_STMT context to be used for extracting sfqid and error
+ * @param const_str_val the src raw value
+ * @param type the target type
+ *  (caller is responsible to make sure currect type is passed in for the raw value)
+ * @param connection_timezone to be used for extracting timestamp string values
+ * @param scale to be used for extracting timestamp string values
+ * @param isNull
+ * @param value_ptr Copied Column data is stored in this pointer (if conversion was successful)
+ * @param value_len_ptr The length of the string value. This is what you would get if you were to call strlen(*value_ptr).
+ * @param max_value_size_ptr The size of the value buffer. If value_ptr is reallocated because the data to copy is too
+ *        large, then this ptr will hold the value of the new buffer size.
+ * @return 0 if success, otherwise an errno is returned
+ * @return
+ */
+SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt,
+                                                 const char *const_str_val,
+                                                 const SF_DB_TYPE type,
+                                                 const char *connection_timezone,
+                                                 int32 scale, sf_bool isNull,
+                                                 char **value_ptr,
+                                                 size_t *value_len_ptr,
+                                                 size_t *max_value_size_ptr);
+
+/**
  * Converts a column into a string, copies to the buffer provided and stores that buffer address in value_ptr. If
  * *value_ptr is not NULL and max_value_size_ptr is not NULL and greater than 0, then the library will copy the string
  * data into the provided buffer. If the provided buffer if not large enough, the library will reallocate this string
