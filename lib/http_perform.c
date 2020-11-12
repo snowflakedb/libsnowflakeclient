@@ -258,21 +258,21 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-//#ifndef _WIN32
-//        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
-//        sf_bool ocsp_check;
-//        if (insecure_mode) {
-//            ocsp_check = SF_BOOLEAN_FALSE;
-//        } else {
-//            ocsp_check = SF_OCSP_CHECK;
-//        }
-//        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
-//        if (res != CURLE_OK) {
-//            log_error("Unable to set OCSP check enable/disable [%s]",
-//                      curl_easy_strerror(res));
-//            break;
-//        }
-//#endif
+#ifndef _WIN32
+        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
+        sf_bool ocsp_check;
+        if (insecure_mode) {
+            ocsp_check = SF_BOOLEAN_FALSE;
+        } else {
+            ocsp_check = SF_OCSP_CHECK;
+        }
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
+        if (res != CURLE_OK) {
+            log_error("Unable to set OCSP check enable/disable [%s]",
+                      curl_easy_strerror(res));
+            break;
+        }
+#endif
 
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
@@ -297,7 +297,8 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-          if (retry_on_curle_couldnt_connect && res == CURLE_COULDNT_CONNECT &&
+          if (retry_on_curle_couldnt_connect == SF_BOOLEAN_TRUE &&
+              res == CURLE_COULDNT_CONNECT &&
               retry_count < retry_on_curle_couldnt_connect_count)
             {
               log_error("curl_easy_perform() failed connecting to server, will retry");
