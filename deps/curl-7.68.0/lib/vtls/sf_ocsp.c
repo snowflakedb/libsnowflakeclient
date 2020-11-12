@@ -1670,10 +1670,6 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
       }
     }
   }
-  else
-  {
-    if (ocsp_log_data) curl_free(ocsp_log_data);
-  }
   if (resp) OCSP_RESPONSE_free(resp);
   return result;
 }
