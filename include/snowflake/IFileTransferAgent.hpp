@@ -72,6 +72,12 @@ public:
    */
   virtual void setPutFastFail(bool putFastFail){};
 
+  /**
+   * Set max number of retries for put fails
+   * @param maxRetries: max number of retries.
+   */
+  virtual void setPutMaxRetries(int maxRetries){};
+
 };
 
 }

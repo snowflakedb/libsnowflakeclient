@@ -46,7 +46,7 @@ class RetryContext
     m_maxRetryCount(maxRetries),
     m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
-    m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
+    m_timeoutInMs(maxRetries * 500 * MILLI_SECONDS_IN_SECOND) // timeout maxRetries * 500 seconds.
     {
         m_startTime = (unsigned long)time(NULL);
     }
@@ -174,10 +174,7 @@ public:
 
   virtual void setPutFastFail(bool fastFail)
   {
-    if(fastFail)
-    {
-      CXX_LOG_DEBUG("Enabling put fast fail.");
-    }
+    CXX_LOG_DEBUG("Setting fastFail to %d", fastFail);
     m_fastFail = fastFail;
   }
 
