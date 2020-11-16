@@ -138,6 +138,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
     int8 retry_count = 0;
+    RETRY_CONTEXT* curl_retry_ctx = retry_ctx_init(1);
     long int http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
       1,      //base
@@ -303,6 +304,8 @@ sf_bool STDCALL http_perform(CURL *curl,
             {
               log_error("curl_easy_perform() failed connecting to server, will retry");
               retry = SF_BOOLEAN_TRUE;
+              uint32 next_sleep_in_secs = retry_ctx_next_sleep(curl_retry_ctx);
+              sleep(next_sleep_in_secs);
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
@@ -369,6 +372,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
 
     SF_FREE(buffer.buffer);
+    retry_ctx_free(curl_retry_ctx);
 
     return ret;
 }
