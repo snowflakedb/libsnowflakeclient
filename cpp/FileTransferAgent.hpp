@@ -20,6 +20,8 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <thread>
+
 #endif
 
 #define FILE_ENCRYPTION_BLOCK_SIZE 128
@@ -44,7 +46,7 @@ class RetryContext
     m_maxRetryCount(maxRetries),
     m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
-    m_timeoutInMs(600 * MILLI_SECONDS_IN_SECOND) // timeout 600 seconds.
+    m_timeoutInMs(maxRetries * 500 * MILLI_SECONDS_IN_SECOND) // timeout maxRetries * 500 seconds.
     {
         m_startTime = (unsigned long)time(NULL);
     }
@@ -83,7 +85,7 @@ class RetryContext
 #ifdef _WIN32
             Sleep(sleepTime);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
-            usleep(sleepTime * 1000); // usleep takes micro seconds as input param and sleepTime is in milli's
+            std::this_thread::sleep_for(std::chrono::milliseconds (std::chrono::milliseconds(sleepTime)));
 #endif
             CXX_LOG_DEBUG("Retry count %d, Retrying after %ld milli seconds put file %s.", m_retryCount, sleepTime, m_putFileName.c_str());
         }
@@ -168,6 +170,17 @@ public:
   virtual void setRandomDeviceAsUrand(bool useUrand)
   {
     m_useDevUrand = useUrand;
+  }
+
+  virtual void setPutFastFail(bool fastFail)
+  {
+    CXX_LOG_DEBUG("Setting fastFail to %d", fastFail);
+    m_fastFail = fastFail;
+  }
+
+  virtual bool isPutFastFailEnabled(void)
+  {
+    return m_fastFail;
   }
 
   virtual void setPutMaxRetries(int maxRetries)
@@ -285,14 +298,17 @@ private:
   /// config struct that is passed in.
   TransferConfig * m_transferConfig;
 
-  // The stream for uploading data from memory. (NOT OWN)
+  /// The stream for uploading data from memory. (NOT OWN)
   std::basic_iostream<char>* m_uploadStream;
 
-  // The data size of upload stream.
+  /// The data size of upload stream.
   size_t m_uploadStreamSize;
 
   /// Whether to use /dev/urandom or /dev/random;
   bool m_useDevUrand;
+
+  /// fastFail, fail all the puts if one of the put fails in the wild char put upload.
+  bool m_fastFail;
 
   int m_maxPutRetries;
 };

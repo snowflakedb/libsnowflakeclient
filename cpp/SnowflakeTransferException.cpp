@@ -19,6 +19,7 @@ static const char * errorMsgFmts[] = {
   "Compression type %s is either not supported.", //COMPRESSION_NOT_SUPPORTED
   "Failed to read %s file on disk, code %d", // FILE_OPEN_ERROR
   "Failed to upload file %s",  //FAILED_TO_TRANSFER
+  "Fast fail enabled, Skipped uploading rest of the files", //FAST_FAIL_ENABLED_SKIP_UPLOADS
 };
 
 Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(
