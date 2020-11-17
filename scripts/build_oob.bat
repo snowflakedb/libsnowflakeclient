@@ -37,10 +37,12 @@ if "%platform%"=="x86" (
 if "%build_type%"=="Debug" (
     set oob_debug_option=yes
     set oob_lib_name=libtelemetry_a_debug.lib
+    set COMPILEFLAG=-MTd
 )
 if "%build_type%"=="Release" (
     set oob_debug_option=no
     set oob_lib_name=libtelemetry_a.lib
+    set COMPILEFLAG=-MT
 )
 
 set target_name=libtelemetry_a.lib
