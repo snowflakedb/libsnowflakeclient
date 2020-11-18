@@ -2,7 +2,7 @@
 :: Build oob for Windows
 ::
 @echo off
-set OOB_VERSION=1.0.3
+set OOB_VERSION=1.0.4
 call %*
 goto :EOF
 
