@@ -2,7 +2,7 @@
 :: Build oob for Windows
 ::
 @echo off
-set OOB_VERSION=1.0.3
+set OOB_VERSION=1.0.4
 call %*
 goto :EOF
 
@@ -37,10 +37,12 @@ if "%platform%"=="x86" (
 if "%build_type%"=="Debug" (
     set oob_debug_option=yes
     set oob_lib_name=libtelemetry_a_debug.lib
+    set COMPILEFLAG=-MTd
 )
 if "%build_type%"=="Release" (
     set oob_debug_option=no
     set oob_lib_name=libtelemetry_a.lib
+    set COMPILEFLAG=-MT
 )
 
 set target_name=libtelemetry_a.lib
@@ -64,7 +66,6 @@ md .\deps-build\%build_dir%\oob\lib
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y %OOB_SOURCE_DIR%\*.h .\deps-build\%build_dir%\oob\include
-copy /v /y %OOB_SOURCE_DIR%\..\curl-%CURL_VERSION%\lib\vtls\sf_ocsp_telemetry_data.h .\deps-build\%build_dir%\oob\include
 copy /v /y %OOB_SOURCE_DIR%\libtelemetry_a.lib .\deps-build\%build_dir%\oob\lib\%target_name%
 
 echo === archiving the library
