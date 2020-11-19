@@ -296,8 +296,6 @@ typedef struct SF_CONNECT {
 
     char *direct_query_token;
 
-    sf_bool retry_on_curle_couldnt_connect;
-
     int8 retry_on_curle_couldnt_connect_count;
 
     // Error

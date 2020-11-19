@@ -133,7 +133,6 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
-                             sf_bool retry_on_curle_couldnt_connect,
                              int8 retry_on_curle_couldnt_connect_count) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
@@ -298,8 +297,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-          if (retry_on_curle_couldnt_connect == SF_BOOLEAN_TRUE &&
-              res == CURLE_COULDNT_CONNECT && curl_retry_ctx->retry_count <
+          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx->retry_count <
                                               retry_on_curle_couldnt_connect_count)
             {
               retry = SF_BOOLEAN_TRUE;
@@ -336,8 +334,12 @@ sf_bool STDCALL http_perform(CURL *curl,
             } else if (http_code != 200) {
                 retry = is_retryable_http_code(http_code);
                 if (!retry) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_RETRY,
-                                        "Received unretryable http code",
+                    char msg[1024];
+                    sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
+                               http_code);
+                    SET_SNOWFLAKE_ERROR(error,
+                                        SF_STATUS_ERROR_RETRY,
+                                        msg,
                                         SF_SQLSTATE_UNABLE_TO_CONNECT);
                 }
             } else {
