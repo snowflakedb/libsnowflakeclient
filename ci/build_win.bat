@@ -42,9 +42,9 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component openssl "%openssl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :download_build_component oob "%oob_build_script%" "%dynamic_runtime%"
+    call :build_component oob "%oob_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
-    call :download_build_component curl "%curl_build_script%" "%dynamic_runtime%"
+    call :build_component curl "%curl_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component aws "%aws_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
@@ -114,10 +114,10 @@ goto :EOF
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error
-        if "%GIT_BRANCH%"=="origin/master" (
+ REM       if "%GIT_BRANCH%"=="origin/master" (
             call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
             if !ERRORLEVEL! NEQ 0 goto :error
-        )
+ REM       )
     )
     exit /b 0
     

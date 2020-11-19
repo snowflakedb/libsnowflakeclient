@@ -61,9 +61,9 @@ function build_component()
     local component_version=$("$component_script" -v)
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
-        if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+#        if [[ "$GIT_BRANCH" == "origin/master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
-        fi
+#        fi
     fi
 }
 
@@ -72,8 +72,8 @@ if [[ "$PLATFORM" == "linux" ]]; then
 fi
 download_build_component zlib "$SCRIPTS_DIR/build_zlib.sh" "$target"
 download_build_component openssl "$SCRIPTS_DIR/build_openssl.sh" "$target"
-download_build_component oob "$SCRIPTS_DIR/build_oob.sh" "$target"
-download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
+build_component oob "$SCRIPTS_DIR/build_oob.sh" "$target"
+build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
