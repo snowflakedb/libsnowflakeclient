@@ -22,32 +22,18 @@ function download_build_component()
 
     local component_version=$($component_script -v)
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
-    if [[ -n "$GITHUB_ACTIONS" ]]; then
-        "$component_script" -t "$build_type"
-    else
-        echo "=== download or build $component_name ==="
-        ret="$(check_directory $component_name $build_type)"
-        if [[ "$ret" == "EXIST" ]] && [[ "$BUILD_CLEAN" == "false" ]]; then
-            echo "Skip download or build."
-        else
             rm -rf $DEPENDENCY_DIR/$component_name
             if ! aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/$component_name/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                if [[ "$GIT_BRANCH" == "origin/master" ]]; then
-                    echo "=== upload $component_name"
+                    echo "=== upload $component_name to sfc_dev1"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
-                else
-                    echo "No upload $component_name"
-                fi
             else
                 echo "=== download and extract: $component_name"
                 pushd $DEPENDENCY_DIR >& /dev/null
                     tar xvfz $ARTIFACTS_DIR/$zip_file_name
                 popd >& /dev/null
             fi
-        fi
-    fi
 }
 
 function build_component()

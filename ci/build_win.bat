@@ -65,27 +65,18 @@ goto :EOF
 
     call %build_script% :get_version
     call %utils_script% :get_zip_file_name %component_name% %version%
-    if defined GITHUB_ACTIONS (
-        call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
-        if !ERRORLEVEL! NEQ 0 goto :error
-    ) else (
+
         echo === download or build: %component_name% ===
         call %utils_script% :check_directory %component_name%
-        if !ERRORLEVEL! EQU 0 (
-            if "%build_clean%"=="false" (
-                echo Skip download or build.
-                exit /b 0
-            )
-        )
+
         rd /s /q deps-build\%arcdir%\%vsdir%\%build_type%\%component_name%
         cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
         if !ERRORLEVEL! NEQ 0 (
             call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
-            if "%GIT_BRANCH%"=="origin/master" (
                 :: upload the artifacts only for main
                 call %utils_script% :upload_to_sfc_dev1_data %platform% %build_type% %vs_version% %component_name% %version%
                 if !ERRORLEVEL! NEQ 0 goto :error
-            )
+
         ) else (
             if not exist deps-build\%arcdir%\%vsdir%\%build_type% md deps-build\%arcdir%\%vsdir%\%build_type%
             pushd deps-build\%arcdir%\%vsdir%\%build_type%
@@ -94,7 +85,6 @@ goto :EOF
                 7z x "%curdir%\artifacts\%zip_file_name%"
             popd
         )
-    )
     exit /b 0
     
 
