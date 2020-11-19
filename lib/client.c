@@ -2710,6 +2710,13 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
         SF_TIMESTAMP ts;
         if (scale < 0)
         {
+          // If scale is not provided, try to calculate it.
+          // E.g., for raw value "1234567890 2040" scale is 0
+          // E.g., for raw value "1234567890.1234 2040" scale is from "." to " "
+          // before TZ offset
+          // E.g., for raw value "1234567890.1234" scale is calculated as length
+          // of input minus length of "1234567890." part
+
           const char *scalePtr = strchr(const_str_val, (int) '.');
           if (scalePtr == NULL)
           {
@@ -2723,6 +2730,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
+          log_info("scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,
