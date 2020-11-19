@@ -418,8 +418,24 @@ sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_V
 void STDCALL reset_curl(CURL *curl);
 
 /**
+ * Frees up the retry Context object
+ *
+ * @param retry_ctx Retry Context object.
+ */
+void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx);
+
+/**
+ * Creates a retry context object and returns it
+ *
+ * @param timeout the initial value to set the context's retry_timeout to
+ * @return Returns an initialized RETRY_CONTEXT object
+ */
+RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout);
+
+/**
  * Determines next sleep duration for request retry. Sets new sleep duration value in Retry Context.
  *
+ * As a side effect will set context's retry_count with the new value and increment retry_count
  * @param retry_ctx Retry Context object. Used to determine next sleep.
  * @return Returns number of seconds to sleep.
  */

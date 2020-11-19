@@ -12,6 +12,7 @@
 #endif
 
 #include <string.h>
+#include <unistd.h>
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -137,7 +138,6 @@ sf_bool STDCALL http_perform(CURL *curl,
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
-    int8 retry_count = 0;
     RETRY_CONTEXT* curl_retry_ctx = retry_ctx_init(1);
     long int http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
@@ -299,12 +299,16 @@ sf_bool STDCALL http_perform(CURL *curl,
         /* Check for errors */
         if (res != CURLE_OK) {
           if (retry_on_curle_couldnt_connect == SF_BOOLEAN_TRUE &&
-              res == CURLE_COULDNT_CONNECT &&
-              retry_count < retry_on_curle_couldnt_connect_count)
+              res == CURLE_COULDNT_CONNECT && curl_retry_ctx->retry_count <
+                                              retry_on_curle_couldnt_connect_count)
             {
-              log_error("curl_easy_perform() failed connecting to server, will retry");
               retry = SF_BOOLEAN_TRUE;
               uint32 next_sleep_in_secs = retry_ctx_next_sleep(curl_retry_ctx);
+              log_error(
+                      "curl_easy_perform() failed connecting to server on attempt %d, "
+                      "will retry after %d second",
+                      curl_retry_ctx->retry_count,
+                      next_sleep_in_secs);
               sleep(next_sleep_in_secs);
             } else {
               char msg[1024];
@@ -344,7 +348,6 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Reset everything
         reset_curl(curl);
         http_code = 0;
-        retry_count += 1;
     }
     while (retry);
 
