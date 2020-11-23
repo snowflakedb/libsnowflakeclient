@@ -2610,17 +2610,6 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
       preallocated = SF_BOOLEAN_TRUE;
     }
 
-    if (isNull != SF_BOOLEAN_TRUE && isNull != SF_BOOLEAN_FALSE)
-    {
-      // If nullablity is not provided try to extract if from the input raw value
-      if (strncmp(const_str_val, "null", 4) == 0)
-      {
-        isNull = SF_BOOLEAN_TRUE;
-      }
-      else{
-        isNull = SF_BOOLEAN_FALSE;
-      }
-    }
 
     if (isNull == SF_BOOLEAN_TRUE) {
       // If value is NULL, allocate buffer for empty string
