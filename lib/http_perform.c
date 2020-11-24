@@ -11,8 +11,13 @@
 
 #endif
 
-#include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
+
+#include <string.h>
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -32,6 +37,8 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
+
+static void my_sleep_ms(uint32 sleepMs);
 
 static
 void dump(const char *text,
@@ -121,6 +128,17 @@ int my_trace(CURL *handle, curl_infotype type,
 
     dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
     return 0;
+}
+
+static
+void my_sleep_ms(uint32 sleepMs)
+{
+#ifdef LINUX
+  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
+#endif
+#ifdef _WIN32
+  Sleep(sleepMs);
+#endif
 }
 
 sf_bool STDCALL http_perform(CURL *curl,
@@ -307,7 +325,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                       "will retry after %d second",
                       curl_retry_ctx->retry_count,
                       next_sleep_in_secs);
-              sleep(next_sleep_in_secs);
+              my_sleep_ms(next_sleep_in_secs*1000);
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
