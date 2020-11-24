@@ -2605,9 +2605,9 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
     // If value_ptr isn't null and max_value_size exists and is greater than 0,
     // then the user passed in a buffer and we should reallocate if needed
     if (*value_ptr != NULL && max_value_size_ptr != NULL && *max_value_size_ptr != 0) {
-      value = *value_ptr;
-      init_value_len = *max_value_size_ptr;
-      preallocated = SF_BOOLEAN_TRUE;
+        value = *value_ptr;
+        init_value_len = *max_value_size_ptr;
+        preallocated = SF_BOOLEAN_TRUE;
     }
 
 
@@ -2779,17 +2779,16 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
         break;
     }
 
-
     // Everything went okay
     status = SF_STATUS_SUCCESS;
 
-    cleanup:
+cleanup:
     *value_ptr = value;
     if (max_value_size_ptr) {
-      *max_value_size_ptr = max_value_size;
+        *max_value_size_ptr = max_value_size;
     }
     if (value_len_ptr) {
-      *value_len_ptr = value_len;
+        *value_len_ptr = value_len;
     }
     return status;
 }
@@ -2928,11 +2927,11 @@ SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanosec
 
 SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
                                                          int32 scale, SF_DB_TYPE ts_type) {
+    if (!ts) {
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
 
-  if (!ts) {
-    return SF_STATUS_ERROR_NULL_POINTER;
-  }
-  SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
+    SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     time_t nsec = 0L;
     time_t sec = 0L;
     int64 tzoffset = 0;
