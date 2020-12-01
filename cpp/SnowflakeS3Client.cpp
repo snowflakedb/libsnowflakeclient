@@ -3,6 +3,7 @@
  */
 
 #include "SnowflakeS3Client.hpp"
+#include "FileTransferAgent.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
@@ -272,13 +273,21 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
 
     for (unsigned int i = 0; i < totalParts; i++)
     {
-      m_threadPool->AddJob([&splitter, this, &uploadParts]()->void
+      m_threadPool->AddJob([&splitter, i, this, &uploadParts]()->void
                            {
                              int tid = m_threadPool->GetThreadIdx();
                              int partId;
                              Util::ByteArrayStreamBuf * buf = splitter.FillAndGetBuf(tid, partId);
                              uploadParts[partId].buf = buf;
-                             this->uploadParts(&uploadParts[partId]);
+                             char retryPartBuflog[200];
+                             sprintf(retryPartBuflog, "Retrying partNumber=%d threadID=%d partId=%d.", i, tid, partId);
+                             RetryContext partRetryCtx(retryPartBuflog, 10);
+                             do
+                             {
+                               //Sleeps only when its a retry
+                               partRetryCtx.waitForNextRetry();
+                               this->uploadParts(&uploadParts[partId]);
+                             } while(partRetryCtx.isRetryable(uploadParts[i].m_outcome));
                            });
     }
 
