@@ -2587,18 +2587,14 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr) {
+SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* const_str_val, const SF_DB_TYPE type, const char *connection_timezone,
+                                                 int32 scale, sf_bool isNull, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr){
+
+    if (value_ptr == NULL) {
+      return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
     SF_STATUS status;
-    cJSON *column = NULL;
-
-    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
-        return status;
-    }
-
-    // Get column
-    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
-        return status;
-    }
 
     char *value = NULL;
     size_t max_value_size = 0;
@@ -2614,19 +2610,20 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
         preallocated = SF_BOOLEAN_TRUE;
     }
 
-    if (snowflake_cJSON_IsNull(column)) {
-        // If value is NULL, allocate buffer for empty string
-        if (init_value_len == 0) {
-            value = global_hooks.calloc(1, 1);
-            max_value_size = 1;
-        } else {
-            // If we don't need to allocate a buffer, set value len to the initial value len
-            max_value_size = init_value_len;
-        }
-        sb_strncpy(value, max_value_size, "", 1);
-        value_len = 0;
-        status = SF_STATUS_SUCCESS;
-        goto cleanup;
+
+    if (isNull == SF_BOOLEAN_TRUE) {
+      // If value is NULL, allocate buffer for empty string
+      if (init_value_len == 0) {
+        value = global_hooks.calloc(1, 1);
+        max_value_size = 1;
+      } else {
+        // If we don't need to allocate a buffer, set value len to the initial value len
+        max_value_size = init_value_len;
+      }
+      sb_strncpy(value, max_value_size, "", 1);
+      value_len = 0;
+      status = SF_STATUS_SUCCESS;
+      goto cleanup;
     }
 
     time_t sec = 0L;
@@ -2634,124 +2631,152 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
     struct tm *tm_ptr;
     memset(&tm_obj, 0, sizeof(tm_obj));
 
-    switch (sfstmt->desc[idx - 1].type) {
-        case SF_DB_TYPE_BOOLEAN: ;
-            const char *bool_value;
-            if (strcmp(column->valuestring, "0") == 0) {
-                /* False */
-                bool_value = SF_BOOLEAN_FALSE_STR;
-            } else {
-                /* True */
-                bool_value = SF_BOOLEAN_TRUE_STR;
-            }
-            value_len = strlen(bool_value);
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
-            } else {
-                max_value_size = init_value_len;
-            }
-            sb_strncpy(value, max_value_size, bool_value, value_len + 1);
-            break;
-        case SF_DB_TYPE_DATE:
-            sec =
-              (time_t) strtol(column->valuestring, NULL, 10) *
-              86400L;
-            _mutex_lock(&gmlocaltime_lock);
-            tm_ptr = sf_gmtime(&sec, &tm_obj);
-            _mutex_unlock(&gmlocaltime_lock);
-            if (tm_ptr == NULL) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                    SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                    "Failed to convert a date value to a string.",
-                                    SF_SQLSTATE_GENERAL_ERROR,
-                                    sfstmt->sfqid);
-                value = NULL;
-                max_value_size = 0;
-                goto cleanup;
-            }
-            // Max size of date string
-            value_len = DATE_STRING_MAX_SIZE;
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
-            } else {
-                max_value_size = init_value_len;
-            }
-            value_len = strftime(value, value_len + 1, "%Y-%m-%d", &tm_obj);
-            break;
-        case SF_DB_TYPE_TIME:
-        case SF_DB_TYPE_TIMESTAMP_NTZ:
-        case SF_DB_TYPE_TIMESTAMP_LTZ:
-        case SF_DB_TYPE_TIMESTAMP_TZ: ;
-            SF_TIMESTAMP ts;
-            if (snowflake_timestamp_from_epoch_seconds(&ts,
-                                                        column->valuestring,
-                                                        sfstmt->connection->timezone,
-                                                        (int32) sfstmt->desc[idx - 1].scale,
-                                                        sfstmt->desc[idx - 1].type)) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                         "Failed to convert the response from the server into a SF_TIMESTAMP.",
-                                         SF_SQLSTATE_GENERAL_ERROR,
-                                         sfstmt->sfqid);
-                value = NULL;
-                max_value_size = 0;
-                goto cleanup;
-            }
-            // TODO add format when format is no longer a fixed string
-            if (snowflake_timestamp_to_string(&ts, "", &value, max_value_size, &value_len, SF_BOOLEAN_TRUE)) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                         "Failed to convert a SF_TIMESTAMP value to a string.",
-                                         SF_SQLSTATE_GENERAL_ERROR,
-                                         sfstmt->sfqid);
-                // If the memory wasn't preallocated, then free it
-                if (!preallocated && value) {
-                    global_hooks.dealloc(value);
-                    value = NULL;
-                    max_value_size = 0;
-                }
-                value_len = 0;
-                goto cleanup;
-            } else {
-                // If true, then we reallocated when writing the timestamp to a string
-                if (value_len + 1 > init_value_len) {
-                    max_value_size = value_len + 1;
-                } else {
-                    max_value_size = init_value_len;
-                }
-            }
+    SF_ERROR_STRUCT *error = (sfstmt != NULL ? &sfstmt->error : NULL);
+    char *sfqid = sfstmt != NULL ? sfstmt->sfqid : NULL;
 
-            break;
-        default:
-            value_len = strlen(column->valuestring);
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
+    switch (type) {
+      case SF_DB_TYPE_BOOLEAN: ;
+        const char *bool_value;
+        if (strcmp(const_str_val, "0") == 0) {
+          /* False */
+          bool_value = SF_BOOLEAN_FALSE_STR;
+        } else {
+          /* True */
+          bool_value = SF_BOOLEAN_TRUE_STR;
+        }
+        value_len = strlen(bool_value);
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        sb_strncpy(value, max_value_size, bool_value, value_len + 1);
+        break;
+      case SF_DB_TYPE_DATE:
+        sec =
+                (time_t) strtol(const_str_val, NULL, 10) *
+                86400L;
+        _mutex_lock(&gmlocaltime_lock);
+        tm_ptr = sf_gmtime(&sec, &tm_obj);
+        _mutex_unlock(&gmlocaltime_lock);
+        if (tm_ptr == NULL) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert a date value to a string.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          value = NULL;
+          max_value_size = 0;
+          goto cleanup;
+        }
+        // Max size of date string
+        value_len = DATE_STRING_MAX_SIZE;
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        value_len = strftime(value, value_len + 1, "%Y-%m-%d", &tm_obj);
+        break;
+      case SF_DB_TYPE_TIME:
+      case SF_DB_TYPE_TIMESTAMP_NTZ:
+      case SF_DB_TYPE_TIMESTAMP_LTZ:
+      case SF_DB_TYPE_TIMESTAMP_TZ: ;
+        SF_TIMESTAMP ts;
+        if (scale < 0)
+        {
+          // If scale is not provided, try to calculate it.
+          // E.g., for raw value "1234567890 2040" scale is 0
+          // E.g., for raw value "1234567890.1234 2040" scale is from "." to " "
+          // before TZ offset
+          // E.g., for raw value "1234567890.1234" scale is calculated as length
+          // of input minus length of "1234567890." part
+
+          const char *scalePtr = strchr(const_str_val, (int) '.');
+          if (scalePtr == NULL)
+          {
+            scale = 0;
+          } else {
+            const char *tzOffsetPtr = strchr(scalePtr+1, (int) ' ');
+            if (tzOffsetPtr == NULL)
+            {
+              scale = strlen(const_str_val) - (scalePtr - const_str_val) - 1;
             } else {
-                max_value_size = init_value_len;
+              scale = tzOffsetPtr - scalePtr - 1;
             }
-            sb_strncpy(value, max_value_size, column->valuestring, value_len + 1);
-            break;
+          }
+          log_info("scale is calculated as %d", scale);
+        }
+
+        if (snowflake_timestamp_from_epoch_seconds(&ts,
+                                                   const_str_val,
+                                                   connection_timezone,
+                                                   scale,
+                                                   type)) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert the response from the server into a SF_TIMESTAMP.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          value = NULL;
+          max_value_size = 0;
+          goto cleanup;
+        }
+        // TODO add format when format is no longer a fixed string
+        if (snowflake_timestamp_to_string(&ts, "", &value, max_value_size, &value_len, SF_BOOLEAN_TRUE)) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert a SF_TIMESTAMP value to a string.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          // If the memory wasn't preallocated, then free it
+          if (!preallocated && value) {
+            global_hooks.dealloc(value);
+            value = NULL;
+            max_value_size = 0;
+          }
+          value_len = 0;
+          goto cleanup;
+        } else {
+          // If true, then we reallocated when writing the timestamp to a string
+          if (value_len + 1 > init_value_len) {
+            max_value_size = value_len + 1;
+          } else {
+            max_value_size = init_value_len;
+          }
+        }
+
+        break;
+      default:
+        value_len = strlen(const_str_val);
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        sb_strncpy(value, max_value_size, const_str_val, value_len + 1);
+        break;
     }
 
     // Everything went okay
@@ -2766,6 +2791,28 @@ cleanup:
         *value_len_ptr = value_len;
     }
     return status;
+}
+
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr) {
+    SF_STATUS status;
+    cJSON *column = NULL;
+
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+    // Get column
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+  return snowflake_raw_value_to_str_rep(sfstmt, column->valuestring,
+                                        sfstmt->desc[idx - 1].type,
+                                        sfstmt->connection->timezone,
+                                        (int32) sfstmt->desc[idx - 1].scale,
+                                        snowflake_cJSON_IsNull(column) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE,
+                                        value_ptr, value_len_ptr,
+                                        max_value_size_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr) {
