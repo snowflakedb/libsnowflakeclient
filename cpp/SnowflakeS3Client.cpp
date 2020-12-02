@@ -287,7 +287,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
                                //Sleeps only when its a retry
                                partRetryCtx.waitForNextRetry();
                                this->uploadParts(&uploadParts[partId]);
-                             } while(partRetryCtx.isRetryable(uploadParts[i].m_outcome));
+                             } while(partRetryCtx.isRetryable(uploadParts[partId].m_outcome));
                            });
     }
 
