@@ -316,7 +316,9 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error, sf->insecure_mode) ||
+                          sf->network_timeout, SF_BOOLEAN_FALSE, error,
+                          sf->insecure_mode,
+                          sf->retry_on_curle_couldnt_connect_count) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -435,7 +437,9 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error, sf->insecure_mode) ||
+                          sf->network_timeout, SF_BOOLEAN_FALSE, error,
+                          sf->insecure_mode,
+                          sf->retry_on_curle_couldnt_connect_count) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -1023,6 +1027,7 @@ RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout) {
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
     retry_ctx->sleep_time = decorrelate_jitter_next_sleep(retry_ctx->djb,
                                                           retry_ctx->sleep_time);
+    ++retry_ctx->retry_count;
     return retry_ctx->sleep_time;
 }
 

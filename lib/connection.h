@@ -364,11 +364,13 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  *                         at the end of the text buffer.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @param insecure_mode Insecure mode disable OCSP check when set to true
+ * @param retry_on_curle_couldnt_connect_count number of times retrying server connection on CURLE_COULDNT_CONNECT error
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error, sf_bool insecure_mode);
+                             SF_ERROR_STRUCT *error, sf_bool insecure_mode,
+                             int8 retry_on_curle_couldnt_connect_count);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -415,8 +417,24 @@ sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_V
 void STDCALL reset_curl(CURL *curl);
 
 /**
+ * Frees up the retry Context object
+ *
+ * @param retry_ctx Retry Context object.
+ */
+void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx);
+
+/**
+ * Creates a retry context object and returns it
+ *
+ * @param timeout the initial value to set the context's retry_timeout to
+ * @return Returns an initialized RETRY_CONTEXT object
+ */
+RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout);
+
+/**
  * Determines next sleep duration for request retry. Sets new sleep duration value in Retry Context.
  *
+ * As a side effect will set context's retry_count with the new value and increment retry_count
  * @param retry_ctx Retry Context object. Used to determine next sleep.
  * @return Returns number of seconds to sleep.
  */

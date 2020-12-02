@@ -210,7 +210,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_AUTOCOMMIT,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
-    SF_DIR_QUERY_TOKEN
+    SF_DIR_QUERY_TOKEN,
+    SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT
 } SF_ATTRIBUTE;
 
 /**
@@ -293,6 +294,8 @@ typedef struct SF_CONNECT {
     char *directURL_param;
 
     char *direct_query_token;
+
+    int8 retry_on_curle_couldnt_connect_count;
 
     // Error
     SF_ERROR_STRUCT error;
