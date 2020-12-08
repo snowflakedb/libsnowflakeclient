@@ -13,16 +13,28 @@ typedef struct test_case_to_string {
     SF_STATUS error_code;
 } TEST_CASE_TO_STRING;
 
+#ifdef _WIN32
+// On Windows TZ variable has different syntax.
+// https://docs.microsoft.com/en-us/previous-versions/90s5c885(v=vs.140)#remarks
+// timezone in connection property like America/New_York won't change local
+// timezone setting as expected, while server doesn't accept Windows syntax like
+// UTC-5:00. Setting session timezone to the actual timezone of the client would
+// work so it won't causing any issue on customer side. But since we need to make
+// the test case work on any timezone, "UTC" is the only timezone setting can be
+// accepted by both server and client side.
+#define USER_TZ "UTC"
+#else
 #define USER_TZ "America/New_York"
+#endif // _WIN32
 
 void test_timestamp_ltz_helper(sf_bool useZeroPrecision)
 {
 
   TEST_CASE_TO_STRING test_cases[] = {
-          {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 -04:00", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
+          {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                          ? "2014-05-03 13:56:46"
                                                                          : "2014-05-03 13:56:46.12300"},
-          {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123 -05:00", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
+          {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                           ? "1969-11-21 05:17:23"
                                                                           : "1969-11-21 05:17:23.01230"},
           {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
