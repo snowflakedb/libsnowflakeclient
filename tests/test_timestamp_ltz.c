@@ -19,7 +19,6 @@ void test_timestamp_ltz_helper(sf_bool useZeroPrecision)
 {
 
   TEST_CASE_TO_STRING test_cases[] = {
-#ifndef _WIN32
           {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 -04:00", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                          ? "2014-05-03 13:56:46"
                                                                          : "2014-05-03 13:56:46.12300"},
@@ -29,22 +28,23 @@ void test_timestamp_ltz_helper(sf_bool useZeroPrecision)
           {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1960-01-01 00:00:00"
                                                                    : "1960-01-01 00:00:00.00000"},
-#ifndef __APPLE__
+#ifdef __linux__
           // Must run the tests High Sierra (10.13) or newer OS.
+          // Windows get inaccurate result as well.
           {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1500-01-01 00:00:00"
                                                                    : "1500-01-01 00:00:00.00000"},
           // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
+          // Windows get the same output as MacOS
           // {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1-01-01 00:00:00"
                                                                    : "1-01-01 00:00:00.00000"},
-#endif // __APPLE__
+#endif // __linux__
           {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "9999-01-01 00:00:00"
                                                                    : "9999-01-01 00:00:00.00000"},
           {.c1in = 7, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
-#endif // _WIN32
           {.c1in = 8, .c2in = NULL, .c2out = NULL},
           /* // none of the platform supports this
           {.c1in = 9, .c2in = "9999-12-31 23:59:59.9999", .c2out = "9999-12-31 23:59:59.99990 -05:00"},

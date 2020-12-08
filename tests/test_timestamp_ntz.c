@@ -19,7 +19,6 @@ void test_timestamp_ntz_helper(sf_bool useZeroPrecision){
           {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "2014-05-03 13:56:46"
                                               : "2014-05-03 13:56:46.1230"},
-#ifndef _WIN32
           {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "1969-11-21 05:17:23"
                                               : "1969-11-21 05:17:23.0123"},
@@ -29,7 +28,7 @@ void test_timestamp_ntz_helper(sf_bool useZeroPrecision){
           {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "1500-01-01 00:00:00"
                                               : "1500-01-01 00:00:00.0000"},
-#if defined __APPLE__
+#ifndef __linux__
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "0001-01-01 00:00:00"
                                               : "0001-01-01 00:00:00.0000"},
@@ -37,7 +36,7 @@ void test_timestamp_ntz_helper(sf_bool useZeroPrecision){
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "1-01-01 00:00:00"
                                               : "1-01-01 00:00:00.0000"},
-#endif // __APPLE__
+#endif // __linux__
           {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "9999-01-01 00:00:00"
                                               : "9999-01-01 00:00:00.0000"},
@@ -45,7 +44,6 @@ void test_timestamp_ntz_helper(sf_bool useZeroPrecision){
           useZeroPrecision == SF_BOOLEAN_TRUE ? "9999-12-31 23:59:59"
                                               : "9999-12-31 23:59:59.9999"},
           {.c1in = 8, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
-#endif // _WIN32
           {.c1in = 9, .c2in = NULL, .c2out = NULL, .error_code=0},
           {.c1in = 10, .c2in = "GARBAGE", .c2out = "", .error_code=100035},
   };
