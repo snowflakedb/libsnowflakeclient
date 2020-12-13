@@ -343,6 +343,7 @@ typedef struct SF_STMT {
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
     char *sql_text;
+    char *query_response_text;
     void *raw_results;
     void *cur_row;
     int64 chunk_rowcount;

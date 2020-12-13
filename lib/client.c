@@ -1209,6 +1209,11 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->sql_text = NULL;
 
+    if (sfstmt->query_response_text) {
+        SF_FREE(sfstmt->query_response_text);
+    }
+    sfstmt->query_response_text = NULL;
+
     if (sfstmt->cur_row) {
         snowflake_cJSON_Delete(sfstmt->cur_row);
         sfstmt->cur_row = NULL;
@@ -1783,7 +1788,18 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
+
+        // Store the full query-response text in query_response_text
+        size_t resp_size = strlen(s_resp) + 1;
+        SF_FREE(sfstmt->query_response_text);
+        sfstmt->query_response_text = (char *) SF_CALLOC(1, resp_size);
+        if (!sfstmt->query_response_text) {
+          return SF_STATUS_ERROR_OUT_OF_MEMORY;
+        }
+
+        sb_strncpy(sfstmt->query_response_text, resp_size, s_resp, resp_size);
         data = snowflake_cJSON_GetObjectItem(resp, "data");
+
         if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId",
                                       SF_UUID4_LEN) && !is_put_get_command) {
             log_debug("No valid sfqid found in response");
