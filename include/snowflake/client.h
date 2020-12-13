@@ -211,7 +211,8 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
-    SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT
+    SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
+    SF_QUERY_RESULT_TYPE
 } SF_ATTRIBUTE;
 
 /**
@@ -267,6 +268,7 @@ typedef struct SF_CONNECT {
     sf_bool autocommit;
     char *timezone;
     char *service_name;
+    char *query_result_format;
 
     /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;

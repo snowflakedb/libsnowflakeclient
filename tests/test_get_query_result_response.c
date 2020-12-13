@@ -23,6 +23,10 @@ void test_get_query_result_response(void **unused) {
     SF_STMT *sfstmt = snowflake_stmt(sf);
 
     status = snowflake_query(
+            sfstmt, "alter session set c_api_query_result_format = 'ARROW_FORCE'",
+            0);
+
+    status = snowflake_query(
             sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))",
             0);
     if (status != SF_STATUS_SUCCESS) {

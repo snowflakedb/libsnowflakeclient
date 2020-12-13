@@ -53,6 +53,20 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
 #define _SF_STMT_TYPE_MULTI_TABLE_INSERT (_SF_STMT_TYPE_DML + 0x500)
 
 /**
+ * Checks whether the client is running in force_arrow mode.
+ *
+ * @param connection pointer to SF_CONNECT
+ * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
+ */
+ static sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
+    if (strcasecmp(connection->query_result_format, "arrow_force") == 0) {
+        return SF_BOOLEAN_TRUE;
+    } else {
+        return SF_BOOLEAN_FALSE;
+    }
+ }
+
+/**
  * Detects statement type is DML
  * @param stmt_type_id statement type id
  * @return SF_BOOLEAN_TRUE if the statement is DM or SF_BOOLEAN_FALSE
@@ -171,6 +185,11 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                 if (sf->service_name == NULL ||
                     strcmp(sf->service_name, value->valuestring) != 0) {
                     alloc_buffer_and_copy(&sf->service_name, value->valuestring);
+                }
+            } else if (strcmp(name->valuestring, "C_API_QUERY_RESULT_FORMAT") == 0) {
+                if (sf->query_result_format == NULL ||
+                    strcmp(sf->query_result_format, value->valuestring) != 0) {
+                    alloc_buffer_and_copy(&sf->query_result_format, value->valuestring);
                 }
             }
         }
@@ -612,6 +631,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
         sf->service_name = NULL;
+        sf->query_result_format = NULL;
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
@@ -682,6 +702,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->application_version);
     SF_FREE(sf->timezone);
     SF_FREE(sf->service_name);
+    SF_FREE(sf->query_result_format);
     SF_FREE(sf->master_token);
     SF_FREE(sf->token);
     SF_FREE(sf->directURL);
@@ -1048,8 +1069,11 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = sf->direct_query_token;
             break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
-          *value = &sf->retry_on_curle_couldnt_connect_count;
-          break;
+            *value = &sf->retry_on_curle_couldnt_connect_count;
+            break;
+        case SF_QUERY_RESULT_TYPE:
+            *value = &sf->query_result_format;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1789,15 +1813,17 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
-        // Store the full query-response text in query_response_text
-        size_t resp_size = strlen(s_resp) + 1;
-        SF_FREE(sfstmt->query_response_text);
-        sfstmt->query_response_text = (char *) SF_CALLOC(1, resp_size);
-        if (!sfstmt->query_response_text) {
-          return SF_STATUS_ERROR_OUT_OF_MEMORY;
+        // Store the full query-response text in query_response_text, if running in force_arrow mode
+        if (is_force_arrow_mode(sfstmt->connection)) {
+            size_t resp_size = strlen(s_resp) + 1;
+            SF_FREE(sfstmt->query_response_text);
+            sfstmt->query_response_text = (char *) SF_CALLOC(1, resp_size);
+            if (!sfstmt->query_response_text) {
+                return SF_STATUS_ERROR_OUT_OF_MEMORY;
+            }
+            sb_strncpy(sfstmt->query_response_text, resp_size, s_resp, resp_size);
         }
 
-        sb_strncpy(sfstmt->query_response_text, resp_size, s_resp, resp_size);
         data = snowflake_cJSON_GetObjectItem(resp, "data");
 
         if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId",
@@ -1907,7 +1933,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 } else {
                     sfstmt->is_dml = detect_stmt_type(stmt_type_id);
                 }
-                rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
+               rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
                 if (snowflake_cJSON_IsArray(rowtype)) {
                     sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
                       rowtype);
@@ -1921,17 +1947,21 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 } else {
                     sfstmt->stats = NULL;
                 }
-                // Set results array
-                if (json_detach_array_from_object(
-                    (cJSON **) (&sfstmt->raw_results),
-                    data, "rowset")) {
-                    log_error("No valid rowset found in response");
-                    SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                             SF_STATUS_ERROR_BAD_JSON,
-                                             "Missing rowset from response. No results found.",
-                                             SF_SQLSTATE_APP_REJECT_CONNECTION,
-                                             sfstmt->sfqid);
-                    goto cleanup;
+
+                // Since we can't parse Arrow results yet, skip this step if running in force_arrow
+                if (!is_force_arrow_mode(sfstmt->connection)) {
+                    // Set results array
+                    if (json_detach_array_from_object(
+                            (cJSON **) (&sfstmt->raw_results),
+                            data, "rowset")) {
+                        log_error("No valid rowset found in response");
+                        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                                                 SF_STATUS_ERROR_BAD_JSON,
+                                                 "Missing rowset from response. No results found.",
+                                                 SF_SQLSTATE_APP_REJECT_CONNECTION,
+                                                 sfstmt->sfqid);
+                        goto cleanup;
+                    }
                 }
                 if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
                     log_warn(
@@ -1946,23 +1976,26 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 // Index starts at 0 and incremented each fetch
                 sfstmt->total_row_index = 0;
 
-                // Set large result set if one exists
-                if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
-                    // We don't care if there is no qrmk, so ignore return code
-                    json_copy_string(&qrmk, data, "qrmk");
-                    chunk_headers = snowflake_cJSON_GetObjectItem(data,
-                                                                  "chunkHeaders");
-                    sfstmt->chunk_downloader = chunk_downloader_init(
-                        qrmk,
-                        chunk_headers,
-                        chunks,
-                        2, // thread count
-                        4, // fetch slot
-                        &sfstmt->error,
-                        sfstmt->connection->insecure_mode);
-                    if (!sfstmt->chunk_downloader) {
-                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
-                        goto cleanup;
+                // Don't download chunks if running in force_arrow
+                if (!is_force_arrow_mode(sfstmt->connection)) {
+                    // Set large result set if one exists
+                    if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
+                        // We don't care if there is no qrmk, so ignore return code
+                        json_copy_string(&qrmk, data, "qrmk");
+                        chunk_headers = snowflake_cJSON_GetObjectItem(data,
+                                                                      "chunkHeaders");
+                        sfstmt->chunk_downloader = chunk_downloader_init(
+                                qrmk,
+                                chunk_headers,
+                                chunks,
+                                2, // thread count
+                                4, // fetch slot
+                                &sfstmt->error,
+                                sfstmt->connection->insecure_mode);
+                        if (!sfstmt->chunk_downloader) {
+                            // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                            goto cleanup;
+                        }
                     }
                 }
             }
