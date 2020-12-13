@@ -58,13 +58,16 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
  * @param connection pointer to SF_CONNECT
  * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
  */
- static sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
+static sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
+    if (connection->query_result_format == NULL) {
+        return SF_BOOLEAN_FALSE;
+    }
     if (strcasecmp(connection->query_result_format, "arrow_force") == 0) {
         return SF_BOOLEAN_TRUE;
     } else {
         return SF_BOOLEAN_FALSE;
     }
- }
+}
 
 /**
  * Detects statement type is DML
@@ -1487,6 +1490,17 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Query results were fetched using Arrow, "
+                                 "but the client library does not yet support decoding Arrow results", "",
+                                 sfstmt->sfqid);
+
+        return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
+    }
+
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
@@ -1629,6 +1643,16 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
         /* no way to set the error other than return value */
         return ret;
     }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Affected row-count not available using force-arrow results type", "",
+                                 sfstmt->sfqid);
+
+        return ret;
+    }
+
     if (snowflake_cJSON_GetArraySize(sfstmt->raw_results) == 0) {
         /* no affected rows is determined. The potential cause is
          * the query is not DML or no stmt was executed at all . */
@@ -1962,22 +1986,19 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                                  sfstmt->sfqid);
                         goto cleanup;
                     }
-                }
-                if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-                    log_warn(
-                        "No total count found in response. Reverting to using array size of results");
-                    sfstmt->total_rowcount = snowflake_cJSON_GetArraySize(
-                      sfstmt->raw_results);
-                }
-                // Get number of rows in this chunk
-                sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
-                  sfstmt->raw_results);
+                    if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
+                        log_warn(
+                                "No total count found in response. Reverting to using array size of results");
+                        sfstmt->total_rowcount = snowflake_cJSON_GetArraySize(
+                                sfstmt->raw_results);
+                    }
+                    // Get number of rows in this chunk
+                    sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
+                            sfstmt->raw_results);
 
-                // Index starts at 0 and incremented each fetch
-                sfstmt->total_row_index = 0;
+                    // Index starts at 0 and incremented each fetch
+                    sfstmt->total_row_index = 0;
 
-                // Don't download chunks if running in force_arrow
-                if (!is_force_arrow_mode(sfstmt->connection)) {
                     // Set large result set if one exists
                     if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
                         // We don't care if there is no qrmk, so ignore return code
@@ -2067,6 +2088,15 @@ SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt) {
 
 int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt) {
     if (!sfstmt) {
+        return -1;
+    }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Result row-count not available using force-arrow results type", "",
+                                 sfstmt->sfqid);
+
         return -1;
     }
     return sfstmt->total_rowcount;
@@ -2177,12 +2207,24 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
     return SF_STATUS_SUCCESS;
 }
 
+
+
 // Make sure that idx is in bounds and that column exists
 SF_STATUS STDCALL _snowflake_get_cJSON_column(SF_STMT *sfstmt, int idx, cJSON **column_ptr) {
     if (idx > snowflake_num_fields(sfstmt) || idx <= 0) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_BOUNDS,
                                  "Column index must be between 1 and snowflake_num_fields()", "", sfstmt->sfqid);
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Query results were fetched using Arrow, "
+                                 "but the client library does not yet support decoding Arrow results", "",
+                                 sfstmt->sfqid);
+
+        return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
 
     cJSON *column = snowflake_cJSON_GetArrayItem(sfstmt->cur_row, idx - 1);

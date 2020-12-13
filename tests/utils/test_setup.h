@@ -22,6 +22,8 @@ extern "C" {
 
 void initialize_test(sf_bool debug);
 
+SF_STATUS enable_arrow_force(SF_CONNECT *sf);
+
 SF_CONNECT *setup_snowflake_connection();
 
 SF_CONNECT *setup_snowflake_connection_with_autocommit(

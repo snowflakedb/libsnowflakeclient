@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2020 Snowflake Computing, Inc. All rights reserved.
  */
 #include "utils/test_setup.h"
 #include <cJSON.h>
@@ -13,7 +13,9 @@
  */
 void test_get_query_result_response(void **unused) {
     SF_CONNECT *sf = setup_snowflake_connection();
-    SF_STATUS status = snowflake_connect(sf);
+    snowflake_connect(sf);
+    SF_STATUS status = enable_arrow_force(sf);
+
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
@@ -21,11 +23,6 @@ void test_get_query_result_response(void **unused) {
 
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
-
-    status = snowflake_query(
-            sfstmt, "alter session set c_api_query_result_format = 'ARROW_FORCE'",
-            0);
-
     status = snowflake_query(
             sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))",
             0);
