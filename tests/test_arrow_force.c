@@ -23,7 +23,7 @@ void test_arrow_force(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    int rows = 100000; // total number of rows
+    int rows = 100; // total number of rows
 
     char sql_buf[1024];
     sprintf(
@@ -61,6 +61,32 @@ void test_arrow_force(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Reset it back to default, and verify that queries still work.
+    status = snowflake_query(
+            sfstmt, "alter session set c_api_query_result_format = default",
+            0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_query(sfstmt, sql_buf, 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // This should fail with the appropriate error code
+    status = snowflake_fetch(sfstmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Same as trying to get a result value
+    status = snowflake_column_as_int64(sfstmt, 1, &c1);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(c1, 0);
+
+    status = snowflake_column_as_str(sfstmt, 2, &c2, 0, 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    assert_int_equal(snowflake_num_rows(sfstmt), rows);
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
