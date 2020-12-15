@@ -16,6 +16,12 @@ void test_get_query_result_response(void **unused) {
     snowflake_connect(sf);
     SF_STATUS status = enable_arrow_force(sf);
 
+    // Skip test if server doesn't support arrow_force param in response
+    if(!is_force_arrow_mode(sf)) {
+        snowflake_term(sf);
+        return;
+    }
+
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }

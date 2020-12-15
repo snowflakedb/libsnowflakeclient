@@ -58,11 +58,11 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
  * @param connection pointer to SF_CONNECT
  * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
  */
-static sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
+sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
     if (connection->query_result_format == NULL) {
         return SF_BOOLEAN_FALSE;
     }
-    if (strcasecmp(connection->query_result_format, "arrow_force") == 0) {
+    if (sf_strncasecmp(connection->query_result_format, "arrow_force", 11) == 0) {
         return SF_BOOLEAN_TRUE;
     } else {
         return SF_BOOLEAN_FALSE;

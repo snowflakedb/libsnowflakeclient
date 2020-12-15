@@ -404,6 +404,14 @@ typedef struct SF_TIMESTAMP {
 } SF_TIMESTAMP;
 
 /**
+ * Checks whether the client is running in force_arrow mode.
+ *
+ * @param connection pointer to SF_CONNECT
+ * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
+ */
+sf_bool is_force_arrow_mode(const SF_CONNECT *connection);
+
+/**
  * Global Snowflake initialization.
  *
  * @return 0 if successful, errno otherwise
