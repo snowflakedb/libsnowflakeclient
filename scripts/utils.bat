@@ -130,6 +130,26 @@ goto :EOF
     cd "%curdir%"
     goto :EOF
 
+:download_from_sfc_dev1_data
+    setlocal
+    set platform=%1
+    set build_type=%2
+    set vs_version=%3
+
+    set component_name=%4
+    set component_version=%5
+
+    set scriptdir=%~dp0
+
+    call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+    call :get_zip_file_name %component_name% %component_version%
+
+    echo === downloading %component_name% from s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
+    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% artifacts
+    if ERRORLEVEL NEQ 0 goto :error
+    cd "%curdir%"
+    goto :EOF
+
 :upload_to_sfc
 :upload_to_sfc_jenkins
     @echo off
@@ -181,7 +201,7 @@ goto :EOF
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
-    md artfacts
+    md artifacts
     echo === downloading %zip_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
     cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
     if %ERRORLEVEL% NEQ 0 goto :error
