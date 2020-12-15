@@ -18,5 +18,5 @@ if [[ "$PLATFORM" == "linux" ]]; then
     cd ../deps/
     BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
 else
-    echo "[ERROR] $PLATFORM is not supported"
+    download_from_sfc_jenkins arrow 0.15.0 Release
 fi

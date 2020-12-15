@@ -130,6 +130,29 @@ goto :EOF
     cd "%curdir%"
     goto :EOF
 
+:download_to_sfc_dev1_data
+    setlocal
+    set platform=%1
+    set build_type=%2
+    set vs_version=%3
+
+    set component_name=%4
+    set component_version=%5
+
+    set scriptdir=%~dp0
+    set dependencydir=%~dp0\..\deps-build\%platform%\%build_type%\%vs_version%\%component_name
+
+    call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
+    call :get_zip_file_name %component_name% %component_version%
+
+    if not exist "%dependencydir%" md %dependencydir%%
+    echo === downloading %component_name% from s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
+    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %dependency_dir%
+    if ERRORLEVEL NEQ 0 goto :error
+    7z x -y -bd %dependencydir%\%zip_file_name% -o%dependencydir%
+    del %dependencydir%\%zip_file_name%
+    if ERRORLEVEL NEQ 0 goto :error
+
 :upload_to_sfc
 :upload_to_sfc_jenkins
     @echo off

@@ -30,7 +30,7 @@ function get_zip_file_name()
     local component_version=$2
     local build_type=$3
 
-    [[ -z "$component_name" ]] && echo "Set component name [zlib, openssl, curl, aws, azure, cmocka, libsnowflakeclient]" && exit 1
+    [[ -z "$component_name" ]] && echo "Set component name [zlib, openssl, curl, arrow, aws, azure, cmocka, libsnowflakeclient]" && exit 1
     [[ -z "$component_version" ]] && echo "Set component_version" && exit 1
     [[ -z "$build_type" ]] && echo "set build_type" && exit 1
     echo "${component_name}_${PLATFORM}_${build_type}-${component_version}.tar.gz"
@@ -86,6 +86,22 @@ function upload_to_sfc_dev1_data()
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name s3://sfc-dev1-data/dependency/$component_name/
+}
+
+function download_from_sfc_dev1_data()
+{
+    local component_name=$1
+    local component_version=$2
+    local build_type=$3
+
+    mkdir -p $UTILS_DIR/../deps-build/$PLATFORM/$build_type
+    pushd $UTILS_DIR/../deps-build/$PLATFORM/$build_type &> /dev/null
+    local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
+    local source=s3://sfc-dev1-data/dependency/$component_name/$zip_file_name
+    rm -rf $component_name
+    echo "Extracting $source in $UTILS_DIR/../deps-build"
+    aws s3 cp $source - | tar xfz -
+    popd &> /dev/null
 }
 
 function upload_to_sfc_jenkins()
