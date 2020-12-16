@@ -9,23 +9,21 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $THIS_DIR/../_init.sh
 source $THIS_DIR/../scripts/login_internal_docker.sh
 
-CONTAINER_NAME=libsnowflakeclient
+CONTAINER_NAME=clion_libsnowflakeclient_dev
 IMAGE_NAME=${CONTAINER_NAME}_image
 SSH_PORT=7786
 GDB_PORT=7787
-DOCKER_IMAGE_FILE=$HOME/clion_libsnowflakeclient_docker/clion_libsnowflakeclient_dev_image.tar
 
 cd $THIS_DIR
 
-#docker pull ${BUILD_IMAGE_NAMES[@]}
-docker load --input $DOCKER_IMAGE_FILE
+docker pull ${BUILD_IMAGE_NAMES[@]}
 
 IP_ADDR=$(ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1)
-##rebuild the image
-#[[ $(docker ps | grep "$CONTAINER_NAME") ]] && docker container stop "$CONTAINER_NAME"
-#docker image build -t $IMAGE_NAME \
-# --build-arg BASE_IMAGE_NAME=${BUILD_IMAGE_NAMES[@]} \
-# --build-arg LOCAL_USER_ID=$(id -u $USER) .
+#rebuild the image
+[[ $(docker ps | grep "$CONTAINER_NAME") ]] && docker container stop "$CONTAINER_NAME"
+docker image build -t $IMAGE_NAME \
+ --build-arg BASE_IMAGE_NAME=${BUILD_IMAGE_NAMES[@]} \
+ --build-arg LOCAL_USER_ID=$(id -u $USER) .
 
 # -v $(cd $THIS_DIR/../.. && pwd):/mnt/host 
 
