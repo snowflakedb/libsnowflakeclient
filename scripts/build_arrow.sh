@@ -25,5 +25,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     tar xzf $THIS_DIR/../deps-build/$PLATFORM/$target/$zip_file_name
     rm $THIS_DIR/../deps-build/$PLATFORM/$target
 else
-    echo "[ERROR] $PLATFORM is not supported"
+    download_from_sfc_jenkins arrow 0.15.0 Release
 fi
