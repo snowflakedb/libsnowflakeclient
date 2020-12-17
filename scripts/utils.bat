@@ -140,13 +140,14 @@ goto :EOF
     set component_version=%5
 
     set scriptdir=%~dp0
+    set dependencydir=%~dp0..\deps-build\%build_dir%
 
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
     echo === downloading %component_name% from s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
-    md artifacts
-    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% artifacts
+    md %dependencydir%
+    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %dependencydir%
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF

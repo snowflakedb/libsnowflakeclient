@@ -23,17 +23,16 @@ source $DIR/utils.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [[ "$PLATFORM" == "linux" ]]; then
-    mkdir ../deps
-    cp $THIS_DIR/arrow.mk ../deps/arrow.mk
-    cd ../deps/
+    chmod +wx $DEPS_DIR
+    cp $THIS_DIR/arrow.mk $DEPS_DIR
+    cd $DEPS_DIR
     BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
 elif [[ "$PLATFORM" == "darwin" ]]; then
     echo "[INFO] For ${PLATFORM}, use pre-built binaries for Arrow"
     local zip_file_name=$(get_zip_file_name arrow $ARROW_VERSION $target)
     download_from_sfc_dev1_data arrow $ARROW_VERSION $target
-    mv $THIS_DIR/../artifacts/$zip_file_name $THIS_DIR/../deps-build/$PLATFORM/$target
-    tar xzf $THIS_DIR/../deps-build/$PLATFORM/$target/$zip_file_name
-    rm $THIS_DIR/../deps-build/$PLATFORM/$target
+    tar xzf $DEPENDENCY_DIR/$zip_file_name
+    rm $DEPENDENCY_DIR/$zip_file_name
 else
     echo "[ERROR] $PLATFORM is not supported"
 fi

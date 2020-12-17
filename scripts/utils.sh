@@ -96,9 +96,8 @@ function download_from_sfc_dev1_data()
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     local source=s3://sfc-dev1-data/dependency/$component_name/$zip_file_name
-    echo "=== downloading $source to $UTILS_DIR/../artifacts"
-    mkdir -p $UTILS_DIR/../artifacts
-    aws s3 cp --only-show-errors $source $UTILS_DIR/../artifacts
+    echo "=== downloading $source to $DEPENDENCY_DIR"
+    aws s3 cp --only-show-errors $source $DEPENDENCY_DIR
 }
 
 function upload_to_sfc_jenkins()
