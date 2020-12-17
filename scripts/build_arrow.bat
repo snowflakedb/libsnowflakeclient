@@ -38,15 +38,15 @@ set ARROW_CMAKE_BUILD_DIR=%ARROW_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%
 set ARROW_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\arrow
 
 :: Until a proper build script can be written for Arrow, download from from SFC.
-set artifactsdir=%~dp0\..\artifacts
-set dependencydir=%~dp0\..\deps-build\%build_dir%\%component_name
+set artifactsdir=%~dp0..\artifacts
+set dependencydir=%~dp0..\deps-build\%build_dir%\%component_name
 
 call "%scriptdir%utils.bat" :download_from_sfc_dev1_data %platform% %build_type% %vs_version% arrow %arrow_version%
 
 7z x -y -bd %artifactsdir%\%zip_file_name% -o%dependencydir%
 del %artifactsdir%\%zip_file_name%
 
-if ERRORLEVEL NEQ 0 goto :error
+if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success
 

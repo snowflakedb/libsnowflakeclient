@@ -2,6 +2,13 @@
 #
 # Build ARROW library
 #
+function usage() {
+    echo "Usage: `basename $0` [-t <Release|Debug>]"
+    echo "Build ARROW library"
+    echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
+    exit 2
+}
 set -o pipefail
 
 #Change the version in the arrow.mk to build 
@@ -10,6 +17,8 @@ ARROW_VERSION=0.15.0
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
+
+[[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -25,5 +34,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     tar xzf $THIS_DIR/../deps-build/$PLATFORM/$target/$zip_file_name
     rm $THIS_DIR/../deps-build/$PLATFORM/$target
 else
-    download_from_sfc_jenkins arrow 0.15.0 Release
+    echo "[ERROR] $PLATFORM is not supported"
 fi
