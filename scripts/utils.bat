@@ -145,7 +145,7 @@ goto :EOF
     call :get_zip_file_name %component_name% %component_version%
 
     echo === downloading %component_name% from s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
-    cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% artifacts
+    cmd /c aws s3 cp s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% artifacts
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF

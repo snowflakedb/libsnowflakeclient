@@ -23,7 +23,7 @@ source $DIR/utils.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [[ "$PLATFORM" == "linux" ]]; then
-    cp $THIS_DIR/arrow.mk ../deps/
+    cp $THIS_DIR/arrow.mk ../deps/arrow.mk
     cd ../deps/
     BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
 elif [[ "$PLATFORM" == "darwin" ]]; then
