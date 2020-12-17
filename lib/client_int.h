@@ -123,11 +123,14 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
  * Executes a statement.
  * @param sfstmt SNOWFLAKE_STMT context.
  * @param sf_use_application_json_accept type true if this is a put/get command
+ * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
+ * if the query response is to be captured.
  *
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool use_application_json_accept_type);
+                                        sf_bool use_application_json_accept_type,
+                                        struct SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /**
  * @return true if this is a put/get command, otherwise false

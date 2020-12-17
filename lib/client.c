@@ -1236,11 +1236,6 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->sql_text = NULL;
 
-    if (sfstmt->query_response_text) {
-        SF_FREE(sfstmt->query_response_text);
-    }
-    sfstmt->query_response_text = NULL;
-
     if (sfstmt->cur_row) {
         snowflake_cJSON_Delete(sfstmt->cur_row);
         sfstmt->cur_row = NULL;
@@ -1345,6 +1340,14 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
         sfstmt->connection = sf;
     }
     return sfstmt;
+}
+
+/**
+ * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ */
+SF_QUERY_RESULT_CAPTURE sf_query_result_capture_init() {
+    SF_QUERY_RESULT_CAPTURE capture = {NULL, 0, 0};
+    return capture;
 }
 
 /**
@@ -1710,11 +1713,16 @@ cleanup:
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text));
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL);
+}
+
+SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool is_put_get_command) {
+                                        sf_bool is_put_get_command,
+                                        SF_QUERY_RESULT_CAPTURE* result_capture) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1837,15 +1845,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
-        // Store the full query-response text in query_response_text, if running in force_arrow mode
-        if (is_force_arrow_mode(sfstmt->connection)) {
+        // Store the full query-response text in the capture buffer, if defined.
+        if (result_capture != NULL && result_capture->capture_buffer != NULL) {
             size_t resp_size = strlen(s_resp) + 1;
-            SF_FREE(sfstmt->query_response_text);
-            sfstmt->query_response_text = (char *) SF_CALLOC(1, resp_size);
-            if (!sfstmt->query_response_text) {
-                return SF_STATUS_ERROR_OUT_OF_MEMORY;
+            if (result_capture->buffer_size < resp_size) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
             }
-            sb_strncpy(sfstmt->query_response_text, resp_size, s_resp, resp_size);
+            sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
+            result_capture->actual_response_size = resp_size;
         }
 
         data = snowflake_cJSON_GetObjectItem(resp, "data");

@@ -327,6 +327,23 @@ typedef struct SF_STATS {
 } SF_STATS;
 
 /**
+ * For certain applications, we may wish to capture
+ * the raw response after issuing a query to Snowflake.
+ * This is a structure used for capturing the results.
+ * Note that the caller is responsible for managing the memory
+ * used for this, and that these should always be constructed
+ * with sf_query_result_capture_init().
+ */
+typedef struct SF_QUERY_RESULT_CAPTURE {
+    // The buffer for storing the results
+    char* capture_buffer;
+    // Size of the buffer
+    size_t buffer_size;
+    // Actual response size
+    size_t actual_response_size;
+} SF_QUERY_RESULT_CAPTURE;
+
+/**
  * Chunk downloader context
  */
 typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
@@ -346,7 +363,6 @@ typedef struct SF_STMT {
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
     char *sql_text;
-    char *query_response_text;
     void *raw_results;
     void *cur_row;
     int64 chunk_rowcount;
@@ -402,6 +418,11 @@ typedef struct SF_TIMESTAMP {
     int32 scale;
     SF_DB_TYPE ts_type;
 } SF_TIMESTAMP;
+
+/**
+ * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ */
+SF_QUERY_RESULT_CAPTURE sf_query_result_capture_init();
 
 /**
  * Checks whether the client is running in force_arrow mode.
@@ -648,6 +669,15 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+
+/**
+ * Executes a statement with capture.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
+        SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer
