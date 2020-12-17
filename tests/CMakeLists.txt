@@ -37,6 +37,8 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
+        test_get_query_result_response
+        test_arrow_force
 #        test_stats
         )
 

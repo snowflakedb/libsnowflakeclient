@@ -131,7 +131,8 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_OUT_OF_RANGE = 240021,
     SF_STATUS_ERROR_NULL_POINTER = 240022,
     SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
-    SF_STATUS_ERROR_OTHER = 240024
+    SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW = 240024,
+    SF_STATUS_ERROR_OTHER = 240025
 } SF_STATUS;
 
 /**
@@ -211,7 +212,8 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
-    SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT
+    SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
+    SF_QUERY_RESULT_TYPE
 } SF_ATTRIBUTE;
 
 /**
@@ -267,6 +269,7 @@ typedef struct SF_CONNECT {
     sf_bool autocommit;
     char *timezone;
     char *service_name;
+    char *query_result_format;
 
     /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;
@@ -343,6 +346,7 @@ typedef struct SF_STMT {
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
     char *sql_text;
+    char *query_response_text;
     void *raw_results;
     void *cur_row;
     int64 chunk_rowcount;
@@ -398,6 +402,14 @@ typedef struct SF_TIMESTAMP {
     int32 scale;
     SF_DB_TYPE ts_type;
 } SF_TIMESTAMP;
+
+/**
+ * Checks whether the client is running in force_arrow mode.
+ *
+ * @param connection pointer to SF_CONNECT
+ * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
+ */
+sf_bool is_force_arrow_mode(const SF_CONNECT *connection);
 
 /**
  * Global Snowflake initialization.
