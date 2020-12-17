@@ -39,12 +39,12 @@ jobs:
               run: ci/test_linux.sh
     build-test-win:
         name: Build-Test-Win
-        runs-on: windows-2019
+        runs-on: windows-2015
         strategy:
             matrix:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
-                vs_version: [ 'VS16' ]
+                vs_version: [ 'VS14' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v1
