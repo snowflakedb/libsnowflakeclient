@@ -29,13 +29,13 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # cd $DEPS_DIR
     # BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
     echo "[INFO] For ${PLATFORM}, use pre-built binaries for Arrow"
-    local zip_file_name=$(get_zip_file_name arrow $ARROW_VERSION $target)
+    zip_file_name=$(get_zip_file_name arrow $ARROW_VERSION $target)
     download_from_sfc_dev1_data arrow $ARROW_VERSION $target
     tar xzf $DEPENDENCY_DIR/$zip_file_name
     rm $DEPENDENCY_DIR/$zip_file_name
 elif [[ "$PLATFORM" == "darwin" ]]; then
     echo "[INFO] For ${PLATFORM}, use pre-built binaries for Arrow"
-    local zip_file_name=$(get_zip_file_name arrow $ARROW_VERSION $target)
+    zip_file_name=$(get_zip_file_name arrow $ARROW_VERSION $target)
     download_from_sfc_dev1_data arrow $ARROW_VERSION $target
     tar xzf $DEPENDENCY_DIR/$zip_file_name
     rm $DEPENDENCY_DIR/$zip_file_name

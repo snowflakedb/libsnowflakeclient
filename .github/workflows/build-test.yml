@@ -39,7 +39,7 @@ jobs:
               run: ci/test_linux.sh
     build-test-win:
         name: Build-Test-Win
-        runs-on: windows-2015
+        runs-on: windows-2019
         strategy:
             matrix:
                 platform: [ 'x64', 'x86' ]
