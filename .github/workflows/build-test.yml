@@ -49,10 +49,10 @@ jobs:
                 vs_version: [ 'VS14' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: microsoft/setup-msbuild@v1.0.2
             - name: Add msbuild to PATH
-            - with:
-                vs-version: ${{ matrix.vs_version }}
+              uses: microsoft/setup-msbuild@v1.0.2
+              with:
+                vs-version: '${{ matrix.vs_version }}'
             - uses: actions/checkout@v1
             - name: Build
               shell: cmd
