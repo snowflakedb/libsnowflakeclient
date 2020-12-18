@@ -58,6 +58,7 @@ void test_get_query_result_response(void **unused) {
             strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
             SF_UUID4_LEN);
 
+    snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
