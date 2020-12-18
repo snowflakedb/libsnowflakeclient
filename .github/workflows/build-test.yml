@@ -36,6 +36,8 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
               run: ci/test_linux.sh
     build-test-win:
         name: Build-Test-Win
@@ -47,6 +49,10 @@ jobs:
                 vs_version: [ 'VS14' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
+            - uses: microsoft/setup-msbuild@v1.0.2
+            - name: Add msbuild to PATH
+            - with:
+                vs-version: ${{ matrix.vs_version }}
             - uses: actions/checkout@v1
             - name: Build
               shell: cmd
