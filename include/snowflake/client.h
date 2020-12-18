@@ -332,7 +332,7 @@ typedef struct SF_STATS {
  * This is a structure used for capturing the results.
  * Note that the caller is responsible for managing the memory
  * used for this, and that these should always be constructed
- * with sf_query_result_capture_init().
+ * with snowflake_query_result_capture_init().
  */
 typedef struct SF_QUERY_RESULT_CAPTURE {
     // The buffer for storing the results
@@ -422,7 +422,7 @@ typedef struct SF_TIMESTAMP {
 /**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
  */
-SF_QUERY_RESULT_CAPTURE sf_query_result_capture_init();
+SF_QUERY_RESULT_CAPTURE snowflake_query_result_capture_init();
 
 /**
  * Checks whether the client is running in force_arrow mode.

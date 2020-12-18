@@ -23,7 +23,7 @@ void test_get_query_result_response(void **unused) {
 
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
-    SF_QUERY_RESULT_CAPTURE result_capture = sf_query_result_capture_init();
+    SF_QUERY_RESULT_CAPTURE result_capture = snowflake_query_result_capture_init();
 
     // Create a space for storing the query response text
     size_t buffer_size = 5000;

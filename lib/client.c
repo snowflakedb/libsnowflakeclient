@@ -1345,7 +1345,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
 /**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
  */
-SF_QUERY_RESULT_CAPTURE sf_query_result_capture_init() {
+SF_QUERY_RESULT_CAPTURE snowflake_query_result_capture_init() {
     SF_QUERY_RESULT_CAPTURE capture = {NULL, 0, 0};
     return capture;
 }
