@@ -421,8 +421,11 @@ typedef struct SF_TIMESTAMP {
 
 /**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ * Note that these need to be released by calling snowflake_query_result_capture_term().
+ *
+ * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
  */
-SF_QUERY_RESULT_CAPTURE snowflake_query_result_capture_init();
+void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
 
 /**
  * Checks whether the client is running in force_arrow mode.
@@ -430,7 +433,7 @@ SF_QUERY_RESULT_CAPTURE snowflake_query_result_capture_init();
  * @param connection pointer to SF_CONNECT
  * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
  */
-sf_bool is_force_arrow_mode(const SF_CONNECT *connection);
+sf_bool STDCALL snowflake_is_force_arrow_mode(const SF_CONNECT *connection);
 
 /**
  * Global Snowflake initialization.
@@ -517,6 +520,14 @@ SF_STATUS STDCALL snowflake_get_attribute(
  * @param sfstmt SNOWFLAKE_STMT context.
  */
 SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
+
+/**
+ * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ *
+ * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
+ *
+ */
+ void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture);
 
 /**
  * Closes and terminates a statement context

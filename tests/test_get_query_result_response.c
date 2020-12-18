@@ -23,29 +23,30 @@ void test_get_query_result_response(void **unused) {
 
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
-    SF_QUERY_RESULT_CAPTURE result_capture = snowflake_query_result_capture_init();
+    SF_QUERY_RESULT_CAPTURE *result_capture;
+    snowflake_query_result_capture_init(&result_capture);
 
     // Create a space for storing the query response text
     size_t buffer_size = 5000;
-    result_capture.capture_buffer = (char *) SF_CALLOC(1, buffer_size);
+    result_capture->capture_buffer = (char *) SF_CALLOC(1, buffer_size);
 
     clear_snowflake_error(&sfstmt->error);
     status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Try first with too small of a buffer size, we should return an error.
-    result_capture.buffer_size = 100;
-    status = snowflake_execute_with_capture(sfstmt, &result_capture);
+    result_capture->buffer_size = 100;
+    status = snowflake_execute_with_capture(sfstmt, result_capture);
     assert_int_equal(status, SF_STATUS_ERROR_BUFFER_TOO_SMALL);
 
     // Now use the actual size
-    result_capture.buffer_size = buffer_size;
+    result_capture->buffer_size = buffer_size;
     clear_snowflake_error(&sfstmt->error);
-    status = snowflake_execute_with_capture(sfstmt, &result_capture);
+    status = snowflake_execute_with_capture(sfstmt, result_capture);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Parse the JSON, and grab a few values to verify correctness
-    cJSON *parsedJSON = snowflake_cJSON_Parse(result_capture.capture_buffer);
+    cJSON *parsedJSON = snowflake_cJSON_Parse(result_capture->capture_buffer);
 
     sf_bool success;
     json_copy_bool(&success, parsedJSON, "success");
@@ -57,8 +58,7 @@ void test_get_query_result_response(void **unused) {
             strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
             SF_UUID4_LEN);
 
-    snowflake_cJSON_Delete(parsedJSON);
-    free(result_capture.capture_buffer);
+    snowflake_query_result_capture_term(result_capture);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
