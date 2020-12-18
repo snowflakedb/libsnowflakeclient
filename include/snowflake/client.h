@@ -523,6 +523,8 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ * Note that this only frees the struct itself, and *not* the underlying
+ * capture buffer! The caller is responsible for managing that.
  *
  * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
  *

@@ -28,7 +28,8 @@ void test_get_query_result_response(void **unused) {
 
     // Create a space for storing the query response text
     size_t buffer_size = 5000;
-    result_capture->capture_buffer = (char *) SF_CALLOC(1, buffer_size);
+    char* resultBuffer = (char *) SF_CALLOC(1, buffer_size);
+    result_capture->capture_buffer = resultBuffer;
 
     clear_snowflake_error(&sfstmt->error);
     status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))", 0);
@@ -46,7 +47,7 @@ void test_get_query_result_response(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Parse the JSON, and grab a few values to verify correctness
-    cJSON *parsedJSON = snowflake_cJSON_Parse(result_capture->capture_buffer);
+    cJSON *parsedJSON = snowflake_cJSON_Parse(resultBuffer);
 
     sf_bool success;
     json_copy_bool(&success, parsedJSON, "success");
@@ -60,6 +61,7 @@ void test_get_query_result_response(void **unused) {
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
+    free(resultBuffer);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

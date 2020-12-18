@@ -1380,13 +1380,14 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ * Note that this only frees the struct itself, and *not* the underlying
+ * capture buffer! The caller is responsible for managing that.
  *
  * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
  *
  */
 void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture) {
     if (capture) {
-        SF_FREE(capture->capture_buffer);
         capture->capture_buffer = NULL;
         SF_FREE(capture);
     }
