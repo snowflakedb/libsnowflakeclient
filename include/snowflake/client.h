@@ -327,6 +327,23 @@ typedef struct SF_STATS {
 } SF_STATS;
 
 /**
+ * For certain applications, we may wish to capture
+ * the raw response after issuing a query to Snowflake.
+ * This is a structure used for capturing the results.
+ * Note that the caller is responsible for managing the memory
+ * used for this, and that these should always be constructed
+ * with snowflake_query_result_capture_init().
+ */
+typedef struct SF_QUERY_RESULT_CAPTURE {
+    // The buffer for storing the results
+    char* capture_buffer;
+    // Size of the buffer
+    size_t buffer_size;
+    // Actual response size
+    size_t actual_response_size;
+} SF_QUERY_RESULT_CAPTURE;
+
+/**
  * Chunk downloader context
  */
 typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
@@ -346,7 +363,6 @@ typedef struct SF_STMT {
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
     char *sql_text;
-    char *query_response_text;
     void *raw_results;
     void *cur_row;
     int64 chunk_rowcount;
@@ -404,12 +420,20 @@ typedef struct SF_TIMESTAMP {
 } SF_TIMESTAMP;
 
 /**
+ * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ * Note that these need to be released by calling snowflake_query_result_capture_term().
+ *
+ * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
+ */
+void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
+
+/**
  * Checks whether the client is running in force_arrow mode.
  *
  * @param connection pointer to SF_CONNECT
  * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
  */
-sf_bool is_force_arrow_mode(const SF_CONNECT *connection);
+sf_bool STDCALL snowflake_is_force_arrow_mode(const SF_CONNECT *connection);
 
 /**
  * Global Snowflake initialization.
@@ -496,6 +520,16 @@ SF_STATUS STDCALL snowflake_get_attribute(
  * @param sfstmt SNOWFLAKE_STMT context.
  */
 SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
+
+/**
+ * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ * Note that this only frees the struct itself, and *not* the underlying
+ * capture buffer! The caller is responsible for managing that.
+ *
+ * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
+ *
+ */
+ void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture);
 
 /**
  * Closes and terminates a statement context
@@ -648,6 +682,15 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+
+/**
+ * Executes a statement with capture.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
+        SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <connection.h>
 #include <memory.h>
+#include <error.h>
 
 /**
  * Tests fetching the query result response directly from SFSTMT
@@ -13,14 +14,7 @@
  */
 void test_get_query_result_response(void **unused) {
     SF_CONNECT *sf = setup_snowflake_connection();
-    snowflake_connect(sf);
-    SF_STATUS status = enable_arrow_force(sf);
-
-    // Skip test if server doesn't support arrow_force param in response
-    if(!is_force_arrow_mode(sf)) {
-        snowflake_term(sf);
-        return;
-    }
+    SF_STATUS status = snowflake_connect(sf);
 
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
@@ -29,15 +23,31 @@ void test_get_query_result_response(void **unused) {
 
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
-    status = snowflake_query(
-            sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))",
-            0);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
+    SF_QUERY_RESULT_CAPTURE *result_capture;
+    snowflake_query_result_capture_init(&result_capture);
+
+    // Create a space for storing the query response text
+    size_t buffer_size = 5000;
+    char* resultBuffer = (char *) SF_CALLOC(1, buffer_size);
+    result_capture->capture_buffer = resultBuffer;
+
+    clear_snowflake_error(&sfstmt->error);
+    status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Try first with too small of a buffer size, we should return an error.
+    result_capture->buffer_size = 100;
+    status = snowflake_execute_with_capture(sfstmt, result_capture);
+    assert_int_equal(status, SF_STATUS_ERROR_BUFFER_TOO_SMALL);
+
+    // Now use the actual size
+    result_capture->buffer_size = buffer_size;
+    clear_snowflake_error(&sfstmt->error);
+    status = snowflake_execute_with_capture(sfstmt, result_capture);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Parse the JSON, and grab a few values to verify correctness
-    cJSON* parsedJSON = snowflake_cJSON_Parse(sfstmt->query_response_text);
+    cJSON *parsedJSON = snowflake_cJSON_Parse(resultBuffer);
 
     sf_bool success;
     json_copy_bool(&success, parsedJSON, "success");
@@ -50,6 +60,8 @@ void test_get_query_result_response(void **unused) {
             SF_UUID4_LEN);
 
     snowflake_cJSON_Delete(parsedJSON);
+    snowflake_query_result_capture_term(result_capture);
+    free(resultBuffer);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

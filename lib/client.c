@@ -58,7 +58,7 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
  * @param connection pointer to SF_CONNECT
  * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
  */
-sf_bool is_force_arrow_mode(const SF_CONNECT *connection) {
+sf_bool STDCALL snowflake_is_force_arrow_mode(const SF_CONNECT *connection) {
     if (connection->query_result_format == NULL) {
         return SF_BOOLEAN_FALSE;
     }
@@ -1236,11 +1236,6 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->sql_text = NULL;
 
-    if (sfstmt->query_response_text) {
-        SF_FREE(sfstmt->query_response_text);
-    }
-    sfstmt->query_response_text = NULL;
-
     if (sfstmt->cur_row) {
         snowflake_cJSON_Delete(sfstmt->cur_row);
         sfstmt->cur_row = NULL;
@@ -1348,6 +1343,23 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
 }
 
 /**
+ * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ * Note that these need to be released by calling snowflake_query_result_capture_term().
+ *
+ * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
+ */
+void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **init) {
+
+    SF_QUERY_RESULT_CAPTURE *capture = (SF_QUERY_RESULT_CAPTURE *) SF_CALLOC(1, sizeof(SF_QUERY_RESULT_CAPTURE));
+
+    capture->capture_buffer = NULL;
+    capture->buffer_size = 0;
+    capture->actual_response_size = 0;
+
+    *init = capture;
+}
+
+/**
  * Leave the memory management of the bind input to the user
  * The user will allocate memory for the SF_BIND_INPUT and
  * pass it to the init function for sane initialization
@@ -1364,6 +1376,21 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
     input->idx = 0;
     input->name = NULL;
     input->value = NULL;
+}
+
+/**
+ * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ * Note that this only frees the struct itself, and *not* the underlying
+ * capture buffer! The caller is responsible for managing that.
+ *
+ * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
+ *
+ */
+void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture) {
+    if (capture) {
+        capture->capture_buffer = NULL;
+        SF_FREE(capture);
+    }
 }
 
 void STDCALL snowflake_stmt_term(SF_STMT *sfstmt) {
@@ -1492,7 +1519,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     }
 
     // Since Arrow isn't yet supported, we throw an error
-    if (is_force_arrow_mode(sfstmt->connection)) {
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
                                  "Query results were fetched using Arrow, "
                                  "but the client library does not yet support decoding Arrow results", "",
@@ -1645,7 +1672,7 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
     }
 
     // Since Arrow isn't yet supported, we throw an error
-    if (is_force_arrow_mode(sfstmt->connection)) {
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
                                  "Affected row-count not available using force-arrow results type", "",
                                  sfstmt->sfqid);
@@ -1710,11 +1737,16 @@ cleanup:
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text));
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL);
+}
+
+SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool is_put_get_command) {
+                                        sf_bool is_put_get_command,
+                                        SF_QUERY_RESULT_CAPTURE* result_capture) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1837,15 +1869,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
-        // Store the full query-response text in query_response_text, if running in force_arrow mode
-        if (is_force_arrow_mode(sfstmt->connection)) {
+        // Store the full query-response text in the capture buffer, if defined.
+        if (result_capture != NULL && result_capture->capture_buffer != NULL) {
             size_t resp_size = strlen(s_resp) + 1;
-            SF_FREE(sfstmt->query_response_text);
-            sfstmt->query_response_text = (char *) SF_CALLOC(1, resp_size);
-            if (!sfstmt->query_response_text) {
-                return SF_STATUS_ERROR_OUT_OF_MEMORY;
+            if (result_capture->buffer_size < resp_size) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
             }
-            sb_strncpy(sfstmt->query_response_text, resp_size, s_resp, resp_size);
+            sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
+            result_capture->actual_response_size = resp_size;
         }
 
         data = snowflake_cJSON_GetObjectItem(resp, "data");
@@ -1973,7 +2004,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 }
 
                 // Since we can't parse Arrow results yet, skip this step if running in force_arrow
-                if (!is_force_arrow_mode(sfstmt->connection)) {
+                if (!snowflake_is_force_arrow_mode(sfstmt->connection)) {
                     // Set results array
                     if (json_detach_array_from_object(
                             (cJSON **) (&sfstmt->raw_results),
@@ -2092,7 +2123,7 @@ int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt) {
     }
 
     // Since Arrow isn't yet supported, we throw an error
-    if (is_force_arrow_mode(sfstmt->connection)) {
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
                                  "Result row-count not available using force-arrow results type", "",
                                  sfstmt->sfqid);
@@ -2218,7 +2249,7 @@ SF_STATUS STDCALL _snowflake_get_cJSON_column(SF_STMT *sfstmt, int idx, cJSON **
     }
 
     // Since Arrow isn't yet supported, we throw an error
-    if (is_force_arrow_mode(sfstmt->connection)) {
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
                                  "Query results were fetched using Arrow, "
                                  "but the client library does not yet support decoding Arrow results", "",

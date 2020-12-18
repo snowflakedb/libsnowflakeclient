@@ -20,7 +20,7 @@ void test_arrow_force(void **unused) {
     SF_STATUS status = enable_arrow_force(sf);
 
     // Skip test if server doesn't support arrow_force param in response
-    if(!is_force_arrow_mode(sf)) {
+    if(!snowflake_is_force_arrow_mode(sf)) {
         snowflake_term(sf);
         return;
     }
