@@ -54,7 +54,7 @@ jobs:
             - name: Add msbuild to PATH
               uses: microsoft/setup-msbuild@v1.0.2
               with:
-                vs-version: '[ 14.0, 14.1 )'
+                vs-version: '[ 14.0, 15.0 )'
             - uses: actions/checkout@v1
             - name: Build
               shell: cmd
