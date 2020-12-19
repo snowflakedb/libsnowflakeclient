@@ -25,6 +25,8 @@ jobs:
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
+                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
               run: ci/build_linux.sh
             - uses: actions/setup-python@v1
               with:
