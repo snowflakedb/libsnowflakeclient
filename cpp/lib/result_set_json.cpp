@@ -5,7 +5,7 @@
 #include <string>
 
 #include "memory.h"
-#include "result_set_json.h"
+#include "snowflake/result_set_json.h"
 
 
 result_set_json_t * result_set_json_create(

@@ -4,8 +4,7 @@
 
 #include <cstdio>
 
-#include "ResultSet.hpp"
-
+#include "snowflake/ResultSet.hpp"
 #include "snowflake/Simba_CRTFunctionSafe.h"
 
 namespace Snowflake

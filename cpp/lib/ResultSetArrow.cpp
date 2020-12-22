@@ -2,8 +2,9 @@
  * Copyright (c) 2020 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "ResultSetArrow.hpp"
 #include <memory>
+
+#include "snowflake/ResultSetArrow.hpp"
 
 namespace Snowflake
 {

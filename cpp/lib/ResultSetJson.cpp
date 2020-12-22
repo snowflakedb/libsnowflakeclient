@@ -2,7 +2,7 @@
  * Copyright (c) 2020 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "ResultSetJson.hpp"
+#include "snowflake/ResultSetJson.hpp"
 
 namespace Snowflake
 {

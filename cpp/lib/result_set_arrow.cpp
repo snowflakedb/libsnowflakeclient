@@ -5,7 +5,7 @@
 #include <string>
 
 #include "memory.h"
-#include "result_set_arrow.h"
+#include "snowflake/result_set_arrow.h"
 
 
 result_set_arrow_t * result_set_arrow_create(
