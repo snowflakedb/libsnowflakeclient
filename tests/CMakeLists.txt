@@ -55,6 +55,18 @@ SET(TESTS_CXX
         test_unit_proxy
         test_unit_oob)
 
+SET(TESTS_ARROW
+        arrow/test_arrow_binary
+        arrow/test_arrow_bool
+        arrow/test_arrow_date
+        arrow/test_arrow_float
+        arrow/test_arrow_number
+        arrow/test_arrow_string
+        arrow/test_arrow_time
+        arrow/test_arrow_timestamp_ntz
+        arrow/test_arrow_timestamp_ntz
+        arrow/test_arrow_timestamp_tz)
+
 SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
@@ -86,7 +98,7 @@ set(SOURCE_UTILS_CXX
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32)
-    set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
+    set(TESTS_CXX ${TESTS_CXX} ${TESTS_ARROW} ${TESTS_PUTGET})
 endif ()
 
 if (UNIX)
