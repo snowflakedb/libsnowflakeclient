@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_RESULTSETJSON_HPP
 #define SNOWFLAKECLIENT_RESULTSETJSON_HPP
 
-#include "ResultSet.cpp"
+#include "snowflake/ResultSet.hpp"
 #include "cJSON.h"
 
 namespace Snowflake

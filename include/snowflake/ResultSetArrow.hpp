@@ -12,7 +12,7 @@
 
 #include "client.h"
 #include "logger.h"
-#include "ResultSet.cpp"
+#include "snowflake/ResultSet.hpp"
 
 
 namespace Snowflake
