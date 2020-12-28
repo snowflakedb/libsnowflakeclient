@@ -10,6 +10,7 @@
 
 result_set_arrow_t * result_set_arrow_create(
     cJSON * data,
+    SF_COLUMN_DESC * metadata,
     SF_CHUNK_DOWNLOADER * chunk_downloader,
     char * query_id,
     int32 tz_offset,
@@ -20,15 +21,16 @@ result_set_arrow_t * result_set_arrow_create(
 {
     result_set_arrow_t * rs_struct;
     rs_struct = (typeof(rs_struct)) SF_MALLOC(sizeof(*rs_struct));
-    Snowflake::Client::ResultSetArrow * rs_obj(
-        data,
-        chunk_downloader,
-        std::string(query_id),
-        tz_offset,
-        total_chunk_count,
-        total_column_count,
-        total_row_count
-    );
+    Snowflake::Client::ResultSetArrow * rs_obj =
+        new Snowflake::Client::ResultSetArrow(
+            data,
+            metadata,
+            chunk_downloader,
+            std::string(query_id),
+            tz_offset,
+            total_chunk_count,
+            total_column_count,
+            total_row_count);
     rs_struct->result_set_object = rs_obj;
 
     return rs_struct;

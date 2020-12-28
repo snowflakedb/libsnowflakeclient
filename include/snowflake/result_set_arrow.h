@@ -27,7 +27,7 @@ extern "C" {
     /**
      * Creates an empty result set.
      */
-    result_set_arrow_t result_set_arrow_create_empty();
+    result_set_arrow_t * result_set_arrow_create_empty();
 
     /**
      * Parameterized constructor.
@@ -41,8 +41,9 @@ extern "C" {
      * @param total_column_count        The total number of columns.
      * @param total_row_count           The total number of rows.
      */
-    result_set_arrow_t result_set_arrow_create(
+    result_set_arrow_t * result_set_arrow_create(
         cJSON * data,
+        SF_COLUMN_DESC * metadata,
         SF_CHUNK_DOWNLOADER * chunk_downloader,
         char * query_id,
         int32 tz_offset,
@@ -54,39 +55,39 @@ extern "C" {
     /**
      * Destructor.
      */
-    void result_set_arrow_destroy();
+    void result_set_arrow_destroy(result_set_arrow_t * rs);
 
     /**
      * Advances to the next column.
      *
      * @return true if next column exists, otherwise false.
      */
-    bool result_set_arrow_next_column();
+    bool result_set_arrow_next_column(result_set_arrow_t * rs);
 
     /**
      * Advances to the next row.
      *
      * @return true if next row exists, otherwise false.
      */
-    bool result_set_arrow_next_row();
+    bool result_set_arrow_next_row(result_set_arrow_t * rs);
 
     /**
      * Get the current column value as string.
      *
-     * @return The current column as a string
+     * @return The current column as a string.
      */
-    char * result_set_arrow_get_current_column_as_string();
+    char * result_set_arrow_get_current_column_as_string(result_set_arrow_t * rs);
 
     /**
      * Get the current row value as string.
      *
-     * @return The current row as a string
+     * @return The current row as a string.
      */
-    char * result_set_arrow_get_current_row_as_string();
+    char * result_set_arrow_get_current_row_as_string(result_set_arrow_t * rs);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // SNOWFLAKE_RESULTSET_H
+#endif // SNOWFLAKE_RESULTSETARROW_H

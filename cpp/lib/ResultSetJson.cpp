@@ -72,7 +72,7 @@ void Snowflake::Client::ResultSetJson::init()
     do
     {
         cJSON * currRow = snowflake_cJSON_GetArrayItem(
-            m_chunkDownloader.queue[m_currChunkIdx].chunk,
+            m_chunkDownloader->queue[m_currChunkIdx].chunk,
             m_currChunkRowIdx);
         snowflake_cJSON_AddItemToArray(m_records, currRow);
     }

@@ -25,9 +25,9 @@ namespace Client
  */
 struct ArrowTimestamp
 {
-    int64 * secondsSinceEpoch = nullptr;
-    int32 * fracSeconds = nullptr;
-    int32 * timeOffset = nullptr;
+    int64 secondsSinceEpoch = 0;
+    int32 fracSeconds = 0;
+    int32 timeOffset = 0;
 };
 
 /**
@@ -94,7 +94,7 @@ public:
      * @param totalColumnCount     The total number of columns.
      * @param totalRowCount        The total number of rows.
      */
-    ResultSetJson(
+    ResultSetArrow(
         cJSON * data,
         SF_COLUMN_DESC * metadata,
         SF_CHUNK_DOWNLOADER * chunkDownloader,
@@ -173,14 +173,35 @@ private:
      *
      * @param chunk                The current chunk as a cJSON array.
      *
-     * @return the vector of array builders.
+     * @return the vector of pointers to ArrayBuilders.
      */
-    std::vector<std::shared_ptr<arrow::ArrayBuilder>>
-    initBuilders(cJSON * chunk);
+    std::vector<arrow::ArrayBuilder *> initBuilders(cJSON * chunk);
+
+    /**
+     * Helper method to create an approriately-typed arrow::Field object,
+     * given the Snowflake DB type of the column to build.
+     *
+     * If you change the mapping of this method, you must also change
+     * ResultSetArrow::convertTypeFromSnowflakeToArrow() to reflect these changes.
+     *
+     * @param snowflakeType        The Snowflake DB type of the column to build.
+     * @param name                 The name of the column.
+     * @param scale                The scale of the column.
+     *
+     * @return the field object.
+     *
+     * @see lib/results.c
+     */
+    std::shared_ptr<arrow::Field> createArrowField(
+        SF_DB_TYPE snowflakeType,
+        std::string name,
+        int64 scale);
 
     /**
      * Helper method to create an approriately-typed arrow::ArrayBuilder object,
      * given the Snowflake DB type of the column to build.
+     *
+     * Returns raw pointer due to compile-time errors with smart pointers.
      *
      * If you change the mapping of this method, you must also change
      * ResultSetArrow::convertTypeFromSnowflakeToArrow() to reflect these changes.
@@ -188,12 +209,11 @@ private:
      * @param snowflakeType        The Snowflake DB type of the column to build.
      * @param scale                The scale of the column.
      *
-     * @return the array builder object.
+     * @return a raw pointer to the array builder object.
      *
      * @see lib/results.c
      */
-    arrow::ArrayBuilder
-    Snowflake::Client::ResultSetArrow::createArrayBuilder(
+    arrow::ArrayBuilder * createArrowArrayBuilder(
         SF_DB_TYPE snowflakeType,
         int64 scale);
 
@@ -203,11 +223,11 @@ private:
      * Note: This method should only be called by the initBuilders() method.
      * In addition, m_currChunkRowIdx must be zeroed before calling.
      *
-     * @param builders             The vector of array builders.
+     * @param builders             The vector of ArrayBuilder pointers.
      * @param chunk                The current chunk as a cJSON array.
      */
     void appendChunkToBuilders(
-        std::vector<std::shared_ptr<arrow::ArrayBuilder>> builders,
+        std::vector<arrow::ArrayBuilder *> builders,
         cJSON * chunk);
 
     /**
@@ -216,11 +236,13 @@ private:
      * column.
      *
      * @param jsonValue                 The value as a cJSON object.
+     * @param builders                  The vector of ArrayBuilders to update.
      *
      * @return The Arrow representation of the given value.
      */
-    std::shared_ptr<arrow::DataType>
-    convertAndAppendValue(cJSON * jsonValue);
+    void convertAndAppendValue(
+        cJSON * jsonValue,
+        std::vector<arrow::ArrayBuilder *> builders);
 
     /**
      * Helper method to convert a Snowflake DB type to an Arrow type.
@@ -242,11 +264,43 @@ private:
      * Helper method to convert the Timestamp value retrieved from cJSON to an
      * instance of ArrowTimestamp.
      *
+     * @param ds                   The date string to convert.
+     *
+     * @return The resultant ArrowTimestamp instance.
+     */
+    int32 convertDateStringToInt32(std::string ds);
+
+    /**
+     * Helper method to convert the Timestamp value retrieved from cJSON to an
+     * instance of ArrowTimestamp.
+     *
+     * @param ts                   The time string to convert.
+     * @param scale                The scale of the time string.
+     *
+     * @return The resultant ArrowTimestamp instance.
+     */
+    int32 convertTimeStringToInt32(std::string ts, int64 scale);
+
+    /**
+     * Helper method to convert the Timestamp value retrieved from cJSON to an
+     * instance of ArrowTimestamp.
+     *
+     * @param ts                   The time string to convert.
+     * @param scale                The scale of the time string.
+     *
+     * @return The resultant ArrowTimestamp instance.
+     */
+    int64 convertTimeStringToInt64(std::string ts, int64 scale);
+
+    /**
+     * Helper method to convert the Timestamp value retrieved from cJSON to an
+     * instance of ArrowTimestamp.
+     *
      * @param tsCString            The timestamp as a C-style string.
      *
      * @return The resultant ArrowTimestamp instance.
      */
-    ArrowTimestamp convertToArrowTimestamp(char * tsCString);
+    ArrowTimestamp convertTimestampStringToStruct(char * tsCString);
 
     /**
      * Helper method to advance index values while initializing the result set.
@@ -256,9 +310,9 @@ private:
     bool advance();
 
     /**
-     * A record batch representing the result set.
+     * A RecordBatch representing the result set.
      */
-    arrow::RecordBatch m_records;
+    std::shared_ptr<arrow::RecordBatch> m_records;
 
     /**
      * An array of SF_COLUMN_DESC instances, representing column metadata.

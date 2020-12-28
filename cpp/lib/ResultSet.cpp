@@ -133,8 +133,8 @@ void Snowflake::Client::ResultSet::initTzString()
     int hh = (int) absOffset / 60;
     int mm = absOffset % 60;
 
-    char buffer[9];
-    sb_sprintf(buffer, 9, "UTC%c%02d:%02d", signChar, hh, mm);
+    char buffer[6];
+    sb_sprintf(buffer, 6, "%c%02d:%02d", signChar, hh, mm);
 
     m_tzString = std::string(buffer);
 }

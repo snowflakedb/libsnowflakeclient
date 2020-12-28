@@ -69,16 +69,7 @@ public:
      *
      * @return true if next row exists, false if next row does not exist.
      */
-    virtual bool next() = 0;
-
-    /**
-     * Get the value of the given column as a string.
-     *
-     * @param columnIdx
-     *
-     * @return The value of the given column as a string.
-     */
-    virtual std::string getColumnAsString(size_t columnIdx) = 0;
+    virtual bool nextRow() = 0;
 
     /**
      * Get the format of a Binary field.
@@ -181,6 +172,8 @@ public:
 protected:
     /**
      * Converts the given time zone offset into a time zone string.
+     *
+     * This string will have the format: ±HH:MM.
      *
      * Note: The time offset will never be negative, even for negative offsets.
      * Instead, UTC+0 is stored as 24*60=1440. Thus, values lie in [0, 2880].
@@ -291,4 +284,4 @@ protected:
 }
 }
 
-#endif // SNOWFLAKECLIENT_IRESULTSET_HPP
+#endif // SNOWFLAKECLIENT_RESULTSET_HPP
