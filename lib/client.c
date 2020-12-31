@@ -1195,7 +1195,7 @@ static void STDCALL _snowflake_add_to_named_param_list(void *name_list, char * n
     nparams = (NamedParams *)name_list;
     if (cur_size == nparams->allocd)
     {
-        nparams->name_list = SF_REALLOC(nparams->name_list,(2*cur_size));
+        nparams->name_list = SF_REALLOC(nparams->name_list,(2 * cur_size * sizeof(void *)));
         nparams->allocd = 2 * cur_size;
     }
     nparams->name_list[cur_size] = (void *)name;
