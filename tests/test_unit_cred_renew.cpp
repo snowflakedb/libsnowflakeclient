@@ -85,6 +85,48 @@ private:
   std::vector<std::string> m_srcLocations;
 };
 
+class MockedStatementGetSmall : public Snowflake::Client::IStatementPutGet
+{
+public:
+  MockedStatementGetSmall()
+    : Snowflake::Client::IStatementPutGet()
+  {
+    m_stageInfo.stageType = Snowflake::Client::StageType::MOCKED_STAGE_TYPE;
+    m_stageInfo.location = "fake s3 location";
+    for (int i = 0; i < 4; i++)
+    {
+        m_encryptionMaterial.emplace_back(
+          (char *)"dvkZi0dkBfrcHr6YxXLRFg==\0",
+          (char *)"1234\0",
+          1234
+        );
+        m_srcLocations.push_back("fake s3 location");
+    }
+  }
+
+  virtual bool parsePutGetCommand(std::string *sql,
+                                  PutGetParseResponse *putGetParseResponse)
+  {
+    putGetParseResponse->stageInfo = m_stageInfo;
+    putGetParseResponse->command = CommandType::DOWNLOAD;
+    putGetParseResponse->sourceCompression = (char *)"NONE";
+    putGetParseResponse->srcLocations = m_srcLocations;
+    putGetParseResponse->autoCompress = false;
+    putGetParseResponse->parallel = 4;
+    putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
+    putGetParseResponse->localLocation = (char *)"/tmp\0";
+
+    return true;
+  }
+
+private:
+  StageInfo m_stageInfo;
+
+  std::vector<EncryptionMaterial> m_encryptionMaterial;
+
+  std::vector<std::string> m_srcLocations;
+};
+
 class MockedStatementPut : public Snowflake::Client::IStatementPutGet
 {
 public:
@@ -217,6 +259,46 @@ private:
   int m_numGetRemoteMetaCalled;
 };
 
+class MockedExceptionStorageClient : public Snowflake::Client::IStorageClient
+{
+public:
+  MockedExceptionStorageClient()
+  {
+    ; // Do nothing
+  }
+
+  ~MockedExceptionStorageClient()
+  {
+    ; // Do nothing
+  }
+
+  virtual RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
+                                 std::basic_iostream<char> *dataStream)
+  {
+      throw std::runtime_error("error");
+      return SUCCESS;
+  }
+
+  virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
+                                               std::basic_iostream<char>* dataStream)
+  {
+      throw std::runtime_error("error");
+      return SUCCESS;
+  }
+
+  virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
+    std::string * filePathFull, FileMetadata *fileMetadata)
+  {
+    std::string iv = "ZxQiil366wJ+QqrhDKckBQ==";
+    Snowflake::Client::Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
+      encryptionMetadata.iv.data);
+    fileMetadata->encryptionMetadata.enKekEncoded = "rgANWKrHN14aKoHRxoIh9GtjXYScNdjseX4kmLZRnEc=";
+    // return small files to test exception in threads.
+    fileMetadata->srcFileSize = DOWNLOAD_DATA_SIZE_THRESHOLD - 1;
+    return SUCCESS;
+  }
+};
+
 void test_token_renew_core(std::string fileName)
 {
   IStorageClient * client = new MockedStorageClient();
@@ -310,6 +392,50 @@ void test_parse_exception(void **unused)
   }
 }
 
+void test_transfer_exception_upload(void **unused)
+{
+  MockedExceptionStorageClient * client = new MockedExceptionStorageClient();
+  StorageClientFactory::injectMockedClient(client);
+
+  std::string cmd = "fake put command";
+
+  // small files to test exception in threads
+  MockedStatementPut mockedStatementPut("small*");
+
+  Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
+
+  try
+  {
+    ITransferResult *result = agent.execute(&cmd);
+    assert_true(false);
+  }
+  catch (SnowflakeTransferException & e)
+  {
+    assert_int_equal(TransferError::FAILED_TO_TRANSFER, e.getCode());
+  }
+}
+
+void test_transfer_exception_download(void **unused)
+{
+  MockedExceptionStorageClient * client = new MockedExceptionStorageClient();
+  StorageClientFactory::injectMockedClient(client);
+
+  std::string cmd = "fake get command";
+
+  MockedStatementGetSmall mockedStatementGetSmall;
+
+  Snowflake::Client::FileTransferAgent agent(&mockedStatementGetSmall);
+
+  ITransferResult * result = agent.execute(&cmd);
+
+  std::string get_status;
+  while(result->next())
+  {
+    result->getColumnAsString(2, get_status);
+    assert_string_equal("ERROR", get_status.c_str());
+  }
+}
+
 static int large_file_removal(void **unused)
 {
   std::string dataDir = TestSetup::getDataDir();
@@ -330,7 +456,9 @@ int main(void) {
     cmocka_unit_test(test_parse_exception),
     cmocka_unit_test(test_token_renew_small_files),
     cmocka_unit_test_teardown(test_token_renew_large_file, large_file_removal),
-    cmocka_unit_test(test_token_renew_get_remote_meta)
+    cmocka_unit_test(test_token_renew_get_remote_meta),
+    cmocka_unit_test(test_transfer_exception_upload),
+    cmocka_unit_test(test_transfer_exception_download)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
