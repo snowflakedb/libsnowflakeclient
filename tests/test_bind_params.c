@@ -91,6 +91,22 @@ void test_bind_parameters(void **unused) {
     status = snowflake_execute(stmt);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    // test with parameters more than 8
+    status = snowflake_prepare(
+      stmt,
+      "select ?,?,?,?,?,?,?,?,?",
+      0
+    );
+
+    for (string_input.idx = 1; string_input.idx <= 9; string_input.idx++)
+    {
+      status = snowflake_bind_param(stmt, &string_input);
+      assert_int_equal(status, SF_STATUS_SUCCESS);
+    }
+
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
     snowflake_stmt_term(stmt);
     snowflake_term(sf);
 }
