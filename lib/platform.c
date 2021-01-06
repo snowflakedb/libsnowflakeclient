@@ -28,13 +28,213 @@
 
 #endif
 
+#ifdef _WIN32
+#include <stdint.h>
+
+// gmttime(), localtime() don't support negative epoch on Windows.
+// Take the implementation from ODBC/DataConversion.cpp
+
+// Seconds in a normal day
+#define SECONDS_IN_DAY        ((int64_t)(24 * 60 * 60))
+// Seconds in a normal, non-leap year
+#define SECONDS_IN_YEAR       (365 * SECONDS_IN_DAY)
+// Compute the number of seconds since year zero before the given year
+#define SECONDS_BEFORE_YEAR(year) \
+    (SECONDS_IN_YEAR * year + \
+    /* Adjust for the number of leap years */ \
+    SECONDS_IN_DAY * ((year + 3) / 4 - (year + 99) / 100 + (year + 399) / 400))
+// Offset of UNIX EPOCH vs zero-years
+#define UNIX_EPOCH_OFFSET     SECONDS_BEFORE_YEAR(1970)
+
+// SystemTimeToTzSpecificLocalTime() doesn't work well for early years like 1600.
+// Since no daylight-saving before 1900, use timezone offset directly to avoid
+// incorrect result from SystemTimeToTzSpecificLocalTime().
+#define NO_DAYLIGHT_OFFSET    (SECONDS_BEFORE_YEAR(1900) - UNIX_EPOCH_OFFSET)
+// We observe that 400/100/4/1 year periods have fixed numbers of seconds/days
+#define SEC_IN_Y400           (SECONDS_IN_DAY * (400 * 365 + 97))
+#define SEC_IN_Y100           (SECONDS_IN_DAY * (100 * 365 + 24))
+#define SEC_IN_Y4             (SECONDS_IN_DAY * (4 * 365 + 1))
+
+// For all computations below, we want to always have a positive time value.
+// To do that, we'll offset negative values by some multiple of 400 years.
+// Note, 400 years is a nice number, as it is a cycle in "leap" years,
+// but also has an exact multiple of 7 days, as ((400*365+100-4+1) % 7) == 0,
+// so it doesn't influence the day-of-the-week calculation.
+//
+// Compute a safe number of years to add (half of sf::sb8 range of seconds).
+#define NEGATIVE_NORMALIZATION_400_YEARS  (INT64_MAX / (2 * SEC_IN_Y400))
+// Compute the matching number of seconds and years
+#define NEGATIVE_NORMALIZATION_SECONDS    (NEGATIVE_NORMALIZATION_400_YEARS * SEC_IN_Y400)
+#define NEGATIVE_NORMALIZATION_YEARS      (NEGATIVE_NORMALIZATION_400_YEARS * 400)
+
+/**
+*  Number of cumulative days BEFORE a given month for non-leap and leap years
+*/
+static const int cumulMonthDays[2][12] = {
+    {   // non-leap year
+        0,
+        31,  // +31 Jan
+        59,  // +28 Feb
+        90,  // +31 Mar
+        120, // +30 Apr
+        151, // +31 May
+        181, // +30 Jun
+        212, // +31 Jul
+        243, // +31 Aug
+        273, // +30 Sep
+        304, // +31 Oct
+        334, // +31 Nov
+    },
+    {   // leap-year
+        0,
+        31,  // +31 Jan
+        60,  // +29 Feb
+        91,  // +31 Mar
+        121, // +30 Apr
+        152, // +31 May
+        182, // +30 Jun
+        213, // +31 Jul
+        244, // +31 Aug
+        274, // +30 Sep
+        305, // +31 Oct
+        335, // +31 Nov
+    }
+};
+
+BOOL isLeapYear(int year)
+{
+    // Hackish is-leap-year implementation from http://jsperf.com/find-leap-year/4
+    return !(year & 3 || (year & 15 && !(year % 25)));
+}
+
+struct tm* sfchrono_gmtime(const time_t *timep, struct tm *tm)
+{
+    time_t t = *timep;
+
+    // Move into "standard" (non-UNIX) calendar realm, where year 1 AD is number 1
+    t += UNIX_EPOCH_OFFSET;
+
+    // Normalize, and remember the value we added (only years matter)
+    // Note, a single addition might not suffice, hence a loop
+    // (should be at most 3 times).
+    int64_t normalizationYearsDelta = 0;
+    while (t < 0)
+    {
+        t += NEGATIVE_NORMALIZATION_SECONDS;
+        normalizationYearsDelta += NEGATIVE_NORMALIZATION_YEARS;
+    }
+
+    // Compute the time of the day
+    time_t secsInDay = t % SECONDS_IN_DAY;
+    tm->tm_hour = (int)(secsInDay / 3600);
+    secsInDay -= tm->tm_hour * 3600;
+    tm->tm_min = (int)(secsInDay / 60);
+    secsInDay -= tm->tm_min * 60;
+    tm->tm_sec = (int)secsInDay;
+
+    // Compute the day of the week
+    int64_t day = t / SECONDS_IN_DAY;
+    tm->tm_wday = (day + 6) % 7;
+
+    // Compute the year.
+
+    // Go over different periods, and compute how many of each a given time has,
+    // reducing time on the way
+    int64_t y100 = 0;
+    int64_t y4 = 0;
+    int64_t y1 = 0;
+    int64_t y400 = t / SEC_IN_Y400;
+    t -= y400 * SEC_IN_Y400;
+    if (t >= SECONDS_IN_YEAR + SECONDS_IN_DAY)
+    {
+        t -= SECONDS_IN_DAY;  // Adjust for last 400*x year
+        y100 = t / SEC_IN_Y100;
+        t -= y100 * SEC_IN_Y100;
+        if (t >= SECONDS_IN_YEAR)
+        {
+            t += SECONDS_IN_DAY;  // Adjust for last 100*x year
+            y4 = t / SEC_IN_Y4;
+            t -= y4 * SEC_IN_Y4;
+            if (t >= SECONDS_IN_YEAR + SECONDS_IN_DAY)
+            {
+                t -= SECONDS_IN_DAY;  // Adjust for last 4*x year
+                y1 = t / SECONDS_IN_YEAR;
+                t -= y1 * SECONDS_IN_YEAR;
+            }
+        }
+    }
+    int64_t year = 400 * y400 + 100 * y100 + 4 * y4 + y1;
+    tm->tm_year = (int)(year - 1900 - normalizationYearsDelta);
+
+    // Compute day of the year
+    int yday = (int)(t / SECONDS_IN_DAY);
+    tm->tm_yday = yday;
+
+    // Compute day and month
+    int isLeap = isLeapYear(year);
+    int m;
+    // @TODO Could do (hard-coded) binary search here
+    for (m = 11; yday < cumulMonthDays[isLeap][m]; --m)
+    {
+    }
+    tm->tm_mon = m;
+    tm->tm_mday = yday - cumulMonthDays[isLeap][m] + 1;
+
+    // GMT is never daylight-saving
+    tm->tm_isdst = 0;
+    // tm->tm_gmtoff = 0; // error in Windows
+    return tm;
+}
+
+struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
+{
+  time_t t = *timep;
+  char * tzptr = sf_getenv("TZ");
+
+  // use TZ environemt variable setting for timestamp_tz
+  if (tzptr && (strlen(tzptr) >= 3) && (strncmp(tzptr, "UTC", 3) == 0))
+  {
+      t -= _timezone;
+      sfchrono_gmtime(&t, tm);
+  }
+  // use system timezone offset when daylight-saving is not available
+  else if(t < NO_DAYLIGHT_OFFSET)
+  {
+      TIME_ZONE_INFORMATION tzInfo;
+      GetTimeZoneInformation(&tzInfo);
+      t -= tzInfo.Bias * 60;
+      sfchrono_gmtime(&t, tm);
+  }
+  else
+  {
+      sfchrono_gmtime(&t, tm);
+      SYSTEMTIME gmTime, localTime;
+      gmTime.wYear = tm->tm_year + 1900;
+      gmTime.wMonth = tm->tm_mon + 1;
+      gmTime.wDay = tm->tm_mday;
+      gmTime.wHour = tm->tm_hour;
+      gmTime.wMinute = tm->tm_min;
+      gmTime.wSecond = tm->tm_sec;
+      gmTime.wMilliseconds = 0;
+
+      if (!SystemTimeToTzSpecificLocalTime(NULL, &gmTime, &localTime))
+      {
+        return NULL;
+      }
+      tm->tm_year = localTime.wYear - 1900;
+      tm->tm_mon = localTime.wMonth - 1;
+      tm->tm_mday = localTime.wDay;
+      tm->tm_hour = localTime.wHour;
+      tm->tm_min = localTime.wMinute;
+      tm->tm_sec = localTime.wSecond;
+  }
+  return tm;
+}
+#endif
+
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
-    errno_t err = gmtime_s(result, timep);
-    if (err) {
-        return NULL;
-    }
-    return result;
+  return sfchrono_gmtime(timep, result);
 #else
     return gmtime_r(timep, result);
 #endif
@@ -42,11 +242,7 @@ struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 
 struct tm *STDCALL sf_localtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
-    errno_t err = localtime_s(result, timep);
-    if (err) {
-        return NULL;
-    }
-    return result;
+  return sfchrono_localtime(timep, result);
 #else
     return localtime_r(timep, result);
 #endif
