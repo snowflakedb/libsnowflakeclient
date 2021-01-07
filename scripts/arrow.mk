@@ -47,10 +47,10 @@ arrow_configure:
 		-DARROW_IPC=ON \
 		-DBOOST_ROOT=../../../$(BOOST_INSTALL_DIR) \
 		-DPYTHON_EXECUTABLE:FILEPATH=`which python3.6` \
-        -DARROW_CXXFLAGS="-march=ivybridge -std=c++11 -fPIC " \
+		-DARROW_CXXFLAGS="-march=ivybridge -std=c++11 -fPIC " \
 		-DARROW_BUILD_STATIC=ON \
 		-DARROW_BUILD_SHARED=OFF \
-        -DCMAKE_INSTALL_PREFIX=../../../$(ARROW_INSTALL_DIR) ../
+		-DCMAKE_INSTALL_PREFIX=../../../$(ARROW_INSTALL_DIR) ../
 
 clean:
 	${RM} ${BUILD_DIR} installed apache-arrow* ${ARROW_DEPS_INSTALL_DIR} ${ARROW_INSTALL_DIR} ${BOOST_INSTALL_DIR}
