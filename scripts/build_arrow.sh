@@ -18,7 +18,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+[[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
 ARROW_SOURCE_DIR=$DEPS_DIR/arrow
 ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
@@ -52,8 +52,8 @@ else
 fi
 
 if [[ "$PLATFORM" == "linux" ]]; then
-    cp $THIS_DIR/arrow.mk $THIS_DIR/../deps/
-    cd $THIS_DIR/../deps/
+    cp $DIR/arrow.mk $DIR/../deps/
+    cd $DIR/../deps/
     BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
 else
     echo "[ERROR] $PLATFORM is not supported"
