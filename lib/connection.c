@@ -512,7 +512,8 @@ STDCALL decorrelate_jitter_init(uint32 base, uint32 cap) {
 
 uint32
 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
-    return uimin(djb->cap, uimax(djb->base, (uint32) (rand() % (sleep * 3))));
+    sleep = uimin(sleep, djb->cap);
+    return ((uint32)(sleep/2) + (uint32) (rand() % (sleep/2)));
 }
 
 char * STDCALL encode_url(CURL *curl,
@@ -1026,7 +1027,7 @@ RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout) {
 
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
     retry_ctx->sleep_time = decorrelate_jitter_next_sleep(retry_ctx->djb,
-                                                          retry_ctx->sleep_time);
+                                                          (retry_ctx->sleep_time * pow(2, (retry_ctx->retry_count+1))));
     ++retry_ctx->retry_count;
     return retry_ctx->sleep_time;
 }

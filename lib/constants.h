@@ -11,7 +11,7 @@ extern "C" {
 
 #include <snowflake/basic_types.h>
 #include "snowflake/platform.h"
-
+#define MAX_RETRY_COUNT 20
 extern sf_bool DISABLE_VERIFY_PEER;
 extern char *CA_BUNDLE_FILE;
 extern int32 SSL_VERSION;
