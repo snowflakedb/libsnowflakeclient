@@ -1026,8 +1026,7 @@ RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout) {
 }
 
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
-    retry_ctx->sleep_time = decorrelate_jitter_next_sleep(retry_ctx->djb,
-                                                          (retry_ctx->sleep_time * pow(2, (retry_ctx->retry_count+1))));
+    retry_ctx->sleep_time = decorrelate_jitter_next_sleep(retry_ctx->djb, retry_ctx->sleep_time * 2);
     ++retry_ctx->retry_count;
     return retry_ctx->sleep_time;
 }

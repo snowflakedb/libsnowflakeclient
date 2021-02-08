@@ -163,7 +163,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     RETRY_CONTEXT curl_retry_ctx = {
             0,      //retry_count
             network_timeout,
-            3,      // time to sleep
+            2,      // time to sleep
             &djb    // Decorrelate jitter
     };
     RAW_JSON_BUFFER buffer = {NULL, 0};
