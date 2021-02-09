@@ -513,6 +513,12 @@ STDCALL decorrelate_jitter_init(uint32 base, uint32 cap) {
 uint32
 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
     sleep = uimin(sleep, djb->cap);
+    // Prevents division by 0 when sleep = 1
+    // and if sleep == 2 the value of sleep time returned never changes.
+    if(sleep <= 2)
+    {
+      sleep = 4;
+    }
     return ((uint32)(sleep/2) + (uint32) (rand() % (sleep/2)));
 }
 

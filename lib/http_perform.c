@@ -159,13 +159,14 @@ sf_bool STDCALL http_perform(CURL *curl,
       1,      //base
       16      //cap
     };
-
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_LOGIN_TIMEOUT;
     RETRY_CONTEXT curl_retry_ctx = {
             0,      //retry_count
             network_timeout,
-            2,      // time to sleep
+            1,      // time to sleep
             &djb    // Decorrelate jitter
     };
+    time_t elapsedRetryTime = time(NULL);
     RAW_JSON_BUFFER buffer = {NULL, 0};
     struct data config;
     config.trace_ascii = 1;
@@ -357,15 +358,17 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
               }
-              if (retry && curl_retry_ctx.retry_count < MAX_RETRY_COUNT)
+              if (retry &&
+                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
+              )
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
                     "curl_easy_perform() Got retryable error http code %d, retry count  %d "
-                    "will retry after %d micro seconds", http_code,
+                    "will retry after %d seconds", http_code,
                     curl_retry_ctx.retry_count,
-                    next_sleep_in_secs * 100);
-                my_sleep_ms(next_sleep_in_secs * 100);
+                    next_sleep_in_secs);
+                my_sleep_ms(next_sleep_in_secs * 1000);
               }
               else {
                 retry = SF_BOOLEAN_FALSE;
