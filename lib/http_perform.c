@@ -133,11 +133,10 @@ int my_trace(CURL *handle, curl_infotype type,
 static
 void my_sleep_ms(uint32 sleepMs)
 {
-#ifdef LINUX
-  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
-#endif
 #ifdef _WIN32
   Sleep(sleepMs);
+#else
+  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
 #endif
 }
 
@@ -155,20 +154,19 @@ sf_bool STDCALL http_perform(CURL *curl,
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
-    RETRY_CONTEXT* curl_retry_ctx = retry_ctx_init(1);
     long int http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
       1,      //base
       16      //cap
     };
-    /* TODO: let's remove this if not used.
-    RETRY_CONTEXT retry_ctx = {
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_LOGIN_TIMEOUT;
+    RETRY_CONTEXT curl_retry_ctx = {
             0,      //retry_count
             network_timeout,
             1,      // time to sleep
             &djb    // Decorrelate jitter
     };
-    */
+    time_t elapsedRetryTime = time(NULL);
     RAW_JSON_BUFFER buffer = {NULL, 0};
     struct data config;
     config.trace_ascii = 1;
@@ -315,15 +313,15 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx->retry_count <
+          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
                                               retry_on_curle_couldnt_connect_count)
             {
               retry = SF_BOOLEAN_TRUE;
-              uint32 next_sleep_in_secs = retry_ctx_next_sleep(curl_retry_ctx);
+              uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
               log_error(
                       "curl_easy_perform() failed connecting to server on attempt %d, "
                       "will retry after %d second",
-                      curl_retry_ctx->retry_count,
+                      curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               my_sleep_ms(next_sleep_in_secs*1000);
             } else {
@@ -350,16 +348,31 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     "Unable to get http response code",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             } else if (http_code != 200) {
-                retry = is_retryable_http_code(http_code);
-                if (!retry) {
-                    char msg[1024];
-                    sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
-                               http_code);
-                    SET_SNOWFLAKE_ERROR(error,
-                                        SF_STATUS_ERROR_RETRY,
-                                        msg,
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
-                }
+              retry = is_retryable_http_code(http_code);
+              if (!retry) {
+                char msg[1024];
+                sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
+                           http_code);
+                SET_SNOWFLAKE_ERROR(error,
+                                    SF_STATUS_ERROR_RETRY,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+              }
+              if (retry &&
+                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
+              )
+              {
+                uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                log_debug(
+                    "curl_easy_perform() Got retryable error http code %d, retry count  %d "
+                    "will retry after %d seconds", http_code,
+                    curl_retry_ctx.retry_count,
+                    next_sleep_in_secs);
+                my_sleep_ms(next_sleep_in_secs * 1000);
+              }
+              else {
+                retry = SF_BOOLEAN_FALSE;
+              }
             } else {
                 ret = SF_BOOLEAN_TRUE;
             }
@@ -395,7 +408,6 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
 
     SF_FREE(buffer.buffer);
-    retry_ctx_free(curl_retry_ctx);
 
     return ret;
 }
