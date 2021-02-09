@@ -71,7 +71,8 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_uploadStream(nullptr),
   m_uploadStreamSize(0),
   m_useDevUrand(false),
-  m_maxPutRetries(5)
+  m_maxPutRetries(5),
+  m_fastFail(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
 }
@@ -341,30 +342,39 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
               m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE, resultIndex);
               break;
           }
-          outcome = uploadSingleFile(m_storageClient, metadata, resultIndex);
-          if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+          // SNOW-218025: Upload and download is not exception safe, catch exception
+          // and take it as transfer failure.
+          try
           {
-            CXX_LOG_DEBUG("Token expired, Renewing token.")
-            _mutex_lock(&m_parallelTokRenewMutex);
-            this->renewToken(command);
-            _mutex_unlock(&m_parallelTokRenewMutex);
+            outcome = uploadSingleFile(m_storageClient, metadata,
+                                                       resultIndex);
+            if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+            {
+              CXX_LOG_DEBUG("Token expired, Renewing token.")
+              _mutex_lock(&m_parallelTokRenewMutex);
+              this->renewToken(command);
+              _mutex_unlock(&m_parallelTokRenewMutex);
+
+              continue;
+            }
           }
-          else
+          catch (...)
           {
-            if( outcome == RemoteStorageRequestOutcome::FAILED)
-            {
-              //Cannot throw and catch error from a thread.
-              CXX_LOG_DEBUG("Parallel upload %s FAILED", metadata->srcFileName.c_str());
-              _mutex_lock(&m_parallelFailedMsgMutex);
-              failedTransfers.append(metadata->srcFileName) + ", ";
-              _mutex_unlock(&m_parallelFailedMsgMutex);
-            }
-            else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
-            {
-              CXX_LOG_DEBUG("Putget Parallel upload %s SUCCESS.", metadata->srcFileName.c_str());
-            }
-            break;
+            outcome = RemoteStorageRequestOutcome::FAILED;
           }
+          if( outcome == RemoteStorageRequestOutcome::FAILED)
+          {
+            //Cannot throw and catch error from a thread.
+            CXX_LOG_DEBUG("Parallel upload %s FAILED", metadata->srcFileName.c_str());
+            _mutex_lock(&m_parallelFailedMsgMutex);
+            failedTransfers.append(metadata->srcFileName) + ", ";
+            _mutex_unlock(&m_parallelFailedMsgMutex);
+          }
+          else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
+          {
+            CXX_LOG_DEBUG("Putget Parallel upload %s SUCCESS.", metadata->srcFileName.c_str());
+          }
+          break;
         } while (true);
     });
   }
@@ -642,18 +652,29 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
     tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
-          RemoteStorageRequestOutcome outcome = downloadSingleFile(m_storageClient, metadata,
-                                                                 resultIndex);
-          if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+          // SNOW-218025: Upload and download is not exception safe, catch exception
+          // and take it as transfer failure.
+          try
           {
-            _mutex_lock(&m_parallelTokRenewMutex);
-            this->renewToken(command);
-            _mutex_unlock(&m_parallelTokRenewMutex);
+            RemoteStorageRequestOutcome outcome = downloadSingleFile(m_storageClient, metadata,
+                                                                   resultIndex);
+            if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
+            {
+              CXX_LOG_DEBUG("Token expired, Renewing token.")
+              _mutex_lock(&m_parallelTokRenewMutex);
+              this->renewToken(command);
+              _mutex_unlock(&m_parallelTokRenewMutex);
+
+              continue;
+            }
           }
-          else
+          catch (...)
           {
-            break;
+            m_executionResults->SetTransferOutCome(
+              RemoteStorageRequestOutcome::FAILED, resultIndex);
           }
+
+          break;
         } while (true);
     });
   }

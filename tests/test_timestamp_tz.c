@@ -18,7 +18,6 @@ typedef struct test_case_to_string {
 
 void test_timestamp_tz_helper(sf_bool useZeroPrecision){
   TEST_CASE_TO_STRING test_cases[] = {
-#ifndef _WIN32
           {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 +09:00", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE
           ? "2014-05-03 13:56:46 +09:00" : "2014-05-03 13:56:46.12300 +09:00"},
@@ -32,7 +31,7 @@ void test_timestamp_tz_helper(sf_bool useZeroPrecision){
           {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE
           ? "1500-01-01 00:00:02 -04:56" : "1500-01-01 00:00:02.00000 -04:56"},
-#ifdef __APPLE__
+#ifndef __linux__
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ?
           "0001-01-01 00:00:02 -04:56" : "0001-01-01 00:00:02.00000 -04:56"},
@@ -40,7 +39,7 @@ void test_timestamp_tz_helper(sf_bool useZeroPrecision){
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE ? "1-01-01 00:00:02 -04:56"
                                               : "1-01-01 00:00:02.00000 -04:56"},
-#endif // __APPLE__
+#endif // __linux__
           {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE
           ? "9999-01-01 00:00:00 -05:00" : "9999-01-01 00:00:00.00000 -05:00"},
@@ -55,7 +54,6 @@ void test_timestamp_tz_helper(sf_bool useZeroPrecision){
           {.c1in = 11, .c2in = "1969-11-21 08:19:34.123 -02:30", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE
           ? "1969-11-21 08:19:34 -02:30" : "1969-11-21 08:19:34.12300 -02:30"},
-#endif // _WIN32
           {.c1in = 12, .c2in = NULL, .c2out = NULL},
           /*
           {.c1in = 11, .c2in = "9999-12-31 23:59:59.9999", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE ? "9999-12-31 23:59:59.99990 -05:00"},

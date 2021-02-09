@@ -103,6 +103,53 @@ void test_bind_named_parameters(void **unused) {
     status = snowflake_execute(stmt);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    // test with parameters more than 8
+    status = snowflake_prepare(
+      stmt,
+      "select :v1,:v2,:v3,:v4,:v5,:v6,:v7,:v8,:v9",
+      0
+    );
+
+    string_input.idx = 0;
+    string_input.name = "v1";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v2";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v3";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v4";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v5";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v6";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v7";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v8";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    string_input.name = "v9";
+    status = snowflake_bind_param(stmt, &string_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
 done:
 
     snowflake_stmt_term(stmt);

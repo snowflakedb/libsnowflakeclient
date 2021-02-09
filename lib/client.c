@@ -53,6 +53,23 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
 #define _SF_STMT_TYPE_MULTI_TABLE_INSERT (_SF_STMT_TYPE_DML + 0x500)
 
 /**
+ * Checks whether the client is running in force_arrow mode.
+ *
+ * @param connection pointer to SF_CONNECT
+ * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
+ */
+sf_bool STDCALL snowflake_is_force_arrow_mode(const SF_CONNECT *connection) {
+    if (connection->query_result_format == NULL) {
+        return SF_BOOLEAN_FALSE;
+    }
+    if (sf_strncasecmp(connection->query_result_format, "arrow_force", 11) == 0) {
+        return SF_BOOLEAN_TRUE;
+    } else {
+        return SF_BOOLEAN_FALSE;
+    }
+}
+
+/**
  * Detects statement type is DML
  * @param stmt_type_id statement type id
  * @return SF_BOOLEAN_TRUE if the statement is DM or SF_BOOLEAN_FALSE
@@ -171,6 +188,11 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                 if (sf->service_name == NULL ||
                     strcmp(sf->service_name, value->valuestring) != 0) {
                     alloc_buffer_and_copy(&sf->service_name, value->valuestring);
+                }
+            } else if (strcmp(name->valuestring, "C_API_QUERY_RESULT_FORMAT") == 0) {
+                if (sf->query_result_format == NULL ||
+                    strcmp(sf->query_result_format, value->valuestring) != 0) {
+                    alloc_buffer_and_copy(&sf->query_result_format, value->valuestring);
                 }
             }
         }
@@ -612,6 +634,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
         sf->service_name = NULL;
+        sf->query_result_format = NULL;
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
@@ -630,6 +653,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL_param = NULL;
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
+        sf->retry_on_curle_couldnt_connect_count = 0;
     }
 
     return sf;
@@ -681,6 +705,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->application_version);
     SF_FREE(sf->timezone);
     SF_FREE(sf->service_name);
+    SF_FREE(sf->query_result_format);
     SF_FREE(sf->master_token);
     SF_FREE(sf->token);
     SF_FREE(sf->directURL);
@@ -951,6 +976,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_DIR_QUERY_TOKEN:
             alloc_buffer_and_copy(&sf->direct_query_token, value);
             break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
+            sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1042,6 +1070,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_DIR_QUERY_TOKEN:
             *value = sf->direct_query_token;
+            break;
+        case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
+            *value = &sf->retry_on_curle_couldnt_connect_count;
+            break;
+        case SF_QUERY_RESULT_TYPE:
+            *value = &sf->query_result_format;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1161,7 +1195,7 @@ static void STDCALL _snowflake_add_to_named_param_list(void *name_list, char * n
     nparams = (NamedParams *)name_list;
     if (cur_size == nparams->allocd)
     {
-        nparams->name_list = SF_REALLOC(nparams->name_list,(2*cur_size));
+        nparams->name_list = SF_REALLOC(nparams->name_list,(2 * cur_size * sizeof(void *)));
         nparams->allocd = 2 * cur_size;
     }
     nparams->name_list[cur_size] = (void *)name;
@@ -1309,6 +1343,23 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
 }
 
 /**
+ * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
+ * Note that these need to be released by calling snowflake_query_result_capture_term().
+ *
+ * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
+ */
+void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **init) {
+
+    SF_QUERY_RESULT_CAPTURE *capture = (SF_QUERY_RESULT_CAPTURE *) SF_CALLOC(1, sizeof(SF_QUERY_RESULT_CAPTURE));
+
+    capture->capture_buffer = NULL;
+    capture->buffer_size = 0;
+    capture->actual_response_size = 0;
+
+    *init = capture;
+}
+
+/**
  * Leave the memory management of the bind input to the user
  * The user will allocate memory for the SF_BIND_INPUT and
  * pass it to the init function for sane initialization
@@ -1325,6 +1376,21 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
     input->idx = 0;
     input->name = NULL;
     input->value = NULL;
+}
+
+/**
+ * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
+ * Note that this only frees the struct itself, and *not* the underlying
+ * capture buffer! The caller is responsible for managing that.
+ *
+ * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
+ *
+ */
+void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture) {
+    if (capture) {
+        capture->capture_buffer = NULL;
+        SF_FREE(capture);
+    }
 }
 
 void STDCALL snowflake_stmt_term(SF_STMT *sfstmt) {
@@ -1451,6 +1517,17 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Query results were fetched using Arrow, "
+                                 "but the client library does not yet support decoding Arrow results", "",
+                                 sfstmt->sfqid);
+
+        return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
+    }
+
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
@@ -1593,6 +1670,16 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
         /* no way to set the error other than return value */
         return ret;
     }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Affected row-count not available using force-arrow results type", "",
+                                 sfstmt->sfqid);
+
+        return ret;
+    }
+
     if (snowflake_cJSON_GetArraySize(sfstmt->raw_results) == 0) {
         /* no affected rows is determined. The potential cause is
          * the query is not DML or no stmt was executed at all . */
@@ -1650,11 +1737,16 @@ cleanup:
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text));
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL);
+}
+
+SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool is_put_get_command) {
+                                        sf_bool is_put_get_command,
+                                        SF_QUERY_RESULT_CAPTURE* result_capture) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1776,7 +1868,19 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
+
+        // Store the full query-response text in the capture buffer, if defined.
+        if (result_capture != NULL && result_capture->capture_buffer != NULL) {
+            size_t resp_size = strlen(s_resp) + 1;
+            if (result_capture->buffer_size < resp_size) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+            }
+            sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
+            result_capture->actual_response_size = resp_size;
+        }
+
         data = snowflake_cJSON_GetObjectItem(resp, "data");
+
         if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId",
                                       SF_UUID4_LEN) && !is_put_get_command) {
             log_debug("No valid sfqid found in response");
@@ -1884,7 +1988,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 } else {
                     sfstmt->is_dml = detect_stmt_type(stmt_type_id);
                 }
-                rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
+               rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
                 if (snowflake_cJSON_IsArray(rowtype)) {
                     sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
                       rowtype);
@@ -1898,48 +2002,52 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 } else {
                     sfstmt->stats = NULL;
                 }
-                // Set results array
-                if (json_detach_array_from_object(
-                    (cJSON **) (&sfstmt->raw_results),
-                    data, "rowset")) {
-                    log_error("No valid rowset found in response");
-                    SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                             SF_STATUS_ERROR_BAD_JSON,
-                                             "Missing rowset from response. No results found.",
-                                             SF_SQLSTATE_APP_REJECT_CONNECTION,
-                                             sfstmt->sfqid);
-                    goto cleanup;
-                }
-                if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-                    log_warn(
-                        "No total count found in response. Reverting to using array size of results");
-                    sfstmt->total_rowcount = snowflake_cJSON_GetArraySize(
-                      sfstmt->raw_results);
-                }
-                // Get number of rows in this chunk
-                sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
-                  sfstmt->raw_results);
 
-                // Index starts at 0 and incremented each fetch
-                sfstmt->total_row_index = 0;
-
-                // Set large result set if one exists
-                if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
-                    // We don't care if there is no qrmk, so ignore return code
-                    json_copy_string(&qrmk, data, "qrmk");
-                    chunk_headers = snowflake_cJSON_GetObjectItem(data,
-                                                                  "chunkHeaders");
-                    sfstmt->chunk_downloader = chunk_downloader_init(
-                        qrmk,
-                        chunk_headers,
-                        chunks,
-                        2, // thread count
-                        4, // fetch slot
-                        &sfstmt->error,
-                        sfstmt->connection->insecure_mode);
-                    if (!sfstmt->chunk_downloader) {
-                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                // Since we can't parse Arrow results yet, skip this step if running in force_arrow
+                if (!snowflake_is_force_arrow_mode(sfstmt->connection)) {
+                    // Set results array
+                    if (json_detach_array_from_object(
+                            (cJSON **) (&sfstmt->raw_results),
+                            data, "rowset")) {
+                        log_error("No valid rowset found in response");
+                        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                                                 SF_STATUS_ERROR_BAD_JSON,
+                                                 "Missing rowset from response. No results found.",
+                                                 SF_SQLSTATE_APP_REJECT_CONNECTION,
+                                                 sfstmt->sfqid);
                         goto cleanup;
+                    }
+                    if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
+                        log_warn(
+                                "No total count found in response. Reverting to using array size of results");
+                        sfstmt->total_rowcount = snowflake_cJSON_GetArraySize(
+                                sfstmt->raw_results);
+                    }
+                    // Get number of rows in this chunk
+                    sfstmt->chunk_rowcount = snowflake_cJSON_GetArraySize(
+                            sfstmt->raw_results);
+
+                    // Index starts at 0 and incremented each fetch
+                    sfstmt->total_row_index = 0;
+
+                    // Set large result set if one exists
+                    if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
+                        // We don't care if there is no qrmk, so ignore return code
+                        json_copy_string(&qrmk, data, "qrmk");
+                        chunk_headers = snowflake_cJSON_GetObjectItem(data,
+                                                                      "chunkHeaders");
+                        sfstmt->chunk_downloader = chunk_downloader_init(
+                                qrmk,
+                                chunk_headers,
+                                chunks,
+                                2, // thread count
+                                4, // fetch slot
+                                &sfstmt->error,
+                                sfstmt->connection->insecure_mode);
+                        if (!sfstmt->chunk_downloader) {
+                            // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                            goto cleanup;
+                        }
                     }
                 }
             }
@@ -2011,6 +2119,15 @@ SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt) {
 
 int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt) {
     if (!sfstmt) {
+        return -1;
+    }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Result row-count not available using force-arrow results type", "",
+                                 sfstmt->sfqid);
+
         return -1;
     }
     return sfstmt->total_rowcount;
@@ -2121,12 +2238,24 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
     return SF_STATUS_SUCCESS;
 }
 
+
+
 // Make sure that idx is in bounds and that column exists
 SF_STATUS STDCALL _snowflake_get_cJSON_column(SF_STMT *sfstmt, int idx, cJSON **column_ptr) {
     if (idx > snowflake_num_fields(sfstmt) || idx <= 0) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_BOUNDS,
                                  "Column index must be between 1 and snowflake_num_fields()", "", sfstmt->sfqid);
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    }
+
+    // Since Arrow isn't yet supported, we throw an error
+    if (snowflake_is_force_arrow_mode(sfstmt->connection)) {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW,
+                                 "Query results were fetched using Arrow, "
+                                 "but the client library does not yet support decoding Arrow results", "",
+                                 sfstmt->sfqid);
+
+        return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
 
     cJSON *column = snowflake_cJSON_GetArrayItem(sfstmt->cur_row, idx - 1);
@@ -2587,18 +2716,14 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr) {
+SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* const_str_val, const SF_DB_TYPE type, const char *connection_timezone,
+                                                 int32 scale, sf_bool isNull, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr){
+
+    if (value_ptr == NULL) {
+      return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
     SF_STATUS status;
-    cJSON *column = NULL;
-
-    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
-        return status;
-    }
-
-    // Get column
-    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
-        return status;
-    }
 
     char *value = NULL;
     size_t max_value_size = 0;
@@ -2614,19 +2739,20 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
         preallocated = SF_BOOLEAN_TRUE;
     }
 
-    if (snowflake_cJSON_IsNull(column)) {
-        // If value is NULL, allocate buffer for empty string
-        if (init_value_len == 0) {
-            value = global_hooks.calloc(1, 1);
-            max_value_size = 1;
-        } else {
-            // If we don't need to allocate a buffer, set value len to the initial value len
-            max_value_size = init_value_len;
-        }
-        sb_strncpy(value, max_value_size, "", 1);
-        value_len = 0;
-        status = SF_STATUS_SUCCESS;
-        goto cleanup;
+
+    if (isNull == SF_BOOLEAN_TRUE) {
+      // If value is NULL, allocate buffer for empty string
+      if (init_value_len == 0) {
+        value = global_hooks.calloc(1, 1);
+        max_value_size = 1;
+      } else {
+        // If we don't need to allocate a buffer, set value len to the initial value len
+        max_value_size = init_value_len;
+      }
+      sb_strncpy(value, max_value_size, "", 1);
+      value_len = 0;
+      status = SF_STATUS_SUCCESS;
+      goto cleanup;
     }
 
     time_t sec = 0L;
@@ -2634,124 +2760,152 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
     struct tm *tm_ptr;
     memset(&tm_obj, 0, sizeof(tm_obj));
 
-    switch (sfstmt->desc[idx - 1].type) {
-        case SF_DB_TYPE_BOOLEAN: ;
-            const char *bool_value;
-            if (strcmp(column->valuestring, "0") == 0) {
-                /* False */
-                bool_value = SF_BOOLEAN_FALSE_STR;
-            } else {
-                /* True */
-                bool_value = SF_BOOLEAN_TRUE_STR;
-            }
-            value_len = strlen(bool_value);
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
-            } else {
-                max_value_size = init_value_len;
-            }
-            sb_strncpy(value, max_value_size, bool_value, value_len + 1);
-            break;
-        case SF_DB_TYPE_DATE:
-            sec =
-              (time_t) strtol(column->valuestring, NULL, 10) *
-              86400L;
-            _mutex_lock(&gmlocaltime_lock);
-            tm_ptr = sf_gmtime(&sec, &tm_obj);
-            _mutex_unlock(&gmlocaltime_lock);
-            if (tm_ptr == NULL) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                    SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                    "Failed to convert a date value to a string.",
-                                    SF_SQLSTATE_GENERAL_ERROR,
-                                    sfstmt->sfqid);
-                value = NULL;
-                max_value_size = 0;
-                goto cleanup;
-            }
-            // Max size of date string
-            value_len = DATE_STRING_MAX_SIZE;
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
-            } else {
-                max_value_size = init_value_len;
-            }
-            value_len = strftime(value, value_len + 1, "%Y-%m-%d", &tm_obj);
-            break;
-        case SF_DB_TYPE_TIME:
-        case SF_DB_TYPE_TIMESTAMP_NTZ:
-        case SF_DB_TYPE_TIMESTAMP_LTZ:
-        case SF_DB_TYPE_TIMESTAMP_TZ: ;
-            SF_TIMESTAMP ts;
-            if (snowflake_timestamp_from_epoch_seconds(&ts,
-                                                        column->valuestring,
-                                                        sfstmt->connection->timezone,
-                                                        (int32) sfstmt->desc[idx - 1].scale,
-                                                        sfstmt->desc[idx - 1].type)) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                         "Failed to convert the response from the server into a SF_TIMESTAMP.",
-                                         SF_SQLSTATE_GENERAL_ERROR,
-                                         sfstmt->sfqid);
-                value = NULL;
-                max_value_size = 0;
-                goto cleanup;
-            }
-            // TODO add format when format is no longer a fixed string
-            if (snowflake_timestamp_to_string(&ts, "", &value, max_value_size, &value_len, SF_BOOLEAN_TRUE)) {
-                SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                         SF_STATUS_ERROR_CONVERSION_FAILURE,
-                                         "Failed to convert a SF_TIMESTAMP value to a string.",
-                                         SF_SQLSTATE_GENERAL_ERROR,
-                                         sfstmt->sfqid);
-                // If the memory wasn't preallocated, then free it
-                if (!preallocated && value) {
-                    global_hooks.dealloc(value);
-                    value = NULL;
-                    max_value_size = 0;
-                }
-                value_len = 0;
-                goto cleanup;
-            } else {
-                // If true, then we reallocated when writing the timestamp to a string
-                if (value_len + 1 > init_value_len) {
-                    max_value_size = value_len + 1;
-                } else {
-                    max_value_size = init_value_len;
-                }
-            }
+    SF_ERROR_STRUCT *error = (sfstmt != NULL ? &sfstmt->error : NULL);
+    char *sfqid = sfstmt != NULL ? sfstmt->sfqid : NULL;
 
-            break;
-        default:
-            value_len = strlen(column->valuestring);
-            if (value_len + 1 > init_value_len) {
-                if (preallocated) {
-                    value = global_hooks.realloc(value, value_len + 1);
-                } else {
-                    value = global_hooks.calloc(1, value_len + 1);
-                }
-                // If we have to allocate memory, then we need to set max_value_size
-                // otherwise we leave max_value_size as is
-                max_value_size = value_len + 1;
+    switch (type) {
+      case SF_DB_TYPE_BOOLEAN: ;
+        const char *bool_value;
+        if (strcmp(const_str_val, "0") == 0) {
+          /* False */
+          bool_value = SF_BOOLEAN_FALSE_STR;
+        } else {
+          /* True */
+          bool_value = SF_BOOLEAN_TRUE_STR;
+        }
+        value_len = strlen(bool_value);
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        sb_strncpy(value, max_value_size, bool_value, value_len + 1);
+        break;
+      case SF_DB_TYPE_DATE:
+        sec =
+                (time_t) strtol(const_str_val, NULL, 10) *
+                86400L;
+        _mutex_lock(&gmlocaltime_lock);
+        tm_ptr = sf_gmtime(&sec, &tm_obj);
+        _mutex_unlock(&gmlocaltime_lock);
+        if (tm_ptr == NULL) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert a date value to a string.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          value = NULL;
+          max_value_size = 0;
+          goto cleanup;
+        }
+        // Max size of date string
+        value_len = DATE_STRING_MAX_SIZE;
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        value_len = strftime(value, value_len + 1, "%Y-%m-%d", &tm_obj);
+        break;
+      case SF_DB_TYPE_TIME:
+      case SF_DB_TYPE_TIMESTAMP_NTZ:
+      case SF_DB_TYPE_TIMESTAMP_LTZ:
+      case SF_DB_TYPE_TIMESTAMP_TZ: ;
+        SF_TIMESTAMP ts;
+        if (scale < 0)
+        {
+          // If scale is not provided, try to calculate it.
+          // E.g., for raw value "1234567890 2040" scale is 0
+          // E.g., for raw value "1234567890.1234 2040" scale is from "." to " "
+          // before TZ offset
+          // E.g., for raw value "1234567890.1234" scale is calculated as length
+          // of input minus length of "1234567890." part
+
+          const char *scalePtr = strchr(const_str_val, (int) '.');
+          if (scalePtr == NULL)
+          {
+            scale = 0;
+          } else {
+            const char *tzOffsetPtr = strchr(scalePtr+1, (int) ' ');
+            if (tzOffsetPtr == NULL)
+            {
+              scale = strlen(const_str_val) - (scalePtr - const_str_val) - 1;
             } else {
-                max_value_size = init_value_len;
+              scale = tzOffsetPtr - scalePtr - 1;
             }
-            sb_strncpy(value, max_value_size, column->valuestring, value_len + 1);
-            break;
+          }
+          log_info("scale is calculated as %d", scale);
+        }
+
+        if (snowflake_timestamp_from_epoch_seconds(&ts,
+                                                   const_str_val,
+                                                   connection_timezone,
+                                                   scale,
+                                                   type)) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert the response from the server into a SF_TIMESTAMP.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          value = NULL;
+          max_value_size = 0;
+          goto cleanup;
+        }
+        // TODO add format when format is no longer a fixed string
+        if (snowflake_timestamp_to_string(&ts, "", &value, max_value_size, &value_len, SF_BOOLEAN_TRUE)) {
+          SET_SNOWFLAKE_STMT_ERROR(error,
+                                   SF_STATUS_ERROR_CONVERSION_FAILURE,
+                                   "Failed to convert a SF_TIMESTAMP value to a string.",
+                                   SF_SQLSTATE_GENERAL_ERROR,
+                                   sfqid);
+          // If the memory wasn't preallocated, then free it
+          if (!preallocated && value) {
+            global_hooks.dealloc(value);
+            value = NULL;
+            max_value_size = 0;
+          }
+          value_len = 0;
+          goto cleanup;
+        } else {
+          // If true, then we reallocated when writing the timestamp to a string
+          if (value_len + 1 > init_value_len) {
+            max_value_size = value_len + 1;
+          } else {
+            max_value_size = init_value_len;
+          }
+        }
+
+        break;
+      default:
+        value_len = strlen(const_str_val);
+        if (value_len + 1 > init_value_len) {
+          if (preallocated) {
+            value = global_hooks.realloc(value, value_len + 1);
+          } else {
+            value = global_hooks.calloc(1, value_len + 1);
+          }
+          // If we have to allocate memory, then we need to set max_value_size
+          // otherwise we leave max_value_size as is
+          max_value_size = value_len + 1;
+        } else {
+          max_value_size = init_value_len;
+        }
+        sb_strncpy(value, max_value_size, const_str_val, value_len + 1);
+        break;
     }
 
     // Everything went okay
@@ -2766,6 +2920,28 @@ cleanup:
         *value_len_ptr = value_len;
     }
     return status;
+}
+
+SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr) {
+    SF_STATUS status;
+    cJSON *column = NULL;
+
+    if ((status = _snowflake_column_null_checks(sfstmt, (void *) value_ptr)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+    // Get column
+    if ((status = _snowflake_get_cJSON_column(sfstmt, idx, &column)) != SF_STATUS_SUCCESS) {
+        return status;
+    }
+
+  return snowflake_raw_value_to_str_rep(sfstmt, column->valuestring,
+                                        sfstmt->desc[idx - 1].type,
+                                        sfstmt->connection->timezone,
+                                        (int32) sfstmt->desc[idx - 1].scale,
+                                        snowflake_cJSON_IsNull(column) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE,
+                                        value_ptr, value_len_ptr,
+                                        max_value_size_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr) {

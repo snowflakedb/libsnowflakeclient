@@ -1,0 +1,12 @@
+## Flag to enable association of rules to area/component(s)
+# [ASSOCIATE_AREAS_AND_COMPONENTS=1]
+## Area-Component(s) Map
+# Please keep the entries in alphabetical order.
+# [START AREA_COMPONENT_MAP]
+# [Data Platform: Ecosystem # Dev - JDBC, Dev - Kafka Connector, Dev - ODBC, Dev - Python Client, Dev - Spark Connector, Dev - NodeJS, Dev - Partner, Dev - Client Backend, Dev - SQL API]
+# [END AREA_COMPONENT_MAP]
+### Data Platform: Ecosystem ###
+# [START AREA # Data Platform: Ecosystem]
+* @snowflakedb/Client 
+# [END AREA # Data Platform: Ecosystem]
+

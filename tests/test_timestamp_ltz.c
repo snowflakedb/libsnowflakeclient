@@ -13,38 +13,50 @@ typedef struct test_case_to_string {
     SF_STATUS error_code;
 } TEST_CASE_TO_STRING;
 
+#ifdef _WIN32
+// On Windows TZ variable has different syntax.
+// https://docs.microsoft.com/en-us/previous-versions/90s5c885(v=vs.140)#remarks
+// timezone in connection property like America/New_York won't change local
+// timezone setting as expected, while server doesn't accept Windows syntax like
+// UTC-5:00. Setting session timezone to the actual timezone of the client would
+// work so it won't causing any issue on customer side. But since we need to make
+// the test case work on any timezone, "UTC" is the only timezone setting can be
+// accepted by both server and client side.
+#define USER_TZ "UTC"
+#else
 #define USER_TZ "America/New_York"
+#endif // _WIN32
 
 void test_timestamp_ltz_helper(sf_bool useZeroPrecision)
 {
 
   TEST_CASE_TO_STRING test_cases[] = {
-#ifndef _WIN32
-          {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 -04:00", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
+          {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                          ? "2014-05-03 13:56:46"
                                                                          : "2014-05-03 13:56:46.12300"},
-          {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123 -05:00", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
+          {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                           ? "1969-11-21 05:17:23"
                                                                           : "1969-11-21 05:17:23.01230"},
           {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1960-01-01 00:00:00"
                                                                    : "1960-01-01 00:00:00.00000"},
-#ifndef __APPLE__
+#ifdef __linux__
           // Must run the tests High Sierra (10.13) or newer OS.
+          // Windows get inaccurate result as well.
           {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1500-01-01 00:00:00"
                                                                    : "1500-01-01 00:00:00.00000"},
           // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
+          // Windows get the same output as MacOS
           // {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "1-01-01 00:00:00"
                                                                    : "1-01-01 00:00:00.00000"},
-#endif // __APPLE__
+#endif // __linux__
           {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = useZeroPrecision == SF_BOOLEAN_TRUE
                                                                    ? "9999-01-01 00:00:00"
                                                                    : "9999-01-01 00:00:00.00000"},
           {.c1in = 7, .c2in = "99999-12-31 23:59:59.9999", .c2out = "", .error_code=100035},
-#endif // _WIN32
           {.c1in = 8, .c2in = NULL, .c2out = NULL},
           /* // none of the platform supports this
           {.c1in = 9, .c2in = "9999-12-31 23:59:59.9999", .c2out = "9999-12-31 23:59:59.99990 -05:00"},
