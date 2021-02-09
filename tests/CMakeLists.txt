@@ -119,9 +119,9 @@ if (APPLE)
             ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AWS_CORE_LIB} ${AWS_S3_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB})
 endif()
 if (WIN32)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ucrtd.lib)
     set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} ${AZURE_STORAGE_LITE_LIB}
-			Version.lib Userenv.lib Bcrypt.lib)
+			Version.lib Userenv.lib Bcrypt.lib ucrtd.lib)
 endif()
 
 if (MOCK)
