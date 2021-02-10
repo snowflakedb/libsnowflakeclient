@@ -27,6 +27,7 @@ class SecretDetector
     static std::regex PRIVATE_KEY_DATA_PATTERN;
     static std::regex CONNECTION_TOKEN_PATTERN;
     static std::regex PASSWORD_PATTERN;
+    static std::regex ESCAPE_PATTERN;
 
     static std::string maskAwsKeys(std::string text);
     static std::string maskAwsTokens(std::string text);
@@ -35,6 +36,7 @@ class SecretDetector
     static std::string maskPrivateKeyData(std::string text);
     static std::string maskConnectionToken(std::string text);
     static std::string maskPassword(std::string text);
+    static std::string escape(std::string text);
 };
 
 }

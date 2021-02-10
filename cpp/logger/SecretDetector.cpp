@@ -21,6 +21,8 @@ namespace Client
 
   std::regex SecretDetector::PASSWORD_PATTERN = std::regex("(password|passcode|pwd)(['\"\\s:=]+)([A-Za-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})", std::regex::icase);
 
+  std::regex SecretDetector::ESCAPE_PATTERN = std::regex("(\\\\|%)", std::regex::icase);
+
   std::string SecretDetector::maskAwsKeys(std::string text)
   {
     return std::regex_replace(text, SecretDetector::AWS_KEY_PATTERN, "$1$2'****'");
@@ -56,9 +58,18 @@ namespace Client
     return std::regex_replace(text, SecretDetector::PASSWORD_PATTERN, "$1$2****");
   }
 
+  /* the output string will finally used by fprintf and having any % or \ will cause issue
+   * replace % with %% and \ with \\
+   */
+  std::string SecretDetector::escape(std::string text)
+  {
+    return std::regex_replace(text, SecretDetector::ESCAPE_PATTERN, "$1$1");
+  }
+
   std::string SecretDetector::maskSecrets(std::string text)
   {
-    return SecretDetector::maskAwsKeys(
+    return SecretDetector::escape(
+      SecretDetector::maskAwsKeys(
         SecretDetector::maskAwsTokens(
           SecretDetector::maskSasTokens(
             SecretDetector::maskPrivateKey(
@@ -72,7 +83,8 @@ namespace Client
               )
             )
           )
-        );
+        )
+      );
   }
 }
 }
