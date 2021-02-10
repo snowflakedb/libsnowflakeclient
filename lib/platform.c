@@ -309,6 +309,7 @@ _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg) {
 int STDCALL _thread_join(SF_THREAD_HANDLE thread) {
 #ifdef _WIN32
     DWORD ret = WaitForSingleObject(thread, INFINITE);
+    CloseHandle(thread);
     return ret == WAIT_OBJECT_0 ? 0 : 1;
 #else
     return pthread_join(thread, NULL);
