@@ -11,6 +11,12 @@
 
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 #include <string.h>
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
@@ -31,6 +37,8 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
+
+static void my_sleep_ms(uint32 sleepMs);
 
 static
 void dump(const char *text,
@@ -122,6 +130,16 @@ int my_trace(CURL *handle, curl_infotype type,
     return 0;
 }
 
+static
+void my_sleep_ms(uint32 sleepMs)
+{
+#ifdef _WIN32
+  Sleep(sleepMs);
+#else
+  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
+#endif
+}
+
 sf_bool STDCALL http_perform(CURL *curl,
                              SF_REQUEST_TYPE request_type,
                              char *url,
@@ -131,7 +149,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
-                             sf_bool insecure_mode) {
+                             sf_bool insecure_mode,
+                             int8 retry_on_curle_couldnt_connect_count) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -140,14 +159,14 @@ sf_bool STDCALL http_perform(CURL *curl,
       1,      //base
       16      //cap
     };
-    /* TODO: let's remove this if not used.
-    RETRY_CONTEXT retry_ctx = {
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_LOGIN_TIMEOUT;
+    RETRY_CONTEXT curl_retry_ctx = {
             0,      //retry_count
             network_timeout,
             1,      // time to sleep
             &djb    // Decorrelate jitter
     };
-    */
+    time_t elapsedRetryTime = time(NULL);
     RAW_JSON_BUFFER buffer = {NULL, 0};
     struct data config;
     config.trace_ascii = 1;
@@ -294,19 +313,32 @@ sf_bool STDCALL http_perform(CURL *curl,
         res = curl_easy_perform(curl);
         /* Check for errors */
         if (res != CURLE_OK) {
-            char msg[1024];
-            if (res == CURLE_SSL_CACERT_BADFILE) {
+          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
+                                              retry_on_curle_couldnt_connect_count)
+            {
+              retry = SF_BOOLEAN_TRUE;
+              uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+              log_error(
+                      "curl_easy_perform() failed connecting to server on attempt %d, "
+                      "will retry after %d second",
+                      curl_retry_ctx.retry_count,
+                      next_sleep_in_secs);
+              my_sleep_ms(next_sleep_in_secs*1000);
+            } else {
+              char msg[1024];
+              if (res == CURLE_SSL_CACERT_BADFILE) {
                 sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
-                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
-            }
-            else {
+                        curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
+                }
+                else {
                 sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+                }
+                msg[sizeof(msg)-1] = (char)0;
+                log_error(msg);
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
-            msg[sizeof(msg)-1] = (char)0;
-            log_error(msg);
-            SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                msg,
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
                 CURLE_OK) {
@@ -316,12 +348,31 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     "Unable to get http response code",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             } else if (http_code != 200) {
-                retry = is_retryable_http_code(http_code);
-                if (!retry) {
-                    SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_RETRY,
-                                        "Received unretryable http code",
-                                        SF_SQLSTATE_UNABLE_TO_CONNECT);
-                }
+              retry = is_retryable_http_code(http_code);
+              if (!retry) {
+                char msg[1024];
+                sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
+                           http_code);
+                SET_SNOWFLAKE_ERROR(error,
+                                    SF_STATUS_ERROR_RETRY,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+              }
+              if (retry &&
+                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
+              )
+              {
+                uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                log_debug(
+                    "curl_easy_perform() Got retryable error http code %d, retry count  %d "
+                    "will retry after %d seconds", http_code,
+                    curl_retry_ctx.retry_count,
+                    next_sleep_in_secs);
+                my_sleep_ms(next_sleep_in_secs * 1000);
+              }
+              else {
+                retry = SF_BOOLEAN_FALSE;
+              }
             } else {
                 ret = SF_BOOLEAN_TRUE;
             }

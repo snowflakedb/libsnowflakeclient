@@ -38,6 +38,23 @@ SF_CONNECT *setup_snowflake_connection() {
             "UTC", SF_BOOLEAN_TRUE);
 }
 
+/**
+ * Enables C_API_QUERY_RESULT_FORMAT='ARROW_FORCE'.
+ * This can be removed when Arrow support is officially added.
+ */
+SF_STATUS STDCALL enable_arrow_force(SF_CONNECT *sf) {
+    /* query */
+    SF_STMT *sfstmt = snowflake_stmt(sf);
+
+    SF_STATUS status = snowflake_query(
+            sfstmt, "alter session set c_api_query_result_format = 'ARROW_FORCE'",
+            0);
+
+    snowflake_stmt_term(sfstmt);
+
+    return status;
+}
+
 SF_CONNECT *setup_snowflake_connection_with_autocommit(
         const char *timezone, sf_bool autocommit) {
     SF_CONNECT *sf = snowflake_init();
