@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <cstdio>
 
-#include "snowflake/ResultSet.hpp"
+#include "ResultSet.hpp"
 #include "snowflake/Simba_CRTFunctionSafe.h"
 
 namespace Snowflake
@@ -12,7 +12,7 @@ namespace Snowflake
 namespace Client
 {
 
-Snowflake::Client::ResultSet::ResultSet() :
+ResultSet::ResultSet() :
     m_binaryOutputFormat("HEX"),
     m_dateOutputFormat("YYYY-MM-DD"),
     m_timeOutputFormat("HH24:MI:SS"),
@@ -20,7 +20,6 @@ Snowflake::Client::ResultSet::ResultSet() :
     m_timestampLtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
     m_timestampNtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3"),
     m_timestampTzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
-    m_isBulkFetchEnabled(false),
     m_currChunkIdx(0),
     m_currChunkRowIdx(0),
     m_currColumnIdx(0),
@@ -29,98 +28,87 @@ Snowflake::Client::ResultSet::ResultSet() :
     ;
 }
 
-Snowflake::Client::ResultSet::ResultSet(
-    SF_CHUNK_DOWNLOADER * chunkDownloader,
-    std::string queryId,
-    int32 tzOffset,
-    size_t totalChunkCount,
-    size_t totalColumnCount,
-    size_t totalRowCount
-) : m_binaryOutputFormat("HEX"),
+ResultSet::ResultSet(SF_COLUMN_DESC * metadata, std::string tzString) :
+    m_binaryOutputFormat("HEX"),
     m_dateOutputFormat("YYYY-MM-DD"),
     m_timeOutputFormat("HH24:MI:SS"),
     m_timestampOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
     m_timestampLtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
     m_timestampNtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3"),
     m_timestampTzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
-    m_isBulkFetchEnabled(false),
-    m_tzOffset(tzOffset),
-    m_chunkDownloader(chunkDownloader),
     m_currChunkIdx(0),
     m_currChunkRowIdx(0),
     m_currColumnIdx(0),
     m_currRowIdx(0),
-    m_queryId(queryId),
-    m_totalChunkCount(totalChunkCount),
-    m_totalColumnCount(totalColumnCount),
-    m_totalRowCount(totalRowCount)
+    m_metadata(metadata),
+    m_totalChunkCount(0),
+    m_totalColumnCount(0),
+    m_totalRowCount(0),
+    m_tzString(tzString)
 {
-    initTzString();
+    ;
 }
 
-std::string Snowflake::Client::ResultSet::getBinaryOutputFormat()
+// Public methods ==================================================================================
+
+std::string ResultSet::getBinaryOutputFormat()
 {
     return m_binaryOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getDateOutputFormat()
+std::string ResultSet::getDateOutputFormat()
 {
     return m_dateOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getTimeOutputFormat()
+std::string ResultSet::getTimeOutputFormat()
 {
     return m_timeOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getTimestampOutputFormat()
+std::string ResultSet::getTimestampOutputFormat()
 {
     return m_timestampOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getTimestampLtzOutputFormat()
+std::string ResultSet::getTimestampLtzOutputFormat()
 {
     return m_timestampLtzOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getTimestampNtzOutputFormat()
+std::string ResultSet::getTimestampNtzOutputFormat()
 {
     return m_timestampNtzOutputFormat;
 }
 
-std::string Snowflake::Client::ResultSet::getTimestampTzOutputFormat()
+std::string ResultSet::getTimestampTzOutputFormat()
 {
     return m_timestampTzOutputFormat;
 }
 
-Snowflake::Client::ColumnFormat Snowflake::Client::ResultSet::getColumnFormat()
+QueryResultFormat ResultSet::getQueryResultFormat()
 {
-    return m_columnFormat;
+    return m_queryResultFormat;
 }
 
-size_t Snowflake::Client::ResultSet::getTotalChunkCount()
+size_t ResultSet::getTotalChunkCount()
 {
     return m_totalChunkCount;
 }
 
-size_t Snowflake::Client::ResultSet::getTotalColumnCount()
+size_t ResultSet::getTotalColumnCount()
 {
     return m_totalColumnCount;
 }
 
-size_t Snowflake::Client::ResultSet::getTotalRowCount()
+size_t ResultSet::getTotalRowCount()
 {
     return m_totalRowCount;
 }
 
-bool Snowflake::Client::ResultSet::isBulkFetchEnabled()
-{
-    return m_isBulkFetchEnabled;
-}
+// Private methods =================================================================================
 
-// Private methods
-
-void Snowflake::Client::ResultSet::initTzString()
+void ResultSet::initTzString()
 {
     int zeroOffset = 1440;
     bool isPositiveOffset = zeroOffset >= m_tzOffset;
@@ -139,5 +127,5 @@ void Snowflake::Client::ResultSet::initTzString()
     m_tzString = std::string(buffer);
 }
 
-}
-}
+} // namespace Client
+} // namespace Snowflake

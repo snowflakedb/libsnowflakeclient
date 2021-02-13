@@ -1,100 +1,276 @@
 /*
- * Copyright (c) 2020 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string>
 
 #include "memory.h"
-#include "snowflake/result_set_arrow.h"
+#include "result_set_arrow.h"
+#include "ResultSetArrow.hpp"
 
 
-result_set_arrow_t * result_set_arrow_create(
-    cJSON * data,
-    SF_COLUMN_DESC * metadata,
-    SF_CHUNK_DOWNLOADER * chunk_downloader,
-    char * query_id,
-    int32 tz_offset,
-    int64 total_chunk_count,
-    int64 total_column_count,
-    int64 total_row_count
-)
-{
-    result_set_arrow_t * rs_struct;
-    rs_struct = (typeof(rs_struct)) SF_MALLOC(sizeof(*rs_struct));
-    Snowflake::Client::ResultSetArrow * rs_obj =
-        new Snowflake::Client::ResultSetArrow(
-            data,
-            metadata,
-            chunk_downloader,
-            std::string(query_id),
-            tz_offset,
-            total_chunk_count,
-            total_column_count,
-            total_row_count);
-    rs_struct->result_set_object = rs_obj;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    return rs_struct;
-}
-
-void result_set_arrow_destroy(result_set_arrow_t * rs)
-{
-    if (rs == NULL)
+    rs_arrow_t * rs_arrow_create(
+        cJSON * initial_chunk,
+        SF_COLUMN_DESC * metadata,
+        std::string timezone
+    )
     {
-        return;
+        rs_arrow_t * rs_struct;
+        rs_struct = (typeof(rs_struct)) SF_MALLOC(sizeof(*rs_struct));
+        Snowflake::Client::ResultSetArrow * rs_obj =
+            new Snowflake::Client::ResultSetArrow(initial_chunk, metadata, timezone);
+        rs_struct->rs_object = rs_obj;
+
+        return rs_struct;
     }
 
-    delete static_cast<Snowflake::Client::ResultSetArrow *>(rs->result_set_object);
-    SF_FREE(rs);
-}
-
-bool result_set_arrow_next_column(result_set_arrow_t * rs)
-{
-    Snowflake::Client::ResultSetArrow * rs_obj;
-
-    if (rs == NULL)
+    void rs_arrow_destroy(rs_arrow_t * rs)
     {
-        return false;
+        if (rs == NULL)
+        {
+            return;
+        }
+
+        delete static_cast<Snowflake::Client::ResultSetArrow*>(rs->rs_object);
+        SF_FREE(rs);
     }
 
-    rs_obj = static_cast<Snowflake::Client::ResultSetArrow *> (rs->result_set_object);
-    return rs_obj->nextColumn();
-}
-
-bool result_set_arrow_next_row(result_set_arrow_t * rs)
-{
-    Snowflake::Client::ResultSetArrow * rs_obj;
-
-    if (rs == NULL)
+    SF_STATUS STDCALL rs_arrow_append_chunk(rs_arrow_t * rs, cJSON * chunk)
     {
-        return false;
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->appendChunk(chunk);
     }
 
-    rs_obj = static_cast<Snowflake::Client::ResultSetArrow *> (rs->result_set_object);
-    return rs_obj->nextRow();
-}
-
-std::string result_set_arrow_get_current_column(result_set_arrow_t * rs)
-{
-    Snowflake::Client::ResultSetArrow * rs_obj;
-
-    if (rs == NULL)
+    SF_STATUS STDCALL rs_arrow_finish_result_set(rs_arrow_t * rs)
     {
-        return NULL;
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->finishResultSet();
     }
 
-    rs_obj = static_cast<Snowflake::Client::ResultSetArrow *> (rs->result_set_object);
-    return rs_obj->getCurrentColumnAsString();
-}
-
-std::string result_set_arrow_get_current_row(result_set_arrow_t * rs)
-{
-    Snowflake::Client::ResultSetArrow * rs_obj;
-
-    if (rs == NULL)
+    SF_STATUS STDCALL rs_arrow_next_column(rs_arrow_t * rs)
     {
-        return NULL;
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->nextColumn();
     }
 
-    rs_obj = static_cast<Snowflake::Client::ResultSetArrow *> (rs->result_set_object);
-    return rs_obj->getCurrentRowAsString();
-}
+    SF_STATUS STDCALL rs_arrow_next_row(rs_arrow_t * rs)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->nextRow();
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_bool(rs_arrow_t * rs, sf_bool * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsBool(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int8(rs_arrow_t * rs, int8 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsInt8(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int32(rs_arrow_t * rs, int32 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsInt32(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int64(rs_arrow_t * rs, int64 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsInt64(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint8(rs_arrow_t * rs, uint8 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsUint8(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint32(rs_arrow_t * rs, uint32 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsUint32(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint64(rs_arrow_t * rs, uint64 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsUint64(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_float64(rs_arrow_t * rs, float64 * out_data)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsFloat64(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_const_string(
+        rs_arrow_t * rs,
+        const char ** out_data
+    )
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsConstString(out_data);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_string(
+        rs_arrow_t * rs,
+        char * out_data,
+        size_t * io_len,
+        size_t * io_capacity
+    )
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsString(out_data, io_len, io_capacity);
+    }
+
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_timestamp(
+        rs_arrow_t * rs,
+        SF_TIMESTAMP * out_data
+    )
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getCurrCellAsTimestamp(out_data);
+    }
+
+    size_t rs_arrow_get_row_count_in_chunk(rs_arrow_t * rs)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_BOOLEAN_FALSE;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getRowCountInChunk();
+    }
+
+    size_t rs_arrow_get_total_row_count(rs_arrow_t * rs)
+    {
+        Snowflake::Client::ResultSetArrow * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_BOOLEAN_FALSE;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
+        return rs_obj->getTotalRowCount();
+    }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
