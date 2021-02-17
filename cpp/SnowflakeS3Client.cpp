@@ -281,7 +281,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
                              uploadParts[partId].buf = buf;
                              char retryPartBuflog[200];
                              sprintf(retryPartBuflog, "Retrying partNumber=%d threadID=%d partId=%d.", i, tid, partId);
-                             RetryContext partRetryCtx(retryPartBuflog, 10);
+                             RetryContext partRetryCtx(retryPartBuflog, m_maxRetries);
                              do
                              {
                                //Sleeps only when its a retry
@@ -548,6 +548,11 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
   {
     return handleError(outcome.GetError());
   }
+}
+
+void SnowflakeS3Client::setMaxRetries(unsigned int maxRetries)
+{
+  m_maxRetries = maxRetries;
 }
 
 }
