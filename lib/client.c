@@ -357,18 +357,8 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
                     strerror(errno));
             goto cleanup;
         }
-        // Open log file
-        LOG_FP = fopen(LOG_PATH, "w+");
-        if (LOG_FP) {
-            // Set log file
-            log_set_fp(LOG_FP);
-        } else {
-            fprintf(stderr,
-                    "Error opening file from file path: %s\nError code: %s\n",
-                    LOG_PATH, strerror(errno));
-            goto cleanup;
-        }
-
+        // Set the log path only, the log file will be created when actual log output is needed.
+        log_set_path(LOG_PATH);
     } else {
         fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
@@ -385,11 +375,8 @@ cleanup:
  * Cleans up memory allocated for log init and closes log file.
  */
 static void STDCALL log_term() {
+    log_close();
     SF_FREE(LOG_PATH);
-    if (LOG_FP) {
-        fclose(LOG_FP);
-        log_set_fp(NULL);
-    }
     _mutex_term(&gmlocaltime_lock);
     _mutex_term(&log_lock);
 }
