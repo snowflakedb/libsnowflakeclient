@@ -146,6 +146,15 @@ public:
     SF_STATUS STDCALL getCurrCellAsUint64(uint64 * out_data);
 
     /**
+     * Writes the value of the current cell as a float32 to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCurrCellAsFloat32(float32 * out_data);
+
+    /**
      * Writes the value of the current cell as a float64 to the provided buffer.
      *
      * @param out_data             The buffer to write to.
@@ -175,7 +184,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsString(char * out_data, size_t * io_len, size_t * io_capacity);
+    SF_STATUS STDCALL getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity);
 
     /**
      * Writes the value of the current cell as a timestamp to the provided buffer.

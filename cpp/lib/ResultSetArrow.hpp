@@ -69,7 +69,7 @@ public:
     /**
      * Destructor.
      */
-    ~ResultSetArrow() = default;
+    ~ResultSetArrow();
 
     /**
      * Appends the given chunk to the internal result set.
@@ -166,6 +166,15 @@ public:
     SF_STATUS STDCALL getCurrCellAsUint64(uint64 * out_data);
 
     /**
+     * Writes the value of the current cell as a float32 to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCurrCellAsFloat32(float32 * out_data);
+
+    /**
      * Writes the value of the current cell as a float64 to the provided buffer.
      *
      * @param out_data             The buffer to write to.
@@ -195,7 +204,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsString(char * out_data, size_t * io_len, size_t * io_capacity);
+    SF_STATUS STDCALL getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity);
 
     /**
      * Writes the value of the current cell as a timestamp to the provided buffer.
@@ -226,27 +235,19 @@ private:
     void init(cJSON * initialChunk);
 
     /**
-     * BufferBuilder object used to consume chunks as they are retrieved from
-     * the server and continually build the final columnar result set.
-     */
-    std::shared_ptr<arrow::BufferBuilder> m_bufferBuilder;
-
-    /**
-     * BufferReader object used to read the chunk content in m_bufferBuilder.
-     * It is used in conjunction with m_recordBatchReader to iterate over the
-     * batches retrieved from the server to build the final columnar result set.
-     */
-    std::shared_ptr<arrow::io::BufferReader> m_bufferReader;
-
-    /**
-     * RecordBatchReader object used to operate on chunk content.
-     */
-    std::shared_ptr<arrow::ipc::RecordBatchReader> m_batchReader;
-
-    /**
      * The Arrow-format chunk iterator object.
      */
     std::shared_ptr<Snowflake::Client::ArrowChunkIterator> m_chunkIterator;
+
+    /**
+     * Indicates whether the first chunk has been processed or not.
+     */
+    bool m_isFirstChunk;
+
+    /**
+     * The key to use when retrieving the base64-encoded rowset data.
+     */
+    const char * m_rowsetKey = "rowsetBase64";
 };
 
 } // namespace Client

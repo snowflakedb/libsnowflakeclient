@@ -325,6 +325,39 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint64(uint64 * out_data)
     return SF_STATUS_SUCCESS;
 }
 
+SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat32(float32 * out_data)
+{
+    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+
+    if (snowflake_cJSON_IsNull(rawData))
+    {
+        CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
+        out_data = nullptr;
+        return SF_STATUS_SUCCESS;
+    }
+
+    float32 value = 0.0;
+    char * endptr;
+    errno = 0;
+    value = std::strtof(rawData->valuestring, &endptr);
+
+    if (endptr == rawData->valuestring)
+    {
+        CXX_LOG_ERROR("Cannot convert value to float32.");
+        out_data = nullptr;
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
+
+    if (errno == ERANGE || value == INFINITY || value == -INFINITY)
+    {
+        CXX_LOG_ERROR("Value out of range for float32.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
+    *out_data = value;
+    return SF_STATUS_SUCCESS;
+}
+
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat64(float64 * out_data)
 {
     cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
@@ -374,7 +407,8 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsConstString(const char ** out_data
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ResultSetJson::getCurrCellAsString(char * out_data, size_t * io_len, size_t * io_capacity)
+SF_STATUS STDCALL
+ResultSetJson::getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity)
 {
     cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
     std::string strValue = std::string(snowflake_cJSON_GetStringValue(rawData));
@@ -397,18 +431,19 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsString(char * out_data, size_t * i
     {
         io_capacity = new size_t;
         *io_capacity = strValue.size();
-        out_data = new char[*io_capacity];
+        *out_data = new char[*io_capacity];
     }
 
     if (isPreallocated && *io_len > *io_capacity)
     {
         *io_capacity = strValue.size();
         delete out_data;
-        out_data = new char[*io_capacity];
+        *out_data = new char[*io_capacity];
     }
 
     // Support conversion from other data types.
-    std::strcpy(out_data, strValue.c_str());
+    std::strcpy(*out_data, strValue.c_str());
+
     return SF_STATUS_SUCCESS;
 }
 

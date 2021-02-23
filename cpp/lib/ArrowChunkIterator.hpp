@@ -245,6 +245,17 @@ public:
     SF_STATUS STDCALL getCellAsUint64(uint32 colIdx, uint32 rowIdx, uint64 * out_data);
 
     /**
+     * Gets the value of the given cell as a float32.
+     *
+     * @param colIdx               The index of the column to get.
+     * @param rowIdx               The index of the row to get.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCellAsFloat32(uint32 colIdx, uint32 rowIdx, float32 * out_data);
+
+    /**
      * Gets the value of the given cell as a float64.
      *
      * @param colIdx               The index of the column to get.
@@ -294,7 +305,7 @@ public:
     SF_STATUS STDCALL getCellAsString(
         uint32 colIdx,
         uint32 rowIdx,
-        char * out_data,
+        char ** out_data,
         size_t * io_len,
         size_t * io_capacity);
 

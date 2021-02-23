@@ -131,7 +131,7 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_OUT_OF_RANGE = 240021,
     SF_STATUS_ERROR_NULL_POINTER = 240022,
     SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
-    SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW = 240024,
+    SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT = 240024,
     SF_STATUS_ERROR_OTHER = 240025
 } SF_STATUS;
 
@@ -246,7 +246,6 @@ typedef struct SF_ERROR_STRUCT {
     char *file;
     int line;
 } SF_ERROR_STRUCT;
-
 /**
  * Snowflake database session context.
  */
@@ -362,8 +361,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
+    void *qrf;
     char *sql_text;
-    void *raw_results;
+    void *result_set;
     void *cur_row;
     int64 chunk_rowcount;
     int64 total_rowcount;
@@ -426,14 +426,6 @@ typedef struct SF_TIMESTAMP {
  * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
  */
 void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
-
-/**
- * Checks whether the client is running in force_arrow mode.
- *
- * @param connection pointer to SF_CONNECT
- * @return SF_BOOLEAN_TRUE if the connection is running in force_arrow mode, otherwise SF_BOOLEAN_FALSE
- */
-sf_bool STDCALL snowflake_is_force_arrow_mode(const SF_CONNECT *connection);
 
 /**
  * Global Snowflake initialization.

@@ -37,8 +37,6 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
-        test_get_query_result_response
-        test_arrow_force
 #        test_stats
         )
 
@@ -88,6 +86,7 @@ set(SOURCE_UTILS_CXX
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32)
+    set(TESTS_C ${TESTS_C})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 endif ()
 
@@ -97,8 +96,60 @@ if (UNIX)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
+if (LINUX)
+    # Group all arrow dependencies.
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} 
+        ${ARROW_DOUBLECONVERSION_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB} ${ARROW_GFLAGSNOTHRD_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_JEMALLOC_LIB} ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
+        ${ARROW_PARQUET_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_THRIFT_LIB} ${ARROW_THRIFTZ_LIB}
+        ${ARROW_Z_LIB} ${ARROW_ZSTD_LIB})
+endif ()
+
+if (APPLE)
+    # Group all Arrow dependencies.
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
+        ${ARROW_DOUBLECONVERSION_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB} ${ARROW_GFLAGSNOTHRD_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_JEMALLOC_LIB} ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_ZSTD_LIB})
+endif ()
+
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
+
+    # Groups all Arrow dependencies.
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
+        ${ARROW_BZ2_LIB}
+        ${ARROW_DOUBLECONVERSION_LIB}
+        ${ARROW_EVENT_LIB} ${ARROW_EVENTCORE_LIB} ${ARROW_EVENTEXTRA_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_LZ4_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_THRIFTMD_LIB} ${ARROW_THRIFTNBMD_LIB} ${ARROW_THRIFTZMD_LIB}
+        ${ARROW_URIPARSER_LIB}
+        ${ARROW_XXHASH_LIB}
+        ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
@@ -107,20 +158,20 @@ if (LINUX)
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
             pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} z m "-framework CoreFoundation" -all_load
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} z m "-framework CoreFoundation" -all_load
             ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${AWS_CORE_LIB} ${AWS_S3_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} z m "-framework CoreFoundation" -all_load ${CURL_LIB}
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation" -all_load ${CURL_LIB}
             ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AWS_CORE_LIB} ${AWS_S3_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB})
 endif()
 if (WIN32)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} ${AZURE_STORAGE_LITE_LIB}
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AWS_S3_LIB} ${AWS_CORE_LIB} ${AZURE_STORAGE_LITE_LIB}
 			Version.lib Userenv.lib Bcrypt.lib)
 endif()
 

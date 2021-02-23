@@ -167,7 +167,8 @@ ArrowChunkIterator::appendChunk(std::vector<std::shared_ptr<arrow::RecordBatch>>
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsBool(uint32 colIdx, uint32 rowIdx, sf_bool * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsBool(uint32 colIdx, uint32 rowIdx, sf_bool * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -190,7 +191,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsBool(uint32 colIdx, uint32 rowIdx
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt8(uint32 colIdx, uint32 rowIdx, int8 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsInt8(uint32 colIdx, uint32 rowIdx, int8 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -213,7 +215,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt8(uint32 colIdx, uint32 rowIdx
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt32(uint32 colIdx, uint32 rowIdx, int32 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsInt32(uint32 colIdx, uint32 rowIdx, int32 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -236,7 +239,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt32(uint32 colIdx, uint32 rowId
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt64(uint32 colIdx, uint32 rowIdx, int64 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsInt64(uint32 colIdx, uint32 rowIdx, int64 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -259,7 +263,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsInt64(uint32 colIdx, uint32 rowId
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint8(uint32 colIdx, uint32 rowIdx, uint8 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsUint8(uint32 colIdx, uint32 rowIdx, uint8 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -282,7 +287,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint8(uint32 colIdx, uint32 rowId
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint32(uint32 colIdx, uint32 rowIdx, uint32 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsUint32(uint32 colIdx, uint32 rowIdx, uint32 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -305,7 +311,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint32(uint32 colIdx, uint32 rowI
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint64(uint32 colIdx, uint32 rowIdx, uint64 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsUint64(uint32 colIdx, uint32 rowIdx, uint64 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -324,11 +331,36 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsUint64(uint32 colIdx, uint32 rowI
     }
 
     int64_t rawData = colData->arrowInt64->Value(cellIdx);
-    *out_data = static_cast<int64>(rawData);
+    *out_data = static_cast<uint64>(rawData);
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsFloat64(uint32 colIdx, uint32 rowIdx, float64 * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsFloat32(uint32 colIdx, uint32 rowIdx, float32 * out_data)
+{
+    std::shared_ptr<ArrowColumn> colData(nullptr);
+    int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
+
+    if (cellIdx < 0)
+    {
+        CXX_LOG_TRACE("Cell at column %d, row %d was not found.", colIdx, rowIdx);
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    }
+
+    if (colData->arrowDouble->IsNull(cellIdx))
+    {
+        CXX_LOG_TRACE("Cell at row %d, column %d is null.", rowIdx, colIdx);
+        out_data = nullptr;
+        return SF_STATUS_SUCCESS;
+    }
+
+    float32 rawData = colData->arrowDouble->Value(cellIdx);
+    *out_data = static_cast<float32>(rawData);
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsFloat64(uint32 colIdx, uint32 rowIdx, float64 * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -351,7 +383,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsFloat64(uint32 colIdx, uint32 row
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32 rowIdx, const char ** out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32 rowIdx, const char ** out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);
@@ -377,7 +410,7 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32
 SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
     uint32 colIdx,
     uint32 rowIdx,
-    char * out_data,
+    char ** out_data,
     size_t * io_len,
     size_t * io_capacity
 )
@@ -417,21 +450,22 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
     {
         io_capacity = new size_t;
         *io_capacity = rawData.size();
-        out_data = new char[*io_capacity];
+        *out_data = new char[*io_capacity];
     }
 
     if (isPreallocated && *io_len > *io_capacity)
     {
         *io_capacity = rawData.size();
         delete out_data;
-        out_data = new char[*io_capacity];
+        *out_data = new char[*io_capacity];
     }
 
-    std::strcpy(out_data, rawData.c_str());
+    std::strcpy(*out_data, rawData.c_str());
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ArrowChunkIterator::getCellAsTimestamp(uint32 colIdx, uint32 rowIdx, SF_TIMESTAMP * out_data)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsTimestamp(uint32 colIdx, uint32 rowIdx, SF_TIMESTAMP * out_data)
 {
     std::shared_ptr<ArrowColumn> colData(nullptr);
     int32 cellIdx = this->getColumn(colIdx, rowIdx, colData);

@@ -16,13 +16,13 @@ extern "C" {
     rs_json_t * rs_json_create(
         cJSON * initial_chunk,
         SF_COLUMN_DESC * metadata,
-        std::string timezone
+        const char * tz_string
     )
     {
         rs_json_t * rs_struct;
         rs_struct = (typeof(rs_struct)) SF_MALLOC(sizeof(*rs_struct));
         Snowflake::Client::ResultSetJson * rs_obj =
-            new Snowflake::Client::ResultSetJson(initial_chunk, metadata, timezone);
+            new Snowflake::Client::ResultSetJson(initial_chunk, metadata, std::string(tz_string));
         rs_struct->rs_object = rs_obj;
 
         return rs_struct;
@@ -182,6 +182,19 @@ extern "C" {
         return rs_obj->getCurrCellAsUint64(out_data);
     }
 
+    SF_STATUS STDCALL rs_json_get_curr_cell_as_float32(rs_json_t * rs, float32 * out_data)
+    {
+        Snowflake::Client::ResultSetJson * rs_obj;
+
+        if (rs == NULL)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
+        return rs_obj->getCurrCellAsFloat32(out_data);
+    }
+
     SF_STATUS STDCALL rs_json_get_curr_cell_as_float64(rs_json_t * rs, float64 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
@@ -213,7 +226,7 @@ extern "C" {
 
     SF_STATUS STDCALL rs_json_get_curr_cell_as_string(
         rs_json_t * rs,
-        char * out_data,
+        char ** out_data,
         size_t * io_len,
         size_t * io_capacity
     )

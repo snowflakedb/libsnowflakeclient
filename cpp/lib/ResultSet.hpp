@@ -63,7 +63,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL appendChunk(cJSON * chunk);
+    virtual SF_STATUS STDCALL appendChunk(cJSON * chunk) = 0;
 
     /**
      * Resets the internal indices so that they may be used to traverse
@@ -71,7 +71,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL finishResultSet();
+    virtual SF_STATUS STDCALL finishResultSet() = 0;
 
     // API methods to consume results ==============================================================
 
@@ -153,6 +153,15 @@ public:
     virtual SF_STATUS STDCALL getCurrCellAsUint64(uint64 * out_data) = 0;
 
     /**
+     * Writes the value of the current cell as a float32 to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    virtual SF_STATUS STDCALL getCurrCellAsFloat32(float32 * out_data) = 0;
+
+    /**
      * Writes the value of the current cell as a float64 to the provided buffer.
      *
      * @param out_data             The buffer to write to.
@@ -182,7 +191,8 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsString(char * out_data, size_t * io_len, size_t * io_capacity) = 0;
+    virtual SF_STATUS STDCALL
+    getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity) = 0;
 
     /**
      * Writes the value of the current cell as a timestamp to the provided buffer.
