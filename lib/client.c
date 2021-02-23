@@ -1860,7 +1860,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         if (result_capture != NULL && result_capture->capture_buffer != NULL) {
             size_t resp_size = strlen(s_resp) + 1;
             if (result_capture->buffer_size < resp_size) {
-                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+                ret = SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+                goto cleanup;
             }
             sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
             result_capture->actual_response_size = resp_size;
