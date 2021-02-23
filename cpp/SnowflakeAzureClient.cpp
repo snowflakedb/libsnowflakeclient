@@ -346,10 +346,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
 
 }
 
-void SnowflakeAzureClient::setMaxRetries(unsigned int maxRetries)
-{
-  m_maxRetries = maxRetries;
-}
 
 }
 }

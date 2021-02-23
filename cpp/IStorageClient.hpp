@@ -50,7 +50,7 @@ public:
     return false;
   }
 
-  virtual void setMaxRetries(unsigned int maxRetries) = 0;
+  virtual void setMaxRetries(unsigned int maxRetries) {};
 };
 }
 }

@@ -111,10 +111,6 @@ private:
 
   const size_t m_uploadThreshold;
   unsigned int m_parallel;
-  /**
-   * Max retries for multipart upload
-   */
-  unsigned int m_maxRetries;
 
   /**
    * Add snowflake specific metadata to the put object metadata.
@@ -144,8 +140,6 @@ private:
   void uploadParts(MultiUploadCtx_a * uploadCtx);
 
   //RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
-
-  void setMaxRetries(unsigned int maxRetries);
 
 };
 }
