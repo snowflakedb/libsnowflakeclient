@@ -49,6 +49,8 @@ public:
   {
     return false;
   }
+
+  virtual void setMaxRetries(unsigned int maxRetries) {};
 };
 }
 }

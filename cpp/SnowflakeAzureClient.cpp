@@ -346,5 +346,6 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
 
 }
 
+
 }
 }

@@ -123,6 +123,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   // init file metadata
   initFileMetadata(command);
+  m_storageClient->setMaxRetries(m_maxPutRetries);
 
   switch (response.command)
   {
