@@ -49,6 +49,7 @@ void test_log_creation(void **unused) {
     assert_int_equal(access(logname, F_OK), 0);
 
     remove(logname);
+}
 
 /**
  * Tests masking secret information in log
