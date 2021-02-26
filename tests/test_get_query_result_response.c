@@ -26,25 +26,15 @@ void test_get_query_result_response(void **unused) {
     SF_QUERY_RESULT_CAPTURE *result_capture;
     snowflake_query_result_capture_init(&result_capture);
 
-    // Create a space for storing the query response text
-    size_t buffer_size = 5000;
-    char* resultBuffer = (char *) SF_CALLOC(1, buffer_size);
-    result_capture->capture_buffer = resultBuffer;
-
     clear_snowflake_error(&sfstmt->error);
     status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    // Try first with too small of a buffer size, we should return an error.
-    result_capture->buffer_size = 100;
-    status = snowflake_execute_with_capture(sfstmt, result_capture);
-    assert_int_equal(status, SF_STATUS_ERROR_BUFFER_TOO_SMALL);
-
-    // Now use the actual size
-    result_capture->buffer_size = buffer_size;
+    // Issue the query
     clear_snowflake_error(&sfstmt->error);
     status = snowflake_execute_with_capture(sfstmt, result_capture);
     assert_int_equal(status, SF_STATUS_SUCCESS);
+    char *resultBuffer = result_capture->capture_buffer;
 
     // Parse the JSON, and grab a few values to verify correctness
     cJSON *parsedJSON = snowflake_cJSON_Parse(resultBuffer);
@@ -61,7 +51,40 @@ void test_get_query_result_response(void **unused) {
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
-    free(resultBuffer);
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
+/**
+ * Tests fetching the query result response with failed query
+ * @param unused
+ */
+void test_get_query_result_response_failed(void **unused) {
+    SF_CONNECT *sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* query */
+    SF_STMT *sfstmt = snowflake_stmt(sf);
+    SF_QUERY_RESULT_CAPTURE *result_capture;
+    snowflake_query_result_capture_init(&result_capture);
+
+    clear_snowflake_error(&sfstmt->error);
+    status = snowflake_prepare(sfstmt, "wrong query", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Issue the query
+    clear_snowflake_error(&sfstmt->error);
+    status = snowflake_execute_with_capture(sfstmt, result_capture);
+    assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
+    assert_null(result_capture->capture_buffer);
+    assert_int_equal(result_capture->actual_response_size, 0);
+
+    snowflake_query_result_capture_term(result_capture);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
@@ -70,6 +93,7 @@ int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_get_query_result_response),
+            cmocka_unit_test(test_get_query_result_response_failed),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
