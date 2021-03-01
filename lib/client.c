@@ -1852,15 +1852,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
+        // s_resp will be freed by snowflake_query_result_capture_term
+        s_resp = snowflake_cJSON_Print(resp);
+        log_trace("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
         if (result_capture != NULL) {
-            // s_resp will be freed by snowflake_query_result_capture_term
-            s_resp = snowflake_cJSON_Print(resp);
-            log_trace("Here is JSON response:\n%s", s_resp);
-            size_t resp_size = strlen(s_resp) + 1;
             result_capture->capture_buffer = s_resp;
-            result_capture->actual_response_size = resp_size;
+            result_capture->actual_response_size = strlen(s_resp) + 1;
         }
 
         data = snowflake_cJSON_GetObjectItem(resp, "data");
@@ -2082,15 +2081,16 @@ cleanup:
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
     SF_FREE(qrmk);
-    if (ret != SF_STATUS_SUCCESS && result_capture != NULL) {
-        // No need to free s_resp if this function succeed. s_resp will be freed in
-        // snowflake_query_result_capture_term.
-        // No need to free s_resp if result_capture == NULL, as s_resp will be NULL as well.
+    if (result_capture == NULL) {
+        // If no result capture, we always free s_resp
+        SF_FREE(s_resp);
+    } else if (ret != SF_STATUS_SUCCESS) {
+        // If result capture failed, free s_resp.
         SF_FREE(s_resp);
         // reset states of result_capture to avoid potential double free of capture_buffer.
         result_capture->capture_buffer = NULL;
         result_capture->actual_response_size = 0;
-    }
+    } // If result capture succeeded, we don't need to free s_resp.
 
     return ret;
 }
