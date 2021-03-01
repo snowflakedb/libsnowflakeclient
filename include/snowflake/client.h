@@ -693,6 +693,15 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
         SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /**
+ * Executes a statement with capture in describe only mode.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
+                                                  SF_QUERY_RESULT_CAPTURE *result_capture);
+
+/**
  * Fetches the next row for the statement and stores on the bound buffer
  * if any. Noop if no buffer is bound.
  *

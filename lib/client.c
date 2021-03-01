@@ -1723,17 +1723,23 @@ cleanup:
     return ret;
 }
 
+SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
+                                                  SF_QUERY_RESULT_CAPTURE *result_capture) {
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_TRUE);
+}
+
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
-                                        SF_QUERY_RESULT_CAPTURE* result_capture) {
+                                        SF_QUERY_RESULT_CAPTURE* result_capture,
+                                        sf_bool is_describe_only) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1837,7 +1843,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
                                   is_string_empty(sfstmt->connection->directURL) ?
-                                  NULL : sfstmt->request_id);
+                                  NULL : sfstmt->request_id, is_describe_only);
     if (bindings != NULL) {
         /* binding parameters if exists */
       snowflake_cJSON_AddItemToObject(body, "bindings", bindings);
