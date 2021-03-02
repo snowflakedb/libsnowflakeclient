@@ -43,14 +43,16 @@ void test_get_describe_only_query_result(void **unused) {
     json_copy_bool(&success, parsedJSON, "success");
     assert_int_equal(success, SF_BOOLEAN_TRUE);
 
-    cJSON *data = snowflake_cJSON_GetObjectItem(
-            parsedJSON, "data");
+    cJSON *data = snowflake_cJSON_GetObjectItem(parsedJSON, "data");
     assert_int_equal(
             strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
             SF_UUID4_LEN);
 
     // Make sure that the query is run in describe only mode and the actual result is empty
     assert_int_equal(snowflake_cJSON_GetArraySize(snowflake_cJSON_GetObjectItem(data, "rowset")), 0);
+    // Make sure row types are returned
+    cJSON *rowtype = snowflake_cJSON_GetArrayItem(snowflake_cJSON_GetObjectItem(data, "rowtype"), 0);
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(rowtype, "type")), "text");
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
