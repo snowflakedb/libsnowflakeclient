@@ -183,7 +183,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     return body;
 }
 
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id) {
+cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only) {
     cJSON *body;
     double submission_time;
     // Create body
@@ -197,6 +197,7 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
     snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
     snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", submission_time);
+    snowflake_cJSON_AddBoolToObject(body, "describeOnly", is_describe_only);
     if (request_id)
     {
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
