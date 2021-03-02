@@ -1340,7 +1340,6 @@ void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **init)
     SF_QUERY_RESULT_CAPTURE *capture = (SF_QUERY_RESULT_CAPTURE *) SF_CALLOC(1, sizeof(SF_QUERY_RESULT_CAPTURE));
 
     capture->capture_buffer = NULL;
-    capture->buffer_size = 0;
     capture->actual_response_size = 0;
 
     *init = capture;
@@ -1375,7 +1374,7 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
  */
 void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture) {
     if (capture) {
-        capture->capture_buffer = NULL;
+        SF_FREE(capture->capture_buffer);
         SF_FREE(capture);
     }
 }
@@ -1853,18 +1852,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
+        // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
-        if (result_capture != NULL && result_capture->capture_buffer != NULL) {
-            size_t resp_size = strlen(s_resp) + 1;
-            if (result_capture->buffer_size < resp_size) {
-                ret = SF_STATUS_ERROR_BUFFER_TOO_SMALL;
-                goto cleanup;
-            }
-            sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
-            result_capture->actual_response_size = resp_size;
+        if (result_capture != NULL) {
+            result_capture->capture_buffer = s_resp;
+            result_capture->actual_response_size = strlen(s_resp) + 1;
         }
 
         data = snowflake_cJSON_GetObjectItem(resp, "data");
@@ -2085,8 +2080,17 @@ cleanup:
     snowflake_cJSON_Delete(body);
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
-    SF_FREE(s_resp);
     SF_FREE(qrmk);
+    if (result_capture == NULL) {
+        // If no result capture, we always free s_resp
+        SF_FREE(s_resp);
+    } else if (ret != SF_STATUS_SUCCESS) {
+        // If result capture failed, free s_resp.
+        SF_FREE(s_resp);
+        // reset states of result_capture to avoid potential double free of capture_buffer.
+        result_capture->capture_buffer = NULL;
+        result_capture->actual_response_size = 0;
+    } // If result capture succeeded, we don't need to free s_resp.
 
     return ret;
 }
