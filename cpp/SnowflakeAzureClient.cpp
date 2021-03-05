@@ -70,6 +70,12 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   auto bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile);
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
 
+  //Ensure the stage location ended with /
+  if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
+  {
+    m_stageInfo->location.push_back('/');
+  }
+
   CXX_LOG_TRACE("Successfully created Azure client. End of constructor.");
 }
 

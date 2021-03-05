@@ -111,6 +111,13 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
           clientConfiguration,
           Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never,
           true); // explicitly set virtual addressing style to be true
+
+  //Ensure the stage location ended with /
+  if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
+  {
+    m_stageInfo->location.push_back('/');
+  }
+
   CXX_LOG_TRACE("Successfully created s3 client. End of constructor.");
 }
 

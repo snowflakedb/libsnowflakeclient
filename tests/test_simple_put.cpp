@@ -51,7 +51,8 @@ void test_simple_put_core(const char * fileName,
                           bool createDupTable=false,
                           bool setCustomThreshold=false,
                           size_t customThreshold=64*1024*1024,
-                          bool useDevUrand=false)
+                          bool useDevUrand=false,
+                          bool createSubfolder=false)
 {
   /* init */
   SF_STATUS status;
@@ -88,6 +89,11 @@ void test_simple_put_core(const char * fileName,
   {
       putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
   }
+  else if (createSubfolder)
+  {
+       putCommand = "put file://" + file + " @%test_small_put/subfolder";
+  }
+
   if (!autoCompress)
   {
     putCommand += " auto_compress=false";
@@ -535,6 +541,11 @@ void test_simple_put_threshold(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, false, 100*1024*1024);
 }
 
+void test_simple_put_create_subfolder(void **unused)
+{
+  test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, false, 100*1024*1024, false, true);
+}
+
 void test_simple_get(void **unused)
 {
   test_simple_put_core("small_file.csv", // filename
@@ -882,7 +893,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_large_put_threshold, teardown),
     cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown),
-    cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown)
+    cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown),
+    cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
