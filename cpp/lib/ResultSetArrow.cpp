@@ -147,78 +147,93 @@ SF_STATUS STDCALL ResultSetArrow::next()
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsBool(sf_bool * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as bool.");
     return m_chunkIterator->getCellAsBool(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsInt8(int8 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as int8.");
     return m_chunkIterator->getCellAsInt8(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsInt32(int32 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as int32.");
     return m_chunkIterator->getCellAsInt32(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsInt64(int64 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as int64.");
     return m_chunkIterator->getCellAsInt64(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsUint8(uint8 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as uint8.");
     return m_chunkIterator->getCellAsUint8(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsUint32(uint32 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as uint32.");
     return m_chunkIterator->getCellAsUint32(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsUint64(uint64 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as uint64.");
     return m_chunkIterator->getCellAsUint64(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsFloat32(float32 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as float32.");
     return m_chunkIterator->getCellAsFloat32(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsFloat64(float64 * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as float64.");
     return m_chunkIterator->getCellAsFloat64(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsConstString(const char ** out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as const string.");
     return m_chunkIterator->getCellAsConstString(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL
 ResultSetArrow::getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity)
 {
+    CXX_LOG_TRACE("Retrieving current cell as string.");
     return m_chunkIterator->getCellAsString(
         m_currColumnIdx, m_currRowIdx, out_data, io_len, io_capacity);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data)
 {
+    CXX_LOG_TRACE("Retrieving current cell as timestamp.");
     return m_chunkIterator->getCellAsTimestamp(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 SF_STATUS STDCALL ResultSetArrow::getCurrCellStrlen(size_t * out_data)
 {
+    CXX_LOG_TRACE("Retrieving string length of current cell.");
     return m_chunkIterator->getCellStrlen(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
 size_t ResultSetArrow::getRowCountInChunk()
 {
+    CXX_LOG_TRACE("Retrieving row count in current chunk.");
     return m_chunkIterator->getRowCountInChunk();
 }
 
 SF_STATUS STDCALL ResultSetArrow::isCurrCellNull(sf_bool * out_data)
 {
+    CXX_LOG_TRACE("Retrieving if current cell is NULL.");
     return m_chunkIterator->isCellNull(m_currColumnIdx, m_currRowIdx, out_data);
 }
 

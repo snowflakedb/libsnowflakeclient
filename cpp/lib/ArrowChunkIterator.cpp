@@ -110,6 +110,7 @@ ArrowChunkIterator::appendChunk(std::vector<std::shared_ptr<arrow::RecordBatch>>
         {
             CXX_LOG_DEBUG("appendChunk -- Iterating on column %d.", j);
             std::shared_ptr<arrow::Array> colArray = currBatch->column(j);
+            CXX_LOG_DEBUG("appendChunk -- RecordBatch column at 0x%x", colArray.get());
             std::shared_ptr<arrow::DataType> type = m_schema->field(j)->type();
             auto arrowCol = std::make_shared<ArrowColumn>(type);
             CXX_LOG_DEBUG(
@@ -210,7 +211,7 @@ ArrowChunkIterator::appendChunk(std::vector<std::shared_ptr<arrow::RecordBatch>>
                 {
                     CXX_LOG_DEBUG("appendChunk -- Column is struct type.");
                     auto values = std::static_pointer_cast<arrow::StructArray>(colArray);
-                    ArrowTimestampArray * ts;
+                    ArrowTimestampArray * ts(new ArrowTimestampArray);
 
                     // Timestamp values are struct arrays which may contain the following fields:
                     // (1) Seconds since Epoch,
@@ -737,36 +738,47 @@ ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32 rowIdx, const cha
         return SF_STATUS_SUCCESS;
     }
 
-    // TODO: Support data types.
-    // std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    // switch (arrowType->id())
-    // {
-    //     case arrow::Type::type::BOOL:
-    //         return convertBoolToString(
-    //             colData, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
-    //     case arrow::Type::type::DATE32:
-    //     case arrow::Type::type::DATE64:
-    //         return convertDateToString(
-    //             colData, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
-    //     case arrow::Type::type::INT8:
-    //     case arrow::Type::type::INT16:
-    //     case arrow::Type::type::INT32:
-    //     case arrow::Type::type::INT64:
-    //         return convertIntToString(
-    //             colData, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
-    //     case arrow::Type::type::STRUCT:
-    //         return convertTimestampToString(
-    //             colData, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
-    //     case arrow::Type::type::STRING:
-    //     {
-    //         const char * rawData = colData->arrowString->GetString(cellIdx).c_str();
-    //         std::strcpy(*out_data, rawData);
-    //         return SF_STATUS_SUCCESS;
-    //     }
-    //     default:
-    //         CXX_LOG_ERROR("Unsupported conversion from %d to STRING.", arrowType->id());
-    //         return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    // }
+    std::shared_ptr<arrow::DataType> arrowType = colData->type;
+    SF_DB_TYPE snowType = m_metadata[colIdx].type;
+    int64 scale = m_metadata[colIdx].scale;
+
+    switch (arrowType->id())
+    {
+        case arrow::Type::type::BINARY:
+            return DataConversions::convertBinaryToConstString(
+                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::BOOL:
+            return DataConversions::convertBoolToConstString(
+                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::DATE32:
+        case arrow::Type::type::DATE64:
+            return DataConversions::convertDateToConstString(
+                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::DECIMAL:
+            return DataConversions::convertDecimalToConstString(
+                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::DOUBLE:
+            return DataConversions::convertDoubleToConstString(
+                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::INT8:
+        case arrow::Type::type::INT16:
+        case arrow::Type::type::INT32:
+        case arrow::Type::type::INT64:
+            return DataConversions::convertIntToConstString(
+                colData, arrowType, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::STRUCT:
+            return DataConversions::convertTimestampToConstString(
+                colData, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
+        case arrow::Type::type::STRING:
+        {
+            std::string strValue = colData->arrowString->GetString(cellIdx);
+            *out_data = strValue.c_str();
+            return SF_STATUS_SUCCESS;
+        }
+        default:
+            CXX_LOG_ERROR("Unsupported conversion from %d to STRING.", arrowType->id());
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
 
     return SF_STATUS_SUCCESS;
 }
