@@ -54,7 +54,7 @@ fi
 if [[ "$PLATFORM" == "linux" ]]; then
     cp $DIR/arrow.mk $DIR/../deps/
     cd $DIR/../deps/
-    BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
+    BUILD_TYPE=$target CC=gcc52 CXX=g++52 make -f arrow.mk
 else
     echo "[ERROR] $PLATFORM is not supported"
 fi

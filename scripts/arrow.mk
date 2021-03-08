@@ -19,17 +19,24 @@ BOOST_INSTALL_DIR := ../deps-build/linux/${BUILD_TYPE}/boost
 all: build copy
 
 copy:
-	cd ${BUILD_DIR} && make install
-	cd ../
-	find ${BUILD_DIR}/ -type f \( -iname "libdouble-conversion.a" -o -iname "libflatbuffers.a" -o -iname "libglog.a" -o -iname "libjemalloc.a" -o -iname "libjemalloc_pic.a" -o -iname "liblz4.a" \) | xargs -I{} cp {} $(ARROW_DEPS_INSTALL_DIR)/lib/
-	find ${BUILD_DIR}/ -type f \( -iname "libboost_filesystem.a" -o -iname "libboost_regex.a" -o -iname "libboost_system.a" \) | xargs -I{} cp {} $(BOOST_INSTALL_DIR)/lib
+	cp ${BUILD_DIR}/boost_ep-prefix/src/boost_ep/stage/lib/*.a $(BOOST_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/brotli_ep/src/brotli_ep-install/lib/*.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/double-conversion_ep/src/double-conversion_ep/lib/libdouble-conversion.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/flatbuffers_ep-prefix/src/flatbuffers_ep-install/lib64/libflatbuffers.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/glog_ep-prefix/src/glog_ep/lib/libglog.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/jemalloc_ep-prefix/src/jemalloc_ep/lib/libjemalloc.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/jemalloc_ep-prefix/src/jemalloc_ep/lib/libjemalloc_pic.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/jemalloc_ep-prefix/src/jemalloc_ep/include/jemalloc/jemalloc.h $(ARROW_DEPS_INSTALL_DIR)/include/ || true
+	cp ${BUILD_DIR}/lz4_ep-prefix/src/lz4_ep/lib/liblz4.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/snappy_ep/src/snappy_ep-install/lib/libsnappy.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
+	cp ${BUILD_DIR}/zstd_ep-install/lib64/libzstd.a $(ARROW_DEPS_INSTALL_DIR)/lib || true
 	cd $(ARROW_INSTALL_DIR)/../ && tar czf arrow_linux_$(BUILD_TYPE)-$(ARROW_VER).tar.gz arrow arrow_deps boost
 
 # arrow build target
 build: create_installdir arrow_configure
 	# The current arrow release has an issue that prevents it from being built
 	# with ccache. Explicitly disable ccache during the build to avoid this.
-	$(MAKE) -C build install
+	$(MAKE) -C ${BUILD_DIR} install
 
 create_installdir:
 	${MKDIR_P} ${BUILD_DIR}
