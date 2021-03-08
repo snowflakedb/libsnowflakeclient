@@ -62,18 +62,11 @@ extern "C" {
     SF_STATUS STDCALL rs_json_finish_result_set(rs_json_t * rs);
 
     /**
-     * Advances to next column.
+     * Advances to next cell.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_json_next_column(rs_json_t * rs);
-
-    /**
-     * Advances to next row.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_json_next_row(rs_json_t * rs);
+    SF_STATUS STDCALL rs_json_next(rs_json_t * rs);
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -224,6 +217,16 @@ extern "C" {
         SF_TIMESTAMP * out_data);
 
     /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param rs                   The ResultSetJson object.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_json_get_curr_cell_strlen(rs_json_t * rs, size_t * out_data);
+
+    /**
      * Get the data in the current row as a cJSON struct.
      *
      * @return The current row as a cJSON struct.
@@ -247,6 +250,16 @@ extern "C" {
      * @return the number of rows in the result set.
      */
     size_t rs_json_get_total_row_count(rs_json_t * rs);
+
+    /**
+     * Indiciates whether the current cell is null or not.
+     *
+     * @param rs                   The ResultSetJson object.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_json_is_curr_cell_null(rs_json_t * rs, sf_bool * out_data);
 
 #ifdef __cplusplus
 } // extern "C"

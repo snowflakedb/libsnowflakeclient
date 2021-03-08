@@ -36,7 +36,16 @@ ResultSetArrow::ResultSetArrow(
 {
     m_queryResultFormat = QueryResultFormat::ARROW;
     m_isFirstChunk = true;
-    init(initialChunk);
+
+    // Populate result set with chunks retrieved from server until all rows in
+    // the chunk downloader are consumed.
+    // Server responds with rows, but it's more convenient to store as columns.
+    this->appendChunk(initialChunk);
+
+    // Reset row indices so that they can be re-used by public API.
+    m_currChunkIdx = 0;
+    m_currChunkRowIdx = 0;
+    m_currRowIdx = 0;
 }
 
 ResultSetArrow::~ResultSetArrow()
@@ -48,11 +57,10 @@ ResultSetArrow::~ResultSetArrow()
 
 SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
 {
-    // Decode Base64-encoded Arrow-format rowset of the chunk.
-    cJSON * base64Rowset = snowflake_cJSON_GetObjectItem(chunk, m_rowsetKey);
-    const char * base64RowsetStr = snowflake_cJSON_GetStringValue(base64Rowset);
+    const char * base64RowsetStr = snowflake_cJSON_GetStringValue(chunk);
+    CXX_LOG_DEBUG("base64RowsetStr: %s", base64RowsetStr);
 
-    if (base64RowsetStr == NULL)
+    if (base64RowsetStr == nullptr)
     {
         CXX_LOG_ERROR("NULL value for key '%s' found in current chunk.", m_rowsetKey);
         return SF_STATUS_ERROR_BAD_RESPONSE;
@@ -65,11 +73,12 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
         return SF_STATUS_SUCCESS;
     }
 
+    // Decode Base64-encoded Arrow-format rowset of the chunk and build a buffer builder from it.
     std::string decodedRowsetStr = arrow::util::base64_decode(std::string(base64RowsetStr));
     std::shared_ptr<arrow::BufferBuilder> bufferBuilder = std::make_shared<arrow::BufferBuilder>();
-    bufferBuilder->Append((void *)decodedRowsetStr.c_str(), decodedRowsetStr.length());
+    bufferBuilder->Append((void *) decodedRowsetStr.c_str(), decodedRowsetStr.length());
 
-    CXX_LOG_TRACE("Chunk %d received.", m_currChunkIdx);
+    CXX_LOG_DEBUG("Chunk %d received.", m_currChunkIdx);
     m_currChunkIdx++;
 
     // Finalize the currently built buffer and initialize reader objects from it.
@@ -79,21 +88,34 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
     std::shared_ptr<arrow::io::BufferReader> bufferReader =
         std::make_shared<arrow::io::BufferReader>(arrowResultData);
 
-    // Add the batches to a vector of RecordBatch objects.
+    // Add the batches to a vector.
     // This stores batches as they are retrieved from the server row-wise
     // and passes them to the ArrowChunkIterator.
     arrow::Result<std::shared_ptr<arrow::ipc::RecordBatchReader>> batchReader =
         arrow::ipc::RecordBatchStreamReader::Open(std::move(bufferReader));
-    std::vector<std::shared_ptr<arrow::RecordBatch>> batches;
 
+    std::vector<std::shared_ptr<arrow::RecordBatch>> batches;
     while (true)
     {
         std::shared_ptr<arrow::RecordBatch> batch;
         batchReader.ValueOrDie()->ReadNext(&batch);
         if (batch == nullptr) break;
+        for (int i = 0; i < batch->schema()->num_fields(); ++i)
+        {
+            CXX_LOG_DEBUG(
+                "appendChunk -- column %d is of type %d",
+                i, batch->schema()->field(i)->type()->id());
+        }
         batches.emplace_back(batch);
     }
 
+    if (m_isFirstChunk)
+    {
+        m_isFirstChunk = false;
+        m_chunkIterator = std::make_shared<ArrowChunkIterator>(m_metadata, m_tzString);
+    }
+
+    m_chunkIterator->updateCounts(&batches, &m_totalColumnCount, &m_totalRowCount);
     return m_chunkIterator->appendChunk(&batches);
 }
 
@@ -107,19 +129,17 @@ SF_STATUS STDCALL ResultSetArrow::finishResultSet()
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ResultSetArrow::nextColumn()
+SF_STATUS STDCALL ResultSetArrow::next()
 {
-    if (m_currColumnIdx >= m_totalColumnCount)
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    if (m_currRowIdx >= m_totalRowCount - 1)
+    {
+        if (m_currColumnIdx >= m_totalColumnCount - 1)
+            return SF_STATUS_ERROR_OUT_OF_BOUNDS;
 
-    m_currColumnIdx++;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL ResultSetArrow::nextRow()
-{
-    if (m_currRowIdx >= m_totalRowCount)
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        m_currRowIdx = 0;
+        m_currColumnIdx++;
+        return SF_STATUS_SUCCESS;
+    }
 
     m_currRowIdx++;
     return SF_STATUS_SUCCESS;
@@ -187,25 +207,22 @@ SF_STATUS STDCALL ResultSetArrow::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data
     return m_chunkIterator->getCellAsTimestamp(m_currColumnIdx, m_currRowIdx, out_data);
 }
 
+SF_STATUS STDCALL ResultSetArrow::getCurrCellStrlen(size_t * out_data)
+{
+    return m_chunkIterator->getCellStrlen(m_currColumnIdx, m_currRowIdx, out_data);
+}
+
 size_t ResultSetArrow::getRowCountInChunk()
 {
     return m_chunkIterator->getRowCountInChunk();
 }
 
-// Private methods =================================================================================
-
-void ResultSetArrow::init(cJSON * initialChunk)
+SF_STATUS STDCALL ResultSetArrow::isCurrCellNull(sf_bool * out_data)
 {
-    // Populate result set with chunks retrieved from server until all rows in
-    // the chunk downloader are consumed.
-    // Server responds with rows, but it's more convenient to store as columns.
-    this->appendChunk(initialChunk);
-
-    // Reset row indices so that they can be re-used by public API.
-    m_currChunkIdx = 0;
-    m_currChunkRowIdx = 0;
-    m_currRowIdx = 0;
+    return m_chunkIterator->isCellNull(m_currColumnIdx, m_currRowIdx, out_data);
 }
+
+// Private methods =================================================================================
 
 } // namespace Client
 } // namespace Snowflake

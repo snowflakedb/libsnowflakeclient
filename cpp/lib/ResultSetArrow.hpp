@@ -47,6 +47,7 @@ namespace Client
 class ResultSetArrow : public Snowflake::Client::ResultSet
 {
 public:
+
     /**
      * Default constructor.
      */
@@ -71,6 +72,8 @@ public:
      */
     ~ResultSetArrow();
 
+    // API methods =================================================================================
+
     /**
      * Appends the given chunk to the internal result set.
      *
@@ -89,18 +92,13 @@ public:
     SF_STATUS STDCALL finishResultSet();
 
     /**
-     * Advances to the next column.
+     * Advances the internal iterators to the next cell.
+     *
+     * Note that Arrow data is internally stored column-wise.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL nextColumn();
-
-    /**
-     * Advances to the next row, moving over to the next chunk if necessary.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL nextRow();
+    SF_STATUS STDCALL next();
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -216,23 +214,31 @@ public:
     SF_STATUS STDCALL getCurrCellAsTimestamp(SF_TIMESTAMP * out_data);
 
     /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCurrCellStrlen(size_t * out_data);
+
+    /**
      * Gets the total number of rows in the current chunk being processed.
      *
      * @return the total number of rows in the current chunk.
      */
     size_t getRowCountInChunk();
 
-private:
-
     /**
-     * Helper method to initialize the result set data.
+     * Indicates whether the current cell is null.
      *
-     * Populates m_records with the results in the first chunk, passed in as an
-     * argument to the constructor.
+     * @param out_data             The buffer to write to.
      *
-     * @param initialChunk         The first chunk of the result set.
+     * @return 0 if successful, otherwise an error is returned.
      */
-    void init(cJSON * initialChunk);
+    SF_STATUS STDCALL isCurrCellNull(sf_bool * out_data);
+
+private:
 
     /**
      * The Arrow-format chunk iterator object.

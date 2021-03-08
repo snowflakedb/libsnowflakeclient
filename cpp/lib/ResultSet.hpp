@@ -36,6 +36,7 @@ enum QueryResultFormat
 class ResultSet
 {
 public:
+
     /**
      * Default constructor.
      */
@@ -76,18 +77,11 @@ public:
     // API methods to consume results ==============================================================
 
     /**
-     * Advances to the next column.
+     * Advances to the next cell.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL nextColumn() = 0;
-
-    /**
-     * Advances to the next row, moving over to the next chunk if necessary.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    virtual SF_STATUS STDCALL nextRow() = 0;
+    virtual SF_STATUS STDCALL next() = 0;
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -203,6 +197,24 @@ public:
      */
     virtual SF_STATUS STDCALL getCurrCellAsTimestamp(SF_TIMESTAMP * out_data) = 0;
 
+    /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    virtual SF_STATUS STDCALL getCurrCellStrlen(size_t * out_data) = 0;
+
+    /**
+     * Indicates whether the current cell is null.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    virtual SF_STATUS STDCALL isCurrCellNull(sf_bool * out_data) = 0;
+
     // Other member getters ========================================================================
 
     /**
@@ -297,6 +309,48 @@ public:
     size_t getTotalRowCount();
 
 protected:
+
+    // Helper methods ==============================================================================
+
+    /**
+     * Helper method to convert a boolean value into a proper string.
+     *
+     * @param value                The initial boolean value retrieved from Snowflake.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    convertBoolToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
+
+    /**
+     * Helper method to convert a date value into a proper string.
+     *
+     * @param value                The initial date value retrieved from Snowflake.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    convertDateToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
+
+    /**
+     * Helper method to convert a time or timestamp value into a proper string.
+     *
+     * @param value                The initial time or timestamp value retrieved from Snowflake.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    convertTimeToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
+
     /**
      * Converts the given time zone offset into a time zone string.
      *
@@ -306,6 +360,8 @@ protected:
      * Instead, UTC+0 is stored as 24*60=1440. Thus, values lie in [0, 2880].
      */
     void initTzString();
+
+    // Protected members ===========================================================================
 
     /**
      * The metadata object.

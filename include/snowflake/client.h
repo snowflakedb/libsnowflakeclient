@@ -364,7 +364,6 @@ typedef struct SF_STMT {
     void *qrf;
     char *sql_text;
     void *result_set;
-    void *cur_row;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
@@ -769,11 +768,22 @@ const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
 
 /**
  * Internal: check connection parameters
- *
+*
  * @param sf SF_CONNECT context
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_check_connection_parameters(SF_CONNECT *sf);
+
+/**
+ * Advances the internal iterators of the result set object stored in sfstmt->result_set.
+ *
+ * If the query result format is ARROW, then columns are advanced first, then rows.
+ * If the query result format is JSON, then rows are advanced first, then columns.
+ *
+ * @param sfstmt SF_STMT context
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_next(SF_STMT *sfstmt);
 
 /**
  * Converts a column in the current row into a boolean value (if a valid conversion exists).

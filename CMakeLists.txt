@@ -196,6 +196,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Column.cpp
         cpp/lib/ArrowChunkIterator.cpp
         cpp/lib/ArrowChunkIterator.hpp
+        cpp/lib/DataConversion.cpp
+        cpp/lib/DataConversion.hpp
         cpp/lib/result_set.cpp
         cpp/lib/result_set_arrow.cpp
         cpp/lib/result_set_json.cpp

@@ -10,7 +10,6 @@
 #include <string>
 
 #include "arrow/api.h"
-#include "arrow/util/base64.h"
 
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
@@ -62,22 +61,19 @@ struct ArrowColumn
     // Arrow data type of the column.
     std::shared_ptr<arrow::DataType> type;
 
-    // Anonymous union representing the array data of the column.
-    union
-    {
-        arrow::BinaryArray     * arrowBinary;
-        arrow::BooleanArray    * arrowBoolean;
-        arrow::Date32Array     * arrowDate32;
-        arrow::Date64Array     * arrowDate64;
-        arrow::Decimal128Array * arrowDecimal128;
-        arrow::DoubleArray     * arrowDouble;
-        arrow::Int8Array       * arrowInt8;
-        arrow::Int16Array      * arrowInt16;
-        arrow::Int32Array      * arrowInt32;
-        arrow::Int64Array      * arrowInt64;
-        arrow::StringArray     * arrowString;
-        ArrowTimestampArray    * arrowTimestamp;
-    };
+    // The array data of the columns. Each instance of ArrowColumn should only have one populated.
+    arrow::BinaryArray     * arrowBinary;
+    arrow::BooleanArray    * arrowBoolean;
+    arrow::Date32Array     * arrowDate32;
+    arrow::Date64Array     * arrowDate64;
+    arrow::Decimal128Array * arrowDecimal128;
+    arrow::DoubleArray     * arrowDouble;
+    arrow::Int8Array       * arrowInt8;
+    arrow::Int16Array      * arrowInt16;
+    arrow::Int32Array      * arrowInt32;
+    arrow::Int64Array      * arrowInt64;
+    arrow::StringArray     * arrowString;
+    ArrowTimestampArray    * arrowTimestamp;
 };
 
 /**
@@ -130,28 +126,43 @@ struct ArrowColumn
 class ArrowChunkIterator
 {
 public:
+
     /**
      * Default constructor.
+     *
+     * Generally not used.
      */
-    ArrowChunkIterator() = default;
+    ArrowChunkIterator();
 
     /**
      * Parameterized constructor.
      *
-     * This constructor is used when the first chunk of the result set and metadata are
-     * available to be passed.
+     * This constructor is used when the metadata is available to be passed.
+     * A call to appendChunk() with the initial chunk as the argument should always follow.
      *
-     * @param initialChunk    The set of columns retrieved as a RecordBatch.
      * @param metadata        The column metadata retrieved from the Snowflake DB.
+     * @param tzString        The time zone.
      */
-    ArrowChunkIterator(
-        std::vector<std::shared_ptr<arrow::RecordBatch>> * initialChunk,
-        SF_COLUMN_DESC * metadata);
+    ArrowChunkIterator(SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
      */
     ~ArrowChunkIterator() = default;
+
+    /**
+     * Helper method to update bookkeeping members that track total counts.
+     *
+     * Must be called before every call to appendChunk().
+     *
+     * @param chunk           The given chunk.
+     * @param out_colCount         The total number of columns in the chunk.
+     * @param out_rowCount         The total number of rows in the chunk.
+     */
+    void updateCounts(
+        std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk,
+        size_t * out_colCount,
+        size_t * out_rowCount);
 
     /**
      * Appends the given chunk to the internal result set.
@@ -161,6 +172,9 @@ public:
      * - snowflake_fetch(), which prompts the chunk downloader object
      *                      to continue fetching chunks.
      *
+     * In addition, also write the updated number of columns and rows in the chunk
+     * to the provided buffers.
+     *
      * @param chunk                The chunk to append.
      *
      * @return 0 if successful, otherwise an error is returned.
@@ -169,6 +183,9 @@ public:
 
     /**
      * Gets the value of the given cell as an sf_bool.
+     *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -181,6 +198,14 @@ public:
     /**
      * Gets the value of the given cell as an int8.
      *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DECIMAL128
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -191,6 +216,14 @@ public:
 
     /**
      * Gets the value of the given cell as an int32.
+     *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DECIMAL128
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -203,6 +236,13 @@ public:
     /**
      * Gets the value of the given cell as an int64.
      *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -213,6 +253,14 @@ public:
 
     /**
      * Gets the value of the given cell as a uint8.
+     *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DECIMAL128
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -225,6 +273,14 @@ public:
     /**
      * Gets the value of the given cell as a uint32.
      *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DECIMAL128
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -235,6 +291,13 @@ public:
 
     /**
      * Gets the value of the given cell as a uint64.
+     *
+     * This API method supports conversion for the following data types:
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -247,6 +310,11 @@ public:
     /**
      * Gets the value of the given cell as a float32.
      *
+     * This API method supports conversion for the following data types:
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -258,6 +326,11 @@ public:
     /**
      * Gets the value of the given cell as a float64.
      *
+     * This API method supports conversion for the following data types:
+     * - DOUBLE
+     * - INT8, INT16, INT32, INT64
+     * - STRING
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -268,6 +341,9 @@ public:
 
     /**
      * Gets the value of the given cell as a constant C-string.
+     *
+     * This API method supports conversion for the following data types:
+     * - STRING
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -284,15 +360,13 @@ public:
      * reallocated and replaced with one with a suitable capacity. In this event, io_capacity
      * will contain the new capacity.
      *
-     * This API method should support string conversion for various data types.
-     * This is currently not handled yet.
-     *
-     * In the C API, the following conversions are done:
-     *
-     * - Boolean
-     * - Date
-     * - Time
-     * - Timestamp (LTZ, NTZ, TZ)
+     * This API method supports conversion for the following data types:
+     * - BINARY
+     * - BOOLEAN
+     * - DATE32, DATE64
+     * - DECIMAL128
+     * - INT8, INT16, INT32, INT64
+     * - STRUCT
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
@@ -312,6 +386,9 @@ public:
     /**
      * Gets the value of the given cell as a timestamp.
      *
+     * This API method supports conversion for the following data types:
+     * - Timestamp
+     *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
@@ -319,6 +396,17 @@ public:
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL getCellAsTimestamp(uint32 colIdx, uint32 rowIdx, SF_TIMESTAMP * out_data);
+
+    /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param colIdx               The index of the column to get.
+     * @param rowIdx               The index of the row to get.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCellStrlen(uint32 colIdx, uint32 rowIdx, size_t * out_data);
 
     /**
      * Returns the Arrow data type of the column associated with the given column index.
@@ -330,15 +418,6 @@ public:
     std::shared_ptr<arrow::DataType> getColumnArrowDataType(uint32 colIdx);
 
     /**
-     * Returns the Snowflake data type of the column associated with the given column index.
-     *
-     * @param colIdx          The index to the column whose data type to retrieve.
-     *
-     * @return the Snowflake data type of the column.
-     */
-    SF_DB_TYPE getColumnSnowflakeDataType(uint32 colIdx);
-
-    /**
      * Gets the row count of the current chunk.
      *
      * Used in conjunction with the library function:
@@ -347,7 +426,19 @@ public:
      */
     size_t getRowCountInChunk();
 
+    /**
+     * Indicates whether the current cell is null.
+     *
+     * @param colIdx               The index of the column to check.
+     * @param rowIdx               The index of the row to check.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL isCellNull(uint32 colIdx, uint32 rowIdx, sf_bool * out_data);
+
 protected:
+
     /**
      * Schema of the result set.
      */
@@ -359,6 +450,22 @@ protected:
     std::vector<std::shared_ptr<ArrowColumn>> m_columns;
 
 private:
+
+    /**
+     * Writes the column data at the given cell to the provided ArrowColumn buffer.
+     *
+     * @param colIdx          The index of the column of the cell to retrieve.
+     * @param rowIdx          The index of the row of the cell to retrieve.
+     * @param out_cellIdx     A buffer to write the index of the ArrowColumn that the requested cell
+     *                        is located at. If the cell could not be found, then this value is -1.
+     *
+     * @return a pointer to the ArrowColumn object to write to.
+     *         If the requested cell could not be found, then nullptr is returned.
+     */
+    std::shared_ptr<ArrowColumn> getColumn(uint32 colIdx, uint32 rowIdx, int32 * out_cellIdx);
+
+    // Private members =============================================================================
+
     /**
      * Total number of record batches in the result set.
      */
@@ -401,6 +508,11 @@ private:
     SF_COLUMN_DESC * m_metadata;
 
     /**
+     * The tz string to use when dealing with time or timestamp values.
+     */
+    std::string m_tzString;
+
+    /**
      * Associates row indices with batch indices to allow for faster retrieval of columns.
      *
      * Key: batch index.
@@ -427,25 +539,6 @@ private:
      * Indicates if the first batch has been consumed or not.
      */
     bool m_isFirstBatch;
-
-    /**
-     * Helper method to update bookkeeping members that track total counts.
-     *
-     * @param chunk           The given chunk.
-     */
-    void updateCounts(std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk);
-
-    /**
-     * Writes the column data at the given cell to the provided ArrowColumn buffer.
-     *
-     * @param colIdx          The index of the column of the cell to retrieve.
-     * @param rowIdx          The index of the row of the cell to retrieve.
-     * @param out_colData     A pointer to the ArrowColumn object to write into.
-     *
-     * @return the index of ArrowColumn that the requested cell is located at.
-     *         If the cell could not be found, then this value is -1.
-     */
-    int32 getColumn(uint32 colIdx, uint32 rowIdx, std::shared_ptr<ArrowColumn> out_colData);
 
 };
 

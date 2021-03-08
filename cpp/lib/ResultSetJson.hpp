@@ -37,9 +37,6 @@ public:
     /**
      * Parameterized constructor.
      *
-     * This class takes ownership of the "initialChunk" and "chunkDownloader" pointers.
-     * Upon invoking the destructor, these resources will be deleted.
-     *
      * @param initialChunk              A pointer to the JSON array containing result set data.
      * @param metadata                  A pointer to the metadata of the result set.
      * @param tzString                  The time zone.
@@ -69,18 +66,13 @@ public:
     SF_STATUS STDCALL finishResultSet();
 
     /**
-     * Advances the internal column index to the next column.
+     * Advances the internal iterators to the next cell.
+     *
+     * Note that JSON data is stored row-wise, as retrieved.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL nextColumn();
-
-    /**
-     * Advances the internal row index to the next row.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL nextRow();
+    SF_STATUS STDCALL next();
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -196,6 +188,15 @@ public:
     SF_STATUS STDCALL getCurrCellAsTimestamp(SF_TIMESTAMP * out_data);
 
     /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL getCurrCellStrlen(size_t * out_data);
+
+    /**
      * Gets the current row.
      *
      * Used in the client function snowflake_fetch() when updating the statement
@@ -212,14 +213,16 @@ public:
      */
     size_t getRowCountInChunk();
 
-private:
-
     /**
-     * Helper method to initialize the result set data.
+     * Indicates whether the current cell is null.
      *
-     * @param initialChunk         The initial chunk of the result set.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
      */
-    void init(cJSON * initialChunk);
+    SF_STATUS STDCALL isCurrCellNull(sf_bool * out_data);
+
+private:
 
     /**
      * Helper method to retrieve the value at a given cell.

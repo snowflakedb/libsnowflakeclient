@@ -77,24 +77,14 @@ extern "C" {
     SF_STATUS STDCALL rs_finish_result_set(void * rs, QueryResultFormat_t * query_result_format);
 
     /**
-     * Advances to the next column.
+     * Advances to the next cell.
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_next_column(void * rs, QueryResultFormat_t * query_result_format);
-
-    /**
-     * Advances to the next row.
-     *
-     * @param rs                   The ResultSet object.
-     * @param query_result_format  The query result format.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_next_row(void * rs, QueryResultFormat_t * query_result_format);
+    SF_STATUS STDCALL rs_next(void * rs, QueryResultFormat_t * query_result_format);
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -260,13 +250,27 @@ extern "C" {
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
      * @param out_data             The buffer to write to.
-    *
+     *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL rs_get_curr_cell_as_timestamp(
         void * rs,
         QueryResultFormat_t * query_result_format,
         SF_TIMESTAMP * out_data);
+
+    /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param rs                   The ResultSet object.
+     * @param query_result_format  The query result format.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_get_curr_cell_strlen(
+        void * rs,
+        QueryResultFormat_t * query_result_format,
+        size_t * out_data);
 
     /**
      * Get the data in the current row as a cJSON struct.
@@ -296,6 +300,20 @@ extern "C" {
      * @return the number of rows in the result set.
      */
     size_t rs_get_total_row_count(void * rs, QueryResultFormat_t * query_result_format);
+
+    /**
+     * Indiciates whether the current cell is null or not.
+     *
+     * @param rs                   The ResultSet object.
+     * @param query_result_format  The query result format.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_is_curr_cell_null(
+        void * rs,
+        QueryResultFormat_t * query_result_format,
+        sf_bool * out_data);
 
 #ifdef __cplusplus
 } // extern "C"

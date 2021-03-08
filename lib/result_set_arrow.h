@@ -62,22 +62,13 @@ extern "C" {
     SF_STATUS STDCALL rs_arrow_finish_result_set(rs_arrow_t * rs);
 
     /**
-     * Advances to the next column.
+     * Advances to the next cell.
      *
      * @param rs                   The ResultSetArrow object.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_next_column(rs_arrow_t * rs);
-
-    /**
-     * Advances to the next row.
-     *
-     * @param rs                   The ResultSetArrow object.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_arrow_next_row(rs_arrow_t * rs);
+    SF_STATUS STDCALL rs_arrow_next(rs_arrow_t * rs);
 
     /**
      * Writes the value of the current cell as a boolean to the provided buffer.
@@ -228,6 +219,16 @@ extern "C" {
         SF_TIMESTAMP * out_data);
 
     /**
+     * Writes the length of the current cell to the provided buffer.
+     *
+     * @param rs                   The ResultSetArrow object.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_arrow_get_curr_cell_strlen(rs_arrow_t * rs, size_t * out_data);
+
+    /**
      * Gets the number of rows in the current chunk being processed.
      *
      * @param rs                   The ResultSetArrow object.
@@ -244,6 +245,16 @@ extern "C" {
      * @return the number of rows in the result set.
      */
     size_t rs_arrow_get_total_row_count(rs_arrow_t * rs);
+
+    /**
+     * Indiciates whether the current cell is null or not.
+     *
+     * @param rs                   The ResultSetArrow object.
+     * @param out_data             The buffer to write to.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL rs_arrow_is_curr_cell_null(rs_arrow_t * rs, sf_bool * out_data);
 
 #ifdef __cplusplus
 } // extern "C"

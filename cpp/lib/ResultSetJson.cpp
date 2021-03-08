@@ -29,7 +29,10 @@ ResultSetJson::ResultSetJson(
     ResultSet(metadata, tzString)
 {
     m_queryResultFormat = QueryResultFormat::JSON;
-    this->init(initialChunk);
+    m_totalColumnCount = snowflake_cJSON_GetArraySize(
+        snowflake_cJSON_GetArrayItem(initialChunk, 0));
+    m_records = snowflake_cJSON_CreateArray();
+    this->appendChunk(initialChunk);
 }
 
 ResultSetJson::~ResultSetJson()
@@ -47,15 +50,17 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
         return SF_STATUS_ERROR_NULL_POINTER;
     }
 
-    while (m_currChunkRowIdx < snowflake_cJSON_GetArraySize(chunk))
+    if (!snowflake_cJSON_IsArray(chunk))
     {
-        cJSON * currRow = snowflake_cJSON_GetArrayItem(chunk, m_currChunkRowIdx);
-        snowflake_cJSON_AddItemToArray(m_records, currRow);
-        m_currChunkRowIdx++;
+        CXX_LOG_ERROR("Given chunk is not of type array.");
+        return SF_STATUS_ERROR_OTHER;
     }
 
-    m_rowCountInChunk = m_currChunkRowIdx;
-    m_currChunkRowIdx = 0;
+    snowflake_cJSON_AddItemToArray(m_records, chunk->child);
+    m_rowCountInChunk = snowflake_cJSON_GetArraySize(chunk);
+    m_totalChunkCount++;
+    m_totalRowCount += m_rowCountInChunk;
+    CXX_LOG_DEBUG("Appended chunk of size %d.", m_rowCountInChunk, chunk->child);
 
     return SF_STATUS_SUCCESS;
 }
@@ -69,21 +74,22 @@ SF_STATUS STDCALL ResultSetJson::finishResultSet()
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ResultSetJson::nextColumn()
+SF_STATUS STDCALL ResultSetJson::next()
 {
-    if (m_currColumnIdx >= m_totalColumnCount)
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    if (m_currColumnIdx == m_totalColumnCount - 1)
+    {
+        if (m_currRowIdx == m_totalRowCount - 1)
+        {
+            CXX_LOG_DEBUG("Already advanced to end of result set.");
+            return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        }
+
+        m_currRowIdx++;
+        m_currColumnIdx = 0;
+        return SF_STATUS_SUCCESS;
+    }
 
     m_currColumnIdx++;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL ResultSetJson::nextRow()
-{
-    if (m_currRowIdx >= m_totalRowCount)
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-
-    m_currRowIdx++;
     return SF_STATUS_SUCCESS;
 }
 
@@ -272,7 +278,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint32(uint32 * out_data)
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    bool isNeg = std::strchr(rawData->valuestring, '-') != NULL ? true : false;
+    bool isNeg = std::strchr(rawData->valuestring, '-') != nullptr ? true : false;
 
     if (((value == 0 || value == ULONG_MAX) && errno == ERANGE)
         || (isNeg && value < (SF_UINT64_MAX - SF_UINT32_MAX))
@@ -399,7 +405,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsConstString(const char ** out_data
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        *out_data = "";
         return SF_STATUS_SUCCESS;
     }
 
@@ -411,40 +417,46 @@ SF_STATUS STDCALL
 ResultSetJson::getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity)
 {
     cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
-    std::string strValue = std::string(snowflake_cJSON_GetStringValue(rawData));
 
     if (snowflake_cJSON_IsNull(rawData))
     {
-        CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        CXX_LOG_DEBUG(
+            "Cell at row %d, column %d is null. Writing as empty string.",
+            m_currRowIdx, m_currColumnIdx);
+
+        // Trivial allocation if necessary.
+        if (io_len == nullptr)
+            io_len = new size_t;
+        *io_len = 0;
+
+        if (io_capacity == nullptr)
+            io_capacity = new size_t;
+        *io_capacity = 1;
+
+        if (*out_data != nullptr)
+            delete *out_data;
+        *out_data = new char[*io_capacity];
+        (*out_data)[0] = '\0';
+
         return SF_STATUS_SUCCESS;
     }
 
-    // Check if there is a pre-allocated buffer passed.
-    bool isPreallocated = out_data != nullptr
-        && io_capacity != nullptr
-        && io_capacity > 0;
-
-    // Allocate a new buffer if there is no pre-allocated buffer,
-    // or if the provided buffer is not of adequate size.
-    if (!isPreallocated)
+    char * strValue = snowflake_cJSON_GetStringValue(rawData);
+    switch (m_metadata[m_currColumnIdx].type)
     {
-        io_capacity = new size_t;
-        *io_capacity = strValue.size();
-        *out_data = new char[*io_capacity];
+        case SF_DB_TYPE_BOOLEAN:
+            return convertBoolToString(strValue, out_data, io_len, io_capacity);
+        case SF_DB_TYPE_DATE:
+            return convertDateToString(strValue, out_data, io_len, io_capacity);
+        case SF_DB_TYPE_TIME:
+        case SF_DB_TYPE_TIMESTAMP_LTZ:
+        case SF_DB_TYPE_TIMESTAMP_NTZ:
+        case SF_DB_TYPE_TIMESTAMP_TZ:
+            return convertTimeToString(strValue, out_data, io_len, io_capacity);
+        default:
+            std::strcpy(*out_data, strValue);
+            return SF_STATUS_SUCCESS;
     }
-
-    if (isPreallocated && *io_len > *io_capacity)
-    {
-        *io_capacity = strValue.size();
-        delete out_data;
-        *out_data = new char[*io_capacity];
-    }
-
-    // Support conversion from other data types.
-    std::strcpy(*out_data, strValue.c_str());
-
-    return SF_STATUS_SUCCESS;
 }
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data)
@@ -477,6 +489,20 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data)
     }
 }
 
+SF_STATUS STDCALL ResultSetJson::getCurrCellStrlen(size_t * out_data)
+{
+    char * strValue = nullptr;
+    size_t len = 0;
+    size_t capacity = 0;
+
+    SF_STATUS status = this->getCurrCellAsString(&strValue, &len, &capacity);
+    if (status != SF_STATUS_SUCCESS)
+        return status;
+
+    *out_data = std::strlen(strValue);
+    return SF_STATUS_SUCCESS;
+}
+
 cJSON * ResultSetJson::getCurrRow()
 {
     return snowflake_cJSON_GetArrayItem(m_records, m_currRowIdx);
@@ -487,16 +513,20 @@ size_t ResultSetJson::getRowCountInChunk()
     return m_rowCountInChunk;
 }
 
-// Private methods =================================================================================
-
-void ResultSetJson::init(cJSON * initialChunk)
+SF_STATUS STDCALL ResultSetJson::isCurrCellNull(sf_bool * out_data)
 {
-    this->appendChunk(initialChunk);
+    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    *out_data = snowflake_cJSON_IsNull(rawData) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+
+    return SF_STATUS_SUCCESS;
 }
+
+// Private methods =================================================================================
 
 cJSON * ResultSetJson::getCellValue(uint32 rowIdx, uint32 colIdx)
 {
-    cJSON * rowData = snowflake_cJSON_GetArrayItem(m_records, m_currRowIdx);
+    CXX_LOG_DEBUG("getCellValue -- Retrieving cell at row %d, column %d.", rowIdx, colIdx);
+    cJSON * rowData = snowflake_cJSON_GetArrayItem(m_records, rowIdx);
     return snowflake_cJSON_GetArrayItem(rowData, colIdx);
 }
 
