@@ -329,15 +329,13 @@ typedef struct SF_STATS {
  * For certain applications, we may wish to capture
  * the raw response after issuing a query to Snowflake.
  * This is a structure used for capturing the results.
- * Note that the caller is responsible for managing the memory
- * used for this, and that these should always be constructed
- * with snowflake_query_result_capture_init().
+ * Note that these should always be constructed
+ * with snowflake_query_result_capture_init(), and be
+ * destructed with snowflake_query_result_capture_term().
  */
 typedef struct SF_QUERY_RESULT_CAPTURE {
     // The buffer for storing the results
     char* capture_buffer;
-    // Size of the buffer
-    size_t buffer_size;
     // Actual response size
     size_t actual_response_size;
 } SF_QUERY_RESULT_CAPTURE;
@@ -682,6 +680,15 @@ SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
  */
 SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
         SF_QUERY_RESULT_CAPTURE* result_capture);
+
+/**
+ * Executes a statement with capture in describe only mode.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
+                                                  SF_QUERY_RESULT_CAPTURE *result_capture);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer

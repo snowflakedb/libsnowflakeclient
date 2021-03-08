@@ -341,18 +341,8 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
                     strerror(errno));
             goto cleanup;
         }
-        // Open log file
-        LOG_FP = fopen(LOG_PATH, "w+");
-        if (LOG_FP) {
-            // Set log file
-            log_set_fp(LOG_FP);
-        } else {
-            fprintf(stderr,
-                    "Error opening file from file path: %s\nError code: %s\n",
-                    LOG_PATH, strerror(errno));
-            goto cleanup;
-        }
-
+        // Set the log path only, the log file will be created when actual log output is needed.
+        log_set_path(LOG_PATH);
     } else {
         fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
@@ -369,11 +359,8 @@ cleanup:
  * Cleans up memory allocated for log init and closes log file.
  */
 static void STDCALL log_term() {
+    log_close();
     SF_FREE(LOG_PATH);
-    if (LOG_FP) {
-        fclose(LOG_FP);
-        log_set_fp(NULL);
-    }
     _mutex_term(&gmlocaltime_lock);
     _mutex_term(&log_lock);
 }
@@ -1335,7 +1322,6 @@ void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **init)
     SF_QUERY_RESULT_CAPTURE *capture = (SF_QUERY_RESULT_CAPTURE *) SF_CALLOC(1, sizeof(SF_QUERY_RESULT_CAPTURE));
 
     capture->capture_buffer = NULL;
-    capture->buffer_size = 0;
     capture->actual_response_size = 0;
 
     *init = capture;
@@ -1370,7 +1356,7 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input)
  */
 void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture) {
     if (capture) {
-        capture->capture_buffer = NULL;
+        SF_FREE(capture->capture_buffer);
         SF_FREE(capture);
     }
 }
@@ -1674,7 +1660,6 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
 
 SF_STATUS STDCALL
 snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size) {
-    log_debug("enter snowflake_prepare");
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1704,18 +1689,23 @@ cleanup:
     return ret;
 }
 
+SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
+                                                  SF_QUERY_RESULT_CAPTURE *result_capture) {
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_TRUE);
+}
+
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
-                                        SF_QUERY_RESULT_CAPTURE* result_capture) {
-    log_debug("enter snowflake_execute_ex");
+                                        SF_QUERY_RESULT_CAPTURE* result_capture,
+                                        sf_bool is_describe_only) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1819,7 +1809,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
                                   is_string_empty(sfstmt->connection->directURL) ?
-                                  NULL : sfstmt->request_id);
+                                  NULL : sfstmt->request_id, is_describe_only);
     if (bindings != NULL) {
         /* binding parameters if exists */
       snowflake_cJSON_AddItemToObject(body, "bindings", bindings);
@@ -1835,17 +1825,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
+        // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
-        if (result_capture != NULL && result_capture->capture_buffer != NULL) {
-            size_t resp_size = strlen(s_resp) + 1;
-            if (result_capture->buffer_size < resp_size) {
-                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
-            }
-            sb_strncpy(result_capture->capture_buffer, resp_size, s_resp, resp_size);
-            result_capture->actual_response_size = resp_size;
+        if (result_capture != NULL) {
+            result_capture->capture_buffer = s_resp;
+            result_capture->actual_response_size = strlen(s_resp) + 1;
         }
 
         data = snowflake_cJSON_GetObjectItem(resp, "data");
@@ -2084,8 +2071,17 @@ cleanup:
     snowflake_cJSON_Delete(body);
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
-    SF_FREE(s_resp);
     SF_FREE(qrmk);
+    if (result_capture == NULL) {
+        // If no result capture, we always free s_resp
+        SF_FREE(s_resp);
+    } else if (ret != SF_STATUS_SUCCESS) {
+        // If result capture failed, free s_resp.
+        SF_FREE(s_resp);
+        // reset states of result_capture to avoid potential double free of capture_buffer.
+        result_capture->capture_buffer = NULL;
+        result_capture->actual_response_size = 0;
+    } // If result capture succeeded, we don't need to free s_resp.
 
     return ret;
 }

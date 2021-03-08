@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
@@ -34,6 +35,7 @@ static struct {
     FILE *fp;
     int level;
     int quiet;
+    const char *path;
 } L;
 
 
@@ -131,18 +133,33 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         // console and file logging are turned on.
         va_list copy;
         va_copy(copy, args);
-        vfprintf(stderr, fmt, copy);
+        log_masked_va_list(stderr, fmt, copy);
         va_end(copy);
         fprintf(stderr, "\n");
         fflush(stderr);
     }
 
     /* Log to file */
+    /* Delay the log file creation to when there is log needs to write
+     * to avoid empty log files.
+     */
+    if (!(L.fp) && L.path)
+    {
+        L.fp = fopen(L.path, "w+");
+        if (!(L.fp))
+        {
+            fprintf(stderr,
+                "Error opening file from file path: %s\nError code: %s\n",
+                L.path, strerror(errno));
+            L.path = NULL;
+        }
+    }
+
     if (L.fp) {
         fprintf(
             L.fp, SF_LOG_TIMESTAMP_FORMAT,
             tsbuf, level_names[level], ns, basename, line);
-        vfprintf(L.fp, fmt, args);
+        log_masked_va_list(L.fp, fmt, args);
         fprintf(L.fp, "\n");
         fflush(L.fp);
     }
@@ -165,3 +182,21 @@ SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
     return SF_LOG_FATAL;
 }
 
+void log_set_path(const char *path) {
+    L.path = path;
+}
+
+void log_close() {
+    /* Acquire lock */
+    lock();
+
+    if (L.fp)
+    {
+        fclose(L.fp);
+        L.fp = NULL;
+    }
+    L.path = NULL;
+
+    /* Release lock */
+    unlock();
+}

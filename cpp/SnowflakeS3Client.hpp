@@ -132,6 +132,11 @@ private:
   unsigned int m_parallel;
 
   /**
+   * Max retries for multipart upload
+   */
+  unsigned int m_maxRetries;
+
+  /**
    * Add snowflake specific metadata to the put object metadata.
    * This includes encryption metadata and source file
    * message digest (after compression)
@@ -159,6 +164,8 @@ private:
   void uploadParts(MultiUploadCtx * uploadCtx);
 
   RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
+
+  void setMaxRetries(unsigned int maxRetries);
 };
 }
 }

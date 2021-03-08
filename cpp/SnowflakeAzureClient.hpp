@@ -140,6 +140,7 @@ private:
   void uploadParts(MultiUploadCtx_a * uploadCtx);
 
   //RemoteStorageRequestOutcome handleError(const Aws::Client::AWSError<Aws::S3::S3Errors> &error);
+
 };
 }
 }
