@@ -46,13 +46,13 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
 {
     if (chunk == nullptr)
     {
-        CXX_LOG_ERROR("Received a null chunk to append.");
+        CXX_LOG_ERROR("appendChunk -- Received a null chunk to append.");
         return SF_STATUS_ERROR_NULL_POINTER;
     }
 
     if (!snowflake_cJSON_IsArray(chunk))
     {
-        CXX_LOG_ERROR("Given chunk is not of type array.");
+        CXX_LOG_ERROR("appendChunk -- Given chunk is not of type array.");
         return SF_STATUS_ERROR_OTHER;
     }
 
@@ -60,7 +60,7 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
     m_rowCountInChunk = snowflake_cJSON_GetArraySize(chunk);
     m_totalChunkCount++;
     m_totalRowCount += m_rowCountInChunk;
-    CXX_LOG_DEBUG("Appended chunk of size %d.", m_rowCountInChunk, chunk->child);
+    CXX_LOG_DEBUG("appendChunk -- Appended chunk of size %d.", m_rowCountInChunk, chunk->child);
 
     return SF_STATUS_SUCCESS;
 }
@@ -80,7 +80,7 @@ SF_STATUS STDCALL ResultSetJson::next()
     {
         if (m_currRowIdx == m_totalRowCount - 1)
         {
-            CXX_LOG_DEBUG("Already advanced to end of result set.");
+            CXX_LOG_DEBUG("next -- Already advanced to end of result set.");
             return SF_STATUS_ERROR_OUT_OF_BOUNDS;
         }
 
@@ -100,7 +100,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsBool(sf_bool * out_data)
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        *out_data = SF_BOOLEAN_FALSE;
         return SF_STATUS_SUCCESS;
     }
 
@@ -178,7 +178,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt32(int32 * out_data)
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -213,7 +213,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt64(int64 * out_data)
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -274,7 +274,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint32(uint32 * out_data)
     if (endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to uint32.");
-        out_data = nullptr;
+        *out_data = 0;
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
@@ -304,7 +304,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint64(uint64 * out_data)
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        out_data = nullptr;
+        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -467,7 +467,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data)
     if (snowflake_cJSON_IsNull(rawData))
     {
         CXX_LOG_DEBUG("Cell at row %d, column %d is null.", m_currRowIdx, m_currColumnIdx);
-        return snowflake_timestamp_from_parts(out_data, 0, 9, 0, 0, 1, 1, 1970, 0, 9, db_type);
+        return snowflake_timestamp_from_parts(out_data, 0, 0, 0, 0, 1, 1, 1970, 0, 9, db_type);
     }
 
     if (db_type == SF_DB_TYPE_DATE
