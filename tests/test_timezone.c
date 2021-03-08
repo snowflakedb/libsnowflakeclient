@@ -36,6 +36,7 @@ void test_timezone(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_const_str(sfstmt, 2, &c2buf);
+        snowflake_next(sfstmt);
         assert_string_equal(local_timezone, c2buf);
     }
     if (status != SF_STATUS_EOF) {

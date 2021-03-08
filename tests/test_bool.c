@@ -112,13 +112,16 @@ void test_bool(void **unused) {
     size_t c2_max_size = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
+        snowflake_next(sfstmt);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         if (v.c2in != NULL) {
             snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+            snowflake_next(sfstmt);
             assert_string_equal(v.c2out, c2);
         } else {
             sf_bool is_null;
             snowflake_column_is_null(sfstmt, 2, &is_null);
+            snowflake_next(sfstmt);
             assert_true(v.c2_is_null == is_null);
         }
     }

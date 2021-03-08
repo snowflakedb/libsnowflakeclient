@@ -55,13 +55,7 @@ void test_arrow_string(void **unused) {
     const char * escape_single_quote_out = "'Single-quotes escaped with backslash'";
     const char * double_quote            = "\"Double-quotes escaped with backslash\"";
     // Special characters.
-    // Note: Seems that most of the non-ASCII cases cause a failure with cURL.
     const char * ascii_punc       = ",./;\'[]\\-=<>?:\"{}|_+!@#$%^&*()`~";
-    const char * unicode_a        = "Ω≈ç√∫˜µ≤≥÷åß∂ƒ©˙∆˚¬…æœ∑´®";
-    const char * unicode_b        = "ЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИ";
-    const char * two_byte_char_cn = "𠜎𠜱𠝹𠱓𠱸𠲖𠳏";
-    const char * two_byte_char_jp = "田中さんにあげて下さい";
-    const char * kaomoji          = "(╯°□°）╯︵ ┻━┻)";
     // Injection.
     const char * sql_injection_a = "1;DROP TABLE t";
     const char * sql_injection_b = "1'; DROP TABLE t-- 1";

@@ -145,13 +145,16 @@ void test_timestamp_ntz_helper(sf_bool useZeroPrecision){
         }
         while (v.error_code != (SF_STATUS)0);
         assert_int_equal(status, SF_STATUS_SUCCESS);
+        snowflake_next(sfstmt);
         if (v.c2out == NULL) {
             // expecting NULL
             snowflake_column_is_null(sfstmt, 2, &is_null);
+            snowflake_next(sfstmt);
             assert_true(is_null);
         } else {
             // expecting not null
             snowflake_column_as_str(sfstmt, 2, &c2buf, &c2buf_len, &c2buf_max_size);
+            snowflake_next(sfstmt);
             assert_string_equal(v.c2out, c2buf);
         }
     }
