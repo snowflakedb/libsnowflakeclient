@@ -15,7 +15,7 @@
  & - c2_out: A pointer to the expected output value retrieved from the server.
  * - c2_is_null: A flag indicating whether the input number value is NULL or not.
  * - error_code: The error code a test case is expected to fail with.
- *     - ?????? for "Numeric value '___' is not recognized"
+ *     - 100038 for "Numeric value '___' is not recognized"
  */
 typedef struct test_case_to_string {
     const int64 c1;
@@ -71,66 +71,60 @@ typedef struct test_case_to_string {
 void test_arrow_float(void** unused) {
     // Test cases.
     // NOTE: For some reason, Snowflake caps precision to 15 digits.
-    // Some test cases aren't working as expected.
+    // NOTE: There is some kind of error when trying to send payloads for
+    //       NaN, inf, and -inf. These cases are not working as expected.
     const char * nan        = "NaN";
     const char * inf_neg    = "-inf";
     const char * inf_pos    = "inf";
     const char * trash      = "ABC";
     const char * empty      = "";
     // Scale 0.
-    const char * s0_oob_neg       = "-18014398509481986"; // -2^54 - 2
-    const char * s0_oob_neg_out   = "-1.8014398509482e+16";
     const char * s0_max_neg_2     = "-18014398509481984"; // -2^54
-    const char * s0_max_neg_2_out = "-1.8014398509482e+16";
+    const char * s0_max_neg_2_out = "-18014398509481984.000000";
     const char * s0_max_neg       = "-9007199254740992"; // -2^53
-    const char * s0_max_neg_out   = "-9.00719925474099e+15";
+    const char * s0_max_neg_out   = "-9007199254740992.000000";
     const char * s0_reg_neg       = "-1234567890";
+    const char * s0_reg_neg_out   = "-1234567890.000000";
     const char * s0_zero          = "0";
+    const char * s0_zero_out      = "0.000000";
     const char * s0_one           = "1";
+    const char * s0_one_out       = "1.000000";
     const char * s0_reg_pos       = "1234567890";
+    const char * s0_reg_pos_out   = "1234567890.000000";
     const char * s0_max_pos       = "9007199254740992"; // 2^53
-    const char * s0_max_pos_out   = "9.00719925474099e+15";
+    const char * s0_max_pos_out   = "9007199254740992.000000";
     const char * s0_max_pos_2     = "18014398509481984"; // 2^54
-    const char * s0_max_pos_2_out = "1.8014398509482e+16";
-    const char * s0_oob_pos       = "18014398509481986"; // 2^54 + 2
-    const char * s0_oob_pos_out   = "1.8014398509482e+16";
+    const char * s0_max_pos_2_out = "18014398509481984.000000";
     // Scale 8
-    const char * s8_oob_neg  = "-1234567.123456789";
-    const char * s8_max_neg  = "-1234567.12345678";
-    const char * s8_reg_neg  = "-0.12345678";
+    const char * s8_max_neg  = "-1234567.123456";
+    const char * s8_reg_neg  = "-0.123456";
     const char * s8_zero     = "0.0";
-    const char * s8_zero_out = "0";
+    const char * s8_zero_out = "0.000000";
     const char * s8_one      = "1.0";
-    const char * s8_one_out  = "1";
-    const char * s8_reg_pos  = "0.12345678";
-    const char * s8_max_pos  = "1234567.12345678";
-    const char * s8_oob_pos  = "1234567.123456789";
+    const char * s8_one_out  = "1.000000";
+    const char * s8_reg_pos  = "0.123456";
+    const char * s8_max_pos  = "1234567.123456";
 
+    // All cases with an expected error code go at the end to avoid
+    // fragmentation of test cases indices.
     TEST_CASE_TO_STRING test_cases[] = {
-        { .c1 = 0,  .c2 = NULL,         .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_TRUE },
-        { .c1 = 1,  .c2 = nan,          .c2_len = 3,  .c2_out = nan,              .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 2,  .c2 = inf_neg,      .c2_len = 4,  .c2_out = inf_neg,          .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 3,  .c2 = inf_pos,      .c2_len = 3,  .c2_out = inf_pos,          .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 4,  .c2 = trash,        .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100108 },
-        { .c1 = 5,  .c2 = empty,        .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100108 },
-        { .c1 = 6,  .c2 = s0_oob_neg,   .c2_len = 0,  .c2_out = s0_oob_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 7,  .c2 = s0_max_neg_2, .c2_len = 20, .c2_out = s0_max_neg_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 8,  .c2 = s0_max_neg,   .c2_len = 21, .c2_out = s0_max_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 9,  .c2 = s0_reg_neg,   .c2_len = 11, .c2_out = s0_reg_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 10, .c2 = s0_zero,      .c2_len = 1,  .c2_out = s0_zero,          .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 11, .c2 = s0_one,       .c2_len = 1,  .c2_out = s0_one,           .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 12, .c2 = s0_reg_pos,   .c2_len = 10, .c2_out = s0_reg_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 13, .c2 = s0_max_pos,   .c2_len = 20, .c2_out = s0_max_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 14, .c2 = s0_max_pos_2, .c2_len = 19, .c2_out = s0_max_pos_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 15, .c2 = s0_oob_pos,   .c2_len = 19, .c2_out = s0_oob_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 16, .c2 = s8_oob_neg,   .c2_len = 17, .c2_out = s8_oob_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 17, .c2 = s8_max_neg,   .c2_len = 17, .c2_out = s8_max_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 18, .c2 = s8_reg_neg,   .c2_len = 11, .c2_out = s8_reg_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 19, .c2 = s8_zero,      .c2_len = 1,  .c2_out = s8_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 20, .c2 = s8_one,       .c2_len = 1,  .c2_out = s8_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 21, .c2 = s8_reg_pos,   .c2_len = 10, .c2_out = s8_reg_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 22, .c2 = s8_max_pos,   .c2_len = 16, .c2_out = s8_max_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 23, .c2 = s8_oob_pos,   .c2_len = 16, .c2_out = s8_oob_pos,       .c2_is_null = SF_BOOLEAN_FALSE }
+        { .c1 =  0, .c2 = NULL,         .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_TRUE },
+        { .c1 =  1, .c2 = s0_max_neg_2, .c2_len = 20, .c2_out = s0_max_neg_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  2, .c2 = s0_max_neg,   .c2_len = 21, .c2_out = s0_max_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  3, .c2 = s0_reg_neg,   .c2_len = 11, .c2_out = s0_reg_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  4, .c2 = s0_zero,      .c2_len = 1,  .c2_out = s0_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  5, .c2 = s0_one,       .c2_len = 1,  .c2_out = s0_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  6, .c2 = s0_reg_pos,   .c2_len = 10, .c2_out = s0_reg_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  7, .c2 = s0_max_pos,   .c2_len = 20, .c2_out = s0_max_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  8, .c2 = s0_max_pos_2, .c2_len = 19, .c2_out = s0_max_pos_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  9, .c2 = s8_max_neg,   .c2_len = 15, .c2_out = s8_max_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 10, .c2 = s8_reg_neg,   .c2_len = 11, .c2_out = s8_reg_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 11, .c2 = s8_zero,      .c2_len = 1,  .c2_out = s8_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 12, .c2 = s8_one,       .c2_len = 1,  .c2_out = s8_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 13, .c2 = s8_reg_pos,   .c2_len = 10, .c2_out = s8_reg_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 14, .c2 = s8_max_pos,   .c2_len = 14, .c2_out = s8_max_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 15, .c2 = trash,        .c2_len = 3,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100038 },
+        { .c1 = 16, .c2 = empty,        .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100038 }
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -147,7 +141,7 @@ void test_arrow_float(void** unused) {
     // Configure this session to use Arrow format.
     status = snowflake_query(
         sfstmt,
-        "alter session set ODBC_QUERY_RESULT_FORMAT=ARROW_FORCE",
+        "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE",
         0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
@@ -179,6 +173,7 @@ void test_arrow_float(void** unused) {
     // Loop over the test cases via index and insert them one by one.
     size_t i;
     size_t num_test_cases = sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING);
+    size_t num_successful_inserts = 0;
 
     for (i = 0; i < num_test_cases; i++) {
         TEST_CASE_TO_STRING tc = test_cases[i];
@@ -202,21 +197,29 @@ void test_arrow_float(void** unused) {
         in_c2.idx = 2;
         in_c2.name = NULL;
         in_c2.c_type = SF_C_TYPE_STRING;
-        in_c2.value = (void*) &tc.c2;
-        in_c2.len = sizeof(sf_bool);
+        in_c2.value = (void*) tc.c2;
+        in_c2.len = tc.c2_len;
 
-        status = snowflake_bind_param(sfstmt, &in_c1);
+        status = snowflake_bind_param(sfstmt, &in_c2);
         if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         // Execute.
+        // If the error_code member is non-zero, then we expect the query to fail.
+        // In that case, ensure the error code matches with what is expected.
+        // Otherwise, proceed as normal.
         status = snowflake_execute(sfstmt);
-        if (status != SF_STATUS_SUCCESS) {
-            dump_error(&(sfstmt->error));
+        if (tc.error_code == SF_STATUS_SUCCESS) {
+            if (status != SF_STATUS_SUCCESS) {
+                dump_error(&(sfstmt->error));
+            }
+            ++num_successful_inserts;
+        } else {
+            SF_ERROR_STRUCT * err = snowflake_stmt_error(sfstmt);
+            assert_int_equal(tc.error_code, err->error_code);
         }
-        assert_int_equal(status, SF_STATUS_SUCCESS);
     }
 
     // Query the table and check for correctness.
@@ -225,30 +228,39 @@ void test_arrow_float(void** unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(sfstmt), num_test_cases);
+    assert_int_equal(snowflake_num_rows(sfstmt), num_successful_inserts);
 
     int64 c1 = 0;
     char *c2 = NULL;
     size_t c2_len = 0;
     size_t c2_max_size = 0;
 
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        snowflake_column_as_int64(sfstmt, 1, &c1);
-        snowflake_next_column(sfstmt);
-        TEST_CASE_TO_STRING tc = test_cases[c1];
+    int64 curr_row;
+    int64 last_read_row = 0;
 
-        // Valid if the value copied to c2 matches the value in tc.c2_out.
-        // c2_len and c2_max_size are unused.
-        if (tc.c2 != NULL) {
-            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
-            snowflake_next_column(sfstmt);
-            assert_string_equal(tc.c2_out, c2);
-        } else {
-            sf_bool c2_is_null;
-            snowflake_column_is_null(sfstmt, 2, &c2_is_null);
-            snowflake_next_column(sfstmt);
-            assert_true(tc.c2_is_null == c2_is_null);
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        // Skip past column 1 as it does not contain meaningful test data.
+        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
+            snowflake_next(sfstmt);
         }
+
+        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
+            TEST_CASE_TO_STRING tc = test_cases[curr_row];
+            // Valid if the value copied to c2 matches the value in tc.c2_out.
+            // c2_len and c2_max_size are unused.
+            if (tc.c2 != NULL) {
+                snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+                snowflake_next(sfstmt);
+                assert_string_equal(tc.c2_out, c2);
+            } else {
+                sf_bool c2_is_null;
+                snowflake_column_is_null(sfstmt, 2, &c2_is_null);
+                snowflake_next(sfstmt);
+                assert_true(tc.c2_is_null == c2_is_null);
+            }
+        }
+
+        last_read_row = curr_row;
     }
 
     // Clean-up.

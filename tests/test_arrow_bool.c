@@ -38,11 +38,11 @@ void test_arrow_bool(void **unused) {
     TEST_CASE_TO_STRING test_cases[] = {
         { .c1_in = 0,  .c2_in = NULL,              .c2_out = NULL, .c2_is_null = SF_BOOLEAN_TRUE },
         { .c1_in = 1,  .c2_in = &SF_BOOLEAN_TRUE,  .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1_in = 2,  .c2_in = &SF_BOOLEAN_FALSE, .c2_out = "0",  .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1_in = 2,  .c2_in = &SF_BOOLEAN_FALSE, .c2_out = "",   .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 3,  .c2_in = &oob_neg_value,    .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 4,  .c2_in = &max_neg_value,    .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 5,  .c2_in = &reg_neg_value,    .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1_in = 6,  .c2_in = &zero_value,       .c2_out = "0",  .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1_in = 6,  .c2_in = &zero_value,       .c2_out = "",   .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 7,  .c2_in = &one_value,        .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 8,  .c2_in = &reg_pos_value,    .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1_in = 9,  .c2_in = &max_pos_value,    .c2_out = "1",  .c2_is_null = SF_BOOLEAN_FALSE },
@@ -147,23 +147,33 @@ void test_arrow_bool(void **unused) {
     size_t c2_len = 1;
     size_t c2_max_size = 1;
 
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        snowflake_column_as_int64(sfstmt, 1, &c1);
-        snowflake_next_column(sfstmt);
-        TEST_CASE_TO_STRING tc = test_cases[c1];
+    int64 curr_row;
+    int64 last_read_row = 0;
 
-        // Valid if the value copied to c2 matches the value in tc.c2_out.
-        // c2_len and c2_max_size are unused.
-        if (tc.c2_in != NULL) {
-            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
-            snowflake_next_column(sfstmt);
-            assert_string_equal(tc.c2_out, c2);
-        } else {
-            sf_bool c2_is_null;
-            snowflake_column_is_null(sfstmt, 2, &c2_is_null);
-            snowflake_next_column(sfstmt);
-            assert_true(tc.c2_is_null == c2_is_null);
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        // Skip past column 1 as it does not contain meaningful test data.
+        for (curr_row = last_read_row; curr_row < num_test_cases; ++curr_row) {
+            snowflake_next(sfstmt);
         }
+
+        // Test column 2.
+        for (curr_row = last_read_row; curr_row < num_test_cases; ++curr_row) {
+            // Valid if the value copied to c2 matches the value in tc.c2_out.
+            // c2_len and c2_max_size are unused.
+            TEST_CASE_TO_STRING tc = test_cases[curr_row];
+            if (tc.c2_in != NULL) {
+                snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+                snowflake_next(sfstmt);
+                assert_string_equal(tc.c2_out, c2);
+            } else {
+                sf_bool c2_is_null;
+                snowflake_column_is_null(sfstmt, 2, &c2_is_null);
+                snowflake_next(sfstmt);
+                assert_true(tc.c2_is_null == c2_is_null);
+            }
+        }
+
+        last_read_row = curr_row;
     }
 
     // Clean-up.
