@@ -768,7 +768,7 @@ ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32 rowIdx, const cha
                 colData, arrowType, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRUCT:
             return Conversion::Arrow::TimestampToConstString(
-                colData, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
+                colData, arrowType, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRING:
         {
             std::string strValue = colData->arrowString->GetString(cellIdx);
@@ -868,7 +868,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         case arrow::Type::type::STRUCT:
             CXX_LOG_DEBUG("Converting from STRUCT to STRING.");
             return Conversion::Arrow::TimestampToString(
-                colData, snowType, scale, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
+                colData, arrowType, snowType, scale,
+                colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::STRING:
         {
             CXX_LOG_DEBUG("Writing STRING data directly.");

@@ -387,21 +387,26 @@ namespace Arrow
     /**
      * Function to convert a time value into a const string.
      *
-     * @param timeSinceMidnight    The amount of time elapsed since midnight.
+     * @param colData              The ArrowColumn for the source data.
+     * @param arrowType            The Arrow data type of the column.
      * @param scale                The scale of the time value.
+     * @param cellIdx              The index of the cell to get.
      * @param out_data             The buffer to which to write the converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL TimeToConstString(
-        int64 timeSinceMidnight,
+        std::shared_ptr<ArrowColumn> & colData,
+        std::shared_ptr<arrow::DataType> arrowType,
         int64 scale,
+        uint32 cellIdx,
         const char ** out_data);
 
     /**
      * Function to convert a time or timestamp value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
+     * @param arrowType            The Arrow data type of the column.
      * @param snowType             The Snowflake DB type of the column.
      * @param scale                The scale of the timestamp value.
      * @param colIdx               The index of the column to get.
@@ -413,6 +418,7 @@ namespace Arrow
      */
     SF_STATUS STDCALL TimestampToConstString(
         std::shared_ptr<ArrowColumn> & colData,
+        std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
         int64 scale,
         uint32 colIdx,
@@ -576,8 +582,10 @@ namespace Arrow
     /**
      * Function to convert a time value into a string.
      *
-     * @param timeSinceMidnight    The amount of time elapsed since midnight.
+     * @param colData              The ArrowColumn for the source data.
+     * @param arrowType            The Arrow data type of the column.
      * @param scale                The scale of the time value.
+     * @param cellIdx              The index of the cell to get.
      * @param out_data             The buffer to which to write the converted string value.
      * @param io_len               The length of the string.
      * @param io_capacity          The capacity of the provided buffer.
@@ -585,8 +593,10 @@ namespace Arrow
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL TimeToString(
-        int64 timeSinceMidnight,
+        std::shared_ptr<ArrowColumn> & colData,
+        std::shared_ptr<arrow::DataType> arrowType,
         int64 scale,
+        uint32 cellIdx,
         char ** out_data,
         size_t * io_len,
         size_t * io_capacity);

@@ -718,6 +718,18 @@ SF_STATUS STDCALL IntToConstString(
     const char ** out_data
 )
 {
+    // If the Snowflake DB type is TIME or TIMESTAMP, then call the appropriate helper.
+    if (snowType == SF_DB_TYPE_TIME)
+        return TimeToConstString(colData, arrowType, scale, cellIdx, out_data);
+
+    if (snowType == SF_DB_TYPE_TIMESTAMP_LTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_NTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_TZ)
+        return TimestampToConstString(
+            colData, arrowType, snowType, scale,
+            colIdx, rowIdx, cellIdx, out_data);
+
+    // Otherwise, convert integral value to string as-is and write to buffer.
     int64 rawData;
     switch (arrowType->id())
     {
@@ -748,11 +760,6 @@ SF_STATUS STDCALL IntToConstString(
         }
     }
 
-    // If the Snowflake DB type is TIME, then convert to a time string.
-    if (snowType == SF_DB_TYPE_TIME)
-        return TimeToConstString(rawData, scale, out_data);
-
-    // Otherwise, convert integral value to string and write to buffer.
     std::string strValue = std::to_string(rawData);
     *out_data = strValue.c_str();
 
@@ -760,12 +767,33 @@ SF_STATUS STDCALL IntToConstString(
 }
 
 SF_STATUS STDCALL TimeToConstString(
-    int64 timeSinceMidnight,
+    std::shared_ptr<ArrowColumn> & colData,
+    std::shared_ptr<arrow::DataType> arrowType,
     int64 scale,
+    uint32 cellIdx,
     const char ** out_data
 )
 {
-    CXX_LOG_DEBUG("Converting time value %d with scale %d.", timeSinceMidnight, scale);
+    int64 timeSinceMidnight;
+    switch (arrowType->id())
+    {
+        case arrow::Type::type::INT32:
+        {
+            timeSinceMidnight = static_cast<int64>(colData->arrowInt32->Value(cellIdx));
+            break;
+        }
+        case arrow::Type::type::INT64:
+        {
+            timeSinceMidnight = static_cast<int64>(colData->arrowInt64->Value(cellIdx));
+            break;
+        }
+        default:
+        {
+            CXX_LOG_ERROR("Trying to convert non-INT type to time string: %d.", arrowType->id());
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+    }
+
     // Construct a tm object holding appropriate time values.
     std::tm timeObj;
     timeObj.tm_mday = 1;
@@ -802,6 +830,7 @@ SF_STATUS STDCALL TimeToConstString(
 
 SF_STATUS STDCALL TimestampToConstString(
     std::shared_ptr<ArrowColumn> & colData,
+    std::shared_ptr<arrow::DataType> arrowType,
     SF_DB_TYPE snowType,
     int64 scale,
     uint32 colIdx,
@@ -1077,6 +1106,19 @@ SF_STATUS STDCALL IntToString(
     size_t * io_capacity
 )
 {
+    // If Snowflake DB type is TIME or TIMESTAMP, then call the appropriate helper.
+    if (snowType == SF_DB_TYPE_TIME)
+        return TimeToString(colData, arrowType, scale, cellIdx, out_data, io_len, io_capacity);
+
+    if (snowType == SF_DB_TYPE_TIMESTAMP_LTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_NTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_TZ)
+        return TimestampToString(
+            colData, arrowType, snowType, scale,
+            colIdx, rowIdx, cellIdx,
+            out_data, io_len, io_capacity);
+
+    // Otherwise, convert integral value to string and write to buffer.
     int64 rawData;
     switch (arrowType->id())
     {
@@ -1107,19 +1149,6 @@ SF_STATUS STDCALL IntToString(
         }
     }
 
-    // If the Snowflake DB type is TIME, then convert to a time string.
-    if (snowType == SF_DB_TYPE_TIME)
-        return TimeToString(rawData, scale, out_data, io_len, io_capacity);
-
-    if (snowType == SF_DB_TYPE_TIMESTAMP_LTZ
-        || snowType == SF_DB_TYPE_TIMESTAMP_NTZ
-        || snowType == SF_DB_TYPE_TIMESTAMP_TZ)
-        return TimestampToString(
-            rawData, arrowType, snowType, scale,
-            colIdx, rowIdx, cellIdx,
-            out_data, io_len, io_capacity);
-
-    // Otherwise, convert integral value to string and write to buffer.
     std::string strValue = std::to_string(rawData);
     Snowflake::Client::Util::AllocateCharBuffer(
         out_data,
@@ -1133,13 +1162,35 @@ SF_STATUS STDCALL IntToString(
 }
 
 SF_STATUS STDCALL TimeToString(
-    int64 timeSinceMidnight,
+    std::shared_ptr<ArrowColumn> & colData,
+    std::shared_ptr<arrow::DataType> arrowType,
     int64 scale,
+    uint32 cellIdx,
     char ** out_data,
     size_t * io_len,
     size_t * io_capacity
 )
 {
+    int64 timeSinceMidnight;
+    switch (arrowType->id())
+    {
+        case arrow::Type::type::INT32:
+        {
+            timeSinceMidnight = static_cast<int64>(colData->arrowInt32->Value(cellIdx));
+            break;
+        }
+        case arrow::Type::type::INT64:
+        {
+            timeSinceMidnight = static_cast<int64>(colData->arrowInt64->Value(cellIdx));
+            break;
+        }
+        default:
+        {
+            CXX_LOG_ERROR("Trying to convert non-INT type to time string: %d.", arrowType->id());
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+    }
+
     // Construct a tm object holding appropriate time values.
     std::tm timeObj;
     timeObj.tm_mday = 1;
