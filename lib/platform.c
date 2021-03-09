@@ -13,7 +13,9 @@
 
 #include <sys/time.h>
 #include <errno.h>
-
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 #endif
 
 
@@ -738,11 +740,10 @@ int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryNa
 {
   char fullPath[MAX_PATH + 1] = {0};
   char partPath[MAX_PATH + 1] = {0};
-  char pathSepStr[2] = {0};
+  char pathSepStr[2] = {PATH_SEP, '\0'};
   char* token = NULL;
   char *next = NULL;
 
-  pathSepStr[0] = PATH_SEP;
   sb_strcpy(fullPath, sizeof(fullPath), directoryName);
 
 #ifdef _WIN32
@@ -752,12 +753,15 @@ int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryNa
     sb_strcat(partPath, sizeof(partPath), token);
     token = strtok_s(NULL, pathSepStr, &next);
 #else
-  next = fullPath;
-  token = strtok_r(fullPath, pathSep, &next);
+  if ('/' == fullPath[0])
+  {
+    sb_strcat(partPath, sizeof(partPath), "/");
+  }
+  token = strtok_r(fullPath, pathSepStr, &next);
   while (token)
   {
     sb_strcat(partPath, sizeof(partPath), token);
-    token = strtok_s(fullPath, PathSep, &next);
+    token = strtok_r(NULL, pathSepStr, &next);
 #endif
     sb_strcat(partPath, sizeof(partPath), pathSepStr);
     if (sf_is_directory_exist(partPath))
@@ -866,11 +870,11 @@ void STDCALL sf_get_username(char * username, int bufLen)
   uid_t userId = getuid();
 
   // Get passwd object from user ID
-  if (int err = getpwuid_r(userId, &pw, pwBuf, pwBufLen, &pwPtr))
+  if (0 != getpwuid_r(userId, &pw, pwBuf, pwBufLen, &pwPtr))
   {
     *username = '\0';
   }
-  esle
+  else
   {
     sb_strcpy(username, bufLen, pw.pw_name);
   }
