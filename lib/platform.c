@@ -723,6 +723,57 @@ int STDCALL sf_create_directory_if_not_exists(const char * directoryName)
 #endif
 }
 
+int STDCALL sf_is_directory_exist(const char * directoryName)
+{
+#ifdef _WIN32
+  DWORD dwAttrib = GetFileAttributes(directoryName);
+  return (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)) ? 1 : 0;
+#else
+  struct stat sb;
+  return (stat(directoryName, &sb) == 0 && S_ISDIR(sb.st_mode));
+#endif
+}
+
+int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryName)
+{
+  char fullPath[MAX_PATH + 1] = {0};
+  char partPath[MAX_PATH + 1] = {0};
+  char pathSepStr[2] = {0};
+  char* token = NULL;
+  char *next = NULL;
+
+  pathSepStr[0] = PATH_SEP;
+  sb_strcpy(fullPath, sizeof(fullPath), directoryName);
+
+#ifdef _WIN32
+  token = strtok_s(fullPath, pathSepStr, &next);
+  while (token)
+  {
+    sb_strcat(partPath, sizeof(partPath), token);
+    token = strtok_s(NULL, pathSepStr, &next);
+#else
+  next = fullPath;
+  token = strtok_r(fullPath, pathSep, &next);
+  while (token)
+  {
+    sb_strcat(partPath, sizeof(partPath), token);
+    token = strtok_s(fullPath, PathSep, &next);
+#endif
+    sb_strcat(partPath, sizeof(partPath), pathSepStr);
+    if (sf_is_directory_exist(partPath))
+    {
+      continue;
+    }
+    int ret = sf_create_directory_if_not_exists(partPath);
+    if (ret != 0)
+    {
+      return ret;
+    }
+  }
+
+  return 0;
+}
+
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {
 #ifdef _WIN32
@@ -759,39 +810,71 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 #endif
 }
 
-/*Returns a unique temporary directory based on uuid string
- * tmpDir: /tmp/snowflakeTmp/<uuid-string/
+/*Returns a unique temporary directory based uuid string
+ * tmpDir: If the input is empty, use the default value of
+ *         /tmp/snowflakeTmp_<username>/<uuid-string>/
+ *         otherwise <temp dir>/<uuid-string>/
  * And tmpDir can hold upto Max path allowed on respective platforms.
  */
 void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
 {
   char uuid_cstr[37]; // 36 byte uuid plus null.
-  char dir_buf[MAX_PATH] = {0};
+  char username[1024];
   uuid4_generate(uuid_cstr);
-#ifdef _WIN32
-  GetTempPath(MAX_PATH, tmpDir);
-  sb_strcat(tmpDir, MAX_PATH, "\\snowflakeTmp\\");
-  //sf_create_directory does not recursively create dirs in the path.
-  sf_create_directory_if_not_exists(tmpDir);
-  sb_sprintf(tmpDir+strlen(tmpDir), MAX_PATH-strlen(tmpDir), "%s\\", uuid_cstr);
-#else
-  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
-
-  if (!tmpEnv)
+  sf_get_username(username, sizeof(username));
+  char pathSepStr[2] = {0};
+  pathSepStr[0] = PATH_SEP;
+  if (strlen(tmpDir) == 0)
   {
-    sb_strcat(dir_buf, MAX_PATH, "/tmp/snowflakeTmp/");
-    //sf_create_directory does not recursively create dirs in the path.
-    sf_create_directory_if_not_exists(dir_buf);
-    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",dir_buf, uuid_cstr);
+    sf_get_tmp_dir(tmpDir);
+    if (tmpDir[strlen(tmpDir) - 1] != PATH_SEP)
+    {
+      sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+    }
+    sb_strcat(tmpDir, MAX_PATH, "snowflakeTmp_");
+    sb_strcat(tmpDir, MAX_PATH, username);
+    sb_strcat(tmpDir, MAX_PATH, pathSepStr);
   }
-  else
+  else if (tmpDir[strlen(tmpDir) - 1] != PATH_SEP)
   {
-    sb_sprintf(dir_buf, MAX_PATH, "%s/snowflakeTmp", tmpEnv);
-    sf_create_directory_if_not_exists(dir_buf);
-    sb_sprintf(tmpDir, MAX_PATH, "%s/%s/",dir_buf,uuid_cstr);
+    sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+  }
+  sb_strcat(tmpDir, MAX_PATH, uuid_cstr);
+  sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+  sf_create_directory_if_not_exists_recursive(tmpDir);
+}
+
+void STDCALL sf_get_username(char * username, int bufLen)
+{
+  if ((!username) || (bufLen <= 0))
+  {
+    return;
+  }
+#ifdef _WIN32
+  // GetUserNameW returns non-zero values on success and zero on failure
+  if (GetUserName(username, &bufLen) == 0)
+  {
+    *username = '\0';
+  }
+#else
+  struct passwd pw;           // The password object which holds username
+  struct passwd* pwPtr;       // A Temp pointer to pw; useless but required by getpwuid_r
+  char pwBuf[1024];
+  int pwBufLen = sizeof(pwBuf);
+
+  // Get the user id
+  uid_t userId = getuid();
+
+  // Get passwd object from user ID
+  if (int err = getpwuid_r(userId, &pw, pwBuf, pwBufLen, &pwPtr))
+  {
+    *username = '\0';
+  }
+  esle
+  {
+    sb_strcpy(username, bufLen, pw.pw_name);
   }
 #endif
-  sf_create_directory_if_not_exists(tmpDir);
 }
 
 void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
