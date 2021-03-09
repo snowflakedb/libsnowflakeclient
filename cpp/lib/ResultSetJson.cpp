@@ -32,7 +32,7 @@ ResultSetJson::ResultSetJson(
     m_totalColumnCount = snowflake_cJSON_GetArraySize(
         snowflake_cJSON_GetArrayItem(initialChunk, 0));
     m_records = snowflake_cJSON_CreateArray();
-    this->appendChunk(initialChunk);
+    appendChunk(initialChunk);
 }
 
 ResultSetJson::~ResultSetJson()
@@ -95,7 +95,7 @@ SF_STATUS STDCALL ResultSetJson::next()
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsBool(sf_bool * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -158,7 +158,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsBool(sf_bool * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt8(int8 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -173,7 +173,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt8(int8 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt32(int32 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -187,7 +187,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt32(int32 * out_data)
     errno = 0;
     value = std::strtoll(rawData->valuestring, &endptr, 10);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to int32.");
         out_data = nullptr;
@@ -208,7 +208,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt32(int32 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt64(int64 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -222,7 +222,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt64(int64 * out_data)
     errno = 0;
     value = std::strtoll(rawData->valuestring, &endptr, 10);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to int64.");
         out_data = nullptr;
@@ -242,7 +242,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsInt64(int64 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint8(uint8 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -257,7 +257,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint8(uint8 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint32(uint32 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -271,7 +271,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint32(uint32 * out_data)
     errno = 0;
     value = std::strtoull(rawData->valuestring, &endptr, 10);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to uint32.");
         *out_data = 0;
@@ -299,7 +299,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint32(uint32 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint64(uint64 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -313,7 +313,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint64(uint64 * out_data)
     errno = 0;
     value = std::strtoull(rawData->valuestring, &endptr, 10);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to uint64.");
         out_data = nullptr;
@@ -333,7 +333,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsUint64(uint64 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat32(float32 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -347,7 +347,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat32(float32 * out_data)
     errno = 0;
     value = std::strtof(rawData->valuestring, &endptr);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to float32.");
         out_data = nullptr;
@@ -366,7 +366,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat32(float32 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat64(float64 * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -380,7 +380,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat64(float64 * out_data)
     errno = 0;
     value = std::strtod(rawData->valuestring, &endptr);
 
-    if (endptr == rawData->valuestring)
+    if ((value == 0 && rawData->valuestring != "0") || endptr == rawData->valuestring)
     {
         CXX_LOG_ERROR("Cannot convert value to float64.");
         out_data = nullptr;
@@ -400,7 +400,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsFloat64(float64 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsConstString(const char ** out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -416,7 +416,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellAsConstString(const char ** out_data
 SF_STATUS STDCALL
 ResultSetJson::getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
 
     if (snowflake_cJSON_IsNull(rawData))
     {
@@ -461,7 +461,7 @@ ResultSetJson::getCurrCellAsString(char ** out_data, size_t * io_len, size_t * i
 
 SF_STATUS STDCALL ResultSetJson::getCurrCellAsTimestamp(SF_TIMESTAMP * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
     SF_DB_TYPE db_type = m_metadata[m_currColumnIdx].type;
 
     if (snowflake_cJSON_IsNull(rawData))
@@ -495,7 +495,7 @@ SF_STATUS STDCALL ResultSetJson::getCurrCellStrlen(size_t * out_data)
     size_t len = 0;
     size_t capacity = 0;
 
-    SF_STATUS status = this->getCurrCellAsString(&strValue, &len, &capacity);
+    SF_STATUS status = getCurrCellAsString(&strValue, &len, &capacity);
     if (status != SF_STATUS_SUCCESS)
         return status;
 
@@ -515,7 +515,7 @@ size_t ResultSetJson::getRowCountInChunk()
 
 SF_STATUS STDCALL ResultSetJson::isCurrCellNull(sf_bool * out_data)
 {
-    cJSON * rawData = this->getCellValue(m_currRowIdx, m_currColumnIdx);
+    cJSON * rawData = getCellValue(m_currRowIdx, m_currColumnIdx);
     *out_data = snowflake_cJSON_IsNull(rawData) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 
     return SF_STATUS_SUCCESS;
