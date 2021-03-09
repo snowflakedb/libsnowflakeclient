@@ -100,6 +100,7 @@ void test_parallel_upload_download_core(int fileNumber)
   const char *c2 = nullptr;
   while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
     snowflake_column_as_const_str(sfstmt, 2, &c2);
+    snowflake_next(sfstmt);
     assert_string_equal(c2, "LOADED");
   }
   assert_int_equal(status, SF_STATUS_EOF);

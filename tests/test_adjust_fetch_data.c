@@ -38,6 +38,7 @@ void test_select_long_data_with_small_initial_buffer(void **unused) {
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_str(sfstmt, 1, &value, &value_len, &max_value_size);
+        snowflake_next(sfstmt);
         assert_int_equal(strlen(value), 100);
         ++counter;
     }

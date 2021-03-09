@@ -26,6 +26,7 @@ void test_select1(void **unused) {
     int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &out);
+        snowflake_next(sfstmt);
         assert_int_equal(out, 1);
         ++counter;
     }

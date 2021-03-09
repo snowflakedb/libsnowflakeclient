@@ -23,64 +23,75 @@ void test_column_as_boolean(void **unused) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_TRUE);
+        snowflake_next(sfstmt);
 
         // Should be false
         if (snowflake_column_as_boolean(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
+        snowflake_next(sfstmt);
 
         // Should be true
         if (snowflake_column_as_boolean(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_TRUE);
+        snowflake_next(sfstmt);
 
         // Should be false
         if (snowflake_column_as_boolean(sfstmt, 4, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
+        snowflake_next(sfstmt);
 
         // Should be true
         if (snowflake_column_as_boolean(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_TRUE);
+        snowflake_next(sfstmt);
 
         // Should be false
         if (snowflake_column_as_boolean(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
+        snowflake_next(sfstmt);
 
         // Should be true
         if (snowflake_column_as_boolean(sfstmt, 7, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_TRUE);
+        snowflake_next(sfstmt);
 
         // Should be false
         if (snowflake_column_as_boolean(sfstmt, 8, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
+        snowflake_next(sfstmt);
 
         // Should be false
         if (snowflake_column_as_boolean(sfstmt, 9, &out)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
+        snowflake_next(sfstmt);
 
         // Out of bounds column check
         if (!(status = snowflake_column_as_boolean(sfstmt, 10, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_boolean(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -104,29 +115,34 @@ void test_column_as_int8(void **unused) {
         if (snowflake_column_as_int8(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 115);
 
         // Case with an empty string
         if (snowflake_column_as_int8(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Case with a null column
         if (snowflake_column_as_int8(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_int8(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_int8(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -152,18 +168,21 @@ void test_column_as_int32(void **unused) {
         if (snowflake_column_as_int32(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 1);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_int32(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Case where a valid conversion leads to the max value for an int32
         if ((status = snowflake_column_as_int32(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_INT32_MAX);
 
@@ -171,6 +190,7 @@ void test_column_as_int32(void **unused) {
         if ((status = snowflake_column_as_int32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_INT32_MIN);
 
@@ -178,12 +198,14 @@ void test_column_as_int32(void **unused) {
         if (snowflake_column_as_int32(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(10, out);
 
         // Trying to convert a NULL to an int
         if (snowflake_column_as_int32(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(0, out);
 
         // **************************************************
@@ -194,29 +216,34 @@ void test_column_as_int32(void **unused) {
         if (!(status = snowflake_column_as_int32(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for int32
         if (!(status = snowflake_column_as_int32(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Trying to convert a number that is out of range for int32
         if (!(status = snowflake_column_as_int32(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_int32(sfstmt, 10, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_int32(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -242,18 +269,21 @@ void test_column_as_int64(void **unused) {
         if (snowflake_column_as_int64(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 1);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_int64(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Case where a valid conversion leads to the max value for an int64
         if ((status = snowflake_column_as_int64(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_INT64_MAX);
 
@@ -261,6 +291,7 @@ void test_column_as_int64(void **unused) {
         if ((status = snowflake_column_as_int64(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_INT64_MIN);
 
@@ -268,12 +299,14 @@ void test_column_as_int64(void **unused) {
         if (snowflake_column_as_int64(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(10, out);
 
         // Trying to convert a NULL to an int
         if (snowflake_column_as_int64(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(0, out);
 
         // **************************************************
@@ -284,29 +317,34 @@ void test_column_as_int64(void **unused) {
         if (!(status = snowflake_column_as_int64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for int64
         if (!(status = snowflake_column_as_int64(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Trying to convert a number that is out of range for int64
         if (!(status = snowflake_column_as_int64(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_int64(sfstmt, 10, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_int64(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -330,29 +368,34 @@ void test_column_as_uint8(void **unused) {
         if (snowflake_column_as_uint8(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 115);
 
         // Case with an empty string
         if (snowflake_column_as_uint8(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Case with a null column
         if (snowflake_column_as_uint8(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_uint8(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_uint8(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -377,18 +420,21 @@ void test_column_as_uint32(void **unused) {
         if (snowflake_column_as_uint32(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 1);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_uint32(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 0);
 
         // Case where a valid conversion leads to the max value for an uint32
         if ((status = snowflake_column_as_uint32(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT32_MAX);
 
@@ -396,6 +442,7 @@ void test_column_as_uint32(void **unused) {
         if ((status = snowflake_column_as_uint32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT32_MAX);
 
@@ -403,12 +450,14 @@ void test_column_as_uint32(void **unused) {
         if (snowflake_column_as_uint32(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(10, out);
 
         // Trying to convert a NULL to an uint32
         if (snowflake_column_as_uint32(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(0, out);
 
         // **************************************************
@@ -419,23 +468,27 @@ void test_column_as_uint32(void **unused) {
         if (!(status = snowflake_column_as_uint32(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for uint32
         if (!(status = snowflake_column_as_uint32(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_uint32(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_uint32(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -460,18 +513,21 @@ void test_column_as_uint64(void **unused) {
         if (snowflake_column_as_uint64(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 1);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_uint64(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 0);
 
         // Case where a valid conversion leads to the max value for an uint64
         if ((status = snowflake_column_as_uint64(sfstmt, 3, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT64_MAX);
 
@@ -479,6 +535,7 @@ void test_column_as_uint64(void **unused) {
         if ((status = snowflake_column_as_uint64(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert(out == SF_UINT64_MAX);
 
@@ -486,12 +543,14 @@ void test_column_as_uint64(void **unused) {
         if (snowflake_column_as_uint64(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(10, out);
 
         // Trying to convert a NULL to an uint64
         if (snowflake_column_as_uint64(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(0, out);
 
         // **************************************************
@@ -502,23 +561,27 @@ void test_column_as_uint64(void **unused) {
         if (!(status = snowflake_column_as_uint64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for uint64
         if (!(status = snowflake_column_as_uint64(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_uint64(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_uint64(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -544,36 +607,42 @@ void test_column_as_float32(void **unused) {
         if (snowflake_column_as_float32(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 1.0);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_float32(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 0.0);
 
         // Case where string to float conversion is not perfect
         if (snowflake_column_as_float32(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == (float32) 1.1);
 
         // Case where a valid conversion leads to the max value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         // Case where a valid conversion leads to the min positive value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 5, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         // Case where a valid conversion leads to the min positive value for a float32
         if ((status = snowflake_column_as_float32(sfstmt, 6, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0.0);
 
         // **************************************************
@@ -585,22 +654,26 @@ void test_column_as_float32(void **unused) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
+        snowflake_next(sfstmt);
 
         // Trying to convert a number that is out of range for float32
         if (!(status = snowflake_column_as_float32(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
+        snowflake_next(sfstmt);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_float32(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_float32(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -626,36 +699,42 @@ void test_column_as_float64(void **unused) {
         if (snowflake_column_as_float64(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 1.0);
 
         // Case where valid conversion leads to a 0
         if (snowflake_column_as_float64(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 0.0);
 
         // Basic Case
         if (snowflake_column_as_float64(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == 1.1);
 
         // Case where a valid conversion leads to the max value for a float64
         if ((status = snowflake_column_as_float64(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         // Case where a valid conversion leads to the min positive value for a float64
         if ((status = snowflake_column_as_float64(sfstmt, 5, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         // Case where a valid conversion leads to the min positive value for a float64
         if ((status = snowflake_column_as_float64(sfstmt, 6, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0.0);
 
         // **************************************************
@@ -666,23 +745,27 @@ void test_column_as_float64(void **unused) {
         if (!(status = snowflake_column_as_float64(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_CONVERSION_FAILURE);
 
         // Trying to convert a number that is out of range for float64
         if (!(status = snowflake_column_as_float64(sfstmt, 8, &out))) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_RANGE);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_float64(sfstmt, 9, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_float64(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -714,16 +797,19 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 1, &out[0])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
 
         // Timestamp NTZ case
         if (snowflake_column_as_timestamp(sfstmt, 2, &out[1])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
 
         // Timestamp TZ case
         if (snowflake_column_as_timestamp(sfstmt, 3, &out[2])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
 
         for (int i = 0; i < 3; i++) {
             assert_int_equal(2018, snowflake_timestamp_get_year(&out[i]));
@@ -752,6 +838,7 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 4, &out[3])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(1970, snowflake_timestamp_get_year(&out[3]));
         assert_int_equal(1, snowflake_timestamp_get_month(&out[3]));
         assert_int_equal(1, snowflake_timestamp_get_mday(&out[3]));
@@ -767,6 +854,7 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 5, &out[4])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[4]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[4]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[4]));
@@ -782,6 +870,7 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 6, &out[5])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[5]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[5]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[5]));
@@ -797,6 +886,7 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 7, &out[6])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[6]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[6]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[6]));
@@ -812,6 +902,7 @@ void test_column_as_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 8, &out[7])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[7]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[7]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[7]));
@@ -827,11 +918,13 @@ void test_column_as_timestamp(void **unused) {
         if (!(status = snowflake_column_as_timestamp(sfstmt, 9, &out[3]))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_timestamp(sfstmt, -1, &out[3]))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -858,6 +951,7 @@ void test_column_as_timestamp_windows(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 1, &out[0])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(1970, snowflake_timestamp_get_year(&out[0]));
         assert_int_equal(1, snowflake_timestamp_get_month(&out[0]));
         assert_int_equal(1, snowflake_timestamp_get_mday(&out[0]));
@@ -873,6 +967,7 @@ void test_column_as_timestamp_windows(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 2, &out[1])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[1]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[1]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[1]));
@@ -888,6 +983,7 @@ void test_column_as_timestamp_windows(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 3, &out[2])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[2]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[2]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[2]));
@@ -903,6 +999,7 @@ void test_column_as_timestamp_windows(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 4, &out[3])) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(2018, snowflake_timestamp_get_year(&out[3]));
         assert_int_equal(10, snowflake_timestamp_get_month(&out[3]));
         assert_int_equal(10, snowflake_timestamp_get_mday(&out[3]));
@@ -918,11 +1015,13 @@ void test_column_as_timestamp_windows(void **unused) {
         if (!(status = snowflake_column_as_timestamp(sfstmt, 5, &out[3]))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_timestamp(sfstmt, -1, &out[3]))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -948,47 +1047,55 @@ void test_column_as_const_str(void **unused) {
         if (snowflake_column_as_const_str(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("some string that is not empty", out);
 
         // Case where string is empty
         if (snowflake_column_as_const_str(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("", out);
 
         // Case with a DOUBLE DB type
         if (snowflake_column_as_const_str(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("1.1", out);
 
         // Case with a INTEGER DB type
         if (snowflake_column_as_const_str(sfstmt, 4, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("10", out);
 
         // Case with a BOOLEAN DB type
         if (snowflake_column_as_const_str(sfstmt, 5, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("1", out);
 
         // Get the value of a NULL column
         if (snowflake_column_as_const_str(sfstmt, 6, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert(out == NULL);
 
         // Out of bounds check
         if (!(status = snowflake_column_as_const_str(sfstmt, 7, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_const_str(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -1012,29 +1119,34 @@ void test_column_is_null(void **unused) {
         if (snowflake_column_is_null(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_false(out);
 
         // Case where column is null
         if (snowflake_column_is_null(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_true(out);
 
         // Case where column is boolean false
         if (snowflake_column_is_null(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_false(out);
 
         // Out of bounds check
         if (!(status = snowflake_column_is_null(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_is_null(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -1058,29 +1170,34 @@ void test_column_strlen(void **unused) {
         if (snowflake_column_strlen(sfstmt, 1, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 11);
 
         // Case with an empty string
         if (snowflake_column_strlen(sfstmt, 2, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Case with a null column
         if (snowflake_column_strlen(sfstmt, 3, &out)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_int_equal(out, 0);
 
         // Out of bounds check
         if (!(status = snowflake_column_strlen(sfstmt, 4, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_strlen(sfstmt, -1, &out))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
@@ -1111,6 +1228,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 1, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("some string", out);
         assert_int_equal(11, out_len);
 
@@ -1118,6 +1236,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 2, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("", out);
         assert_int_equal(0, out_len);
 
@@ -1125,6 +1244,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 3, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("", out);
         assert_int_equal(0, out_len);
 
@@ -1132,6 +1252,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 4, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("", out);
         assert_int_equal(0, out_len);
 
@@ -1139,6 +1260,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 5, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("1", out);
         assert_int_equal(1, out_len);
 
@@ -1146,6 +1268,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 6, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("2018-09-14", out);
         assert_int_equal(10, out_len);
 
@@ -1153,6 +1276,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 7, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("2014-03-20 15:30:45.493679329", out);
         assert_int_equal(29, out_len);
 
@@ -1160,6 +1284,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 8, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("2014-03-20 15:30:45.493679329", out);
         assert_int_equal(29, out_len);
 
@@ -1167,6 +1292,7 @@ void test_column_as_str(void **unused) {
         if (snowflake_column_as_str(sfstmt, 9, &out, &out_len, &out_max_size)) {
             dump_error(&(sfstmt->error));
         }
+        snowflake_next(sfstmt);
         assert_string_equal("2014-03-20 15:30:45.493679329 -07:00", out);
         assert_int_equal(36, out_len);
 
@@ -1174,11 +1300,13 @@ void test_column_as_str(void **unused) {
         if (!(status = snowflake_column_as_str(sfstmt, 10, &out, &out_len, &out_max_size))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_str(sfstmt, -1, &out, &out_len, &out_max_size))) {
             dump_error(&(sfstmt->error));
         }
+        status = snowflake_next(sfstmt);
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 

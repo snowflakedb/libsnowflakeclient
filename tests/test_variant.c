@@ -88,8 +88,11 @@ void test_variant(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_const_str(sfstmt, 1, &c1buf);
+        snowflake_next(sfstmt);
         snowflake_column_as_const_str(sfstmt, 2, &c2buf);
+        snowflake_next(sfstmt);
         snowflake_column_as_const_str(sfstmt, 3, &c3buf);
+        snowflake_next(sfstmt);
         assert_string_equal(c1buf, "{\n  \"test1\": 1\n}");
         assert_string_equal(c2buf, "[\n  \"[1,2,3]\"\n]");
         assert_string_equal(c3buf, "\"[456,789]\"");
