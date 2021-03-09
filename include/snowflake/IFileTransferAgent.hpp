@@ -19,7 +19,9 @@ namespace Client
  */
 struct TransferConfig
 {
+  TransferConfig() : caBundleFile(NULL), tempDir(NULL) {}
   char * caBundleFile;
+  char * tempDir;
 };
 
 class IFileTransferAgent

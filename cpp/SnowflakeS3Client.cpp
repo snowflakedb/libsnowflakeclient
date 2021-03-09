@@ -58,7 +58,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
 
   Aws::String caFile;
-  if (transferConfig != nullptr)
+  if ((transferConfig != nullptr) && (transferConfig->caBundleFile != nullptr))
   {
     caFile = Aws::String(transferConfig->caBundleFile);
   }
