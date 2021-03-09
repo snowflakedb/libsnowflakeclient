@@ -25,9 +25,46 @@ namespace Snowflake
 namespace Client
 {
 
+namespace Util
+{
+
+void AllocateCharBuffer(
+    char ** out_data,
+    size_t * io_len,
+    size_t * io_capacity,
+    size_t len
+)
+{
+    // Allocate pointers for length and capacity containers if necessary,
+    // then initialize with appropriate values.
+    if (io_len == nullptr)
+        io_len = new size_t;
+    *io_len = len;
+
+    if (io_capacity == nullptr)
+        io_capacity = new size_t;
+    *io_capacity = len + 1;
+
+    // Ensure that the buffer is well-allocated.
+    if (*out_data == nullptr)
+    {
+        CXX_LOG_DEBUG("Given unallocating buffer. Allocating...");
+        *out_data = new char[*io_capacity];
+        CXX_LOG_DEBUG("Allocated at 0x%x with capacity %d.", *out_data, *io_capacity);
+    }
+}
+
+}
+
+namespace Conversion
+{
+
+namespace Arrow
+{
+
 // Helper methods for numeric conversion ===========================================================
 
-SF_STATUS STDCALL DataConversions::convertNumericToSignedInteger(
+SF_STATUS STDCALL NumericToSignedInteger(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -112,7 +149,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToSignedInteger(
     if (convData < lowerLimit || convData > upperLimit)
     {
         CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
     // All checks passed. Proceed to write to buffer.
@@ -120,7 +157,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToSignedInteger(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertNumericToUnsignedInteger(
+SF_STATUS STDCALL NumericToUnsignedInteger(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -224,7 +261,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToUnsignedInteger(
     if (convData > upperLimit)
     {
         CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
     // All checks passed. Proceed to write to buffer.
@@ -232,7 +269,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToUnsignedInteger(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertNumericToDouble(
+SF_STATUS STDCALL NumericToDouble(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -285,7 +322,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToDouble(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertNumericToFloat(
+SF_STATUS STDCALL NumericToFloat(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -339,7 +376,7 @@ SF_STATUS STDCALL DataConversions::convertNumericToFloat(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertStringToSignedInteger(
+SF_STATUS STDCALL StringToSignedInteger(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -390,7 +427,7 @@ SF_STATUS STDCALL DataConversions::convertStringToSignedInteger(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertStringToUnsignedInteger(
+SF_STATUS STDCALL StringToUnsignedInteger(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -440,7 +477,7 @@ SF_STATUS STDCALL DataConversions::convertStringToUnsignedInteger(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertStringToDouble(
+SF_STATUS STDCALL StringToDouble(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -480,7 +517,7 @@ SF_STATUS STDCALL DataConversions::convertStringToDouble(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertStringToFloat(
+SF_STATUS STDCALL StringToFloat(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -522,7 +559,7 @@ SF_STATUS STDCALL DataConversions::convertStringToFloat(
 
 // Helper methods for const string conversion ======================================================
 
-SF_STATUS STDCALL DataConversions::convertBinaryToConstString(
+SF_STATUS STDCALL BinaryToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -543,7 +580,7 @@ SF_STATUS STDCALL DataConversions::convertBinaryToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertBoolToConstString(
+SF_STATUS STDCALL BoolToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -565,7 +602,7 @@ SF_STATUS STDCALL DataConversions::convertBoolToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDateToConstString(
+SF_STATUS STDCALL DateToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -626,7 +663,7 @@ SF_STATUS STDCALL DataConversions::convertDateToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDecimalToConstString(
+SF_STATUS STDCALL DecimalToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -648,7 +685,7 @@ SF_STATUS STDCALL DataConversions::convertDecimalToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDoubleToConstString(
+SF_STATUS STDCALL DoubleToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -670,7 +707,7 @@ SF_STATUS STDCALL DataConversions::convertDoubleToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertIntToConstString(
+SF_STATUS STDCALL IntToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     SF_DB_TYPE snowType,
@@ -713,7 +750,7 @@ SF_STATUS STDCALL DataConversions::convertIntToConstString(
 
     // If the Snowflake DB type is TIME, then convert to a time string.
     if (snowType == SF_DB_TYPE_TIME)
-        return convertTimeToConstString(rawData, scale, out_data);
+        return TimeToConstString(rawData, scale, out_data);
 
     // Otherwise, convert integral value to string and write to buffer.
     std::string strValue = std::to_string(rawData);
@@ -722,7 +759,7 @@ SF_STATUS STDCALL DataConversions::convertIntToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertTimeToConstString(
+SF_STATUS STDCALL TimeToConstString(
     int64 timeSinceMidnight,
     int64 scale,
     const char ** out_data
@@ -763,7 +800,7 @@ SF_STATUS STDCALL DataConversions::convertTimeToConstString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertTimestampToConstString(
+SF_STATUS STDCALL TimestampToConstString(
     std::shared_ptr<ArrowColumn> & colData,
     SF_DB_TYPE snowType,
     int64 scale,
@@ -773,20 +810,49 @@ SF_STATUS STDCALL DataConversions::convertTimestampToConstString(
     const char ** out_data
 )
 {
-    SF_TIMESTAMP sfts;
-
     // The C API has a custom struct `SF_TIMESTAMP` used to represent Timestamp values.
     // In addition to what's available in the ArrowTimestamp struct, we must provide:
     // (1) A tm object that represents the timestamp value,
     // (2) The scale of the value,
     // (3) The timestamp type, i.e. LTZ, NTZ, TZ.
-    ArrowTimestampArray * ts = colData->arrowTimestamp;
-    time_t t = static_cast<time_t>(ts->sse->Value(cellIdx));
-    sfts.tm_obj = *(std::localtime(&t));
-    sfts.nsec = ts->fs->Value(cellIdx);
-    sfts.tzoffset = ts->tz->Value(cellIdx);
-    sfts.scale = static_cast<int64>(scale);
+    SF_TIMESTAMP sfts;
+    sfts.scale = scale;
     sfts.ts_type = snowType;
+
+    switch (arrowType->id())
+    {
+        case arrow::Type::type::INT32:
+        {
+            std::time_t t = colData->arrowInt32->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = 0;
+            sfts.tzoffset = 0;
+            break;
+        }
+        case arrow::Type::type::INT64:
+        {
+            std::time_t t = colData->arrowInt64->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = 0;
+            sfts.tzoffset = 0;
+            break;
+        }
+        case arrow::Type::type::STRUCT:
+        {
+            ArrowTimestampArray * ts = colData->arrowTimestamp;
+            std::time_t t = ts->sse->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = (ts->fs == nullptr) ? 0 : ts->fs->Value(cellIdx);
+            sfts.tzoffset = (ts->tz == nullptr) ? 0 : ts->tz->Value(cellIdx);
+            break;
+        }
+        default:
+        {
+            CXX_LOG_ERROR(
+                "Trying to convert non-INT or STRUCT type to timestamp string: %d.",
+                arrowType->id());
+        }
+    }
 
     // Leverage client library to convert to string.
     // The client will handle the allocation of resources if necessary.
@@ -802,33 +868,7 @@ SF_STATUS STDCALL DataConversions::convertTimestampToConstString(
 
 // Helper methods for string conversion ============================================================
 
-void DataConversions::allocateCharBuffer(
-    char ** out_data,
-    size_t * io_len,
-    size_t * io_capacity,
-    size_t len
-)
-{
-    // Allocate pointers for length and capacity containers if necessary,
-    // then initialize with appropriate values.
-    if (io_len == nullptr)
-        io_len = new size_t;
-    *io_len = len;
-
-    if (io_capacity == nullptr)
-        io_capacity = new size_t;
-    *io_capacity = len + 1;
-
-    // Ensure that the buffer is well-allocated.
-    if (*out_data == nullptr)
-    {
-        CXX_LOG_DEBUG("Given unallocating buffer. Allocating...");
-        *out_data = new char[*io_capacity];
-        CXX_LOG_DEBUG("Allocated at 0x%x with capacity %d.", *out_data, *io_capacity);
-    }
-}
-
-SF_STATUS STDCALL DataConversions::convertBinaryToString(
+SF_STATUS STDCALL BinaryToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -846,14 +886,18 @@ SF_STATUS STDCALL DataConversions::convertBinaryToString(
     }
 
     std::string strValue = colData->arrowBinary->GetString(cellIdx);
-    allocateCharBuffer(out_data, io_len, io_capacity, strValue.size());
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        strValue.size());
     std::strncpy(*out_data, strValue.c_str(), *io_len);
     (*out_data)[*io_len] = '\0';
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertBoolToString(
+SF_STATUS STDCALL BoolToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -872,14 +916,18 @@ SF_STATUS STDCALL DataConversions::convertBoolToString(
 
     bool boolValue = colData->arrowBoolean->Value(cellIdx);
     const char * strValue = (boolValue) ? SF_BOOLEAN_TRUE_STR : SF_BOOLEAN_FALSE_STR;
-    allocateCharBuffer(out_data, io_len, io_capacity, std::strlen(strValue));
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        std::strlen(strValue));
     std::strncpy(*out_data, strValue, *io_len);
     (*out_data)[*io_len] = '\0';
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDateToString(
+SF_STATUS STDCALL DateToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -893,7 +941,11 @@ SF_STATUS STDCALL DataConversions::convertDateToString(
     // Probably want to move these values to a better place.
     int maxDateLength = 12;
     const char * dateFormat = "%Y-%m-%d";
-    allocateCharBuffer(out_data, io_len, io_capacity, maxDateLength);
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        maxDateLength);
 
     // Number of days elapsed since Epoch time.
     int64 dateValue;
@@ -952,7 +1004,7 @@ SF_STATUS STDCALL DataConversions::convertDateToString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDecimalToString(
+SF_STATUS STDCALL DecimalToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -971,14 +1023,18 @@ SF_STATUS STDCALL DataConversions::convertDecimalToString(
 
     std::string strValue = colData->arrowDecimal128->GetString(cellIdx);
     CXX_LOG_DEBUG("Retrieved strValue %s from colData.", strValue);
-    allocateCharBuffer(out_data, io_len, io_capacity, strValue.size());
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        strValue.size());
     std::strncpy(*out_data, strValue.c_str(), *io_len);
     (*out_data)[*io_len] = '\0';
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertDoubleToString(
+SF_STATUS STDCALL DoubleToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     uint32 colIdx,
@@ -997,15 +1053,18 @@ SF_STATUS STDCALL DataConversions::convertDoubleToString(
 
     float64 doubleValue = colData->arrowDouble->Value(cellIdx);
     std::string strValue = std::to_string(doubleValue);
-    allocateCharBuffer(out_data, io_len, io_capacity, strValue.size());
-    CXX_LOG_DEBUG("len %d, capacity %d", *io_len, *io_capacity);
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        strValue.size());
     std::strncpy(*out_data, strValue.c_str(), *io_len);
     (*out_data)[*io_len] = '\0';
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertIntToString(
+SF_STATUS STDCALL IntToString(
     std::shared_ptr<ArrowColumn> & colData,
     std::shared_ptr<arrow::DataType> arrowType,
     SF_DB_TYPE snowType,
@@ -1050,18 +1109,30 @@ SF_STATUS STDCALL DataConversions::convertIntToString(
 
     // If the Snowflake DB type is TIME, then convert to a time string.
     if (snowType == SF_DB_TYPE_TIME)
-        return convertTimeToString(rawData, scale, out_data, io_len, io_capacity);
+        return TimeToString(rawData, scale, out_data, io_len, io_capacity);
+
+    if (snowType == SF_DB_TYPE_TIMESTAMP_LTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_NTZ
+        || snowType == SF_DB_TYPE_TIMESTAMP_TZ)
+        return TimestampToString(
+            rawData, arrowType, snowType, scale,
+            colIdx, rowIdx, cellIdx,
+            out_data, io_len, io_capacity);
 
     // Otherwise, convert integral value to string and write to buffer.
     std::string strValue = std::to_string(rawData);
-    allocateCharBuffer(out_data, io_len, io_capacity, strValue.size());
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        strValue.size());
     *out_data = std::strncpy(*out_data, strValue.c_str(), *io_len);
     (*out_data)[*io_len] = '\0';
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DataConversions::convertTimeToString(
+SF_STATUS STDCALL TimeToString(
     int64 timeSinceMidnight,
     int64 scale,
     char ** out_data,
@@ -1096,8 +1167,9 @@ SF_STATUS STDCALL DataConversions::convertTimeToString(
     return snowflake_timestamp_to_string(&ts, "", out_data, *io_capacity, io_len, SF_BOOLEAN_TRUE);
 }
 
-SF_STATUS STDCALL DataConversions::convertTimestampToString(
+SF_STATUS STDCALL TimestampToString(
     std::shared_ptr<ArrowColumn> & colData,
+    std::shared_ptr<arrow::DataType> arrowType,
     SF_DB_TYPE snowType,
     int64 scale,
     uint32 colIdx,
@@ -1108,27 +1180,172 @@ SF_STATUS STDCALL DataConversions::convertTimestampToString(
     size_t * io_capacity
 )
 {
-    SF_TIMESTAMP sfts;
-
     // The C API has a custom struct `SF_TIMESTAMP` used to represent Timestamp values.
     // In addition to what's available in the ArrowTimestamp struct, we must provide:
     // (1) A tm object that represents the timestamp value,
     // (2) The scale of the value,
     // (3) The timestamp type, i.e. LTZ, NTZ, TZ.
-    ArrowTimestampArray * ts = colData->arrowTimestamp;
-    std::time_t t = ts->sse->Value(cellIdx);
-    sfts.tm_obj = *(std::localtime(&t));
-    sfts.nsec = (ts->fs == nullptr) ? 0 : ts->fs->Value(cellIdx);
-    sfts.tzoffset = (ts->tz == nullptr) ? 0 : ts->tz->Value(cellIdx);
+    SF_TIMESTAMP sfts;
     sfts.scale = scale;
     sfts.ts_type = snowType;
 
-    CXX_LOG_DEBUG("sse: %d, fs: %d, tz: %d", ts->sse->Value(cellIdx), sfts.nsec, sfts.tzoffset);
+    switch (arrowType->id())
+    {
+        case arrow::Type::type::INT32:
+        {
+            std::time_t t = colData->arrowInt32->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = 0;
+            sfts.tzoffset = 0;
+            break;
+        }
+        case arrow::Type::type::INT64:
+        {
+            std::time_t t = colData->arrowInt64->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = 0;
+            sfts.tzoffset = 0;
+            break;
+        }
+        case arrow::Type::type::STRUCT:
+        {
+            ArrowTimestampArray * ts = colData->arrowTimestamp;
+            std::time_t t = ts->sse->Value(cellIdx);
+            sfts.tm_obj = *(std::localtime(&t));
+            sfts.nsec = (ts->fs == nullptr) ? 0 : ts->fs->Value(cellIdx);
+            sfts.tzoffset = (ts->tz == nullptr) ? 0 : ts->tz->Value(cellIdx);
+            break;
+        }
+        default:
+        {
+            CXX_LOG_ERROR(
+                "Trying to convert non-INT or STRUCT type to timestamp string: %d.",
+                arrowType->id());
+        }
+    }
 
     // Leverage client library to convert to string.
     // The client will handle the allocation of resources if necessary.
     return snowflake_timestamp_to_string(&sfts, "", out_data, *io_capacity, io_len, SF_BOOLEAN_TRUE);
 }
+
+} // namespace Arrow
+
+namespace Json
+{
+
+SF_STATUS STDCALL BoolToString(
+    char * value,
+    char ** out_data,
+    size_t * io_len,
+    size_t * io_capacity
+)
+{
+    const char * boolValue = (std::strcmp(value, "0") == 0) ?
+        SF_BOOLEAN_FALSE_STR : SF_BOOLEAN_TRUE_STR;
+
+    // Ensure that the buffer is well allocated.
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        std::strlen(boolValue));
+
+    *out_data = const_cast<char *>(boolValue);
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL DateToString(
+    char * value,
+    char ** out_data,
+    size_t * io_len,
+    size_t * io_capacity
+)
+{
+    // TODO: Move these elsewhere.
+    size_t maxDateLength = 12;
+    const char * dateFormat = "%Y-%m-%d";
+
+    // Ensure that the buffer is well allocated.
+    Snowflake::Client::Util::AllocateCharBuffer(
+        out_data,
+        io_len,
+        io_capacity,
+        maxDateLength);
+    CXX_LOG_TRACE("out_data allocated at 0x%x.", *out_data);
+
+    // The main logic for the conversion.
+    struct tm tm_obj;
+    struct tm * tm_ptr;
+    memset(&tm_obj, 0, sizeof(tm_obj));
+    CXX_LOG_TRACE("tm_obj at 0x%x", &tm_obj);
+    char * endptr;
+    time_t sec = (time_t) std::strtol(value, &endptr, 10) * 24L * 60L * 60L;
+    CXX_LOG_TRACE("sec = %d", sec);
+    tm_ptr = sf_gmtime(&sec, &tm_obj);
+    CXX_LOG_TRACE("tm_ptr at 0x%x", tm_ptr);
+
+    if (tm_ptr == nullptr)
+    {
+        if (*out_data != nullptr)
+            delete *out_data;
+
+        if (io_len != nullptr)
+            delete io_len;
+
+        if (io_capacity != nullptr)
+            delete io_capacity;
+
+        CXX_LOG_DEBUG("Failed to convert date value to string.");
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
+
+    strftime(*out_data, *io_len, dateFormat, &tm_obj);
+    CXX_LOG_TRACE("done writing date to string.");
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL TimeToString(
+    char * value,
+    int64 scale,
+    SF_DB_TYPE snowType,
+    std::string tzString,
+    char ** out_data,
+    size_t * io_len,
+    size_t * io_capacity
+)
+{
+    SF_STATUS status;
+    SF_TIMESTAMP ts;
+
+    status = snowflake_timestamp_from_epoch_seconds(&ts, value, tzString.c_str(), scale, snowType);
+
+    if (status != SF_STATUS_SUCCESS)
+    {
+        if (*out_data != nullptr)
+            delete *out_data;
+
+        if (io_len != nullptr)
+            delete io_len;
+
+        if (io_capacity != nullptr)
+            delete io_capacity;
+
+        CXX_LOG_DEBUG("Failed to convert time or timestamp value to string.");
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
+
+    // It's okay to ignore most allocations as the client function will handle that as necessary.
+    // Just make sure that io_capacity is not NULL.
+    if (io_capacity == nullptr)
+        io_capacity = new size_t(0);
+
+    return snowflake_timestamp_to_string(&ts, "", out_data, *io_capacity, io_len, SF_BOOLEAN_TRUE);
+}
+
+} // namespace Json
+
+} // namespace Conversion
 
 } // namespace Client
 } // namespace Snowflake

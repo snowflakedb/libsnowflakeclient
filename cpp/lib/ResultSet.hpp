@@ -313,45 +313,6 @@ protected:
     // Helper methods ==============================================================================
 
     /**
-     * Helper method to convert a boolean value into a proper string.
-     *
-     * @param value                The initial boolean value retrieved from Snowflake.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    convertBoolToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
-     * Helper method to convert a date value into a proper string.
-     *
-     * @param value                The initial date value retrieved from Snowflake.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    convertDateToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
-     * Helper method to convert a time or timestamp value into a proper string.
-     *
-     * @param value                The initial time or timestamp value retrieved from Snowflake.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    convertTimeToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
      * Converts the given time zone offset into a time zone string.
      *
      * This string will have the format: ±HH:MM.

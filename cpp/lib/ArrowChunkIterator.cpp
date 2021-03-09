@@ -307,12 +307,12 @@ ArrowChunkIterator::getCellAsInt8(uint32 colIdx, uint32 rowIdx, int8 * out_data)
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
         {
-            status = DataConversions::convertNumericToSignedInteger(
+            status = Conversion::Arrow::NumericToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT8);
         }
         case arrow::Type::type::STRING:
         {
-            status = DataConversions::convertStringToSignedInteger(
+            status = Conversion::Arrow::StringToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT8);
         }
         default:
@@ -369,12 +369,12 @@ ArrowChunkIterator::getCellAsInt32(uint32 colIdx, uint32 rowIdx, int32 * out_dat
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
         {
-            status = DataConversions::convertNumericToSignedInteger(
+            status = Conversion::Arrow::NumericToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT32);
         }
         case arrow::Type::type::STRING:
         {
-            status = DataConversions::convertStringToSignedInteger(
+            status = Conversion::Arrow::StringToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT32);
         }
         default:
@@ -429,10 +429,10 @@ ArrowChunkIterator::getCellAsInt64(uint32 colIdx, uint32 rowIdx, int64 * out_dat
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
-            return DataConversions::convertNumericToSignedInteger(
+            return Conversion::Arrow::NumericToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, INT64);
         case arrow::Type::type::STRING:
-            return DataConversions::convertStringToSignedInteger(
+            return Conversion::Arrow::StringToSignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, INT64);
         default:
             CXX_LOG_ERROR("Unsupported conversion from %d to INT64.", arrowType->id());
@@ -480,12 +480,12 @@ ArrowChunkIterator::getCellAsUint8(uint32 colIdx, uint32 rowIdx, uint8 * out_dat
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
         {
-            status = DataConversions::convertNumericToUnsignedInteger(
+            status = Conversion::Arrow::NumericToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT8);
         }
         case arrow::Type::type::STRING:
         {
-            status = DataConversions::convertStringToUnsignedInteger(
+            status = Conversion::Arrow::StringToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT8);
         }
         default:
@@ -542,12 +542,12 @@ ArrowChunkIterator::getCellAsUint32(uint32 colIdx, uint32 rowIdx, uint32 * out_d
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
         {
-            status = DataConversions::convertNumericToUnsignedInteger(
+            status = Conversion::Arrow::NumericToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT32);
         }
         case arrow::Type::type::STRING:
         {
-            status = DataConversions::convertStringToUnsignedInteger(
+            status = Conversion::Arrow::StringToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT32);
         }
         default:
@@ -602,10 +602,10 @@ ArrowChunkIterator::getCellAsUint64(uint32 colIdx, uint32 rowIdx, uint64 * out_d
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
-            return DataConversions::convertNumericToUnsignedInteger(
+            return Conversion::Arrow::NumericToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, UINT64);
         case arrow::Type::type::STRING:
-            return DataConversions::convertStringToUnsignedInteger(
+            return Conversion::Arrow::StringToUnsignedInteger(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, UINT64);
         default:
             CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", arrowType->id());
@@ -647,10 +647,10 @@ ArrowChunkIterator::getCellAsFloat32(uint32 colIdx, uint32 rowIdx, float32 * out
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
-            return DataConversions::convertNumericToFloat(
+            return Conversion::Arrow::NumericToFloat(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRING:
-            return DataConversions::convertStringToFloat(
+            return Conversion::Arrow::StringToFloat(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         default:
             CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", arrowType->id());
@@ -692,10 +692,10 @@ ArrowChunkIterator::getCellAsFloat64(uint32 colIdx, uint32 rowIdx, float64 * out
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
-            return DataConversions::convertNumericToDouble(
+            return Conversion::Arrow::NumericToDouble(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRING:
-            return DataConversions::convertStringToDouble(
+            return Conversion::Arrow::StringToDouble(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         default:
             CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", arrowType->id());
@@ -745,29 +745,29 @@ ArrowChunkIterator::getCellAsConstString(uint32 colIdx, uint32 rowIdx, const cha
     switch (arrowType->id())
     {
         case arrow::Type::type::BINARY:
-            return DataConversions::convertBinaryToConstString(
+            return Conversion::Arrow::BinaryToConstString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::BOOL:
-            return DataConversions::convertBoolToConstString(
+            return Conversion::Arrow::BoolToConstString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::DATE32:
         case arrow::Type::type::DATE64:
-            return DataConversions::convertDateToConstString(
+            return Conversion::Arrow::DateToConstString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::DECIMAL:
-            return DataConversions::convertDecimalToConstString(
+            return Conversion::Arrow::DecimalToConstString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::DOUBLE:
-            return DataConversions::convertDoubleToConstString(
+            return Conversion::Arrow::DoubleToConstString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::INT8:
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
-            return DataConversions::convertIntToConstString(
+            return Conversion::Arrow::IntToConstString(
                 colData, arrowType, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRUCT:
-            return DataConversions::convertTimestampToConstString(
+            return Conversion::Arrow::TimestampToConstString(
                 colData, snowType, scale, colIdx, rowIdx, cellIdx, out_data);
         case arrow::Type::type::STRING:
         {
@@ -838,42 +838,46 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
     {
         case arrow::Type::type::BINARY:
             CXX_LOG_DEBUG("Converting from BINARY to STRING.");
-            return DataConversions::convertBinaryToString(
+            return Conversion::Arrow::BinaryToString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::BOOL:
             CXX_LOG_DEBUG("Converting from BOOL to STRING.");
-            return DataConversions::convertBoolToString(
+            return Conversion::Arrow::BoolToString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::DATE32:
         case arrow::Type::type::DATE64:
             CXX_LOG_DEBUG("Converting from DATE to STRING.");
-            return DataConversions::convertDateToString(
+            return Conversion::Arrow::DateToString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::DECIMAL:
             CXX_LOG_DEBUG("Converting from DECIMAL to STRING");
-            return DataConversions::convertDecimalToString(
+            return Conversion::Arrow::DecimalToString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::DOUBLE:
             CXX_LOG_DEBUG("Converting from DOUBLE to STRING");
-            return DataConversions::convertDoubleToString(
+            return Conversion::Arrow::DoubleToString(
                 colData, arrowType, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::INT8:
         case arrow::Type::type::INT16:
         case arrow::Type::type::INT32:
         case arrow::Type::type::INT64:
             CXX_LOG_DEBUG("Converting from INT to STRING.");
-            return DataConversions::convertIntToString(
+            return Conversion::Arrow::IntToString(
                 colData, arrowType, snowType, scale,
                 colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::STRUCT:
             CXX_LOG_DEBUG("Converting from STRUCT to STRING.");
-            return DataConversions::convertTimestampToString(
+            return Conversion::Arrow::TimestampToString(
                 colData, snowType, scale, colIdx, rowIdx, cellIdx, out_data, io_len, io_capacity);
         case arrow::Type::type::STRING:
         {
             CXX_LOG_DEBUG("Writing STRING data directly.");
             std::string strValue = colData->arrowString->GetString(cellIdx);
-            DataConversions::allocateCharBuffer(out_data, io_len, io_capacity, strValue.size());
+            Snowflake::Client::Util::AllocateCharBuffer(
+                out_data,
+                io_len,
+                io_capacity,
+                strValue.size());
             std::strncpy(*out_data, strValue.c_str(), *io_len);
             (*out_data)[*io_len] = '\0';
 

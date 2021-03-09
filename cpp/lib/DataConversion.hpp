@@ -50,17 +50,41 @@ static std::map<IntegerType, uint64> intTypeToUpperLimit =
     { INT64,  SF_INT64_MAX }
 };
 
-/**
- * A utility class with static member methods to perform data conversions.
- */
-class DataConversions
+namespace Util
 {
-public:
+
+    /**
+     * Helper method to allocate a char buffer to write converted Arrow data to if necessary.
+     *
+     * TODO: It doesn't make much sense to have a util function in a conversion file.
+     *       Try to find a better place to move this to.
+     *
+     * @param out_data             A pointer to the buffer.
+     * @param out_len              The length of the string data.
+     * @param out_capacity         The capacity of the provided buffer.
+     * @param len                  The true length of the string to write.
+     */
+    void AllocateCharBuffer(
+        char ** out_data,
+        size_t * out_len,
+        size_t * out_capacity,
+        size_t len);
+
+}
+
+/**
+ * Namespace capturing all data conversion functions.
+ */
+namespace Conversion
+{
+
+namespace Arrow
+{
 
     // Numeric conversion ==========================================================================
 
     /**
-     * Static method to convert a numeric value into a signed integral value.
+     * Function to convert a numeric value into a signed integral value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -72,7 +96,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertNumericToSignedInteger(
+    SF_STATUS STDCALL NumericToSignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -82,7 +106,7 @@ public:
         IntegerType intType);
 
     /**
-     * Static method to convert a numeric value into an unsigned integral value.
+     * Function to convert a numeric value into an unsigned integral value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -94,7 +118,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertNumericToUnsignedInteger(
+    SF_STATUS STDCALL NumericToUnsignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -104,7 +128,7 @@ public:
         IntegerType intType);
 
     /**
-     * Static method to convert a numeric value into a float64 value.
+     * Function to convert a numeric value into a float64 value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -115,7 +139,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertNumericToDouble(
+    SF_STATUS STDCALL NumericToDouble(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -124,7 +148,7 @@ public:
         float64 * out_data);
 
     /**
-     * Static method to convert a numeric value into a float32 value.
+     * Function to convert a numeric value into a float32 value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -135,7 +159,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertNumericToFloat(
+    SF_STATUS STDCALL NumericToFloat(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -144,7 +168,7 @@ public:
         float32 * out_data);
 
     /**
-     * Static method to convert a string value into a signed integral value.
+     * Function to convert a string value into a signed integral value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -156,7 +180,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertStringToSignedInteger(
+    SF_STATUS STDCALL StringToSignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -166,7 +190,7 @@ public:
         IntegerType intType);
 
     /**
-     * Static method to convert a string value into an unsigned integral value.
+     * Function to convert a string value into an unsigned integral value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -178,7 +202,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertStringToUnsignedInteger(
+    SF_STATUS STDCALL StringToUnsignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -188,7 +212,7 @@ public:
         IntegerType intType);
 
     /**
-     * Static method to convert a string value into a float64 value.
+     * Function to convert a string value into a float64 value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -199,7 +223,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertStringToDouble(
+    SF_STATUS STDCALL StringToDouble(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -208,7 +232,7 @@ public:
         float64 * out_data);
 
     /**
-     * Static method to convert a string value into a float32 value.
+     * Function to convert a string value into a float32 value.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -219,7 +243,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertStringToFloat(
+    SF_STATUS STDCALL StringToFloat(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -230,7 +254,7 @@ public:
     // Const String conversion =====================================================================
 
     /**
-     * Static method to convert a binary value into a const string.
+     * Function to convert a binary value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -243,7 +267,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertBinaryToConstString(
+    SF_STATUS STDCALL BinaryToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -252,7 +276,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert a boolean value into a const string.
+     * Function to convert a boolean value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -265,7 +289,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertBoolToConstString(
+    SF_STATUS STDCALL BoolToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -274,7 +298,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert a date value into a const string.
+     * Function to convert a date value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -285,7 +309,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDateToConstString(
+    SF_STATUS STDCALL DateToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -294,7 +318,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert a decimal value into a const string.
+     * Function to convert a decimal value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -305,7 +329,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDecimalToConstString(
+    SF_STATUS STDCALL DecimalToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -314,7 +338,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert a double value into a const string.
+     * Function to convert a double value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -325,7 +349,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDoubleToConstString(
+    SF_STATUS STDCALL DoubleToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -334,7 +358,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert an integral value into a const string.
+     * Function to convert an integral value into a const string.
      *
      * Note: INT32 and INT64 values may contain Snowflake TIME values.
      *       This method checks the Snowflake DB type to cover these cases.
@@ -350,7 +374,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertIntToConstString(
+    SF_STATUS STDCALL IntToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
@@ -361,7 +385,7 @@ public:
         const char ** out_data);
 
     /**
-     * Static method to convert a time value into a const string.
+     * Function to convert a time value into a const string.
      *
      * @param timeSinceMidnight    The amount of time elapsed since midnight.
      * @param scale                The scale of the time value.
@@ -369,13 +393,13 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertTimeToConstString(
+    SF_STATUS STDCALL TimeToConstString(
         int64 timeSinceMidnight,
         int64 scale,
         const char ** out_data);
 
     /**
-     * Static method to convert a time or timestamp value into a const string.
+     * Function to convert a time or timestamp value into a const string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param snowType             The Snowflake DB type of the column.
@@ -387,7 +411,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertTimestampToConstString(
+    SF_STATUS STDCALL TimestampToConstString(
         std::shared_ptr<ArrowColumn> & colData,
         SF_DB_TYPE snowType,
         int64 scale,
@@ -399,24 +423,7 @@ public:
     // String conversion ===========================================================================
 
     /**
-     * Helper method to allocate a char buffer to write converted Arrow data to if necessary.
-     *
-     * TODO: It doesn't make much sense to have this as a static method of a conversion class.
-     *       Try to find a better place to move this to.
-     *
-     * @param out_data             A pointer to the buffer.
-     * @param out_len              The length of the string data.
-     * @param out_capacity         The capacity of the provided buffer.
-     * @param len                  The true length of the string to write.
-     */
-    static void allocateCharBuffer(
-        char ** out_data,
-        size_t * out_len,
-        size_t * out_capacity,
-        size_t len);
-
-    /**
-     * Static method to convert a binary value into a string.
+     * Function to convert a binary value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -429,7 +436,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertBinaryToString(
+    SF_STATUS STDCALL BinaryToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -440,7 +447,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a boolean value into a string.
+     * Function to convert a boolean value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -453,7 +460,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertBoolToString(
+    SF_STATUS STDCALL BoolToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -464,7 +471,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a date value into a string.
+     * Function to convert a date value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -477,7 +484,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDateToString(
+    SF_STATUS STDCALL DateToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -488,7 +495,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a decimal value into a string.
+     * Function to convert a decimal value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -501,7 +508,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDecimalToString(
+    SF_STATUS STDCALL DecimalToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -512,7 +519,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a double value into a string.
+     * Function to convert a double value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
      * @param arrowType            The Arrow data type of the column.
@@ -525,7 +532,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertDoubleToString(
+    SF_STATUS STDCALL DoubleToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         uint32 colIdx,
@@ -536,7 +543,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert an integral value into a string.
+     * Function to convert an integral value into a string.
      *
      * Note: INT32 and INT64 values may contain Snowflake TIME values.
      *       This method checks the Snowflake DB type to cover these cases.
@@ -554,7 +561,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertIntToString(
+    SF_STATUS STDCALL IntToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
@@ -567,7 +574,7 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a time value into a string.
+     * Function to convert a time value into a string.
      *
      * @param timeSinceMidnight    The amount of time elapsed since midnight.
      * @param scale                The scale of the time value.
@@ -577,7 +584,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertTimeToString(
+    SF_STATUS STDCALL TimeToString(
         int64 timeSinceMidnight,
         int64 scale,
         char ** out_data,
@@ -585,9 +592,10 @@ public:
         size_t * io_capacity);
 
     /**
-     * Static method to convert a time or timestamp value into a string.
+     * Function to convert a time or timestamp value into a string.
      *
      * @param colData              The ArrowColumn for the source data.
+     * @param arrowType            The Arrow data type of the column.
      * @param snowType             The Snowflake DB type of the column.
      * @param scale                The scale of the timestamp value.
      * @param colIdx               The index of the column to get.
@@ -599,8 +607,9 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    static SF_STATUS STDCALL convertTimestampToString(
+    SF_STATUS STDCALL TimestampToString(
         std::shared_ptr<ArrowColumn> & colData,
+        std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
         int64 scale,
         uint32 colIdx,
@@ -610,7 +619,63 @@ public:
         size_t * io_len,
         size_t * io_capacity);
 
-};
+} // namespace Arrow
+
+namespace Json
+{
+
+    /**
+     * Helper method to convert a boolean value into a proper string.
+     *
+     * @param value                The initial boolean value retrieved from Snowflake.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    BoolToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
+
+    /**
+     * Helper method to convert a date value into a proper string.
+     *
+     * @param value                The initial date value retrieved from Snowflake.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    DateToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
+
+    /**
+     * Helper method to convert a time or timestamp value into a proper string.
+     *
+     * @param value                The initial time or timestamp value retrieved from Snowflake.
+     * @param scale                The scale of the time or timestamp value.
+     * @param snowType             The Snowflake DB type of the time or timestamp value.
+     * @param tzString             The time zone.
+     * @param out_data             The buffer to which to write the converted string value.
+     * @param io_len               The length of the string.
+     * @param io_capacity          The capacity of the provided buffer.
+     *
+     * @return -1 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL
+    TimeToString(
+        char * value,
+        int64 scale,
+        SF_DB_TYPE snowType,
+        std::string tzString,
+        char ** out_data,
+        size_t * io_len,
+        size_t * io_capacity);
+
+} // namespace Json
+
+} // namespace Conversion
 
 } // namespace Client
 } // namespace Snowflake

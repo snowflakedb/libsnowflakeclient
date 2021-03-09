@@ -58,11 +58,10 @@ ResultSetArrow::~ResultSetArrow()
 SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
 {
     const char * base64RowsetStr = snowflake_cJSON_GetStringValue(chunk);
-    CXX_LOG_DEBUG("base64RowsetStr: %s", base64RowsetStr);
 
     if (base64RowsetStr == nullptr)
     {
-        CXX_LOG_ERROR("NULL value for key '%s' found in current chunk.", m_rowsetKey);
+        CXX_LOG_ERROR("appendChunk -- NULL value for key '%s' in current chunk.", m_rowsetKey);
         return SF_STATUS_ERROR_BAD_RESPONSE;
     }
 
@@ -78,7 +77,7 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
     std::shared_ptr<arrow::BufferBuilder> bufferBuilder = std::make_shared<arrow::BufferBuilder>();
     bufferBuilder->Append((void *) decodedRowsetStr.c_str(), decodedRowsetStr.length());
 
-    CXX_LOG_DEBUG("Chunk %d received.", m_currChunkIdx);
+    CXX_LOG_INFO("appendChunk -- Chunk %d received.", m_currChunkIdx);
     m_currChunkIdx++;
 
     // Finalize the currently built buffer and initialize reader objects from it.
@@ -99,13 +98,8 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(cJSON * chunk)
     {
         std::shared_ptr<arrow::RecordBatch> batch;
         batchReader.ValueOrDie()->ReadNext(&batch);
-        if (batch == nullptr) break;
-        for (int i = 0; i < batch->schema()->num_fields(); ++i)
-        {
-            CXX_LOG_DEBUG(
-                "appendChunk -- column %d is of type %d",
-                i, batch->schema()->field(i)->type()->id());
-        }
+        if (batch == nullptr)
+            break;
         batches.emplace_back(batch);
     }
 
@@ -134,7 +128,10 @@ SF_STATUS STDCALL ResultSetArrow::next()
     if (m_currRowIdx >= m_totalRowCount - 1)
     {
         if (m_currColumnIdx >= m_totalColumnCount - 1)
+        {
+            CXX_LOG_ERROR("next -- Already reached end of result set.");
             return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        }
 
         m_currRowIdx = 0;
         m_currColumnIdx++;
