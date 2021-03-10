@@ -1,6 +1,19 @@
 ARG BASE_IMAGE_NAME
 FROM $BASE_IMAGE_NAME
 ARG LOCAL_USER_ID
+
+# replace outdated yum repo link with snowflake internal links
+COPY CentOS-Base.repo /etc/yum.repos.d/
+CMD chmod 644 /etc/yum.repos.d/CentOS-Base.repo
+RUN yum-config-manager --disable centos*
+RUN yum-config-manager --disable WANdisco-git
+RUN yum-config-manager --disable okay
+RUN yum-config-manager --disable base
+RUN yum-config-manager --disable updates
+RUN yum-config-manager --enable base
+RUN yum-config-manager --enable updates
+RUN yum-config-manager --enable extras
+
 # setup ssh server for debugging
 RUN yum install -y openssh-server
 
@@ -25,6 +38,8 @@ RUN echo 'debugger:pwd' | chpasswd
 
 # let cmake link to cmake3
 RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
+RUN mkdir -p /home/debugger/SnowflakeDep
+RUN ln -s /home/shared/SnowflakeDep/linux /home/debugger/SnowflakeDep
 
 # gosu does not works well with ssh. Override the Build image settings
 COPY entrypoint.sh /usr/bin/entrypoint.sh
