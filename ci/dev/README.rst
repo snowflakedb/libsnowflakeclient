@@ -30,6 +30,7 @@ Setup
 
     .. code-block:: bash
 
+        $ export NEXUS_PASSWORD='your LDAP password'
         $ ./ci/dev/start.sh
 
     Type `pwd` if the password is asked.
@@ -87,6 +88,7 @@ Setup
     .. code-block:: bash
 
         cd /home/debugger/libsnowflakeclient
+        export BUILD_TYPE='Debug' # or 'Release' for release build
         source ./ci/dev/docker_init.sh
         ./ci/build/build.sh
 

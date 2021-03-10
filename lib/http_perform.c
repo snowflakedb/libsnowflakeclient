@@ -274,21 +274,21 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-#ifndef _WIN32
-        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
-        sf_bool ocsp_check;
-        if (insecure_mode) {
-            ocsp_check = SF_BOOLEAN_FALSE;
-        } else {
-            ocsp_check = SF_OCSP_CHECK;
-        }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
-        if (res != CURLE_OK) {
-            log_error("Unable to set OCSP check enable/disable [%s]",
-                      curl_easy_strerror(res));
-            break;
-        }
-#endif
+//#ifndef _WIN32
+//        // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
+//        sf_bool ocsp_check;
+//        if (insecure_mode) {
+//            ocsp_check = SF_BOOLEAN_FALSE;
+//        } else {
+//            ocsp_check = SF_OCSP_CHECK;
+//        }
+//        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
+//        if (res != CURLE_OK) {
+//            log_error("Unable to set OCSP check enable/disable [%s]",
+//                      curl_easy_strerror(res));
+//            break;
+//        }
+//#endif
 
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
