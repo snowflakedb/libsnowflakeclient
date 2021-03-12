@@ -133,7 +133,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         // console and file logging are turned on.
         va_list copy;
         va_copy(copy, args);
-        log_masked_va_list(stderr, fmt, copy);
+        vfprintf(stderr, fmt, copy);
         va_end(copy);
         fprintf(stderr, "\n");
         fflush(stderr);
@@ -159,7 +159,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         fprintf(
             L.fp, SF_LOG_TIMESTAMP_FORMAT,
             tsbuf, level_names[level], ns, basename, line);
-        log_masked_va_list(L.fp, fmt, args);
+        vfprintf(L.fp, fmt, args);
         fprintf(L.fp, "\n");
         fflush(L.fp);
     }
