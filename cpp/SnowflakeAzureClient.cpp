@@ -38,11 +38,15 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   const std::string azuresaskey("AZURE_SAS_KEY");
-  char caBundleFile[MAX_PATH] ={0};
+  char caBundleFile[MAX_PATH] = {0};
   if(transferConfig && transferConfig->caBundleFile) {
-      int len = std::min((int)strlen(transferConfig->caBundleFile), MAX_PATH - 1);
-      sb_strncpy(caBundleFile, sizeof(caBundleFile), transferConfig->caBundleFile, len);
-      caBundleFile[len]=0;
+      if ( strlen(transferConfig->caBundleFile) > MAX_PATH -1) {
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR, 
+            "CA bundle file path too long.");
+      }
+      if (0 != strcpy(caBundleFile, transferConfig->caBundleFile)) {
+        caBundleFile[0] = 0;
+      }
       CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
   }
   else if( caBundleFile[0] == 0 ) {
@@ -51,9 +55,11 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   }
   if( caBundleFile[0] == 0 ) {
       const char* capath = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-      int len = std::min((int)strlen(capath), MAX_PATH - 1);
-      sb_strncpy(caBundleFile, sizeof(caBundleFile), capath, len);
-      caBundleFile[len]=0;
+      if( NULL != capath && strlen(capath) > MAX_PATH - 1) {
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR, 
+            "CA bundle file path too long.");
+      }
+      strcpy(caBundleFile, capath);
       CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if(caBundleFile[0] == 0) {
