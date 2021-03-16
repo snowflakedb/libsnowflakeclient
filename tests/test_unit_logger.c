@@ -50,91 +50,6 @@ void test_log_creation(void **unused) {
 
     remove(logname);
 }
-
-/**
- * Tests masking secret information in log
- */
-void test_mask_secret_log(void **unused) {
-    FILE* fp = fopen("dummy.log", "w+");
-    assert_non_null(fp);
-    log_set_lock(NULL);
-    log_set_level(SF_LOG_TRACE);
-    log_set_quiet(1);
-    log_set_fp(fp);
-
-    const char * logtext[][2] = {
-        {//0
-            "Secure log record!",
-            "Secure log record!"
-        },
-        {//1
-            "Token =ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ",
-            "Token =****"
-        },
-        {//2
-            "idToken : ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ",
-            "idToken : ****"
-        },
-        {//3
-            "sessionToken:ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ",
-            "sessionToken:****"
-        },
-        {//4
-            "masterToken : 'ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ'",
-            "masterToken : '****'"
-        },
-        {//5
-            "assertion content:\"ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ\"",
-            "assertion content:\"****\""
-        },
-        {//6
-            "password: random!TEST/-pwd=123++#",
-            "password: ****"
-        },
-        {//7
-            "pwd =\"random!TEST/-pwd=123++#",
-            "pwd =\"****"
-        },
-        {//8
-            "AWSAccessKeyId=ABCD%efg+1234/567",
-            "AWSAccessKeyId=****"
-        },
-        {//9
-            "https://sfc-fake.s3.fakeamazon.com/012345xx-012x-012x-0123-1a2b3c4d/fake/data_fake?x-amz-server-side-encryption-customer-algorithm=fakealgo&response-content-encoding=fakezip&AWSAccessKeyId=ABCD%efg+1234/567&Expires=123456789&Signature=ABCD%efg+1234/567ABCD%efg+1234/567",
-            "https://sfc-fake.s3.fakeamazon.com/012345xx-012x-012x-0123-1a2b3c4d/fake/data_fake?x-amz-server-side-encryption-customer-algorithm=fakealgo&response-content-encoding=fakezip&AWSAccessKeyId=****&Expires=123456789&Signature=****"
-        },
-        {//10
-            "aws_key_id='afhl124lomsafho0582'",
-            "aws_key_id='****'"
-        },
-        {//11
-            "aws_secret_key = 'dfhuwaojm753omsdfh30oi+fj'",
-            "aws_secret_key = '****'"
-        },
-        {//12
-            "\"privateKeyData\": \"abcdefghijk\"",
-            "\"privateKeyData\": \"XXXX\""
-        },
-    };
-
-    char * line = NULL;
-    size_t len = 0;
-    for (int i = 0; i < 13; i++)
-    {
-        fseek(fp, 0, SEEK_SET);
-        log_trace("%s", logtext[i][0]);
-        fseek(fp, 0, SEEK_SET);
-        getline(&line, &len, fp);
-        if (i != 0)
-        {
-            assert_null(strstr(line, logtext[i][0]));
-        }
-        assert_non_null(strstr(line, logtext[i][1]));
-    }
-
-    free(line);
-    fclose(fp);
-}
 #endif
 
 int main(void) {
@@ -142,7 +57,6 @@ int main(void) {
         cmocka_unit_test(test_log_str_to_level),
 #ifndef _WIN32
         cmocka_unit_test(test_log_creation),
-        cmocka_unit_test(test_mask_secret_log),
 #endif
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
