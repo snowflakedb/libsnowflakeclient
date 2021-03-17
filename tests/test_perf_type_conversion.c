@@ -22,7 +22,6 @@ void test_col_conv_int64_type(void **unused) {
     int64 out = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &out);
-        snowflake_next(sfstmt);
     }
 
     clock_gettime(clk_id, &end);
@@ -47,7 +46,6 @@ void test_col_conv_float64_type(void **unused) {
     float64 out = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_float64(sfstmt, 1, &out);
-        snowflake_next(sfstmt);
     }
 
     clock_gettime(clk_id, &end);
@@ -73,7 +71,6 @@ void test_col_conv_str_type(void **unused) {
     const char *out;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_const_str(sfstmt, 1, &out);
-        snowflake_next(sfstmt);
     }
 
     clock_gettime(clk_id, &end);
@@ -102,7 +99,6 @@ void test_col_conv_timestamp_type(void **unused) {
     size_t out_max_size = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_str(sfstmt, 1, &out, &out_len, &out_max_size);
-        snowflake_next(sfstmt);
     }
 
     clock_gettime(clk_id, &end);
@@ -135,11 +131,9 @@ void test_col_conv_multi_type(void **unused) {
         switch(sfstmt->total_row_index % 2) {
             case 0:
                 snowflake_column_as_const_str(sfstmt, 1, &out_str);
-                snowflake_next(sfstmt);
                 break;
             case 1:
                 snowflake_column_as_int64(sfstmt, 1, &out_int);
-                snowflake_next(sfstmt);
                 break;
         }
     }
@@ -171,7 +165,6 @@ void test_col_conv_multi_types_per_row(void **unused) {
         snowflake_column_as_int64(sfstmt, 1, &out_int);
         snowflake_column_as_float64(sfstmt, 1, &out_float);
         snowflake_column_as_const_str(sfstmt, 1, &out_str);
-        snowflake_next(sfstmt);
     }
 
     clock_gettime(clk_id, &end);

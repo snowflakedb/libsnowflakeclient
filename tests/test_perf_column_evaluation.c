@@ -28,7 +28,6 @@ void test_eval_all_cols(void **unused) {
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         for (int i = 0; i < NUM_COLS; i++) {
             snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
-            snowflake_next(sfstmt);
         }
         fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
     }
@@ -62,13 +61,11 @@ void test_eval_half_cols(void **unused) {
         if (sfstmt->total_row_index % 2) {
             for (int i = 0; i < 3; i++) {
                 snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
-                snowflake_next(sfstmt);
             }
             fprintf(dev_null, "%lli, %lli, %lli", out[0], out[1], out[2]);
         } else {
             for (int i = 3; i < NUM_COLS; i++) {
                 snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
-                snowflake_next(sfstmt);
             }
             fprintf(dev_null, "%lli, %lli, %lli", out[3], out[4], out[5]);
         }
@@ -103,7 +100,6 @@ void test_skip_rows_half(void **unused) {
         if (sfstmt->total_row_index % 2) {
             for (int i = 0; i < NUM_COLS; i++) {
                 snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
-                snowflake_next(sfstmt);
             }
             fprintf(dev_null, "%lli, %lli, %lli, %lli, %lli, %lli", out[0], out[1], out[2], out[3], out[4], out[5]);
         }
@@ -137,7 +133,6 @@ void test_skip_all_rows(void **unused) {
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         for (int i = 0; i < NUM_COLS; i++) {
             snowflake_column_as_int64(sfstmt, i + 1, &out[i]);
-            snowflake_next(sfstmt);
         }
     }
 

@@ -171,11 +171,8 @@ void test_simple_put_core(const char * fileName,
         assert_int_equal(SF_STATUS_SUCCESS, ret);
 
         snowflake_column_as_const_str(sfstmt, 1, &out_c1);
-        snowflake_next(sfstmt);
         snowflake_column_as_const_str(sfstmt, 2, &out_c2);
-        snowflake_next(sfstmt);
         snowflake_column_as_const_str(sfstmt, 3, &out_c3);
-        snowflake_next(sfstmt);
 
         assert_string_equal(out_c1, "1");
         assert_string_equal(out_c2, "2");
@@ -205,7 +202,6 @@ void test_simple_put_core(const char * fileName,
           ret = snowflake_fetch(sfstmt);
           assert_int_equal(SF_STATUS_SUCCESS, ret);
           snowflake_column_as_const_str(sfstmt, 1, &f);
-          snowflake_next(sfstmt);
           fileList.emplace_back(f);
       }
       ret = snowflake_fetch(sfstmt);
@@ -485,11 +481,8 @@ void test_simple_put_use_dev_urandom(void **unused)
 	  ret = snowflake_fetch(sfstmt);
 	  assert_int_equal(SF_STATUS_SUCCESS, ret);
 	  snowflake_column_as_const_str(sfstmt, 1, &out_c1);
-    snowflake_next(sfstmt);
 	  snowflake_column_as_const_str(sfstmt, 2, &out_c2);
-    snowflake_next(sfstmt);
 	  snowflake_column_as_const_str(sfstmt, 3, &out_c3);
-    snowflake_next(sfstmt);
 	  std::string c1 = std::to_string(i);
 	  std::string c2 = std::to_string(i + 1);
 	  assert_string_equal(out_c1, c1.c_str());

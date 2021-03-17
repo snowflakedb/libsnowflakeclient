@@ -103,9 +103,7 @@ void test_selectbin(void **unused) {
         int64 c1 = 0;
         const char *c2 = NULL;
         snowflake_column_as_int64(sfstmt, 1, &c1);
-        snowflake_next(sfstmt);
         snowflake_column_as_const_str(sfstmt, 2, &c2);
-        snowflake_next(sfstmt);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         assert_string_equal(v.c2out, c2);
     }

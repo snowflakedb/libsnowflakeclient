@@ -143,7 +143,6 @@ void test_transaction(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_column_as_int64(sfstmt, 1, &v);
-    snowflake_next(sfstmt);
     assert_int_equal(v, 3);
 
     status = snowflake_query(

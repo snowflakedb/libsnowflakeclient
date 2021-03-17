@@ -24,7 +24,6 @@ void test_native_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 1, &ts)) {
             dump_error(&(sfstmt->error));
         }
-        snowflake_next(sfstmt);
         assert_int_equal(12, snowflake_timestamp_get_hours(&ts));
         assert_int_equal(34, snowflake_timestamp_get_minutes(&ts));
         assert_int_equal(56, snowflake_timestamp_get_seconds(&ts));
@@ -34,7 +33,6 @@ void test_native_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 2, &ts)) {
             dump_error(&(sfstmt->error));
         }
-        snowflake_next(sfstmt);
         assert_int_equal(14, snowflake_timestamp_get_mday(&ts));
         assert_int_equal(9, snowflake_timestamp_get_month(&ts));
         assert_int_equal(2018, snowflake_timestamp_get_year(&ts));
@@ -47,7 +45,6 @@ void test_native_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 3, &ts)) {
             dump_error(&(sfstmt->error));
         }
-        snowflake_next(sfstmt);
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
         assert_int_equal(3, snowflake_timestamp_get_month(&ts));
         assert_int_equal(2014, snowflake_timestamp_get_year(&ts));
@@ -60,7 +57,6 @@ void test_native_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 4, &ts)) {
             dump_error(&(sfstmt->error));
         }
-        snowflake_next(sfstmt);
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
         assert_int_equal(3, snowflake_timestamp_get_month(&ts));
         assert_int_equal(2014, snowflake_timestamp_get_year(&ts));
@@ -73,7 +69,6 @@ void test_native_timestamp(void **unused) {
         if (snowflake_column_as_timestamp(sfstmt, 5, &ts)) {
             dump_error(&(sfstmt->error));
         }
-        snowflake_next(sfstmt);
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
         assert_int_equal(3, snowflake_timestamp_get_month(&ts));
         assert_int_equal(2014, snowflake_timestamp_get_year(&ts));

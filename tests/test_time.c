@@ -113,9 +113,7 @@ void test_time(void **unused) {
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1_out);
-        snowflake_next(sfstmt);
         snowflake_column_as_str(sfstmt, 2, &c2_out, &c2_out_len, &c2_out_max_size);
-        snowflake_next(sfstmt);
         TEST_CASE_TO_STRING v = test_cases[c1_out - 1];
         assert_int_equal(status, SF_STATUS_SUCCESS);
         assert_string_equal(v.c2out, c2_out);
