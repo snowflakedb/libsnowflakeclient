@@ -16,14 +16,22 @@ namespace Client
 /**
  * Represents a result set retrieved in JSON format.
  *
- * Internally, the result set is stored as a cJSON structure.
+ * Internally, the result set is stored as a cJSON structure representing the current chunk being
+ * processed. This chunk will be continually freed and set as the application consumes chunks.
  *
- * When using this class, first populate the result set by using the client library
- * functions in conjunction with the appendChunk() and finishResultSet() methods.
+ * When using this class, populate the result set one chunk at a time by using the client library
+ * function, snowflake_fetch(), which will call appendChunk(). This sets the chunk to the provided
+ * chunk and sets the result set in its initial state.
  *
- * When the result set is finalized, consume the results by using the nextColumn()
- * and nextRow() methods to advance the internal iterators and retrieve data at
- * particular cells using the numerous getters.
+ * Then, snowflake_fetch() will start the consumption of the chunk by calling the next() method.
+ * Initially, the iterator is set to a null state. The first call will move the iterator to the
+ * first row of the chunk.
+ *
+ * From there, you can retrieve data at particular cells using the numerous getter functions.
+ * To advance to the next row, simply call snowflake_fetch() again, which will in turn call
+ * next() or appendChunk() if there are no more rows to be consumed.
+ *
+ * Note: We cache both the current row for performance.
  */
 class ResultSetJson : public Snowflake::Client::ResultSet
 {
@@ -37,11 +45,12 @@ public:
     /**
      * Parameterized constructor.
      *
-     * @param initialChunk              A pointer to the JSON array containing result set data.
+     * @param data                      A pointer to the JSON server response data.
+     * @param rowset                    A pointer to the JSON array containing result set data.
      * @param metadata                  A pointer to the metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSetJson(cJSON * initialChunk, SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSetJson(cJSON * data, cJSON * rowset, SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -49,7 +58,7 @@ public:
     ~ResultSetJson();
 
     /**
-     * Appends the given chunk to the internal result set.
+     * Frees the previously held chunk in m_chunk and sets the current chunk to the given chunk.
      *
      * @param chunk                The chunk to append.
      *
@@ -58,149 +67,164 @@ public:
     SF_STATUS STDCALL appendChunk(cJSON * chunk);
 
     /**
-     * Resets the internal indices so that they may be used to traverse
-     * the finished result set for consumption.
+     * Resets the internal indices.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL finishResultSet();
 
     /**
-     * Advances the internal iterators to the next cell.
+     * Advances the internal iterator to the next row. If there are no more rows to consume,
+     * then the position is maintained until it is reset to the initial state by appendChunk().
      *
-     * Note that JSON data is stored row-wise, as retrieved.
+     * Note: The initial state of iterator is nullptr. 
+     *       The first call to next() will set the iterator to the first row of the chunk.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL next();
 
     /**
-     * Writes the value of the current cell as a boolean to the provided buffer.
+     * Writes the value of the given cell as a boolean to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsBool(sf_bool * out_data);
+    SF_STATUS STDCALL getCellAsBool(size_t idx, sf_bool * out_data);
 
     /**
-     * Writes the value of the current cell as an int8 to the provided buffer.
+     * Writes the value of the given cell as an int8 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsInt8(int8 * out_data);
+    SF_STATUS STDCALL getCellAsInt8(size_t idx, int8 * out_data);
 
     /**
-     * Writes the value of the current cell as an int32 to the provided buffer.
+     * Writes the value of the given cell as an int32 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsInt32(int32 * out_data);
+    SF_STATUS STDCALL getCellAsInt32(size_t idx, int32 * out_data);
 
     /**
-     * Writes the value of the current cell as an int64 to the provided buffer.
+     * Writes the value of the given cell as an int64 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsInt64(int64 * out_data);
+    SF_STATUS STDCALL getCellAsInt64(size_t idx, int64 * out_data);
 
     /**
-     * Writes the value of the current cell as a uint8 to the provided buffer.
+     * Writes the value of the given cell as a uint8 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsUint8(uint8 * out_data);
+    SF_STATUS STDCALL getCellAsUint8(size_t idx, uint8 * out_data);
 
     /**
-     * Writes the value of the current cell as a uint32 to the provided buffer.
+     * Writes the value of the given cell as a uint32 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsUint32(uint32 * out_data);
+    SF_STATUS STDCALL getCellAsUint32(size_t idx, uint32 * out_data);
 
     /**
-     * Writes the value of the current cell as a uint64 to the provided buffer.
+     * Writes the value of the given cell as a uint64 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsUint64(uint64 * out_data);
+    SF_STATUS STDCALL getCellAsUint64(size_t idx, uint64 * out_data);
 
     /**
-     * Writes the value of the current cell as a float32 to the provided buffer.
+     * Writes the value of the given cell as a float32 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsFloat32(float32 * out_data);
+    SF_STATUS STDCALL getCellAsFloat32(size_t idx, float32 * out_data);
 
     /**
-     * Writes the value of the current cell as a float64 to the provided buffer.
+     * Writes the value of the given cell as a float64 to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsFloat64(float64 * out_data);
+    SF_STATUS STDCALL getCellAsFloat64(size_t idx, float64 * out_data);
 
     /**
-     * Writes the value of the current cell as a constant C-string to the provided buffer.
+     * Writes the value of the given cell as a constant C-string to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsConstString(const char ** out_data);
+    SF_STATUS STDCALL getCellAsConstString(size_t idx, const char ** out_data);
 
     /**
-     * Writes the value of the current cell as a C-string to the provided buffer.
+     * Writes the value of the given cell as a C-string to the provided buffer.
      *
      * In the event that the provided buffer is not large enough to contain the requested string,
      * the buffer will be re-allocated and io_capacity will be updated accordingly.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      * @param io_len               The length of the string.
      * @param io_capacity          The capacity of the provided buffer.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity);
+    SF_STATUS STDCALL
+    getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity);
 
     /**
-     * Writes the value of the current cell as a timestamp to the provided buffer.
+     * Writes the value of the given cell as a timestamp to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellAsTimestamp(SF_TIMESTAMP * out_data);
+    SF_STATUS STDCALL getCellAsTimestamp(size_t idx, SF_TIMESTAMP * out_data);
 
     /**
-     * Writes the length of the current cell to the provided buffer.
+     * Writes the length of the given cell to the provided buffer.
      *
+     * @param idx                  The index of the column to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCurrCellStrlen(size_t * out_data);
+    SF_STATUS STDCALL getCellStrlen(size_t idx, size_t * out_data);
 
     /**
-     * Gets the current row.
+     * Gets the current row. Expected only to be called in snowflake_affected_rows(),
+     * when the statement is DML and the response cannot be in a non-JSON format.
      *
-     * Used in the client function snowflake_fetch() when updating the statement
-     * handle object with the current row. Only for JSON query format.
+     * Note: Gives ownership of the row pointer to the caller!
      *
      * @return the current row.
      */
@@ -214,30 +238,26 @@ public:
     size_t getRowCountInChunk();
 
     /**
-     * Indicates whether the current cell is null.
+     * Indicates whether the given cell is null.
      *
+     * @param idx                  The index of the column to check is null.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL isCurrCellNull(sf_bool * out_data);
+    SF_STATUS STDCALL isCellNull(size_t idx, sf_bool * out_data);
 
 private:
 
     /**
-     * Helper method to retrieve the value at a given cell.
-     *
-     * @param rowIdx               The row index of the cell to retrieve.
-     * @param colIdx               The column index of the cell to retrieve.
-     *
-     * @return the cJSON value of the cell, or NULL if unsuccessful.
+     * The current chunk retrieved from the server.
      */
-    cJSON * getCellValue(uint32 rowIdx, uint32 colIdx);
+    cJSON * m_chunk;
 
     /**
-     * The JSON array representing the result set.
+     * The JSON array representing the current row.
      */
-    cJSON * m_records;
+    cJSON * m_currRow;
 
     /**
      * The number of rows in the chunk currently being processed.

@@ -54,7 +54,7 @@ namespace Util
 {
 
     /**
-     * Helper method to allocate a char buffer to write converted Arrow data to if necessary.
+     * Helper method to allocate a char buffer to write converted string data to if necessary.
      *
      * TODO: It doesn't make much sense to have a util function in a conversion file.
      *       Try to find a better place to move this to.
@@ -99,8 +99,8 @@ namespace Arrow
     SF_STATUS STDCALL NumericToSignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         int64 * out_data,
         IntegerType intType);
@@ -121,8 +121,8 @@ namespace Arrow
     SF_STATUS STDCALL NumericToUnsignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         uint64 * out_data,
         IntegerType intType);
@@ -142,8 +142,8 @@ namespace Arrow
     SF_STATUS STDCALL NumericToDouble(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         float64 * out_data);
 
@@ -162,8 +162,8 @@ namespace Arrow
     SF_STATUS STDCALL NumericToFloat(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         float32 * out_data);
 
@@ -183,8 +183,8 @@ namespace Arrow
     SF_STATUS STDCALL StringToSignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         int64 * out_data,
         IntegerType intType);
@@ -205,8 +205,8 @@ namespace Arrow
     SF_STATUS STDCALL StringToUnsignedInteger(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         uint64 * out_data,
         IntegerType intType);
@@ -226,8 +226,8 @@ namespace Arrow
     SF_STATUS STDCALL StringToDouble(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         float64 * out_data);
 
@@ -246,187 +246,10 @@ namespace Arrow
     SF_STATUS STDCALL StringToFloat(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
         float32 * out_data);
-
-    // Const String conversion =====================================================================
-
-    /**
-     * Function to convert a binary value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL BinaryToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a boolean value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL BoolToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a date value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL DateToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a decimal value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL DecimalToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a double value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL DoubleToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert an integral value into a const string.
-     *
-     * Note: INT32 and INT64 values may contain Snowflake TIME values.
-     *       This method checks the Snowflake DB type to cover these cases.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param snowType             The Snowflake DB type of the column.
-     * @param scale                The scale of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL IntToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        SF_DB_TYPE snowType,
-        int64 scale,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a time value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param scale                The scale of the time value.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL TimeToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        int64 scale,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    /**
-     * Function to convert a time or timestamp value into a const string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param snowType             The Snowflake DB type of the column.
-     * @param scale                The scale of the timestamp value.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL TimestampToConstString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        SF_DB_TYPE snowType,
-        int64 scale,
-        uint32 colIdx,
-        uint32 rowIdx,
-        uint32 cellIdx,
-        const char ** out_data);
-
-    // String conversion ===========================================================================
 
     /**
      * Function to convert a binary value into a string.
@@ -436,21 +259,17 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL BinaryToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a boolean value into a string.
@@ -460,21 +279,17 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The buffer converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL BoolToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a date value into a string.
@@ -484,21 +299,17 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL DateToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a decimal value into a string.
@@ -508,21 +319,17 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL DecimalToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a double value into a string.
@@ -532,21 +339,17 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL DoubleToString(
         std::shared_ptr<ArrowColumn> & colData,
         std::shared_ptr<arrow::DataType> arrowType,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert an integral value into a string.
@@ -561,9 +364,7 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
@@ -572,12 +373,10 @@ namespace Arrow
         std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
         int64 scale,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a time value into a string.
@@ -586,9 +385,7 @@ namespace Arrow
      * @param arrowType            The Arrow data type of the column.
      * @param scale                The scale of the time value.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
@@ -597,9 +394,7 @@ namespace Arrow
         std::shared_ptr<arrow::DataType> arrowType,
         int64 scale,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
     /**
      * Function to convert a time or timestamp value into a string.
@@ -611,9 +406,7 @@ namespace Arrow
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
      * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
+     * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
@@ -622,12 +415,10 @@ namespace Arrow
         std::shared_ptr<arrow::DataType> arrowType,
         SF_DB_TYPE snowType,
         int64 scale,
-        uint32 colIdx,
-        uint32 rowIdx,
+        size_t colIdx,
+        size_t rowIdx,
         uint32 cellIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        std::string& outString);
 
 } // namespace Arrow
 

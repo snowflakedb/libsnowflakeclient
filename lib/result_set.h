@@ -32,7 +32,8 @@ extern "C" {
      * Parameterized constructor.
      * Initializes the result set with required information as well as data.
      *
-     * @param initial_chunk             A pointer to the result set data.
+     * @param data                      A pointer to the server response data.
+     * @param rowset                    A pointer to the result set data.
      * @param metadata                  A pointer to the metadata for the result set.
      * @param query_result_format       The query result format.
      * @param tz_string                 The time zone.
@@ -40,7 +41,8 @@ extern "C" {
      * @return the created result set.
      */
     void * rs_create(
-        cJSON * initial_chunk,
+        cJSON * data,
+        cJSON * rowset,
         SF_COLUMN_DESC * metadata,
         QueryResultFormat_t * query_result_format,
         const char * tz_string);
@@ -91,13 +93,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_bool(
+    SF_STATUS STDCALL rs_get_cell_as_bool(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         sf_bool * out_data);
 
     /**
@@ -105,13 +109,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_int8(
+    SF_STATUS STDCALL rs_get_cell_as_int8(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         int8 * out_data);
 
     /**
@@ -119,13 +125,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_int32(
+    SF_STATUS STDCALL rs_get_cell_as_int32(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         int32 * out_data);
 
     /**
@@ -133,13 +141,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_int64(
+    SF_STATUS STDCALL rs_get_cell_as_int64(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         int64 * out_data);
 
     /**
@@ -147,13 +157,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_uint8(
+    SF_STATUS STDCALL rs_get_cell_as_uint8(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         uint8 * out_data);
 
     /**
@@ -161,13 +173,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_uint32(
+    SF_STATUS STDCALL rs_get_cell_as_uint32(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         uint32 * out_data);
 
     /**
@@ -175,13 +189,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_uint64(
+    SF_STATUS STDCALL rs_get_cell_as_uint64(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         uint64 * out_data);
 
     /**
@@ -189,13 +205,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_float32(
+    SF_STATUS STDCALL rs_get_cell_as_float32(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         float32 * out_data);
 
     /**
@@ -203,13 +221,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_float64(
+    SF_STATUS STDCALL rs_get_cell_as_float64(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         float64 * out_data);
 
     /**
@@ -217,13 +237,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_const_string(
+    SF_STATUS STDCALL rs_get_cell_as_const_string(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         const char ** out_data);
 
     /**
@@ -231,15 +253,17 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      * @param io_len               The length of the requested string.
      * @param io_capacity          The capacity of the provided buffer.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_string(
+    SF_STATUS STDCALL rs_get_cell_as_string(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         char ** out_data,
         size_t * io_len,
         size_t * io_capacity);
@@ -249,13 +273,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_as_timestamp(
+    SF_STATUS STDCALL rs_get_cell_as_timestamp(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         SF_TIMESTAMP * out_data);
 
     /**
@@ -263,23 +289,16 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_get_curr_cell_strlen(
+    SF_STATUS STDCALL rs_get_cell_strlen(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         size_t * out_data);
-
-    /**
-     * Get the data in the current row as a cJSON struct.
-     *
-     * Only valid if the query result format is JSON_FORMAT.
-     *
-     * @return The current row as a cJSON struct if JSON_FORMAT, otherwise NULL.
-     */
-    cJSON * rs_get_curr_row(void * rs, QueryResultFormat_t * query_result_format);
 
     /**
      * Gets the number of rows in the current chunk being processed.
@@ -306,13 +325,15 @@ extern "C" {
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_is_curr_cell_null(
+    SF_STATUS STDCALL rs_is_cell_null(
         void * rs,
         QueryResultFormat_t * query_result_format,
+        size_t idx,
         sf_bool * out_data);
 
 #ifdef __cplusplus

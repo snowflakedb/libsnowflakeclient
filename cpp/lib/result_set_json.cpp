@@ -14,14 +14,15 @@ extern "C" {
 #endif
 
     rs_json_t * rs_json_create(
-        cJSON * initial_chunk,
+        cJSON * data,
+        cJSON * rowset,
         SF_COLUMN_DESC * metadata,
         const char * tz_string
     )
     {
         rs_json_t * rs_struct = (rs_json_t *) SF_MALLOC(sizeof(rs_json_t));
         Snowflake::Client::ResultSetJson * rs_obj =
-            new Snowflake::Client::ResultSetJson(initial_chunk, metadata, std::string(tz_string));
+            new Snowflake::Client::ResultSetJson(data, rowset, metadata, std::string(tz_string));
         rs_struct->rs_object = rs_obj;
 
         return rs_struct;
@@ -77,7 +78,7 @@ extern "C" {
         return rs_obj->next();
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_bool(rs_json_t * rs, sf_bool * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_bool(rs_json_t * rs, size_t idx, sf_bool * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -87,10 +88,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsBool(out_data);
+        return rs_obj->getCellAsBool(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_int8(rs_json_t * rs, int8 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_int8(rs_json_t * rs, size_t idx, int8 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -100,10 +101,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsInt8(out_data);
+        return rs_obj->getCellAsInt8(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_int32(rs_json_t * rs, int32 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_int32(rs_json_t * rs, size_t idx, int32 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -113,10 +114,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsInt32(out_data);
+        return rs_obj->getCellAsInt32(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_int64(rs_json_t * rs, int64 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_int64(rs_json_t * rs, size_t idx, int64 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -126,10 +127,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsInt64(out_data);
+        return rs_obj->getCellAsInt64(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_uint8(rs_json_t * rs, uint8 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_uint8(rs_json_t * rs, size_t idx, uint8 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -139,10 +140,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsUint8(out_data);
+        return rs_obj->getCellAsUint8(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_uint32(rs_json_t * rs, uint32 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_uint32(rs_json_t * rs, size_t idx, uint32 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -152,10 +153,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsUint32(out_data);
+        return rs_obj->getCellAsUint32(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_uint64(rs_json_t * rs, uint64 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_uint64(rs_json_t * rs, size_t idx, uint64 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -165,10 +166,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsUint64(out_data);
+        return rs_obj->getCellAsUint64(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_float32(rs_json_t * rs, float32 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_float32(rs_json_t * rs, size_t idx, float32 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -178,10 +179,10 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsFloat32(out_data);
+        return rs_obj->getCellAsFloat32(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_float64(rs_json_t * rs, float64 * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_as_float64(rs_json_t * rs, size_t idx, float64 * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -191,11 +192,12 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsFloat64(out_data);
+        return rs_obj->getCellAsFloat64(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_const_string(
+    SF_STATUS STDCALL rs_json_get_cell_as_const_string(
         rs_json_t * rs,
+        size_t idx,
         const char ** out_data
     )
     {
@@ -207,11 +209,12 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsConstString(out_data);
+        return rs_obj->getCellAsConstString(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_string(
+    SF_STATUS STDCALL rs_json_get_cell_as_string(
         rs_json_t * rs,
+        size_t idx,
         char ** out_data,
         size_t * io_len,
         size_t * io_capacity
@@ -225,11 +228,12 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsString(out_data, io_len, io_capacity);
+        return rs_obj->getCellAsString(idx, out_data, io_len, io_capacity);
     }
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_as_timestamp(
+    SF_STATUS STDCALL rs_json_get_cell_as_timestamp(
         rs_json_t * rs,
+        size_t idx,
         SF_TIMESTAMP * out_data
     )
     {
@@ -241,11 +245,11 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellAsTimestamp(out_data);
+        return rs_obj->getCellAsTimestamp(idx, out_data);
     }
 
 
-    SF_STATUS STDCALL rs_json_get_curr_cell_strlen(rs_json_t * rs, size_t * out_data)
+    SF_STATUS STDCALL rs_json_get_cell_strlen(rs_json_t * rs, size_t idx, size_t * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -255,20 +259,7 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrCellStrlen(out_data);
-    }
-
-    cJSON * rs_json_get_curr_row(rs_json_t * rs)
-    {
-        Snowflake::Client::ResultSetJson * rs_obj;
-
-        if (rs == NULL)
-        {
-            return NULL;
-        }
-
-        rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCurrRow();
+        return rs_obj->getCellStrlen(idx, out_data);
     }
 
     size_t rs_json_get_row_count_in_chunk(rs_json_t * rs)
@@ -297,7 +288,7 @@ extern "C" {
         return rs_obj->getTotalRowCount();
     }
 
-    SF_STATUS STDCALL rs_json_is_curr_cell_null(rs_json_t * rs, sf_bool * out_data)
+    SF_STATUS STDCALL rs_json_is_cell_null(rs_json_t * rs, size_t idx, sf_bool * out_data)
     {
         Snowflake::Client::ResultSetJson * rs_obj;
 
@@ -307,7 +298,7 @@ extern "C" {
         }
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->isCurrCellNull(out_data);
+        return rs_obj->isCellNull(idx, out_data);
     }
 
 #ifdef __cplusplus

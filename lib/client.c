@@ -1530,12 +1530,13 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
 
                     sfstmt->chunk_downloader->consumer_head++;
 
-                    // Set new chunk and remove chunk reference from locked array
+                    // Set the new chunk, which will internally free the previous chunk appended.
                     rs_append_chunk(
                         sfstmt->result_set,
                         (QueryResultFormat_t *) sfstmt->qrf,
                         sfstmt->chunk_downloader->queue[index].chunk);
 
+                    // Remove chunk reference from locked array
                     sfstmt->chunk_downloader->queue[index].chunk = NULL;
                     sfstmt->chunk_rowcount = sfstmt->chunk_downloader->queue[index].row_count;
                     log_debug("Acquired chunk %llu from chunk downloader",
@@ -1566,6 +1567,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     }
 
     // Get next result row
+    _snowflake_next(sfstmt);
     sfstmt->chunk_rowcount--;
     sfstmt->total_row_index++;
     ret = SF_STATUS_SUCCESS;
@@ -1624,11 +1626,9 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
         return ret;
     }
 
-    size_t total_size = rs_get_total_row_count(
-        sfstmt->result_set,
-        (QueryResultFormat_t *) sfstmt->qrf);
+    ret = rs_get_total_row_count(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
 
-    if (total_size == 0) {
+    if (ret == 0) {
         /* no affected rows is determined. The potential cause is
          * the query is not DML or no stmt was executed at all . */
         SET_SNOWFLAKE_STMT_ERROR(
@@ -1636,25 +1636,8 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
             SF_STATUS_ERROR_APPLICATION_ERROR, "No results found.",
             SF_SQLSTATE_NO_DATA, sfstmt->sfqid);
         sfstmt->error.error_code = SF_STATUS_ERROR_APPLICATION_ERROR;
-        return ret;
     }
 
-    if (sfstmt->is_dml) {
-        // DML statements will return with a result set of dimensions 1 by 1.
-        // The cell contains the number of rows affected.
-        while (rs_next(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf)) {
-            int64 curr;
-            rs_get_curr_cell_as_int64(
-                sfstmt->result_set,
-                (QueryResultFormat_t *) sfstmt->qrf,
-                &curr);
-            ret += curr;
-        }
-
-        rs_finish_result_set(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
-    } else {
-        ret = sfstmt->total_rowcount;
-    }
     return ret;
 }
 
@@ -1959,19 +1942,27 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->stats = NULL;
                 }
 
-                // Determine query result format.
+                // Determine query result format and detach rowset object from data.
                 cJSON * qrf = snowflake_cJSON_GetObjectItem(data, "queryResultFormat");
                 char * qrf_str = snowflake_cJSON_GetStringValue(qrf);
-                cJSON * chunk = (cJSON *) SF_CALLOC(1, sizeof(cJSON));
-
                 sfstmt->qrf = SF_CALLOC(1, sizeof(QueryResultFormat_t));
+                cJSON * rowset = SF_CALLOC(1, sizeof(cJSON));
+
                 if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
                     *((QueryResultFormat_t *) sfstmt->qrf) = ARROW_FORMAT;
-                    chunk = snowflake_cJSON_GetObjectItem(data, "rowsetBase64");
+                    if (json_detach_array_from_object((cJSON **) (&rowset), data, "rowsetBase64")) {
+                        log_error("No valid rowset found in response.");
+                        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                                                SF_STATUS_ERROR_BAD_JSON,
+                                                "Missing rowset from response. No results found.",
+                                                SF_SQLSTATE_APP_REJECT_CONNECTION,
+                                                sfstmt->sfqid);
+                        goto cleanup;
+                    }
                 }
                 else if (strcmp(qrf_str, "json") == 0) {
                     *((QueryResultFormat_t *) sfstmt->qrf) = JSON_FORMAT;
-                    if (json_detach_array_from_object((cJSON **) (&chunk), data, "rowset")) {
+                    if (json_detach_array_from_object((cJSON **) (&rowset), data, "rowset")) {
                         log_error("No valid rowset found in response.");
                         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
                                                 SF_STATUS_ERROR_BAD_JSON,
@@ -1985,14 +1976,48 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     log_error("Unsupported query result format: %s", qrf_str);
                 }
 
+                // Detach "rowset" object and create the result set.
                 sfstmt->result_set = rs_create(
-                    chunk,
+                    data,
+                    rowset,
                     sfstmt->desc,
                     (QueryResultFormat_t *) sfstmt->qrf,
                     sfstmt->connection->timezone);
 
-                // Update row counts. The member chunk_rowcount is used in snowflake_fetch
-                // to control the number of iterations.
+                // Index starts at 0 and incremented each fetch
+                sfstmt->total_row_index = 0;
+
+                // When the result set is sufficient large, the server response will contain
+                // an empty "rowset" object. Instead, it will have a "chunks" object that contains,
+                // among other fields, a URL from which the result set can be downloaded in chunks.
+                // In this case, we initialize the chunk downloader, which will download in the
+                // background as calls to snowflake_fetch() are made.
+                if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
+                    // We don't care if there is no qrmk, so ignore return code
+                    json_copy_string(&qrmk, data, "qrmk");
+                    chunk_headers = snowflake_cJSON_GetObjectItem(data, "chunkHeaders");
+                    NON_JSON_RESP* (*callback_create_resp)(void) = NULL;
+                    if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf))
+                    {
+                        //TODO: set call back function for arrow format to download chunks in arrow
+                    }
+                    sfstmt->chunk_downloader = chunk_downloader_init(
+                            qrmk,
+                            chunk_headers,
+                            chunks,
+                            2, // thread count
+                            4, // fetch slot
+                            &sfstmt->error,
+                            sfstmt->connection->insecure_mode,
+                            callback_create_resp);
+                    if (!sfstmt->chunk_downloader) {
+                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                        goto cleanup;
+                    }
+                }
+
+                // Update row counts. When chunk_rowcount reaches zero, snowflake_fetch will
+                // get the chunk downloader to download more chunks.
                 sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
                     sfstmt->result_set,
                     (QueryResultFormat_t *) sfstmt->qrf);
@@ -2001,28 +2026,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     log_warn(
                         "No total count found in response. Reverting to using array size of results");
                     sfstmt->total_rowcount = sfstmt->chunk_rowcount;
-                }
-
-                // Index starts at 0 and incremented each fetch
-                sfstmt->total_row_index = 0;
-
-                // Set large result set if one exists
-                if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
-                    // We don't care if there is no qrmk, so ignore return code
-                    json_copy_string(&qrmk, data, "qrmk");
-                    chunk_headers = snowflake_cJSON_GetObjectItem(data, "chunkHeaders");
-                    sfstmt->chunk_downloader = chunk_downloader_init(
-                            qrmk,
-                            chunk_headers,
-                            chunks,
-                            2, // thread count
-                            4, // fetch slot
-                            &sfstmt->error,
-                            sfstmt->connection->insecure_mode);
-                    if (!sfstmt->chunk_downloader) {
-                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
-                        goto cleanup;
-                    }
                 }
             }
         } else if (json_error != SF_JSON_ERROR_NONE) {
@@ -2213,30 +2216,6 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt) {
     return SF_STATUS_SUCCESS;
 }
 
-
-
-// Make sure that idx is in bounds and that column exists
-SF_STATUS STDCALL _snowflake_get_cJSON_column(SF_STMT *sfstmt, int idx, cJSON **column_ptr) {
-    if (idx > snowflake_num_fields(sfstmt) || idx <= 0) {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_BOUNDS,
-                                 "Column index must be between 1 and snowflake_num_fields()", "", sfstmt->sfqid);
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
-    // Since Arrow isn't yet supported, we throw an error
-    cJSON *row = rs_get_curr_row(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
-    cJSON *column = snowflake_cJSON_GetArrayItem(row, idx - 1);
-    if (!column) {
-        *column_ptr = NULL;
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW,
-                                 "Column is missing from row.", "", sfstmt->sfqid);
-        return SF_STATUS_ERROR_MISSING_COLUMN_IN_ROW;
-    }
-
-    *column_ptr = column;
-    return SF_STATUS_SUCCESS;
-}
-
 // Does NULL checking and clears the SF_STMT error struct
 SF_STATUS STDCALL _snowflake_column_null_checks(SF_STMT *sfstmt, void *value_ptr) {
     if (!sfstmt) {
@@ -2252,7 +2231,7 @@ SF_STATUS STDCALL _snowflake_column_null_checks(SF_STMT *sfstmt, void *value_ptr
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_next(SF_STMT *sfstmt) {
+SF_STATUS STDCALL _snowflake_next(SF_STMT *sfstmt) {
     return rs_next(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
 }
 
@@ -2263,7 +2242,7 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
         return status;
     }
 
-    return rs_get_curr_cell_as_bool(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_bool(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *value_ptr) {
@@ -2273,7 +2252,7 @@ SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *val
         return status;
     }
 
-    return rs_get_curr_cell_as_uint8(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_uint8(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *value_ptr) {
@@ -2283,7 +2262,7 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
         return status;
     }
 
-    return rs_get_curr_cell_as_uint32(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_uint32(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *value_ptr) {
@@ -2293,7 +2272,7 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *v
         return status;
     }
 
-    return rs_get_curr_cell_as_uint64(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_uint64(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value_ptr) {
@@ -2303,7 +2282,7 @@ SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value
         return status;
     }
 
-    return rs_get_curr_cell_as_int8(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_int8(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *value_ptr) {
@@ -2313,7 +2292,7 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
         return status;
     }
 
-    return rs_get_curr_cell_as_int32(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_int32(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *value_ptr) {
@@ -2323,7 +2302,7 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *val
         return status;
     }
 
-    return rs_get_curr_cell_as_int64(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_int64(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 *value_ptr) {
@@ -2333,7 +2312,7 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
         return status;
     }
 
-    return rs_get_curr_cell_as_float32(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_float32(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr) {
@@ -2343,7 +2322,7 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 
         return status;
     }
 
-    return rs_get_curr_cell_as_float64(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_float64(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIMESTAMP *value_ptr) {
@@ -2353,7 +2332,7 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
         return status;
     }
 
-    return rs_get_curr_cell_as_timestamp(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_timestamp(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr) {
@@ -2363,7 +2342,7 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
         return status;
     }
 
-    return rs_get_curr_cell_as_const_string(sfstmt->result_set, sfstmt->qrf, value_ptr);
+    return rs_get_cell_as_const_string(sfstmt->result_set, sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* const_str_val, const SF_DB_TYPE type, const char *connection_timezone,
@@ -2579,9 +2558,10 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
         return status;
     }
 
-    return rs_get_curr_cell_as_string(
+    return rs_get_cell_as_string(
         sfstmt->result_set,
         sfstmt->qrf,
+        idx,
         value_ptr,
         value_len_ptr,
         max_value_size_ptr);
@@ -2594,7 +2574,7 @@ SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *valu
         return status;
     }
 
-    return rs_get_curr_cell_strlen(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf, value_ptr);
+    return rs_get_cell_strlen(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr) {
@@ -2604,7 +2584,7 @@ SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *va
         return status;
     }
 
-    return rs_is_curr_cell_null(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf, value_ptr);
+    return rs_is_cell_null(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf, idx, value_ptr);
 }
 
 SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanoseconds, int32 seconds,

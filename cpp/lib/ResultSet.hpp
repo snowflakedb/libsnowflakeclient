@@ -45,10 +45,12 @@ public:
     /**
      * Parameterized constructor.
      *
+     * @param data                      A pointer to the JSON server response data.
+     * @param rowset                    A pointer to the JSON array containing result set data.
      * @param metadata                  The metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSet(cJSON * data, cJSON * rowset, SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -77,108 +79,122 @@ public:
     // API methods to consume results ==============================================================
 
     /**
-     * Advances to the next cell.
+     * Advances to the next column or row, depending on the query result format.
+     *
+     * If Arrow format, advance to the next column.
+     * If JSON format, advance to the next row.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     virtual SF_STATUS STDCALL next() = 0;
 
     /**
-     * Writes the value of the current cell as a boolean to the provided buffer.
+     * Writes the value of the given cell as a boolean to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsBool(sf_bool * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsBool(size_t idx, sf_bool * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as an int8 to the provided buffer.
+     * Writes the value of the given cell as an int8 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsInt8(int8 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsInt8(size_t idx, int8 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as an int32 to the provided buffer.
+     * Writes the value of the given cell as an int32 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsInt32(int32 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsInt32(size_t idx, int32 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as an int64 to the provided buffer.
+     * Writes the value of the given cell as an int64 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsInt64(int64 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsInt64(size_t idx, int64 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a uint8 to the provided buffer.
+     * Writes the value of the given cell as a uint8 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsUint8(uint8 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsUint8(size_t idx, uint8 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a uint32 to the provided buffer.
+     * Writes the value of the given cell as a uint32 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsUint32(uint32 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsUint32(size_t idx, uint32 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a uint64 to the provided buffer.
+     * Writes the value of the given cell as a uint64 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsUint64(uint64 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsUint64(size_t idx, uint64 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a float32 to the provided buffer.
+     * Writes the value of the given cell as a float32 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsFloat32(float32 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsFloat32(size_t idx, float32 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a float64 to the provided buffer.
+     * Writes the value of the given cell as a float64 to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsFloat64(float64 * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsFloat64(size_t idx, float64 * out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a constant C-string to the provided buffer.
+     * Writes the value of the given cell as a constant C-string to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsConstString(const char ** out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsConstString(size_t idx, const char ** out_data) = 0;
 
     /**
-     * Writes the value of the current cell as a C-string to the provided buffer.
+     * Writes the value of the given cell as a C-string to the provided buffer.
      *
      * In the event that the provided buffer is not large enough to contain the requested string,
      * the buffer will be re-allocated and io_capacity will be updated accordingly.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      * @param io_len               The length of the string.
      * @param io_capacity          The capacity of the provided buffer.
@@ -186,34 +202,37 @@ public:
      * @return 0 if successful, otherwise an error is returned.
      */
     virtual SF_STATUS STDCALL
-    getCurrCellAsString(char ** out_data, size_t * io_len, size_t * io_capacity) = 0;
+    getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity) = 0;
 
     /**
-     * Writes the value of the current cell as a timestamp to the provided buffer.
+     * Writes the value of the given cell as a timestamp to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellAsTimestamp(SF_TIMESTAMP * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellAsTimestamp(size_t idx, SF_TIMESTAMP * out_data) = 0;
 
     /**
-     * Writes the length of the current cell to the provided buffer.
+     * Writes the length of the given cell to the provided buffer.
      *
+     * @param idx                  The index of the column or row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL getCurrCellStrlen(size_t * out_data) = 0;
+    virtual SF_STATUS STDCALL getCellStrlen(size_t idx, size_t * out_data) = 0;
 
     /**
-     * Indicates whether the current cell is null.
+     * Indicates whether the given cell is null.
      *
+     * @param idx                  The index of the column or row to check is null.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    virtual SF_STATUS STDCALL isCurrCellNull(sf_bool * out_data) = 0;
+    virtual SF_STATUS STDCALL isCellNull(size_t idx, sf_bool * out_data) = 0;
 
     // Other member getters ========================================================================
 
@@ -352,17 +371,22 @@ protected:
     /**
      * The output format of a Timestamp LTZ (local time zone) field.
      */
-     std::string m_timestampLtzOutputFormat;
+    std::string m_timestampLtzOutputFormat;
 
     /**
      * The output format of a Timestamp NTZ (no time zone) field.
      */
-     std::string m_timestampNtzOutputFormat;
+    std::string m_timestampNtzOutputFormat;
 
     /**
      * The output format of a Timestamp TZ (time zone) field.
      */
-     std::string m_timestampTzOutputFormat;
+    std::string m_timestampTzOutputFormat;
+
+    /**
+     * Indicates whether the query that generated this result set is a DML statement.
+     */
+    bool m_isDml;
 
     /**
      * The format of the result set.

@@ -27,12 +27,14 @@ extern "C" {
      * Parameterized constructor.
      * Initializes the result set with required information as well as data.
      *
-     * @param initial_chunk             A pointer to the result set data.
+     * @param data                      A pointer to the server response data.
+     * @param rowset                    A pointer to the result set data.
      * @param metadata                  A pointer to the metadata for the result set.
      * @param tz_string                 The time zone.
      */
     rs_arrow_t * rs_arrow_create(
-        cJSON * initial_chunk,
+        cJSON * data,
+        cJSON * rowset,
         SF_COLUMN_DESC * metadata,
         const char * tz_string);
 
@@ -74,134 +76,156 @@ extern "C" {
      * Writes the value of the current cell as a boolean to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_bool(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_bool(
         rs_arrow_t * rs,
+        size_t idx,
         sf_bool * out_data);
 
     /**
      * Writes the value of the current cell as an int8 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int8(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_int8(
         rs_arrow_t * rs,
+        size_t idx,
         int8 * out_data);
 
     /**
      * Writes the value of the current cell as an int32 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int32(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_int32(
         rs_arrow_t * rs,
+        size_t idx,
         int32 * out_data);
 
     /**
      * Writes the value of the current cell as an int64 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_int64(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_int64(
         rs_arrow_t * rs,
+        size_t idx,
         int64 * out_data);
 
     /**
      * Writes the value of the current cell as a uint8 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint8(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_uint8(
         rs_arrow_t * rs,
+        size_t idx,
         uint8 * out_data);
 
     /**
      * Writes the value of the current cell as a uint32 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint32(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_uint32(
         rs_arrow_t * rs,
+        size_t idx,
         uint32 * out_data);
 
     /**
      * Writes the value of the current cell as a uint64 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_uint64(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_uint64(
         rs_arrow_t * rs,
+        size_t idx,
         uint64 * out_data);
 
     /**
      * Writes the value of the current cell as a float32 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_float32(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_float32(
         rs_arrow_t * rs,
+        size_t idx,
         float32 * out_data);
 
     /**
      * Writes the value of the current cell as a float64 to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_float64(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_float64(
         rs_arrow_t * rs,
+        size_t idx,
         float64 * out_data);
 
     /**
      * Writes the value of the current cell as a constant C-string to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_const_string(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_const_string(
         rs_arrow_t * rs,
+        size_t idx,
         const char ** out_data);
 
     /**
      * Writes the value of the current cell as a C-string to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      * @param io_len               The length of the requested string.
      * @param io_capacity          The capacity of the provided buffer.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_string(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_string(
         rs_arrow_t * rs,
+        size_t idx,
         char ** out_data,
         size_t * io_len,
         size_t * io_capacity);
@@ -210,23 +234,26 @@ extern "C" {
      * Writes the value of the current cell as a timestamp to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
     *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_as_timestamp(
+    SF_STATUS STDCALL rs_arrow_get_cell_as_timestamp(
         rs_arrow_t * rs,
+        size_t idx,
         SF_TIMESTAMP * out_data);
 
     /**
      * Writes the length of the current cell to the provided buffer.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_get_curr_cell_strlen(rs_arrow_t * rs, size_t * out_data);
+    SF_STATUS STDCALL rs_arrow_get_cell_strlen(rs_arrow_t * rs, size_t idx, size_t * out_data);
 
     /**
      * Gets the number of rows in the current chunk being processed.
@@ -250,11 +277,12 @@ extern "C" {
      * Indiciates whether the current cell is null or not.
      *
      * @param rs                   The ResultSetArrow object.
+     * @param idx                  The index of the row to retrieve.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_is_curr_cell_null(rs_arrow_t * rs, sf_bool * out_data);
+    SF_STATUS STDCALL rs_arrow_is_cell_null(rs_arrow_t * rs, size_t idx, sf_bool * out_data);
 
 #ifdef __cplusplus
 } // extern "C"

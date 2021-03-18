@@ -33,14 +33,12 @@ ResultSet::ResultSet() :
     ;
 }
 
-ResultSet::ResultSet(SF_COLUMN_DESC * metadata, std::string tzString) :
-    m_binaryOutputFormat("HEX"),
-    m_dateOutputFormat("YYYY-MM-DD"),
-    m_timeOutputFormat("HH24:MI:SS"),
-    m_timestampOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
-    m_timestampLtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
-    m_timestampNtzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3"),
-    m_timestampTzOutputFormat("YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM"),
+ResultSet::ResultSet(
+    cJSON * data,
+    cJSON * rowset,
+    SF_COLUMN_DESC * metadata,
+    std::string tzString
+) :
     m_currChunkIdx(0),
     m_currChunkRowIdx(0),
     m_currColumnIdx(0),
@@ -48,10 +46,30 @@ ResultSet::ResultSet(SF_COLUMN_DESC * metadata, std::string tzString) :
     m_metadata(metadata),
     m_totalChunkCount(0),
     m_totalColumnCount(0),
-    m_totalRowCount(0),
     m_tzString(tzString)
 {
-    ;
+    // Determine session parameter values.
+    cJSON * params = snowflake_cJSON_GetObjectItem(data, "parameters");
+    for (int i = 0; i < snowflake_cJSON_GetArraySize(params); ++i)
+    {
+        cJSON * curr = snowflake_cJSON_GetArrayItem(params, i);
+        const char * paramName = snowflake_cJSON_GetObjectItem(curr, "name")->valuestring;
+
+        if (paramName == "BINARY_OUTPUT_FORMAT")
+            m_binaryOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "DATE_OUTPUT_FORMAT")
+            m_dateOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "TIME_OUTPUT_FORMAT")
+            m_timeOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "TIMESTAMP_OUTPUT_FORMAT")
+            m_timestampOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "TIMESTAMP_LTZ_OUTPUT_FORMAT")
+            m_timestampLtzOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "TIMESTAMP_NTZ_OUTPUT_FORMAT")
+            m_timestampNtzOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+        else if (paramName == "TIMESTAMP_TZ_OUTPUT_FORMAT")
+            m_timestampTzOutputFormat = snowflake_cJSON_GetObjectItem(curr, "value")->valuestring;
+    }
 }
 
 // Public getter methods ===========================================================================

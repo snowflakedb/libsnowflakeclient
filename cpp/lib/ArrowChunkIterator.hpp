@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-#include "arrow/api.h"
+#include "arrowheaders.hpp"
 
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
@@ -193,7 +193,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsBool(uint32 colIdx, uint32 rowIdx, sf_bool * out_data);
+    SF_STATUS STDCALL getCellAsBool(size_t colIdx, size_t rowIdx, sf_bool * out_data);
 
     /**
      * Gets the value of the given cell as an int8.
@@ -212,7 +212,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt8(uint32 colIdx, uint32 rowIdx, int8 * out_data);
+    SF_STATUS STDCALL getCellAsInt8(size_t colIdx, size_t rowIdx, int8 * out_data);
 
     /**
      * Gets the value of the given cell as an int32.
@@ -231,7 +231,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt32(uint32 colIdx, uint32 rowIdx, int32 * out_data);
+    SF_STATUS STDCALL getCellAsInt32(size_t colIdx, size_t rowIdx, int32 * out_data);
 
     /**
      * Gets the value of the given cell as an int64.
@@ -249,7 +249,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt64(uint32 colIdx, uint32 rowIdx, int64 * out_data);
+    SF_STATUS STDCALL getCellAsInt64(size_t colIdx, size_t rowIdx, int64 * out_data);
 
     /**
      * Gets the value of the given cell as a uint8.
@@ -268,7 +268,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint8(uint32 colIdx, uint32 rowIdx, uint8 * out_data);
+    SF_STATUS STDCALL getCellAsUint8(size_t colIdx, size_t rowIdx, uint8 * out_data);
 
     /**
      * Gets the value of the given cell as a uint32.
@@ -287,7 +287,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint32(uint32 colIdx, uint32 rowIdx, uint32 * out_data);
+    SF_STATUS STDCALL getCellAsUint32(size_t colIdx, size_t rowIdx, uint32 * out_data);
 
     /**
      * Gets the value of the given cell as a uint64.
@@ -305,7 +305,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint64(uint32 colIdx, uint32 rowIdx, uint64 * out_data);
+    SF_STATUS STDCALL getCellAsUint64(size_t colIdx, size_t rowIdx, uint64 * out_data);
 
     /**
      * Gets the value of the given cell as a float32.
@@ -321,7 +321,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsFloat32(uint32 colIdx, uint32 rowIdx, float32 * out_data);
+    SF_STATUS STDCALL getCellAsFloat32(size_t colIdx, size_t rowIdx, float32 * out_data);
 
     /**
      * Gets the value of the given cell as a float64.
@@ -337,28 +337,10 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsFloat64(uint32 colIdx, uint32 rowIdx, float64 * out_data);
+    SF_STATUS STDCALL getCellAsFloat64(size_t colIdx, size_t rowIdx, float64 * out_data);
 
     /**
-     * Gets the value of the given cell as a constant C-string.
-     *
-     * This API method supports conversion for the following data types:
-     * - STRING
-     *
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param out_data             The buffer to write to.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL getCellAsConstString(uint32 colIdx, uint32 rowIdx, const char ** out_data);
-
-    /**
-     * Gets the value of the given cell as a C-string.
-     *
-     * If the length of the string exceeds the capacity of the provided buffer, then the buffer
-     * reallocated and replaced with one with a suitable capacity. In this event, io_capacity
-     * will contain the new capacity.
+     * Gets the value of the given cell as a string.
      *
      * This API method supports conversion for the following data types:
      * - BINARY
@@ -370,18 +352,14 @@ public:
      *
      * @param colIdx               The index of the column to get.
      * @param rowIdx               The index of the row to get.
-     * @param out_data             The buffer to write to.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the buffer.
+     * @param outString            The output string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL getCellAsString(
-        uint32 colIdx,
-        uint32 rowIdx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
+        size_t colIdx,
+        size_t rowIdx,
+        std::string& outString);
 
     /**
      * Gets the value of the given cell as a timestamp.
@@ -395,7 +373,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsTimestamp(uint32 colIdx, uint32 rowIdx, SF_TIMESTAMP * out_data);
+    SF_STATUS STDCALL getCellAsTimestamp(size_t colIdx, size_t rowIdx, SF_TIMESTAMP * out_data);
 
     /**
      * Writes the length of the current cell to the provided buffer.
@@ -406,7 +384,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellStrlen(uint32 colIdx, uint32 rowIdx, size_t * out_data);
+    SF_STATUS STDCALL getCellStrlen(size_t colIdx, size_t rowIdx, size_t * out_data);
 
     /**
      * Returns the Arrow data type of the column associated with the given column index.
@@ -435,7 +413,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL isCellNull(uint32 colIdx, uint32 rowIdx, sf_bool * out_data);
+    SF_STATUS STDCALL isCellNull(size_t colIdx, size_t rowIdx, sf_bool * out_data);
 
 protected:
 
@@ -462,7 +440,20 @@ private:
      * @return a pointer to the ArrowColumn object to write to.
      *         If the requested cell could not be found, then nullptr is returned.
      */
-    std::shared_ptr<ArrowColumn> getColumn(uint32 colIdx, uint32 rowIdx, int32 * out_cellIdx);
+    std::shared_ptr<ArrowColumn> getColumn(size_t colIdx, size_t rowIdx, int32 * out_cellIdx);
+
+    /**
+     * Internally method to check if a cell is null.
+     *
+     * @param colData         The column to check.
+     * @param cellIdx         The index of the column to check.
+     *
+     * @return true if the cell is null, otherwise false.
+     */
+    bool isCellNull(
+        std::shared_ptr<ArrowColumn> colData,
+        std::shared_ptr<arrow::DataType> arrowType,
+        int32 cellIdx);
 
     // Private members =============================================================================
 

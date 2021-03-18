@@ -316,7 +316,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json,
+        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count) ||
@@ -437,7 +437,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json,
+        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count) ||
