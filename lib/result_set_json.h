@@ -27,13 +27,11 @@ extern "C" {
      * Parameterized constructor.
      * Initializes the result set with required information as well as data.
      *
-     * @param data                      A pointer to the server response data.
      * @param rowset                    A pointer to the result set data.
      * @param metadata                  A pointer to the metadata for the result set.
      * @param tz_string                 The time zone.
      */
     rs_json_t * rs_json_create(
-        cJSON * data,
         cJSON * rowset,
         SF_COLUMN_DESC * metadata,
         const char * tz_string);

@@ -5,16 +5,17 @@
 #ifndef SNOWFLAKECLIENT_RESULTSETARROW_HPP
 #define SNOWFLAKECLIENT_RESULTSETARROW_HPP
 
+#include "arrowheaders.hpp"
+
 #include <string>
 #include <vector>
-
-#include "arrowheaders.hpp"
 
 #include "cJSON.h"
 #include "snowflake/client.h"
 #include "ArrowChunkIterator.hpp"
 #include "ResultSet.hpp"
 
+#ifndef SF_WIN32
 
 namespace Snowflake
 {
@@ -57,12 +58,12 @@ public:
      * contained in the initial chunk. It will also initialize m_metadata with
      * the metadata in "metadata".
      *
-     * @param data                 A pointer to the JSON server response data.
-     * @param rowset               A pointer to the JSON array containing result set data.
+     * @param initialChunk         A pointer to arrow::BufferBuilder containing result
+     *                               set data of the initial chunk.
      * @param metadata             An array of metadata objects for each column.
      * @param tzString             The time zone.
      */
-    ResultSetArrow(cJSON * data, cJSON * rowset, SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSetArrow(arrow::BufferBuilder * initialChunk, SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -78,7 +79,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL appendChunk(cJSON * chunk);
+    SF_STATUS STDCALL appendChunk(arrow::BufferBuilder * chunk);
 
     /**
      * Resets the internal indices so that they may be used to traverse
@@ -256,8 +257,8 @@ private:
     std::shared_ptr<Snowflake::Client::ArrowChunkIterator> m_chunkIterator;
 
     /**
-     * The cache for string value for each column of current row.
-     */
+    * The cache for string value for each column of current row.
+    */
     std::vector<std::pair<bool, std::string> > m_cacheStrVal;
 
     /**
@@ -274,4 +275,5 @@ private:
 } // namespace Client
 } // namespace Snowflake
 
+#endif // SF_WIN32
 #endif // SNOWFLAKECLIENT_RESULTSETARROW_HPP

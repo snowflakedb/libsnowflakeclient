@@ -9,9 +9,8 @@
 extern "C" {
 #endif
 
-    void * rs_create(
-        cJSON * data,
-        cJSON * rowset,
+    void * rs_create_with_json_result(
+        cJSON * json_rowset,
         SF_COLUMN_DESC * metadata,
         QueryResultFormat_t * query_result_format,
         const char * tz_string
@@ -20,9 +19,27 @@ extern "C" {
         switch (*query_result_format)
         {
             case ARROW_FORMAT:
-                return rs_arrow_create(data, rowset, metadata, tz_string);
+                return rs_arrow_create_with_json_result(json_rowset, metadata, tz_string);
             case JSON_FORMAT:
-                return rs_json_create(data, rowset, metadata, tz_string);
+                return rs_json_create(json_rowset, metadata, tz_string);
+            default:
+                return nullptr;
+        }
+    }
+
+    void * rs_create_with_chunk(
+        void * initial_chunk,
+        SF_COLUMN_DESC * metadata,
+        QueryResultFormat_t * query_result_format,
+        const char * tz_string
+    )
+    {
+        switch (*query_result_format)
+        {
+            case ARROW_FORMAT:
+                return rs_arrow_create_with_chunk((NON_JSON_RESP*)initial_chunk, metadata, tz_string);
+            case JSON_FORMAT:
+                return rs_json_create((cJSON*)initial_chunk, metadata, tz_string);
             default:
                 return nullptr;
         }
@@ -43,14 +60,14 @@ extern "C" {
     }
 
     SF_STATUS STDCALL
-    rs_append_chunk(void * rs, QueryResultFormat_t * query_result_format, cJSON * chunk)
+    rs_append_chunk(void * rs, QueryResultFormat_t * query_result_format, void * chunk)
     {
         switch (*query_result_format)
         {
             case ARROW_FORMAT:
-                return rs_arrow_append_chunk((rs_arrow_t *) rs, chunk);
+                return rs_arrow_append_chunk((rs_arrow_t *) rs, (NON_JSON_RESP*)chunk);
             case JSON_FORMAT:
-                return rs_json_append_chunk((rs_json_t *) rs, chunk);
+                return rs_json_append_chunk((rs_json_t *) rs, (cJSON*)chunk);
             default:
                 return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
         }
@@ -328,19 +345,6 @@ extern "C" {
                 return rs_arrow_get_row_count_in_chunk((rs_arrow_t *) rs);
             case JSON_FORMAT:
                 return rs_json_get_row_count_in_chunk((rs_json_t *) rs);
-            default:
-                return 0;
-        }
-    }
-
-    size_t rs_get_total_row_count(void * rs, QueryResultFormat_t * query_result_format)
-    {
-        switch (*query_result_format)
-        {
-            case ARROW_FORMAT:
-                return rs_arrow_get_total_row_count((rs_arrow_t *) rs);
-            case JSON_FORMAT:
-                return rs_json_get_total_row_count((rs_json_t *) rs);
             default:
                 return 0;
         }

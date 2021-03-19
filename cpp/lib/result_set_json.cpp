@@ -14,15 +14,14 @@ extern "C" {
 #endif
 
     rs_json_t * rs_json_create(
-        cJSON * data,
         cJSON * rowset,
         SF_COLUMN_DESC * metadata,
         const char * tz_string
     )
     {
         rs_json_t * rs_struct = (rs_json_t *) SF_MALLOC(sizeof(rs_json_t));
-        Snowflake::Client::ResultSetJson * rs_obj =
-            new Snowflake::Client::ResultSetJson(data, rowset, metadata, std::string(tz_string));
+        Snowflake::Client::ResultSetJson * rs_obj = new Snowflake::Client::ResultSetJson(
+            rowset, metadata, std::string(tz_string));
         rs_struct->rs_object = rs_obj;
 
         return rs_struct;
@@ -273,19 +272,6 @@ extern "C" {
 
         rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
         return rs_obj->getRowCountInChunk();
-    }
-
-    size_t rs_json_get_total_row_count(rs_json_t * rs)
-    {
-        Snowflake::Client::ResultSetJson * rs_obj;
-
-        if (rs == NULL)
-        {
-            return 0;
-        }
-
-        rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getTotalRowCount();
     }
 
     SF_STATUS STDCALL rs_json_is_cell_null(rs_json_t * rs, size_t idx, sf_bool * out_data)

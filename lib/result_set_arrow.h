@@ -8,6 +8,7 @@
 #include "cJSON.h"
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
+#include "connection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,18 +26,29 @@ extern "C" {
 
     /**
      * Parameterized constructor.
-     * Initializes the result set with required information as well as data.
+     * Initializes the result set with rowset64 data in json result set.
      *
-     * @param data                      A pointer to the server response data.
-     * @param rowset                    A pointer to the result set data.
+     * @param json_rowset64             A pointer to the rowset64 data in json result set.
      * @param metadata                  A pointer to the metadata for the result set.
      * @param tz_string                 The time zone.
      */
-    rs_arrow_t * rs_arrow_create(
-        cJSON * data,
-        cJSON * rowset,
+    rs_arrow_t * rs_arrow_create_with_json_result(
+        cJSON * json_rowset64,
         SF_COLUMN_DESC * metadata,
         const char * tz_string);
+
+    /**
+    * Parameterized constructor.
+    * Initializes the result set with the first arrow chunk of the result set.
+    *
+    * @param initial_chunk             A pointer to the first chunk of the result set.
+    * @param metadata                  A pointer to the metadata for the result set.
+    * @param tz_string                 The time zone.
+    */
+    rs_arrow_t * rs_arrow_create_with_chunk(
+      NON_JSON_RESP * initial_chunk,
+      SF_COLUMN_DESC * metadata,
+      const char * tz_string);
 
     /**
      * Destructor.
@@ -51,7 +63,7 @@ extern "C" {
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL rs_arrow_append_chunk(rs_arrow_t * rs, cJSON * chunk);
+    SF_STATUS STDCALL rs_arrow_append_chunk(rs_arrow_t * rs, NON_JSON_RESP * chunk);
 
     /**
      * Resets the internal indices so that they may be used to traverse
@@ -265,15 +277,6 @@ extern "C" {
     size_t rs_arrow_get_row_count_in_chunk(rs_arrow_t * rs);
 
     /**
-     * Gets the total number of rows in the entire result set.
-     *
-     * @param rs                   The ResultSetArrow object.
-     *
-     * @return the number of rows in the result set.
-     */
-    size_t rs_arrow_get_total_row_count(rs_arrow_t * rs);
-
-    /**
      * Indiciates whether the current cell is null or not.
      *
      * @param rs                   The ResultSetArrow object.
@@ -283,6 +286,8 @@ extern "C" {
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL rs_arrow_is_cell_null(rs_arrow_t * rs, size_t idx, sf_bool * out_data);
+
+    NON_JSON_RESP* callback_create_arrow_resp(void);
 
 #ifdef __cplusplus
 } // extern "C"

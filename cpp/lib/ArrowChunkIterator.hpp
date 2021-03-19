@@ -4,16 +4,17 @@
 #ifndef SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP
 #define SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP
 
+#include "arrowheaders.hpp"
+
+#ifndef SF_WIN32
+
 #include <map>
 #include <memory>
 #include <vector>
 #include <string>
 
-#include "arrowheaders.hpp"
-
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
-
 
 namespace Snowflake
 {
@@ -42,9 +43,9 @@ namespace Client
  */
  struct ArrowTimestampArray
  {
-    std::shared_ptr<arrow::Int64Array> sse;
-    std::shared_ptr<arrow::Int32Array> fs;
-    std::shared_ptr<arrow::Int32Array> tz;
+    arrow::Int64Array * sse = nullptr;
+    arrow::Int32Array * fs = nullptr;
+    arrow::Int32Array * tz = nullptr;
  };
 
 /**
@@ -52,15 +53,6 @@ namespace Client
  */
 struct ArrowColumn
 {
-    // Constructor.
-    ArrowColumn(std::shared_ptr<arrow::DataType> type)
-    {
-        this->type = type;
-    }
-
-    // Arrow data type of the column.
-    std::shared_ptr<arrow::DataType> type;
-
     // The array data of the columns. Each instance of ArrowColumn should only have one populated.
     arrow::BinaryArray     * arrowBinary;
     arrow::BooleanArray    * arrowBoolean;
@@ -73,7 +65,7 @@ struct ArrowColumn
     arrow::Int32Array      * arrowInt32;
     arrow::Int64Array      * arrowInt64;
     arrow::StringArray     * arrowString;
-    ArrowTimestampArray    * arrowTimestamp;
+    std::shared_ptr<ArrowTimestampArray> arrowTimestamp;
 };
 
 /**
@@ -137,49 +129,28 @@ public:
     /**
      * Parameterized constructor.
      *
-     * This constructor is used when the metadata is available to be passed.
-     * A call to appendChunk() with the initial chunk as the argument should always follow.
-     *
+     * @param chunk           The chunk
      * @param metadata        The column metadata retrieved from the Snowflake DB.
      * @param tzString        The time zone.
      */
-    ArrowChunkIterator(SF_COLUMN_DESC * metadata, std::string tzString);
+    ArrowChunkIterator(arrow::BufferBuilder * chunk,
+                       SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
      */
     ~ArrowChunkIterator() = default;
 
+    // Move to next row. return false when entire chunk is fetched.
+    bool next();
     /**
-     * Helper method to update bookkeeping members that track total counts.
-     *
-     * Must be called before every call to appendChunk().
-     *
-     * @param chunk           The given chunk.
-     * @param out_colCount         The total number of columns in the chunk.
-     * @param out_rowCount         The total number of rows in the chunk.
-     */
-    void updateCounts(
-        std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk,
-        size_t * out_colCount,
-        size_t * out_rowCount);
-
-    /**
-     * Appends the given chunk to the internal result set.
-     *
-     * Used in conjunction with the library functions:
-     * - snowflake_execute_ex(), which fetches the initial chunk.
-     * - snowflake_fetch(), which prompts the chunk downloader object
-     *                      to continue fetching chunks.
-     *
-     * In addition, also write the updated number of columns and rows in the chunk
-     * to the provided buffers.
-     *
-     * @param chunk                The chunk to append.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL appendChunk(std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk);
+    * Check a column of current row is null.
+    *
+    * @param col             The index of the column to check.
+    *
+    * @return true if the cell is null, otherwise false.
+    */
+    bool isCellNull(int32 col);
 
     /**
      * Gets the value of the given cell as an sf_bool.
@@ -188,12 +159,11 @@ public:
      * - BOOLEAN
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsBool(size_t colIdx, size_t rowIdx, sf_bool * out_data);
+    SF_STATUS STDCALL getCellAsBool(size_t colIdx,sf_bool * out_data);
 
     /**
      * Gets the value of the given cell as an int8.
@@ -207,12 +177,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt8(size_t colIdx, size_t rowIdx, int8 * out_data);
+    SF_STATUS STDCALL getCellAsInt8(size_t colIdx, int8 * out_data);
 
     /**
      * Gets the value of the given cell as an int32.
@@ -226,12 +195,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt32(size_t colIdx, size_t rowIdx, int32 * out_data);
+    SF_STATUS STDCALL getCellAsInt32(size_t colIdx, int32 * out_data);
 
     /**
      * Gets the value of the given cell as an int64.
@@ -244,12 +212,12 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
+     * @param rawData              The flag indicate that get the raw data directly without conversion.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsInt64(size_t colIdx, size_t rowIdx, int64 * out_data);
+    SF_STATUS STDCALL getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData = false);
 
     /**
      * Gets the value of the given cell as a uint8.
@@ -263,12 +231,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint8(size_t colIdx, size_t rowIdx, uint8 * out_data);
+    SF_STATUS STDCALL getCellAsUint8(size_t colIdx, uint8 * out_data);
 
     /**
      * Gets the value of the given cell as a uint32.
@@ -282,12 +249,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint32(size_t colIdx, size_t rowIdx, uint32 * out_data);
+    SF_STATUS STDCALL getCellAsUint32(size_t colIdx, uint32 * out_data);
 
     /**
      * Gets the value of the given cell as a uint64.
@@ -300,12 +266,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsUint64(size_t colIdx, size_t rowIdx, uint64 * out_data);
+    SF_STATUS STDCALL getCellAsUint64(size_t colIdx, uint64 * out_data);
 
     /**
      * Gets the value of the given cell as a float32.
@@ -316,12 +281,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsFloat32(size_t colIdx, size_t rowIdx, float32 * out_data);
+    SF_STATUS STDCALL getCellAsFloat32(size_t colIdx, float32 * out_data);
 
     /**
      * Gets the value of the given cell as a float64.
@@ -332,12 +296,11 @@ public:
      * - STRING
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsFloat64(size_t colIdx, size_t rowIdx, float64 * out_data);
+    SF_STATUS STDCALL getCellAsFloat64(size_t colIdx, float64 * out_data);
 
     /**
      * Gets the value of the given cell as a string.
@@ -351,14 +314,12 @@ public:
      * - STRUCT
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param outString            The output string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL getCellAsString(
         size_t colIdx,
-        size_t rowIdx,
         std::string& outString);
 
     /**
@@ -368,32 +329,11 @@ public:
      * - Timestamp
      *
      * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
      * @param out_data             The buffer to write to.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL getCellAsTimestamp(size_t colIdx, size_t rowIdx, SF_TIMESTAMP * out_data);
-
-    /**
-     * Writes the length of the current cell to the provided buffer.
-     *
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param out_data             The buffer to write to.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL getCellStrlen(size_t colIdx, size_t rowIdx, size_t * out_data);
-
-    /**
-     * Returns the Arrow data type of the column associated with the given column index.
-     *
-     * @param colIdx          The index to the column whose data type to retrieve.
-     *
-     * @return the Arrow data type of the column.
-     */
-    std::shared_ptr<arrow::DataType> getColumnArrowDataType(uint32 colIdx);
+    SF_STATUS STDCALL getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data);
 
     /**
      * Gets the row count of the current chunk.
@@ -404,56 +344,26 @@ public:
      */
     size_t getRowCountInChunk();
 
-    /**
-     * Indicates whether the current cell is null.
-     *
-     * @param colIdx               The index of the column to check.
-     * @param rowIdx               The index of the row to check.
-     * @param out_data             The buffer to write to.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL isCellNull(size_t colIdx, size_t rowIdx, sf_bool * out_data);
+    uint32 getColumnCount()
+    {
+        return m_columnCount;
+    }
 
 protected:
 
-    /**
-     * Schema of the result set.
-     */
-    std::shared_ptr<arrow::Schema> m_schema;
+    /** schema of current record batch */
+    std::shared_ptr<arrow::Schema> m_currentSchema;
 
+    std::vector<std::shared_ptr<arrow::RecordBatch> > m_cRecordBatches;
     /**
      * Vector of ArrowColumns that represents the final, columnar result set.
      */
-    std::vector<std::shared_ptr<ArrowColumn>> m_columns;
+    std::vector<ArrowColumn> m_columns;
 
 private:
 
-    /**
-     * Writes the column data at the given cell to the provided ArrowColumn buffer.
-     *
-     * @param colIdx          The index of the column of the cell to retrieve.
-     * @param rowIdx          The index of the row of the cell to retrieve.
-     * @param out_cellIdx     A buffer to write the index of the ArrowColumn that the requested cell
-     *                        is located at. If the cell could not be found, then this value is -1.
-     *
-     * @return a pointer to the ArrowColumn object to write to.
-     *         If the requested cell could not be found, then nullptr is returned.
-     */
-    std::shared_ptr<ArrowColumn> getColumn(size_t colIdx, size_t rowIdx, int32 * out_cellIdx);
-
-    /**
-     * Internally method to check if a cell is null.
-     *
-     * @param colData         The column to check.
-     * @param cellIdx         The index of the column to check.
-     *
-     * @return true if the cell is null, otherwise false.
-     */
-    bool isCellNull(
-        std::shared_ptr<ArrowColumn> colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        int32 cellIdx);
+    /** Column chunks */
+    void initColumnChunks();
 
     // Private members =============================================================================
 
@@ -468,19 +378,9 @@ private:
     uint32 m_columnCount;
 
     /**
-     * Total number of rows.
-     */
-    uint32 m_rowCount;
-
-    /**
      * Total number of rows inside current record batch.
      */
     uint32 m_rowCountInBatch;
-
-    /**
-     * Total number of rows inside the current chunk being processed.
-     */
-    uint32 m_rowCountInChunk;
 
     /**
      * Current index that the iterator points to.
@@ -494,6 +394,11 @@ private:
     uint32 m_currRowIndexInBatch;
 
     /**
+    * column data types
+    */
+    std::vector<uint8> m_arrowColumnDataTypes;
+
+    /**
      * A pointer to the column metadata retrieved from the Snowflake DB.
      */
     SF_COLUMN_DESC * m_metadata;
@@ -502,38 +407,10 @@ private:
      * The tz string to use when dealing with time or timestamp values.
      */
     std::string m_tzString;
-
-    /**
-     * Associates row indices with batch indices to allow for faster retrieval of columns.
-     *
-     * Key: batch index.
-     * Value: max row index contained in the batch.
-     *
-     * For example, suppose that we have the following:
-     *
-     * {
-     *   0: 12,
-     *   1: 18,
-     *   2: 28,
-     *   3: 35
-     * }
-     *
-     * Where each batch consists of 5 columns.
-     *
-     * Batch 0 contains columns 0 through 4, each of which contains rows 0 through 12 (total 13).
-     * Batch 1 contains columns 5 through 9, each of which contains rows 13 through 18 (total 6).
-     * ...and so on.
-     */
-    std::map<uint32, uint32> m_batchRowIndexMap;
-
-    /**
-     * Indicates if the first batch has been consumed or not.
-     */
-    bool m_isFirstBatch;
-
 };
 
 } // namespace Client
 } // namespace Snowflake
 
+#endif  // SF_WIN32
 #endif  // SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP

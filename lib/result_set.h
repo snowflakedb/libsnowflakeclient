@@ -32,17 +32,32 @@ extern "C" {
      * Parameterized constructor.
      * Initializes the result set with required information as well as data.
      *
-     * @param data                      A pointer to the server response data.
-     * @param rowset                    A pointer to the result set data.
+     * @param json_rowset               A pointer to the result set data.
      * @param metadata                  A pointer to the metadata for the result set.
      * @param query_result_format       The query result format.
      * @param tz_string                 The time zone.
      *
      * @return the created result set.
      */
-    void * rs_create(
-        cJSON * data,
-        cJSON * rowset,
+    void * rs_create_with_json_result(
+        cJSON * json_rowset,
+        SF_COLUMN_DESC * metadata,
+        QueryResultFormat_t * query_result_format,
+        const char * tz_string);
+
+    /**
+     * Parameterized constructor.
+     * Initializes the result set with required information as well as data.
+     *
+     * @param initial_chunk             A pointer to the initial chunk.
+     * @param metadata                  A pointer to the metadata for the result set.
+     * @param query_result_format       The query result format.
+     * @param tz_string                 The time zone.
+     *
+     * @return the created result set.
+     */
+    void * rs_create_with_chunk(
+        void * initial_chunk,
         SF_COLUMN_DESC * metadata,
         QueryResultFormat_t * query_result_format,
         const char * tz_string);
@@ -65,7 +80,7 @@ extern "C" {
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL
-    rs_append_chunk(void * rs, QueryResultFormat_t * query_result_format, cJSON * chunk);
+    rs_append_chunk(void * rs, QueryResultFormat_t * query_result_format, void * chunk);
 
     /**
      * Resets the internal indices so that they may be used to traverse
@@ -301,6 +316,19 @@ extern "C" {
         size_t * out_data);
 
     /**
+     * Gets the current row as cJSON.
+     *
+     * Note: Only defined for JSON format.
+     * Note: Transfers ownership of the pointer.
+     *
+     * @param rs                   The ResultSet object.
+     * @param query_result_format  The query result format.
+     *
+     * @return the current row if JSON format, otherwise nullptr is returned.
+     */
+    cJSON * rs_get_row(void * rs, QueryResultFormat_t * query_result_format);
+
+    /**
      * Gets the number of rows in the current chunk being processed.
      *
      * @param rs                   The ResultSet object.
@@ -309,16 +337,6 @@ extern "C" {
      * @return the number of rows in the current chunk.
      */
     size_t rs_get_row_count_in_chunk(void * rs, QueryResultFormat_t * query_result_format);
-
-    /**
-     * Gets the total number of rows in the entire result set.
-     *
-     * @param rs                   The ResultSet object.
-     * @param query_result_format  The query result format.
-     *
-     * @return the number of rows in the result set.
-     */
-    size_t rs_get_total_row_count(void * rs, QueryResultFormat_t * query_result_format);
 
     /**
      * Indiciates whether the current cell is null or not.

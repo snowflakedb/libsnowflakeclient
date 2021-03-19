@@ -24,38 +24,15 @@ ResultSetJson::ResultSetJson() :
 }
 
 ResultSetJson::ResultSetJson(
-    cJSON * data,
     cJSON * rowset,
     SF_COLUMN_DESC * metadata,
     std::string tzString
 ) :
-    ResultSet(data, rowset, metadata, tzString)
+    ResultSet(metadata, tzString)
 {
     m_queryResultFormat = QueryResultFormat::JSON;
-
-    // "stats" shows number of rows inserted, deleted, updated and duplicated.
-    // It only exists if the original query was a DML statement.
-    m_isDml = snowflake_cJSON_HasObjectItem(data, "stats");
-    m_totalColumnCount =
-        snowflake_cJSON_GetArraySize(snowflake_cJSON_GetObjectItem(data, "rowtype"));
-
-    if (m_isDml)
-    {
-        m_totalRowCount = 0;
-        cJSON * row = snowflake_cJSON_GetArrayItem(rowset, 0);
-        for (int i = 0; i < m_totalColumnCount; ++i)
-        {
-            cJSON * curr = snowflake_cJSON_GetArrayItem(row, i);
-            m_totalRowCount += static_cast<size_t>(std::stoull(curr->valuestring, NULL, 10));
-        }
-    }
-    else
-    {
-        m_totalRowCount = static_cast<size_t>(
-            snowflake_cJSON_GetObjectItem(data, "total")->valuedouble);
-    }
-
-    CXX_LOG_DEBUG("rowset: 0x%x", rowset);
+    m_totalColumnCount = snowflake_cJSON_GetArraySize(
+        snowflake_cJSON_GetArrayItem(rowset, 0));
     m_chunk = nullptr;
     appendChunk(rowset);
 }
@@ -70,8 +47,6 @@ ResultSetJson::~ResultSetJson()
 
 SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
 {
-    CXX_LOG_DEBUG("chunk: 0x%x", chunk);
-    CXX_LOG_DEBUG("m_chunk: 0x%x", m_chunk);
     if (chunk == nullptr)
     {
         CXX_LOG_ERROR("appendChunk -- Received a null chunk to append.");

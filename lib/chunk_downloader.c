@@ -467,7 +467,7 @@ static void * chunk_downloader_thread(void *downloader) {
         }
         else
         {
-            chunk_downloader->queue[index].chunk = chunk;
+            chunk_downloader->queue[index].chunk = (void *)chunk;
         }
 
         // Notify the consumer that we have a chunk ready

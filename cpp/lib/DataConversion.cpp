@@ -16,7 +16,6 @@
 #include "snowflake/platform.h"
 #include "ArrowChunkIterator.hpp"
 #include "DataConversion.hpp"
-#include "memory.h"
 #include "ResultSet.hpp"
 
 
@@ -35,24 +34,33 @@ void AllocateCharBuffer(
     size_t len
 )
 {
-    // Write appropriate values to pointers for length and capacity containers if necessary.
-    if (io_len != nullptr)
-        *io_len = len;
-
-    if (io_capacity != nullptr)
-        *io_capacity = len + 1;
-
-    // Ensure that the buffer is well-allocated.
-    if (*out_data == nullptr)
-        *out_data = (char *) global_hooks.calloc(1, sizeof(size_t));
-
-    // If the provided buffer is pre-allocated but the capacity is not large enough to store
-    // the string value, then re-allocate with a large enough capacity.
-    if (*out_data != nullptr && *io_capacity <= len + 1)
+    size_t bufLen = 0;
+    char * buf = *out_data;
+    if (io_capacity)
     {
-        global_hooks.dealloc(*out_data);
-        *io_capacity = len + 1;
-        *out_data = (char *) global_hooks.calloc(1, sizeof(char *) * (len + 1));
+        bufLen = *io_capacity;
+    }
+
+    if (bufLen < len + 1)
+    {
+        if (buf)
+        {
+            buf = (char*)realloc(buf, len + 1);
+        }
+        else
+        {
+            buf = (char*)malloc(len + 1);
+        }
+        *out_data = buf;
+        if (io_capacity)
+        {
+            *io_capacity = len + 1;
+        }
+    }
+
+    if (io_len)
+    {
+        *io_len = len;
     }
 }
 
@@ -66,411 +74,92 @@ namespace Arrow
 
 // Helper methods for numeric conversion ===========================================================
 
-SF_STATUS STDCALL NumericToSignedInteger(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
+SF_STATUS STDCALL IntegerToInteger(
+    int64 in_data,
     int64 * out_data,
     IntegerType intType
 )
 {
     // Determine upper and lower limits based on buffer type.
     int64 lowerLimit = intTypeToLowerLimit[intType];
-    uint64 upperLimit = intTypeToUpperLimit[intType];
-
-    int64 convData;
-    switch (colData->type->id())
+    // No need to check upper limit for unit64
+    int64 upperLimit = -1;
+    if (UINT64 != intType)
     {
-        case arrow::Type::type::BOOL:
-        {
-            bool rawData = colData->arrowBoolean->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DATE32:
-        {
-            int32_t rawData = colData->arrowDate32->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DATE64:
-        {
-            int64_t rawData = colData->arrowDate64->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DECIMAL:
-        {
-            // TODO: Consider performance.
-            const uint8_t * rawData = colData->arrowDecimal128->Value(cellIdx);
-            int32_t byteWidth = colData->arrowDecimal128->byte_width();
-            auto basicDec128 = arrow::BasicDecimal128(rawData);
-            auto dec128 = arrow::Decimal128(basicDec128);
-            convData = static_cast<int64>(int64_t(dec128));
-            break;
-        }
-        case arrow::Type::type::DOUBLE:
-        {
-            double rawData = colData->arrowDouble->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            int8_t rawData = colData->arrowInt8->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            int16_t rawData = colData->arrowInt16->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            int32_t rawData = colData->arrowInt32->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            int64_t rawData = colData->arrowInt64->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        upperLimit = intTypeToUpperLimit[intType];
     }
 
-    if (convData < lowerLimit || convData > upperLimit)
+    if (in_data < lowerLimit || ((upperLimit > 0) && (in_data > upperLimit)))
     {
-        CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     // All checks passed. Proceed to write to buffer.
-    *out_data = convData;
+    *out_data = in_data;
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL NumericToUnsignedInteger(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    uint64 * out_data,
-    IntegerType intType
-)
-{
-    // Determine upper limit based on buffer type.
-    uint64 upperLimit = intTypeToUpperLimit[intType];
-
-    uint64 convData;
-    switch (colData->type->id())
-    {
-        case arrow::Type::type::BOOL:
-        {
-            bool rawData = colData->arrowBoolean->Value(cellIdx);
-            convData = static_cast<int64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DATE32:
-        {
-            int32_t rawData = colData->arrowDate32->Value(cellIdx);
-            // Given the semantics of a DATE, it doesn't make sense to convert negative values.
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DATE64:
-        {
-            int64_t rawData = colData->arrowDate64->Value(cellIdx);
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        case arrow::Type::type::DECIMAL:
-        {
-            // TODO: Consider performance.
-            const uint8_t * rawData = colData->arrowDecimal128->Value(cellIdx);
-            int32_t byteWidth = colData->arrowDecimal128->byte_width();
-            auto basicDec128 = arrow::BasicDecimal128(rawData);
-            auto dec128 = arrow::Decimal128(basicDec128);
-            convData = static_cast<uint64>(int64_t(dec128));
-            break;
-        }
-        case arrow::Type::type::DOUBLE:
-        {
-            double rawData = colData->arrowDouble->Value(cellIdx);
-            // Treat negative values as bad input.
-            if (rawData < 0L)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(std::llround(rawData));
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            int8_t rawData = colData->arrowInt8->Value(cellIdx);
-            // Treat negative values as bad input.
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            int16_t rawData = colData->arrowInt16->Value(cellIdx);
-            // Treat negative values as bad input.
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            int32_t rawData = colData->arrowInt32->Value(cellIdx);
-            // Treat negative values as bad input.
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            int64_t rawData = colData->arrowInt64->Value(cellIdx);
-            // Treat negative values as bad input.
-            if (rawData < 0)
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            convData = static_cast<uint64>(rawData);
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
-
-    if (convData > upperLimit)
-    {
-        CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
-    // All checks passed. Proceed to write to buffer.
-    *out_data = convData;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL NumericToDouble(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    float64 * out_data
-)
-{
-    float64 convData;
-    switch (colData->type->id())
-    {
-        case arrow::Type::type::DOUBLE:
-        {
-            convData = colData->arrowDouble->Value(cellIdx);
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            int8_t rawData = colData->arrowInt8->Value(cellIdx);
-            convData = static_cast<float64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            int16_t rawData = colData->arrowInt16->Value(cellIdx);
-            convData = static_cast<float64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            int32_t rawData = colData->arrowInt32->Value(cellIdx);
-            convData = static_cast<float64>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            int64_t rawData = colData->arrowInt64->Value(cellIdx);
-            convData = static_cast<float64>(rawData);
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
-
-    // Proceed to write to buffer.
-    *out_data = convData;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL NumericToFloat(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    float32 * out_data
-)
-{
-    float32 convData;
-    switch (colData->type->id())
-    {
-        case arrow::Type::type::DOUBLE:
-        {
-            float64 rawData = colData->arrowDouble->Value(cellIdx);
-            convData = static_cast<float32>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            int8_t rawData = colData->arrowInt8->Value(cellIdx);
-            convData = static_cast<float32>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            int16_t rawData = colData->arrowInt16->Value(cellIdx);
-            convData = static_cast<float32>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            int32_t rawData = colData->arrowInt32->Value(cellIdx);
-            convData = static_cast<float32>(rawData);
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            int64_t rawData = colData->arrowInt64->Value(cellIdx);
-            convData = static_cast<float32>(rawData);
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
-
-    // Proceed to write to buffer.
-    *out_data = convData;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL StringToSignedInteger(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
+SF_STATUS STDCALL StringToInteger(
+    const std::string& str_data,
     int64 * out_data,
     IntegerType intType
 )
 {
     // Determine upper and lower limits based on buffer type.
     int64 lowerLimit = intTypeToLowerLimit[intType];
-    uint64 upperLimit = intTypeToUpperLimit[intType];
-
-    int64 convData;
-    switch (colData->type->id())
+    // No need to check upper limit for unit64
+    int64 upperLimit = -1;
+    if (UINT64 != intType)
     {
-        case arrow::Type::type::STRING:
-        {
-            errno = 0;
-            size_t charsProcessed;
-            std::string rawData = colData->arrowString->GetString(cellIdx);
-            convData = static_cast<int64>(std::stoll(rawData, &charsProcessed, 10));
-
-            if (errno != 0)
-            {
-                CXX_LOG_ERROR("Conversion from STRING to INTEGER failed.");
-                CXX_LOG_ERROR("Value %s resulted in errno %d", rawData, errno);
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            }
-
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        upperLimit = intTypeToUpperLimit[intType];
     }
 
-    if (convData < lowerLimit || convData > upperLimit)
+    size_t charsProcessed;
+    int64 convData;
+    try
     {
-        CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
+        convData = static_cast<int64>(std::stoll(str_data, &charsProcessed, 10));
+    }
+    catch (const std::out_of_range& e)
+    {
+        CXX_LOG_ERROR("Conversion from STRING to INTEGER failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    catch (...)
+    {
+        CXX_LOG_ERROR("Conversion from STRING to INTEGER failed %s.", str_data.c_str());
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
+    if (convData < lowerLimit || ((upperLimit > 0) && (convData > upperLimit)))
+    {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
     // All checks passed. Proceed to write to buffer.
     *out_data = convData;
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL StringToUnsignedInteger(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    uint64 * out_data,
-    IntegerType intType
+SF_STATUS STDCALL StringToUint64(
+    const std::string& str_data,
+    uint64 * out_data
 )
 {
-    // Determine upper limit based on buffer type.
-    uint64 upperLimit = intTypeToUpperLimit[intType];
-
+    size_t charsProcessed;
     uint64 convData;
-    switch (colData->type->id())
+    try
     {
-        case arrow::Type::type::STRING:
-        {
-            errno = 0;
-            size_t charsProcessed;
-            std::string rawData = colData->arrowString->GetString(cellIdx);
-            convData = static_cast<uint64>(std::stoull(rawData, &charsProcessed, 10));
-
-            if (errno != 0)
-            {
-                CXX_LOG_ERROR("Conversion from STRING to UNSIGNED INTEGER failed.");
-                CXX_LOG_ERROR("Value %s resulted in errno %d", rawData, errno);
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            }
-
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        convData = static_cast<int64>(std::stoull(str_data, &charsProcessed, 10));
     }
-
-    if (convData > upperLimit)
+    catch (const std::out_of_range& e)
     {
-        CXX_LOG_ERROR("Cell at column %d, row %d out of bounds.", colIdx, rowIdx);
+        CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    catch (...)
+    {
+        CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
@@ -480,162 +169,75 @@ SF_STATUS STDCALL StringToUnsignedInteger(
 }
 
 SF_STATUS STDCALL StringToDouble(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
+    const std::string& str_data,
     float64 * out_data
 )
 {
+    size_t charsProcessed;
     float64 convData;
-    switch (colData->type->id())
+    try
     {
-        case arrow::Type::type::STRING:
-        {
-            errno = 0;
-            size_t charsProcessed;
-            std::string rawData = colData->arrowString->GetString(cellIdx);
-            convData = static_cast<float64>(std::stod(rawData, &charsProcessed));
-
-            if (errno != 0)
-            {
-                CXX_LOG_ERROR("Conversion from STRING to DOUBLE failed.");
-                CXX_LOG_ERROR("Value %s resulted in errno %d", rawData, errno);
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            }
-
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        convData = std::stod(str_data, &charsProcessed);
+    }
+    catch (const std::out_of_range& e)
+    {
+        CXX_LOG_ERROR("Conversion from STRING to FLOAT64 failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    catch (...)
+    {
+        CXX_LOG_ERROR("conversion from STRING to FLOAT64 failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    // All checks passed. Proceed to write to buffer.
+    if (convData == INFINITY || convData == -INFINITY)
+    {
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
     *out_data = convData;
     return SF_STATUS_SUCCESS;
 }
 
 SF_STATUS STDCALL StringToFloat(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
+    const std::string& str_data,
     float32 * out_data
 )
 {
+    size_t charsProcessed;
     float32 convData;
-    switch (colData->type->id())
+    try
     {
-        case arrow::Type::type::STRING:
-        {
-            errno = 0;
-            size_t charsProcessed;
-            std::string rawData = colData->arrowString->GetString(cellIdx);
-            convData = static_cast<float32>(std::stof(rawData, &charsProcessed));
-
-            if (errno != 0)
-            {
-                CXX_LOG_ERROR("conversion from STRING to DOUBLE failed.");
-                CXX_LOG_ERROR("value %s resulted in errno %d", rawData, errno);
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            }
-
-            break;
-        }
-        default:
-        {
-            // Should never be reached.
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        convData = static_cast<float32>(std::stof(str_data, &charsProcessed));
+    }
+    catch (const std::out_of_range& e)
+    {
+        CXX_LOG_ERROR("Conversion from STRING to FLOAT32 failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+    catch (...)
+    {
+        CXX_LOG_ERROR("conversion from STRING to FLOAT32 failed %s.", str_data.c_str());
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    // All checks passed. Proceed to write to buffer.
     *out_data = convData;
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL BinaryToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    if (arrowType->id() != arrow::Type::type::BINARY)
-    {
-        CXX_LOG_ERROR("Trying to convert non-BINARY type to binary string: %d.", arrowType->id());
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    outString = colData->arrowBinary->GetString(cellIdx);
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL BoolToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    if (arrowType->id() != arrow::Type::type::BOOL)
-    {
-        CXX_LOG_ERROR("Trying to convert non-BOOL type to bool string: %d.", arrowType->id());
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    bool boolValue = colData->arrowBoolean->Value(cellIdx);
-    outString = (boolValue) ? SF_BOOLEAN_TRUE_STR : SF_BOOLEAN_FALSE_STR;
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL DateToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
+    int64 date,
     std::string& outString
 )
 {
     char dateBuf[64];
     const char * dateFormat = "%Y-%m-%d";
 
-    // Number of days elapsed since Epoch time.
-    int64 dateValue;
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::DATE32:
-        {
-            dateValue = static_cast<int64>(colData->arrowDate32->Value(cellIdx));
-            break;
-        }
-        case arrow::Type::type::DATE64:
-        {
-            dateValue = static_cast<int64>(colData->arrowDate64->Value(cellIdx));
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Trying to convert non-DATE type to date string: %d.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
-
     // The main logic for the conversion.
     struct tm tm_obj;
     struct tm *tm_ptr;
     std::memset(&tm_obj, 0, sizeof(tm_obj));
-    time_t sec = (time_t) dateValue * 24L * 60L * 60L;
+    time_t sec = (time_t) date * 24L * 60L * 60L;
     tm_ptr = sf_gmtime(&sec, &tm_obj);
 
     // If tm_ptr is null, then the operation has failed.
@@ -651,136 +253,18 @@ SF_STATUS STDCALL DateToString(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL DecimalToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    if (arrowType->id() != arrow::Type::type::DECIMAL)
-    {
-        CXX_LOG_ERROR("Trying to convert non-DECIMAL type to decimal string.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    outString = colData->arrowDecimal128->GetString(cellIdx);
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL DoubleToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    if (arrowType->id() != arrow::Type::type::DOUBLE)
-    {
-        CXX_LOG_ERROR("Trying to convert non-DOUBLE type to decimal string.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    float64 doubleValue = colData->arrowDouble->Value(cellIdx);
-    outString = std::to_string(doubleValue);
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL IntToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    SF_DB_TYPE snowType,
-    int64 scale,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    // If Snowflake DB type is TIME or TIMESTAMP, then call the appropriate helper.
-    if (snowType == SF_DB_TYPE_TIME)
-        return TimeToString(colData, arrowType, scale, cellIdx, outString);
-
-    if (snowType == SF_DB_TYPE_TIMESTAMP_LTZ
-        || snowType == SF_DB_TYPE_TIMESTAMP_NTZ
-        || snowType == SF_DB_TYPE_TIMESTAMP_TZ)
-        return TimestampToString(
-            colData, arrowType, snowType, scale,
-            colIdx, rowIdx, cellIdx,
-            outString);
-
-    // Otherwise, convert integral value to string and write to buffer.
-    int64 rawData;
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::INT8:
-        {
-            rawData = static_cast<int64>(colData->arrowInt8->Value(cellIdx));
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            rawData = static_cast<int64>(colData->arrowInt16->Value(cellIdx));
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            rawData = static_cast<int64>(colData->arrowInt32->Value(cellIdx));
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            rawData = static_cast<int64>(colData->arrowInt64->Value(cellIdx));
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Trying to convert non-INT type to int string: %d.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
-
-    outString = std::to_string(rawData);
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL TimeToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
+    int64 timeSinceMidnight,
     int64 scale,
-    uint32 cellIdx,
     std::string& outString
 )
 {
     char tsBuf[64];
-    int64 timeSinceMidnight;
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::INT32:
-        {
-            timeSinceMidnight = static_cast<int64>(colData->arrowInt32->Value(cellIdx));
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            timeSinceMidnight = static_cast<int64>(colData->arrowInt64->Value(cellIdx));
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Trying to convert non-INT type to time string: %d.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-    }
 
     // Construct a tm object holding appropriate time values.
     std::tm timeObj;
     timeObj.tm_mday = 1;
-    int64 secsSinceMidnight = timeSinceMidnight / std::pow(10, scale);
+    int64 secsSinceMidnight = timeSinceMidnight / power10[scale];
 
     std::lldiv_t divBySecs = std::lldiv(secsSinceMidnight, 60);
     std::lldiv_t divByMins = std::lldiv(divBySecs.quot, 60);
@@ -791,7 +275,7 @@ SF_STATUS STDCALL TimeToString(
     // Create Timestamp object. This will be used to create the end time string.
     SF_TIMESTAMP ts;
     ts.tm_obj = timeObj;
-    ts.nsec = timeSinceMidnight % (int64) std::pow(10, scale);
+    ts.nsec = timeSinceMidnight % power10[scale];
     ts.tzoffset = 0;
     ts.scale = static_cast<int32>(scale);
     ts.ts_type = SF_DB_TYPE_TIME;
@@ -805,77 +289,6 @@ SF_STATUS STDCALL TimeToString(
     if (SF_STATUS_SUCCESS != ret)
     {
         return ret;
-    }
-
-    outString = tsBuf;
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL TimestampToString(
-    std::shared_ptr<ArrowColumn> & colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    SF_DB_TYPE snowType,
-    int64 scale,
-    size_t colIdx,
-    size_t rowIdx,
-    uint32 cellIdx,
-    std::string& outString
-)
-{
-    // The C API has a custom struct `SF_TIMESTAMP` used to represent Timestamp values.
-    // In addition to what's available in the ArrowTimestamp struct, we must provide:
-    // (1) A tm object that represents the timestamp value,
-    // (2) The scale of the value,
-    // (3) The timestamp type, i.e. LTZ, NTZ, TZ.
-    char tsBuf[64];
-    SF_TIMESTAMP sfts;
-    sfts.scale = scale;
-    sfts.ts_type = snowType;
-
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::INT32:
-        {
-            std::time_t t = colData->arrowInt32->Value(cellIdx);
-            sfts.tm_obj = *(std::localtime(&t));
-            sfts.nsec = 0;
-            sfts.tzoffset = 0;
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            std::time_t t = colData->arrowInt64->Value(cellIdx);
-            sfts.tm_obj = *(std::localtime(&t));
-            sfts.nsec = 0;
-            sfts.tzoffset = 0;
-            break;
-        }
-        case arrow::Type::type::STRUCT:
-        {
-            ArrowTimestampArray * ts = colData->arrowTimestamp;
-            std::time_t t = ts->sse->Value(cellIdx);
-            sfts.tm_obj = *(std::localtime(&t));
-            sfts.nsec = (ts->fs == nullptr) ? 0 : ts->fs->Value(cellIdx);
-            sfts.tzoffset = (ts->tz == nullptr) ? 0 : ts->tz->Value(cellIdx);
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR(
-                "Trying to convert non-INT or STRUCT type to timestamp string: %d.",
-                arrowType->id());
-        }
-    }
-
-    // Leverage client library to convert to string.
-    // The client will handle the allocation of resources if necessary.
-    char * out_data = tsBuf;
-    size_t len = 0;
-    SF_STATUS ret = snowflake_timestamp_to_string(
-                        &sfts, "", &out_data, sizeof(tsBuf), &len, SF_BOOLEAN_FALSE);
-    if (SF_STATUS_SUCCESS != ret)
-    {
-      return ret;
     }
 
     outString = tsBuf;

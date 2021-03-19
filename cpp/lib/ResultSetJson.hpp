@@ -45,12 +45,14 @@ public:
     /**
      * Parameterized constructor.
      *
-     * @param data                      A pointer to the JSON server response data.
      * @param rowset                    A pointer to the JSON array containing result set data.
      * @param metadata                  A pointer to the metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSetJson(cJSON * data, cJSON * rowset, SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSetJson(
+        cJSON * rowset,
+        SF_COLUMN_DESC * metadata,
+        std::string tzString);
 
     /**
      * Destructor.
@@ -219,16 +221,6 @@ public:
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL getCellStrlen(size_t idx, size_t * out_data);
-
-    /**
-     * Gets the current row. Expected only to be called in snowflake_affected_rows(),
-     * when the statement is DML and the response cannot be in a non-JSON format.
-     *
-     * Note: Gives ownership of the row pointer to the caller!
-     *
-     * @return the current row.
-     */
-    cJSON * getCurrRow();
 
     /**
      * Gets the total number of rows in the current chunk being processed.

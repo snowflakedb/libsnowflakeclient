@@ -36,7 +36,11 @@ static std::map<IntegerType, int64> intTypeToLowerLimit =
     { INT8,   CHAR_MIN },
     { INT16,  SHRT_MIN },
     { INT32,  SF_INT32_MIN },
-    { INT64,  SF_INT64_MIN }
+    { INT64,  SF_INT64_MIN },
+    { UINT8,  CHAR_MIN },
+    { UINT16, SHRT_MIN },
+    { UINT32, SF_INT32_MIN },
+    { UINT64, SF_INT64_MIN }
 };
 
 /**
@@ -47,14 +51,31 @@ static std::map<IntegerType, uint64> intTypeToUpperLimit =
     { INT8,   CHAR_MAX },
     { INT16,  SHRT_MAX },
     { INT32,  SF_INT32_MAX },
-    { INT64,  SF_INT64_MAX }
+    { INT64,  SF_INT64_MAX },
+    { UINT8,  UCHAR_MAX },
+    { UINT16, USHRT_MAX },
+    { UINT32, SF_UINT32_MAX },
+    { UINT64, SF_UINT64_MAX }
+};
+
+const int64 power10[10] = {
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000
 };
 
 namespace Util
 {
 
     /**
-     * Helper method to allocate a char buffer to write converted string data to if necessary.
+     * Helper method to allocate a char buffer to write converted Arrow data to if necessary.
      *
      * TODO: It doesn't make much sense to have a util function in a conversion file.
      *       Try to find a better place to move this to.
@@ -84,340 +105,93 @@ namespace Arrow
     // Numeric conversion ==========================================================================
 
     /**
-     * Function to convert a numeric value into a signed integral value.
+     * Function to convert between integral value.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
+     * @param in_data              The data needs to be converted
      * @param out_data             The buffer to which to write the converted integral value.
      * @param intType              The type of the buffer.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL NumericToSignedInteger(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
+    SF_STATUS STDCALL IntegerToInteger(
+        int64 in_data,
         int64 * out_data,
         IntegerType intType);
 
     /**
-     * Function to convert a numeric value into an unsigned integral value.
+     * Function to convert a string value into a integral value.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
+     * @param str_data             The string needs to be converted
      * @param out_data             The buffer to which to write the converted integral value.
      * @param intType              The type of the buffer.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL NumericToUnsignedInteger(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        uint64 * out_data,
-        IntegerType intType);
-
-    /**
-     * Function to convert a numeric value into a float64 value.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL NumericToDouble(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        float64 * out_data);
-
-    /**
-     * Function to convert a numeric value into a float32 value.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL NumericToFloat(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        float32 * out_data);
-
-    /**
-     * Function to convert a string value into a signed integral value.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
-     * @param intType              The type of the buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL StringToSignedInteger(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
+    SF_STATUS STDCALL StringToInteger(
+        const std::string& str_data,
         int64 * out_data,
         IntegerType intType);
 
     /**
-     * Function to convert a string value into an unsigned integral value.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
-     * @param intType              The type of the buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL StringToUnsignedInteger(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        uint64 * out_data,
-        IntegerType intType);
+    * Function to convert a string value into a uint64 value.
+    *
+    * @param str_data             The string needs to be converted
+    * @param out_data             The buffer to which to write the converted value.
+    *
+    * @return 0 if successful, otherwise an error is returned.
+    */
+    SF_STATUS STDCALL StringToUint64(
+        const std::string& str_data,
+        uint64 * out_data);
 
     /**
      * Function to convert a string value into a float64 value.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
+     * @param str_data             The string value needs to be converted.
+     * @param out_data             The buffer to which to write the converted double value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL StringToDouble(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
+        const std::string& str_data,
         float64 * out_data);
 
     /**
      * Function to convert a string value into a float32 value.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param out_data             The buffer to which to write the converted integral value.
+     * @param str_data             The string value needs to be converted.
+     * @param out_data             The buffer to which to write the converted float value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL StringToFloat(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
+        const std::string& str_data,
         float32 * out_data);
-
-    /**
-     * Function to convert a binary value into a string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL BinaryToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        std::string& outString);
-
-    /**
-     * Function to convert a boolean value into a string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The buffer converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL BoolToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        std::string& outString);
 
     /**
      * Function to convert a date value into a string.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
+     * @param date                 Number of days elapsed since Epoch time.
      * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL DateToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        std::string& outString);
-
-    /**
-     * Function to convert a decimal value into a string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL DecimalToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        std::string& outString);
-
-    /**
-     * Function to convert a double value into a string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL DoubleToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
-        std::string& outString);
-
-    /**
-     * Function to convert an integral value into a string.
-     *
-     * Note: INT32 and INT64 values may contain Snowflake TIME values.
-     *       This method checks the Snowflake DB type to cover these cases.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param snowType             The Snowflake DB type of the column.
-     * @param scale                The scale of the column.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL IntToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        SF_DB_TYPE snowType,
-        int64 scale,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
+        int64 date,
         std::string& outString);
 
     /**
      * Function to convert a time value into a string.
      *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
+     * @param timeSinceMidnight    The time data needs to be converted.
      * @param scale                The scale of the time value.
-     * @param cellIdx              The index of the cell to get.
      * @param outString            The converted string value.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL TimeToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
+        int64 timeSinceMidnight,
         int64 scale,
-        uint32 cellIdx,
-        std::string& outString);
-
-    /**
-     * Function to convert a time or timestamp value into a string.
-     *
-     * @param colData              The ArrowColumn for the source data.
-     * @param arrowType            The Arrow data type of the column.
-     * @param snowType             The Snowflake DB type of the column.
-     * @param scale                The scale of the timestamp value.
-     * @param colIdx               The index of the column to get.
-     * @param rowIdx               The index of the row to get.
-     * @param cellIdx              The index of the cell to get.
-     * @param outString            The converted string value.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL TimestampToString(
-        std::shared_ptr<ArrowColumn> & colData,
-        std::shared_ptr<arrow::DataType> arrowType,
-        SF_DB_TYPE snowType,
-        int64 scale,
-        size_t colIdx,
-        size_t rowIdx,
-        uint32 cellIdx,
         std::string& outString);
 
 } // namespace Arrow

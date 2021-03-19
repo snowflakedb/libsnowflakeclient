@@ -21,272 +21,211 @@ namespace Snowflake
 namespace Client
 {
 
-ArrowChunkIterator::ArrowChunkIterator(SF_COLUMN_DESC * metadata, std::string tzString)
+ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
+                                       SF_COLUMN_DESC * metadata, std::string tzString)
     : m_metadata(metadata), m_tzString(tzString)
 {
-    m_isFirstBatch = true;
-    m_currBatchIndex = 0;
-    m_currRowIndexInBatch = 0;
+    // Finalize the currently built buffer and initialize reader objects from it.
+    // This resets the buffer builder for future use.
+    std::shared_ptr<arrow::Buffer> arrowResultData;
+    chunk->Finish(&arrowResultData);
+    std::shared_ptr<arrow::io::BufferReader> bufferReader =
+        std::make_shared<arrow::io::BufferReader>(arrowResultData);
 
-    // Schema and column counts are deferred to updateCounts(),
-    // where the initial chunk is available.
-    m_batchCount = 0;
-    m_rowCount = 0;
-    m_rowCountInBatch = 0;
-    m_rowCountInChunk = 0;
+    // Add the batches to a vector.
+    // This stores batches as they are retrieved from the server row-wise
+    // and passes them to the ArrowChunkIterator.
+    arrow::Result<std::shared_ptr<arrow::ipc::RecordBatchReader>> batchReader =
+        arrow::ipc::RecordBatchStreamReader::Open(std::move(bufferReader));
+
+    while (true)
+    {
+        std::shared_ptr<arrow::RecordBatch> batch;
+        batchReader.ValueOrDie()->ReadNext(&batch);
+        if (batch == nullptr)
+            break;
+        m_cRecordBatches.emplace_back(batch);
+    }
+
+    // delete the original BufferBuilder since the buffer is passed to batches already
+    delete chunk;
+
+    m_batchCount = m_cRecordBatches.size();
+    m_columnCount = m_batchCount > 0 ? (m_cRecordBatches)[0]->num_columns() : 0;
+    m_rowCountInBatch = m_batchCount > 0 ? (m_cRecordBatches)[0]->num_rows() : 0;
+    m_currentSchema = m_batchCount > 0 ? (m_cRecordBatches)[0]->schema() : nullptr;
+    m_currBatchIndex = 0;
+    m_currRowIndexInBatch = -1;
+
+    for (int col = 0; col < m_columnCount; ++col) {
+        m_arrowColumnDataTypes.push_back(m_currentSchema->field(col)->type()->id());
+        CXX_LOG_TRACE("ArrowChunkIterator: col:%d arrow::Type: %s",
+            col, m_currentSchema->field(col)->type()->name().c_str());
+    }
 }
 
 // Public methods ==================================================================================
-
-void ArrowChunkIterator::updateCounts(
-    std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk,
-    size_t * out_colCount,
-    size_t * out_rowCount
-)
+bool ArrowChunkIterator::next()
 {
-    // If first batch, then initialize schema and column count to proper values.
-    if (m_isFirstBatch)
+    m_currRowIndexInBatch++;
+
+    //If its the first row in the batch then initialize the new set of columns.
+    if (m_columns.size() == 0)
+        this->initColumnChunks();
+
+    if (m_currRowIndexInBatch < m_rowCountInBatch)
     {
-        m_schema = (*chunk)[0]->schema();
-        m_columnCount = m_schema->num_fields();
-        *out_colCount = m_columnCount;
-        CXX_LOG_TRACE("updateCounts -- result set contains %d columns", m_columnCount);
+        return true;
     }
-
-    // Reset the row count in the current chunk to 0.
-    m_rowCountInChunk = 0;
-
-    // Note: The calculation in the following for-loop depends on m_batchCount
-    // holding the number of batches excluding the given chunk. Thus, it must
-    // be executed before m_batchCount is updated for the given chunk.
-    for (size_t batchIdx = 0; batchIdx < chunk->size(); ++batchIdx)
+    else
     {
-        // Update row-related counts.
-        m_rowCountInBatch = (*chunk)[batchIdx]->num_rows();
-        m_rowCount += m_rowCountInBatch;
-        m_rowCountInChunk += m_rowCountInBatch;
-
-        // If this is the first batch, then set prevMaxRowIdx to -1
-        // to account for zero-based indexing.
-        // m_batchCount will be initialized to 0 which is fine as 0 + 0 = 0.
-        int32 prevMaxRowIdx = m_isFirstBatch ?
-            -1 : m_batchRowIndexMap[m_batchRowIndexMap.size() - 1];
-        m_isFirstBatch = false;
-
-        // Update batch-row index map.
-        m_batchRowIndexMap.insert(
-            std::pair<uint32, uint32>(
-                // Key is the current batch index.
-                // Add previous batch count to current batch index.
-                // m_batchCount stores size and batchIdx is zero-indexed, which cancels out.
-                // There is no need to increment/decrement by one.
-                m_batchCount + batchIdx,
-                // Value is the current max row index.
-                // Add previous max row index to current row count.
-                static_cast<uint32>(prevMaxRowIdx + m_rowCountInBatch)));
-    }
-
-    m_batchCount += chunk->size();
-
-    // Update ResulSetArrow counts.
-    *out_rowCount += m_rowCountInChunk;
-    CXX_LOG_TRACE("result set contains %d rows", *out_rowCount);
-}
-
-SF_STATUS STDCALL
-ArrowChunkIterator::appendChunk(std::vector<std::shared_ptr<arrow::RecordBatch>> * chunk)
-{
-    // Iterate over all columns in the chunk, collecting them into the internal result set.
-    for (size_t i = 0; i < m_batchCount; ++i)
-    {
-        std::shared_ptr<arrow::RecordBatch> currBatch = (*chunk)[i];
-        m_rowCountInBatch = currBatch->num_rows();
-
-        for (size_t j = 0; j < m_columnCount; ++j)
+        CXX_LOG_TRACE("ArrowChunkIterator: recordBatch %d with %ld rows.",
+            m_currBatchIndex, m_rowCountInBatch);
+        m_currBatchIndex++;
+        if (m_currBatchIndex < m_batchCount)
         {
-            std::shared_ptr<arrow::Array> colArray = currBatch->column(j);
-            std::shared_ptr<arrow::DataType> type = m_schema->field(j)->type();
-            auto arrowCol = std::make_shared<ArrowColumn>(type);
-
-            switch (type->id())
-            {
-                case arrow::Type::type::BINARY:
-                {
-                    arrowCol->arrowBinary =
-                        std::static_pointer_cast<arrow::BinaryArray>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::BOOL:
-                {
-                    arrowCol->arrowBoolean =
-                        std::static_pointer_cast<arrow::BooleanArray>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::DATE32:
-                {
-                    arrowCol->arrowDate32 =
-                        std::static_pointer_cast<arrow::Date32Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::DATE64:
-                {
-                    arrowCol->arrowDate64 =
-                        std::static_pointer_cast<arrow::Date64Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::DECIMAL:
-                {
-                    arrowCol->arrowDecimal128 =
-                        std::static_pointer_cast<arrow::Decimal128Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::DOUBLE:
-                {
-                    arrowCol->arrowDouble =
-                        std::static_pointer_cast<arrow::DoubleArray>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::INT8:
-                {
-                    arrowCol->arrowInt8 =
-                        std::static_pointer_cast<arrow::Int8Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::INT16:
-                {
-                    arrowCol->arrowInt16 =
-                        std::static_pointer_cast<arrow::Int16Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::INT32:
-                {
-                    arrowCol->arrowInt32 =
-                        std::static_pointer_cast<arrow::Int32Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::INT64:
-                {
-                    arrowCol->arrowInt64 =
-                        std::static_pointer_cast<arrow::Int64Array>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::type::STRING:
-                {
-                    arrowCol->arrowString =
-                        std::static_pointer_cast<arrow::StringArray>(colArray).get();
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                case arrow::Type::STRUCT:
-                {
-                    auto values = std::static_pointer_cast<arrow::StructArray>(colArray);
-                    ArrowTimestampArray * ts(new ArrowTimestampArray);
-
-                    // Timestamp values are struct arrays which may contain the following fields:
-                    // (1) Seconds since Epoch,
-                    // (2) Fractional seconds, expressed in milliseconds,
-                    // (3) Time zone offset.
-                    // The only field guaranteed is (1). All others may or may not be present,
-                    // depending on the scale and type of Timestamp (LTZ, NTZ, or TZ).
-                    ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0));
-                    if (values->num_fields() > 1)
-                        ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1));
-                    if (values->num_fields() > 2)
-                        ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2));
-
-                    arrowCol->arrowTimestamp = ts;
-                    m_columns.emplace_back(arrowCol);
-                    break;
-                }
-                default:
-                {
-                    CXX_LOG_ERROR("Unsupported Arrow type for append: %d.", type->id());
-                    return SF_STATUS_ERROR_DATA_CONVERSION;
-                }
-            }
+            m_currRowIndexInBatch = 0;
+            m_rowCountInBatch = (m_cRecordBatches)[m_currBatchIndex]->num_rows();
+            CXX_LOG_TRACE("ArrowChunkIterator: Initiating record batch %d with %ld rows.",
+                m_currBatchIndex, m_rowCountInBatch);
+            this->initColumnChunks();
+            return true;
         }
     }
+    return false;
+}
 
-    m_rowCountInBatch = 0;
-    return SF_STATUS_SUCCESS;
+bool ArrowChunkIterator::isCellNull(int32 col)
+{
+    switch (m_arrowColumnDataTypes[col])
+    {
+    case (arrow::Type::type::DATE32):
+    {
+        return m_columns[col].arrowDate32->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::DATE64):
+    {
+        return m_columns[col].arrowDate64->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::STRING):
+    {
+        return m_columns[col].arrowString->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::INT8):
+    {
+        return m_columns[col].arrowInt8->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::INT16):
+    {
+        return m_columns[col].arrowInt16->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::INT32):
+    {
+        return m_columns[col].arrowInt32->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::INT64):
+    {
+        return m_columns[col].arrowInt64->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::BOOL):
+    {
+        return m_columns[col].arrowBoolean->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::BINARY):
+    {
+        return m_columns[col].arrowBinary->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::DOUBLE):
+    {
+        return m_columns[col].arrowDouble->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::DECIMAL):
+    {
+        return m_columns[col].arrowDecimal128->IsNull(m_currRowIndexInBatch);
+        break;
+    }
+    case (arrow::Type::type::STRUCT):
+    {
+        return (m_columns[col].arrowTimestamp->sse->IsNull(m_currRowIndexInBatch));
+        break;
+    }
+    default:
+        break;
+    }
+    return false;
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsBool(size_t colIdx, size_t rowIdx, sf_bool * out_data)
+ArrowChunkIterator::getCellAsBool(size_t colIdx, sf_bool * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = SF_BOOLEAN_FALSE;
         return SF_STATUS_SUCCESS;
     }
 
-    switch (arrowType->id())
+    switch (m_arrowColumnDataTypes[colIdx])
     {
         case arrow::Type::type::BOOL:
         {
-            auto rawData = colData->arrowBoolean->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowBoolean->Value(m_currRowIndexInBatch);
             *out_data = (rawData) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::DOUBLE:
         {
-            auto rawData = colData->arrowDouble->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
             *out_data = (rawData == 0.0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::INT8:
         {
-            auto rawData = colData->arrowInt8->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowInt8->Value(m_currRowIndexInBatch);
             *out_data = (rawData == 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::INT16:
         {
-            auto rawData = colData->arrowInt16->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowInt16->Value(m_currRowIndexInBatch);
             *out_data = (rawData == 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::INT32:
         {
-            auto rawData = colData->arrowInt32->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowInt32->Value(m_currRowIndexInBatch);
             *out_data = (rawData == 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::INT64:
         {
-            auto rawData = colData->arrowInt64->Value(cellIdx);
+            auto rawData = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
             *out_data = (rawData == 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         case arrow::Type::type::STRING:
         {
-            auto rawData = colData->arrowString->GetString(cellIdx);
+            auto rawData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
             *out_data = (rawData.empty()) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
             return SF_STATUS_SUCCESS;
         }
         default:
         {
-            CXX_LOG_ERROR("Unsupported conversion from %d to BOOLEAN.", arrowType->id());
+            CXX_LOG_ERROR("Unsupported conversion from %d to BOOLEAN.", m_arrowColumnDataTypes[colIdx]);
             return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
     }
@@ -294,750 +233,769 @@ ArrowChunkIterator::getCellAsBool(size_t colIdx, size_t rowIdx, sf_bool * out_da
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsInt8(size_t colIdx, size_t rowIdx, int8 * out_data)
+ArrowChunkIterator::getCellAsInt8(size_t colIdx, int8 * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
-    SF_STATUS status;
-    int64 rawData;
-    switch (arrowType->id())
+    std::string strVal;
+    SF_STATUS status = getCellAsString(colIdx, strVal);
+    if (status != SF_STATUS_SUCCESS)
     {
-        case arrow::Type::type::BOOL:
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-        {
-            status = Conversion::Arrow::NumericToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT8);
-        }
-        case arrow::Type::type::STRING:
-        {
-            status = Conversion::Arrow::StringToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT8);
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported conversion from %d to INT8.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        return status;
     }
 
-    if (status != SF_STATUS_SUCCESS)
-        return status;
+    if (strVal.empty())
+    {
+        *out_data = 0;
+    }
+    else
+    {
+        *out_data = (int8)strVal[0];
+    }
 
-    *out_data = static_cast<int8>(rawData);
     return SF_STATUS_SUCCESS;
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsInt32(size_t colIdx, size_t rowIdx, int32 * out_data)
+ArrowChunkIterator::getCellAsInt32(size_t colIdx, int32 * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
-    SF_STATUS status;
-    int64 rawData;
-    switch (arrowType->id())
+    // Not go through conversion if type matched for performance.
+    if ((arrow::Type::type::INT32 == m_arrowColumnDataTypes[colIdx]) &&
+        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale)))
     {
-        case arrow::Type::type::BOOL:
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-        {
-            status = Conversion::Arrow::NumericToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT32);
-        }
-        case arrow::Type::type::STRING:
-        {
-            status = Conversion::Arrow::StringToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, INT32);
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported conversion from %d to INT32.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        *out_data = m_columns[colIdx].arrowInt32->Value(m_currRowIndexInBatch);
+        return SF_STATUS_SUCCESS;
     }
 
+    SF_STATUS status;
+    int64 rawData;
+
+    status = getCellAsInt64(colIdx, &rawData);
     if (status != SF_STATUS_SUCCESS)
+    {
         return status;
+    }
+
+    status = Conversion::Arrow::IntegerToInteger(rawData, &rawData, INT32);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        return status;
+    }
 
     *out_data = static_cast<int32>(rawData);
     return SF_STATUS_SUCCESS;
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsInt64(size_t colIdx, size_t rowIdx, int64 * out_data)
+ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rowData)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
-    switch (arrowType->id())
+    // Not go through conversion if type matched for performance.
+    if ((arrow::Type::type::INT64 == m_arrowColumnDataTypes[colIdx]) &&
+        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale) || rowData))
+    {
+        *out_data = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
+        return SF_STATUS_SUCCESS;
+    }
+
+    if ((!rowData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
+    {
+        float64 floatData;
+        SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            return status;
+        }
+
+        if ((floatData > SF_INT64_MAX) || (floatData < SF_INT64_MIN))
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+
+        *out_data = (int64)floatData;
+        return SF_STATUS_SUCCESS;
+    }
+
+    int64 data;
+    switch (m_arrowColumnDataTypes[colIdx])
     {
         case arrow::Type::type::BOOL:
+        {
+            data = (int64)m_columns[colIdx].arrowBoolean->Value(m_currRowIndexInBatch);
+            break;
+        }
         case arrow::Type::type::DATE32:
+        {
+            data = (int64)m_columns[colIdx].arrowDate32->Value(m_currRowIndexInBatch);
+            break;
+        }
         case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
+        {
+            data = (int64)m_columns[colIdx].arrowDate64->Value(m_currRowIndexInBatch);
+            break;
+        }
         case arrow::Type::type::INT8:
+        {
+            data = (int64)m_columns[colIdx].arrowInt8->Value(m_currRowIndexInBatch);
+            break;
+        }
         case arrow::Type::type::INT16:
+        {
+            data = (int64)m_columns[colIdx].arrowInt16->Value(m_currRowIndexInBatch);
+            break;
+        }
         case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-            return Conversion::Arrow::NumericToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data, INT64);
+        {
+            data = (int64)m_columns[colIdx].arrowInt32->Value(m_currRowIndexInBatch);
+            break;
+        }
+        case arrow::Type::type::DOUBLE:
+        {
+            double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
+            if ((dblData > SF_INT64_MAX) || (dblData < SF_INT64_MIN))
+            {
+                return SF_STATUS_ERROR_OUT_OF_RANGE;
+            }
+            data = (int64)dblData;
+            break;
+        }
+        case arrow::Type::type::DECIMAL:
+        {
+            std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+            return Conversion::Arrow::StringToInteger(strData, out_data, INT64);
+        }
         case arrow::Type::type::STRING:
-            return Conversion::Arrow::StringToSignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data, INT64);
+        {
+            std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
+            return Conversion::Arrow::StringToInteger(strData, out_data, INT64);
+        }
         default:
-            CXX_LOG_ERROR("Unsupported conversion from %d to INT64.", arrowType->id());
+            CXX_LOG_ERROR("Unsupported conversion from %d to INT64.", m_arrowColumnDataTypes[colIdx]);
             return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
+
+    *out_data = data;
+    return SF_STATUS_SUCCESS;
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsUint8(size_t colIdx, size_t rowIdx, uint8 * out_data)
+ArrowChunkIterator::getCellAsUint8(size_t colIdx, uint8 * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
+    return getCellAsInt8(colIdx, (int8*)out_data);
+}
 
-    if (colData == nullptr)
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
+{
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
+    {
+        *out_data = 0;
+        return SF_STATUS_SUCCESS;
+    }
+
+    // Not go through conversion if type matched for performance.
+    if ((arrow::Type::type::INT32 == m_arrowColumnDataTypes[colIdx]) &&
+        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale)))
+    {
+        int32 data = m_columns[colIdx].arrowInt32->Value(m_currRowIndexInBatch);
+        *out_data = (uint32)data;
+        return SF_STATUS_SUCCESS;
+    }
+
+    SF_STATUS status;
+    int64 rawData;
+
+    status = getCellAsInt64(colIdx, &rawData);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = Conversion::Arrow::IntegerToInteger(rawData, &rawData, UINT32);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    *out_data = static_cast<int32>(rawData);
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL
+ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
+{
+    if (colIdx >= m_columnCount)
+    {
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    }
+
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
     SF_STATUS status;
-    uint64 rawData;
-    switch (arrowType->id())
+    int64 data;
+    // Not go through conversion if type matched for performance.
+    if ((arrow::Type::type::INT64 == m_arrowColumnDataTypes[colIdx]) &&
+        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale)))
     {
-        case arrow::Type::type::BOOL:
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-        {
-            status = Conversion::Arrow::NumericToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT8);
-        }
-        case arrow::Type::type::STRING:
-        {
-            status = Conversion::Arrow::StringToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT8);
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported conversion from %d to UINT8.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        data = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
+        *out_data = (uint64)data;
+        return SF_STATUS_SUCCESS;
     }
 
-    if (status != SF_STATUS_SUCCESS)
-        return status;
-
-    *out_data = static_cast<uint8>(rawData);
-    return SF_STATUS_SUCCESS;
+    switch (m_arrowColumnDataTypes[colIdx])
+    {
+    case arrow::Type::type::BOOL:
+    case arrow::Type::type::DATE32:
+    case arrow::Type::type::DATE64:
+    case arrow::Type::type::INT8:
+    case arrow::Type::type::INT16:
+    case arrow::Type::type::INT32:
+    {
+        status = getCellAsInt64(colIdx, &data);
+        if (status)
+        {
+            return status;
+        }
+        *out_data = (uint64)data;
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::DOUBLE:
+    {
+        double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
+        if ((dblData > SF_UINT64_MAX) || (dblData < SF_INT64_MIN))
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+        *out_data = (uint64)dblData;
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::DECIMAL:
+    {
+        std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToUint64(strData, out_data);
+    }
+    case arrow::Type::type::STRING:
+    {
+        std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToUint64(strData, out_data);
+    }
+    default:
+        CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", m_arrowColumnDataTypes[colIdx]);
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsUint32(size_t colIdx, size_t rowIdx, uint32 * out_data)
+ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
+        return SF_STATUS_SUCCESS;
+    }
+
+    // Not go through conversion if type matched for performance.
+    if (arrow::Type::type::DOUBLE == m_arrowColumnDataTypes[colIdx])
+    {
+        float64 floatValue = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
+        if (floatValue == INFINITY || floatValue == -INFINITY)
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+
+        *out_data = (float32)floatValue;
         return SF_STATUS_SUCCESS;
     }
 
     SF_STATUS status;
-    uint64 rawData;
-    switch (arrowType->id())
+    switch (m_arrowColumnDataTypes[colIdx])
     {
-        case arrow::Type::type::BOOL:
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
+    case arrow::Type::type::BOOL:
+    case arrow::Type::type::DATE32:
+    case arrow::Type::type::DATE64:
+    case arrow::Type::type::INT8:
+    case arrow::Type::type::INT16:
+    case arrow::Type::type::INT32:
+    case arrow::Type::type::INT64:
+    {
+        float64 data;
+        status = getCellAsFloat64(colIdx, &data);
+        if (status)
         {
-            status = Conversion::Arrow::NumericToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT32);
+            return status;
         }
-        case arrow::Type::type::STRING:
-        {
-            status = Conversion::Arrow::StringToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, &rawData, UINT32);
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported conversion from %d to UINT32.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
+        *out_data = (float32)data;
+        return SF_STATUS_SUCCESS;
     }
-
-    if (status != SF_STATUS_SUCCESS)
-        return status;
-
-    *out_data = static_cast<uint32>(rawData);
-    return SF_STATUS_SUCCESS;
+    case arrow::Type::type::DECIMAL:
+    {
+        std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToFloat(strData, out_data);
+    }
+    case arrow::Type::type::STRING:
+    {
+        std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToFloat(strData, out_data);
+    }
+    default:
+        CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", m_arrowColumnDataTypes[colIdx]);
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsUint64(size_t colIdx, size_t rowIdx, uint64 * out_data)
+ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
-    switch (arrowType->id())
+    // Not go through conversion if type matched for performance.
+    if (arrow::Type::type::DOUBLE == m_arrowColumnDataTypes[colIdx])
     {
-        case arrow::Type::type::BOOL:
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-        case arrow::Type::type::DECIMAL:
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-            return Conversion::Arrow::NumericToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data, UINT64);
-        case arrow::Type::type::STRING:
-            return Conversion::Arrow::StringToUnsignedInteger(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data, UINT64);
-        default:
-            CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-}
+        float64 floatValue = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
+        if (floatValue == INFINITY || floatValue == -INFINITY)
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
 
-SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsFloat32(size_t colIdx, size_t rowIdx, float32 * out_data)
-{
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
-    {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
-    {
-        *out_data = 0;
+        *out_data = floatValue;
         return SF_STATUS_SUCCESS;
     }
 
-    switch (arrowType->id())
+    SF_STATUS status;
+    switch (m_arrowColumnDataTypes[colIdx])
     {
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-            return Conversion::Arrow::NumericToFloat(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
-        case arrow::Type::type::STRING:
-            return Conversion::Arrow::StringToFloat(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
-        default:
-            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-}
-
-SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsFloat64(size_t colIdx, size_t rowIdx, float64 * out_data)
-{
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    case arrow::Type::type::BOOL:
+    case arrow::Type::type::DATE32:
+    case arrow::Type::type::DATE64:
+    case arrow::Type::type::INT8:
+    case arrow::Type::type::INT16:
+    case arrow::Type::type::INT32:
+    case arrow::Type::type::INT64:
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
+        int64 intData;
+        status = getCellAsInt64(colIdx, &intData, true);
+        if (status)
+        {
+            return status;
+        }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
-    {
-        *out_data = 0;
+        float64 floatData = (float64)intData;
+        if ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale > 0))
+        {
+            floatData /= (float64)(power10[m_metadata[colIdx].scale]);
+        }
+        *out_data = floatData;
         return SF_STATUS_SUCCESS;
     }
-
-    switch (arrowType->id())
+    case arrow::Type::type::DECIMAL:
     {
-        case arrow::Type::type::DOUBLE:
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-            return Conversion::Arrow::NumericToDouble(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
-        case arrow::Type::type::STRING:
-            return Conversion::Arrow::StringToDouble(
-                colData, arrowType, colIdx, rowIdx, cellIdx, out_data);
-        default:
-            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToDouble(strData, out_data);
+    }
+    case arrow::Type::type::STRING:
+    {
+        std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
+        return Conversion::Arrow::StringToDouble(strData, out_data);
+    }
+    default:
+        CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", m_arrowColumnDataTypes[colIdx]);
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 }
 
 SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
     size_t colIdx,
-    size_t rowIdx,
     std::string& outString
 )
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (isCellNull(colData, arrowType, cellIdx))
+    if (isCellNull(colIdx))
     {
         outString = "";
         return SF_STATUS_SUCCESS;
     }
 
+    SF_STATUS status;
+
     SF_DB_TYPE snowType = m_metadata[colIdx].type;
-    int64 scale = m_metadata[colIdx].scale;
-    switch (arrowType->id())
+
+    if ((SF_DB_TYPE_TIMESTAMP_TZ == snowType) ||
+        (SF_DB_TYPE_TIMESTAMP_NTZ == snowType) ||
+        (SF_DB_TYPE_TIMESTAMP_LTZ == snowType))
     {
-        case arrow::Type::type::BINARY:
-            return Conversion::Arrow::BinaryToString(
-                colData, arrowType, colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::BOOL:
-            return Conversion::Arrow::BoolToString(
-                colData, arrowType, colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::DATE32:
-        case arrow::Type::type::DATE64:
-            return Conversion::Arrow::DateToString(
-                colData, arrowType, colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::DECIMAL:
-            return Conversion::Arrow::DecimalToString(
-                colData, arrowType, colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::DOUBLE:
-            return Conversion::Arrow::DoubleToString(
-                colData, arrowType, colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::INT8:
-        case arrow::Type::type::INT16:
-        case arrow::Type::type::INT32:
-        case arrow::Type::type::INT64:
-            return Conversion::Arrow::IntToString(
-                colData, arrowType, snowType, scale,
-                colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::STRUCT:
-            return Conversion::Arrow::TimestampToString(
-                colData, arrowType, snowType, scale,
-                colIdx, rowIdx, cellIdx, outString);
-        case arrow::Type::type::STRING:
+        SF_TIMESTAMP ts;
+        status = getCellAsTimestamp(colIdx, &ts);
+        if (SF_STATUS_SUCCESS != status)
         {
-            outString = colData->arrowString->GetString(cellIdx);
+            return status;
+        }
+
+        char buf[64];
+        char* bufPtr = buf;
+        status = snowflake_timestamp_to_string(&ts, "", &bufPtr, sizeof(buf), NULL, SF_BOOLEAN_FALSE);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            return status;
+        }
+
+        outString = std::string(buf);
+        return SF_STATUS_SUCCESS;
+    }
+
+    switch (m_arrowColumnDataTypes[colIdx])
+    {
+    case arrow::Type::type::STRING:
+    {
+        outString = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::BINARY:
+    {
+        outString = m_columns[colIdx].arrowBinary->GetString(m_currRowIndexInBatch);
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::BOOL:
+    {
+        outString = m_columns[colIdx].arrowBoolean->Value(m_currRowIndexInBatch) ?
+                        SF_BOOLEAN_TRUE_STR : SF_BOOLEAN_FALSE_STR;
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::INT8:
+    case arrow::Type::type::INT16:
+    case arrow::Type::type::INT32:
+    case arrow::Type::type::INT64:
+    {
+        if ((SF_DB_TYPE_FIXED == snowType) && (m_metadata[colIdx].scale != 0))
+        {
+            float64 floatData;
+            status = getCellAsFloat64(colIdx, &floatData);
+            if (SF_STATUS_SUCCESS != status)
+            {
+                return status;
+            }
+            outString = std::to_string(floatData);
             return SF_STATUS_SUCCESS;
         }
-        default:
-            CXX_LOG_ERROR("Unsupported conversion from %d to STRING.", arrowType->id());
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+
+        int64 data;
+        status = getCellAsInt64(colIdx, &data);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            return status;
+        }
+
+        // INT32 and INT64 values may contain Snowflake TIME/TIMESTAMP values.
+        if (SF_DB_TYPE_TIME == snowType)
+        {
+            return Conversion::Arrow::TimeToString(data, m_metadata[colIdx].scale, outString);
+        }
+
+        outString = std::to_string(data);
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::DATE32:
+    case arrow::Type::type::DATE64:
+    {
+        int64 date;
+        status = getCellAsInt64(colIdx, &date);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            return status;
+        }
+        return Conversion::Arrow::DateToString(date, outString);
+    }
+    case arrow::Type::type::DOUBLE:
+    {
+        outString = std::to_string(m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch));
+        // remove trailing 0
+        outString.erase(outString.find_last_not_of('0') + 1, std::string::npos);
+        return SF_STATUS_SUCCESS;
+    }
+    case arrow::Type::type::DECIMAL:
+    {
+        outString = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+        return SF_STATUS_SUCCESS;
+    }
+    default:
+        CXX_LOG_ERROR("Unsupported conversion from %d to STRING.", m_arrowColumnDataTypes[colIdx]);
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, size_t rowIdx, SF_TIMESTAMP * out_data)
+ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
 {
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (colIdx >= m_columnCount)
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
-    // Only support proper timestamps.
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    if (arrowType->id() != arrow::Type::type::STRUCT)
-    {
-        CXX_LOG_ERROR("Unsupported conversion from %d to TIMESTAMP.", arrowType->id());
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    if (colData->arrowTimestamp->sse->IsNull(cellIdx))
+    if (isCellNull(colIdx))
     {
         return snowflake_timestamp_from_parts(out_data, 0, 0, 0, 0, 1, 1, 1970, 0, 9, SF_DB_TYPE_TIMESTAMP_NTZ);
     }
 
-    // The C API has a custom struct `SF_TIMESTAMP` used to represent Timestamp values.
-    // In addition to what's available in the ArrowTimestamp struct, we must provide:
-    // (1) A tm object that represents the timestamp value,
-    // (2) The scale of the value,
-    // (3) The timestamp type, i.e. LTZ, NTZ, TZ.
-    ArrowTimestampArray * ts = colData->arrowTimestamp;
-    time_t t = static_cast<time_t>(ts->sse->Value(cellIdx));
-    out_data->tm_obj = *(std::localtime(&t));
-    out_data->nsec = ts->fs->Value(cellIdx);
-    out_data->tzoffset = ts->tz->Value(cellIdx);
-    out_data->scale = static_cast<int64>(m_metadata[colIdx].scale);
-    out_data->ts_type = m_metadata[colIdx].type;
+    SF_DB_TYPE snowType = m_metadata[colIdx].type;
+    uint8 arrowType = m_arrowColumnDataTypes[colIdx];
+    SF_STATUS status;
 
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL
-ArrowChunkIterator::getCellStrlen(size_t colIdx, size_t rowIdx, size_t * out_data)
-{
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-
-    if (colData == nullptr)
+    if (((SF_DB_TYPE_TIMESTAMP_TZ != snowType) &&
+        (SF_DB_TYPE_TIMESTAMP_NTZ != snowType) &&
+        (SF_DB_TYPE_TIMESTAMP_LTZ != snowType)) ||
+        ((arrowType != arrow::Type::type::INT64) &&
+        (arrowType != arrow::Type::type::STRUCT)))
     {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    // Static buffers to hold fixed-size values for performance.
-    // uint8_t binBuf[128];
+    int64_t secondsSinceEpoch = 0;
+    int64_t fracSeconds = 0;
+    int32_t tz = 0;
+    int16_t scale = m_metadata[colIdx].scale;
 
-    std::shared_ptr<arrow::DataType> arrowType = colData->type;
-    switch(arrowType->id())
+    if (arrowType == arrow::Type::type::INT64)
     {
-        case arrow::Type::type::BINARY:
+        fracSeconds = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
+    }
+    else
+    {
+        if (m_columns[colIdx].arrowTimestamp->sse)
+            secondsSinceEpoch = m_columns[colIdx].arrowTimestamp->sse->Value(m_currRowIndexInBatch);
+        if (m_columns[colIdx].arrowTimestamp->fs)
+            fracSeconds = m_columns[colIdx].arrowTimestamp->fs->Value(m_currRowIndexInBatch);
+        if (m_columns[colIdx].arrowTimestamp->tz)
+            tz = m_columns[colIdx].arrowTimestamp->tz->Value(m_currRowIndexInBatch);
+
+        if (SF_DB_TYPE_TIMESTAMP_TZ == snowType && !m_columns[colIdx].arrowTimestamp->tz)
         {
-            break;
+            // should have timezone information but it's null.
+            // fracSeconds actually is timezone information and fracSeconds is included in secondsSinceEpoch
+            tz = fracSeconds;
+            fracSeconds = secondsSinceEpoch;
+            secondsSinceEpoch = 0;
         }
-        case arrow::Type::type::BOOL:
+        else
         {
-            break;
-        }
-        case arrow::Type::type::DATE32:
-        {
-            auto rawData = colData->arrowDate32->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::DATE64:
-        {
-            auto rawData = colData->arrowDate64->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::DECIMAL:
-        {
-            break;
-        }
-        case arrow::Type::type::DOUBLE:
-        {
-            auto rawData = colData->arrowDouble->Value(cellIdx);
-            *out_data = std::to_string(rawData).size();
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            auto rawData = colData->arrowInt8->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            auto rawData = colData->arrowInt16->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            auto rawData = colData->arrowInt32->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            auto rawData = colData->arrowInt64->Value(cellIdx);
-            *out_data = std::trunc(std::log10(rawData)) + 1;
-            break;
-        }
-        case arrow::Type::type::STRING:
-        {
-            break;
-        }
-        case arrow::Type::STRUCT:
-        {
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported Arrow type: %d.", arrowType->id());
-            return SF_STATUS_ERROR_DATA_CONVERSION;
+            // If we get fraction from struct, it's in nanosec so the scale is 9.
+            scale = 9;
         }
     }
 
-    return SF_STATUS_SUCCESS;
-}
+    if (secondsSinceEpoch == 0)
+    {
+        secondsSinceEpoch = fracSeconds / power10[scale];
+        fracSeconds = fracSeconds % power10[scale];
+    }
 
-std::shared_ptr<arrow::DataType> ArrowChunkIterator::getColumnArrowDataType(uint32 colIdx)
-{
-    return m_schema->field(colIdx)->type();
+    if (fracSeconds < 0)
+    {
+        fracSeconds += power10[scale];
+        secondsSinceEpoch--;
+    }
+    else if (fracSeconds > 0)
+    {
+        if (secondsSinceEpoch < 0)
+        {
+            fracSeconds = power10[scale] - fracSeconds;
+            secondsSinceEpoch++;
+        }
+    }
+    else
+    {
+        scale = 0;
+    }
+
+    // covert fracSeconds to nsec
+    if (scale)
+    {
+        fracSeconds *= power10[9 - scale];
+        scale = 9;
+    }
+
+    char buf[64];
+    std::string tsString = std::to_string(secondsSinceEpoch);
+    if (fracSeconds)
+    {
+        sb_sprintf(buf, sizeof(buf), ".%09d", (uint32)fracSeconds);
+        tsString += std::string(buf);
+    }
+    if (tz)
+    {
+        sb_sprintf(buf, sizeof(buf), " %d", tz);
+        tsString += std::string(buf);
+    }
+
+    status = snowflake_timestamp_from_epoch_seconds(out_data, tsString.c_str(), m_tzString.c_str(), scale, snowType);
+    if (SF_STATUS_SUCCESS != status)
+    {
+        return status;
+    }
+
+    out_data->scale = m_metadata[colIdx].scale;
+    return SF_STATUS_SUCCESS;
 }
 
 size_t ArrowChunkIterator::getRowCountInChunk()
 {
-    return m_rowCountInChunk;
-}
-
-SF_STATUS STDCALL
-ArrowChunkIterator::isCellNull(size_t colIdx, size_t rowIdx, sf_bool * out_data)
-{
-    int32 cellIdx;
-    std::shared_ptr<ArrowColumn> colData = getColumn(colIdx, rowIdx, &cellIdx);
-    if (colData == nullptr)
-    {
-        CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+    size_t rowCount = 0;
+    for (unsigned int i = 0; i < (m_cRecordBatches).size(); ++i) {
+        size_t rowCountBatch = (m_cRecordBatches)[i]->num_rows();
+        rowCount += rowCountBatch;
     }
-
-    CXX_LOG_TRACE("cellIdx is %d", cellIdx);
-    std::shared_ptr<arrow::DataType> arrowType = getColumnArrowDataType(colIdx);
-
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::BINARY:
-        {
-            *out_data = colData->arrowBinary->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::BOOL:
-        {
-            CXX_LOG_TRACE("Bool value IsNull? %d", colData->arrowBoolean->IsNull(cellIdx));
-            *out_data = colData->arrowBoolean->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::DATE32:
-        {
-            *out_data = colData->arrowDate32->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::DATE64:
-        {
-            *out_data = colData->arrowDate64->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::DECIMAL:
-        {
-            *out_data = colData->arrowDecimal128->IsNull(cellIdx) ?
-                SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::DOUBLE:
-        {
-            *out_data = colData->arrowDouble->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::INT8:
-        {
-            *out_data = colData->arrowInt8->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::INT16:
-        {
-            *out_data = colData->arrowInt16->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::INT32:
-        {
-            *out_data = colData->arrowInt32->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::INT64:
-        {
-            *out_data = colData->arrowInt64->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::type::STRING:
-        {
-            *out_data = colData->arrowString->IsNull(cellIdx) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        case arrow::Type::STRUCT:
-        {
-            *out_data = colData->arrowTimestamp->sse->IsNull(cellIdx) ?
-                SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-            break;
-        }
-        default:
-        {
-            CXX_LOG_ERROR("Unsupported Arrow type: %d.", arrowType->id());
-            return SF_STATUS_ERROR_DATA_CONVERSION;
-        }
-    }
-
-    return SF_STATUS_SUCCESS;
+    return rowCount;
 }
 
 // Private methods =================================================================================
-
-std::shared_ptr<ArrowColumn> ArrowChunkIterator::getColumn(
-    size_t colIdx,
-    size_t rowIdx,
-    int32 * out_cellIdx
-)
+void ArrowChunkIterator::initColumnChunks()
 {
-    // The internal result set, m_columns, contains more elements than m_columnCount would suggest.
-    // In fact, we have m_batchCount * m_columnCount elements altogether.
-    // The columns are "chunked" in the sense that there is one set of columns for each RecordBatch.
-    // Thus, we use the row index of the cell whose value we wish to retrieve to determine
-    // the correct column data to write.
-    uint32 prevMaxRowIdx = 0;
+    m_columns.clear();
 
-    for (auto const& batchRowIdxPair : m_batchRowIndexMap)
+    ArrowColumn arrowcol;
+
+    std::shared_ptr<arrow::RecordBatch> currentBatch = (m_cRecordBatches)[m_currBatchIndex];
+
+    m_currentSchema = currentBatch->schema();
+    m_rowCountInBatch = currentBatch->num_rows();
+    for (int i = 0; i < m_columnCount; i++)
     {
-        if (rowIdx <= batchRowIdxPair.second)
-        {
-            *out_cellIdx = rowIdx - prevMaxRowIdx;
+        std::shared_ptr<arrow::Array> columnArray = currentBatch->column(i);
+        std::shared_ptr<arrow::DataType> dt = m_currentSchema->field(i)->type();
 
-            // Since there is one set of columns stored for each batch, simply
-            // multiply batch index with column count and add the given column index.
-            uint32 trueColIdx = m_columnCount * batchRowIdxPair.first + colIdx;
-            return m_columns[trueColIdx];
-        }
-        else
+        switch (dt->id())
         {
-            prevMaxRowIdx = batchRowIdxPair.second;
+            case arrow::Type::STRUCT: {
+                auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
+                std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
+                ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
+                if (values->num_fields() > 1)
+                    ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
+                if (values->num_fields() > 2)
+                    ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
+                arrowcol.arrowTimestamp = ts;
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+
+            case arrow::Type::type::DATE32: {
+                arrowcol.arrowDate32 = std::static_pointer_cast<arrow::Date32Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::DATE64: {
+                arrowcol.arrowDate64 = std::static_pointer_cast<arrow::Date64Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::STRING: {
+                arrowcol.arrowString = std::static_pointer_cast<arrow::StringArray>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::INT8: {
+                arrowcol.arrowInt8 = std::static_pointer_cast<arrow::Int8Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::INT16: {
+                arrowcol.arrowInt16 = std::static_pointer_cast<arrow::Int16Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::INT32: {
+                arrowcol.arrowInt32 = std::static_pointer_cast<arrow::Int32Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::INT64: {
+                arrowcol.arrowInt64 = std::static_pointer_cast<arrow::Int64Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::BOOL: {
+                arrowcol.arrowBoolean = std::static_pointer_cast<arrow::BooleanArray>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::BINARY: {
+                arrowcol.arrowBinary = std::static_pointer_cast<arrow::BinaryArray>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::DOUBLE: {
+                arrowcol.arrowDouble = std::static_pointer_cast<arrow::DoubleArray>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+            case arrow::Type::type::DECIMAL:{
+                arrowcol.arrowDecimal128 = std::static_pointer_cast<arrow::Decimal128Array>(columnArray).get();
+                m_columns.emplace_back(arrowcol);
+                break;
+            }
+
+            default:
+            {
+                return;
+            }
         }
     }
-
-    // Should never reach.
-    CXX_LOG_ERROR("Could not find the appropriate column element.");
-    return nullptr;
 }
-
-bool ArrowChunkIterator::isCellNull(
-    std::shared_ptr<ArrowColumn> colData,
-    std::shared_ptr<arrow::DataType> arrowType,
-    int32 cellIdx
-)
-{
-    switch (arrowType->id())
-    {
-        case arrow::Type::type::BINARY:
-            return colData->arrowBinary->IsNull(cellIdx);
-        case arrow::Type::type::BOOL:
-            return colData->arrowBoolean->IsNull(cellIdx);
-        case arrow::Type::type::DATE32:
-            return colData->arrowDate32->IsNull(cellIdx);
-        case arrow::Type::type::DATE64:
-            return colData->arrowDate64->IsNull(cellIdx);
-        case arrow::Type::type::DECIMAL:
-            return colData->arrowDecimal128->IsNull(cellIdx);
-        case arrow::Type::type::DOUBLE:
-            return colData->arrowDouble->IsNull(cellIdx);
-        case arrow::Type::type::INT8:
-            return colData->arrowInt8->IsNull(cellIdx);
-        case arrow::Type::type::INT16:
-            return colData->arrowInt16->IsNull(cellIdx);
-        case arrow::Type::type::INT32:
-            return colData->arrowInt32->IsNull(cellIdx);
-        case arrow::Type::type::INT64:
-            return colData->arrowInt64->IsNull(cellIdx);
-        case arrow::Type::type::STRING:
-            return colData->arrowString->IsNull(cellIdx);
-        case arrow::Type::STRUCT:
-            return colData->arrowTimestamp->sse->IsNull(cellIdx);
-        default:
-            CXX_LOG_ERROR("Unsupported Arrow type: %d.", arrowType->id());
-            return true;
-    }
-}
-
 } // namespace Client
 } // namespace Snowflake
 #endif // ifndef SF_WIN32

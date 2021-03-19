@@ -45,12 +45,10 @@ public:
     /**
      * Parameterized constructor.
      *
-     * @param data                      A pointer to the JSON server response data.
-     * @param rowset                    A pointer to the JSON array containing result set data.
      * @param metadata                  The metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSet(cJSON * data, cJSON * rowset, SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -58,15 +56,6 @@ public:
     virtual ~ResultSet(){}
 
     // API methods to populate results =============================================================
-
-    /**
-     * Appends the given chunk to the internal result set.
-     *
-     * @param chunk                The chunk to append.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    virtual SF_STATUS STDCALL appendChunk(cJSON * chunk) = 0;
 
     /**
      * Resets the internal indices so that they may be used to traverse
@@ -371,22 +360,17 @@ protected:
     /**
      * The output format of a Timestamp LTZ (local time zone) field.
      */
-    std::string m_timestampLtzOutputFormat;
+     std::string m_timestampLtzOutputFormat;
 
     /**
      * The output format of a Timestamp NTZ (no time zone) field.
      */
-    std::string m_timestampNtzOutputFormat;
+     std::string m_timestampNtzOutputFormat;
 
     /**
      * The output format of a Timestamp TZ (time zone) field.
      */
-    std::string m_timestampTzOutputFormat;
-
-    /**
-     * Indicates whether the query that generated this result set is a DML statement.
-     */
-    bool m_isDml;
+     std::string m_timestampTzOutputFormat;
 
     /**
      * The format of the result set.

@@ -202,6 +202,12 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
     {
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
+
+#ifdef SF_WIN32
+    cJSON * parameters = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
+    snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
+#endif
     return body;
 }
 

@@ -402,9 +402,9 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
-    if (ret) {
+    if (ret && json) {
       // We were successful so parse JSON from text
-      if (chunk_downloader && json) {
+      if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
             sb_memcpy(&buffer.buffer[buffer.size], 1, "]", 1);
