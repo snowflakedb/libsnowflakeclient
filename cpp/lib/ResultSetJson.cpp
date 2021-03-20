@@ -31,8 +31,6 @@ ResultSetJson::ResultSetJson(
     ResultSet(metadata, tzString)
 {
     m_queryResultFormat = QueryResultFormat::JSON;
-    m_totalColumnCount = snowflake_cJSON_GetArraySize(
-        snowflake_cJSON_GetArrayItem(rowset, 0));
     m_chunk = nullptr;
     appendChunk(rowset);
 }
@@ -69,9 +67,14 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
     m_currRow = nullptr;
 
     // Update other counts.
+    if (m_isFirstChunk)
+    {
+        m_isFirstChunk = false;
+        m_totalColumnCount = snowflake_cJSON_GetArraySize(m_chunk->child);
+    }
     m_rowCountInChunk = snowflake_cJSON_GetArraySize(m_chunk);
     m_totalChunkCount++;
-    CXX_LOG_DEBUG("appendChunk -- Appended chunk of size %d.", m_rowCountInChunk, chunk->child);
+    CXX_LOG_DEBUG("appendChunk -- Appended chunk of size %d.", m_rowCountInChunk);
 
     return SF_STATUS_SUCCESS;
 }

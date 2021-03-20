@@ -41,9 +41,10 @@ ResultSet::ResultSet(
     m_currChunkRowIdx(0),
     m_currColumnIdx(0),
     m_currRowIdx(0),
-    m_metadata(metadata),
     m_totalChunkCount(0),
     m_totalColumnCount(0),
+    m_metadata(metadata),
+    m_isFirstChunk(true),
     m_tzString(tzString)
 {
     ;

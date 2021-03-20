@@ -1538,12 +1538,6 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                             sfstmt->desc,
                             (QueryResultFormat_t *) sfstmt->qrf,
                             sfstmt->connection->timezone);
-
-                        // Update row counts. When chunk_rowcount reaches zero, snowflake_fetch will
-                        // get the chunk downloader to download more chunks.
-                        sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                            sfstmt->result_set,
-                            (QueryResultFormat_t *) sfstmt->qrf);
                     } else {
                         rs_append_chunk(
                             sfstmt->result_set,
@@ -2021,7 +2015,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
                     // Even when the result set is split into chunks, JSON format will still
                     // response with the first chunk in "rowset", so be sure to include it.
-                    rs_create_with_json_result(
+                    sfstmt->result_set = rs_create_with_json_result(
                         rowset,
                         sfstmt->desc,
                         (QueryResultFormat_t *)sfstmt->qrf,
@@ -2031,6 +2025,13 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
                         sfstmt->result_set,
                         (QueryResultFormat_t *) sfstmt->qrf);
+
+                    // Update total row count. Used in snowflake_num_rows().
+                    if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
+                        log_warn(
+                            "No total count found in response. Reverting to using array size of results");
+                        sfstmt->total_rowcount = sfstmt->chunk_rowcount;
+                    }
                 } else {
                     if (sfstmt->is_dml == SF_BOOLEAN_TRUE) {
                         // If DML, then do not create a result set object.
@@ -2054,12 +2055,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                             (QueryResultFormat_t *) sfstmt->qrf,
                             sfstmt->connection->timezone);
 
-                        // Update row counts. The member chunk_rowcount is used in snowflake_fetch
-                        // to control the chunk downloader.
+                        // Update chunk row count. Controls the chunk downloader.
                         sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
                             sfstmt->result_set,
                             (QueryResultFormat_t *) sfstmt->qrf);
 
+                        // Update total row count. Used in snowflake_num_rows().
                         if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
                             log_warn(
                                 "No total count found in response. Reverting to using array size of results");

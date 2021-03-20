@@ -262,11 +262,6 @@ private:
     std::vector<std::pair<bool, std::string> > m_cacheStrVal;
 
     /**
-     * Indicates whether the first chunk has been processed or not.
-     */
-    bool m_isFirstChunk;
-
-    /**
      * The key to use when retrieving the base64-encoded rowset data.
      */
     const char * m_rowsetKey = "rowsetBase64";

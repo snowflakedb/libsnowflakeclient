@@ -25,7 +25,6 @@ ResultSetArrow::ResultSetArrow() :
     Snowflake::Client::ResultSet()
 {
     m_queryResultFormat = QueryResultFormat::ARROW;
-    m_isFirstChunk = true;
 }
 
 ResultSetArrow::ResultSetArrow(
@@ -36,7 +35,6 @@ ResultSetArrow::ResultSetArrow(
     ResultSet(metadata, tzString)
 {
     m_queryResultFormat = QueryResultFormat::ARROW;
-    m_isFirstChunk = true;
 
     this->appendChunk(initialChunk);
 

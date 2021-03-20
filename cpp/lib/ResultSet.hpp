@@ -332,10 +332,7 @@ protected:
 
     // Protected members ===========================================================================
 
-    /**
-     * The metadata object.
-     */
-    SF_COLUMN_DESC * m_metadata;
+    // Output formats ==============================================================================
 
     /**
      * The output format of a Binary field.
@@ -372,20 +369,7 @@ protected:
      */
      std::string m_timestampTzOutputFormat;
 
-    /**
-     * The format of the result set.
-     */
-    QueryResultFormat m_queryResultFormat;
-
-    /**
-     * The tz string to use when dealing with time or timestamp values.
-     */
-    std::string m_tzString;
-
-    /**
-     * The tz offset to use when dealing with time or timestamp values.
-     */
-    int32 m_tzOffset;
+    // Counts and indices ==========================================================================
 
     /**
      * The index of the current chunk.
@@ -421,6 +405,33 @@ protected:
      * The total number of rows.
      */
     size_t m_totalRowCount;
+
+    // Miscellaneous ===============================================================================
+
+    /**
+     * The metadata object.
+     */
+    SF_COLUMN_DESC * m_metadata;
+
+    /**
+     * The format of the result set.
+     */
+    QueryResultFormat m_queryResultFormat;
+
+    /**
+     * The tz string to use when dealing with time or timestamp values.
+     */
+    std::string m_tzString;
+
+    /**
+     * The tz offset to use when dealing with time or timestamp values.
+     */
+    int32 m_tzOffset;
+
+    /**
+     * Indicates whether the first chunk has been processed or not.
+     */
+    bool m_isFirstChunk;
 };
 
 }
