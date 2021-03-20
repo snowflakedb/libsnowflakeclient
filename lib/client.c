@@ -2003,6 +2003,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf)) {
                         callback_create_resp = callback_create_arrow_resp;
                     }
+
                     sfstmt->chunk_downloader = chunk_downloader_init(
                             qrmk,
                             chunk_headers,
@@ -2013,9 +2014,23 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                             sfstmt->connection->insecure_mode,
                             callback_create_resp);
                     if (!sfstmt->chunk_downloader) {
-                        // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
+                        // Unable to create chunk downloader.
+                        // Error is set in chunk_downloader_init function.
                         goto cleanup;
                     }
+
+                    // Even when the result set is split into chunks, JSON format will still
+                    // response with the first chunk in "rowset", so be sure to include it.
+                    rs_create_with_json_result(
+                        rowset,
+                        sfstmt->desc,
+                        (QueryResultFormat_t *)sfstmt->qrf,
+                        sfstmt->connection->timezone);
+
+                    // Update chunk row count. Controls the chunk downloader.
+                    sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
+                        sfstmt->result_set,
+                        (QueryResultFormat_t *) sfstmt->qrf);
                 } else {
                     if (sfstmt->is_dml == SF_BOOLEAN_TRUE) {
                         // If DML, then do not create a result set object.
