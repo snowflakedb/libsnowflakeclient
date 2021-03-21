@@ -307,7 +307,7 @@ ArrowChunkIterator::getCellAsInt32(size_t colIdx, int32 * out_data)
 }
 
 SF_STATUS STDCALL
-ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rowData)
+ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData)
 {
     if (colIdx >= m_columnCount)
     {
@@ -322,13 +322,13 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rowData
 
     // Not go through conversion if type matched for performance.
     if ((arrow::Type::type::INT64 == m_arrowColumnDataTypes[colIdx]) &&
-        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale) || rowData))
+        ((SF_DB_TYPE_FIXED != m_metadata[colIdx].type) || (0 == m_metadata[colIdx].scale) || rawData))
     {
         *out_data = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
         return SF_STATUS_SUCCESS;
     }
 
-    if ((!rowData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
+    if ((!rawData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
     {
         float64 floatData;
         SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
@@ -708,7 +708,17 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
     }
     case arrow::Type::type::BINARY:
     {
-        outString = m_columns[colIdx].arrowBinary->GetString(m_currRowIndexInBatch);
+        int len = 0;
+        auto values = m_columns[colIdx].arrowBinary->GetValue(m_currRowIndexInBatch, &len);
+        std::vector<char> buffer(len * 2 + 1);
+        char* ptr = buffer.data();
+        for (int i = 0; i < len; i++)
+        {
+            sprintf(ptr, "%02X", values[i]);
+            ptr += 2;
+        }
+        *ptr = '\0';
+        outString = std::string(buffer.data());
         return SF_STATUS_SUCCESS;
     }
     case arrow::Type::type::BOOL:
@@ -796,11 +806,11 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
     uint8 arrowType = m_arrowColumnDataTypes[colIdx];
     SF_STATUS status;
 
-    if (((SF_DB_TYPE_TIMESTAMP_TZ != snowType) &&
+    if ((SF_DB_TYPE_TIMESTAMP_TZ != snowType) &&
         (SF_DB_TYPE_TIMESTAMP_NTZ != snowType) &&
-        (SF_DB_TYPE_TIMESTAMP_LTZ != snowType)) ||
-        ((arrowType != arrow::Type::type::INT64) &&
-        (arrowType != arrow::Type::type::STRUCT)))
+        (SF_DB_TYPE_TIMESTAMP_LTZ != snowType) &&
+        (SF_DB_TYPE_TIME != snowType) &&
+        (SF_DB_TYPE_DATE != snowType))
     {
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
@@ -810,9 +820,13 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
     int32_t tz = 0;
     int16_t scale = m_metadata[colIdx].scale;
 
-    if (arrowType == arrow::Type::type::INT64)
+    if (arrowType != arrow::Type::type::STRUCT)
     {
-        fracSeconds = m_columns[colIdx].arrowInt64->Value(m_currRowIndexInBatch);
+        status = getCellAsInt64(colIdx, &fracSeconds);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            return status;
+        }
     }
     else
     {
@@ -844,10 +858,23 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
         fracSeconds = fracSeconds % power10[scale];
     }
 
+    bool needMinus = false;
     if (fracSeconds < 0)
     {
-        fracSeconds += power10[scale];
-        secondsSinceEpoch--;
+        if (secondsSinceEpoch <= 0)
+        {
+            fracSeconds = -fracSeconds;
+            if (0 == secondsSinceEpoch)
+            {
+                // when second part is 0 and fraction is nagative, add '-' at beginning.
+                needMinus = true;
+            }
+        }
+        else if (secondsSinceEpoch > 0)
+        {
+            fracSeconds += power10[scale];
+            secondsSinceEpoch--;
+        }
     }
     else if (fracSeconds > 0)
     {
@@ -870,7 +897,13 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
     }
 
     char buf[64];
-    std::string tsString = std::to_string(secondsSinceEpoch);
+    std::string tsString;
+    if (needMinus)
+    {
+        tsString = "-";
+    }
+    tsString += std::to_string(secondsSinceEpoch);
+
     if (fracSeconds)
     {
         sb_sprintf(buf, sizeof(buf), ".%09d", (uint32)fracSeconds);
