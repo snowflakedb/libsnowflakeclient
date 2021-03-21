@@ -52,7 +52,8 @@ void test_simple_put_core(const char * fileName,
                           bool setCustomThreshold=false,
                           size_t customThreshold=64*1024*1024,
                           bool useDevUrand=false,
-                          bool createSubfolder=false)
+                          bool createSubfolder=false,
+                          char * tmpDir = nullptr)
 {
   /* init */
   SF_STATUS status;
@@ -111,7 +112,15 @@ void test_simple_put_core(const char * fileName,
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
-  Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+  TransferConfig transConfig;
+  TransferConfig * transConfigPtr = nullptr;
+  if (tmpDir)
+  {
+      transConfig.tempDir = tmpDir;
+      transConfigPtr = &transConfig;
+  }
+  Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
   if(useDevUrand){
     agent.setRandomDeviceAsUrand(true);
@@ -505,6 +514,40 @@ void test_simple_put_auto_compress(void **unused)
   );
 }
 
+void test_simple_put_config_temp_dir(void **unused)
+{
+  char tmpDir[MAX_PATH] = {0};
+  char pathSepStr[2] = {PATH_SEP, '\0'};
+  sf_get_tmp_dir(tmpDir);
+  strcat(tmpDir, "test_config_temp_dir");
+  strcat(tmpDir, pathSepStr);
+  strcat(tmpDir, "test_subfolder");
+
+  if (sf_is_directory_exist(tmpDir))
+  {
+    sf_delete_directory_if_exists(tmpDir);
+  }
+
+  // run with configured temp folder
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       true, // copyUploadFile
+                       true, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64*1024*1024, // customThreshold
+                       false, // useDevUrand
+                       false, // createSubfolder
+                       tmpDir
+  );
+
+  assert_true(sf_is_directory_exist(tmpDir));
+
+  sf_delete_directory_if_exists(tmpDir);
+}
+
 void test_simple_put_auto_detect_gzip(void ** unused)
 {
   test_simple_put_core("small_file.csv.gz", "auto", true);
@@ -877,6 +920,7 @@ int main(void) {
 
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
+    cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
     cmocka_unit_test_teardown(test_simple_put_no_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_gzip, teardown),
