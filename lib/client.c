@@ -1943,7 +1943,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 cJSON * qrf = snowflake_cJSON_GetObjectItem(data, "queryResultFormat");
                 char * qrf_str = snowflake_cJSON_GetStringValue(qrf);
                 sfstmt->qrf = SF_CALLOC(1, sizeof(QueryResultFormat_t));
-                cJSON * rowset = SF_CALLOC(1, sizeof(cJSON));
+                cJSON * rowset = NULL;
 
                 if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
 #ifdef SF_WIN32
@@ -1955,27 +1955,11 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
 #endif
                     *((QueryResultFormat_t *) sfstmt->qrf) = ARROW_FORMAT;
-                    if (json_detach_array_from_object((cJSON **) (&rowset), data, "rowsetBase64")) {
-                        log_error("No valid rowset found in response.");
-                        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                                SF_STATUS_ERROR_BAD_JSON,
-                                                "Missing rowset from response. No results found.",
-                                                SF_SQLSTATE_APP_REJECT_CONNECTION,
-                                                sfstmt->sfqid);
-                        goto cleanup;
-                    }
+                    rowset = snowflake_cJSON_DetachItemFromObject(data, "rowsetBase64");
                 }
                 else if (strcmp(qrf_str, "json") == 0) {
                     *((QueryResultFormat_t *) sfstmt->qrf) = JSON_FORMAT;
-                    if (json_detach_array_from_object((cJSON **) (&rowset), data, "rowset")) {
-                        log_error("No valid rowset found in response.");
-                        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                                                SF_STATUS_ERROR_BAD_JSON,
-                                                "Missing rowset from response. No results found.",
-                                                SF_SQLSTATE_APP_REJECT_CONNECTION,
-                                                sfstmt->sfqid);
-                        goto cleanup;
-                    }
+                    json_detach_array_from_object((cJSON **) (&rowset), data, "rowset");
                 }
                 else {
                     log_error("Unsupported query result format: %s", qrf_str);

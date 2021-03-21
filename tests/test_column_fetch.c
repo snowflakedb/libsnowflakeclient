@@ -1077,6 +1077,11 @@ void test_column_strlen(void **unused) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
+
+        if (!(status = snowflake_column_strlen(sfstmt, -1, &out))) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
     snowflake_stmt_term(sfstmt);

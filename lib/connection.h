@@ -15,7 +15,7 @@
 */
 #if !defined(SF_WIN64) && !defined(SF_WIN32) 
 #if defined(_WIN64)
-#define SF_WIN32
+#define SF_WIN64
 #elif defined(_WIN32)
 #define SF_WIN32
 #endif

@@ -69,8 +69,13 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
     // Update other counts.
     if (m_isFirstChunk)
     {
-        m_isFirstChunk = false;
         m_totalColumnCount = snowflake_cJSON_GetArraySize(m_chunk->child);
+        if (0 == m_totalColumnCount)
+        {
+            m_rowCountInChunk = 0;
+            return SF_STATUS_SUCCESS;
+        }
+        m_isFirstChunk = false;
     }
     m_rowCountInChunk = snowflake_cJSON_GetArraySize(m_chunk);
     m_totalChunkCount++;
