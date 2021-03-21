@@ -53,6 +53,17 @@ ResultSetArrow::~ResultSetArrow()
 
 SF_STATUS STDCALL ResultSetArrow::appendChunk(arrow::BufferBuilder * chunk)
 {
+    if (chunk == nullptr)
+    {
+        if (m_isFirstChunk)
+        {
+            // Allow the case that no rowset in response when result set needs to be downloaded with multiple chunks
+            return SF_STATUS_SUCCESS;
+        }
+        CXX_LOG_ERROR("appendChunk -- Received a null chunk to append.");
+        return SF_STATUS_ERROR_NULL_POINTER;
+    }
+
     CXX_LOG_INFO("appendChunk -- Chunk %d received.", m_currChunkIdx);
     m_currChunkIdx++;
 
@@ -237,6 +248,10 @@ SF_STATUS STDCALL ResultSetArrow::getCellStrlen(size_t idx, size_t * out_data)
 size_t ResultSetArrow::getRowCountInChunk()
 {
     CXX_LOG_TRACE("Retrieving row count in current chunk.");
+    if (!m_chunkIterator)
+    {
+        return 0;
+    }
     return m_chunkIterator->getRowCountInChunk();
 }
 

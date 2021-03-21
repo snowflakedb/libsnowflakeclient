@@ -21,11 +21,18 @@ extern "C" {
         const char * tz_string
     )
     {
-        const char * base64RowsetStr = snowflake_cJSON_GetStringValue(json_rowset64);
-        // Decode Base64-encoded Arrow-format rowset of the chunk and build a buffer builder from it.
-        std::string decodedRowsetStr = arrow::util::base64_decode(std::string(base64RowsetStr));
-        arrow::BufferBuilder* bufferBuilder = new arrow::BufferBuilder();
-        bufferBuilder->Append((void *)decodedRowsetStr.c_str(), decodedRowsetStr.length());
+        arrow::BufferBuilder* bufferBuilder = NULL;
+        if (json_rowset64)
+        {
+            const char * base64RowsetStr = snowflake_cJSON_GetStringValue(json_rowset64);
+            if (base64RowsetStr && strlen(base64RowsetStr) > 0)
+            {
+                // Decode Base64-encoded Arrow-format rowset of the chunk and build a buffer builder from it.
+                std::string decodedRowsetStr = arrow::util::base64_decode(std::string(base64RowsetStr));
+                bufferBuilder = new arrow::BufferBuilder();
+                bufferBuilder->Append((void *)decodedRowsetStr.c_str(), decodedRowsetStr.length());
+            }
+        }
 
         rs_arrow_t * rs_struct = (rs_arrow_t *) SF_MALLOC(sizeof(rs_arrow_t));
         Snowflake::Client::ResultSetArrow * rs_obj =
