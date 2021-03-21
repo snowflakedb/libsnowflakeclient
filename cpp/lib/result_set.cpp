@@ -73,19 +73,6 @@ extern "C" {
         }
     }
 
-    SF_STATUS STDCALL rs_finish_result_set(void * rs, QueryResultFormat_t * query_result_format)
-    {
-        switch (*query_result_format)
-        {
-            case ARROW_FORMAT:
-                return rs_arrow_finish_result_set((rs_arrow_t *) rs);
-            case JSON_FORMAT:
-                return rs_json_finish_result_set((rs_json_t *) rs);
-            default:
-                return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
-        }
-    }
-
     SF_STATUS STDCALL rs_next(void * rs, QueryResultFormat_t * query_result_format)
     {
         switch (*query_result_format)

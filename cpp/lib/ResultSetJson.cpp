@@ -79,15 +79,6 @@ SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ResultSetJson::finishResultSet()
-{
-    m_currChunkIdx = 0;
-    m_currChunkRowIdx = 0;
-    m_currRowIdx = 0;
-
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL ResultSetJson::next()
 {
     // If the current row is null, then this is the first call to next().
@@ -117,12 +108,6 @@ SF_STATUS STDCALL ResultSetJson::next()
 
 SF_STATUS STDCALL ResultSetJson::getCellAsBool(size_t idx, sf_bool * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -193,12 +178,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsBool(size_t idx, sf_bool * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsInt8(size_t idx, int8 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -220,12 +199,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt8(size_t idx, int8 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -268,12 +241,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -315,12 +282,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsUint8(size_t idx, uint8 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -342,12 +303,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint8(size_t idx, uint8 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -397,12 +352,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -444,12 +393,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
 
 SF_STATUS STDCALL ResultSetJson::getCellAsFloat32(size_t idx, float32 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -490,12 +433,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat32(size_t idx, float32 * out_data
 
 SF_STATUS STDCALL ResultSetJson::getCellAsFloat64(size_t idx, float64 * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -537,12 +474,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat64(size_t idx, float64 * out_data
 
 SF_STATUS STDCALL ResultSetJson::getCellAsConstString(size_t idx, const char ** out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -565,12 +496,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsConstString(size_t idx, const char ** 
 SF_STATUS STDCALL
 ResultSetJson::getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -623,12 +548,6 @@ ResultSetJson::getCellAsString(size_t idx, char ** out_data, size_t * io_len, si
 
 SF_STATUS STDCALL ResultSetJson::getCellAsTimestamp(size_t idx, SF_TIMESTAMP * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -666,12 +585,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsTimestamp(size_t idx, SF_TIMESTAMP * o
 
 SF_STATUS STDCALL ResultSetJson::getCellStrlen(size_t idx, size_t * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");
@@ -700,12 +613,6 @@ size_t ResultSetJson::getRowCountInChunk()
 
 SF_STATUS STDCALL ResultSetJson::isCellNull(size_t idx, sf_bool * out_data)
 {
-    if (m_currRow == nullptr && m_currRowIdx == m_totalRowCount)
-    {
-        CXX_LOG_ERROR("Trying to retrieve cell when already advanced past end of result set.");
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
     if (idx < 1 || idx > m_totalColumnCount)
     {
         CXX_LOG_ERROR("Trying to retrieve out-of-bounds cell index.");

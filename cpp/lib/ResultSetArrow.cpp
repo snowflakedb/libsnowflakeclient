@@ -70,16 +70,6 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(arrow::BufferBuilder * chunk)
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL ResultSetArrow::finishResultSet()
-{
-    m_currChunkIdx = 0;
-    m_currChunkRowIdx = 0;
-    m_currColumnIdx = 0;
-    m_currRowIdx = 0;
-
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL ResultSetArrow::next()
 {
     // clear cache for each row

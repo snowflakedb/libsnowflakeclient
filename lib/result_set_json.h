@@ -52,17 +52,7 @@ extern "C" {
     SF_STATUS STDCALL rs_json_append_chunk(rs_json_t * rs, cJSON * chunk);
 
     /**
-     * Resets the internal indices so that they may be used to traverse
-     * the finished result set for consumption.
-     *
-     * @param rs                   The ResultSetJson object.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_json_finish_result_set(rs_json_t * rs);
-
-    /**
-     * Advances to next cell.
+     * Advances to next row.
      *
      * @return 0 if successful, otherwise an error is returned.
      */

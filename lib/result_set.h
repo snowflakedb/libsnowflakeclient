@@ -83,18 +83,7 @@ extern "C" {
     rs_append_chunk(void * rs, QueryResultFormat_t * query_result_format, void * chunk);
 
     /**
-     * Resets the internal indices so that they may be used to traverse
-     * the finished result set for consumption.
-     *
-     * @param rs                   The ResultSet object.
-     * @param query_result_format  The query result format.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_finish_result_set(void * rs, QueryResultFormat_t * query_result_format);
-
-    /**
-     * Advances to the next cell.
+     * Advances to the next row.
      *
      * @param rs                   The ResultSet object.
      * @param query_result_format  The query result format.

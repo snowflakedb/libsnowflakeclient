@@ -79,19 +79,6 @@ extern "C" {
         return rs_obj->appendChunk(buffer);
     }
 
-    SF_STATUS STDCALL rs_arrow_finish_result_set(rs_arrow_t * rs)
-    {
-        Snowflake::Client::ResultSetArrow * rs_obj;
-
-        if (rs == NULL)
-        {
-            return SF_STATUS_ERROR_NULL_POINTER;
-        }
-
-        rs_obj = static_cast<Snowflake::Client::ResultSetArrow*> (rs->rs_object);
-        return rs_obj->finishResultSet();
-    }
-
     SF_STATUS STDCALL rs_arrow_next(rs_arrow_t * rs)
     {
         Snowflake::Client::ResultSetArrow * rs_obj;

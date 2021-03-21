@@ -36,11 +36,10 @@ namespace Client
  * of columns.
  *
  * When using this class, first populate the result set by using the client library
- * functions in conjunction with the appendChunk() and finishResultSet() methods.
+ * functions in conjunction with the appendChunk() method.
  *
- * When the result set is finalized, consume the results by using the nextColumn()
- * and nextRow() methods to advance the internal iterators and retrieve data at
- * particular cells using the numerous getters.
+ * Consume the results by using the next() method to advance the internal iterators
+ * and retrieve data at particular cells using the numerous getters.
  */
 class ResultSetArrow : public Snowflake::Client::ResultSet
 {
@@ -82,15 +81,7 @@ public:
     SF_STATUS STDCALL appendChunk(arrow::BufferBuilder * chunk);
 
     /**
-     * Resets the internal indices so that they may be used to traverse
-     * the finished result set for consumption.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL finishResultSet();
-
-    /**
-     * Advances the internal iterator to the next column.
+     * Advances the internal iterator to the next row.
      *
      * @return 0 if successful, otherwise an error is returned.
      */

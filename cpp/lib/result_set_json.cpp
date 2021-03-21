@@ -51,19 +51,6 @@ extern "C" {
         return rs_obj->appendChunk(chunk);
     }
 
-    SF_STATUS STDCALL rs_json_finish_result_set(rs_json_t * rs)
-    {
-        Snowflake::Client::ResultSetJson * rs_obj;
-
-        if (rs == NULL)
-        {
-            return SF_STATUS_ERROR_NULL_POINTER;
-        }
-
-        rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->finishResultSet();
-    }
-
     SF_STATUS STDCALL rs_json_next(rs_json_t * rs)
     {
         Snowflake::Client::ResultSetJson * rs_obj;

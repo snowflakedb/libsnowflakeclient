@@ -69,13 +69,6 @@ public:
     SF_STATUS STDCALL appendChunk(cJSON * chunk);
 
     /**
-     * Resets the internal indices.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL finishResultSet();
-
-    /**
      * Advances the internal iterator to the next row. If there are no more rows to consume,
      * then the position is maintained until it is reset to the initial state by appendChunk().
      *

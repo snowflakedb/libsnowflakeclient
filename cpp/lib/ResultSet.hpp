@@ -55,23 +55,10 @@ public:
      */
     virtual ~ResultSet(){}
 
-    // API methods to populate results =============================================================
+    // API methods =================================================================================
 
     /**
-     * Resets the internal indices so that they may be used to traverse
-     * the finished result set for consumption.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    virtual SF_STATUS STDCALL finishResultSet() = 0;
-
-    // API methods to consume results ==============================================================
-
-    /**
-     * Advances to the next column or row, depending on the query result format.
-     *
-     * If Arrow format, advance to the next column.
-     * If JSON format, advance to the next row.
+     * Advances to the next row.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
