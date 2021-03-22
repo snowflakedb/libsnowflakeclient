@@ -512,14 +512,7 @@ ResultSetJson::getCellAsString(size_t idx, char ** out_data, size_t * io_len, si
 
     if (snowflake_cJSON_IsNull(cell))
     {
-        // Trivial allocation if necessary.
-        if (io_capacity == nullptr)
-            io_capacity = new size_t;
-        *io_capacity = 1;
-
-        if (*out_data != nullptr)
-            delete *out_data;
-        *out_data = new char[*io_capacity];
+        Snowflake::Client::Util::AllocateCharBuffer(out_data, io_len, io_capacity, 0);
         (*out_data)[0] = '\0';
 
         return SF_STATUS_SUCCESS;
