@@ -815,10 +815,10 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    int64_t secondsSinceEpoch = 0;
-    int64_t fracSeconds = 0;
-    int32_t tz = 0;
-    int16_t scale = m_metadata[colIdx].scale;
+    int64 secondsSinceEpoch = 0;
+    int64 fracSeconds = 0;
+    int32 tz = 0;
+    int64 scale = m_metadata[colIdx].scale;
 
     if (arrowType != arrow::Type::type::STRUCT)
     {
