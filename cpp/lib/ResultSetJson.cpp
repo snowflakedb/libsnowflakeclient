@@ -206,6 +206,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt8(size_t idx, int8 * out_data)
 
     if (snowflake_cJSON_IsNull(cell))
     {
+        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -318,9 +319,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint8(size_t idx, uint8 * out_data)
 
     cJSON * cell = snowflake_cJSON_GetArrayItem(m_currRow, idx - 1);
     m_currColumnIdx = idx - 1;
-
-    // Set default value for error or null cases.
-    *out_data = 0;
 
     if (snowflake_cJSON_IsNull(cell))
     {
