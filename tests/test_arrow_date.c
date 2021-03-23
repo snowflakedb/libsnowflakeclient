@@ -34,7 +34,6 @@ void test_arrow_date(void** unused) {
     const char * empty         = "";
     // Format 1: YYYY-MM-DD
     const char * f1_trash       = "ABCD-EF-GH";
-    const char * f1_neg         = "-1970-01-01";
     const char * f1_min         = "0000-01-01";
     const char * f1_max         = "9999-12-31";
     const char * f1_epoch_eve   = "1969-12-31";
@@ -50,19 +49,18 @@ void test_arrow_date(void** unused) {
     // fragmentation of test cases indices.
     TEST_CASE_TO_STRING test_cases[] = {
         { .c1 =  0, .c2 = NULL,           .c2_len = 0,  .c2_out = NULL,           .c2_is_null = SF_BOOLEAN_TRUE },
-        { .c1 =  1, .c2 = f1_min,         .c2_len = 10, .c2_out = "0-01-01",      .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  2, .c2 = f1_max,         .c2_len = 10, .c2_out = f1_max,         .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  3, .c2 = f1_epoch_eve,   .c2_len = 10, .c2_out = f1_epoch_eve,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  4, .c2 = f1_epoch,       .c2_len = 10, .c2_out = f1_epoch,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  5, .c2 = f1_epochalypse, .c2_len = 10, .c2_out = f1_epochalypse, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  6, .c2 = f1_modern,      .c2_len = 10, .c2_out = f1_modern,      .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  1, .c2 = f1_min,         .c2_len = 11, .c2_out = f1_min,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  2, .c2 = f1_max,         .c2_len = 11, .c2_out = f1_max,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  3, .c2 = f1_epoch_eve,   .c2_len = 11, .c2_out = f1_epoch_eve,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  4, .c2 = f1_epoch,       .c2_len = 11, .c2_out = f1_epoch,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  5, .c2 = f1_epochalypse, .c2_len = 11, .c2_out = f1_epochalypse, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  6, .c2 = f1_modern,      .c2_len = 11, .c2_out = f1_modern,      .c2_is_null = SF_BOOLEAN_FALSE },
         { .c1 =  7, .c2 = empty,          .c2_len = 0,  .c2_out = "",             .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 =  8, .c2 = f1_trash,       .c2_len = 0,  .c2_out = "",             .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 =  9, .c2 = f1_neg,         .c2_len = 0,  .c2_out = "",             .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 = 10, .c2 = f1_zero_day,    .c2_len = 10, .c2_out = f1_zero_day,    .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 = 11, .c2 = f1_zero_month,  .c2_len = 10, .c2_out = f1_zero_month,  .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 = 12, .c2 = f1_oob_day,     .c2_len = 10, .c2_out = f1_oob_day,     .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
-        { .c1 = 13, .c2 = f1_oob_month,   .c2_len = 10, .c2_out = f1_oob_month,   .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 }
+        { .c1 =  8, .c2 = f1_trash,       .c2_len = 11, .c2_out = "",             .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
+        { .c1 =  9, .c2 = f1_zero_day,    .c2_len = 11, .c2_out = f1_zero_day,    .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
+        { .c1 = 10, .c2 = f1_zero_month,  .c2_len = 11, .c2_out = f1_zero_month,  .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
+        { .c1 = 11, .c2 = f1_oob_day,     .c2_len = 11, .c2_out = f1_oob_day,     .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 },
+        { .c1 = 12, .c2 = f1_oob_month,   .c2_len = 11, .c2_out = f1_oob_month,   .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100040 }
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -172,33 +170,19 @@ void test_arrow_date(void** unused) {
     size_t c2_len = 0;
     size_t c2_max_size = 0;
 
-    int64 curr_row;
-    int64 last_read_row = 0;
-
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        // Skip past column 1 as it does not contain meaningful test data.
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            snowflake_next(sfstmt);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        TEST_CASE_TO_STRING tc = test_cases[c1];
+        // Valid if the value copied to c2 matches the value in tc.c2.
+        // c2_len and c2_max_size are unused.
+        if (tc.c2 != NULL) {
+            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+            assert_string_equal(tc.c2_out, c2);
+        } else {
+            sf_bool c2_is_null;
+            snowflake_column_is_null(sfstmt, 2, &c2_is_null);
+            assert_true(tc.c2_is_null == c2_is_null);
         }
-
-        // Test column 2.
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            // Valid if value copied to c2 matches the value in tc.c2.
-            // c2_len and c2_max_size are unused.
-            TEST_CASE_TO_STRING tc = test_cases[curr_row];
-            if (tc.c2 != NULL) {
-                snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
-                snowflake_next(sfstmt);
-                assert_string_equal(tc.c2_out, c2);
-            } else {
-                sf_bool c2_is_null;
-                snowflake_column_is_null(sfstmt, 2, &c2_is_null);
-                snowflake_next(sfstmt);
-                assert_true(tc.c2_is_null == c2_is_null);
-            }
-        }
-
-        last_read_row = curr_row;
     }
 
     // Clean-up.
