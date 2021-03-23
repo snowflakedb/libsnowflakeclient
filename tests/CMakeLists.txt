@@ -72,9 +72,6 @@ SET(TESTS_PUTGET
         test_simple_put)
 
 SET(TESTS_PERF
-        test_arrow_perf_string_reads_and_writes
-        test_arrow_perf_column_evaluation
-        test_arrow_perf_type_conversion
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)
