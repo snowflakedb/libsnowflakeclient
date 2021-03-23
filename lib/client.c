@@ -2671,7 +2671,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
 
     if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf))
     {
-        // For arrow the const string is formated already
+        // For Arrow the const string is formatted already
         return snowflake_raw_value_to_str_rep(sfstmt, str_val,
                                              SF_DB_TYPE_TEXT,
                                              sfstmt->connection->timezone,
