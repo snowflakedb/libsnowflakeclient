@@ -199,24 +199,6 @@ extern "C" {
         const char ** out_data);
 
     /**
-     * Writes the value of the current cell as a C-string to the provided buffer.
-     *
-     * @param rs                   The ResultSetJson object.
-     * @param idx                  The index of the column to retrieve.
-     * @param out_data             The buffer to write to.
-     * @param io_len               The length of the requested string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_json_get_cell_as_string(
-        rs_json_t * rs,
-        size_t idx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
-
-    /**
      * Writes the value of the current cell as a timestamp to the provided buffer.
      *
      * @param rs                   The ResultSetJson object.

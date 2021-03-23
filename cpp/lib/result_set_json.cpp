@@ -198,25 +198,6 @@ extern "C" {
         return rs_obj->getCellAsConstString(idx, out_data);
     }
 
-    SF_STATUS STDCALL rs_json_get_cell_as_string(
-        rs_json_t * rs,
-        size_t idx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity
-    )
-    {
-        Snowflake::Client::ResultSetJson * rs_obj;
-
-        if (rs == NULL)
-        {
-            return SF_STATUS_ERROR_NULL_POINTER;
-        }
-
-        rs_obj = static_cast<Snowflake::Client::ResultSetJson*> (rs->rs_object);
-        return rs_obj->getCellAsString(idx, out_data, io_len, io_capacity);
-    }
-
     SF_STATUS STDCALL rs_json_get_cell_as_timestamp(
         rs_json_t * rs,
         size_t idx,

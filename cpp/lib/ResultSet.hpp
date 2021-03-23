@@ -165,22 +165,6 @@ public:
     virtual SF_STATUS STDCALL getCellAsConstString(size_t idx, const char ** out_data) = 0;
 
     /**
-     * Writes the value of the given cell as a C-string to the provided buffer.
-     *
-     * In the event that the provided buffer is not large enough to contain the requested string,
-     * the buffer will be re-allocated and io_capacity will be updated accordingly.
-     *
-     * @param idx                  The index of the column or row to retrieve.
-     * @param out_data             The buffer to write to.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    virtual SF_STATUS STDCALL
-    getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity) = 0;
-
-    /**
      * Writes the value of the given cell as a timestamp to the provided buffer.
      *
      * @param idx                  The index of the column or row to retrieve.
@@ -269,20 +253,6 @@ public:
     QueryResultFormat getQueryResultFormat();
 
     /**
-     * Gets the tz string to use when dealing with time or timestamp values.
-     *
-     * @return The tz string to use when dealing with time or timestamp values.
-     */
-    std::string getTzString();
-
-    /**
-     * Gets the tz offset to use when dealing with time or timestamp values.
-     *
-     * @return The tz offset to use when dealing with time or timestamp values.
-     */
-    int32 getTzOffset();
-
-    /**
      * Gets the total number of chunks that the result set is divided into.
      *
      * @return The total number of chunks that the result set is divided into.
@@ -302,6 +272,25 @@ public:
      * @return The total number of rows in the result set.
      */
     size_t getTotalRowCount();
+
+    SF_STATUS getError()
+    {
+        return m_error;
+    }
+
+    const char * getErrorMessage()
+    {
+        return m_errMsg.c_str();
+    }
+
+    void setError(SF_STATUS error, const char* errMsg)
+    {
+        m_error = error;
+        if (errMsg)
+        {
+            m_errMsg = errMsg;
+        }
+    }
 
 protected:
 
@@ -419,6 +408,10 @@ protected:
      * Indicates whether the first chunk has been processed or not.
      */
     bool m_isFirstChunk;
+
+    SF_STATUS m_error;
+
+    std::string m_errMsg;
 };
 
 }

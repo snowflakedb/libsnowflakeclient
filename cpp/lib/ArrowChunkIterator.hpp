@@ -20,6 +20,14 @@ namespace Snowflake
 {
 namespace Client
 {
+    class ResultSetArrow;
+}
+}
+
+namespace Snowflake
+{
+namespace Client
+{
 
 /**
  * Represents a Timestamp value.
@@ -134,7 +142,8 @@ public:
      * @param tzString        The time zone.
      */
     ArrowChunkIterator(arrow::BufferBuilder * chunk,
-                       SF_COLUMN_DESC * metadata, std::string tzString);
+                       SF_COLUMN_DESC * metadata, std::string tzString,
+                       ResultSetArrow * parent);
 
     /**
      * Destructor.
@@ -350,7 +359,6 @@ public:
     }
 
 protected:
-
     /** schema of current record batch */
     std::shared_ptr<arrow::Schema> m_currentSchema;
 
@@ -407,6 +415,8 @@ private:
      * The tz string to use when dealing with time or timestamp values.
      */
     std::string m_tzString;
+
+    ResultSetArrow * m_parent;
 };
 
 } // namespace Client

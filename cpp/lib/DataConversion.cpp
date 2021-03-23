@@ -68,10 +68,8 @@ void AllocateCharBuffer(
 
 namespace Conversion
 {
-
 namespace Arrow
 {
-
 // Helper methods for numeric conversion ===========================================================
 
 SF_STATUS STDCALL IntegerToInteger(
@@ -296,93 +294,6 @@ SF_STATUS STDCALL TimeToString(
 }
 
 } // namespace Arrow
-
-namespace Json
-{
-
-SF_STATUS STDCALL BoolToString(
-    char * value,
-    char ** out_data,
-    size_t * io_len,
-    size_t * io_capacity
-)
-{
-    const char * boolValue = (std::strcmp(value, "0") == 0) ?
-        SF_BOOLEAN_FALSE_STR : SF_BOOLEAN_TRUE_STR;
-    size_t len = std::strlen(boolValue);
-
-    // Ensure that the buffer is well allocated.
-    Snowflake::Client::Util::AllocateCharBuffer(out_data, io_len, io_capacity, len);
-
-    std::strncpy(*out_data, boolValue, len);
-    (*out_data)[len] = '\0';
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL DateToString(
-    char * value,
-    char ** out_data,
-    size_t * io_len,
-    size_t * io_capacity
-)
-{
-    // TODO: Move these elsewhere.
-    size_t maxDateLength = 12;
-    const char * dateFormat = "%Y-%m-%d";
-
-    // The main logic for the conversion.
-    struct tm tm_obj;
-    struct tm * tm_ptr;
-    memset(&tm_obj, 0, sizeof(tm_obj));
-    char * endptr;
-    time_t sec = (time_t) std::strtoll(value, &endptr, 10) * 24L * 60L * 60L;
-    tm_ptr = sf_gmtime(&sec, &tm_obj);
-
-    if (tm_ptr == nullptr)
-    {
-        CXX_LOG_DEBUG("Failed to convert date value to string.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    // Ensure that the buffer is well allocated.
-    Snowflake::Client::Util::AllocateCharBuffer(out_data, io_len, io_capacity, maxDateLength);
-
-    if (io_len != nullptr)
-        *io_len = strftime(*out_data, *io_capacity, dateFormat, &tm_obj);
-    else
-        strftime(*out_data, *io_capacity, dateFormat, &tm_obj);
-
-    return SF_STATUS_SUCCESS;
-}
-
-SF_STATUS STDCALL TimeToString(
-    char * value,
-    int64 scale,
-    SF_DB_TYPE snowType,
-    std::string tzString,
-    char ** out_data,
-    size_t * io_len,
-    size_t * io_capacity
-)
-{
-    SF_STATUS status;
-    SF_TIMESTAMP ts;
-
-    status = snowflake_timestamp_from_epoch_seconds(&ts, value, tzString.c_str(), scale, snowType);
-
-    if (status != SF_STATUS_SUCCESS)
-    {
-        CXX_LOG_ERROR("Failed to convert time or timestamp value to string.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    // It's okay to ignore most allocations as the client function will handle that as necessary.
-    return snowflake_timestamp_to_string(&ts, "", out_data, *io_capacity, io_len, SF_BOOLEAN_TRUE);
-}
-
-} // namespace Json
-
 } // namespace Conversion
-
 } // namespace Client
 } // namespace Snowflake

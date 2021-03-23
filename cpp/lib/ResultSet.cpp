@@ -45,7 +45,8 @@ ResultSet::ResultSet(
     m_totalColumnCount(0),
     m_metadata(metadata),
     m_isFirstChunk(true),
-    m_tzString(tzString)
+    m_tzString(tzString),
+    m_error(SF_STATUS_SUCCESS)
 {
     ;
 }

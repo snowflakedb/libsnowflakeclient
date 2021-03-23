@@ -188,22 +188,6 @@ public:
     SF_STATUS STDCALL getCellAsConstString(size_t idx, const char ** out_data);
 
     /**
-     * Writes the value of the given cell as a C-string to the provided buffer.
-     *
-     * In the event that the provided buffer is not large enough to contain the requested string,
-     * the buffer will be re-allocated and io_capacity will be updated accordingly.
-     *
-     * @param idx                  The index of the row to retrieve.
-     * @param out_data             The buffer to write to.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
      * Writes the value of the given cell as a timestamp to the provided buffer.
      *
      * @param idx                  The index of the row to retrieve.
@@ -251,11 +235,6 @@ private:
     * The cache for string value for each column of current row.
     */
     std::vector<std::pair<bool, std::string> > m_cacheStrVal;
-
-    /**
-     * The key to use when retrieving the base64-encoded rowset data.
-     */
-    const char * m_rowsetKey = "rowsetBase64";
 };
 
 } // namespace Client

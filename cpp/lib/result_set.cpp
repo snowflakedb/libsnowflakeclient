@@ -3,7 +3,7 @@
  */
 
 #include "result_set.h"
-
+#include "ResultSet.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -266,28 +266,6 @@ extern "C" {
         }
     }
 
-    SF_STATUS STDCALL rs_get_cell_as_string(
-        void * rs,
-        QueryResultFormat_t * query_result_format,
-        size_t idx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity
-    )
-    {
-        switch (*query_result_format)
-        {
-            case ARROW_FORMAT:
-                return rs_arrow_get_cell_as_string(
-                    (rs_arrow_t *) rs, idx, out_data, io_len, io_capacity);
-            case JSON_FORMAT:
-                return rs_json_get_cell_as_string(
-                    (rs_json_t *) rs, idx, out_data, io_len, io_capacity);
-            default:
-                return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
-        }
-    }
-
     SF_STATUS STDCALL rs_get_cell_as_timestamp(
         void * rs,
         QueryResultFormat_t * query_result_format,
@@ -353,6 +331,54 @@ extern "C" {
             default:
                 return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
         }
+    }
+
+    SF_STATUS STDCALL rs_get_error(
+        void * rs,
+        QueryResultFormat_t * query_result_format
+    )
+    {
+        if (!rs || !query_result_format)
+        {
+            return SF_STATUS_ERROR_NULL_POINTER;
+        }
+
+        Snowflake::Client::ResultSet * rs_obj = NULL;
+        switch (*query_result_format)
+        {
+        case ARROW_FORMAT:
+            rs_obj = static_cast<Snowflake::Client::ResultSet*>(((rs_arrow_t *)rs)->rs_object);
+        case JSON_FORMAT:
+            rs_obj = static_cast<Snowflake::Client::ResultSet*>(((rs_json_t *)rs)->rs_object);
+        default:
+            return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
+        }
+
+        return rs_obj->getError();
+    }
+
+    const char* rs_get_error_message(
+        void * rs,
+        QueryResultFormat_t * query_result_format
+    )
+    {
+        if (!rs || !query_result_format)
+        {
+            return "";
+        }
+
+        Snowflake::Client::ResultSet * rs_obj = NULL;
+        switch (*query_result_format)
+        {
+        case ARROW_FORMAT:
+            rs_obj = static_cast<Snowflake::Client::ResultSet*>(((rs_arrow_t *)rs)->rs_object);
+        case JSON_FORMAT:
+            rs_obj = static_cast<Snowflake::Client::ResultSet*>(((rs_json_t *)rs)->rs_object);
+        default:
+            return "";
+        }
+
+        return rs_obj->getErrorMessage();
     }
 
 #ifdef __cplusplus

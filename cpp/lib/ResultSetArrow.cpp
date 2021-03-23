@@ -67,7 +67,7 @@ SF_STATUS STDCALL ResultSetArrow::appendChunk(arrow::BufferBuilder * chunk)
     CXX_LOG_INFO("appendChunk -- Chunk %d received.", m_currChunkIdx);
     m_currChunkIdx++;
 
-    m_chunkIterator = std::make_shared<ArrowChunkIterator>(chunk, m_metadata, m_tzString);
+    m_chunkIterator = std::make_shared<ArrowChunkIterator>(chunk, m_metadata, m_tzString, this);
     if (m_isFirstChunk)
     {
         m_isFirstChunk = false;
@@ -146,7 +146,9 @@ SF_STATUS STDCALL ResultSetArrow::getCellAsConstString(size_t idx, const char **
 {
     if ((0 == idx) || (idx > m_cacheStrVal.size()))
     {
-      return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
   
     sf_bool isNull = SF_BOOLEAN_FALSE;
@@ -171,38 +173,6 @@ SF_STATUS STDCALL ResultSetArrow::getCellAsConstString(size_t idx, const char **
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL
-ResultSetArrow::getCellAsString(size_t idx, char ** out_data, size_t * io_len, size_t * io_capacity)
-{
-    if ((0 == idx) || (idx > m_cacheStrVal.size()))
-    {
-        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
-    }
-
-    if (!m_cacheStrVal[idx - 1].first)
-    {
-        if (m_chunkIterator->isCellNull(idx - 1))
-        {
-            m_cacheStrVal[idx - 1].second = "";
-        }
-        else
-        {
-            SF_STATUS ret = m_chunkIterator->getCellAsString(idx - 1, m_cacheStrVal[idx - 1].second);
-            if (SF_STATUS_SUCCESS != ret)
-            {
-                return ret;
-            }
-        }
-        m_cacheStrVal[idx - 1].first = true;
-    }
-  
-    std::string& strVal = m_cacheStrVal[idx - 1].second;
-    Client::Util::AllocateCharBuffer(out_data, io_len, io_capacity, strVal.length());
-    sb_strcpy(*out_data, strVal.length() + 1, strVal.c_str());
-  
-    return SF_STATUS_SUCCESS;
-}
-
 SF_STATUS STDCALL ResultSetArrow::getCellAsTimestamp(size_t idx, SF_TIMESTAMP * out_data)
 {
     return m_chunkIterator->getCellAsTimestamp(idx - 1, out_data);
@@ -212,7 +182,9 @@ SF_STATUS STDCALL ResultSetArrow::getCellStrlen(size_t idx, size_t * out_data)
 {
     if ((0 == idx) || (idx > m_cacheStrVal.size()))
     {
-      return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+        setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
+        return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
   
     if (m_chunkIterator->isCellNull(idx - 1))
@@ -249,6 +221,8 @@ SF_STATUS STDCALL ResultSetArrow::isCellNull(size_t idx, sf_bool * out_data)
 {
     if ((0 == idx) || (idx > m_cacheStrVal.size()))
     {
+        setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 

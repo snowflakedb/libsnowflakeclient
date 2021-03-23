@@ -253,26 +253,6 @@ extern "C" {
         const char ** out_data);
 
     /**
-     * Writes the value of the current cell as a C-string to the provided buffer.
-     *
-     * @param rs                   The ResultSet object.
-     * @param query_result_format  The query result format.
-     * @param idx                  The index of the column or row to retrieve.
-     * @param out_data             The buffer to write to.
-     * @param io_len               The length of the requested string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL rs_get_cell_as_string(
-        void * rs,
-        QueryResultFormat_t * query_result_format,
-        size_t idx,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
-
-    /**
      * Writes the value of the current cell as a timestamp to the provided buffer.
      *
      * @param rs                   The ResultSet object.
@@ -305,19 +285,6 @@ extern "C" {
         size_t * out_data);
 
     /**
-     * Gets the current row as cJSON.
-     *
-     * Note: Only defined for JSON format.
-     * Note: Transfers ownership of the pointer.
-     *
-     * @param rs                   The ResultSet object.
-     * @param query_result_format  The query result format.
-     *
-     * @return the current row if JSON format, otherwise nullptr is returned.
-     */
-    cJSON * rs_get_row(void * rs, QueryResultFormat_t * query_result_format);
-
-    /**
      * Gets the number of rows in the current chunk being processed.
      *
      * @param rs                   The ResultSet object.
@@ -342,6 +309,32 @@ extern "C" {
         QueryResultFormat_t * query_result_format,
         size_t idx,
         sf_bool * out_data);
+
+    /**
+    * Get the latest error code.
+    *
+    * @param rs                   The ResultSet object.
+    * @param query_result_format  The query result format.
+    *
+    * @return the latest error code. 0 if no error.
+    */
+    SF_STATUS STDCALL rs_get_error(
+        void * rs,
+        QueryResultFormat_t * query_result_format
+    );
+
+    /**
+    * Get the latest error code.
+    *
+    * @param rs                   The ResultSet object.
+    * @param query_result_format  The query result format.
+    *
+    * @return the latest error message. empty string if no error.
+    */
+    const char* rs_get_error_message(
+        void * rs,
+        QueryResultFormat_t * query_result_format
+    );
 
 #ifdef __cplusplus
 } // extern "C"

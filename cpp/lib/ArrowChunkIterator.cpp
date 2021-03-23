@@ -11,7 +11,7 @@
 #include "snowflake/platform.h"
 #include "ArrowChunkIterator.hpp"
 #include "DataConversion.hpp"
-#include "ResultSet.hpp"
+#include "ResultSetArrow.hpp"
 
 #ifndef SF_WIN32
 #undef BOOL
@@ -22,8 +22,9 @@ namespace Client
 {
 
 ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
-                                       SF_COLUMN_DESC * metadata, std::string tzString)
-    : m_metadata(metadata), m_tzString(tzString)
+                                       SF_COLUMN_DESC * metadata, std::string tzString,
+                                       ResultSetArrow * parent)
+    : m_metadata(metadata), m_tzString(tzString), m_parent(parent)
 {
     // Finalize the currently built buffer and initialize reader objects from it.
     // This resets the buffer builder for future use.
@@ -170,12 +171,16 @@ ArrowChunkIterator::getCellAsBool(size_t colIdx, sf_bool * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = SF_BOOLEAN_FALSE;
+
     if (isCellNull(colIdx))
     {
-        *out_data = SF_BOOLEAN_FALSE;
         return SF_STATUS_SUCCESS;
     }
 
@@ -226,6 +231,8 @@ ArrowChunkIterator::getCellAsBool(size_t colIdx, sf_bool * out_data)
         default:
         {
             CXX_LOG_ERROR("Unsupported conversion from %d to BOOLEAN.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to boolean from data type.");
             return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
     }
@@ -237,12 +244,16 @@ ArrowChunkIterator::getCellAsInt8(size_t colIdx, int8 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -270,12 +281,16 @@ ArrowChunkIterator::getCellAsInt32(size_t colIdx, int32 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -299,6 +314,8 @@ ArrowChunkIterator::getCellAsInt32(size_t colIdx, int32 * out_data)
     status = Conversion::Arrow::IntegerToInteger(rawData, &rawData, INT32);
     if (status != SF_STATUS_SUCCESS)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+            "Value out of range for int32.");
         return status;
     }
 
@@ -311,12 +328,16 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -334,11 +355,15 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
         if (SF_STATUS_SUCCESS != status)
         {
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Cannot convert value to int64.");
             return status;
         }
 
         if ((floatData > SF_INT64_MAX) || (floatData < SF_INT64_MIN))
         {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for int64.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
 
@@ -384,6 +409,8 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
             if ((dblData > SF_INT64_MAX) || (dblData < SF_INT64_MIN))
             {
+                m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                    "Value out of range for int64.");
                 return SF_STATUS_ERROR_OUT_OF_RANGE;
             }
             data = (int64)dblData;
@@ -400,8 +427,12 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             return Conversion::Arrow::StringToInteger(strData, out_data, INT64);
         }
         default:
+        {
             CXX_LOG_ERROR("Unsupported conversion from %d to INT64.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Cannot convert value to int64.");
             return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
     }
 
     *out_data = data;
@@ -419,12 +450,16 @@ ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -449,7 +484,8 @@ ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
     status = Conversion::Arrow::IntegerToInteger(rawData, &rawData, UINT32);
     if (status != SF_STATUS_SUCCESS)
     {
-        return status;
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+            "Value out of range for uint32.");
     }
 
     *out_data = static_cast<int32>(rawData);
@@ -461,12 +497,16 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -503,6 +543,8 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
         double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
         if ((dblData > SF_UINT64_MAX) || (dblData < SF_INT64_MIN))
         {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for uint64.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
         *out_data = (uint64)dblData;
@@ -511,17 +553,39 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
     case arrow::Type::type::DECIMAL:
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToUint64(strData, out_data);
+        status = Conversion::Arrow::StringToUint64(strData, out_data);
+        break;
     }
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToUint64(strData, out_data);
+        status = Conversion::Arrow::StringToUint64(strData, out_data);
+        break;
     }
     default:
+    {
         CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", m_arrowColumnDataTypes[colIdx]);
+        m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "No valid conversion to uint64 from data type.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
+    }
+
+    if (SF_STATUS_SUCCESS != status)
+    {
+        if (SF_STATUS_ERROR_OUT_OF_RANGE == status)
+        {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for uint64.");
+        }
+        else
+        {
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Cannot convert value to uint64.");
+        }
+    }
+
+    return status;
 }
 
 SF_STATUS STDCALL
@@ -529,12 +593,16 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0.0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -544,6 +612,8 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
         float64 floatValue = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
         if (floatValue == INFINITY || floatValue == -INFINITY)
         {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for float32.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
 
@@ -574,17 +644,39 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
     case arrow::Type::type::DECIMAL:
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToFloat(strData, out_data);
+        status = Conversion::Arrow::StringToFloat(strData, out_data);
+        break;
     }
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToFloat(strData, out_data);
+        status = Conversion::Arrow::StringToFloat(strData, out_data);
+        break;
     }
     default:
+    {
         CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", m_arrowColumnDataTypes[colIdx]);
+        m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "No valid conversion to float32 from data type.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
+    }
+
+    if (SF_STATUS_SUCCESS != status)
+    {
+        if (SF_STATUS_ERROR_OUT_OF_RANGE == status)
+        {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for float32.");
+        }
+        else
+        {
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Cannot convert value to float32.");
+        }
+    }
+
+    return status;
 }
 
 SF_STATUS STDCALL
@@ -592,12 +684,16 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    *out_data = 0.0;
+
     if (isCellNull(colIdx))
     {
-        *out_data = 0;
         return SF_STATUS_SUCCESS;
     }
 
@@ -607,6 +703,8 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
         float64 floatValue = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
         if (floatValue == INFINITY || floatValue == -INFINITY)
         {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for float64.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
 
@@ -643,17 +741,39 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
     case arrow::Type::type::DECIMAL:
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToDouble(strData, out_data);
+        status = Conversion::Arrow::StringToDouble(strData, out_data);
+        break;
     }
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
-        return Conversion::Arrow::StringToDouble(strData, out_data);
+        status = Conversion::Arrow::StringToDouble(strData, out_data);
+        break;
     }
     default:
+    {
         CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", m_arrowColumnDataTypes[colIdx]);
+        m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "No valid conversion to float64 from data type.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
+    }
+
+    if (SF_STATUS_SUCCESS != status)
+    {
+        if (SF_STATUS_ERROR_OUT_OF_RANGE == status)
+        {
+            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                "Value out of range for float64.");
+        }
+        else
+        {
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Cannot convert value to float64.");
+        }
+    }
+
+    return status;
 }
 
 SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
@@ -663,12 +783,16 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 
+    // Set default value for null and error cases.
+    outString = "";
+
     if (isCellNull(colIdx))
     {
-        outString = "";
         return SF_STATUS_SUCCESS;
     }
 
@@ -692,6 +816,7 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         status = snowflake_timestamp_to_string(&ts, "", &bufPtr, sizeof(buf), NULL, SF_BOOLEAN_FALSE);
         if (SF_STATUS_SUCCESS != status)
         {
+            m_parent->setError(status, "Failed to convert value to string.");
             return status;
         }
 
@@ -754,7 +879,12 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         // INT32 and INT64 values may contain Snowflake TIME/TIMESTAMP values.
         if (SF_DB_TYPE_TIME == snowType)
         {
-            return Conversion::Arrow::TimeToString(data, m_metadata[colIdx].scale, outString);
+            status = Conversion::Arrow::TimeToString(data, m_metadata[colIdx].scale, outString);
+            if (SF_STATUS_SUCCESS != status)
+            {
+                m_parent->setError(status, "Failed to convert value to string.");
+            }
+            return status;
         }
 
         outString = std::to_string(data);
@@ -769,7 +899,13 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         {
             return status;
         }
-        return Conversion::Arrow::DateToString(date, outString);
+
+        status = Conversion::Arrow::DateToString(date, outString);
+        if (SF_STATUS_SUCCESS != status)
+        {
+            m_parent->setError(status, "Failed to convert value to string.");
+        }
+        return status;
     }
     case arrow::Type::type::DOUBLE:
     {
@@ -784,8 +920,12 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         return SF_STATUS_SUCCESS;
     }
     default:
+    {
         CXX_LOG_ERROR("Unsupported conversion from %d to STRING.", m_arrowColumnDataTypes[colIdx]);
+        m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "No valid conversion to string from data type.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
     }
 }
 
@@ -794,6 +934,8 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
 {
     if (colIdx >= m_columnCount)
     {
+        m_parent->setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,
+            "Column index must be between 1 and snowflake_num_fields()");
         return SF_STATUS_ERROR_OUT_OF_BOUNDS;
     }
 

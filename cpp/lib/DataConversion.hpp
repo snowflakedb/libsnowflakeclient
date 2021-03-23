@@ -71,28 +71,6 @@ const int64 power10[10] = {
     1000000000
 };
 
-namespace Util
-{
-
-    /**
-     * Helper method to allocate a char buffer to write converted Arrow data to if necessary.
-     *
-     * TODO: It doesn't make much sense to have a util function in a conversion file.
-     *       Try to find a better place to move this to.
-     *
-     * @param out_data             A pointer to the buffer.
-     * @param out_len              The length of the string data.
-     * @param out_capacity         The capacity of the provided buffer.
-     * @param len                  The true length of the string to write.
-     */
-    void AllocateCharBuffer(
-        char ** out_data,
-        size_t * out_len,
-        size_t * out_capacity,
-        size_t len);
-
-}
-
 /**
  * Namespace capturing all data conversion functions.
  */
@@ -195,63 +173,7 @@ namespace Arrow
         std::string& outString);
 
 } // namespace Arrow
-
-namespace Json
-{
-
-    /**
-     * Helper method to convert a boolean value into a proper string.
-     *
-     * @param value                The initial boolean value retrieved from Snowflake.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    BoolToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
-     * Helper method to convert a date value into a proper string.
-     *
-     * @param value                The initial date value retrieved from Snowflake.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    DateToString(char * value, char ** out_data, size_t * io_len, size_t * io_capacity);
-
-    /**
-     * Helper method to convert a time or timestamp value into a proper string.
-     *
-     * @param value                The initial time or timestamp value retrieved from Snowflake.
-     * @param scale                The scale of the time or timestamp value.
-     * @param snowType             The Snowflake DB type of the time or timestamp value.
-     * @param tzString             The time zone.
-     * @param out_data             The buffer to which to write the converted string value.
-     * @param io_len               The length of the string.
-     * @param io_capacity          The capacity of the provided buffer.
-     *
-     * @return -1 if successful, otherwise an error is returned.
-     */
-    SF_STATUS STDCALL
-    TimeToString(
-        char * value,
-        int64 scale,
-        SF_DB_TYPE snowType,
-        std::string tzString,
-        char ** out_data,
-        size_t * io_len,
-        size_t * io_capacity);
-
-} // namespace Json
-
 } // namespace Conversion
-
 } // namespace Client
 } // namespace Snowflake
 
