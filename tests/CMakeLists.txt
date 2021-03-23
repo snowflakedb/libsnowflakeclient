@@ -57,12 +57,24 @@ SET(TESTS_CXX
         test_unit_proxy
         test_unit_oob)
 
+SET(TESTS_ARROW
+        test_arrow_binary
+        test_arrow_bool
+        test_arrow_date
+        test_arrow_float
+        test_arrow_number
+        test_arrow_string
+        test_arrow_time)
+
 SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
         test_simple_put)
 
 SET(TESTS_PERF
+        test_arrow_perf_string_reads_and_writes
+        test_arrow_perf_column_evaluation
+        test_arrow_perf_type_conversion
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)

@@ -67,21 +67,21 @@ void test_arrow_string(void **unused) {
     TEST_CASE_TO_STRING test_cases[] = {
         { .c1 =  0, .c2 = NULL,                .c2_len = 0,  .c2_out = NULL,                    .c2_is_null = SF_BOOLEAN_TRUE },
         { .c1 =  1, .c2 = empty,               .c2_len = 0,  .c2_out = "",                      .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  2, .c2 = tab,                 .c2_len = 28, .c2_out = tab,                     .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  3, .c2 = unix_linefeed,       .c2_len = 30, .c2_out = unix_linefeed,           .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  4, .c2 = windows_linefeed,    .c2_len = 39, .c2_out = windows_linefeed,        .c2_is_null = SF_BOOLEAN_FALSE },
-        // { .c1 =  5, .c2 = backspace,           .c2_len = 19, .c2_out = backspace_out,           .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  6, .c2 = backslash,           .c2_len = 24, .c2_out = backslash,               .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  7, .c2 = mixed_backslash,     .c2_len = 37, .c2_out = mixed_backslash,         .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  8, .c2 = double_single_quote, .c2_len = 37, .c2_out = double_single_quote,     .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  9, .c2 = escape_single_quote, .c2_len = 38, .c2_out = escape_single_quote_out, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 10, .c2 = double_quote,        .c2_len = 38, .c2_out = double_quote,            .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 11, .c2 = ascii_punc,          .c2_len = 33, .c2_out = ascii_punc,              .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 12, .c2 = sql_injection_a,     .c2_len = 14, .c2_out = sql_injection_a,         .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 13, .c2 = sql_injection_b,     .c2_len = 20, .c2_out = sql_injection_b,         .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 14, .c2 = sql_injection_c,     .c2_len = 13, .c2_out = sql_injection_c,         .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 15, .c2 = sql_injection_d,     .c2_len = 11, .c2_out = sql_injection_d,         .c2_is_null = SF_BOOLEAN_FALSE }
-        // { .c1 = 17, .c2 = single_quote,        .c2_len = 37, .c2_out = "",                      .c2_is_null = SF_BOOLEAN_FALSE , .error_code = 100042 },
+        { .c1 =  2, .c2 = tab,                 .c2_len = 29, .c2_out = tab,                     .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  3, .c2 = unix_linefeed,       .c2_len = 31, .c2_out = unix_linefeed,           .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  4, .c2 = windows_linefeed,    .c2_len = 40, .c2_out = windows_linefeed,        .c2_is_null = SF_BOOLEAN_FALSE },
+        // { .c1 =  5, .c2 = backspace,           .c2_len = 20, .c2_out = backspace_out,           .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  5, .c2 = backslash,           .c2_len = 24, .c2_out = backslash,               .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  6, .c2 = mixed_backslash,     .c2_len = 38, .c2_out = mixed_backslash,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  7, .c2 = double_single_quote, .c2_len = 38, .c2_out = double_single_quote,     .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  8, .c2 = escape_single_quote, .c2_len = 39, .c2_out = escape_single_quote_out, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  9, .c2 = double_quote,        .c2_len = 39, .c2_out = double_quote,            .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 10, .c2 = ascii_punc,          .c2_len = 33, .c2_out = ascii_punc,              .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 11, .c2 = sql_injection_a,     .c2_len = 15, .c2_out = sql_injection_a,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 12, .c2 = sql_injection_b,     .c2_len = 21, .c2_out = sql_injection_b,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 13, .c2 = sql_injection_c,     .c2_len = 14, .c2_out = sql_injection_c,         .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 14, .c2 = sql_injection_d,     .c2_len = 12, .c2_out = sql_injection_d,         .c2_is_null = SF_BOOLEAN_FALSE }
+        // { .c1 = 15, .c2 = single_quote,        .c2_len = 38, .c2_out = "",                      .c2_is_null = SF_BOOLEAN_FALSE , .error_code = 100042 },
     };
 
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -191,33 +191,19 @@ void test_arrow_string(void **unused) {
     size_t c2_len = 0;
     size_t c2_max_size = 0;
 
-    int64 curr_row;
-    int64 last_read_row = 0;
-
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        // Skip past column 1 as it does not contain meaningful test data.
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            snowflake_next(sfstmt);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        TEST_CASE_TO_STRING tc = test_cases[c1];
+        // Valid if the value copied to c2 matches the value in tc.c2.
+        // c2_len and c2_max_size are unused.
+        if (tc.c2 != NULL) {
+            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+            assert_string_equal(tc.c2_out, c2);
+        } else {
+            sf_bool c2_is_null;
+            snowflake_column_is_null(sfstmt, 2, &c2_is_null);
+            assert_true(tc.c2_is_null == c2_is_null);
         }
-
-        // Test column 2.
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            // Valid if value copied to c2 matches the value in tc.c2.
-            // c2_len and c2_max_size are unused.
-            TEST_CASE_TO_STRING tc = test_cases[curr_row];
-            if (tc.c2 != NULL) {
-                snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
-                snowflake_next(sfstmt);
-                assert_string_equal(tc.c2_out, c2);
-            } else {
-                sf_bool c2_is_null;
-                snowflake_column_is_null(sfstmt, 2, &c2_is_null);
-                snowflake_next(sfstmt);
-                assert_true(tc.c2_is_null == c2_is_null);
-            }
-        }
-
-        last_read_row = curr_row;
     }
 
     // Clean-up.

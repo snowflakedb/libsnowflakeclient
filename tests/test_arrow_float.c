@@ -80,28 +80,28 @@ void test_arrow_float(void** unused) {
     const char * empty      = "";
     // Scale 0.
     const char * s0_max_neg_2     = "-18014398509481984"; // -2^54
-    const char * s0_max_neg_2_out = "-18014398509481984.000000";
+    const char * s0_max_neg_2_out = "-18014398509481984.";
     const char * s0_max_neg       = "-9007199254740992"; // -2^53
-    const char * s0_max_neg_out   = "-9007199254740992.000000";
+    const char * s0_max_neg_out   = "-9007199254740992.";
     const char * s0_reg_neg       = "-1234567890";
-    const char * s0_reg_neg_out   = "-1234567890.000000";
+    const char * s0_reg_neg_out   = "-1234567890.";
     const char * s0_zero          = "0";
-    const char * s0_zero_out      = "0.000000";
+    const char * s0_zero_out      = "0.";
     const char * s0_one           = "1";
-    const char * s0_one_out       = "1.000000";
+    const char * s0_one_out       = "1.";
     const char * s0_reg_pos       = "1234567890";
-    const char * s0_reg_pos_out   = "1234567890.000000";
+    const char * s0_reg_pos_out   = "1234567890.";
     const char * s0_max_pos       = "9007199254740992"; // 2^53
-    const char * s0_max_pos_out   = "9007199254740992.000000";
+    const char * s0_max_pos_out   = "9007199254740992.";
     const char * s0_max_pos_2     = "18014398509481984"; // 2^54
-    const char * s0_max_pos_2_out = "18014398509481984.000000";
+    const char * s0_max_pos_2_out = "18014398509481984.";
     // Scale 8
     const char * s8_max_neg  = "-1234567.123456";
     const char * s8_reg_neg  = "-0.123456";
     const char * s8_zero     = "0.0";
-    const char * s8_zero_out = "0.000000";
+    const char * s8_zero_out = "0.";
     const char * s8_one      = "1.0";
-    const char * s8_one_out  = "1.000000";
+    const char * s8_one_out  = "1.";
     const char * s8_reg_pos  = "0.123456";
     const char * s8_max_pos  = "1234567.123456";
 
@@ -109,21 +109,21 @@ void test_arrow_float(void** unused) {
     // fragmentation of test cases indices.
     TEST_CASE_TO_STRING test_cases[] = {
         { .c1 =  0, .c2 = NULL,         .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_TRUE },
-        { .c1 =  1, .c2 = s0_max_neg_2, .c2_len = 20, .c2_out = s0_max_neg_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  2, .c2 = s0_max_neg,   .c2_len = 21, .c2_out = s0_max_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  3, .c2 = s0_reg_neg,   .c2_len = 11, .c2_out = s0_reg_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  4, .c2 = s0_zero,      .c2_len = 1,  .c2_out = s0_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  5, .c2 = s0_one,       .c2_len = 1,  .c2_out = s0_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  6, .c2 = s0_reg_pos,   .c2_len = 10, .c2_out = s0_reg_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  7, .c2 = s0_max_pos,   .c2_len = 20, .c2_out = s0_max_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  8, .c2 = s0_max_pos_2, .c2_len = 19, .c2_out = s0_max_pos_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 =  9, .c2 = s8_max_neg,   .c2_len = 15, .c2_out = s8_max_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 10, .c2 = s8_reg_neg,   .c2_len = 11, .c2_out = s8_reg_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 11, .c2 = s8_zero,      .c2_len = 1,  .c2_out = s8_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 12, .c2 = s8_one,       .c2_len = 1,  .c2_out = s8_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 13, .c2 = s8_reg_pos,   .c2_len = 10, .c2_out = s8_reg_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 14, .c2 = s8_max_pos,   .c2_len = 14, .c2_out = s8_max_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
-        { .c1 = 15, .c2 = trash,        .c2_len = 3,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100038 },
+        { .c1 =  1, .c2 = s0_max_neg_2, .c2_len = 19, .c2_out = s0_max_neg_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  2, .c2 = s0_max_neg,   .c2_len = 18, .c2_out = s0_max_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  3, .c2 = s0_reg_neg,   .c2_len = 12, .c2_out = s0_reg_neg_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  4, .c2 = s0_zero,      .c2_len = 2,  .c2_out = s0_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  5, .c2 = s0_one,       .c2_len = 2,  .c2_out = s0_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  6, .c2 = s0_reg_pos,   .c2_len = 11, .c2_out = s0_reg_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  7, .c2 = s0_max_pos,   .c2_len = 17, .c2_out = s0_max_pos_out,   .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  8, .c2 = s0_max_pos_2, .c2_len = 18, .c2_out = s0_max_pos_2_out, .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 =  9, .c2 = s8_max_neg,   .c2_len = 16, .c2_out = s8_max_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 10, .c2 = s8_reg_neg,   .c2_len = 10, .c2_out = s8_reg_neg,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 11, .c2 = s8_zero,      .c2_len = 4,  .c2_out = s8_zero_out,      .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 12, .c2 = s8_one,       .c2_len = 4,  .c2_out = s8_one_out,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 13, .c2 = s8_reg_pos,   .c2_len = 9,  .c2_out = s8_reg_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 14, .c2 = s8_max_pos,   .c2_len = 15, .c2_out = s8_max_pos,       .c2_is_null = SF_BOOLEAN_FALSE },
+        { .c1 = 15, .c2 = trash,        .c2_len = 4,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100038 },
         { .c1 = 16, .c2 = empty,        .c2_len = 0,  .c2_out = "",               .c2_is_null = SF_BOOLEAN_FALSE, .error_code = 100038 }
     };
 
@@ -235,32 +235,19 @@ void test_arrow_float(void** unused) {
     size_t c2_len = 0;
     size_t c2_max_size = 0;
 
-    int64 curr_row;
-    int64 last_read_row = 0;
-
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
-        // Skip past column 1 as it does not contain meaningful test data.
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            snowflake_next(sfstmt);
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        TEST_CASE_TO_STRING tc = test_cases[c1];
+        // Valid if the value copied to c2 matches the value in tc.c2_out.
+        // c2_len and c2_max_size are unused.
+        if (tc.c2 != NULL) {
+            snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
+            assert_string_equal(tc.c2_out, c2);
+        } else {
+            sf_bool c2_is_null;
+            snowflake_column_is_null(sfstmt, 2, &c2_is_null);
+            assert_true(tc.c2_is_null == c2_is_null);
         }
-
-        for (curr_row = last_read_row; curr_row < num_successful_inserts; ++curr_row) {
-            TEST_CASE_TO_STRING tc = test_cases[curr_row];
-            // Valid if the value copied to c2 matches the value in tc.c2_out.
-            // c2_len and c2_max_size are unused.
-            if (tc.c2 != NULL) {
-                snowflake_column_as_str(sfstmt, 2, &c2, &c2_len, &c2_max_size);
-                snowflake_next(sfstmt);
-                assert_string_equal(tc.c2_out, c2);
-            } else {
-                sf_bool c2_is_null;
-                snowflake_column_is_null(sfstmt, 2, &c2_is_null);
-                snowflake_next(sfstmt);
-                assert_true(tc.c2_is_null == c2_is_null);
-            }
-        }
-
-        last_read_row = curr_row;
     }
 
     // Clean-up.
