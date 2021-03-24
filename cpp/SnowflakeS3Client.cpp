@@ -83,7 +83,16 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   clientConfiguration.connectTimeoutMs = 30000;
   //AwsClient default to 10 retries and never succeed.
   //Reducing the number of retries
-  clientConfiguration.retryStrategy = std::make_shared<Aws::Client::DefaultRetryStrategy>(2, 25);
+  int numRetries = 2;
+  FILE *fp = fopen("/tmp/putconfig.conf", "r");
+  if(fp != NULL) {
+    char retries[10] = {0};
+    fscanf(fp, "%[^\n]s", retries);
+    fscanf(fp, "%[^\n]s", retries);
+    numRetries = strtol(retries, NULL, 0);
+    fclose(fp);
+  }
+  clientConfiguration.retryStrategy = std::make_shared<Aws::Client::DefaultRetryStrategy>(numRetries, 25);
   Util::Proxy proxy;
   proxy.setProxyFromEnv();
 

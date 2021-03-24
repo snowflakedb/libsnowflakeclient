@@ -48,6 +48,15 @@ class RetryContext
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
     m_timeoutInMs(maxRetries * 500 * MILLI_SECONDS_IN_SECOND) // timeout maxRetries * 500 seconds.
     {
+      int minSleepTime = 50;
+      FILE *fp = fopen("/tmp/putconfig.conf", "r");
+      if(fp != NULL) {
+        char retries[10] = {0};
+        fscanf(fp, "%[^\n]s", retries);
+        minSleepTime = strtol(retries, NULL, 0);
+        fclose(fp);
+      }
+        m_minSleepTimeInMs = minSleepTime;
         m_startTime = (unsigned long)time(NULL);
     }
 
