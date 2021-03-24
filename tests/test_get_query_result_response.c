@@ -81,8 +81,7 @@ void test_get_query_result_response_failed(void **unused) {
     clear_snowflake_error(&sfstmt->error);
     status = snowflake_execute_with_capture(sfstmt, result_capture);
     assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
-    assert_null(result_capture->capture_buffer);
-    assert_int_equal(result_capture->actual_response_size, 0);
+    assert_int_not_equal(result_capture->actual_response_size, 0);
 
     snowflake_query_result_capture_term(result_capture);
     snowflake_stmt_term(sfstmt);
