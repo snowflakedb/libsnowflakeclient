@@ -40,11 +40,14 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   const std::string azuresaskey("AZURE_SAS_KEY");
   char caBundleFile[MAX_PATH] = {0};
   if(transferConfig && transferConfig->caBundleFile) {
-      if ( strlen(transferConfig->caBundleFile) > MAX_PATH -1) {
+      size_t len = strlen(transferConfig->caBundleFile);
+      if ( len > MAX_PATH - 1) {
         throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
             "CA bundle file path too long.");
       }
-      strcpy(caBundleFile, transferConfig->caBundleFile);
+      if( ! sb_strcpy(caBundleFile, (size_t)MAX_PATH, transferConfig->caBundleFile) ) {
+        caBundleFile[0] = 0;
+      }
       CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
   }
   else if( caBundleFile[0] == 0 ) {
@@ -57,7 +60,9 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
         throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
             "CA bundle file path too long.");
       }
-      strcpy(caBundleFile, capath);
+      if ( ! sb_strcpy(caBundleFile, (size_t)MAX_PATH, capath) ) {
+        caBundleFile[0] = 0;
+      }
       CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if(caBundleFile[0] == 0) {
