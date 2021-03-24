@@ -44,7 +44,7 @@ class RetryContext
     m_retryCount(0),
     m_putFileName(fileName),
     m_maxRetryCount(maxRetries),
-    m_minSleepTimeInMs(3 * MILLI_SECONDS_IN_SECOND), //3 seconds
+    m_minSleepTimeInMs(50), //50 milli seconds
     m_maxSleepTimeInMs(180 * MILLI_SECONDS_IN_SECOND), //180 seconds is the max sleep time
     m_timeoutInMs(maxRetries * 500 * MILLI_SECONDS_IN_SECOND) // timeout maxRetries * 500 seconds.
     {
@@ -70,7 +70,12 @@ class RetryContext
             CXX_LOG_DEBUG("After %d retry put %s successfully uploaded.", m_retryCount-1, m_putFileName.c_str());
         }
         unsigned long elapsedTime = time(NULL) - m_startTime;
-        return isPutInRetryableState && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInMs;
+        bool isretry = isPutInRetryableState && m_retryCount <= m_maxRetryCount && elapsedTime < m_timeoutInMs;
+        if(!isretry) {
+          CXX_LOG_ERROR("After %d retry put %s failed to upload aborting this file upload.",
+                        m_retryCount-1, m_putFileName.c_str());
+        }
+        return isretry;
     }
 
     /**

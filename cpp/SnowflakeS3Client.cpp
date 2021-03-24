@@ -13,6 +13,8 @@
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
 #include <aws/core/Aws.h>
+#include <aws/core/client/ClientConfiguration.h>
+#include <aws/core/client/DefaultRetryStrategy.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/GetObjectRequest.h>
@@ -79,6 +81,9 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
+  //AwsClient default to 10 retries and never succeed.
+  //Reducing the number of retries
+  clientConfiguration.retryStrategy = std::make_shared<Aws::Client::DefaultRetryStrategy>(2, 25);
   Util::Proxy proxy;
   proxy.setProxyFromEnv();
 
