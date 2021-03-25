@@ -58,6 +58,7 @@ SET(TESTS_CXX
         test_unit_oob)
 
 SET(TESTS_ARROW
+        test_arrow_column_fetch
         test_arrow_binary
         test_arrow_bool
         test_arrow_date
@@ -72,6 +73,9 @@ SET(TESTS_PUTGET
         test_simple_put)
 
 SET(TESTS_PERF
+        test_arrow_perf_string_reads_and_writes
+        test_arrow_perf_column_evaluation
+        test_arrow_perf_type_conversion
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)
@@ -97,7 +101,7 @@ set(SOURCE_UTILS_CXX
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32)
-    set(TESTS_C ${TESTS_C})
+    set(TESTS_C ${TESTS_C} ${TESTS_ARROW})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 endif ()
 
@@ -219,7 +223,7 @@ if (MOCK)
                 ./${T})
     ENDFOREACH ()
 else()
-    FOREACH (T ${TESTS_C})
+    FOREACH (T ${TESTS_C} ${TESTS_ARROW})
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
         if (WIN32)
             target_include_directories(
