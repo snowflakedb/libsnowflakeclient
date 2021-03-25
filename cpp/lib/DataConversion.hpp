@@ -4,6 +4,8 @@
 #ifndef SNOWFLAKECLIENT_DATACONVERSION_HPP
 #define SNOWFLAKECLIENT_DATACONVERSION_HPP
 
+#include "arrowheaders.hpp"
+
 #include <map>
 #include <memory>
 #include <vector>
