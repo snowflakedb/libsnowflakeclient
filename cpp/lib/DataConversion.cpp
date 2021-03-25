@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
 #include "arrowheaders.hpp"
@@ -18,7 +19,7 @@
 #include "DataConversion.hpp"
 #include "ResultSet.hpp"
 
-
+#ifndef SF_WIN32
 namespace Snowflake
 {
 namespace Client
@@ -297,3 +298,5 @@ SF_STATUS STDCALL TimeToString(
 } // namespace Conversion
 } // namespace Client
 } // namespace Snowflake
+
+#endif // SF_WIN32

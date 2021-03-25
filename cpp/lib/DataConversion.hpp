@@ -13,7 +13,7 @@
 #include "snowflake/client.h"
 #include "ArrowChunkIterator.hpp"
 
-
+#ifndef SF_WIN32
 namespace Snowflake
 {
 namespace Client
@@ -177,4 +177,5 @@ namespace Arrow
 } // namespace Client
 } // namespace Snowflake
 
+#endif  // SF_WIN32
 #endif  // SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP
