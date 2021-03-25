@@ -2,21 +2,33 @@
 #
 # Build ARROW library
 #
+function usage() {
+    echo "Usage: `basename $0` [-t <Release|Debug>]"
+    echo "Build ARROW library"
+    echo "-t <Release/Debug> : Release or Debug builds"
+    echo "-v                 : Version"
+    exit 2
+}
 set -o pipefail
 
-#Change the version in the arrow.mk to build 
-ARROW_VERSION=0.15.0
+# Change the version in arrow.mk to build
+ARROW_VERSION=0.17.0
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+DEPS_BUILD_DIR=$DIR/../deps-build
 source $DIR/_init.sh $@
-source $DIR/utils.sh
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+[[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
-if [[ "$PLATFORM" == "linux" ]]; then
-    cp $THIS_DIR/arrow.mk ../deps/
-    cd ../deps/
-    BUILD_TYPE=$BUILD_TYPE CC=gcc52 CXX=g++52 make -f arrow.mk
-else
-    echo "[ERROR] $PLATFORM is not supported"
-fi
+cd $DIR/../deps-build
+if [ -d "arrow" ]; then rm -rf arrow; fi
+if [ -d "arrow_deps" ]; then rm -rf arrow_deps; fi
+if [ -d "boost" ]; then rm -rf boost; fi
+tar xzf arrow_linux_$target-$ARROW_VERSION.tar.gz
+if [ -d "$DEPENDENCY_DIR/arrow" ]; then rm -rf $DEPENDENCY_DIR/arrow; fi
+if [ -d "$DEPENDENCY_DIR/arrow_deps" ]; then rm -rf $DEPENDENCY_DIR/arrow_deps; fi
+if [ -d "$DEPENDENCY_DIR/boost" ]; then rm -rf $DEPENDENCY_DIR/boost; fi
+if [ -d "arrow" ]; then mv arrow $DEPENDENCY_DIR; fi
+if [ -d "arrow_deps" ]; then mv arrow_deps $DEPENDENCY_DIR; fi
+if [ -d "boost" ]; then mv boost $DEPENDENCY_DIR; fi
+
