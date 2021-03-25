@@ -34,9 +34,9 @@ rd /S /Q boost
 rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
-copy arrow %build_dir%
-copy arrow_deps %build_dir%
-copy boost %build_dir%
+move arrow %build_dir%
+move arrow_deps %build_dir%
+move boost %build_dir%
 
 goto :success
 

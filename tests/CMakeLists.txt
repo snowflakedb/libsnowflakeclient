@@ -223,7 +223,7 @@ if (MOCK)
                 ./${T})
     ENDFOREACH ()
 else()
-    FOREACH (T ${TESTS_C} ${TESTS_ARROW})
+    FOREACH (T ${TESTS_C})
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
         if (WIN32)
             target_include_directories(
