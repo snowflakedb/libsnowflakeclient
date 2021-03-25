@@ -2843,7 +2843,6 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         nsec = pow10_int64[ts->scale] - nsec;
         sec--;
     }
-    log_info("sec: %lld, nsec: %lld", sec, nsec);
     // Transform nsec to a 9 digit number to store in the timestamp struct
     ts->nsec = (int32) (nsec * pow10_int64[9-ts->scale]);
 

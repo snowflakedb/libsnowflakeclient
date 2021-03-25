@@ -39,7 +39,7 @@ void test_col_conv_float64_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>5000));");
 
     clock_gettime(clk_id, &begin);
 
@@ -50,7 +50,7 @@ void test_col_conv_float64_type(void **unused) {
 
     clock_gettime(clk_id, &end);
 
-    process_results(begin, end, 12000, "test_col_conv_float64_type");
+    process_results(begin, end, 5000, "test_col_conv_float64_type");
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
@@ -63,7 +63,7 @@ void test_col_conv_str_type(void **unused) {
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select randstr(999,random()) from table(generator(rowcount=>4000));");
+    setup_and_run_query(&sf, &sfstmt, "select randstr(255,random()) from table(generator(rowcount=>300));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -75,7 +75,7 @@ void test_col_conv_str_type(void **unused) {
 
     clock_gettime(clk_id, &end);
 
-    process_results(begin, end, 4000, "test_col_conv_str_type");
+    process_results(begin, end, 300, "test_col_conv_str_type");
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);

@@ -9,12 +9,12 @@
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
 
-#define STRING_FIELD_MAX_SIZE 1048576
-#define STRING_FIELD_FIXED_SIZE 10240
+#define STRING_FIELD_MAX_SIZE 2048
+#define STRING_FIELD_FIXED_SIZE 256
 
-const char *COL_EVAL_QUERY = "select randstr(10239,random()) from table(generator(rowcount=>500));";
+const char *COL_EVAL_QUERY = "select randstr(255,random()) from table(generator(rowcount=>300));";
 const size_t NUM_COLS = 1;
-const int NUM_ROWS = 500;
+const int NUM_ROWS = 300;
 
 typedef struct BOOK {
     char *title;
@@ -95,7 +95,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
 
     // Randomly select string size based on provided gen seed
     setup_and_run_query(&sf, &sfstmt,
-                        "select randstr(uniform(1, 1048575, 8888),random()) from table(generator(rowcount=>500));");
+                        "select randstr(uniform(1, 2048, 8888),random()) from table(generator(rowcount=>300));");
 
     // Begin timing
     clock_gettime(clk_id, &begin);
