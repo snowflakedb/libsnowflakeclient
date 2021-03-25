@@ -96,7 +96,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Randomly select string size based on provided gen seed
-    setup_and_run_query(&sf, &sfstmt, "alter set session C_API_QUERY_RESULT_FORMAT=ARROW_FORCE;");
+    setup_and_run_query(&sf, &sfstmt, "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE;");
     snowflake_query(sfstmt, "select randstr(uniform(1, 2048, 8888),random()) from table(generator(rowcount=>300));", 0);
 
     // Begin timing
