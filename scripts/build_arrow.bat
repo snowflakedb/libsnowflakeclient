@@ -29,6 +29,8 @@ rd /S /Q arrow
 rd /S /Q arrow_deps
 rd /S /Q boost
 7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip
+del %dependencydir%\*.zip
+del %dependencydir%\*.gz
 
 rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
