@@ -77,6 +77,7 @@ download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
+build_component arrow "$SCRIPTS_DIR/build_arrow.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
 
 [[ -n "$WHITESOURCE_API_KEY" ]] && $CI_BUILD_DIR/wss.sh || true

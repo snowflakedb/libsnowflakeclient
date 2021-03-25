@@ -21,6 +21,7 @@ set oob_build_script="%scriptdir%..\scripts\build_oob.bat"
 set aws_build_script="%scriptdir%..\scripts\build_awssdk.bat"
 set azure_build_script="%scriptdir%..\scripts\build_azuresdk.bat"
 set cmocka_build_script="%scriptdir%..\scripts\build_cmocka.bat"
+set arrow_build_script="%scriptdir%..\scripts\build_arrow.bat"
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
 
 set upload_artifact_script="%scriptdir%container\upload_artifact.bat"
@@ -51,6 +52,8 @@ goto :EOF
     call :download_build_component azure "%azure_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
+    if %ERRORLEVEL% NEQ 0 goto :error
+    call :build_component arrow "%arrow_build_script%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
