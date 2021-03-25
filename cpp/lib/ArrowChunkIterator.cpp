@@ -29,7 +29,7 @@ ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
     // Finalize the currently built buffer and initialize reader objects from it.
     // This resets the buffer builder for future use.
     std::shared_ptr<arrow::Buffer> arrowResultData;
-    chunk->Finish(&arrowResultData);
+    (void) chunk->Finish(&arrowResultData);
     std::shared_ptr<arrow::io::BufferReader> bufferReader =
         std::make_shared<arrow::io::BufferReader>(arrowResultData);
 
@@ -42,7 +42,7 @@ ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
     while (true)
     {
         std::shared_ptr<arrow::RecordBatch> batch;
-        batchReader.ValueOrDie()->ReadNext(&batch);
+        (void) batchReader.ValueOrDie()->ReadNext(&batch);
         if (batch == nullptr)
             break;
         m_cRecordBatches.emplace_back(batch);

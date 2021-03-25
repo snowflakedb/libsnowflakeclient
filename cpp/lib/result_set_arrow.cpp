@@ -30,7 +30,7 @@ extern "C" {
                 // Decode Base64-encoded Arrow-format rowset of the chunk and build a buffer builder from it.
                 std::string decodedRowsetStr = arrow::util::base64_decode(std::string(base64RowsetStr));
                 bufferBuilder = new arrow::BufferBuilder();
-                bufferBuilder->Append((void *)decodedRowsetStr.c_str(), decodedRowsetStr.length());
+                (void) bufferBuilder->Append((void *)decodedRowsetStr.c_str(), decodedRowsetStr.length());
             }
         }
 
@@ -295,7 +295,7 @@ extern "C" {
         arrow::BufferBuilder * arrowBufBuilder = (arrow::BufferBuilder*)(userdata);
 
         log_debug("Curl response for arrow chunk size: %zu", data_size);
-        arrowBufBuilder->Append(ptr, data_size);
+        (void) arrowBufBuilder->Append(ptr, data_size);
         return data_size;
     }
 
