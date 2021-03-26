@@ -25,20 +25,23 @@ set curdir=%cd%
 set dependencydir=%scriptdir%..\deps-build\
 cd %dependencydir%
 
-rd /S /Q arrow
-rd /S /Q arrow_deps
-rd /S /Q boost
-7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip
-del %dependencydir%\*.zip
-del %dependencydir%\*.gz
-
 rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
-move arrow %build_dir%
-move arrow_deps %build_dir%
-move boost %build_dir%
-
+if defined GITHUB_ACTIONS (
+    rd /S /Q C:\arrowlibs
+    cd c:\
+    7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -oarrowlibs
+    cd %dependencydir%
+    mklink /j %build_dir%\arrow C:\arrowlibs\arrow
+    mklink /j %build_dir%\arrow_deps C:\arrowlibs\arrow_deps
+    mklink /j %build_dir%\boost C:\arrowlibs\boost
+    del %dependencydir%\*.zip
+    del %dependencydir%\*.gz
+)
+else (
+    7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -o%build_dir%
+)
 goto :success
 
 :success
