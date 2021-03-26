@@ -33,13 +33,24 @@ if defined GITHUB_ACTIONS (
     cd c:\
     7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -oarrowlibs
     cd %dependencydir%
-    mklink /j %build_dir%\arrow C:\arrowlibs\arrow
-    mklink /j %build_dir%\arrow_deps C:\arrowlibs\arrow_deps
-    mklink /j %build_dir%\boost C:\arrowlibs\boost
+    cd %build_dir%
+    mkdir arrow arrow_deps boost
+    mkdir arrow\lib arrow_deps\lib boost\lib
+    xcopy ^
+        "C:\arrowlibs\arrow\include" ^
+        "arrow\include\" ^
+        /v /y /e
+
+    mklink /h arrow\lib\arrow.lib C:\arrowlibs\arrow\lib\arrow.lib
+    FOR %%A IN ("C:\arrowlibs\arrow_deps\lib\*") DO (
+        MKLINK /h "arrow_deps\lib\%%~NXA" "%%~A"
+    )
+    FOR %%A IN ("C:\arrowlibs\boost\lib\*") DO (
+        MKLINK /h "boost\lib\%%~NXA" "%%~A"
+    )
     del %dependencydir%\*.zip
     del %dependencydir%\*.gz
-)
-else (
+) else (
     7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -o%build_dir%
 )
 goto :success
