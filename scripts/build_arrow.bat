@@ -29,31 +29,31 @@ rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
 if defined GITHUB_ACTIONS (
-    rd /S /Q C:\snowflake
-    mkdir C:\snowflake
-    echo "after create c:\snowflake"
+    rd /S /Q C:\Temp\snowflake
+    mkdir C:\Temp\snowflake
+    echo "after create c:\Temp\snowflake"
     dir C:\
     dir D:\
     7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -oarrowlibs
-    move arrowlibs C:\snowflake
+    move arrowlibs C:\Temp\snowflake
     echo "after move arrowlibs"
-    dir C:\
-    dir C:\snowflake\arrowlibs\arrow
-    dir C:\snowflake\arrowlibs\arrow\include
+    dir C:\Temp
+    dir C:\Temp\snowflake\arrowlibs\arrow
+    dir C:\Temp\snowflake\arrowlibs\arrow\include
     cd %dependencydir%
     cd %build_dir%
     mkdir arrow arrow_deps boost
     mkdir arrow\lib arrow_deps\lib boost\lib
     xcopy ^
-        "C:\snowflake\arrowlibs\arrow\include" ^
+        "C:\Temp\snowflake\arrowlibs\arrow\include" ^
         "arrow\include\" ^
         /v /y /e
 
-    mklink /h arrow\lib\arrow.lib C:\snowflake\arrowlibs\arrow\lib\arrow.lib
-    FOR %%A IN ("C:\snowflake\arrowlibs\arrow_deps\lib\*") DO (
+    mklink /h arrow\lib\arrow.lib C:\Temp\snowflake\arrowlibs\arrow\lib\arrow.lib
+    FOR %%A IN ("C:\Temp\snowflake\arrowlibs\arrow_deps\lib\*") DO (
         MKLINK /h "arrow_deps\lib\%%~NXA" "%%~A"
     )
-    FOR %%A IN ("C:\snowflake\arrowlibs\boost\lib\*") DO (
+    FOR %%A IN ("C:\Temp\snowflake\arrowlibs\boost\lib\*") DO (
         MKLINK /h "boost\lib\%%~NXA" "%%~A"
     )
     del %dependencydir%\*.zip
