@@ -2090,13 +2090,9 @@ cleanup:
     if (result_capture == NULL) {
         // If no result capture, we always free s_resp
         SF_FREE(s_resp);
-    } else if (ret != SF_STATUS_SUCCESS) {
-        // If result capture failed, free s_resp.
-        SF_FREE(s_resp);
-        // reset states of result_capture to avoid potential double free of capture_buffer.
-        result_capture->capture_buffer = NULL;
-        result_capture->actual_response_size = 0;
-    } // If result capture succeeded, we don't need to free s_resp.
+    }
+    // Caller should always call result_capture_term to free s_resp,
+    // if result_capture is not NULL
 
     return ret;
 }
