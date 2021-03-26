@@ -11,7 +11,7 @@ goto :EOF
     goto :EOF
 
 :build
-@echo off
+@echo on
 setlocal
 set platform=%1
 set build_type=%2
@@ -30,8 +30,11 @@ rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
 if defined GITHUB_ACTIONS (
     rd /S /Q C:\arrowlibs
-    cd c:\
+    cd C:\
     7z x %dependencydir%\arrow_%arcdir%_%vsdir%_%build_type%-%arrow_version%.zip -oarrowlibs
+    dir C:\
+    dir C:\arrowlibs\arrow
+    dir C:\arrowlibs\arrow\include
     cd %dependencydir%
     cd %build_dir%
     mkdir arrow arrow_deps boost
