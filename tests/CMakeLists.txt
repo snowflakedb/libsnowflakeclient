@@ -62,8 +62,8 @@ SET(TESTS_ARROW
         test_arrow_binary
         test_arrow_bool
         test_arrow_date
-        test_arrow_float
-        test_arrow_number
+        #test_arrow_float
+        #test_arrow_number
         test_arrow_string
         test_arrow_time)
 
