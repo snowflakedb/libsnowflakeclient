@@ -55,16 +55,14 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     if defined GITHUB_ACTIONS (
         rd /S /Q %scriptdir%\..\deps
-        @echo on
-        echo "after delete deps"
-        dir D:\
-        dir %scriptdir%\..
-        @echo off
     )
     call :build_component arrow "%arrow_build_script%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
+    if defined GITHUB_ACTIONS (
+        rd /S /Q %scriptdir%\..\deps-build
+    )
     exit /b 0
 
 :download_build_component
