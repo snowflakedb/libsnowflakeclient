@@ -57,25 +57,12 @@ SET(TESTS_CXX
         test_unit_proxy
         test_unit_oob)
 
-SET(TESTS_ARROW
-        test_arrow_column_fetch
-        test_arrow_binary
-        test_arrow_bool
-        test_arrow_date
-        #test_arrow_float
-        #test_arrow_number
-        test_arrow_string
-        test_arrow_time)
-
 SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
         test_simple_put)
 
 SET(TESTS_PERF
-        test_arrow_perf_string_reads_and_writes
-        test_arrow_perf_column_evaluation
-        test_arrow_perf_type_conversion
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)
@@ -101,7 +88,7 @@ set(SOURCE_UTILS_CXX
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32)
-    set(TESTS_C ${TESTS_C} ${TESTS_ARROW})
+    set(TESTS_C ${TESTS_C})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 endif ()
 
@@ -115,30 +102,28 @@ if (LINUX)
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
         ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
         ${ARROW_DOUBLECONVERSION_LIB}
         ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB} ${ARROW_GFLAGSNOTHRD_LIB}
+        ${ARROW_GFLAGS_LIB}
         ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOC_LIB} ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_JEMALLOCPIC_LIB}
         ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
         ${ARROW_SNAPPY_LIB}
-        ${ARROW_THRIFT_LIB} ${ARROW_THRIFTZ_LIB}
-        ${ARROW_Z_LIB} ${ARROW_ZSTD_LIB})
+        ${ARROW_ZSTD_LIB})
 endif ()
 
 if (APPLE)
     # Group all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
         ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
-        ${ARROW_DOUBLECONVERSION_LIB}
         ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB} ${ARROW_GFLAGSNOTHRD_LIB}
+        ${ARROW_GFLAGS_LIB}
         ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOC_LIB} ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_JEMALLOCPIC_LIB}
         ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
         ${ARROW_SNAPPY_LIB}
         ${ARROW_ZSTD_LIB})
@@ -150,7 +135,7 @@ if (WIN32)
     # Groups all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${ARROW_BOOSTFILESYSTEM_LIB} ${ARROW_BOOSTREGEX_LIB} ${ARROW_BOOSTSYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
         ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
         ${ARROW_BZ2_LIB}
         ${ARROW_DOUBLECONVERSION_LIB}
@@ -160,9 +145,6 @@ if (WIN32)
         ${ARROW_GLOG_LIB}
         ${ARROW_LZ4_LIB}
         ${ARROW_SNAPPY_LIB}
-        ${ARROW_THRIFTMD_LIB} ${ARROW_THRIFTNBMD_LIB} ${ARROW_THRIFTZMD_LIB}
-        ${ARROW_URIPARSER_LIB}
-        ${ARROW_XXHASH_LIB}
         ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
 endif ()
 
