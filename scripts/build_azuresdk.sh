@@ -12,8 +12,14 @@ set -o pipefail
 
 AZURE_VERSION=0.1.18
 
-export CC="/usr/lib64/ccache/gcc52 -g"
-export CXX="/usr/lib64/ccache/g++52 -g"
+#If its not for XP use gcc52
+if [[ -z "$XP_BUILD" ]] ; then 
+  export CC="/usr/lib64/ccache/gcc52"
+  export CXX="/usr/lib64/ccache/g++52"
+else
+  export CC="gcc82"
+  export CXX="g++82"
+fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
