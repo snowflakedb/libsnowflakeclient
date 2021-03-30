@@ -24,7 +24,7 @@ cd $DIR/../deps-build
 if [ -d "arrow" ]; then rm -rf arrow; fi
 if [ -d "arrow_deps" ]; then rm -rf arrow_deps; fi
 if [ -d "boost" ]; then rm -rf boost; fi
-tar xzf arrow_linux_$target-$ARROW_VERSION.tar.gz
+tar xzf arrow_${PLATFORM}_${target}-${ARROW_VERSION}.tar.gz
 if [ -d "$DEPENDENCY_DIR/arrow" ]; then rm -rf $DEPENDENCY_DIR/arrow; fi
 if [ -d "$DEPENDENCY_DIR/arrow_deps" ]; then rm -rf $DEPENDENCY_DIR/arrow_deps; fi
 if [ -d "$DEPENDENCY_DIR/boost" ]; then rm -rf $DEPENDENCY_DIR/boost; fi

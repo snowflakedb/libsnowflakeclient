@@ -120,6 +120,8 @@ goto :EOF
 
     call %build_script% :get_version
     if defined JENKINS_URL (
+        :: Temporarily disable uploading of Arrow artifacts until we compile from source.
+        if "%component_name%"=="arrow" exit /b 0
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error

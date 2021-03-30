@@ -345,12 +345,14 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/include
-            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
-	        deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             include
             lib)
+    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        include_directories(deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/include)
+    endif ()
 endif()
 
 message("libtelemetry is located at " ${OOB_LIB})
@@ -358,9 +360,6 @@ message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
 message("libarrow is located at " ${ARROW_ARROW_LIB})
-message("libbrotlicommon is located at " ${ARROW_BROTLICOMMON_LIB})
-message("libbrotlidec is located at " ${ARROW_BROTLIDEC_LIB})
-message("libbrotlienc is located at " ${ARROW_BROTLIENC_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
 message("libazure-storage-lite.a is located at " ${AZURE_STORAGE_LITE_LIB})
@@ -398,11 +397,15 @@ elseif(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib"
-            "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib"
     )
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        link_directories(
+                "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/lib"
+                "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib"
+                "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib"
+        )
+    endif()
     if(MOCK)
         link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib")
     endif()

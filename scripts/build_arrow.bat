@@ -21,6 +21,8 @@ set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+if "%platform%" == "x86" goto :success
+
 set curdir=%cd%
 set dependencydir=%scriptdir%..\deps-build\
 cd %dependencydir%
