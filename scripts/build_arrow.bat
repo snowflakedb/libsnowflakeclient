@@ -3,12 +3,12 @@
 ::
 @echo off
 set arrow_version=0.17.0
-:: call %*
-:: goto :EOF
-:: 
-:: :get_version
-::     set version=%arrow_version%
-::     goto :EOF
+call %*
+goto :EOF
+
+:get_version
+    set version=%arrow_version%
+    goto :EOF
 
 :build
 @echo off
