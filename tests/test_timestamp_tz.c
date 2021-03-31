@@ -16,7 +16,7 @@ typedef struct test_case_to_string {
 
 #define USER_TZ "America/New_York"
 
-void test_timestamp_tz_helper(sf_bool useZeroPrecision){
+void test_timestamp_tz_helper(sf_bool use_arrow, sf_bool useZeroPrecision){
   TEST_CASE_TO_STRING test_cases[] = {
           {.c1in = 1, .c2in = "2014-05-03 13:56:46.123 +09:00", .c2out =
           useZeroPrecision == SF_BOOLEAN_TRUE
@@ -70,6 +70,20 @@ void test_timestamp_tz_helper(sf_bool useZeroPrecision){
 
     /* Create a statement once and reused */
     SF_STMT *sfstmt = snowflake_stmt(sf);
+
+    /* Set query result format to Arrow if necessary */
+    status = snowflake_query(
+        sfstmt,
+        use_arrow == SF_BOOLEAN_TRUE
+        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
     status = snowflake_query(
       sfstmt,
       useZeroPrecision == SF_BOOLEAN_TRUE
@@ -182,15 +196,21 @@ void test_timestamp_tz_helper(sf_bool useZeroPrecision){
     snowflake_term(sf);
 }
 
-void test_timestamp_tz(void** unused) {
-  test_timestamp_tz_helper(SF_BOOLEAN_TRUE);
-  test_timestamp_tz_helper(SF_BOOLEAN_FALSE);
+void test_timestamp_tz_arrow(void **unused) {
+    test_timestamp_tz_helper(SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE);
+    test_timestamp_tz_helper(SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE);
+}
+
+void test_timestamp_tz_json(void **unused) {
+    test_timestamp_tz_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE);
+    test_timestamp_tz_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 }
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_timestamp_tz),
+      cmocka_unit_test(test_timestamp_tz_arrow),
+      cmocka_unit_test(test_timestamp_tz_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

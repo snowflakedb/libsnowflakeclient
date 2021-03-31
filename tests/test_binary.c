@@ -12,8 +12,7 @@ typedef struct test_case_to_string {
     SF_STATUS error_code;
 } TEST_CASE_TO_STRING;
 
-
-void test_selectbin(void **unused) {
+void test_selectbin_helper(sf_bool use_arrow) {
     TEST_CASE_TO_STRING test_cases[] = {
       {.c1in = 1, .c2in = "\xab\xcd\xef\x12\x34", .c2inlen=5, .c2out = "ABCDEF1234"},
       {.c1in = 2, .c2in = "\x56\x78\x9a\xbc\xde\xf0", .c2inlen=6, .c2out = "56789ABCDEF0"},
@@ -31,6 +30,20 @@ void test_selectbin(void **unused) {
 
     /* Create a statement once and reused */
     SF_STMT *sfstmt = snowflake_stmt(sf);
+
+    /* Set query result format to Arrow if necessary */
+    status = snowflake_query(
+        sfstmt,
+        use_arrow == SF_BOOLEAN_TRUE
+        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
     /* NOTE: the numeric type here should fit into int64 otherwise
      * it is taken as a float */
     status = snowflake_query(
@@ -122,11 +135,19 @@ void test_selectbin(void **unused) {
     snowflake_term(sf);
 }
 
+void test_selectbin_arrow(void **unused) {
+    test_selectbin_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_selectbin_json(void **unused) {
+    test_selectbin_helper(SF_BOOLEAN_TRUE);
+}
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_selectbin),
+      cmocka_unit_test(test_selectbin_arrow),
+      cmocka_unit_test(test_selectbin_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

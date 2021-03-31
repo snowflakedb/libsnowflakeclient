@@ -7,7 +7,7 @@
 #include "utils/test_setup.h"
 
 
-void test_col_conv_int64_type(void **unused) {
+void test_col_conv_int64_type_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -15,7 +15,12 @@ void test_col_conv_int64_type(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select seq4() from table(generator(rowcount=>12000));", 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -32,14 +37,19 @@ void test_col_conv_int64_type(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_conv_float64_type(void **unused) {
+void test_col_conv_float64_type_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select as_double(10.01) from table(generator(rowcount=>5000));");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select as_double(10.01) from table(generator(rowcount=>5000));", 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -56,14 +66,19 @@ void test_col_conv_float64_type(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_conv_str_type(void **unused) {
+void test_col_conv_str_type_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select randstr(255,random()) from table(generator(rowcount=>300));");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select randstr(255,random()) from table(generator(rowcount=>300));", 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -81,7 +96,7 @@ void test_col_conv_str_type(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_conv_timestamp_type(void **unused) {
+void test_col_conv_timestamp_type_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -89,7 +104,11 @@ void test_col_conv_timestamp_type(void **unused) {
     clockid_t clk_id = CLOCK_MONOTONIC;
 
     setup_and_run_query(&sf, &sfstmt,
-                        "select dateadd(day, uniform(1, 500, random()), current_timestamp) from table(generator(rowcount=>4000));");
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select dateadd(day, uniform(1, 500, random()), current_timestamp) from table(generator(rowcount=>4000));", 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -111,14 +130,19 @@ void test_col_conv_timestamp_type(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_conv_multi_type(void **unused) {
+void test_col_conv_multi_type_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select seq4() from table(generator(rowcount=>12000));", 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -146,14 +170,19 @@ void test_col_conv_multi_type(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_conv_multi_types_per_row(void **unused) {
+void test_col_conv_multi_types_per_row_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, "select seq4() from table(generator(rowcount=>12000));");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select seq4() from table(generator(rowcount=>12000));", 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -175,15 +204,69 @@ void test_col_conv_multi_types_per_row(void **unused) {
     snowflake_term(sf);
 }
 
+void test_col_conv_int64_type_arrow(void **unused) {
+    test_col_conv_int64_type_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_int64_type_json(void **unused) {
+    test_col_conv_int64_type_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_conv_float64_type_arrow(void **unused) {
+    test_col_conv_float64_type_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_float64_type_json(void **unused) {
+    test_col_conv_float64_type_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_conv_str_type_arrow(void **unused) {
+    test_col_conv_str_type_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_str_type_json(void **unused) {
+    test_col_conv_str_type_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_conv_timestamp_type_arrow(void **unused) {
+    test_col_conv_timestamp_type_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_timestamp_type_json(void **unused) {
+    test_col_conv_timestamp_type_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_conv_multi_type_arrow(void **unused) {
+    test_col_conv_multi_type_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_multi_type_json(void **unused) {
+    test_col_conv_multi_type_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_conv_multi_types_per_row_arrow(void **unused) {
+    test_col_conv_multi_types_per_row_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_conv_multi_types_per_row_json(void **unused) {
+    test_col_conv_multi_types_per_row_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_col_conv_int64_type),
-      cmocka_unit_test(test_col_conv_float64_type),
-      cmocka_unit_test(test_col_conv_str_type),
-      cmocka_unit_test(test_col_conv_timestamp_type),
-      cmocka_unit_test(test_col_conv_multi_type),
-      cmocka_unit_test(test_col_conv_multi_types_per_row),
+      cmocka_unit_test(test_col_conv_int64_type_arrow),
+      cmocka_unit_test(test_col_conv_int64_type_json),
+      cmocka_unit_test(test_col_conv_float64_type_arrow),
+      cmocka_unit_test(test_col_conv_float64_type_json),
+      cmocka_unit_test(test_col_conv_str_type_arrow),
+      cmocka_unit_test(test_col_conv_str_type_json),
+      cmocka_unit_test(test_col_conv_timestamp_type_arrow),
+      cmocka_unit_test(test_col_conv_timestamp_type_json),
+      cmocka_unit_test(test_col_conv_multi_type_arrow),
+      cmocka_unit_test(test_col_conv_multi_type_json),
+      cmocka_unit_test(test_col_conv_multi_types_per_row_arrow),
+      cmocka_unit_test(test_col_conv_multi_types_per_row_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

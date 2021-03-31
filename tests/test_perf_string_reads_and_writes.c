@@ -22,14 +22,19 @@ typedef struct BOOK {
     size_t text_len;
 } BOOK;
 
-void test_col_string_read_fixed_size(void **unused) {
+void test_col_string_read_fixed_size_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -50,14 +55,19 @@ void test_col_string_read_fixed_size(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_string_manipulate_fixed_size(void **unused) {
+void test_col_string_manipulate_fixed_size_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
     clockid_t clk_id = CLOCK_MONOTONIC;
 
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -86,7 +96,7 @@ void test_col_string_manipulate_fixed_size(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
+void test_col_buffer_copy_unknown_size_dynamic_memory_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -95,7 +105,11 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
 
     // Randomly select string size based on provided gen seed
     setup_and_run_query(&sf, &sfstmt,
-                        "select randstr(uniform(1, 2048, 8888),random()) from table(generator(rowcount=>300));");
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select randstr(uniform(1, 2048, 8888),random()) from table(generator(rowcount=>300));", 0);
 
     // Begin timing
     clock_gettime(clk_id, &begin);
@@ -124,7 +138,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory(void **unused) {
     snowflake_term(sf);
 }
 
-void test_col_buffer_copy_concat_multiple_rows(void **unused) {
+void test_col_buffer_copy_concat_multiple_rows_helper(sf_bool use_arrow) {
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
@@ -139,7 +153,13 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     }
 
     // Get all public domain books. Sort by text_part_id to ensure that you concatenate book in right order
-    setup_and_run_query(&sf, &sfstmt, "select * from public_domain_books order by id, text_part;");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select * from public_domain_books order by id, text_part;", 0);
+
     // Begin timing
     clock_gettime(clk_id, &begin);
 
@@ -191,13 +211,49 @@ void test_col_buffer_copy_concat_multiple_rows(void **unused) {
     snowflake_term(sf);
 }
 
+void test_col_string_read_fixed_size_arrow(void **unused) {
+    test_col_string_read_fixed_size_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_string_read_fixed_size_json(void **unused) {
+    test_col_string_read_fixed_size_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_string_manipulate_fixed_size_arrow(void **unused) {
+    test_col_string_manipulate_fixed_size_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_string_manipulate_fixed_size_json(void **unused) {
+    test_col_string_manipulate_fixed_size_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_buffer_copy_unknown_size_dynamic_memory_arrow(void **unused) {
+    test_col_buffer_copy_unknown_size_dynamic_memory_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_buffer_copy_unknown_size_dynamic_memory_json(void **unused) {
+    test_col_buffer_copy_unknown_size_dynamic_memory_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_col_buffer_copy_concat_multiple_rows_arrow(void **unused) {
+    test_col_buffer_copy_concat_multiple_rows_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_col_buffer_copy_concat_multiple_rows_json(void **unused) {
+    test_col_buffer_copy_concat_multiple_rows_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_col_string_read_fixed_size),
-      cmocka_unit_test(test_col_string_manipulate_fixed_size),
-      cmocka_unit_test(test_col_buffer_copy_unknown_size_dynamic_memory),
-      cmocka_unit_test(test_col_buffer_copy_concat_multiple_rows),
+      cmocka_unit_test(test_col_string_read_fixed_size_arrow),
+      cmocka_unit_test(test_col_string_read_fixed_size_json),
+      cmocka_unit_test(test_col_string_manipulate_fixed_size_arrow),
+      cmocka_unit_test(test_col_string_manipulate_fixed_size_json),
+      cmocka_unit_test(test_col_buffer_copy_unknown_size_dynamic_memory_arrow),
+      cmocka_unit_test(test_col_buffer_copy_unknown_size_dynamic_memory_json),
+      cmocka_unit_test(test_col_buffer_copy_concat_multiple_rows_arrow),
+      cmocka_unit_test(test_col_buffer_copy_concat_multiple_rows_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
