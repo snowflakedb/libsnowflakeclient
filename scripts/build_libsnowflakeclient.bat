@@ -78,6 +78,12 @@ copy /v /y ^
     .\include\snowflake\* ^
 	.\deps-build\%build_dir%\libsnowflakeclient\include\snowflake\*
 
+:: Prune unnecessary files that result in a large archive (~8GB)
+for %%f in (%cmake_dir%\tests\%build_type%\*.exp) do del %%f
+for %%f in (%cmake_dir%\tests\%build_type%\*.lib) do del %%f
+for %%f in (%cmake_dir%\tests\%build_type%\*.ilk) do del %%f
+for %%f in (%cmake_dir%\tests\%build_type%\*.pdb) do del %%f
+
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file libsnowflakeclient %libsnowflakeclient_version%
 if %ERRORLEVEL% NEQ 0 goto :error
