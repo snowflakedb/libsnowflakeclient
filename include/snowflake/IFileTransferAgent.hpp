@@ -19,9 +19,10 @@ namespace Client
  */
 struct TransferConfig
 {
-  TransferConfig() : caBundleFile(NULL), tempDir(NULL) {}
+  TransferConfig() : caBundleFile(NULL), tempDir(NULL), useS3regionalUrl(false) {}
   char * caBundleFile;
   char * tempDir;
+  bool useS3regionalUrl;
 };
 
 class IFileTransferAgent
