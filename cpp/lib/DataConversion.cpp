@@ -15,7 +15,6 @@
 
 #include "../logger/SFLogger.hpp"
 #include "snowflake/platform.h"
-#include "ArrowChunkIterator.hpp"
 #include "DataConversion.hpp"
 #include "ResultSet.hpp"
 
@@ -24,49 +23,6 @@ namespace Snowflake
 {
 namespace Client
 {
-
-namespace Util
-{
-
-void AllocateCharBuffer(
-    char ** out_data,
-    size_t * io_len,
-    size_t * io_capacity,
-    size_t len
-)
-{
-    size_t bufLen = 0;
-    char * buf = *out_data;
-    if (io_capacity)
-    {
-        bufLen = *io_capacity;
-    }
-
-    if (bufLen < len + 1)
-    {
-        if (buf)
-        {
-            buf = (char*)realloc(buf, len + 1);
-        }
-        else
-        {
-            buf = (char*)malloc(len + 1);
-        }
-        *out_data = buf;
-        if (io_capacity)
-        {
-            *io_capacity = len + 1;
-        }
-    }
-
-    if (io_len)
-    {
-        *io_len = len;
-    }
-}
-
-} // namespace Util
-
 namespace Conversion
 {
 namespace Arrow
