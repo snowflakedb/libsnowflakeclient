@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 # Change the version in arrow.mk to build
-ARROW_VERSION=0.17.0
+ARROW_VERSION=0.17.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 DEPS_BUILD_DIR=$DIR/../deps-build

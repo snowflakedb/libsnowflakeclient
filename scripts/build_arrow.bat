@@ -2,7 +2,7 @@
 :: Build ARROW library
 ::
 @echo off
-set arrow_version=0.17.0
+set arrow_version=0.17.1
 call %*
 goto :EOF
 
@@ -20,8 +20,6 @@ set vs_version=%3
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-
-if "%platform%" == "x86" goto :success
 
 set curdir=%cd%
 set dependencydir=%scriptdir%..\deps-build\
