@@ -270,14 +270,20 @@ if (WIN32)
     find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
     find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED)
     find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED)
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+        find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+        find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+    else()
+        find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+        find_library(BOOST_REGEX_LIB boost_regex-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+        find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
+    endif()
     # No arrow on Win-32bit
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
         find_library(ARROW_ARROW_LIB arrow.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/lib/ REQUIRED)
         # The following file names differ based on build type
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
-            find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
-            find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
             find_library(ARROW_BZ2_LIB bz2d.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
             find_library(ARROW_GFLAGS_LIB gflags_static_debug.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
             find_library(ARROW_LZ4_LIB lz4d.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
@@ -285,9 +291,6 @@ if (WIN32)
             find_library(ARROW_ZLIB_LIB zlibd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
             find_library(ARROW_ZSTD_LIB zstdd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
         else()
-            find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
-            find_library(BOOST_REGEX_LIB boost_regex-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
-            find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED)
             find_library(ARROW_BZ2_LIB bz2.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
             find_library(ARROW_GFLAGS_LIB gflags_static.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
             find_library(ARROW_LZ4_LIB lz4.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
@@ -316,6 +319,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
@@ -331,6 +335,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
@@ -345,6 +350,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
@@ -359,6 +365,7 @@ message("libtelemetry is located at " ${OOB_LIB})
 message("libcurl is located at " ${CURL_LIB})
 message("libssl is located at " ${SSL_LIB})
 message("libcrypto is located at " ${CRYPTO_LIB})
+message("libboost_regex is located at " ${BOOST_REGEX_LIB})
 message("libarrow is located at " ${ARROW_ARROW_LIB})
 message("libaws-cpp-sdk-core is located at " ${AWS_CORE_LIB})
 message("libaws-cpp-sdk-s3 is located at " ${AWS_S3_LIB})
