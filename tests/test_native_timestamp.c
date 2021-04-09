@@ -4,17 +4,23 @@
 #include <string.h>
 #include "utils/test_setup.h"
 
-void test_native_timestamp(void **unused) {
+void test_native_timestamp_helper(sf_bool use_arrow) {
+
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select to_time('12:34:56'),"
-                                      "date_from_parts(2018, 09, 14), "
-                                      "timestamp_ltz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
-                                      "timestamp_ntz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
-                                      "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select to_time('12:34:56'),"
+                            "date_from_parts(2018, 09, 14), "
+                            "timestamp_ltz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
+                            "timestamp_ntz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
+                            "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')", 0);
 
     // Stores the result from the fetch operation
     SF_TIMESTAMP ts;
@@ -82,10 +88,19 @@ void test_native_timestamp(void **unused) {
     snowflake_term(sf);
 }
 
+void test_native_timestamp_arrow(void **unused) {
+    test_native_timestamp_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_native_timestamp_json(void **unused) {
+    test_native_timestamp_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_native_timestamp),
+      cmocka_unit_test(test_native_timestamp_arrow),
+      cmocka_unit_test(test_native_timestamp_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

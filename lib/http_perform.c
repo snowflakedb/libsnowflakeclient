@@ -146,6 +146,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              SF_HEADER *header,
                              char *body,
                              cJSON **json,
+                             NON_JSON_RESP *non_json_resp,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
@@ -237,16 +238,30 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&json_resp_cb);
+        if (!json && non_json_resp)
+        {
+            res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, non_json_resp->write_callback);
+        }
+        else
+        {
+          res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&json_resp_cb);
+        }
         if (res != CURLE_OK) {
             log_error("Failed to set writer [%s]", curl_easy_strerror(res));
             break;
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &buffer);
+        if (!json && non_json_resp)
+        {
+            res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, non_json_resp->buffer);
+        }
+        else
+        {
+            res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
+        }
         if (res != CURLE_OK) {
-            log_error("Failed to set write data [%s]", curl_easy_strerror(res));
-            break;
+          log_error("Failed to set write data [%s]", curl_easy_strerror(res));
+          break;
         }
 
         if (DISABLE_VERIFY_PEER) {
@@ -299,11 +314,14 @@ sf_bool STDCALL http_perform(CURL *curl,
                 break;
             }
 
-            // Set the first character in the buffer as a bracket
-            buffer.buffer = (char *) SF_CALLOC(1,
-                                               2); // Don't forget null terminator
-            buffer.size = 1;
-            sb_strncpy(buffer.buffer, 2, "[", 2);
+            if (json)
+            {
+                // Set the first character in the buffer as a bracket
+                buffer.buffer = (char *)SF_CALLOC(1,
+                  2); // Don't forget null terminator
+                buffer.size = 1;
+                sb_strncpy(buffer.buffer, 2, "[", 2);
+            }
         }
 
         // Be optimistic
@@ -384,9 +402,9 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
-    // We were successful so parse JSON from text
-    if (ret) {
-        if (chunk_downloader) {
+    if (ret && json) {
+      // We were successful so parse JSON from text
+      if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
             sb_memcpy(&buffer.buffer[buffer.size], 1, "]", 1);
@@ -420,6 +438,7 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
                                     SF_HEADER *header,
                                     char *body,
                                     cJSON **json,
+                                    NON_JSON_RESP *non_json_resp,
                                     int64 network_timeout,
                                     sf_bool chunk_downloader,
                                     SF_ERROR_STRUCT *error,

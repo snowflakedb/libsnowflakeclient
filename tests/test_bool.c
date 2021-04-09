@@ -12,7 +12,8 @@ typedef struct test_case_to_string {
     const sf_bool c2_is_null;
 } TEST_CASE_TO_STRING;
 
-void test_bool(void **unused) {
+void test_bool_helper(sf_bool use_arrow) {
+
     const sf_bool large_value = (sf_bool) 64;
     const sf_bool zero_value = (sf_bool) 0;
     const sf_bool negative_value = (sf_bool) -12;
@@ -36,6 +37,20 @@ void test_bool(void **unused) {
 
     /* Create a statement once and reused */
     SF_STMT *sfstmt = snowflake_stmt(sf);
+
+    /* Set query result format to Arrow if necessary */
+    status = snowflake_query(
+        sfstmt,
+        use_arrow == SF_BOOLEAN_TRUE
+        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
     /* NOTE: the numeric type here should fit into int64 otherwise
      * it is taken as a float */
     status = snowflake_query(
@@ -139,10 +154,19 @@ void test_bool(void **unused) {
     snowflake_term(sf);
 }
 
+void test_bool_arrow(void **unused) {
+    test_bool_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_bool_json(void **unused) {
+    test_bool_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_bool),
+      cmocka_unit_test(test_bool_arrow),
+      cmocka_unit_test(test_bool_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

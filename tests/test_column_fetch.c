@@ -4,15 +4,20 @@
 #include <assert.h>
 #include "utils/test_setup.h"
 
-void test_column_as_boolean(void **unused) {
+void test_column_as_boolean_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 'some string', '', "
-                                      "to_boolean('yes'), to_boolean('no'), "
-                                      "0.000001, 0.0, NULL;");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 'some string', '', "
+                            "to_boolean('yes'), to_boolean('no'), "
+                            "0.000001, 0.0, NULL;", 0);
 
     // Stores the result from the fetch operation
     sf_bool out;
@@ -88,13 +93,18 @@ void test_column_as_boolean(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_int8(void **unused) {
+void test_column_as_int8_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select to_char('s'), '', NULL");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select to_char('s'), '', NULL", 0);
 
     // Stores the result from the fetch operation
     int8 out;
@@ -134,15 +144,20 @@ void test_column_as_int8(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_int32(void **unused) {
+void test_column_as_int32_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 2147483647, -2147483648, "
-                                      "10.01, NULL, 'some string', 10000000000000000000, "
-                                      "-10000000000000000000");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 2147483647, -2147483648, "
+                            "10.01, NULL, 'some string', 10000000000000000000, "
+                            "-10000000000000000000", 0);
 
     // Stores the result from the fetch operation
     int32 out;
@@ -224,15 +239,20 @@ void test_column_as_int32(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_int64(void **unused) {
+void test_column_as_int64_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 9223372036854775807, -9223372036854775808, "
-                                      "10.01, NULL, 'some string', 10000000000000000000, "
-                                      "-10000000000000000000");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 9223372036854775807, -9223372036854775808, "
+                            "10.01, NULL, 'some string', 10000000000000000000, "
+                            "-10000000000000000000", 0);
 
     // Stores the result from the fetch operation
     int64 out;
@@ -314,13 +334,18 @@ void test_column_as_int64(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_uint8(void **unused) {
+void test_column_as_uint8_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select to_char('s'), '', NULL");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select to_char('s'), '', NULL", 0);
 
     // Stores the result from the fetch operation
     uint8 out;
@@ -360,14 +385,19 @@ void test_column_as_uint8(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_uint32(void **unused) {
+void test_column_as_uint32_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 4294967295, -1, 10.01, NULL, "
-                                      "'some string', 20000000000000000000");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 4294967295, -1, 10.01, NULL, "
+                            "'some string', 20000000000000000000", 0);
 
     // Stores the result from the fetch operation
     uint32 out;
@@ -443,14 +473,19 @@ void test_column_as_uint32(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_uint64(void **unused) {
+void test_column_as_uint64_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 18446744073709551615, -1, 10.01, NULL, "
-                                      "'some string', 20000000000000000000");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 18446744073709551615, -1, 10.01, NULL, "
+                            "'some string', 20000000000000000000", 0);
 
     // Stores the result from the fetch operation
     uint64 out;
@@ -526,15 +561,20 @@ void test_column_as_uint64(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_float32(void **unused) {
+void test_column_as_float32_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 1.1, as_double(3.40282e+38),"
-                                      "as_double(1.176e-38), NULL, 'some string', "
-                                      "2e500");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 1.1, as_double(3.40282e+38),"
+                            "as_double(1.176e-38), NULL, 'some string', "
+                            "2e500", 0);
 
     // Stores the result from the fetch operation
     float32 out;
@@ -608,15 +648,20 @@ void test_column_as_float32(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_float64(void **unused) {
+void test_column_as_float64_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, 0, 1.1, as_double(1.79769e+308),"
-                                      "as_double(2.225074e-308), NULL, 'some string', "
-                                      "2e500");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, 0, 1.1, as_double(1.79769e+308),"
+                            "as_double(2.225074e-308), NULL, 'some string', "
+                            "2e500", 0);
 
     // Stores the result from the fetch operation
     float64 out;
@@ -690,12 +735,17 @@ void test_column_as_float64(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_timestamp(void **unused) {
+void test_column_as_timestamp_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
-    setup_and_run_query(&sf, &sfstmt, "alter session set timezone='America/Los_Angeles'");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "alter session set timezone='America/Los_Angeles'", 0);
 
     snowflake_query(sfstmt, "select timestamp_ltz_from_parts(2018, 06, 01, 7, 40, 52, 968746000),"
                             "timestamp_ntz_from_parts(2018, 06, 01, 14, 40, 52, 968746000),"
@@ -839,16 +889,21 @@ void test_column_as_timestamp(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_timestamp_windows(void **unused) {
+void test_column_as_timestamp_windows_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
-    setup_and_run_query(&sf, &sfstmt, "select "
-                                      "NULL, "
-                                      "to_timestamp_tz('2018-10-10 12:34:56 -7:00'), "
-                                      "to_timestamp_tz('2018-10-10 20:34:56 +1:00'), "
-                                      "to_timestamp_ntz('2018-10-10 19:34:56 +6:00')");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select "
+                            "NULL, "
+                            "to_timestamp_tz('2018-10-10 12:34:56 -7:00'), "
+                            "to_timestamp_tz('2018-10-10 20:34:56 +1:00'), "
+                            "to_timestamp_ntz('2018-10-10 19:34:56 +6:00')", 0);
 
     // Stores the result from the fetch operation
     SF_TIMESTAMP out[4];
@@ -930,15 +985,20 @@ void test_column_as_timestamp_windows(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_const_str(void **unused) {
+void test_column_as_const_str_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 'some string that is not empty', '', "
-                                      "as_double(1.1), as_integer(to_variant(10)), "
-                                      "to_boolean(1), NULL");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 'some string that is not empty', '', "
+                            "as_double(1.1), as_integer(to_variant(10)), "
+                            "to_boolean(1), NULL", 0);
 
     // Stores the result from the fetch operation
     const char *out;
@@ -996,13 +1056,18 @@ void test_column_as_const_str(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_is_null(void **unused) {
+void test_column_is_null_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 1, NULL, to_boolean(0)");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 1, NULL, to_boolean(0)", 0);;
 
     // Stores the result from the fetch operation
     sf_bool out;
@@ -1042,13 +1107,18 @@ void test_column_is_null(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_strlen(void **unused) {
+void test_column_strlen_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 'some string', '', NULL");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 'some string', '', NULL", 0);;
 
     // Stores the result from the fetch operation
     size_t out;
@@ -1088,18 +1158,23 @@ void test_column_strlen(void **unused) {
     snowflake_term(sf);
 }
 
-void test_column_as_str(void **unused) {
+void test_column_as_str_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, "select 'some string', '', NULL, "
-                                      "to_boolean(0), to_boolean(1), "
-                                      "date_from_parts(2018, 09, 14), "
-                                      "timestamp_ltz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
-                                      "timestamp_ntz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
-                                      "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')");
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, "select 'some string', '', NULL, "
+                            "to_boolean(0), to_boolean(1), "
+                            "date_from_parts(2018, 09, 14), "
+                            "timestamp_ltz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
+                            "timestamp_ntz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
+                            "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')", 0);
 
     // Stores the result from the fetch operation
     char *out = NULL;
@@ -1188,27 +1263,162 @@ void test_column_as_str(void **unused) {
     snowflake_term(sf);
 }
 
+void test_column_as_boolean_arrow(void **unused) {
+    test_column_as_boolean_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_boolean_json(void **unused) {
+    test_column_as_boolean_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_int8_arrow(void **unused) {
+    test_column_as_int8_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_int8_json(void **unused) {
+    test_column_as_int8_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_int32_arrow(void **unused) {
+    test_column_as_int32_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_int32_json(void **unused) {
+    test_column_as_int32_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_int64_arrow(void **unused) {
+    test_column_as_int64_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_int64_json(void **unused) {
+    test_column_as_int64_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_uint8_arrow(void **unused) {
+    test_column_as_uint8_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_uint8_json(void **unused) {
+    test_column_as_uint8_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_uint32_arrow(void **unused) {
+    test_column_as_uint32_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_uint32_json(void **unused) {
+    test_column_as_uint32_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_uint64_arrow(void **unused) {
+    test_column_as_uint64_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_uint64_json(void **unused) {
+    test_column_as_uint64_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_float32_arrow(void **unused) {
+    test_column_as_float32_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_float32_json(void **unused) {
+    test_column_as_float32_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_float64_arrow(void **unused) {
+    test_column_as_float64_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_float64_json(void **unused) {
+    test_column_as_float64_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_timestamp_arrow(void **unused) {
+    test_column_as_timestamp_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_timestamp_json(void **unused) {
+    test_column_as_timestamp_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_timestamp_windows_arrow(void **unused) {
+    test_column_as_timestamp_windows_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_timestamp_windows_json(void **unused) {
+    test_column_as_timestamp_windows_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_const_str_arrow(void **unused) {
+    test_column_as_const_str_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_const_str_json(void **unused) {
+    test_column_as_const_str_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_is_null_arrow(void **unused) {
+    test_column_is_null_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_is_null_json(void **unused) {
+    test_column_is_null_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_strlen_arrow(void **unused) {
+    test_column_strlen_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_strlen_json(void **unused) {
+    test_column_strlen_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_as_str_arrow(void **unused) {
+    test_column_as_str_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_column_as_str_json(void **unused) {
+    test_column_as_str_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_column_as_boolean),
-      cmocka_unit_test(test_column_as_int8),
-      cmocka_unit_test(test_column_as_int32),
-      cmocka_unit_test(test_column_as_int64),
-      cmocka_unit_test(test_column_as_uint8),
-      cmocka_unit_test(test_column_as_uint32),
-      cmocka_unit_test(test_column_as_uint64),
-      cmocka_unit_test(test_column_as_float32),
-      cmocka_unit_test(test_column_as_float64),
+      cmocka_unit_test(test_column_as_boolean_arrow),
+      cmocka_unit_test(test_column_as_boolean_json),
+      cmocka_unit_test(test_column_as_int8_arrow),
+      cmocka_unit_test(test_column_as_int8_json),
+      cmocka_unit_test(test_column_as_int32_arrow),
+      cmocka_unit_test(test_column_as_int32_json),
+      cmocka_unit_test(test_column_as_int64_arrow),
+      cmocka_unit_test(test_column_as_int64_json),
+      cmocka_unit_test(test_column_as_uint8_arrow),
+      cmocka_unit_test(test_column_as_uint8_json),
+      cmocka_unit_test(test_column_as_uint32_arrow),
+      cmocka_unit_test(test_column_as_uint32_json),
+      cmocka_unit_test(test_column_as_uint64_arrow),
+      cmocka_unit_test(test_column_as_uint64_json),
+      cmocka_unit_test(test_column_as_float32_arrow),
+      cmocka_unit_test(test_column_as_float32_json),
+      cmocka_unit_test(test_column_as_float64_arrow),
+      cmocka_unit_test(test_column_as_float64_json),
 #ifndef _WIN32
-      cmocka_unit_test(test_column_as_timestamp),
+      cmocka_unit_test(test_column_as_timestamp_arrow),
+      cmocka_unit_test(test_column_as_timestamp_json),
 #else 
-      cmocka_unit_test(test_column_as_timestamp_windows),
+      cmocka_unit_test(test_column_as_timestamp_windows_arrow),
+      cmocka_unit_test(test_column_as_timestamp_windows_json),
 #endif
-      cmocka_unit_test(test_column_as_const_str),
-      cmocka_unit_test(test_column_is_null),
-      cmocka_unit_test(test_column_strlen),
-      cmocka_unit_test(test_column_as_str),
+      cmocka_unit_test(test_column_as_const_str_arrow),
+      cmocka_unit_test(test_column_as_const_str_json),
+      cmocka_unit_test(test_column_is_null_arrow),
+      cmocka_unit_test(test_column_is_null_json),
+      cmocka_unit_test(test_column_strlen_arrow),
+      cmocka_unit_test(test_column_strlen_json),
+      cmocka_unit_test(test_column_as_str_arrow),
+      cmocka_unit_test(test_column_as_str_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

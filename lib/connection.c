@@ -202,6 +202,12 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
     {
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
+
+#ifdef SF_WIN32
+    cJSON * parameters = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
+    snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
+#endif
     return body;
 }
 
@@ -316,7 +322,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json,
+        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count) ||
@@ -437,7 +443,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json,
+        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count) ||

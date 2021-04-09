@@ -9,7 +9,7 @@ const char *COL_EVAL_QUERY = "select seq4(), seq4(), seq4(), seq4(), seq4(), seq
 const int NUM_COLS = 6;
 const int NUM_ROWS = 4000;
 
-void test_eval_all_cols(void **unused) {
+void test_eval_all_cols_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -18,7 +18,12 @@ void test_eval_all_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -41,7 +46,7 @@ void test_eval_all_cols(void **unused) {
     fclose(dev_null);
 }
 
-void test_eval_half_cols(void **unused) {
+void test_eval_half_cols_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -50,7 +55,12 @@ void test_eval_half_cols(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -80,7 +90,7 @@ void test_eval_half_cols(void **unused) {
     fclose(dev_null);
 }
 
-void test_skip_rows_half(void **unused) {
+void test_skip_rows_half_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -89,7 +99,12 @@ void test_skip_rows_half(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -114,7 +129,7 @@ void test_skip_rows_half(void **unused) {
     fclose(dev_null);
 }
 
-void test_skip_all_rows(void **unused) {
+void test_skip_all_rows_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -123,7 +138,12 @@ void test_skip_all_rows(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -145,7 +165,7 @@ void test_skip_all_rows(void **unused) {
     fclose(dev_null);
 }
 
-void test_skip_all_rows_no_bind(void **unused) {
+void test_skip_all_rows_no_bind_helper(sf_bool use_arrow) {
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
@@ -154,7 +174,12 @@ void test_skip_all_rows_no_bind(void **unused) {
     FILE *dev_null = fopen("/dev/null", "w");
 
     // Setup connection, run query, and get results back
-    setup_and_run_query(&sf, &sfstmt, COL_EVAL_QUERY);
+    setup_and_run_query(&sf, &sfstmt,
+                        use_arrow == SF_BOOLEAN_TRUE
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+
+    snowflake_query(sfstmt, COL_EVAL_QUERY, 0);
 
     clock_gettime(clk_id, &begin);
 
@@ -171,14 +196,59 @@ void test_skip_all_rows_no_bind(void **unused) {
     fclose(dev_null);
 }
 
+void test_eval_all_cols_arrow(void **unused) {
+    test_eval_all_cols_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_eval_all_cols_json(void **unused) {
+    test_eval_all_cols_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_eval_half_cols_arrow(void **unused) {
+    test_eval_half_cols_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_eval_half_cols_json(void **unused) {
+    test_eval_half_cols_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_skip_rows_half_arrow(void **unused) {
+    test_skip_rows_half_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_skip_rows_half_json(void **unused) {
+    test_skip_rows_half_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_skip_all_rows_arrow(void **unused) {
+    test_skip_all_rows_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_skip_all_rows_json(void **unused) {
+    test_skip_all_rows_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_skip_all_rows_no_bind_arrow(void **unused) {
+    test_skip_all_rows_no_bind_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_skip_all_rows_no_bind_json(void **unused) {
+    test_skip_all_rows_no_bind_helper(SF_BOOLEAN_FALSE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_eval_all_cols),
-      cmocka_unit_test(test_eval_half_cols),
-      cmocka_unit_test(test_skip_rows_half),
-      cmocka_unit_test(test_skip_all_rows),
-      cmocka_unit_test(test_skip_all_rows_no_bind),
+      cmocka_unit_test(test_eval_all_cols_arrow),
+      cmocka_unit_test(test_eval_all_cols_json),
+      cmocka_unit_test(test_eval_half_cols_arrow),
+      cmocka_unit_test(test_eval_half_cols_json),
+      cmocka_unit_test(test_skip_rows_half_arrow),
+      cmocka_unit_test(test_skip_rows_half_json),
+      cmocka_unit_test(test_skip_all_rows_arrow),
+      cmocka_unit_test(test_skip_all_rows_json),
+      cmocka_unit_test(test_skip_all_rows_no_bind_arrow),
+      cmocka_unit_test(test_skip_all_rows_no_bind_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
