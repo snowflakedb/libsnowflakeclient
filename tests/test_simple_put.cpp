@@ -53,7 +53,8 @@ void test_simple_put_core(const char * fileName,
                           size_t customThreshold=64*1024*1024,
                           bool useDevUrand=false,
                           bool createSubfolder=false,
-                          char * tmpDir = nullptr)
+                          char * tmpDir = nullptr,
+                          bool useS3regionalUrl = false)
 {
   /* init */
   SF_STATUS status;
@@ -119,6 +120,11 @@ void test_simple_put_core(const char * fileName,
   {
       transConfig.tempDir = tmpDir;
       transConfigPtr = &transConfig;
+  }
+  if(useS3regionalUrl)
+  {
+    transConfig.useS3regionalUrl = true;
+    transConfigPtr = &transConfig;
   }
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
@@ -589,6 +595,20 @@ void test_simple_put_create_subfolder(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, false, 100*1024*1024, false, true);
 }
 
+void test_simple_put_use_s3_regionalURL(void **unused)
+{
+  test_simple_put_core("small_file.csv.gz", "gzip", false,false,
+                       false,
+                       false,
+                       false,
+                       false,
+                       100*1024*1024,
+                       false,
+                       false,
+                       nullptr,
+                       true);
+}
+
 void test_simple_get(void **unused)
 {
   test_simple_put_core("small_file.csv", // filename
@@ -938,7 +958,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_large_put_threshold, teardown),
     cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown),
-    cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown)
+    cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown),
+    cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

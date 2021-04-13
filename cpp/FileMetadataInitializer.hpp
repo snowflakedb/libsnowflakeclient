@@ -11,7 +11,7 @@
 #include "IStorageClient.hpp"
 
 // used to decide whether to upload in sequence or in parallel
-#define DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD 67108864 //64Mb
+#define DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD 209715200 //200Mb
 #define DOWNLOAD_DATA_SIZE_THRESHOLD 5242880 // 5MB
 
 namespace Snowflake
