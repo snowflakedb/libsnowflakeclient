@@ -31,8 +31,14 @@ private:
 #define CXX_LOG_FATAL(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_FATAL, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_FATAL)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_FATAL, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_FATAL, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_fatal(CXX_LOG_NS, __VA_ARGS__); \
   } \
@@ -40,8 +46,14 @@ private:
 #define CXX_LOG_ERROR(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_ERROR, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_ERROR)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_ERROR, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_ERROR, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_error(CXX_LOG_NS, __VA_ARGS__); \
   } \
@@ -49,8 +61,14 @@ private:
 #define CXX_LOG_WARN(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_WARN, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_WARN)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_WARN, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_WARN, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_warn(CXX_LOG_NS, __VA_ARGS__); \
   } \
@@ -58,8 +76,14 @@ private:
 #define CXX_LOG_INFO(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_INFO, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_INFO)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_INFO, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_INFO, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_info(CXX_LOG_NS, __VA_ARGS__); \
   } \
@@ -67,8 +91,14 @@ private:
 #define CXX_LOG_DEBUG(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_DEBUG, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_DEBUG)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_DEBUG, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_DEBUG, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_debug(CXX_LOG_NS, __VA_ARGS__); \
   } \
@@ -76,8 +106,14 @@ private:
 #define CXX_LOG_TRACE(...)  \
   if (SFLogger::getExternalLogger() != NULL) \
   { \
-    SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_TRACE, __FILE__, \
-                                           SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    if ((SFLogger::getExternalLogger()->needSecretMask() == SF_BOOLEAN_TRUE) && \
+        (SFLogger::getExternalLogger()->getLogLevel() <= SF_LOG_LEVEL::SF_LOG_TRACE)) \
+    { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_TRACE, __FILE__, "%s", \
+                                             SFLogger::getMaskedMsg(__VA_ARGS__).c_str()); \
+    } else { \
+      SFLogger::getExternalLogger()->logLine(SF_LOG_LEVEL::SF_LOG_TRACE, __FILE__, __VA_ARGS__); \
+    } \
   } else { \
     sf_log_trace(CXX_LOG_NS, __VA_ARGS__); \
   } \
