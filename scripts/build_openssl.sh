@@ -45,7 +45,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export CC="${GCC:-gcc52}"
     make distclean clean &> /dev/null || true
-    perl ./Configure linux-x86_64 "${openssl_config_opts[@]}"
+    perl ./Configure linux-$(uname -p) "${openssl_config_opts[@]}"
     make depend > /dev/null
     make -j 4 > /dev/null
     make install_sw install_ssldirs > /dev/null
