@@ -1,0 +1,11 @@
+{
+    "testconnection": {
+        "SNOWFLAKE_TEST_ACCOUNT": "sfctest0.us-central1.gcp",
+        "SNOWFLAKE_TEST_WAREHOUSE": "testwh_capi",
+        "SNOWFLAKE_TEST_USER": "test_capi",
+        "SNOWFLAKE_TEST_PASSWORD": "tPsM-*dgvelV8UVhvOYxF1I35E",
+        "SNOWFLAKE_TEST_DATABASE": "testdb_capi",
+        "SNOWFLAKE_TEST_SCHEMA": "public",
+        "SNOWFLAKE_TEST_ROLE": "testrole_capi"
+    }
+}
