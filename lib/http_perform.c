@@ -389,6 +389,14 @@ sf_bool STDCALL http_perform(CURL *curl,
                 my_sleep_ms(next_sleep_in_secs * 1000);
               }
               else {
+                char msg[1024];
+                sb_sprintf(msg, sizeof(msg),
+                           "Exceeded the retry_timeout , http code: [%d]",
+                           http_code);
+                SET_SNOWFLAKE_ERROR(error,
+                                    SF_STATUS_ERROR_RETRY,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
                 retry = SF_BOOLEAN_FALSE;
               }
             } else {
