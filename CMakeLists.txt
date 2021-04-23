@@ -20,6 +20,11 @@ set(OPENSSL_VERSION_NUMBER  0x11100000L)
 # Generates compile_commands.json file for clangd to parse.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if ($ENV{XP_BUILD})
+    message("-- Building libsnowflakeclient for XP")
+    add_definitions(-DLIBSFCLI_FOR_XP)
+endif ()
+
 if (MOCK)
     set(MOCK_OBJECT_WRAPPER_FLAGS -Wl,--wrap=http_perform)
     add_definitions(-DMOCK_ENABLED)
