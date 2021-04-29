@@ -10,7 +10,7 @@ SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
-source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
+source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE "$@"
 source $SCRIPTS_DIR/utils.sh
 init_git_variables
 
@@ -55,9 +55,10 @@ function build_component()
     local component_name=$1
     local component_script=$2
     local build_type=$3
+    local other_args="$4"
 
     echo "=== build: $component_name ==="
-    "$component_script" -t "$build_type"
+    "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
@@ -77,6 +78,7 @@ download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
-build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target"
+build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target" "$@"
 
 [[ -n "$WHITESOURCE_API_KEY" ]] && $CI_BUILD_DIR/wss.sh || true
+
