@@ -39,6 +39,9 @@ if [[ -z "$GCC" || -z "$GXX" ]]; then
     elif which gcc72 >& /dev/null; then
         GCC="$(which gcc72)"
         GXX="$(which g++72)"
+    elif which gcc82 >& /dev/null; then
+        GCC="$(which gcc82)"
+        GXX="$(which g++82)"
     else
         # Default to system
         GCC="$(which gcc)"
