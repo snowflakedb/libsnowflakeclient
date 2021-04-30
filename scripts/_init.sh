@@ -24,12 +24,9 @@ else
 fi
 
 if [[ -z "$GCC" || -z "$GXX" ]]; then
-    if which gcc49 >& /dev/null; then
-        GCC="$(which gcc49)"
-        GXX="$(which g++49)"
-    elif which gcc-4.9 >& /dev/null; then
-        GCC="$(which gcc-4.9)"
-        GXX="$(which g++-4.9)"
+    if which gcc-52 >& /dev/null; then
+        GCC="$(which gcc-52)"
+        GXX="$(which g++-52)"
     elif which gcc52 >& /dev/null; then
         GCC="$(which gcc52)"
         GXX="$(which g++52)"
@@ -42,6 +39,9 @@ if [[ -z "$GCC" || -z "$GXX" ]]; then
     elif which gcc82 >& /dev/null; then
         GCC="$(which gcc82)"
         GXX="$(which g++82)"
+    elif which gcc92 >& /dev/null; then
+        GCC="$(which gcc92)"
+        GXX="$(which g++92)"
     else
         # Default to system
         GCC="$(which gcc)"
