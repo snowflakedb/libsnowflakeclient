@@ -89,7 +89,24 @@ void test_crud(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_affected_rows(sfstmt), 2);
+
+    // Check the resultset of dml query
+    assert_int_equal(1, snowflake_num_fields(sfstmt));
+    SF_COLUMN_DESC * desc = snowflake_desc(sfstmt);
+    // Check column name
+    assert_string_equal("number of rows inserted", desc->name);
+
+    // fetch on the resultset
+    status = snowflake_fetch(sfstmt);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    const char *out;
+    if (snowflake_column_as_const_str(sfstmt, 1, &out)) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_string_equal("2", out);
 
     _fetch_data(sfstmt, 3);
 
