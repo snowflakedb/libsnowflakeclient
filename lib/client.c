@@ -1635,7 +1635,25 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
         return ret;
     }
 
-    return sfstmt->total_rowcount;
+    if (sfstmt->is_dml == SF_BOOLEAN_TRUE) {
+        if (SF_STATUS_SUCCESS != snowflake_fetch(sfstmt))
+        {
+            return -1;
+        }
+        int64 total = 0;
+        for (int i = 1; i <= sfstmt->total_fieldcount; ++i) {
+            int64 field = 0;
+            if (SF_STATUS_SUCCESS != snowflake_column_as_int64(sfstmt, i, &field))
+            {
+                return -1;
+            }
+            total += field;
+        }
+        return total;
+    }
+    else {
+        return sfstmt->total_rowcount;
+    }
 }
 
 SF_STATUS STDCALL
@@ -2036,39 +2054,23 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         sfstmt->total_rowcount = sfstmt->chunk_rowcount;
                     }
                 } else {
-                    if (sfstmt->is_dml == SF_BOOLEAN_TRUE) {
-                        // If DML, then do not create a result set object.
-                        // Instead, determine total number of affected rows here.
-                        cJSON * raw_row_result;
-                        cJSON * row = snowflake_cJSON_DetachItemFromArray(rowset, 0);
-                        int64 ret = 0;
+                    // Create a result set object and update the total rowcount.
+                    sfstmt->result_set = rs_create_with_json_result(
+                        rowset,
+                        sfstmt->desc,
+                        (QueryResultFormat_t *) sfstmt->qrf,
+                        sfstmt->connection->timezone);
 
-                        for (int i = 0; i < sfstmt->total_fieldcount; ++i) {
-                            raw_row_result = snowflake_cJSON_GetArrayItem(row, i);
-                            ret += (int64) strtoull(raw_row_result->valuestring, NULL, 10);
-                        }
+                    // Update chunk row count. Controls the chunk downloader.
+                    sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
+                        sfstmt->result_set,
+                        (QueryResultFormat_t *) sfstmt->qrf);
 
-                        sfstmt->total_rowcount = ret;
-                        snowflake_cJSON_Delete(rowset);
-                    } else {
-                        // If not DML, then create a result set object and update the total rowcount.
-                        sfstmt->result_set = rs_create_with_json_result(
-                            rowset,
-                            sfstmt->desc,
-                            (QueryResultFormat_t *) sfstmt->qrf,
-                            sfstmt->connection->timezone);
-
-                        // Update chunk row count. Controls the chunk downloader.
-                        sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                            sfstmt->result_set,
-                            (QueryResultFormat_t *) sfstmt->qrf);
-
-                        // Update total row count. Used in snowflake_num_rows().
-                        if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-                            log_warn(
-                                "No total count found in response. Reverting to using array size of results");
-                            sfstmt->total_rowcount = sfstmt->chunk_rowcount;
-                        }
+                    // Update total row count. Used in snowflake_num_rows().
+                    if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
+                        log_warn(
+                            "No total count found in response. Reverting to using array size of results");
+                        sfstmt->total_rowcount = sfstmt->chunk_rowcount;
                     }
                 }
             }
