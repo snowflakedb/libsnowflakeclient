@@ -61,9 +61,8 @@ class RetryContext
      */
     bool isRetryable(RemoteStorageRequestOutcome putStatus)
     {
-        //If putStatus is not SUCCESS and not TOKEN_EXPIRED then put is retryable
-        bool isPutInRetryableState = ((putStatus != RemoteStorageRequestOutcome::SUCCESS) &&
-                (putStatus != RemoteStorageRequestOutcome::TOKEN_EXPIRED)) ;
+        //If putStatus is not SUCCESS, not TOKEN_EXPIRED and not SKIP_UPLOAD_FILE then put is retryable
+        bool isPutInRetryableState = (putStatus == RemoteStorageRequestOutcome::FAILED);
         //If file upload is successful in a retry log it
         if(putStatus == RemoteStorageRequestOutcome::SUCCESS && m_retryCount > 1)
         {
