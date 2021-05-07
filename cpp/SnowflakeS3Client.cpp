@@ -52,8 +52,6 @@ namespace
 
     ~awsdk_init()
     {
-      Aws::Utils::Logging::ShutdownAWSLogging();
-      Aws::ShutdownAPI(options);
     }
 
     Aws::SDKOptions options;
