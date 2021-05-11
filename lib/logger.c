@@ -28,6 +28,7 @@
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
 #include <string.h>
+#include "../cpp/logger/SFLoggerCWrapper.h"
 
 static struct {
     void *udata;
@@ -97,6 +98,21 @@ void log_log(int level, const char *file, int line, const char *ns,
 {
     va_list args;
     va_start(args, fmt);
+
+    if (getExternalLogger()){
+      // va_list can only be consumed once. Make a copy so we can use it again
+      va_list copy;
+      va_copy(copy, args);
+
+      // Add the line (since logLineVA doesn't take line)
+      char linedFmt[strlen(fmt) + 10 /*max num of digits for line*/ + 3];
+      sprintf(linedFmt, "%d: %s", line, fmt);
+
+      externalLogger_logLineVA((SF_LOG_LEVEL) level,
+                               sf_filename_from_path(file), linedFmt, copy);
+      va_end(copy);
+    }
+
     log_log_va_list(level, file, line, ns, fmt, args);
     va_end(args);
 }
