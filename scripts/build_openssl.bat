@@ -9,7 +9,7 @@
 :: - vs14 / vs15
 
 @echo off
-set OPENSSL_VERSION=1.1.1i
+set OPENSSL_VERSION=1.1.1k
 call %*
 goto :EOF
 
