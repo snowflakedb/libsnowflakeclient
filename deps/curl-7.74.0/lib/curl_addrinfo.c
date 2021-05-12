@@ -50,6 +50,10 @@
 #  define in_addr_t unsigned long
 #endif
 
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+#include <pthread.h>
+#endif
+
 #include <stddef.h>
 
 #include "curl_addrinfo.h"
@@ -89,6 +93,15 @@ Curl_freeaddrinfo(struct Curl_addrinfo *cahead)
   }
 }
 
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+static void Curl_print_pthread_error(int error)
+{
+  printf("pthread mutex_raw error no is: %d\n", error);
+  if(error == EINVAL) {
+    printf("the mutex has not been properly initialized.\n");
+  }
+}
+#endif
 
 #ifdef HAVE_GETADDRINFO
 /*
@@ -105,6 +118,16 @@ Curl_freeaddrinfo(struct Curl_addrinfo *cahead)
  * whole library, any such call should be 'routed' through this one.
  */
 
+ /*
+ * SNOW-119090 where application is not pthread compatible causing
+ * libnss_file.so being loaded before the pthread and SEGFAULT when
+ * calling getaddrinfo().
+ */
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+static pthread_mutex_t sf_getaddrinfo_mutex = PTHREAD_MUTEX_INITIALIZER;
+char sf_enable_getaddrinfo_lock = 0;
+#endif
+
 int
 Curl_getaddrinfo_ex(const char *nodename,
                     const char *servname,
@@ -118,8 +141,21 @@ Curl_getaddrinfo_ex(const char *nodename,
   struct Curl_addrinfo *ca;
   size_t ss_size;
   int error;
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+  int mutex_error;
+#endif
 
   *result = NULL; /* assume failure */
+
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+  if(sf_enable_getaddrinfo_lock == 1) {
+    mutex_error = pthread_mutex_lock(&sf_getaddrinfo_mutex);
+    if(mutex_error != 0) {
+      Curl_print_pthread_error(mutex_error);
+      return mutex_error;
+    }
+  }
+#endif
 
   error = getaddrinfo(nodename, servname, hints, &aihead);
   if(error)
@@ -188,6 +224,16 @@ Curl_getaddrinfo_ex(const char *nodename,
   /* destroy the addrinfo list */
   if(aihead)
     freeaddrinfo(aihead);
+
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+  if(sf_enable_getaddrinfo_lock == 1) {
+    mutex_error = pthread_mutex_unlock(&sf_getaddrinfo_mutex);
+    if(mutex_error != 0) {
+      Curl_print_pthread_error(mutex_error);
+      error = mutex_error;
+    }
+  }
+#endif
 
   /* if we failed, also destroy the Curl_addrinfo list */
   if(error) {

@@ -108,6 +108,10 @@ typedef void CURL;
 typedef void CURLSH;
 #endif
 
+#ifdef __linux__
+extern char sf_enable_getaddrinfo_lock;
+#endif
+
 /*
  * libcurl external API function linkage decorations.
  */
@@ -2072,6 +2076,12 @@ typedef enum {
   /* HSTS write callback */
   CURLOPT(CURLOPT_HSTSWRITEFUNCTION, CURLOPTTYPE_FUNCTIONPOINT, 303),
   CURLOPT(CURLOPT_HSTSWRITEDATA, CURLOPTTYPE_CBPOINT, 304),
+
+  /* Snowflake options. True if enabling ocsp check */
+  CURLOPT(CURLOPT_SSL_SF_OCSP_CHECK, CURLOPTTYPE_LONG, 305),
+
+  /* Snowflake options. True if soft fail is enabled */
+  CURLOPT(CURLOPT_SSL_SF_OCSP_FAIL_OPEN, CURLOPTTYPE_LONG, 306),
 
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
