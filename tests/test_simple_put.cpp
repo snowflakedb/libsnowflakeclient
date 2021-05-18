@@ -54,7 +54,9 @@ void test_simple_put_core(const char * fileName,
                           bool useDevUrand=false,
                           bool createSubfolder=false,
                           char * tmpDir = nullptr,
-                          bool useS3regionalUrl = false)
+                          bool useS3regionalUrl = false,
+                          int compressLevel = -1,
+                          bool overwrite = false)
 {
   /* init */
   SF_STATUS status;
@@ -111,6 +113,10 @@ void test_simple_put_core(const char * fileName,
     putCommand += std::to_string(customThreshold);
   }
 
+  if (overwrite)
+  {
+      putCommand += " overwrite=true";
+  }
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
     <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
 
@@ -126,6 +132,12 @@ void test_simple_put_core(const char * fileName,
     transConfig.useS3regionalUrl = true;
     transConfigPtr = &transConfig;
   }
+  if(compressLevel > 0)
+  {
+    transConfig.compressLevel = compressLevel;
+    transConfigPtr = &transConfig;
+  }
+
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
   if(useDevUrand){
@@ -518,6 +530,38 @@ void test_simple_put_auto_compress(void **unused)
                        "auto", //source compression
                        true // auto compress
   );
+
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false,
+                       false,
+                       false,
+                       false,
+                       false,
+                       100*1024*1024,
+                       false,
+                       false,
+                       nullptr,
+                       false,
+                       1,
+                       true);
+
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false,
+                       false,
+                       false,
+                       false,
+                       false,
+                       100*1024*1024,
+                       false,
+                       false,
+                       nullptr,
+                       false,
+                       9,
+                       true);
 }
 
 void test_simple_put_config_temp_dir(void **unused)

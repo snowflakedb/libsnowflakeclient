@@ -22,7 +22,8 @@
 
 int Snowflake::Client::Util::CompressionUtil::compressWithGzip(FILE *source,
                                                                FILE *dest,
-                                                               long &destSize)
+                                                               long &destSize,
+                                                               int level)
 {
   SET_BINARY_MODE(source);
   SET_BINARY_MODE(dest);
@@ -37,7 +38,11 @@ int Snowflake::Client::Util::CompressionUtil::compressWithGzip(FILE *source,
   strm.zalloc = Z_NULL;
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
-  ret = deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
+  if ((level < 0) || (level > 9))
+  {
+      level = Z_DEFAULT_COMPRESSION;
+  }
+  ret = deflateInit2(&strm, level, Z_DEFLATED,
                      WINDOW_BIT | GZIP_ENCODING, 8, Z_DEFAULT_STRATEGY);
   if (ret != Z_OK)
     return ret;
