@@ -57,32 +57,7 @@ namespace
     Aws::SDKOptions options;
   };
 
-  struct awsdk_mutex
-  {
-    awsdk_mutex()
-    {
-      _critical_section_init(&sdkMutex);
-    }
-
-    ~awsdk_mutex()
-    {
-      _critical_section_term(&sdkMutex);
-    }
-
-    void lock()
-    {
-      _critical_section_lock(&sdkMutex);
-    }
-
-    void unlock()
-    {
-      _critical_section_unlock(&sdkMutex);
-    }
-
-    SF_CRITICAL_SECTION_HANDLE sdkMutex;
-  };
-
-  awsdk_mutex s_sdkMutex;
+  Snowflake::Client::AwsMutex s_sdkMutex;
   std::unique_ptr<struct awsdk_init> s_awssdk;
 }
 

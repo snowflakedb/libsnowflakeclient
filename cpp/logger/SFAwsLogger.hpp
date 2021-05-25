@@ -6,6 +6,7 @@
 #define SNOWFLAKECLIENT_SFAWSLOGGER_HPP
 
 #include <aws/core/utils/logging/LogSystemInterface.h>
+#include "snowflake/platform.h"
 
 using Aws::Utils::Logging::LogLevel;
 
@@ -13,6 +14,31 @@ namespace Snowflake
 {
 namespace Client
 {
+  struct AwsMutex
+  {
+    AwsMutex()
+    {
+      _critical_section_init(&m_mutex);
+    }
+
+    ~AwsMutex()
+    {
+      _critical_section_term(&m_mutex);
+    }
+
+    void lock()
+    {
+      _critical_section_lock(&m_mutex);
+    }
+
+    void unlock()
+    {
+      _critical_section_unlock(&m_mutex);
+    }
+
+    SF_CRITICAL_SECTION_HANDLE m_mutex;
+  };
+
 class SFAwsLogger : public Aws::Utils::Logging::LogSystemInterface
 {
 public:

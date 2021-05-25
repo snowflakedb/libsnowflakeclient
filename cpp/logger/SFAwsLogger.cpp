@@ -22,32 +22,7 @@ namespace
     return data.find(toSearch, pos);
   }
 
-  struct awslog_mutex
-  {
-    awslog_mutex()
-    {
-      _critical_section_init(&logMutex);
-    }
-
-    ~awslog_mutex()
-    {
-      _critical_section_term(&logMutex);
-    }
-
-    void lock()
-    {
-      _critical_section_lock(&logMutex);
-    }
-
-    void unlock()
-    {
-      _critical_section_unlock(&logMutex);
-    }
-
-    SF_CRITICAL_SECTION_HANDLE logMutex;
-  };
-
-  awslog_mutex s_logMutex;
+  Snowflake::Client::AwsMutex s_logMutex;
 }
 
 Snowflake::Client::SFAwsLogger::SFAwsLogger()
