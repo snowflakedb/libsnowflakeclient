@@ -67,6 +67,26 @@ function zip_file()
     fi
 }
 
+function zip_files()
+{
+    local component_name=$1
+    local component_version=$2
+    local build_type=$3
+    local files=$4
+
+    local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
+
+    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+        local f=$UTILS_DIR/../artifacts/$zip_file_name
+        rm -f $f
+        pushd $DEPENDENCY_DIR/
+            echo tar cfz $f $files
+            tar cfz $f $files
+            tar tvfz $f
+        popd
+    fi
+}
+
 function check_directory()
 {
     local component_name=$1
