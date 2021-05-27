@@ -44,7 +44,10 @@ if [[ "$target" != "Release" ]]; then
 fi
 
 cd $BOOST_SOURCE_DIR
-./bootstrap.sh --prefix=. --with-libraries=filesystem,regex,system
+echo "using gcc : : $CXX ; " >> tools/build/src/user-config.jam
+echo CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
+CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
+echo ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -m64 -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -m64 -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 
 cd $DIR
