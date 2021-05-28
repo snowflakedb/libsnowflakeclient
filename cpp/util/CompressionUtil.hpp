@@ -22,9 +22,10 @@ public:
    * @param source source file to compress
    * @param dest destination file that compress result will write to
    * @param destSize file size of compression result
+   * @param level compression level
    * @return
    */
-  static int compressWithGzip(FILE *source, FILE *dest, long &destSize);
+  static int compressWithGzip(FILE *source, FILE *dest, long &destSize, int level = -1);
 
   /**
    * Compress file with gzip

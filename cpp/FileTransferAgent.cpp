@@ -556,9 +556,14 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   CXX_LOG_DEBUG("Starting file compression");
   
   char tempDir[MAX_PATH]={0};
-  if (m_transferConfig && m_transferConfig->tempDir)
+  int level = -1;
+  if (m_transferConfig)
   {
-    sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+    level = m_transferConfig->compressLevel;
+    if (m_transferConfig->tempDir)
+    {
+      sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+    }
   }
   sf_get_uniq_tmp_dir(tempDir);
   std::string stagingFile(tempDir);
@@ -576,7 +581,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileToUpload.c_str(), -1);
   }
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
-                                          fileMetadata->srcFileToUploadSize);
+                                          fileMetadata->srcFileToUploadSize, level);
   if (ret != 0)
   {
     CXX_LOG_ERROR("Failed to compress source file. Error code: %d", ret);
