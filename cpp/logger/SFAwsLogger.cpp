@@ -21,6 +21,8 @@ namespace
     // Find sub string in given string
     return data.find(toSearch, pos);
   }
+
+  Snowflake::Client::AwsMutex s_logMutex;
 }
 
 Snowflake::Client::SFAwsLogger::SFAwsLogger()
@@ -57,7 +59,10 @@ void Snowflake::Client::SFAwsLogger::LogStream(LogLevel logLevel,
                                                const char *tag,
                                                const Aws::OStringStream &messageStream)
 {
-  std::string logStr = messageStream.rdbuf()->str();
+  std::string logStr;
+  s_logMutex.lock();
+  logStr = messageStream.rdbuf()->str();
+  s_logMutex.unlock();
   if ((std::string::npos != findCaseInsensitive(logStr, "token")) ||
       (std::string::npos != findCaseInsensitive(logStr, "Credential")) ||
       (std::string::npos != findCaseInsensitive(logStr, "Signature")) ||

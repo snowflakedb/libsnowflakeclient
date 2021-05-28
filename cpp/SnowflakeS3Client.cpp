@@ -39,6 +39,28 @@
 #define AWS_TOKEN "AWS_TOKEN"
 #define SFC_DIGEST "sfc-digest"
 
+namespace
+{
+  struct awsdk_init
+  {
+    awsdk_init()
+    {
+      Aws::InitAPI(options);
+      Aws::Utils::Logging::InitializeAWSLogging(
+        Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
+    }
+
+    ~awsdk_init()
+    {
+    }
+
+    Aws::SDKOptions options;
+  };
+
+  Snowflake::Client::AwsMutex s_sdkMutex;
+  std::unique_ptr<struct awsdk_init> s_awssdk;
+}
+
 namespace Snowflake
 {
 namespace Client
@@ -54,9 +76,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   m_uploadThreshold(uploadThreshold),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
-  Aws::Utils::Logging::InitializeAWSLogging(
-    Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
-
   Aws::String caFile;
   if ((transferConfig != nullptr) && (transferConfig->caBundleFile != nullptr))
   {
@@ -73,8 +92,17 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                                      "CA bundle file is empty.");
   }
-  //TODO move this to global init
-  Aws::InitAPI(options);
+
+  if (!s_awssdk)
+  {
+    s_sdkMutex.lock();
+    if (!s_awssdk)
+    {
+      s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
+    }
+    s_sdkMutex.unlock();
+  }
+
   clientConfiguration.region = stageInfo->region;
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
@@ -131,8 +159,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
 SnowflakeS3Client::~SnowflakeS3Client()
 {
   delete s3Client;
-  //TODO move this to global shutdown
-  //Aws::ShutdownAPI(options);
   if (m_threadPool != nullptr)
   {
     delete m_threadPool;
