@@ -20,7 +20,6 @@ jobs:
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v1
-            - uses: lukka/get-cmake@latest
             - name: Build
               shell: bash
               env:
