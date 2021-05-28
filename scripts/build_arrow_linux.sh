@@ -105,7 +105,7 @@ mkdir $ARROW_DEPS_BUILD_DIR/lib
 mkdir $ARROW_CMAKE_BUILD_DIR
 
 cd $ARROW_CMAKE_BUILD_DIR
-$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -m64 -fPIC -pthread" ../
+cmake -E env cmake ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -m64 -fPIC -pthread" ../
 
 make
 make install
