@@ -105,7 +105,9 @@ void log_log(int level, const char *file, int line, const char *ns,
       va_copy(copy, args);
 
       // Add the line (since logLineVA doesn't take line)
-      char linedFmt[strlen(fmt) + 10 /*max num of digits for line*/ + 3];
+      char linedFmt[strlen(fmt) +
+                    NO_OF_CHARS_FOR_LOG_LINE /*max num of digits for line*/ +
+                    3];
       sprintf(linedFmt, "%d: %s", line, fmt);
 
       externalLogger_logLineVA((SF_LOG_LEVEL) level,
