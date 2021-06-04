@@ -1122,6 +1122,15 @@ int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
  */
 int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
 
+
+/**
+ * Sets the external logger (instances of subclasses of Snowflake::Client::ISFLogger)
+ * The overridden method logLineVA of this external logger is called with every logged line
+ *
+ * @param logger instance of subclasses of Snowflake::Client::ISFLogger
+ */
+void STDCALL snowflake_set_external_logger(void *logger);
+
 #ifdef  __cplusplus
 }
 #endif

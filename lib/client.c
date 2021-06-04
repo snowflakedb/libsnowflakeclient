@@ -16,6 +16,7 @@
 #include "results.h"
 #include "error.h"
 #include "chunk_downloader.h"
+#include "../cpp/logger/SFLoggerCWrapper.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
@@ -3317,5 +3318,9 @@ int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts) {
         return -1;
     }
     return ts->scale;
+}
+
+void STDCALL snowflake_set_external_logger(void *logger) {
+  setExternalLogger(logger);
 }
 

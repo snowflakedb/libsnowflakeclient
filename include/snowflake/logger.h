@@ -39,6 +39,11 @@
  */
 #define SF_LOG_TIMESTAMP_FORMAT_COLOR "%s %s%-5s\x1b[0m \x1b[90m%-5s %-16s %4d:\x1b[0m "
 
+/**
+ * Number of chars reserved for log line when formatting the log message
+ */
+#define NO_OF_CHARS_FOR_LOG_LINE 10
+
 typedef void (*log_LockFn)(void *udata, int lock);
 
 typedef enum SF_LOG_LEVEL {

@@ -199,7 +199,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
         cpp/lib/Column.cpp
-        cpp/jwt/jwtWrapper.cpp)
+        cpp/jwt/jwtWrapper.cpp
+	cpp/logger/SFLoggerCWrapper.cpp
+	cpp/logger/SFLoggerCWrapper.h)
 
 if (LINUX)
     # Linux
