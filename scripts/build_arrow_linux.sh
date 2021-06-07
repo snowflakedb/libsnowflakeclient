@@ -68,32 +68,9 @@ else
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
 fi
 arrow_configure_opts+=(
-    "-DARROW_USE_STATIC_CRT=ON"
     "-DCMAKE_C_COMPILER=$CC"
     "-DCMAKE_CXX_COMPILER=$CXX"
     "-DCMAKE_INSTALL_PREFIX=$ARROW_BUILD_DIR"
-    "-DARROW_BOOST_USE_SHARED=OFF"
-    "-DARROW_BUILD_SHARED=OFF"
-    "-DARROW_BUILD_STATIC=ON"
-    "-DBOOST_SOURCE=SYSTEM"
-    "-DARROW_WITH_BROTLI=OFF"
-    "-DARROW_WITH_LZ4=OFF"
-    "-DARROW_WITH_SNAPPY=OFF"
-    "-DARROW_WITH_ZLIB=OFF"
-    "-DARROW_JSON=OFF"
-    "-DARROW_DATASET=OFF"
-    "-DARROW_BUILD_UTILITIES=OFF"
-    "-DARROW_COMPUTE=OFF"
-    "-DARROW_FILESYSTEM=OFF"
-    "-DARROW_USE_GLOG=OFF"
-    "-DARROW_HDFS=OFF"
-    "-DARROW_WITH_BACKTRACE=OFF"
-    "-DARROW_JEMALLOC_USE_SHARED=OFF"
-    "-DARROW_BUILD_TESTS=OFF"
-    "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
-    "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
-    "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
-    "-DBOOST_REGEX_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_regex.a"
 )
 
 rm -rf $ARROW_BUILD_DIR
@@ -105,7 +82,7 @@ mkdir $ARROW_DEPS_BUILD_DIR/lib
 mkdir $ARROW_CMAKE_BUILD_DIR
 
 cd $ARROW_CMAKE_BUILD_DIR
-$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -m64 -fPIC -pthread" ../
+$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} ../
 
 make
 make install
