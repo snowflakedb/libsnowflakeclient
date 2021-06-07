@@ -52,7 +52,7 @@ CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesyste
 
 cd $DIR
 
-if [[ -z "$GITHUB_ACTIONS" ]]; then
+if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $BOOST_SOURCE_DIR
     rm $BOOST_SINGLE_ZIP
 fi

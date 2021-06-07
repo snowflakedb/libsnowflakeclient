@@ -118,6 +118,6 @@ cd $DIR
 echo === zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
 zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
 
-if [[ -z "$GITHUB_ACTIONS" ]]; then
+if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $ARROW_SOURCE_DIR
 fi
