@@ -20,6 +20,12 @@ source $DIR/_init.sh $@
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
+if [[ "$PLATFORM" == "linux" ]]; then
+    source $DIR/build_boost_linux.sh -t $target
+    source $DIR/build_arrow_linux.sh -t $target
+    exit 0
+fi
+
 cd $DIR/../deps-build
 if [ -d "arrow" ]; then rm -rf arrow; fi
 if [ -d "arrow_deps" ]; then rm -rf arrow_deps; fi
@@ -32,8 +38,3 @@ if [ -d "arrow" ]; then mv arrow $DEPENDENCY_DIR; fi
 if [ -d "arrow_deps" ]; then mv arrow_deps $DEPENDENCY_DIR; fi
 if [ -d "boost" ]; then mv boost $DEPENDENCY_DIR; fi
 
-cd $DIR
-if [[ "$PLATFORM" == "linux" ]]; then
-    source $DIR/build_arrow_linux.sh -t $target
-    exit 0
-fi
