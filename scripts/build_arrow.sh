@@ -20,6 +20,12 @@ source $DIR/_init.sh $@
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
+if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" ]]; then
+    source $DIR/build_boost_linux.sh -t $target
+    source $DIR/build_arrow_linux.sh -t $target
+    exit 0
+fi
+
 cd $DIR/../deps-build
 if [ -d "arrow" ]; then rm -rf arrow; fi
 if [ -d "arrow_deps" ]; then rm -rf arrow_deps; fi
