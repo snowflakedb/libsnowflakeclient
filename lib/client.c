@@ -1850,7 +1850,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     }
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_trace("Here is constructed body:\n%s", s_body);
+    log_trace("Here is constructed body test:\n%s", s_body);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
