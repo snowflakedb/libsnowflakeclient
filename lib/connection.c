@@ -324,10 +324,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             // Error is set in the perform function
             break;
         }
-        if (SF_BOOLEAN_TRUE) {
-            json_error = json_copy_string_no_alloc(query_code, *json, "code",
-                                                    QUERYCODE_LEN);
-            log_error("Query code missing: %s", snowflake_cJSON_Print(*json));
+        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code",
+                                                    QUERYCODE_LEN)) !=
+            SF_JSON_ERROR_NONE &&
+            json_error != SF_JSON_ERROR_ITEM_NULL) {
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -445,10 +445,10 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             // Error is set in the perform function
             break;
         }
-        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code",
-                                                    QUERYCODE_LEN)) !=
-            SF_JSON_ERROR_NONE &&
-            json_error != SF_JSON_ERROR_ITEM_NULL) {
+        if (SF_BOOLEAN_TRUE) {
+            json_error = json_copy_string_no_alloc(query_code, *json, "code",
+                                                   QUERYCODE_LEN);
+            log_error("Query code missing: %s", snowflake_cJSON_Print(*json));
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
