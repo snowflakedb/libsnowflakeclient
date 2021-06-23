@@ -1645,7 +1645,10 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
 
     while (current_item)
     {
-        log_trace("current item is: %s",current_item->string);
+        if(strcmp(current_item->string,"rowset") == 0){
+            current_item = current_item->next;
+            continue;
+        }
         if (output_buffer->format)
         {
             size_t i;
