@@ -102,7 +102,7 @@ public:
 
   inline void removeClaim(const std::string &key) override
   {
-    snowflake_cJSON_DeleteItemFromObject(this->json_root_.get(), key.c_str(),cJSON_False);
+    snowflake_cJSON_DeleteItemFromObject(this->json_root_.get(), key.c_str(), cJSON_False);
   }
 
 private:
