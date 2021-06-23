@@ -22,7 +22,6 @@
 
 /* cJSON */
 /* JSON parser in C. */
-#include <snowflake/logger.h>
 /* disable warnings about old C89 functions in MSVC */
 #if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
 #define _CRT_SECURE_NO_DEPRECATE
@@ -2145,7 +2144,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *o
 }
 
 //delete the key word, if recurse = true, it will delete any children contain the key word
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string,cJSON_bool recurse)
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string, cJSON_bool recurse)
 {
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObject(object, string));
     if(recurse){
