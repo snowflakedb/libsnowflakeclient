@@ -330,7 +330,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             cJSON *newJson = snowflake_cJSON_Duplicate(*json,cJSON_True);
             const char* del = "rowset";
             snowflake_cJSON_DeleteItemFromObject(newJson,del,cJSON_True);
-            log_error("Query code missing: %s", snowflake_cJSON_Print(*json));
+            log_error("Query code missing: %s", snowflake_cJSON_Print(newJson));
             //free the memory
             snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
