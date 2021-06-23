@@ -2144,9 +2144,18 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *o
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string)
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string,cJSON_bool recurse)
 {
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObject(object, string));
+    if(recurse){
+        cJSON *child = NULL;
+        child = object->child;
+        while (child != NULL)
+        {
+            snowflake_cJSON_DeleteItemFromObject(child, string, cJSON_True);
+            child = child->next;
+        }
+    }
 }
 
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
