@@ -2144,6 +2144,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *o
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
+//delete the key word, if recurse = true, it will delete any children contain the key word
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string,cJSON_bool recurse)
 {
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObject(object, string));
