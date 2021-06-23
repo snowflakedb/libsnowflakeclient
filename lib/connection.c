@@ -327,9 +327,12 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         if (SF_BOOLEAN_TRUE) {
             json_error = json_copy_string_no_alloc(query_code, *json, "code",
                                                    QUERYCODE_LEN);
+            cJSON *newJson = snowflake_cJSON_Duplicate(*json,cJSON_True);
             const char* del = "rowset";
-            snowflake_cJSON_DeleteItemFromObject(*json,del,cJSON_True);
+            snowflake_cJSON_DeleteItemFromObject(newJson,del,cJSON_True);
             log_error("Query code missing: %s", snowflake_cJSON_Print(*json));
+            //free the memory
+            snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
