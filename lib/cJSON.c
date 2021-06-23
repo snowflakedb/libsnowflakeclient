@@ -22,7 +22,7 @@
 
 /* cJSON */
 /* JSON parser in C. */
-
+#include <snowflake/logger.h>
 /* disable warnings about old C89 functions in MSVC */
 #if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
 #define _CRT_SECURE_NO_DEPRECATE
@@ -1645,6 +1645,7 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
 
     while (current_item)
     {
+        log_trace("current item is: %s",current_item->string);
         if (output_buffer->format)
         {
             size_t i;
