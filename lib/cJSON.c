@@ -2143,8 +2143,9 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *o
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-//Delete the item with target keyword in json object, if recurse = true,
-// it will delete any children json object contain the item with target keyword.
+//Delete the item with target keyword in json object, if recurse = false, it could only
+//delete the current level object's keyword
+// if recurse = true, it will delete any children json object contain the item with target keyword.
 //For example, {"data1" : XXX, "data2" : XXX} and keyword = "data2", it will return {"data1" : XXX}.
 //When recurse = true, {"data1" : {"data2" : XXX, "data3" : XXX}} and key word = "data2", it will return
 // {"data1" : {"data3" : XXX}}
