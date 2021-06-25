@@ -233,7 +233,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromArray(cJSON *array, int whic
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromArray(cJSON *array, int which);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObject(cJSON *object, const char *string);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string);
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string);
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string, cJSON_bool recurse);
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string);
 
 /* Update array items. */

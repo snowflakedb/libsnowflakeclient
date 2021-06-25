@@ -22,7 +22,6 @@
 
 /* cJSON */
 /* JSON parser in C. */
-
 /* disable warnings about old C89 functions in MSVC */
 #if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
 #define _CRT_SECURE_NO_DEPRECATE
@@ -2144,9 +2143,24 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemFromObjectCaseSensitive(cJSON *o
     return snowflake_cJSON_DetachItemViaPointer(object, to_detach);
 }
 
-CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string)
+//Delete the item with target keyword in json object, if recurse = false, it could only
+//delete the current level object's keyword
+// if recurse = true, it will delete any children json object contain the item with target keyword.
+//For example, {"data1" : XXX, "data2" : XXX} and keyword = "data2", it will return {"data1" : XXX}.
+//When recurse = true, {"data1" : {"data2" : XXX, "data3" : XXX}} and key word = "data2", it will return
+// {"data1" : {"data3" : XXX}}
+CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const char *string, cJSON_bool recurse)
 {
     snowflake_cJSON_Delete(snowflake_cJSON_DetachItemFromObject(object, string));
+    if(recurse){
+        cJSON *child = NULL;
+        child = object->child;
+        while (child != NULL)
+        {
+            snowflake_cJSON_DeleteItemFromObject(child, string, cJSON_True);
+            child = child->next;
+        }
+    }
 }
 
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
