@@ -107,8 +107,12 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
-  if(transferConfig != nullptr && transferConfig->useS3regionalUrl)
-  {
+
+  // FIPS mode check
+  if (stageInfo->endPoint != nullptr) {
+    // FIPS mode is enabled, use the endpoint provided by GS directly
+    clientConfiguration.endPointOverride = Aws::String(stageInfo->endPoint);
+  } else if (transferConfig != nullptr && transferConfig->useS3regionalUrl) {
     clientConfiguration.endpointOverride = Aws::String("s3.")
         + Aws::String(clientConfiguration.region)
         + Aws::String(".amazonaws.com");

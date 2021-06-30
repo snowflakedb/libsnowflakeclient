@@ -1285,6 +1285,8 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
     SF_FREE(put_get_response->stage_info->location);
     SF_FREE(put_get_response->stage_info->path);
     SF_FREE(put_get_response->stage_info->region);
+    SF_FREE(put_get_response->stage_info->endPoint);
+    SF_FREE(put_get_response->stage_info->storageAccount);
     SF_FREE(put_get_response->stage_info);
     SF_FREE(put_get_response->enc_mat_put->query_stage_master_key);
     SF_FREE(put_get_response->enc_mat_put);
