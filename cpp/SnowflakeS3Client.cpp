@@ -111,7 +111,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   // FIPS mode check
   if (!(m_stageInfo->endPoint.empty())) {
     // FIPS mode is enabled, use the endpoint provided by GS directly
-    clientConfiguration.endPointOverride = Aws::String(stageInfo->endPoint);
+    clientConfiguration.endpointOverride = Aws::String(stageInfo->endPoint);
   } else if (transferConfig != nullptr && transferConfig->useS3regionalUrl) {
     clientConfiguration.endpointOverride = Aws::String("s3.")
         + Aws::String(clientConfiguration.region)
