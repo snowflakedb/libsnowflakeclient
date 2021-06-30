@@ -1862,7 +1862,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
-        log_debug("Receive response");
+        log_debug("Query execution receives response");
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
@@ -1969,6 +1969,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     "localLocation");
 
             } else {
+                // todo: Deadlock possible?
                 // Set Database info
                 _mutex_lock(&sfstmt->connection->mutex_parameters);
                 /* Set other parameters. Ignore the status */
