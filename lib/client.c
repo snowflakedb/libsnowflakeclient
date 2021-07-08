@@ -727,7 +727,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     char os_version[128];
     sf_os_version(os_version, sizeof(os_version));
 
-    log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
+    log_debug("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
              SF_API_VERSION,
              sf_os_name(),
              os_version);
@@ -1500,12 +1500,10 @@ SF_STATUS STDCALL snowflake_query(
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    log_info("Query prepare done");
     ret = snowflake_execute(sfstmt);
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    log_info("Query execution done");
     return SF_STATUS_SUCCESS;
 }
 
@@ -1729,6 +1727,7 @@ snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size) {
     ret = SF_STATUS_SUCCESS;
 
 cleanup:
+    log_info("Query prepare done");
     return ret;
 }
 
@@ -2106,7 +2105,7 @@ cleanup:
     }
     // Caller should always call result_capture_term to free s_resp,
     // if result_capture is not NULL
-
+    log_info("Query execution done");
     return ret;
 }
 
@@ -2855,7 +2854,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
-          log_info("scale is calculated as %d", scale);
+          log_debug("scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,
@@ -3112,7 +3111,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         nsec = pow10_int64[ts->scale] - nsec;
         sec--;
     }
-    log_info("sec: %lld, nsec: %lld", sec, nsec);
+    log_debug("sec: %lld, nsec: %lld", sec, nsec);
     // Transform nsec to a 9 digit number to store in the timestamp struct
     ts->nsec = (int32) (nsec * pow10_int64[9-ts->scale]);
 
