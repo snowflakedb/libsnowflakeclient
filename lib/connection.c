@@ -352,7 +352,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         }
 
         if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
-            log_debug("Session token expired");
+            log_info("Session token expired");
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -398,7 +398,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_debug("ping pong starting...");
+            log_info("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE)) {
                 // Error came from request up, just break
@@ -426,12 +426,12 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            if(counter_for_code == 1000){
+            if(counter_for_code == 1000 && sf->log_curl_post_call){
                 cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
                 const char* del = "rowset";
                 //delete the sensitive information in case it leaks to customer
                 snowflake_cJSON_DeleteItemFromObject(newJson, del, cJSON_True);
-                log_debug("Query continue in progress, query information: %s", snowflake_cJSON_Print(newJson));
+                log_info("Query continue in progress, query information: %s", snowflake_cJSON_Print(newJson));
                 //free the memory
                 snowflake_cJSON_free(newJson);
                 counter_for_code = 0;
@@ -446,7 +446,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         ret = SF_BOOLEAN_TRUE;
         counter++;
         if(counter == 1000){
-            log_debug("curl post call loop, query code : %s", query_code);
+            log_info("curl post call loop, query code : %s", query_code);
             counter = 0;
         }
     }

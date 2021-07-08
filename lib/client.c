@@ -618,6 +618,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         alloc_buffer_and_copy(&sf->protocol, "https");
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
+        sf->log_curl_post_call = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -931,6 +932,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_PASSCODE_IN_PASSWORD:
             sf->passcode_in_password = *((sf_bool *) value);
             break;
+        case SF_CON_LOG_CURL_POST_CALL:
+            sf->log_curl_post_call = *((sf_bool *) value);
+            break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
             break;
@@ -1022,6 +1026,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_PASSCODE_IN_PASSWORD:
             *value = &sf->passcode_in_password;
+            break;
+        case SF_CON_LOG_CURL_POST_CALL:
+            *value = &sf->log_curl_post_call;
             break;
         case SF_CON_APPLICATION_NAME:
             *value = sf->application_name;
@@ -1493,12 +1500,12 @@ SF_STATUS STDCALL snowflake_query(
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    log_debug("Query prepare done");
+    log_info("Query prepare done");
     ret = snowflake_execute(sfstmt);
     if (ret != SF_STATUS_SUCCESS) {
         return ret;
     }
-    log_debug("Query execution done");
+    log_info("Query execution done");
     return SF_STATUS_SUCCESS;
 }
 
@@ -1829,7 +1836,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             }
         }
     }
-    log_debug("Query executes parameter done");
+    log_info("Query executes parameter done");
 
     if (is_string_empty(sfstmt->connection->directURL) &&
         (is_string_empty(sfstmt->connection->master_token) ||
@@ -1862,7 +1869,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
-        log_debug("Query execution receives response");
+        log_info("Query execution receives response");
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
