@@ -426,7 +426,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            if(counter_for_code == 1000 && sf->log_curl_post_call){
+            if(counter_for_code == 1000 && sf->log_spec_info){
                 cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
                 const char* del = "rowset";
                 //delete the sensitive information in case it leaks to customer
