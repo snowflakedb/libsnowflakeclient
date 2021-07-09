@@ -727,7 +727,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     char os_version[128];
     sf_os_version(os_version, sizeof(os_version));
 
-    log_debug("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
+    log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
              SF_API_VERSION,
              sf_os_name(),
              os_version);
@@ -1748,6 +1748,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         SF_QUERY_RESULT_CAPTURE* result_capture,
                                         sf_bool is_describe_only) {
+    log_info("Start executing");
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
