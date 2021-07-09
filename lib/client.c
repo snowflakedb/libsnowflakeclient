@@ -618,7 +618,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         alloc_buffer_and_copy(&sf->protocol, "https");
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
-        sf->log_spec_info = SF_BOOLEAN_FALSE;
+        sf->log_query_exec_steps_info = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -932,8 +932,8 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_PASSCODE_IN_PASSWORD:
             sf->passcode_in_password = *((sf_bool *) value);
             break;
-        case SF_CON_LOG_SPEC_INFO:
-            sf->log_spec_info = *((sf_bool *) value);
+        case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
+            sf->log_query_exec_steps_info = *((sf_bool *) value);
             break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
@@ -1027,8 +1027,8 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_PASSCODE_IN_PASSWORD:
             *value = &sf->passcode_in_password;
             break;
-        case SF_CON_LOG_SPEC_INFO:
-            *value = &sf->log_spec_info;
+        case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
+            *value = &sf->log_query_exec_steps_info;
             break;
         case SF_CON_APPLICATION_NAME:
             *value = sf->application_name;
