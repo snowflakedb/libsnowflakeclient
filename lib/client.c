@@ -618,6 +618,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         alloc_buffer_and_copy(&sf->protocol, "https");
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
+        sf->log_query_exec_steps_info = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -931,6 +932,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_PASSCODE_IN_PASSWORD:
             sf->passcode_in_password = *((sf_bool *) value);
             break;
+        case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
+            sf->log_query_exec_steps_info = *((sf_bool *) value);
+            break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
             break;
@@ -1022,6 +1026,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_PASSCODE_IN_PASSWORD:
             *value = &sf->passcode_in_password;
+            break;
+        case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
+            *value = &sf->log_query_exec_steps_info;
             break;
         case SF_CON_APPLICATION_NAME:
             *value = sf->application_name;
@@ -1720,6 +1727,7 @@ snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size) {
     ret = SF_STATUS_SUCCESS;
 
 cleanup:
+    log_info("Query prepare done");
     return ret;
 }
 
@@ -1740,6 +1748,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         SF_QUERY_RESULT_CAPTURE* result_capture,
                                         sf_bool is_describe_only) {
+    log_info("Start executing");
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1827,6 +1836,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             }
         }
     }
+    log_info("Query executes parameter done");
 
     if (is_string_empty(sfstmt->connection->directURL) &&
         (is_string_empty(sfstmt->connection->master_token) ||
@@ -1859,6 +1869,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
+        log_info("Query execution receives response");
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
@@ -1965,12 +1976,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     "localLocation");
 
             } else {
+                log_info("lock the parameters");
                 // Set Database info
                 _mutex_lock(&sfstmt->connection->mutex_parameters);
                 /* Set other parameters. Ignore the status */
                 _set_current_objects(sfstmt, data);
                 _set_parameters_session_info(sfstmt->connection, data);
                 _mutex_unlock(&sfstmt->connection->mutex_parameters);
+                log_info("unlock the parameters");
                 int64 stmt_type_id;
                 if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
                     /* failed to get statement type id */
@@ -2094,7 +2107,7 @@ cleanup:
     }
     // Caller should always call result_capture_term to free s_resp,
     // if result_capture is not NULL
-
+    log_info("Query execution done");
     return ret;
 }
 
@@ -2843,7 +2856,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
-          log_info("scale is calculated as %d", scale);
+          log_debug("scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,
@@ -3100,7 +3113,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         nsec = pow10_int64[ts->scale] - nsec;
         sec--;
     }
-    log_info("sec: %lld, nsec: %lld", sec, nsec);
+    log_debug("sec: %lld, nsec: %lld", sec, nsec);
     // Transform nsec to a 9 digit number to store in the timestamp struct
     ts->nsec = (int32) (nsec * pow10_int64[9-ts->scale]);
 

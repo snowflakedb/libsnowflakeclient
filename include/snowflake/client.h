@@ -200,6 +200,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_PROTOCOL,
     SF_CON_PASSCODE,
     SF_CON_PASSCODE_IN_PASSWORD,
+    SF_CON_LOG_QUERY_EXEC_STEPS_INFO,
     SF_CON_APPLICATION_NAME,
     SF_CON_APPLICATION_VERSION,
     SF_CON_AUTHENTICATOR,
@@ -265,6 +266,7 @@ typedef struct SF_CONNECT {
 
     char *passcode;
     sf_bool passcode_in_password;
+    sf_bool log_query_exec_steps_info;
     sf_bool insecure_mode;
     sf_bool autocommit;
     char *timezone;
