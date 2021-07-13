@@ -476,7 +476,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     // Set to 0
     memset(query_code, 0, QUERYCODE_LEN);
-
+    int counter = 0;
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
@@ -511,6 +511,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         }
 
         if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
+            log_info("Session token expired");
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -538,6 +539,13 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         }
 
         ret = SF_BOOLEAN_TRUE;
+        if(sf->log_query_exec_steps_info){
+            if(counter == 1000){
+                log_info("curl get call loop, query code : %s", query_code);
+                counter = 0;
+            }
+            counter++;
+        }
     }
     while (0); // Dummy loop to break out of
 

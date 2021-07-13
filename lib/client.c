@@ -1976,13 +1976,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     "localLocation");
 
             } else {
-                // todo: Deadlock possible?
+                log_info("lock the parameters");
                 // Set Database info
                 _mutex_lock(&sfstmt->connection->mutex_parameters);
                 /* Set other parameters. Ignore the status */
                 _set_current_objects(sfstmt, data);
                 _set_parameters_session_info(sfstmt->connection, data);
                 _mutex_unlock(&sfstmt->connection->mutex_parameters);
+                log_info("unlock the parameters");
                 int64 stmt_type_id;
                 if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
                     /* failed to get statement type id */
