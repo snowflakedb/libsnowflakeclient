@@ -42,6 +42,7 @@ ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
     while (true)
     {
         std::shared_ptr<arrow::RecordBatch> batch;
+        if (!batchReader.ok()) break;
         (void) batchReader.ValueOrDie()->ReadNext(&batch);
         if (batch == nullptr)
             break;
@@ -71,7 +72,7 @@ bool ArrowChunkIterator::next()
     m_currRowIndexInBatch++;
 
     //If its the first row in the batch then initialize the new set of columns.
-    if (m_columns.size() == 0)
+    if ((m_columns.size() == 0) && (m_batchCount > 0))
         this->initColumnChunks();
 
     if (m_currRowIndexInBatch < m_rowCountInBatch)
