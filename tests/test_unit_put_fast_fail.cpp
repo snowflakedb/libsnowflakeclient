@@ -3,7 +3,7 @@
  */
 
 /**
- * Testing Put retry
+ * Testing Put/Get retry
  *
  * Note: s3 client in this class is mocked
  */
@@ -23,6 +23,9 @@
 
 using namespace ::Snowflake::Client;
 int parallelThreads = 1;
+int filesize = 1000;
+int timeOfFail = 2;
+size_t putThreshold = DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD;
 std::vector<std::string> fileList;
 
 std::string getTestFileMatchDir()
@@ -75,13 +78,16 @@ public:
     : Snowflake::Client::IStatementPutGet()
   {
     m_stageInfo.stageType = Snowflake::Client::StageType::MOCKED_STAGE_TYPE;
-    m_stageInfo.location = "fake s3 location";
-    m_encryptionMaterial.emplace_back(
-      (char *)"dvkZi0dkBfrcHr6YxXLRFg==\0",
-      (char *)"1234\0",
-      1234
-    );
-    m_srcLocations.push_back("fake s3 location");
+    m_stageInfo.location = "fake s3 location/";
+    for (int i = 0; i < 10; i++)
+    {
+      m_encryptionMaterial.emplace_back(
+        (char *)"YwBGVekuIpW20JAsAEQDng==\0",
+        (char *)"1234\0",
+        92019674385866
+      );
+      m_srcLocations.push_back("file" + std::to_string(i) + ".csv");
+    }
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
@@ -129,7 +135,7 @@ public:
     putGetParseResponse->command = CommandType::UPLOAD;
     putGetParseResponse->sourceCompression = (char *)"NONE";
     putGetParseResponse->srcLocations = m_srcLocations;
-    putGetParseResponse->threshold = DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD;
+    putGetParseResponse->threshold = putThreshold;
     putGetParseResponse->autoCompress = false;
     putGetParseResponse->parallel = parallelThreads;
     putGetParseResponse->encryptionMaterials = m_encryptionMaterial;
@@ -149,7 +155,7 @@ private:
 class MockedStorageClient : public Snowflake::Client::IStorageClient
 {
 public:
-  MockedStorageClient() : m_putSuccess(false)
+  MockedStorageClient() : m_failedTimes(0)
   {
   }
 
@@ -171,7 +177,12 @@ public:
     std::string fileName = fileMetadata->srcFileName.substr(found+1);
     if(fileName.compare("file2.csv") == 0)
     {
-      return FAILED;
+      if (m_failedTimes < timeOfFail)
+      {
+        m_failedTimes++;
+        return FAILED;
+      }
+      return SUCCESS;
     }
     //Lets make succesful files wait
     //So the failed ones can catch up with retries and set fastFail.
@@ -186,21 +197,43 @@ public:
   virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
     std::string * filePathFull, FileMetadata *fileMetadata)
   {
-      return SUCCESS;
+    fileMetadata->srcFileSize = filesize;
+    std::string iv = "fDnCvS9AFFdXnyM9bsEXcA==";
+    Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
+                         encryptionMetadata.iv.data);
+    fileMetadata->encryptionMetadata.enKekEncoded = "whKlah/HwHnm9RZw/h8gU5PLRg0IOXvwANx7cyLC4Fg=";
+    return SUCCESS;
   }
 
   virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
                                                std::basic_iostream<char>* dataStream)
   {
+    std::size_t found = fileMetadata->srcFileName.find_last_of("/\\");
+    std::string fileName = fileMetadata->srcFileName.substr(found+1);
+    if(fileName.compare("file2.csv") == 0)
+    {
+      if (m_failedTimes < timeOfFail)
+      {
+        m_failedTimes++;
+        return FAILED;
+      }
+      return SUCCESS;
+    }
+    //Lets make succesful files wait
+    //So the failed ones can catch up with retries and set fastFail.
+#ifdef _WIN32
+    Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+#else
+    std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+#endif
     return SUCCESS;
   }
 
 private:
-  bool m_putSuccess;
-
+  int m_failedTimes;
 };
 
-void test_put_fast_fail_core()
+void test_put_fast_fail_core(bool successWithRetry)
 {
   std::string matchDir = getTestFileMatchDir();
   matchDir += "*.csv";
@@ -215,17 +248,99 @@ void test_put_fast_fail_core()
 
   agent.setPutFastFail(true);
 
-  agent.setPutMaxRetries(2);
+  if (successWithRetry)
+  {
+    agent.setPutMaxRetries(timeOfFail);
+  }
+  else
+  {
+    agent.setPutMaxRetries(timeOfFail - 1);
+  }
 
   try
   {
     ITransferResult *result = agent.execute(&cmd);
 
-    assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
+    if (successWithRetry)
+    {
+      assert_int_equal(10, result->getResultSize());
+      while(result->next())
+      {
+        std::string value;
+        result->getColumnAsString(6, value);
+        assert_string_equal("UPLOADED", value.c_str());
+      }
+    }
+	else
+    {
+      assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
+    }
   }
   catch(SnowflakeTransferException &ex)
   {
-    assert_int_equal(ex.getCode(), TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS);
+    if (successWithRetry)
+    {
+      assert_int_equal(ex.getCode(), -1);//If this reaches here then fast fail failed.
+    }
+    else
+    {
+      assert_int_equal(ex.getCode(), TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS);
+    }
+  }
+}
+
+void test_get_fast_fail_core(bool successWithRetry)
+{
+  std::string matchDir = getTestFileMatchDir();
+  IStorageClient * client = new MockedStorageClient();
+  StorageClientFactory::injectMockedClient(client);
+
+  std::string cmd = std::string("get @odbctestStage file://") + matchDir;
+
+  MockedStatementGet mockedStatementget;
+
+  Snowflake::Client::FileTransferAgent agent(&mockedStatementget);
+
+  agent.setGetFastFail(true);
+
+  if (successWithRetry)
+  {
+    agent.setGetMaxRetries(timeOfFail);
+  }
+  else
+  {
+    agent.setGetMaxRetries(timeOfFail - 1);
+  }
+
+  try
+  {
+    ITransferResult *result = agent.execute(&cmd);
+
+    if (successWithRetry)
+    {
+      assert_int_equal(10, result->getResultSize());
+      while(result->next())
+      {
+        std::string value;
+        result->getColumnAsString(2, value);
+        assert_string_equal("DOWNLOADED", value.c_str());
+      }
+    }
+    else
+    {
+      assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
+    }
+  }
+  catch(SnowflakeTransferException &ex)
+  {
+    if (successWithRetry)
+    {
+      assert_int_equal(ex.getCode(), -1);//If this reaches here then fast fail failed.
+    }
+    else
+    {
+      assert_int_equal(ex.getCode(), TransferError::FAST_FAIL_ENABLED_SKIP_DOWNLOADS);
+    }
   }
 }
 
@@ -238,7 +353,8 @@ void test_put_fast_fail_core()
 void test_put_fast_fail_sequential(void **unused)
 {
   parallelThreads = 1;
-  test_put_fast_fail_core();
+  test_put_fast_fail_core(true);
+  test_put_fast_fail_core(false);
 }
 
 /**
@@ -250,7 +366,36 @@ void test_put_fast_fail_sequential(void **unused)
 void test_put_fast_fail_parallel(void **unused)
 {
   parallelThreads = 3;
-  test_put_fast_fail_core();
+  test_put_fast_fail_core(true);
+  test_put_fast_fail_core(false);
+}
+
+void test_put_fast_fail_large_sequential(void **unused)
+{
+  putThreshold = 1;
+  test_put_fast_fail_core(true);
+  test_put_fast_fail_core(false);
+}
+
+void test_get_fast_fail_sequential(void **unused)
+{
+  parallelThreads = 1;
+  test_get_fast_fail_core(true);
+  test_get_fast_fail_core(false);
+}
+
+void test_get_fast_fail_parallel(void **unused)
+{
+  parallelThreads = 3;
+  test_get_fast_fail_core(true);
+  test_get_fast_fail_core(false);
+}
+
+void test_get_fast_fail_large_sequential(void **unused)
+{
+  filesize = 10 * 1024 * 1024;
+  test_get_fast_fail_core(true);
+  test_get_fast_fail_core(false);
 }
 
 static int gr_teardown(void **unused)
@@ -279,6 +424,10 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_put_fast_fail_sequential),
     cmocka_unit_test(test_put_fast_fail_parallel),
+    cmocka_unit_test(test_put_fast_fail_large_sequential),
+    cmocka_unit_test(test_get_fast_fail_sequential),
+    cmocka_unit_test(test_get_fast_fail_parallel),
+    cmocka_unit_test(test_get_fast_fail_large_sequential),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
