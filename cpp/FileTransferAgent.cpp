@@ -676,7 +676,6 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_DOWNLOADS, m_failedTransfers.c_str());
     }
-    throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, m_failedTransfers.c_str());
   }
 }
 
@@ -800,7 +799,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
    fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
 
-   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
+   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::FAILED;
    RetryContext getRetryCtx(fileMetadata->srcFileName, m_maxGetRetries);
    do
    {
@@ -816,14 +815,16 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), std::strerror(errno));
-       throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+       m_executionResults->SetTransferOutCome(outcome, resultIndex);
+       break;
      }
      if (!dstFile.is_open())
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), std::strerror(errno));
-       throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
+       m_executionResults->SetTransferOutCome(outcome, resultIndex);
+       break;
      }
      Crypto::CipherIOStream decryptOutputStream(
        dstFile,
