@@ -327,10 +327,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             // Error is set in the perform function
             break;
         }
-        sf_bool flag = SF_BOOLEAN_TRUE;
-        if (flag) {
-            json_error = json_copy_string_no_alloc(query_code, *json, "code",
-                                                   QUERYCODE_LEN);
+        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code",
+                                                    QUERYCODE_LEN)) !=
+            SF_JSON_ERROR_NONE &&
+            json_error != SF_JSON_ERROR_ITEM_NULL)  {
             //modify the new Json since we need to keep the original json information
             //cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
             //const char* del = "rowset";
