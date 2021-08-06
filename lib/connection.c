@@ -332,13 +332,13 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             json_error = json_copy_string_no_alloc(query_code, *json, "code",
                                                    QUERYCODE_LEN);
             //modify the new Json since we need to keep the original json information
-            cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
-            const char* del = "rowset";
+            //cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
+            //const char* del = "rowset";
             //delete the sensitive information in case it leaks to customer
-            snowflake_cJSON_DeleteItemFromObject(newJson, del, cJSON_True);
-            log_error("Missing query code:\n %s", snowflake_cJSON_Print(newJson));
+            //snowflake_cJSON_DeleteItemFromObject(newJson, del, cJSON_True);
+            log_error("Missing query code:\n %s", snowflake_cJSON_Print(*json));
             //free the memory
-            snowflake_cJSON_free(newJson);
+            //snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
