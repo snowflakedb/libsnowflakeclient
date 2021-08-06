@@ -599,5 +599,10 @@ void SnowflakeS3Client::setMaxRetries(unsigned int maxRetries)
   m_maxRetries = maxRetries;
 }
 
+char * SnowflakeS3Client::GetClientConfigStageEndpoint()
+{
+  return clientConfiguration.endpointOverride.c_str();
+}
+
 }
 }

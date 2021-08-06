@@ -76,7 +76,7 @@ typedef struct SF_STAGE_INFO {
   char *path;
   char *region;
   char *storageAccount; // For Azure only
-  char *endPoint; //For FIPS support
+  char *endPoint; //For FIPS and Azure support
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
 

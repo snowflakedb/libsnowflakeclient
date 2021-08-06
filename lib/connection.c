@@ -674,7 +674,6 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         // make sure that the value is set to NULL to enable
         // NULL checks.
         SF_FREE(*dest);
-        *dest = NULL;
         return SF_JSON_ERROR_ITEM_MISSING;
     } else if (snowflake_cJSON_IsNull(blob)) {
         SF_FREE(*dest);
