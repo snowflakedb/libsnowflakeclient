@@ -406,6 +406,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
         snowflake_cJSON_Delete(*json);
         *json = NULL;
+        log_error("buffer information", buffer.buffer);
         *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
