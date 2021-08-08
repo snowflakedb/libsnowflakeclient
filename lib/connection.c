@@ -341,9 +341,9 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 snowflake_cJSON_DeleteItemFromObject(newJson, dels[i], cJSON_True);
                 i++;
             }
-            log_error("Missing query code:\n %s", snowflake_cJSON_Print(*json));
+            log_error("Missing query code:\n %s", snowflake_cJSON_Print(newJson));
             //free the memory
-            //snowflake_cJSON_free(newJson);
+            snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
