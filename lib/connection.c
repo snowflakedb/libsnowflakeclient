@@ -332,10 +332,15 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL)  {
             //modify the new Json since we need to keep the original json information
-            //cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
-            //const char* del = "rowset";
-            //delete the sensitive information in case it leaks to customer
-            //snowflake_cJSON_DeleteItemFromObject(newJson, del, cJSON_True);
+            cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
+            //delete the sensitive and useless information in case it leaks to customer
+            const char* dels[] = {"parameters", "rowtype", "rowset", 0};
+
+            int i = 0;
+            while (dels[i] != (void *)0){
+                snowflake_cJSON_DeleteItemFromObject(newJson, dels[i], cJSON_True);
+                i++;
+            }
             log_error("Missing query code:\n %s", snowflake_cJSON_Print(*json));
             //free the memory
             //snowflake_cJSON_free(newJson);
