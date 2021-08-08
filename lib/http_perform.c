@@ -242,8 +242,9 @@ sf_bool STDCALL http_perform(CURL *curl,
             log_error("Failed to set writer [%s]", curl_easy_strerror(res));
             break;
         }
-
+        log_error("buffer before %s\n",buffer.buffer);
         res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &buffer);
+        log_error("buffer after %s\n",buffer.buffer);
         if (res != CURLE_OK) {
             log_error("Failed to set write data [%s]", curl_easy_strerror(res));
             break;
@@ -406,7 +407,9 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
         snowflake_cJSON_Delete(*json);
         *json = NULL;
-        log_error("buffer information:\n %s", buffer.buffer);
+        if(!strstr(buffer.buffer, "code")){
+            log_error("buffer information:\n %s", buffer.buffer);
+        }
         *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
