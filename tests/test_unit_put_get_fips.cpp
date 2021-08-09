@@ -23,21 +23,23 @@
 
 using namespace ::Snowflake::Client;
 
-class MockedPutGetAgent : public Snowflake::Client::FileTransferAgent
+class MockedPutGetAgent : public Snowflake::Client::IFileTransferAgent
 {
 public:
     MockedPutGetAgent(IStatementPutGet *statement)
-      : m_stmtPutGet(statement) {}
+      : Snowflake::Client::IStatementPutGet(),
+      m_stmtPutGet{statement} {}
 
-    virtual const char * getStageEndpoint(std::string *command)
+    const char * getStageEndpoint(std::string *command)
     {
-      assert_true(m_stmtPutGet->parsePutGetCommand(&response));
+      assert_true(m_stmtPutGet->parsePutGetCommand(command,
+                                                   &response));
       m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
                                                         (unsigned int) response.parallel,
                                                         response.threshold,
                                                         m_transferConfig,
                                                         m_stmtPutGet);
-      return ((Snowflake::Client::SnowflakeS3Client)m_storageClient)->GetClientConfigStageEndpoint();
+      return ((SnowflakeS3Client)m_storageClient)->GetClientConfigStageEndpoint();
     }
 private:
     IStatementPutGet *m_stmtPutGet;
@@ -64,7 +66,8 @@ public:
       1234);
   }
 
-  virtual bool parsePutGetCommand(PutGetParseResponse *putGetParseResponse)
+  bool parsePutGetCommand(std::string *sql,
+      PutGetParseResponse *putGetParseResponse)
   {
     putGetParseResponse->stageInfo = m_stageInfo;
     putGetParseResponse->command = CommandType::UPLOAD;
@@ -101,7 +104,7 @@ void test_simple_put_stage_endpoint_core(std::string fileName,
 
   MockedPutGetAgent agent(&mockedStatementPut);
 
-  const char *cfg_stageEndpoint = agent.getStageEndpoint();
+  const char *cfg_stageEndpoint = agent.getStageEndpoint(&cmd);
 
   assert_string_equal(stageEndpoint.c_str(), cfg_stageEndpoint);
 }
