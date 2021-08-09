@@ -103,7 +103,7 @@ void test_simple_put_stage_endpoint_core(std::string fileName,
 
   const char *cfg_stageEndpoint = agent.getStageEndpoint();
 
-  assert_string_equal(stageEndpoint, std::string(cfg_stageEndpoint));
+  assert_string_equal(stageEndpoint.c_str(), cfg_stageEndpoint);
 }
 
 void test_simple_put_stage_endpoint(void ** unused)
