@@ -243,6 +243,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
         res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &buffer);
+
         if (res != CURLE_OK) {
             log_error("Failed to set write data [%s]", curl_easy_strerror(res));
             break;
@@ -396,8 +397,8 @@ sf_bool STDCALL http_perform(CURL *curl,
     // We were successful so parse JSON from text
     if (ret) {
         //Check if the "code" attribute exist in the response texts
-        if(!strstr(buffer.buffer, "code")){
-            log_error("code does not exist in the original text");
+        if(strstr(buffer.buffer, "\"code\"")){
+            log_error("code does not exist in the original text\n%s",buffer.buffer);
         }
         if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
