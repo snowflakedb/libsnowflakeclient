@@ -242,6 +242,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             log_error("Failed to set writer [%s]", curl_easy_strerror(res));
             break;
         }
+
         
         res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &buffer);
         if (res != CURLE_OK) {
