@@ -1140,5 +1140,4 @@ void STDCALL create_json_resp_log(cJSON **json){
     log_error("Missing query code:\n %s", snowflake_cJSON_Print(newJson));
     //free the memory
     snowflake_cJSON_free(newJson);
-    free(dels);
 }
