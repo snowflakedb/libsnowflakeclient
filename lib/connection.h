@@ -458,6 +458,8 @@ SF_HEADER* STDCALL sf_header_create();
 
 void STDCALL sf_header_destroy(SF_HEADER *sf_header);
 
+void STDCALL create_json_resp_log(cJSON **json);
+
 #ifdef __cplusplus
 }
 #endif
