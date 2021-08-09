@@ -26,10 +26,10 @@ using namespace ::Snowflake::Client;
 class MockedPutGetAgent : public Snowflake::Client::FileTransferAgent
 {
 public:
-    MockedTransferAgent(IStatementPutGet *statement)
+    MockedPutGetAgent(IStatementPutGet *statement)
       : m_stmtPutGet(statement) {}
 
-    virtual const char * getStageEndpoint(string *command)
+    virtual const char * getStageEndpoint(std::string *command)
     {
       assert_true(m_stmtPutGet->parsePutGetCommand(&response));
       m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
