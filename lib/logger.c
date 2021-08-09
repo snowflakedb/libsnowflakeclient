@@ -103,16 +103,17 @@ void log_log(int level, const char *file, int line, const char *ns,
       // va_list can only be consumed once. Make a copy so we can use it again
       va_list copy;
       va_copy(copy, args);
-
+      size_t linedFmt_length = strlen(fmt) +
+                                  NO_OF_CHARS_FOR_LOG_LINE /*max num of digits for line*/ +
+                                  3;
       // Add the line (since logLineVA doesn't take line)
-      char linedFmt[strlen(fmt) +
-                    NO_OF_CHARS_FOR_LOG_LINE /*max num of digits for line*/ +
-                    3];
+      char* linedFmt = malloc(linedFmt_length);
       sprintf(linedFmt, "%d: %s", line, fmt);
 
       externalLogger_logLineVA((SF_LOG_LEVEL) level,
                                sf_filename_from_path(file), linedFmt, copy);
       va_end(copy);
+      free(linedFmt);
     }
 
     log_log_va_list(level, file, line, ns, fmt, args);
