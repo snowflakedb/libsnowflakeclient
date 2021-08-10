@@ -42,7 +42,24 @@ public:
                                                         response.threshold,
                                                         m_transferConfig,
                                                         m_stmtPutGet);
-      return ((SnowflakeS3Client)m_storageClient)->GetClientConfigStageEndpoint();
+      // Since we know that the object is originally pointing to SnowflakeS3Client
+      // we can assume that the dynamic cast will work. If this test were to be made
+      // generic such we don't know what the underlying object type is this piece of
+      // code might cause a null pointer dereference.
+      return (dynamic_cast<SnowflakeS3Client *>m_storageClient)->GetClientConfigStageEndpoint();
+    }
+
+    // Not used implemented to prevent abstract class
+    virtual ITransferResult *execute(std::string *command)
+    {
+      return nullptr;
+    }
+
+    // Not used implemented to prevent abstract class
+    virtual void setUploadStream(std::basic_iostream<char> * uploadStream,
+                                 size_t dataSize)
+    {
+      return;
     }
 private:
     IStatementPutGet *m_stmtPutGet;
@@ -134,7 +151,7 @@ void test_simple_put_stage_endpoint_with_regional(std::string fileName,
   transferConfig.caBundleFile = nullptr;
   test_simple_put_stage_endpoint_core(fileName,
                                       stageEndpoint,
-                                      &transConfig);
+                                      &transferConfig);
 }
 
 void test_simple_put_stage_endpoint(void ** unused)
