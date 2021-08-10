@@ -17,6 +17,7 @@
 #include "util/Base64.hpp"
 #include "FileTransferExecutionResult.hpp"
 #include "FileTransferAgent.hpp"
+#include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -26,9 +27,11 @@ using namespace ::Snowflake::Client;
 class MockedPutGetAgent : public Snowflake::Client::IFileTransferAgent
 {
 public:
-    MockedPutGetAgent(IStatementPutGet *statement)
-      : Snowflake::Client::IStatementPutGet(),
-      m_stmtPutGet{statement} {}
+    MockedPutGetAgent(IStatementPutGet *statement,
+                      TransferConfig *transferConfig)
+      : Snowflake::Client::IFileTransferAgent(),
+      m_stmtPutGet{statement},
+      m_transferConfig(transferConfig) {}
 
     const char * getStageEndpoint(std::string *command)
     {
@@ -45,6 +48,8 @@ private:
     IStatementPutGet *m_stmtPutGet;
 
     IStorageClient *m_storageClient;
+
+    TransferConfig *m_transferConfig;
 
     PutGetParseResponse response;
 };
@@ -95,24 +100,50 @@ private:
  * @param fileName
  */
 void test_simple_put_stage_endpoint_core(std::string fileName,
-                                std::string stageEndpoint)
+                                         std::string stageEndpoint,
+                                         TransferConfig *transferConfig)
 {
   std::string cmd = std::string("put file://") + fileName + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
 
   MockedStatementPut mockedStatementPut(fileName,
                                         stageEndpoint);
 
-  MockedPutGetAgent agent(&mockedStatementPut);
+  MockedPutGetAgent agent(&mockedStatementPut, transferConfig);
 
   const char *cfg_stageEndpoint = agent.getStageEndpoint(&cmd);
 
   assert_string_equal(stageEndpoint.c_str(), cfg_stageEndpoint);
 }
 
+void test_simple_put_stage_endpoint_no_regional(std::string fileName,
+                                                std::string stageEndpoint)
+{
+  TransferConfig transferConfig;
+  transferConfig.useS3regionalUrl = false;
+  transferConfig.caBundleFile = nullptr;
+  test_simple_put_stage_endpoint_core(fileName,
+                                      stageEndpoint,
+                                      &transferConfig);
+}
+
+void test_simple_put_stage_endpoint_with_regional(std::string fileName,
+                                                std::string stageEndpoint)
+{
+  TransferConfig transferConfig;
+  transferConfig.useS3regionalUrl = true;
+  transferConfig.caBundleFile = nullptr;
+  test_simple_put_stage_endpoint_core(fileName,
+                                      stageEndpoint,
+                                      &transConfig);
+}
+
 void test_simple_put_stage_endpoint(void ** unused)
 {
-  test_simple_put_stage_endpoint_core("small_file.csv.gz",
-                                      "abc.testendpoint.us-east-1.snowflakecomputing.com");
+  test_simple_put_stage_endpoint_no_regional("small_file.csv.gz",
+                                             "abc.testendpoint.us-east-1.snowflakecomputing.com");
+
+  test_simple_put_stage_endpoint_with_regional("small_file.csv.gz",
+                                               "abc.testendpoint.us-east-1.snowflakecomputing.com");
 }
 
 
