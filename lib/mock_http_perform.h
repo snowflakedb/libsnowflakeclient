@@ -18,7 +18,8 @@ extern "C" {
 // This is just the mock interface
 sf_bool STDCALL __wrap_http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                                     char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
-                                    SF_ERROR_STRUCT *error, sf_bool insecure_mode);
+                                    SF_ERROR_STRUCT *error, sf_bool insecure_mode, int8 retry_on_curle_couldnt_connect_count,
+                                    sf_bool log_query_exec_steps_info);
 
 #endif
 
