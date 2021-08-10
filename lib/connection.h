@@ -371,7 +371,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error, sf_bool insecure_mode,
-                             int8 retry_on_curle_couldnt_connect_count);
+                             int8 retry_on_curle_couldnt_connect_count, sf_bool log_query_exec_steps_info);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -457,6 +457,8 @@ sf_bool STDCALL set_tokens(SF_CONNECT *sf, cJSON *data, const char *session_toke
 SF_HEADER* STDCALL sf_header_create();
 
 void STDCALL sf_header_destroy(SF_HEADER *sf_header);
+
+cJSON *STDCALL create_json_resp_log(cJSON **json);
 
 #ifdef __cplusplus
 }
