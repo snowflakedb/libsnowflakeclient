@@ -333,7 +333,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
             //Log the useful response information
-            create_json_resp_log(json);
+            cJSON *newJson = create_json_resp_log(json);
+            log_error("Missing query code in post call:\n %s", snowflake_cJSON_Print(newJson));
+            //free the memory
+            snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -407,7 +410,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
               SF_JSON_ERROR_NONE &&
               json_error != SF_JSON_ERROR_ITEM_NULL) {
                 //Log the useful response information
-                create_json_resp_log(json);
+                cJSON *newJson = create_json_resp_log(json);
+                log_error("Missing query code in post call:\n %s", snowflake_cJSON_Print(newJson));
+                //free the memory
+                snowflake_cJSON_free(newJson);
                 stop = SF_BOOLEAN_TRUE;
                 JSON_ERROR_MSG(json_error, error_msg, "Query code");
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
@@ -416,10 +422,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             }
             if(sf->log_query_exec_steps_info){
                 if(counter_for_code == 1000){
-                    cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
-                    const char* del = "rowset";
-                    //delete the sensitive information in case it leaks to customer
-                    snowflake_cJSON_DeleteItemFromObject(newJson, del, cJSON_True);
+                    //Log the useful response information
+                    cJSON *newJson = create_json_resp_log(json);
                     log_info("Query continue in progress, query information: %s", snowflake_cJSON_Print(newJson));
                     //free the memory
                     snowflake_cJSON_free(newJson);
@@ -471,7 +475,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
-                          sf->log_debug_mod) ||
+                          sf->log_query_exec_steps_info) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -481,7 +485,10 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
             //Log the useful response information
-            create_json_resp_log(json);
+            cJSON *newJson = create_json_resp_log(json);
+            log_error("Missing query code in get call:\n %s", snowflake_cJSON_Print(newJson));
+            //free the memory
+            snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -1128,7 +1135,7 @@ void STDCALL sf_header_destroy(SF_HEADER *sf_header) {
 }
 
 //Help function to log the useful response json data
-void STDCALL create_json_resp_log(cJSON **json){
+cJSON *STDCALL create_json_resp_log(cJSON **json){
     //modify the new Json since we need to keep the original json information
     cJSON *newJson = snowflake_cJSON_Duplicate(*json, cJSON_True);
     //delete the sensitive and useless information in case it leaks to customer
@@ -1139,7 +1146,5 @@ void STDCALL create_json_resp_log(cJSON **json){
         snowflake_cJSON_DeleteItemFromObject(newJson, dels[i], cJSON_True);
         i++;
     }
-    log_error("Missing query code:\n %s", snowflake_cJSON_Print(newJson));
-    //free the memory
-    snowflake_cJSON_free(newJson);
+    return newJson;
 }
