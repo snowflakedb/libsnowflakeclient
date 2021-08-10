@@ -150,7 +150,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
-                             int8 retry_on_curle_couldnt_connect_count) {
+                             int8 retry_on_curle_couldnt_connect_count,
+                             sf_bool log_query_exec_steps_info) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -397,7 +398,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     // We were successful so parse JSON from text
     if (ret) {
         //Check if the "code" attribute exist in the response texts
-        if(!strstr(buffer.buffer, "\"code\"")){
+        if(log_query_exec_steps_info && !strstr(buffer.buffer, "\"code\"")){
             log_error("code does not exist in the original text");
         }
         if (chunk_downloader) {
