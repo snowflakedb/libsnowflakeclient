@@ -46,12 +46,14 @@ find_path(Zstd_INCLUDE_DIR zstd.h
   HINTS
     ${PC_Zstd_INCLUDEDIR}
     ${PC_Zstd_INCLUDE_DIRS}
+    NO_DEFAULT_PATH
 )
 
 find_library(Zstd_LIBRARY NAMES zstd
   HINTS
     ${PC_Zstd_LIBDIR}
     ${PC_Zstd_LIBRARY_DIRS}
+    NO_DEFAULT_PATH
 )
 
 include(FindPackageHandleStandardArgs)
