@@ -46,7 +46,7 @@ public:
       // we can assume that the dynamic cast will work. If this test were to be made
       // generic such we don't know what the underlying object type is this piece of
       // code might cause a null pointer dereference.
-      return (dynamic_cast<SnowflakeS3Client *>m_storageClient)->GetClientConfigStageEndpoint();
+      return (dynamic_cast<SnowflakeS3Client *>(m_storageClient))->GetClientConfigStageEndpoint();
     }
 
     // Not used implemented to prevent abstract class
