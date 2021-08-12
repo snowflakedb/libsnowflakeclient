@@ -186,6 +186,7 @@ static int checkSSDStatus(void);
 static void termCertOCSP();
 static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
+static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
@@ -1533,7 +1534,22 @@ static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)
   setOOBeventdata(OOBEVENTNAME, "OCSPException", 0);
   setOOBeventdata(URGENCY, NULL, 1);
   oobevent = prepareOOBevent(ocsp_log);
+  clearOSCPLogData(ocsp_log);
   return oobevent;
+}
+
+static void clearOSCPLogData(SF_OTD *ocsp_log)
+{
+  if (!ocsp_log) {
+    return;
+  }
+  ocsp_log->event_type[0] = '\0';
+  ocsp_log->event_sub_type[0] = '\0';
+  ocsp_log->sfc_peer_host[0] = '\0';
+  ocsp_log->cert_id[0] = '\0';
+  ocsp_log->ocsp_req_b64[0] = '\0';
+  ocsp_log->ocsp_responder_url[0] = '\0';
+  ocsp_log->error_msg[0] = '\0';
 }
 /**
  * Check one certificate
