@@ -1533,8 +1533,6 @@ static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)
   setOOBeventdata(OOBEVENTNAME, "OCSPException", 0);
   setOOBeventdata(URGENCY, NULL, 1);
   oobevent = prepareOOBevent(ocsp_log);
-  FREE_OCSP_LOG(ocsp_log);
-  ocsp_log = NULL;
   return oobevent;
 }
 /**
@@ -2124,7 +2122,6 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
   CURLcode rs = CURLE_OK;
   char *ocsp_fail_open_env = getenv("SF_OCSP_FAIL_OPEN"); // Testing Only
   SF_FAILOPEN_STATUS ocsp_fail_open = ENABLED;
-  SF_OTD *ocsp_log_data = (SF_OTD *)calloc(1, sizeof(SF_OTD));
 
 
 // These end points are Out of band telemetry end points.
@@ -2135,6 +2132,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
       ) {
     return rs;
   }
+
+  SF_OTD *ocsp_log_data = (SF_OTD *)calloc(1, sizeof(SF_OTD));
 
   if (ocsp_fail_open_env != NULL)
   {
@@ -2183,6 +2182,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
   }
   writeOCSPCacheFile(data);
 end:
+  // Who locate who free and that's the rule
+  FREE_OCSP_LOG(ocsp_log_data);
   infof(data, "End SF OCSP Validation... Result: %d\n", rs);
   return rs;
 }
