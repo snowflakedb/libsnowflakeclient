@@ -21,10 +21,10 @@
 ###########################################################################
 include(FindPackageHandleStandardArgs)
 
-find_path(BROTLI_INCLUDE_DIR "brotli/decode.h" NO_DEFAULT_PATH)
+find_path(BROTLI_INCLUDE_DIR "brotli/decode.h")
 
-find_library(BROTLICOMMON_LIBRARY NAMES brotlicommon NO_DEFAULT_PATH)
-find_library(BROTLIDEC_LIBRARY NAMES brotlidec NO_DEFAULT_PATH)
+find_library(BROTLICOMMON_LIBRARY NAMES brotlicommon)
+find_library(BROTLIDEC_LIBRARY NAMES brotlidec)
 
 find_package_handle_standard_args(BROTLI
     FOUND_VAR
