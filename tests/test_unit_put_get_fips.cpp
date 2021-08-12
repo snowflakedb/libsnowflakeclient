@@ -161,7 +161,7 @@ void test_simple_put_stage_endpoint(void ** unused)
                                              "abc.testendpoint.us-east-1.snowflakecomputing.com");
 
   //test_simple_put_stage_endpoint_with_regional("small_file.csv.gz",
-                                               "abc.testendpoint.us-east-1.snowflakecomputing.com");
+  //                                             "abc.testendpoint.us-east-1.snowflakecomputing.com");
 }
 
 
