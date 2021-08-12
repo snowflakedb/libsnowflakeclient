@@ -44,7 +44,7 @@ curl_configure_opts+=(
     "--disable-shared"
     "--prefix=$LIBCURL_BUILD_DIR"
     "--without-libssh2"
-    "--without-brotil"
+    "--without-brotli"
     "--without-zstd"
     "--disable-rtsp"
     "--disable-ldap"
