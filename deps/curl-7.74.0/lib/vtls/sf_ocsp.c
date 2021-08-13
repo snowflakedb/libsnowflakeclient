@@ -186,6 +186,7 @@ static int checkSSDStatus(void);
 static void termCertOCSP();
 static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
+static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
@@ -1533,9 +1534,22 @@ static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)
   setOOBeventdata(OOBEVENTNAME, "OCSPException", 0);
   setOOBeventdata(URGENCY, NULL, 1);
   oobevent = prepareOOBevent(ocsp_log);
-  FREE_OCSP_LOG(ocsp_log);
-  ocsp_log = NULL;
+  clearOSCPLogData(ocsp_log);
   return oobevent;
+}
+
+static void clearOSCPLogData(SF_OTD *ocsp_log)
+{
+  if (!ocsp_log) {
+    return;
+  }
+  ocsp_log->event_type[0] = '\0';
+  ocsp_log->event_sub_type[0] = '\0';
+  ocsp_log->sfc_peer_host[0] = '\0';
+  ocsp_log->cert_id[0] = '\0';
+  ocsp_log->ocsp_req_b64[0] = '\0';
+  ocsp_log->ocsp_responder_url[0] = '\0';
+  ocsp_log->error_msg[0] = '\0';
 }
 /**
  * Check one certificate
@@ -2124,7 +2138,6 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
   CURLcode rs = CURLE_OK;
   char *ocsp_fail_open_env = getenv("SF_OCSP_FAIL_OPEN"); // Testing Only
   SF_FAILOPEN_STATUS ocsp_fail_open = ENABLED;
-  SF_OTD *ocsp_log_data = (SF_OTD *)calloc(1, sizeof(SF_OTD));
 
 
 // These end points are Out of band telemetry end points.
@@ -2135,6 +2148,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
       ) {
     return rs;
   }
+
+  SF_OTD *ocsp_log_data = (SF_OTD *)calloc(1, sizeof(SF_OTD));
 
   if (ocsp_fail_open_env != NULL)
   {
@@ -2183,6 +2198,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
   }
   writeOCSPCacheFile(data);
 end:
+  // Who locate who free and that's the rule
+  FREE_OCSP_LOG(ocsp_log_data);
   infof(data, "End SF OCSP Validation... Result: %d\n", rs);
   return rs;
 }
