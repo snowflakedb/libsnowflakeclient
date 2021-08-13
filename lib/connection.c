@@ -670,10 +670,18 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
     size_t blob_size;
     cJSON *blob = snowflake_cJSON_GetObjectItem(data, item);
     if (!blob) {
+        // We don't check the return status everywhere
+        // make sure that the value is set to NULL to enable
+        // NULL checks.
+        SF_FREE(*dest);
         return SF_JSON_ERROR_ITEM_MISSING;
     } else if (snowflake_cJSON_IsNull(blob)) {
+        SF_FREE(*dest);
+        *dest = NULL;
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!snowflake_cJSON_IsString(blob)) {
+        SF_FREE(*dest);
+        *dest = NULL;
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         blob_size = strlen(blob->valuestring) + 1;

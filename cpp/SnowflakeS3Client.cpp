@@ -107,8 +107,12 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
   clientConfiguration.connectTimeoutMs = 30000;
-  if(transferConfig != nullptr && transferConfig->useS3regionalUrl)
-  {
+
+  // FIPS mode check
+  if (!(m_stageInfo->endPoint.empty())) {
+    // FIPS mode is enabled, use the endpoint provided by GS directly
+    clientConfiguration.endpointOverride = Aws::String(stageInfo->endPoint);
+  } else if (transferConfig != nullptr && transferConfig->useS3regionalUrl) {
     clientConfiguration.endpointOverride = Aws::String("s3.")
         + Aws::String(clientConfiguration.region)
         + Aws::String(".amazonaws.com");
@@ -593,6 +597,11 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 void SnowflakeS3Client::setMaxRetries(unsigned int maxRetries)
 {
   m_maxRetries = maxRetries;
+}
+
+const char * SnowflakeS3Client::GetClientConfigStageEndpoint()
+{
+  return clientConfiguration.endpointOverride.c_str();
 }
 
 }

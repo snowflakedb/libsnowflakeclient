@@ -116,6 +116,12 @@ public:
   RemoteStorageRequestOutcome GetRemoteFileMetadata(
     std::string * filePathFull, FileMetadata *fileMetadata);
 
+  /*
+   * This is added only to assist in unit tests.
+   * SNOW-373871
+   */
+  const char *GetClientConfigStageEndpoint();
+
 private:
   Aws::SDKOptions options;
 

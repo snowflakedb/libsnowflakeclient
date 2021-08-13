@@ -4,7 +4,7 @@
 #
 if [[ -z "$GITHUB_ACTIONS" ]]; then
     echo "[INFO] Login the internal Docker Resistry"
-    NEXUS_USER=${USERNAME:-jenkins}
+    NEXUS_USER=${USERNAME:-${USER:-jenkins}}
     if [[ -z "$NEXUS_PASSWORD" ]]; then
         echo "[ERROR] Set NEXUS_PASSWORD to your LDAP password to access the internal repository!"
         exit 1

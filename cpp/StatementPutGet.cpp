@@ -74,6 +74,10 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   {
     putGetParseResponse->stageInfo.stageType = StageType::S3;
     putGetParseResponse->stageInfo.region = response->stage_info->region;
+    // FIPS Support
+    if (response->stage_info->endPoint != NULL) {
+      putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
+    }
     putGetParseResponse->stageInfo.credentials = {
             {"AWS_KEY_ID",     response->stage_info->stage_cred->aws_key_id},
             {"AWS_SECRET_KEY", response->stage_info->stage_cred->aws_secret_key},
