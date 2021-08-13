@@ -80,6 +80,13 @@ public:
   {
     m_stageInfo.stageType = StageType::S3;
     m_stageInfo.endPoint = stageEndpoint;
+    char aws_token[] = "AWS_TOKEN";
+    char aws_key_id[] = "AWS_KEY_ID";
+    char aws_secret_key[] = "AWS_SECRET_KEY";
+    m_stageInfo.credentials.insert( {{"AWS_TOKEN", aws_token},
+                                     {"AWS_KEY_ID", aws_key_id},
+                                     {"AWS_SECRET_KEY", aws_secret_key}});
+
     std::string dataDir = TestSetup::getDataDir();
     m_srcLocations.push_back(dataDir + fileName);
     m_encryptionMaterial.emplace_back(
@@ -137,8 +144,9 @@ void test_simple_put_stage_endpoint_no_regional(std::string fileName,
                                                 std::string stageEndpoint)
 {
   TransferConfig transferConfig;
+  char cafile[] = "/tmp/cafile";
   transferConfig.useS3regionalUrl = false;
-  transferConfig.caBundleFile = nullptr;
+  transferConfig.caBundleFile = cafile;
   test_simple_put_stage_endpoint_core(fileName,
                                       stageEndpoint,
                                       &transferConfig);
