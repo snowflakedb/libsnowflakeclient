@@ -2176,7 +2176,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
     ocsp_fail_open = DISABLED;
   }
 
-  sf_otd_set_insecure_mode(1, &ocsp_log_data);
+  sf_otd_set_insecure_mode(0, &ocsp_log_data);
 
   infof(data, "Cert Data Store: %s, Certifcate Chain: %s\n", st, ch);
   initOCSPCacheServer(data);
