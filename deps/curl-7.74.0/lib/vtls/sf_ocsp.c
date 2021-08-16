@@ -2149,7 +2149,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
     return rs;
   }
 
-  SF_OTD *ocsp_log_data = (SF_OTD *)calloc(1, sizeof(SF_OTD));
+  SF_OTD ocsp_log_data;
+  memset(&ocsp_log_data, 0, sizeof(SF_OTD));
 
   if (ocsp_fail_open_env != NULL)
   {
@@ -2175,13 +2176,13 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
     ocsp_fail_open = DISABLED;
   }
 
-  sf_otd_set_insecure_mode(1, ocsp_log_data);
+  sf_otd_set_insecure_mode(0, &ocsp_log_data);
 
   infof(data, "Cert Data Store: %s, Certifcate Chain: %s\n", st, ch);
   initOCSPCacheServer(data);
 
   infof(data, "Start SF OCSP Validation...\n");
-  readOCSPCacheFile(data, ocsp_log_data);
+  readOCSPCacheFile(data, &ocsp_log_data);
 
   numcerts = sk_X509_num(ch);
   infof(data, "Number of certificates in the chain: %d\n", numcerts);
@@ -2190,7 +2191,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
     X509* cert = sk_X509_value(ch, i);
     X509* issuer = sk_X509_value(ch, i+1);
 
-    rs = checkOneCert(cert, issuer, ch, st, ocsp_fail_open, conn, ocsp_log_data);
+    rs = checkOneCert(cert, issuer, ch, st, ocsp_fail_open, conn, &ocsp_log_data);
     if (rs != CURLE_OK)
     {
       goto end;
@@ -2198,8 +2199,6 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn, STACK_OF(X509) *ch, 
   }
   writeOCSPCacheFile(data);
 end:
-  // Who locate who free and that's the rule
-  FREE_OCSP_LOG(ocsp_log_data);
   infof(data, "End SF OCSP Validation... Result: %d\n", rs);
   return rs;
 }
