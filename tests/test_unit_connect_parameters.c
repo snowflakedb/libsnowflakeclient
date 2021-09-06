@@ -151,6 +151,57 @@ void test_connection_parameters_for_global_with_account_dashes(void **unused) {
     SF_FREE(sf);
 }
 
+/**
+ * Test no host
+ */
+void test_connection_parameters_application(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+    memset(sf, 0, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+
+    // application is null
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    // application is empty
+    sf->application = "";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    // valid application names
+    sf->application = "test1234";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    sf->application = "test_1234";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    sf->application = "test-1234";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    sf->application = "test.1234";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+
+    // invalid application names
+    sf->application = "1234test";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+
+    sf->application = "test$A";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+
+    sf->application = "test<script>";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_ERROR_GENERAL);
+
+    SF_FREE(sf);
+}
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -161,6 +212,7 @@ int main(void) {
         cmocka_unit_test(test_connection_parameters_including_region_including_dot),
         cmocka_unit_test(test_connection_parameters_for_global_url_basic),
         cmocka_unit_test(test_connection_parameters_for_global_url_full),
+        cmocka_unit_test(test_connection_parameters_application),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     return ret;

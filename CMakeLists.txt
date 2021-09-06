@@ -215,6 +215,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.cpp
         cpp/lib/ResultSetJson.hpp
         cpp/jwt/jwtWrapper.cpp
+        cpp/util/SnowflakeCommon.cpp
         lib/result_set.h
         lib/result_set_arrow.h
         lib/result_set_json.h)
