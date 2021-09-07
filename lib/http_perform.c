@@ -313,7 +313,9 @@ sf_bool STDCALL http_perform(CURL *curl,
         retry = SF_BOOLEAN_FALSE;
 
         log_trace("Running curl call");
+        log_info("Start curl perform");
         res = curl_easy_perform(curl);
+        log_info("Finish curl perform");
         /* Check for errors */
         if (res != CURLE_OK) {
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
