@@ -378,7 +378,7 @@ static void STDCALL log_term() {
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (is_string_empty(sf->account)) {
-        // Invalid connection
+        // Invalid account
         log_error(ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -389,7 +389,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (is_string_empty(sf->user)) {
-        // Invalid connection
+        // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -400,7 +400,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (is_string_empty(sf->password)) {
-        // Invalid connection
+        // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -411,7 +411,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (SF_BOOLEAN_FALSE == validate_application(sf->application)) {
-        // Invalid connection
+        // Invalid parnter application name
         log_error(ERR_MSG_APPLICATION_PARAMETER_INVALID);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
