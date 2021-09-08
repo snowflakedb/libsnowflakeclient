@@ -46,6 +46,12 @@ static SF_STATUS STDCALL
 _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
                              cJSON *session_info, sf_bool do_validate);
 
+/**
+ * Validate partner application name.
+ * @param application partner application name
+ */
+sf_bool validate_application(const char *application);
+
 #define _SF_STMT_TYPE_DML 0x3000
 #define _SF_STMT_TYPE_INSERT (_SF_STMT_TYPE_DML + 0x100)
 #define _SF_STMT_TYPE_UPDATE (_SF_STMT_TYPE_DML + 0x200)
@@ -372,7 +378,7 @@ static void STDCALL log_term() {
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (is_string_empty(sf->account)) {
-        // Invalid connection
+        // Invalid account
         log_error(ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -383,7 +389,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (is_string_empty(sf->user)) {
-        // Invalid connection
+        // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -394,12 +400,23 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (is_string_empty(sf->password)) {
-        // Invalid connection
+        // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
             ERR_MSG_PASSWORD_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if (SF_BOOLEAN_FALSE == validate_application(sf->application)) {
+        // Invalid parnter application name
+        log_error(ERR_MSG_APPLICATION_PARAMETER_INVALID);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_APPLICATION_PARAMETER_INVALID,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -609,6 +626,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
+        sf->application = NULL;
 
         _mutex_init(&sf->mutex_parameters);
 
@@ -674,6 +692,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->authenticator);
     SF_FREE(sf->application_name);
     SF_FREE(sf->application_version);
+    SF_FREE(sf->application);
     SF_FREE(sf->timezone);
     SF_FREE(sf->service_name);
     SF_FREE(sf->query_result_format);
@@ -749,7 +768,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     // Create body
     body = create_auth_json_body(
         sf,
-        sf->application_name,
+        sf->application,
         sf->application_name,
         sf->application_version,
         sf->timezone,
@@ -920,6 +939,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_APPLICATION_VERSION:
             alloc_buffer_and_copy(&sf->application_version, value);
             break;
+        case SF_CON_APPLICATION:
+          alloc_buffer_and_copy(&sf->application, value);
+          break;
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
@@ -1012,6 +1034,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_APPLICATION_VERSION:
             *value = sf->application_version;
             break;
+        case SF_CON_APPLICATION:
+          *value = sf->application;
+          break;
         case SF_CON_AUTHENTICATOR:
             *value = sf->authenticator;
             break;
