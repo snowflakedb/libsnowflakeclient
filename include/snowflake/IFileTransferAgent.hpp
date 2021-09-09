@@ -86,6 +86,18 @@ public:
    */
   virtual void setPutMaxRetries(int maxRetries){};
 
+  /**
+  * Enable fast fail for get by setting it to true.
+  * @param getFastFail
+  */
+  virtual void setGetFastFail(bool getFastFail) {};
+
+  /**
+  * Set max number of retries for get fails
+  * @param maxRetries: max number of retries.
+  */
+  virtual void setGetMaxRetries(int maxRetries) {};
+
 };
 
 }

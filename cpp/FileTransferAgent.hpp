@@ -173,18 +173,34 @@ public:
 
   virtual void setPutFastFail(bool fastFail)
   {
-    CXX_LOG_DEBUG("Setting fastFail to %d", fastFail);
-    m_fastFail = fastFail;
+    CXX_LOG_DEBUG("Setting put fastFail to %d", fastFail);
+    m_putFastFail = fastFail;
   }
 
   virtual bool isPutFastFailEnabled(void)
   {
-    return m_fastFail;
+    return m_putFastFail;
   }
 
   virtual void setPutMaxRetries(int maxRetries)
   {
      m_maxPutRetries = maxRetries;
+  }
+
+  virtual void setGetFastFail(bool fastFail)
+  {
+    CXX_LOG_DEBUG("Setting get fastFail to %d", fastFail);
+    m_getFastFail = fastFail;
+  }
+
+  virtual bool isGetFastFailEnabled(void)
+  {
+    return m_getFastFail;
+  }
+
+  virtual void setGetMaxRetries(int maxRetries)
+  {
+    m_maxGetRetries = maxRetries;
   }
 
 private:
@@ -306,10 +322,17 @@ private:
   /// Whether to use /dev/urandom or /dev/random;
   bool m_useDevUrand;
 
-  /// fastFail, fail all the puts if one of the put fails in the wild char put upload.
-  bool m_fastFail;
+  /// Put fastFail, fail all the puts if one of the put fails in the wild char put upload.
+  bool m_putFastFail;
 
   int m_maxPutRetries;
+
+  /// Get fastFail, fail all the gets if one of the file get fails.
+  bool m_getFastFail;
+
+  int m_maxGetRetries;
+
+  std::string m_failedTransfers;
 };
 }
 }

@@ -20,6 +20,7 @@ static const char * errorMsgFmts[] = {
   "Failed to read %s file on disk, code %d", // FILE_OPEN_ERROR
   "Failed to upload file %s",  //FAILED_TO_TRANSFER
   "Fast fail enabled, Skipped uploading rest of the files", //FAST_FAIL_ENABLED_SKIP_UPLOADS
+  "Fast fail enabled, Skipped downloading rest of the files", //FAST_FAIL_ENABLED_SKIP_DOWNLOADS
 };
 
 Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(
