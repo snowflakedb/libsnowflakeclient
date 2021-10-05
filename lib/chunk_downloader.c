@@ -225,7 +225,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 thread_count,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error,
-                                                   sf_bool insecure_mode) {
+                                                   sf_bool insecure_mode,
+                                                   sf_bool enable_downloader_notify) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
@@ -258,6 +259,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->has_error = SF_BOOLEAN_FALSE;
     chunk_downloader->sf_error = sf_error;
     chunk_downloader->insecure_mode = insecure_mode;
+    chunk_downloader->enable_downloader_notify = enable_downloader_notify;
 
     // Initialize chunk_headers or qrmk
     if (chunk_headers) {
@@ -440,7 +442,9 @@ static void * chunk_downloader_thread(void *downloader) {
                 chunk_downloader->has_error = SF_BOOLEAN_TRUE;
             }
             _rwlock_wrunlock(&chunk_downloader->attr_lock);
-            _cond_signal(&chunk_downloader->consumer_cond);
+            if(chunk_downloader->enable_downloader_notify){
+                _cond_signal(&chunk_downloader->consumer_cond);
+            }
             log_info("download chunk failed, error : %s", err.msg);
             break;
         }

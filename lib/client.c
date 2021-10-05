@@ -619,6 +619,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->log_query_exec_steps_info = SF_BOOLEAN_FALSE;
+        sf->enable_downloader_notify = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -935,6 +936,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
             sf->log_query_exec_steps_info = *((sf_bool *) value);
             break;
+        case SF_CON_ENABLE_DOWNLOADER_NOTIFY:
+            sf->enable_downloader_notify = *((sf_bool *) value);
+            break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
             break;
@@ -1029,6 +1033,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
             *value = &sf->log_query_exec_steps_info;
+            break;
+        case SF_CON_ENABLE_DOWNLOADER_NOTIFY:
+            *value = &sf->enable_downloader_notify;
             break;
         case SF_CON_APPLICATION_NAME:
             *value = sf->application_name;
@@ -2054,7 +2061,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                 2, // thread count
                                 4, // fetch slot
                                 &sfstmt->error,
-                                sfstmt->connection->insecure_mode);
+                                sfstmt->connection->insecure_mode,
+                                sfstmt->connection->enable_downloader_notify);
                         if (!sfstmt->chunk_downloader) {
                             log_warn("Unable to create chunk downloader");
                             // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
