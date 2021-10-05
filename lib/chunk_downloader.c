@@ -440,6 +440,7 @@ static void * chunk_downloader_thread(void *downloader) {
                 chunk_downloader->has_error = SF_BOOLEAN_TRUE;
             }
             _rwlock_wrunlock(&chunk_downloader->attr_lock);
+            _cond_signal(&chunk_downloader->consumer_cond);
             log_info("download chunk failed, error : %s", err.msg);
             break;
         }
