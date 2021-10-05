@@ -1507,7 +1507,9 @@ SF_STATUS STDCALL snowflake_query(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
+SF_STATUS STDCALL snowflake_fetch(SF_STMT* sfstmt) { return snowflake_fetch_with_error(sfstmt, NULL); }
+
+SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* error) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1557,13 +1559,18 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         sfstmt->chunk_downloader->queue[index].chunk == NULL &&
                         !get_shutdown_or_error(
                             sfstmt->chunk_downloader)) {
+                        log_debug("snowflake_fetch: waiting for chunk_downloader");
                         _cond_wait(
                             &sfstmt->chunk_downloader->consumer_cond,
                             &sfstmt->chunk_downloader->queue_lock);
+                        log_debug("snowflake_fetch: waiting for chunk_downloader done");
                     }
 
                     if (get_error(sfstmt->chunk_downloader)) {
                         get_chunk_success = SF_BOOLEAN_FALSE;
+                        if (error) {
+                            copy_snowflake_error(error, sfstmt->chunk_downloader->sf_error);
+                        }
                         break;
                     } else if (get_shutdown(sfstmt->chunk_downloader)) {
                         get_chunk_success = SF_BOOLEAN_FALSE;
@@ -2039,6 +2046,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         json_copy_string(&qrmk, data, "qrmk");
                         chunk_headers = snowflake_cJSON_GetObjectItem(data,
                                                                       "chunkHeaders");
+                        log_info("download chunk");
                         sfstmt->chunk_downloader = chunk_downloader_init(
                                 qrmk,
                                 chunk_headers,
@@ -2048,6 +2056,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                 &sfstmt->error,
                                 sfstmt->connection->insecure_mode);
                         if (!sfstmt->chunk_downloader) {
+                            log_warn("Unable to create chunk downloader");
                             // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
                             goto cleanup;
                         }

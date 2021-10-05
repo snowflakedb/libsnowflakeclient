@@ -312,8 +312,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Be optimistic
         retry = SF_BOOLEAN_FALSE;
 
-        log_trace("Running curl call");
-        log_info("Start curl perform");
+        log_info("Running curl call");
         res = curl_easy_perform(curl);
         log_info("Finish curl perform");
         /* Check for errors */
@@ -399,6 +398,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     // We were successful so parse JSON from text
     if (ret) {
+        log_info("Succeed to get the response from curl_easy_performance");
         //Check if the "code" attribute exist in the response texts
         if(log_query_exec_steps_info && !strstr(buffer.buffer, "\"code\"")){
             log_error("code does not exist in the original text");

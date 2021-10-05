@@ -711,6 +711,15 @@ SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt);
 
 /**
+ * Fetches the next row for the statement and stores on the bound buffer
+ * if any. Noop if no buffer is bound.
+ *
+ * @param sfstmt SNOWFLAKE_RESULTSET context.
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* error);
+
+/**
  * Returns the number of binding parameters in the statement.
  *
  * @param sfstmt SNOWFLAKE_STMT context.

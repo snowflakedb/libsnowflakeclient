@@ -300,7 +300,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
             SET_SNOWFLAKE_ERROR(sf_error, SF_STATUS_ERROR_PTHREAD, error_msg, "");
             return NULL;
         }
-
+        log_info("Initialize the chunk_download thread");
         chunk_downloader->thread_count++;
     }
 
@@ -440,6 +440,7 @@ static void * chunk_downloader_thread(void *downloader) {
                 chunk_downloader->has_error = SF_BOOLEAN_TRUE;
             }
             _rwlock_wrunlock(&chunk_downloader->attr_lock);
+            log_info("download chunk failed, error : %s", err.msg);
             break;
         }
 
