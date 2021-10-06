@@ -312,7 +312,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Be optimistic
         retry = SF_BOOLEAN_FALSE;
 
-        log_info("Running curl call");
+        log_debug("Running curl call");
         res = curl_easy_perform(curl);
         unsigned int seeds = time(NULL) ^ pthread_self();
         if (chunk_downloader) {

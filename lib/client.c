@@ -1530,7 +1530,9 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
         return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
-    clear_snowflake_error(error);
+    if(error != NULL && sfstmt->connection->enable_downloader_notify){
+        clear_snowflake_error(error);
+    }
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
@@ -1575,8 +1577,9 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
                     if (get_error(sfstmt->chunk_downloader)) {
                         get_chunk_success = SF_BOOLEAN_FALSE;
-                        if (error) {
+                        if (sfstmt->connection->enable_downloader_notify && error) {
                             copy_snowflake_error(error, sfstmt->chunk_downloader->sf_error);
+                            log_error("chunk downloader fails with error : %s", error->msg);
                         }
                         break;
                     } else if (get_shutdown(sfstmt->chunk_downloader)) {
