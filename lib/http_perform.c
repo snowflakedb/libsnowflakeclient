@@ -314,12 +314,6 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         log_debug("Running curl call");
         res = curl_easy_perform(curl);
-        unsigned int seeds = time(NULL) ^ pthread_self();
-        if (chunk_downloader) {
-          unsigned seed_res = rand_r(&seeds) % 3;
-          res = (CURLcode)seed_res;
-          log_info("error message : %s", curl_easy_strerror(res));
-        }
         log_info("Finish curl perform");
         /* Check for errors */
         if (res != CURLE_OK) {

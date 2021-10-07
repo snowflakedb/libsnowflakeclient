@@ -1530,7 +1530,7 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
         return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
-    if(error != NULL && sfstmt->connection->enable_downloader_notify){
+    if(sfstmt->connection->enable_downloader_notify && error != NULL){
         clear_snowflake_error(error);
     }
     clear_snowflake_error(&sfstmt->error);

@@ -442,6 +442,8 @@ static void * chunk_downloader_thread(void *downloader) {
                 chunk_downloader->has_error = SF_BOOLEAN_TRUE;
             }
             _rwlock_wrunlock(&chunk_downloader->attr_lock);
+            log_warn("download chunk failed, error : %s", err.msg);
+            // Notify the consumer that we have issue to download the chunk
             if(chunk_downloader->enable_downloader_notify){
                 _cond_signal(&chunk_downloader->consumer_cond);
             }
