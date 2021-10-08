@@ -478,16 +478,17 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->log_query_exec_steps_info) ||
             !*json) {
             // Error is set in the perform function
-            log_error("curl_post_call: http_perform failed");
+            log_error("curl_get_call: http_perform failed");
             break;
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code",
                                                     QUERYCODE_LEN)) !=
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
+            log_error("curl_post_call: Bad json response - missing query code");
             //Log the useful response information
             cJSON *newJson = create_json_resp_log(json);
-            log_error("Missing query code in get call:\n %s", snowflake_cJSON_Print(newJson));
+            log_error("curl_get_call: Json response:\n %s", snowflake_cJSON_Print(newJson));
             //free the memory
             snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
@@ -503,7 +504,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         }
 
         if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
-            log_info("curl_post_call: Session token expired");
+            log_info("curl_get_call: Session token expired");
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -520,13 +521,13 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             }
         }
         else if (strcmp(query_code, SESSION_TOKEN_INVALID_CODE) == 0) {
-            log_error("curl_post_call: SESSION_TOKEN_INVALID_CODE");
+            log_error("curl_get_call: SESSION_TOKEN_INVALID_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_SESSION_TOKEN_INVALID, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
         }
         else if (strcmp(query_code, GONE_SESSION_CODE) == 0) {
-            log_error("curl_post_call: GONE_SESSION_CODE");
+            log_error("curl_get_call: GONE_SESSION_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_GONE_SESSION, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
