@@ -321,6 +321,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
+                          sf->retry_on_all_curl_errors,
                           sf->log_query_exec_steps_info) ||
             !*json) {
             // Error is set in the perform function
@@ -331,8 +332,9 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
             //Log the useful response information
+            log_error("curl_post_call: Bad json response - missing query code");
             cJSON *newJson = create_json_resp_log(json);
-            log_error("Missing query code in post call:\n %s", snowflake_cJSON_Print(newJson));
+            log_error("curl_post_call: Json response:\n %s", snowflake_cJSON_Print(newJson));
             //free the memory
             snowflake_cJSON_free(newJson);
             JSON_ERROR_MSG(json_error, error_msg, "Query code");
@@ -348,7 +350,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         }
 
         if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
-            log_info("Session token expired");
+            log_info("curl_post_call: Session token expired");
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -368,11 +370,13 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             }
         }
         else if (strcmp(query_code, SESSION_TOKEN_INVALID_CODE) == 0) {
+            log_error("curl_post_call: SESSION_TOKEN_INVALID_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_SESSION_TOKEN_INVALID, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
         }
         else if (strcmp(query_code, GONE_SESSION_CODE) == 0) {
+            log_error("curl_post_call: GONE_SESSION_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_GONE_SESSION, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
@@ -387,6 +391,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             data = snowflake_cJSON_GetObjectItem(*json, "data");
             if (json_copy_string(&result_url, data, "getResultUrl") !=
                 SF_JSON_ERROR_NONE) {
+                log_error("curl_post_call: Bad json, missing resultUrl");
                 stop = SF_BOOLEAN_TRUE;
                 JSON_ERROR_MSG(json_error, error_msg, "Result URL");
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
@@ -394,9 +399,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_info("ping pong starting...");
+            log_info("curl_post_call: ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE)) {
+                log_error("curl_post_call: ping pong failed, error_code %d, msg %s", error->error_code, error->msg);
                 // Error came from request up, just break
                 stop = SF_BOOLEAN_TRUE;
                 break;
@@ -408,8 +414,10 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
               SF_JSON_ERROR_NONE &&
               json_error != SF_JSON_ERROR_ITEM_NULL) {
                 //Log the useful response information
+                log_error("curl_post_call: Bad json response - missing query code after ping pong");
                 cJSON *newJson = create_json_resp_log(json);
-                log_error("Missing query code in post call:\n %s", snowflake_cJSON_Print(newJson));
+                log_error("curl_post_call: Json response:\n %s", snowflake_cJSON_Print(newJson));
+
                 //free the memory
                 snowflake_cJSON_free(newJson);
                 stop = SF_BOOLEAN_TRUE;
@@ -421,6 +429,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             if(sf->log_query_exec_steps_info){
                 if(counter_for_code == 1000){
                     //Log the useful response information
+                    log_info("Query continue progress");
                     cJSON *newJson = create_json_resp_log(json);
                     log_info("Query continue in progress, query information: %s", snowflake_cJSON_Print(newJson));
                     //free the memory
@@ -465,9 +474,11 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
+                          sf->retry_on_all_curl_errors,
                           sf->log_query_exec_steps_info) ||
             !*json) {
             // Error is set in the perform function
+            log_error("curl_post_call: http_perform failed");
             break;
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code",
@@ -492,7 +503,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         }
 
         if (strcmp(query_code, SESSION_TOKEN_EXPIRED_CODE) == 0) {
-            log_info("Session token expired");
+            log_info("curl_post_call: Session token expired");
             if (!renew_session(curl, sf, error)) {
                 // Error is set in renew session function
                 break;
@@ -509,11 +520,13 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
             }
         }
         else if (strcmp(query_code, SESSION_TOKEN_INVALID_CODE) == 0) {
+            log_error("curl_post_call: SESSION_TOKEN_INVALID_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_SESSION_TOKEN_INVALID, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
         }
         else if (strcmp(query_code, GONE_SESSION_CODE) == 0) {
+            log_error("curl_post_call: GONE_SESSION_CODE");
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CONNECTION_NOT_EXIST,
                                 ERR_MSG_GONE_SESSION, SF_SQLSTATE_CONNECTION_NOT_EXIST);
             break;
@@ -735,7 +748,7 @@ json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
         if (dest[dest_size - 1] != '\0') {
             dest[dest_size - 1] = '\0';
         }
-        log_debug("Item and Value; %s: %s", item, dest);
+        log_trace("Item and Value; %s: %s", item, dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -752,7 +765,7 @@ json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         *dest = snowflake_cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
-        log_debug("Item and Value; %s: %i", item, *dest);
+        log_trace("Item and Value; %s: %i", item, *dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -769,7 +782,7 @@ json_copy_int(int64 *dest, cJSON *data, const char *item) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
         *dest = (int64) blob->valuedouble;
-        log_debug("Item and Value; %s: %i", item, *dest);
+        log_trace("Item and Value; %s: %i", item, *dest);
     }
 
     return SF_JSON_ERROR_NONE;
@@ -860,7 +873,7 @@ ARRAY_LIST *json_get_object_keys(const cJSON *item) {
 size_t
 json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     size_t data_size = size * nmemb;
-    log_debug("Curl response size: %zu", data_size);
+    log_trace("Curl response size: %zu", data_size);
     raw_json->buffer = (char *) SF_REALLOC(raw_json->buffer,
                                            raw_json->size + data_size + 1);
     // Start copying where last null terminator existed

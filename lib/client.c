@@ -644,6 +644,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
+        sf->retry_on_all_curl_errors = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -975,6 +976,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
             break;
+        case SF_RETRY_ON_ALL_CURL_ERRORS:
+            sf->retry_on_all_curl_errors = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1075,6 +1079,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             *value = &sf->retry_on_curle_couldnt_connect_count;
+            break;
+        case SF_RETRY_ON_ALL_CURL_ERRORS
+            *value = &sf->retry_on_all_curl_errors;
             break;
         case SF_QUERY_RESULT_TYPE:
             *value = &sf->query_result_format;
@@ -1544,6 +1551,10 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
     // Check for chunk_downloader error
     if (sfstmt->chunk_downloader && get_error(sfstmt->chunk_downloader)) {
+        if (sfstmt->connection->enable_downloader_notify && error) {
+            copy_snowflake_error(error, sfstmt->chunk_downloader->sf_error);
+            log_error("chunk downloader fails with error : %s", error->msg);
+        }
         goto cleanup;
     }
 
@@ -2106,7 +2117,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             goto cleanup;
         }
     } else {
-        log_trace("Connection failed");
+        log_warn("Connection failed: code %d, msg %s", sfstmt->error.error_code , sfstmt->error.msg);
         // Set the return status to the error code
         // that we got from the connection layer
         ret = sfstmt->error.error_code;
