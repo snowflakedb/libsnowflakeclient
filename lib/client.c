@@ -938,7 +938,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->log_query_exec_steps_info = *((sf_bool *) value);
             break;
         case SF_CON_ENABLE_DOWNLOADER_NOTIFY:
-            sf->enable_downloader_notify = *((sf_bool *) value);
+            sf->enable_downloader_notify = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
@@ -1080,7 +1080,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             *value = &sf->retry_on_curle_couldnt_connect_count;
             break;
-        case SF_RETRY_ON_ALL_CURL_ERRORS
+        case SF_RETRY_ON_ALL_CURL_ERRORS:
             *value = &sf->retry_on_all_curl_errors;
             break;
         case SF_QUERY_RESULT_TYPE:
@@ -2076,7 +2076,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                 4, // fetch slot
                                 &sfstmt->error,
                                 sfstmt->connection->insecure_mode,
-                                sfstmt->connection->enable_downloader_notify);
+                                sfstmt->connection->enable_downloader_notify,
+                                sfstmt->connection->retry_on_all_curl_errors);
                         if (!sfstmt->chunk_downloader) {
                             log_warn("Unable to create chunk downloader");
                             // Unable to create chunk downloader. Error is set in chunk_downloader_init function.

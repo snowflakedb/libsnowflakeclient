@@ -485,7 +485,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                                                     QUERYCODE_LEN)) !=
             SF_JSON_ERROR_NONE &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
-            log_error("curl_post_call: Bad json response - missing query code");
+            log_error("curl_get_call: Bad json response - missing query code");
             //Log the useful response information
             cJSON *newJson = create_json_resp_log(json);
             log_error("curl_get_call: Json response:\n %s", snowflake_cJSON_Print(newJson));

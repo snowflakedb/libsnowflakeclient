@@ -65,6 +65,9 @@ struct SF_CHUNK_DOWNLOADER {
 
     //enable notify the main thread when download fails
     sf_bool enable_downloader_notify;
+
+    //enable retry on all curl error when call http_perform
+    sf_bool retry_on_all_curl_error;
 };
 
 SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
@@ -74,7 +77,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error,
                                                    sf_bool insecure_mode,
-                                                   sf_bool enable_downloader_notify);
+                                                   sf_bool enable_downloader_notify,
+                                                   sf_bool retry_on_all_curl_errors);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
