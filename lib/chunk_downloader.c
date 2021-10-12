@@ -304,7 +304,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
             SET_SNOWFLAKE_ERROR(sf_error, SF_STATUS_ERROR_PTHREAD, error_msg, "");
             return NULL;
         }
-        log_info("Initialize the chunk_download thread");
+        log_info("Initialize the chunk_download thread %u", thread_count);
         chunk_downloader->thread_count++;
     }
 
