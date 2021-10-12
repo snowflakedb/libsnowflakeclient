@@ -1537,9 +1537,6 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
         return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
-    if(sfstmt->connection->enable_downloader_notify && error != NULL){
-        clear_snowflake_error(error);
-    }
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
@@ -3367,5 +3364,9 @@ int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts) {
 
 void STDCALL snowflake_set_external_logger(void *logger) {
   setExternalLogger(logger);
+}
+
+void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error){
+    clear_snowflake_error(error);
 }
 

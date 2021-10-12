@@ -1138,6 +1138,13 @@ int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
  */
 int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
 
+/**
+ * This is a helper function to clear the error and we could call it in XP since
+ * we could not directly call error.h functions
+ * @param error
+ */
+void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error);
+
 
 /**
  * Sets the external logger (instances of subclasses of Snowflake::Client::ISFLogger)
