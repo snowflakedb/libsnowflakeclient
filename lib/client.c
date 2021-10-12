@@ -1537,6 +1537,7 @@ SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* e
 
         return SF_STATUS_ERROR_ATTEMPT_TO_RETRIEVE_FORCE_ARROW;
     }
+
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     sf_bool get_chunk_success = SF_BOOLEAN_TRUE;
