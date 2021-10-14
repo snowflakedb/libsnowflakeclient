@@ -619,6 +619,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->log_query_exec_steps_info = SF_BOOLEAN_FALSE;
+        sf->enable_downloader_notify = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -643,6 +644,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
+        sf->retry_on_all_curl_errors = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -935,6 +937,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
             sf->log_query_exec_steps_info = *((sf_bool *) value);
             break;
+        case SF_CON_ENABLE_DOWNLOADER_NOTIFY:
+            sf->enable_downloader_notify = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_APPLICATION_NAME:
             alloc_buffer_and_copy(&sf->application_name, value);
             break;
@@ -970,6 +975,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
+            break;
+        case SF_RETRY_ON_ALL_CURL_ERRORS:
+            sf->retry_on_all_curl_errors = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1030,6 +1038,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_LOG_QUERY_EXEC_STEPS_INFO:
             *value = &sf->log_query_exec_steps_info;
             break;
+        case SF_CON_ENABLE_DOWNLOADER_NOTIFY:
+            *value = &sf->enable_downloader_notify;
+            break;
         case SF_CON_APPLICATION_NAME:
             *value = sf->application_name;
             break;
@@ -1068,6 +1079,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             *value = &sf->retry_on_curle_couldnt_connect_count;
+            break;
+        case SF_RETRY_ON_ALL_CURL_ERRORS:
+            *value = &sf->retry_on_all_curl_errors;
             break;
         case SF_QUERY_RESULT_TYPE:
             *value = &sf->query_result_format;
@@ -1507,7 +1521,9 @@ SF_STATUS STDCALL snowflake_query(
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
+SF_STATUS STDCALL snowflake_fetch(SF_STMT* sfstmt) { return snowflake_fetch_with_error(sfstmt, NULL); }
+
+SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* error) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
@@ -1533,6 +1549,10 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
 
     // Check for chunk_downloader error
     if (sfstmt->chunk_downloader && get_error(sfstmt->chunk_downloader)) {
+        if (sfstmt->connection->enable_downloader_notify && error) {
+            copy_snowflake_error(error, sfstmt->chunk_downloader->sf_error);
+            log_error("chunk downloader fails with error : %s", error->msg);
+        }
         goto cleanup;
     }
 
@@ -1557,13 +1577,19 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         sfstmt->chunk_downloader->queue[index].chunk == NULL &&
                         !get_shutdown_or_error(
                             sfstmt->chunk_downloader)) {
+                        log_debug("snowflake_fetch: waiting for chunk_downloader");
                         _cond_wait(
                             &sfstmt->chunk_downloader->consumer_cond,
                             &sfstmt->chunk_downloader->queue_lock);
+                        log_debug("snowflake_fetch: waiting for chunk_downloader done");
                     }
 
                     if (get_error(sfstmt->chunk_downloader)) {
                         get_chunk_success = SF_BOOLEAN_FALSE;
+                        if (sfstmt->connection->enable_downloader_notify && error) {
+                            copy_snowflake_error(error, sfstmt->chunk_downloader->sf_error);
+                            log_error("chunk downloader fails with error : %s", error->msg);
+                        }
                         break;
                     } else if (get_shutdown(sfstmt->chunk_downloader)) {
                         get_chunk_success = SF_BOOLEAN_FALSE;
@@ -2039,6 +2065,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         json_copy_string(&qrmk, data, "qrmk");
                         chunk_headers = snowflake_cJSON_GetObjectItem(data,
                                                                       "chunkHeaders");
+                        log_info("download chunk");
                         sfstmt->chunk_downloader = chunk_downloader_init(
                                 qrmk,
                                 chunk_headers,
@@ -2046,8 +2073,11 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                 2, // thread count
                                 4, // fetch slot
                                 &sfstmt->error,
-                                sfstmt->connection->insecure_mode);
+                                sfstmt->connection->insecure_mode,
+                                sfstmt->connection->enable_downloader_notify,
+                                sfstmt->connection->retry_on_all_curl_errors);
                         if (!sfstmt->chunk_downloader) {
+                            log_warn("Unable to create chunk downloader");
                             // Unable to create chunk downloader. Error is set in chunk_downloader_init function.
                             goto cleanup;
                         }
@@ -2086,7 +2116,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             goto cleanup;
         }
     } else {
-        log_trace("Connection failed");
+        log_warn("Connection failed: code %d, msg %s", sfstmt->error.error_code , sfstmt->error.msg);
         // Set the return status to the error code
         // that we got from the connection layer
         ret = sfstmt->error.error_code;
@@ -3335,5 +3365,9 @@ int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts) {
 
 void STDCALL snowflake_set_external_logger(void *logger) {
   setExternalLogger(logger);
+}
+
+void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error){
+    clear_snowflake_error(error);
 }
 

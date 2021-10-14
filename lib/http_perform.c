@@ -151,6 +151,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
                              int8 retry_on_curle_couldnt_connect_count,
+                             sf_bool retry_on_all_curl_errors,
                              sf_bool log_query_exec_steps_info) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
@@ -312,14 +313,13 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Be optimistic
         retry = SF_BOOLEAN_FALSE;
 
-        log_trace("Running curl call");
-        log_info("Start curl perform");
+        log_debug("Running curl_easy_perform");
         res = curl_easy_perform(curl);
-        log_info("Finish curl perform");
+        log_info("curl_easy_perform finish");
         /* Check for errors */
         if (res != CURLE_OK) {
-          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
-                                              retry_on_curle_couldnt_connect_count)
+          if ((retry_on_all_curl_errors || res == CURLE_COULDNT_CONNECT) &&
+          curl_retry_ctx.retry_count < retry_on_curle_couldnt_connect_count)
             {
               retry = SF_BOOLEAN_TRUE;
               uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
@@ -358,17 +358,15 @@ sf_bool STDCALL http_perform(CURL *curl,
                 char msg[1024];
                 sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
                            http_code);
+                log_error(msg);
                 SET_SNOWFLAKE_ERROR(error,
                                     SF_STATUS_ERROR_RETRY,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
-              }
-              if (retry &&
-                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
-              )
+              } else if ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
-                log_debug(
+                log_info(
                     "curl_easy_perform() Got retryable error http code %d, retry count  %d "
                     "will retry after %d seconds", http_code,
                     curl_retry_ctx.retry_count,
@@ -380,6 +378,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                 sb_sprintf(msg, sizeof(msg),
                            "Exceeded the retry_timeout , http code: [%d]",
                            http_code);
+                log_error(msg);
                 SET_SNOWFLAKE_ERROR(error,
                                     SF_STATUS_ERROR_RETRY,
                                     msg,
@@ -399,6 +398,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     // We were successful so parse JSON from text
     if (ret) {
+        log_info("Succeed to get the response from curl_easy_performance");
         //Check if the "code" attribute exist in the response texts
         if(log_query_exec_steps_info && !strstr(buffer.buffer, "\"code\"")){
             log_error("code does not exist in the original text");

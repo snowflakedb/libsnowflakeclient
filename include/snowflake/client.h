@@ -201,6 +201,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_PASSCODE,
     SF_CON_PASSCODE_IN_PASSWORD,
     SF_CON_LOG_QUERY_EXEC_STEPS_INFO,
+    SF_CON_ENABLE_DOWNLOADER_NOTIFY,
     SF_CON_APPLICATION_NAME,
     SF_CON_APPLICATION_VERSION,
     SF_CON_AUTHENTICATOR,
@@ -214,6 +215,7 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
+    SF_RETRY_ON_ALL_CURL_ERRORS,
     SF_QUERY_RESULT_TYPE
 } SF_ATTRIBUTE;
 
@@ -267,6 +269,7 @@ typedef struct SF_CONNECT {
     char *passcode;
     sf_bool passcode_in_password;
     sf_bool log_query_exec_steps_info;
+    sf_bool enable_downloader_notify;
     sf_bool insecure_mode;
     sf_bool autocommit;
     char *timezone;
@@ -301,6 +304,8 @@ typedef struct SF_CONNECT {
     char *direct_query_token;
 
     int8 retry_on_curle_couldnt_connect_count;
+
+    sf_bool retry_on_all_curl_errors;
 
     // Error
     SF_ERROR_STRUCT error;
@@ -709,6 +714,15 @@ SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt);
+
+/**
+ * Fetches the next row for the statement and stores on the bound buffer
+ * if any. Noop if no buffer is bound.
+ *
+ * @param sfstmt SNOWFLAKE_RESULTSET context.
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_fetch_with_error(SF_STMT* sfstmt, SF_ERROR_STRUCT* error);
 
 /**
  * Returns the number of binding parameters in the statement.
@@ -1123,6 +1137,13 @@ int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
  * @return Returns -1 if ts is NULL, otherwise scale from timestamp (0-9)
  */
 int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
+
+/**
+ * This is a helper function to clear the error and we could call it in XP since
+ * we could not directly call error.h functions
+ * @param error
+ */
+void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error);
 
 
 /**

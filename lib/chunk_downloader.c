@@ -201,12 +201,12 @@ cleanup:
     return ret;
 }
 
-sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, SF_ERROR_STRUCT *error, sf_bool insecure_mode) {
+sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, SF_ERROR_STRUCT *error, sf_bool insecure_mode, sf_bool retry_on_all_curl_errors) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     curl = curl_easy_init();
 
-    if (!curl || !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT, SF_BOOLEAN_TRUE, error, insecure_mode, 0, SF_BOOLEAN_FALSE)) {
+    if (!curl || !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT, SF_BOOLEAN_TRUE, error, insecure_mode, 0, retry_on_all_curl_errors, SF_BOOLEAN_FALSE)) {
         // Error set in perform function
         goto cleanup;
     }
@@ -225,7 +225,9 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 thread_count,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error,
-                                                   sf_bool insecure_mode) {
+                                                   sf_bool insecure_mode,
+                                                   sf_bool enable_downloader_notify,
+                                                   sf_bool retry_on_all_curl_errors) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
@@ -258,6 +260,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->has_error = SF_BOOLEAN_FALSE;
     chunk_downloader->sf_error = sf_error;
     chunk_downloader->insecure_mode = insecure_mode;
+    chunk_downloader->enable_downloader_notify = enable_downloader_notify;
+    chunk_downloader->retry_on_all_curl_error = retry_on_all_curl_errors;
 
     // Initialize chunk_headers or qrmk
     if (chunk_headers) {
@@ -300,7 +304,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
             SET_SNOWFLAKE_ERROR(sf_error, SF_STATUS_ERROR_PTHREAD, error_msg, "");
             return NULL;
         }
-
+        log_info("Initialize the chunk_download thread %u", thread_count);
         chunk_downloader->thread_count++;
     }
 
@@ -433,13 +437,18 @@ static void * chunk_downloader_thread(void *downloader) {
 
         // Download chunk
         if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
-                            &chunk, &err, chunk_downloader->insecure_mode)) {
+                            &chunk, &err, chunk_downloader->insecure_mode, chunk_downloader->retry_on_all_curl_error)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {
                 copy_snowflake_error(chunk_downloader->sf_error, &err);
                 chunk_downloader->has_error = SF_BOOLEAN_TRUE;
             }
             _rwlock_wrunlock(&chunk_downloader->attr_lock);
+            log_warn("download chunk failed, error : %s", err.msg);
+            // Notify the consumer that we have issue to download the chunk
+            if(chunk_downloader->enable_downloader_notify){
+                _cond_signal(&chunk_downloader->consumer_cond);
+            }
             break;
         }
 
