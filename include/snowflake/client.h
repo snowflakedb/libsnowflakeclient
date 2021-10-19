@@ -214,6 +214,9 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
+    SF_ENABLE_STORED_PROC_CLIENT_CURL_TIMEOUT,
+    SF_STORED_PROC_CLIENT_CURL_TIMEOUT_SECOND,
+    SF_STORED_PROC_CLIENT_CURL_CONNECTION_TIMEOUT_SECOND,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_RETRY_ON_ALL_CURL_ERRORS,
     SF_QUERY_RESULT_TYPE
@@ -304,6 +307,10 @@ typedef struct SF_CONNECT {
     char *direct_query_token;
 
     int8 retry_on_curle_couldnt_connect_count;
+
+    int8 enable_stored_proc_client_curl_timeout;
+    long stored_proc_client_curl_timeout_second;
+    long stored_proc_client_curl_connection_timeout_second;
 
     sf_bool retry_on_all_curl_errors;
 

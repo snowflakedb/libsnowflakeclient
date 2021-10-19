@@ -643,6 +643,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL_param = NULL;
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
+        sf->enable_stored_proc_client_curl_timeout = 0;
+        sf->stored_proc_client_curl_timeout_second = 90;
+        sf->stored_proc_client_curl_connection_timeout_second = 10;
         sf->retry_on_curle_couldnt_connect_count = 0;
         sf->retry_on_all_curl_errors = SF_BOOLEAN_FALSE;
     }
@@ -973,6 +976,15 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_DIR_QUERY_TOKEN:
             alloc_buffer_and_copy(&sf->direct_query_token, value);
             break;
+        case SF_ENABLE_STORED_PROC_CLIENT_CURL_TIMEOUT:
+            sf->enable_stored_proc_client_curl_timeout = value ? *((int8 *) value) : 0;
+            break;
+        case SF_STORED_PROC_CLIENT_CURL_TIMEOUT_SECOND:
+            sf->stored_proc_client_curl_timeout_second = value ? *((long *) value) : 90;
+            break;
+        case SF_STORED_PROC_CLIENT_CURL_CONNECTION_TIMEOUT_SECOND:
+            sf->stored_proc_client_curl_connection_timeout_second = value ? *((long *) value) : 10;
+            break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
             break;
@@ -1076,6 +1088,15 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_DIR_QUERY_TOKEN:
             *value = sf->direct_query_token;
+            break;
+        case SF_ENABLE_STORED_PROC_CLIENT_CURL_TIMEOUT:
+            *value = &sf->enable_stored_proc_client_curl_timeout;
+            break;
+        case SF_STORED_PROC_CLIENT_CURL_TIMEOUT_SECOND:
+            *value = &sf->stored_proc_client_curl_timeout_second;
+            break;
+        case SF_STORED_PROC_CLIENT_CURL_CONNECTION_TIMEOUT_SECOND:
+            *value = &sf->stored_proc_client_curl_connection_timeout_second;
             break;
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             *value = &sf->retry_on_curle_couldnt_connect_count;
@@ -2075,7 +2096,10 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                 &sfstmt->error,
                                 sfstmt->connection->insecure_mode,
                                 sfstmt->connection->enable_downloader_notify,
-                                sfstmt->connection->retry_on_all_curl_errors);
+                                sfstmt->connection->retry_on_all_curl_errors,
+                                sfstmt->connection->enable_stored_proc_client_curl_timeout,
+                                sfstmt->connection->stored_proc_client_curl_timeout_second,
+                                sfstmt->connection->stored_proc_client_curl_connection_timeout_second);
                         if (!sfstmt->chunk_downloader) {
                             log_warn("Unable to create chunk downloader");
                             // Unable to create chunk downloader. Error is set in chunk_downloader_init function.

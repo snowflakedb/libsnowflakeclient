@@ -68,6 +68,11 @@ struct SF_CHUNK_DOWNLOADER {
 
     //enable retry on all curl error when call http_perform
     sf_bool retry_on_all_curl_error;
+
+    //enable timeout in curl performance
+    int8 enable_stored_proc_client_curl_timeout;
+    long stored_proc_client_curl_timeout_second;
+    long stored_proc_client_curl_connection_timeout_second;
 };
 
 SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
@@ -78,7 +83,10 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    SF_ERROR_STRUCT *sf_error,
                                                    sf_bool insecure_mode,
                                                    sf_bool enable_downloader_notify,
-                                                   sf_bool retry_on_all_curl_errors);
+                                                   sf_bool retry_on_all_curl_errors,
+                                                   int8 enable_stored_proc_client_curl_timeout,
+                                                   long stored_proc_client_curl_timeout_second,
+                                                   long stored_proc_client_curl_connection_second);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
