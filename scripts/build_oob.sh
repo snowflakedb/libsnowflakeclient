@@ -33,7 +33,7 @@ oob_config_opts+=(
     "--prefix=$OOB_BUILD_DIR"
 )
 cd $OOB_SOURCE_DIR
-export CURL_DIR=curl-7.74.0
+export CURL_DIR=curl-7.78.0
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     if [[ -z "$XP_BUILD" ]] ; then
