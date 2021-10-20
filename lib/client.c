@@ -1760,10 +1760,10 @@ snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size) {
     _snowflake_stmt_reset(sfstmt);
     // Set sql_text to command
     if (command_size == 0) {
-        log_debug("Command size is 0, using to strlen to find query length.");
+        log_trace("Command size is 0, using to strlen to find query length.");
         sql_text_size += strlen(command);
     } else {
-        log_debug("Command size non-zero, setting as sql text size.");
+        log_trace("Command size non-zero, setting as sql text size.");
         sql_text_size += command_size;
     }
     sfstmt->sql_text = (char *) SF_CALLOC(1, sql_text_size);
