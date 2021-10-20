@@ -242,6 +242,8 @@ struct ssl_connect_data {
 };
 
 struct ssl_primary_config {
+  bool sf_ocsp_check;    /* set TRUE if client side ocsp check is enabled */
+  bool sf_ocsp_failopen; /* set FALSE if failopen has to be disabled.*/
   long version;          /* what version the client wants to use */
   long version_max;      /* max supported version the client wants to use*/
   char *CApath;          /* certificate dir (doesn't work on windows) */

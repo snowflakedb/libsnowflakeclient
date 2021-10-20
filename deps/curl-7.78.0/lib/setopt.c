@@ -1965,6 +1965,23 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     data->set.doh_verifystatus = (0 != va_arg(param, long)) ?
       TRUE : FALSE;
     break;
+  case CURLOPT_SSL_SF_OCSP_CHECK:
+    data->set.ssl.primary.sf_ocsp_check = (0 != va_arg(param, long)) ?
+                                         TRUE : FALSE;
+    /* Update the current connection ssl_config. */
+    if(data->conn) {
+      data->conn->ssl_config.sf_ocsp_check =
+        data->set.ssl.primary.sf_ocsp_check;
+    }
+    break;
+  case CURLOPT_SSL_SF_OCSP_FAIL_OPEN:
+    data->set.ssl.primary.sf_ocsp_failopen = (0 != va_arg(param, long)) ?
+            TRUE:FALSE;
+    if(data->conn) {
+      data->conn->ssl_config.sf_ocsp_failopen =
+              data->set.ssl.primary.sf_ocsp_failopen;
+    }
+    break;
   case CURLOPT_SSL_CTX_FUNCTION:
     /*
      * Set a SSL_CTX callback

@@ -55,7 +55,9 @@ LIB_VTLS_CFILES =           \
   vtls/schannel_verify.c    \
   vtls/sectransp.c          \
   vtls/vtls.c               \
-  vtls/wolfssl.c
+  vtls/wolfssl.c            \
+  vtls/sf_ocsp.c            \
+  vtls/sf_cJSON.c
 
 LIB_VTLS_HFILES =           \
   vtls/bearssl.h            \
@@ -71,7 +73,9 @@ LIB_VTLS_HFILES =           \
   vtls/schannel.h           \
   vtls/sectransp.h          \
   vtls/vtls.h               \
-  vtls/wolfssl.h
+  vtls/wolfssl.h            \
+  vtls/sf_ocsp.h            \
+  vtls/sf_cJSON.h
 
 LIB_VQUIC_CFILES = \
   vquic/ngtcp2.c   \
