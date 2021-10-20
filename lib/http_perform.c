@@ -152,6 +152,9 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool insecure_mode,
                              int8 retry_on_curle_couldnt_connect_count,
                              sf_bool retry_on_all_curl_errors,
+                             int8 enable_stored_proc_client_curl_timeout,
+                             long stored_proc_client_curl_timeout_second,
+                             long stored_proc_client_curl_connection_timeout_second,
                              sf_bool log_query_exec_steps_info) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
@@ -274,6 +277,37 @@ sf_bool STDCALL http_perform(CURL *curl,
             log_error("Unable to set SSL Version [%s]",
                       curl_easy_strerror(res));
             break;
+        }
+
+        if (enable_stored_proc_client_curl_timeout > 0) {
+            // CURL_TIMEOUT is risky since it will timeout after a specific time even the execution not
+            // finish. In general, we should not disable it
+            if (enable_stored_proc_client_curl_timeout > 1) {
+                log_debug("Client Curl Timeout in : %ld", stored_proc_client_curl_timeout_second);
+                res = curl_easy_setopt(curl, CURLOPT_TIMEOUT, stored_proc_client_curl_timeout_second);
+                if (res != CURLE_OK) {
+                    log_error("Unable to set timeout [%s]", curl_easy_strerror(res));
+                    break;
+                }
+
+                // In unix-like systems, when libcurl uses the standard name resolver, a SIGALRM is raised
+                // during name resolution which libcurl thinks is the timeout alarm
+                // CURLOPT_TIMEOUT might cause signals to be used unless
+                // CURLOPT_NOSIGNAL is set.
+                res = curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+                if (res != CURLE_OK) {
+                    log_error("Unable to set NOSIGNAL [%s]", curl_easy_strerror(res));
+                    break;
+                }
+            }
+            // CURL_CONNECTION_TIMEOUT only limits the connection phase, it has no impact once it has
+            // connected
+            log_debug("Client Curl Connection timeout in : %ld", stored_proc_client_curl_connection_timeout_second);
+            res = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, stored_proc_client_curl_connection_timeout_second);
+            if (res != CURLE_OK) {
+                log_error("Unable to set connection timeout [%s]", curl_easy_strerror(res));
+                break;
+            }
         }
 
 #ifndef _WIN32

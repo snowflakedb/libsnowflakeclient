@@ -373,6 +373,9 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              char *body, cJSON **json, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error, sf_bool insecure_mode,
                              int8 retry_on_curle_couldnt_connect_count, sf_bool retry_on_all_curl_errors,
+                             int8 enable_stored_proc_client_curl_timeout,
+                             long stored_proc_client_curl_timeout_second,
+                             long stored_proc_client_curl_connection_timeout_second,
                              sf_bool log_query_exec_steps_info);
 
 /**
