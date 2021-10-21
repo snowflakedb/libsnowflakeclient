@@ -3870,7 +3870,7 @@ static CURLcode servercert(struct Curl_easy *data,
     ch = SSL_get_peer_cert_chain(backend->handle);
     if (!ch)
     {
-      failf(data, "Out of memory. Failed to get certificate chain\n");
+      failf(data, "Out of memory. Failed to get certificate chain");
       X509_free(backend->server_cert);
       backend->server_cert = NULL;
       return CURLE_OUT_OF_MEMORY;
@@ -3878,7 +3878,7 @@ static CURLcode servercert(struct Curl_easy *data,
     st = SSL_CTX_get_cert_store(backend->ctx);
     if (!st)
     {
-      failf(data, "NULL data store\n");
+      failf(data, "NULL data store");
       X509_free(backend->server_cert);
       backend->server_cert = NULL;
       return CURLE_SSL_INVALIDCERTSTATUS;

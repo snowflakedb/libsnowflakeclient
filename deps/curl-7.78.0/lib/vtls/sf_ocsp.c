@@ -396,7 +396,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
 
   if (br == NULL)
   {
-    failf(data, "Failed to get OCSP response basic\n");
+    failf(data, "Failed to get OCSP response basic");
     sf_otd_set_event_sub_type(OCSP_RESPONSE_LOAD_FAILURE, ocsp_log_data);
     result = CERT_STATUS_INVALID;
     goto end;
@@ -407,7 +407,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
   if (ocsp_res <= 0)
   {
     failf(data,
-          "OCSP response signature verification failed. ret: %s\n",
+          "OCSP response signature verification failed. ret: %s",
           ossl_strerror(ERR_get_error(), error_buffer,
                         sizeof(error_buffer)));
     sf_otd_set_event_sub_type(OCSP_RESPONSE_SIGNATURE_INVALID, ocsp_log_data);
@@ -415,7 +415,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     goto end;
   }
   infof(data,
-        "OCSP response signature verification success. ret: %s\n",
+        "OCSP response signature verification success. ret: %s",
         ossl_strerror(ERR_get_error(), error_buffer,
                       sizeof(error_buffer)));
 
@@ -446,12 +446,12 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       long validity = (pday*24*60*60 + psec)/100;
       skewInSec = validity > skewInSec ? validity : skewInSec;
       infof(data, "Diff between thisupd and nextupd "
-              "day: %d, sec: %d, Tolerant skew: %d\n", pday, psec,
+              "day: %d, sec: %d, Tolerant skew: %d", pday, psec,
               skewInSec);
     }
     else
     {
-      failf(data, "Invalid structure of ASN1_GENERALIZEDTIME\n");
+      failf(data, "Invalid structure of ASN1_GENERALIZEDTIME");
       result = CERT_STATUS_INVALID;
       goto end;
     }
@@ -462,7 +462,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
      */
     if(cert_status != V_OCSP_CERTSTATUS_REVOKED &&
           !OCSP_check_validity(thisupd, nextupd, skewInSec, -1L)) {
-      failf(data, "OCSP response has expired\n");
+      failf(data, "OCSP response has expired");
       sf_otd_set_event_sub_type(OCSP_RESPONSE_EXPIRED, ocsp_log_data);
       result = CERT_STATUS_INVALID;
       goto end;
@@ -487,19 +487,19 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     {
       case V_OCSP_CERTSTATUS_GOOD:
         result = CERT_STATUS_GOOD;
-        infof(data, "SSL certificate status: %s (%d)\n",
+        infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
 
       case V_OCSP_CERTSTATUS_REVOKED:
         result = CERT_STATUS_REVOKED;
-        failf(data, "SSL certificate revocation reason: %s (%d)\n",
+        failf(data, "SSL certificate revocation reason: %s (%d)",
               OCSP_crl_reason_str(crl_reason), crl_reason);
         goto end;
 
       case V_OCSP_CERTSTATUS_UNKNOWN:
         result = CERT_STATUS_UNKNOWN;
-        infof(data, "SSL certificate status: %s (%d)\n",
+        infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
     }
@@ -601,7 +601,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   len_ocsp_req_der = i2d_OCSP_REQUEST(req, &ocsp_req_der);
   if (len_ocsp_req_der<= 0 || ocsp_req_der == NULL)
   {
-    failf(data, "Failed to encode ocsp request into DER format\n");
+    failf(data, "Failed to encode ocsp request into DER format");
     sf_otd_set_event_sub_type(OCSP_RESPONSE_LOAD_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -611,7 +611,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
       &ocsp_req_base64, &ocsp_req_base64_len);
   if (result != CURLE_OK)
   {
-    failf(data, "Failed to encode ocsp requst into base64 format\n");
+    failf(data, "Failed to encode ocsp requst into base64 format");
     sf_otd_set_event_sub_type(OCSP_RESPONSE_ENCODE_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -693,7 +693,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
 
       if (res != CURLE_OK)
       {
-        failf(data, "OCSP checking curl_easy_perform() failed: %s\n",
+        failf(data, "OCSP checking curl_easy_perform() failed: %s",
               curl_easy_strerror(res));
         if (ocsp_retry_cnt == max_retry -1)
         {
@@ -717,7 +717,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
         }
         else if (response_code < 200 || response_code >= 300)
         {
-          failf(data, "OCSP request failed with non-200 level code: %d\n",
+          failf(data, "OCSP request failed with non-200 level code: %d",
                 response_code);
 
           if (ocsp_retry_cnt == max_retry-1)
@@ -744,7 +744,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
                                     (long)ocsp_response_raw.size);
   if (ocsp_response == NULL)
   {
-    failf(data, "Failed to decode ocsp response\n");
+    failf(data, "Failed to decode ocsp response");
     sf_otd_set_error_msg("Failed to decode ocsp response", ocsp_log_data);
     sf_otd_set_event_sub_type(OCSP_RESPONSE_DECODE_FAILURE, ocsp_log_data);
   }
@@ -774,12 +774,12 @@ int prepareRequest(OCSP_REQUEST **req,
   if(!*req) *req = OCSP_REQUEST_new();
   if(!*req)
   {
-    failf(data, "Failed to allocate OCSP request\n");
+    failf(data, "Failed to allocate OCSP request");
     goto err;
   }
   if(!OCSP_request_add0_id(*req, certid))
   {
-    failf(data, "Failed to attach CertID to OCSP request\n");
+    failf(data, "Failed to attach CertID to OCSP request");
       goto err;
   }
   return 1;
@@ -863,7 +863,7 @@ char* encodeOCSPCertIDToBase64(OCSP_CERTID *certid, struct Curl_easy *data)
   len = i2d_OCSP_CERTID(certid, &der_buf);
   if (len <= 0 || der_buf == NULL)
   {
-    infof(data, "Failed to encode OCSP CertId\n");
+    infof(data, "Failed to encode OCSP CertId");
     goto end;
   }
   result = Curl_base64_encode(data,(char *)der_buf, (size_t)len,
@@ -962,7 +962,7 @@ OCSP_CERTID* decodeOCSPCertIDFromBase64(char* src, struct Curl_easy *data)
   CURLcode result;
   if (src == NULL)
   {
-    infof(data, "Base64 input is NULL for decoding OCSP CertID\n");
+    infof(data, "Base64 input is NULL for decoding OCSP CertID");
     return NULL;
   }
 
@@ -984,7 +984,7 @@ OCSP_CERTID* decodeOCSPCertIDFromBase64(char* src, struct Curl_easy *data)
 
   if (target_certid == NULL)
   {
-    infof(data, "Failed to decode OCSP CertID.\n");
+    infof(data, "Failed to decode OCSP CertID.");
     return NULL;
   }
   return target_certid;
@@ -1006,14 +1006,14 @@ OCSP_RESPONSE * decodeOCSPResponseFromBase64(char* src, struct Curl_easy *data)
 
   if (src == NULL)
   {
-    infof(data, "Base64 input is NULL for decoding OCSP Response\n");
+    infof(data, "Base64 input is NULL for decoding OCSP Response");
     return NULL;
   }
   result = Curl_base64_decode(src,
                               &ocsp_response_der, &ocsp_response_der_len);
   if (result)
   {
-    infof(data, "Failed to decode OCSP response from base64 string: %s\n",
+    infof(data, "Failed to decode OCSP response from base64 string: %s",
           curl_easy_strerror(result));
     return NULL;
   }
@@ -1025,7 +1025,7 @@ OCSP_RESPONSE * decodeOCSPResponseFromBase64(char* src, struct Curl_easy *data)
   curl_free(ocsp_response_der_org);
   if (resp == NULL)
   {
-    infof(data, "Failed to decode OCSP response cache from der format\n");
+    infof(data, "Failed to decode OCSP response cache from der format");
     return NULL;
   }
   return resp;
@@ -1046,7 +1046,7 @@ static SF_OCSP_STATUS checkResponseTimeValidity(OCSP_RESPONSE *resp, struct Curl
     br = OCSP_response_get1_basic(resp);
     if (br == NULL)
     {
-        failf(data, "Failed to get OCSP response basic from cache\n");
+        failf(data, "Failed to get OCSP response basic from cache");
         sf_otd_set_event_sub_type(OCSP_RESPONSE_CACHE_ENTRY_LOAD_FAILED, ocsp_log_data);
         goto end;
     }
@@ -1078,12 +1078,12 @@ static SF_OCSP_STATUS checkResponseTimeValidity(OCSP_RESPONSE *resp, struct Curl
             long validity = (pday*24*60*60 + psec)/100;
             skewInSec = validity > skewInSec ? validity : skewInSec;
             infof(data, "Diff between thisupd and nextupd "
-            "day: %d, sec: %d, Tolerant skew: %d\n", pday, psec,
+            "day: %d, sec: %d, Tolerant skew: %d", pday, psec,
             skewInSec);
         }
         else
         {
-            failf(data, "Invalid structure of ASN1_GENERALIZEDTIME\n");
+            failf(data, "Invalid structure of ASN1_GENERALIZEDTIME");
             goto end;
         }
         /*
@@ -1092,7 +1092,7 @@ static SF_OCSP_STATUS checkResponseTimeValidity(OCSP_RESPONSE *resp, struct Curl
          */
         if(!OCSP_check_validity(thisupd, nextupd, skewInSec, -1L))
         {
-          failf(data, "OCSP response has expired\n");
+          failf(data, "OCSP response has expired");
           sf_otd_set_event_sub_type(OCSP_RESPONSE_FROM_CACHE_EXPIRED, ocsp_log_data);
           goto end;
         }
@@ -1126,7 +1126,7 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
 
   if (cache_value == NULL || !cJSON_IsArray(cache_value))
   {
-    infof(data, "OCSP Cache value is invalid\n");
+    infof(data, "OCSP Cache value is invalid");
     goto end;
   }
 
@@ -1134,7 +1134,7 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
   last_query_time = cJSON_GetArrayItem(cache_value, 0);
   if (!cJSON_IsNumber(last_query_time))
   {
-    infof(data, "OCSP Cache Last query time is invalid\n");
+    infof(data, "OCSP Cache Last query time is invalid");
     cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
                                             cache_value->string);
     goto end;
@@ -1145,7 +1145,7 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
   /* valid for 120 hours */
   if ((unsigned long)time(NULL) - last_query_time_l >= 24*60*60*5)
   {
-    infof(data, "OCSP Response Cache Expired\n");
+    infof(data, "OCSP Response Cache Expired");
     goto end;
   }
 
@@ -1153,7 +1153,7 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
   resp_bas64_j = cJSON_GetArrayItem(cache_value, 1);
   if (!cJSON_IsString(resp_bas64_j) || resp_bas64_j->valuestring == NULL)
   {
-    infof(data, "OCSP Response cache is invalid. Deleting it from the cache.\n");
+    infof(data, "OCSP Response cache is invalid. Deleting it from the cache.");
     cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
                                             cache_value->string);
     goto end;
@@ -1193,7 +1193,7 @@ OCSP_RESPONSE * findOCSPRespInMem(OCSP_CERTID *certid, struct Curl_easy *data, S
   {
     /* NOTE encode to base64 only for logging */
     char* cert_id_encode = encodeOCSPCertIDToBase64(certid, data);
-    infof(data, "OCSP Response Cache found!!!: %s\n", cert_id_encode);
+    infof(data, "OCSP Response Cache found!!!: %s", cert_id_encode);
     if (cert_id_encode) curl_free(cert_id_encode);
   }
 end:
@@ -1226,7 +1226,7 @@ cJSON *getCacheEntry(OCSP_CERTID* certid, struct Curl_easy *data)
 
     if (target_certid == NULL)
     {
-      infof(data, "Failed to decode OCSP CertID in the cache.\n");
+      infof(data, "Failed to decode OCSP CertID in the cache.");
       continue;
     }
     cmp = OCSP_id_cmp(target_certid, certid);
@@ -1276,7 +1276,7 @@ void updateCacheWithBulkEntries(cJSON* tmp_cache, struct Curl_easy *data)
       element_pointer->string, data);
     if (cert_id == NULL)
     {
-      infof(data, "CertID is NULL\n");
+      infof(data, "CertID is NULL");
       continue;
     }
     found = getCacheEntry(cert_id, data);
@@ -1313,7 +1313,7 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data)
   curlh = curl_easy_init();
   if (!curlh)
   {
-    failf(data, "Failed to initialize curl to download OCSP cache.\n");
+    failf(data, "Failed to initialize curl to download OCSP cache.");
     sf_otd_set_event_sub_type(OCSP_RESPONSE_CURL_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -1351,11 +1351,11 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data)
     {
       /* Success */
       infof(data, "OCSP Cache Download request returned with http status code 2XX");
-      infof(data, "Successfully downloaded OCSP Cache.\n");
+      infof(data, "Successfully downloaded OCSP Cache.");
     }
     else if (response_code < 200 || response_code >= 300 )
     {
-      failf(data, "OCSP cache download request failed with non-200 level code: %d, OCSP Cache Could not be downloaded\n",
+      failf(data, "OCSP cache download request failed with non-200 level code: %d, OCSP Cache Could not be downloaded",
             response_code);
       sf_otd_set_event_sub_type(OCSP_RESPONSE_CACHE_DOWNLOAD_FAILED, ocsp_log_data);
       goto end;
@@ -1377,7 +1377,7 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data)
 
   /* update OCSP cache with the downloaded cache */
   updateCacheWithBulkEntries(tmp_cache, data);
-  infof(data, "Number of cache entries: %d\n",
+  infof(data, "Number of cache entries: %d",
         cJSON_GetArraySize(ocsp_cache_root));
 
   _mutex_unlock(&ocsp_response_cache_mutex);
@@ -1463,20 +1463,20 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     char *ocsp_url = sk_OPENSSL_STRING_value(ocsp_list, i);
     if (ocsp_url == NULL)
     {
-      failf(data, "OCSP Validation URL is not present \n");
+      failf(data, "OCSP Validation URL is not present");
       /*
        * Try the next OCSP Server in ocsp_list, if present.
        */
       continue;
     }
     ocsp_url_missing = false;
-    infof(data, "OCSP Validation URL: %s\n", ocsp_url);
+    infof(data, "OCSP Validation URL: %s", ocsp_url);
     strncpy(ocsp_log_data->ocsp_responder_url, ocsp_url, sizeof(ocsp_log_data->ocsp_responder_url));
     url_parse_result = OCSP_parse_url(
         ocsp_url, &host, &port, &path, &use_ssl);
     if (!url_parse_result)
     {
-      failf(data, "Invalid OCSP Validation URL: %s\n", ocsp_url);
+      failf(data, "Invalid OCSP Validation URL: %s", ocsp_url);
       /* try the next OCSP server if available. Usually only one OCSP server
        * is attached, so it is unlikely the second OCSP server is used, but
        * in theory it could, so it let try. */
@@ -1519,7 +1519,7 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data)
   infof(data, "WARNING!!! Using fail-open to connect. Driver is connecting to an "
               "HTTPS endpoint without OCSP based Certificate Revocation checking "
               "as it could not obtain a valid OCSP Response to use from the CA OCSP "
-              "responder. Details:\n%s",ocsp_log_data);
+              "responder. Details:%s",ocsp_log_data);
   if (ocsp_log_data)
   {
     sendOOBevent(ocsp_log_data);
@@ -1585,12 +1585,12 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
     OCSP_CERTID *certid = NULL;
     int ocsp_status = 0;
     resp = getOCSPResponse(cert, issuer, conn, data, ocsp_fail_open, ocsp_log_data);
-    infof(data, "Starting checking cert for %s...\n",
+    infof(data, "Starting checking cert for %s...",
           X509_NAME_oneline(X509_get_subject_name(cert), X509_cert_name,
                             MAX_CERT_NAME_LEN));
     if (!resp)
     {
-      failf(data, "Unable to get OCSP response\n");
+      failf(data, "Unable to get OCSP response");
       if (retry_count == MAX_RETRY - 1)
       {
         sf_otd_set_event_sub_type(OCSP_RESPONSE_FETCH_FAILURE, ocsp_log_data);
@@ -1603,7 +1603,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
     ocsp_status = OCSP_response_status(resp);
     if (ocsp_status != OCSP_RESPONSE_STATUS_SUCCESSFUL)
     {
-      failf(data, "Invalid OCSP response status: %s (%d)\n",
+      failf(data, "Invalid OCSP response status: %s (%d)",
             OCSP_response_status_str(ocsp_status), ocsp_status);
       if (retry_count ==  MAX_RETRY - 1)
       {
@@ -1707,16 +1707,16 @@ char* mkdirIfNotExists(char* dir, struct Curl_easy *data)
   {
     if (errno != EEXIST)
     {
-      failf(data, "Failed to create %s directory. Ignored. Error: %d\n",
+      failf(data, "Failed to create %s directory. Ignored. Error: %d",
             dir, errno);
       return NULL;
 
     }
-    infof(data, "Already exists %s directory.\n", dir);
+    infof(data, "Already exists %s directory.", dir);
   }
   else
   {
-    infof(data, "Created %s directory.\n", dir);
+    infof(data, "Created %s directory.", dir);
   }
   return dir;
 }
@@ -1805,7 +1805,7 @@ char* ensureCacheDir(char* cache_dir, struct Curl_easy *data)
     goto err;
   }
 #endif
-  infof(data, "OCSP cache file directory: %s\n", cache_dir);
+  infof(data, "OCSP cache file directory: %s", cache_dir);
   return cache_dir;
 err:
   return NULL;
@@ -1827,13 +1827,13 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   _mutex_lock(&ocsp_response_cache_mutex);
   if (ocsp_cache_root == NULL)
   {
-      infof(data, "Skipping writing OCSP cache file as no OCSP cache root exists.\n");
+      infof(data, "Skipping writing OCSP cache file as no OCSP cache root exists.");
       goto end;
   }
 
   if (ensureCacheDir(cache_dir, data) == NULL)
   {
-    failf(data, "The cache file is not accessible.\n");
+    failf(data, "The cache file is not accessible.");
     goto end;
   }
 
@@ -1841,7 +1841,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   strcpy(cache_file, cache_dir);
   strcat(cache_file, PATH_SEP);
   strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
-  infof(data, "OCSP Cache file: %s\n", cache_file);
+  infof(data, "OCSP Cache file: %s", cache_file);
 
   /* cache lock directory/file */
   strcpy(cache_lock_file, cache_file);
@@ -1855,15 +1855,15 @@ void writeOCSPCacheFile(struct Curl_easy* data)
     {
       if ((long)time(NULL) - (long) statbuf.st_mtime < 60*60)
       {
-        infof(data, "Other process lock the file, ignored\n");
+        infof(data, "Other process lock the file, ignored");
         goto end;
       }
       else
       {
-        infof(data, "Remove the old lock file\n");
+        infof(data, "Remove the old lock file");
         if (remove(cache_lock_file) != 0)
         {
-          infof(data, "Failed to delete the lock file: %s, ignored\n", cache_lock_file);
+          infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
           goto end;
         }
       }
@@ -1874,40 +1874,40 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   fh = fopen(cache_lock_file, "w");
   if (fh == NULL)
   {
-    infof(data, "Failed to create a lock file: %s. Skipping writing OCSP cache file.\n",
+    infof(data, "Failed to create a lock file: %s. Skipping writing OCSP cache file.",
         cache_lock_file);
     goto end;
   }
   if (fclose(fh) != 0)
   {
-    infof(data, "Failed to close a lock file: %s. Ignored.\n", cache_lock_file);
+    infof(data, "Failed to close a lock file: %s. Ignored.", cache_lock_file);
     goto end;
   }
 
   fp = fopen(cache_file, "w");
   if (fp == NULL)
   {
-    infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.\n");
+    infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
     goto end;
   }
   jsonText = cJSON_PrintUnformatted(ocsp_cache_root);
   if (fprintf(fp, "%s", jsonText) < 0)
   {
-    infof(data, "Failed to write OCSP response cache file. Skipping\n");
+    infof(data, "Failed to write OCSP response cache file. Skipping");
   }
 
   if (fclose(fp) != 0)
   {
-    infof(data, "Failed to close OCSP response cache file: %s. Ignored\n", cache_file);
+    infof(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
   }
-  infof(data, "Write OCSP Response to cache file\n");
+  infof(data, "Write OCSP Response to cache file");
 
   /* deallocate json string */
   cJSON_free(jsonText);
 
   if (remove(cache_lock_file) != 0)
   {
-    infof(data, "Failed to delete the lock file: %s, ignored\n", cache_lock_file);
+    infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
   }
 end:
   if (ocsp_cache_root != NULL)
@@ -1944,16 +1944,16 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   strcpy(cache_file, cache_dir);
   strcat(cache_file, PATH_SEP);
   strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
-  infof(data, "OCSP cache file: %s\n", cache_file);
+  infof(data, "OCSP cache file: %s", cache_file);
 
   if (ocsp_cache_root != NULL)
   {
-    infof(data, "OCSP cache was already read onto memory\n");
+    infof(data, "OCSP cache was already read onto memory");
     goto end;
   }
   if (access(cache_file, F_OK) == -1)
   {
-    infof(data, "No OCSP cache file found on disk. file: %s\n", cache_file);
+    infof(data, "No OCSP cache file found on disk. file: %s", cache_file);
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -1961,30 +1961,30 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   pfile = fopen(cache_file, "r");
   if (pfile == NULL)
   {
-    infof(data, "Failed to open OCSP response cache file. Ignored.\n");
+    infof(data, "Failed to open OCSP response cache file. Ignored.");
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
 
   if (fgets(ocsp_resp_cache_str, sizeof(ocsp_resp_cache_str), pfile) == NULL) {
-    infof(data, "Failed to read OCSP response cache file. Ignored\n");
+    infof(data, "Failed to read OCSP response cache file. Ignored");
     goto file_close;
   }
   /* just attached the whole JSON object */
   ocsp_cache_root = cJSON_Parse(ocsp_resp_cache_str);
   if (ocsp_cache_root == NULL)
   {
-    infof(data, "Failed to parse cache file content in json format\n");
+    infof(data, "Failed to parse cache file content in json format");
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
   }
   else
   {
-    infof(data, "OCSP cache file was successfully loaded\n");
+    infof(data, "OCSP cache file was successfully loaded");
   }
 file_close:
   if (fclose(pfile) != 0)
   {
-    infof(data, "Failed to close cache file. Ignored.\n");
+    infof(data, "Failed to close cache file. Ignored.");
     goto end;
   }
 end:
@@ -2095,9 +2095,9 @@ void initOCSPCacheServer(struct Curl_easy *data)
   }
 
   end:
-  infof(data, "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED: %s\n",
+  infof(data, "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED: %s",
     ocsp_cache_server_enabled ? "true" : "false");
-  infof(data, "SF_OCSP_RESPONSE_CACHE_SERVER_URL: %s\n",
+  infof(data, "SF_OCSP_RESPONSE_CACHE_SERVER_URL: %s",
     ocsp_cache_server_url);
   _mutex_unlock(&ocsp_response_cache_mutex);
 }
@@ -2183,14 +2183,14 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 
   sf_otd_set_insecure_mode(0, &ocsp_log_data);
 
-  infof(data, "Cert Data Store: %s, Certifcate Chain: %s\n", st, ch);
+  infof(data, "Cert Data Store: %s, Certifcate Chain: %s", st, ch);
   initOCSPCacheServer(data);
 
-  infof(data, "Start SF OCSP Validation...\n");
+  infof(data, "Start SF OCSP Validation...");
   readOCSPCacheFile(data, &ocsp_log_data);
 
   numcerts = sk_X509_num(ch);
-  infof(data, "Number of certificates in the chain: %d\n", numcerts);
+  infof(data, "Number of certificates in the chain: %d", numcerts);
   for (i =0; i < numcerts - 1; i++)
   {
     X509* cert = sk_X509_value(ch, i);
@@ -2204,6 +2204,6 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
   }
   writeOCSPCacheFile(data);
 end:
-  infof(data, "End SF OCSP Validation... Result: %d\n", rs);
+  infof(data, "End SF OCSP Validation... Result: %d", rs);
   return rs;
 }
