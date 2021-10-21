@@ -150,7 +150,7 @@ Curl_getaddrinfo_ex(const char *nodename,
 #if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
   if(sf_enable_getaddrinfo_lock == 1) {
     mutex_error = pthread_mutex_lock(&sf_getaddrinfo_mutex);
-    if(mutex_error != 0) {
+    if(mutex_error) {
       Curl_print_pthread_error(mutex_error);
       return mutex_error;
     }
@@ -228,7 +228,7 @@ Curl_getaddrinfo_ex(const char *nodename,
 #if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
   if(sf_enable_getaddrinfo_lock == 1) {
     mutex_error = pthread_mutex_unlock(&sf_getaddrinfo_mutex);
-    if(mutex_error != 0) {
+    if(mutex_error) {
       Curl_print_pthread_error(mutex_error);
       error = mutex_error;
     }
