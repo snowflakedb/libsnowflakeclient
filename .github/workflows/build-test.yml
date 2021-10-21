@@ -13,7 +13,7 @@ on:
 jobs:
     build-test-linux:
         name: Build-Test-Linux
-        runs-on: ubuntu-16.04
+        runs-on: ubuntu-latest
         strategy:
             matrix:
                 build_type: [ 'Debug', 'Release' ]
