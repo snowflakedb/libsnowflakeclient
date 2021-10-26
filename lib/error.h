@@ -27,6 +27,11 @@ void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
 
 void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error);
 
+/**
+ * Initializes SF_ERROR_STRUCT objects with default values
+ **/
+void STDCALL init_snowflake_error(SF_ERROR_STRUCT* error);
+
 void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 
 #define ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING "account parameter is missing"
