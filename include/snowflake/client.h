@@ -1154,6 +1154,12 @@ void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error);
 
 
 /**
+ * Initializes SF_ERROR_STRUCT objects with default values
+ **/
+void STDCALL snowflake_init_error(SF_ERROR_STRUCT* error);
+
+
+/**
  * Sets the external logger (instances of subclasses of Snowflake::Client::ISFLogger)
  * The overridden method logLineVA of this external logger is called with every logged line
  *
