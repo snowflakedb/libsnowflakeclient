@@ -1152,6 +1152,11 @@ int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
  */
 void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error);
 
+/**
+ * This is a helper function to init the error and we could call it in XP since
+ * we could not directly call error.h functions
+ * @param error
+ */
 void STDCALL snowflake_init_error(SF_ERROR_STRUCT *error);
 
 
