@@ -1152,6 +1152,8 @@ int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
  */
 void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error);
 
+void STDCALL snowflake_init_error(SF_ERROR_STRUCT *error);
+
 
 /**
  * Sets the external logger (instances of subclasses of Snowflake::Client::ISFLogger)
