@@ -96,8 +96,8 @@ void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error) {
 void STDCALL init_snowflake_error(SF_ERROR_STRUCT* error) {
     sb_strcpy(error->sqlstate, sizeof(error->sqlstate), SF_SQLSTATE_NO_ERROR);
     error->error_code = SF_STATUS_SUCCESS;
-    error->msg = nullptr;
-    error->file = nullptr;
+    error->msg = NULL;
+    error->file = NULL;
     error->line = 0;
     error->is_shared_msg = SF_BOOLEAN_FALSE;
     memset(error->sfqid, 0, SF_UUID4_LEN);
