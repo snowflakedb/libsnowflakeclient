@@ -3395,7 +3395,3 @@ void STDCALL snowflake_clear_error(SF_ERROR_STRUCT *error){
     clear_snowflake_error(error);
 }
 
-void STDCALL snowflake_init_error(SF_ERROR_STRUCT *error){
-  init_snowflake_error(error);
-}
-
