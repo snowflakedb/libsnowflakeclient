@@ -1,0 +1,80 @@
+FROM centos:7.9.2009
+
+RUN mkdir -p /usr/lib64/ccache
+ENV PATH="/usr/lib64/ccache:${PATH}"
+
+RUN yum -y update
+RUN yum -y install epel-release
+RUN yum install -y yum-utils
+
+RUN yum -y install centos-release-scl
+# gnu toolsets
+RUN yum -y install devtoolset-7-{binutils,runtime,gcc,gcc-c++,libstdc++-devel,gdb,make} \
+  && ln -s /opt/rh/devtoolset-7/root/usr/bin/g++ /usr/lib64/ccache/g++\
+  && ln -s /opt/rh/devtoolset-7/root/usr/bin/gcc /usr/lib64/ccache/gcc\
+  && ln -s /opt/rh/devtoolset-7/root/usr/bin/strip /usr/lib64/ccache/strip\
+  && ln -s /opt/rh/devtoolset-7/root/usr/bin/make /usr/lib64/ccache/make
+
+ENV CC='/usr/lib64/ccache/gcc' CXX='/usr/lib64/ccache/g++'
+
+RUN yum install -y git
+
+# zlib for libsnowflakeclient as build_zlib.sh is not called in its build script
+RUN yum install -y zlib zlib-devel
+
+# dependencies for libuuid
+RUN yum install -y bison gettext gettext-devel
+
+# cmake3
+RUN yum install -y cmake &&\
+    ln -s /usr/bin/cmake /usr/lib64/ccache/cmake
+
+RUN yum install -y which jq tar unzip zstd bzip2
+
+RUN yum install -y libtool
+
+# Dependencies for tests
+# cppunit
+RUN yum install -y cppunit cppunit-devel
+
+# unixodbc
+RUN yum install -y unixODBC
+# re2
+RUN yum install -y re2-devel &&\
+    echo '/usr/local/lib' >> /etc/ld.so.conf.d/locallib.conf &&\
+    ldconfig
+
+# gosu
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.13/gosu-arm64"
+RUN chmod +x /usr/local/bin/gosu
+
+# Java
+RUN yum -y install java-1.8.0-openjdk-devel
+
+# python
+RUN yum -y install rh-python38
+COPY scripts/python3.8.sh /usr/local/bin/python3.8
+COPY scripts/python3.8.sh /usr/local/bin/python3
+RUN chmod a+rx /usr/local/bin/python3.8
+RUN chmod a+rx /usr/local/bin/python3
+COPY scripts/pip38.sh /usr/local/bin/pip
+RUN chmod a+rx /usr/local/bin/pip
+RUN pip install -U pip
+
+RUN yum -y install rh-python38-python-devel
+
+# aws
+RUN pip install -U awscli
+COPY scripts/aws38.sh /usr/local/bin/aws
+RUN chmod a+rx /usr/local/bin/aws
+
+# workspace
+
+RUN mkdir -p /home/user
+RUN chmod 777 /home/user
+WORKDIR /home/user
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +rx /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+

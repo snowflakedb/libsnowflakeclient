@@ -1,6 +1,13 @@
 #!/bin/bash -e
 
-export PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
+sys=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
+arch=$(uname -p)
+if [[ "$sys" == "linux" ]] && [[ "$arch" != "x86_64" ]]; then
+    export PLATFORM=$sys-$arch
+else
+    export PLATFORM=$sys
+fi
+
 export INTERNAL_REPO=nexus.int.snowflakecomputing.com:8086
 if [[ -z "$GITHUB_ACTIONS" ]]; then
     # Use the internal Docker Registry
