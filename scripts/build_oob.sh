@@ -41,6 +41,9 @@ if [[ "$PLATFORM" == "linux" ]]; then
     else
       export CC=gcc82
     fi
+    if [[ "$ARCH" != "x86_64" ]]; then
+      export CC=$GCC
+    fi
     export AR=ar
     export AROPTIONS=rcs
     make distclean clean > /dev/null || true

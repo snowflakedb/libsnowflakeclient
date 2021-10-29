@@ -9,6 +9,11 @@ source $THIS_DIR/scripts/login_internal_docker.sh
 
 [[ -z "$BUILD_TYPE" ]] && echo "Specify BUILD_TYPE. [Debug, Release]" && exit 1
 
+function docker_img_exist() {
+  docker manifest inspect $1 &>/dev/null
+  echo "$?"
+}
+
 if [[ -z "$GITHUB_ACTIONS" ]]; then
     export GIT_URL=${GIT_URL:-https://github.com/snowflakedb/libsnowflakeclient.git}
     export GIT_BRANCH=${GIT_BRANCH:-origin/$(git rev-parse --abbrev-ref HEAD)}
@@ -19,9 +24,13 @@ else
     export GIT_COMMIT=${GITHUB_SHA}
 fi
 
-BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-centos6-default]}"
+BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$IMAGE_OS]}"
 echo $BUILD_IMAGE_NAME
-docker pull "${BUILD_IMAGE_NAME}"
+
+if [[ $(docker_img_exist $BUILD_IMAGE) == "0" ]]; then
+    docker pull "${BUILD_IMAGE_NAME}"
+fi
+
 docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
@@ -39,6 +48,7 @@ docker run \
         -e GITHUB_EVENT_NAME \
         -e GITHUB_REF \
         -w /mnt/host \
-        "${BUILD_IMAGE_NAME}" \
-        "/mnt/host/ci/build/build.sh"
+	-it --entrypoint /bin/bash \
+        "${BUILD_IMAGE_NAME}" 
+#        "/mnt/host/ci/build/build.sh"
 

@@ -26,8 +26,8 @@ RUN yum install -y zlib zlib-devel
 RUN yum install -y bison gettext gettext-devel
 
 # cmake3
-RUN yum install -y cmake &&\
-    ln -s /usr/bin/cmake /usr/lib64/ccache/cmake
+RUN yum install -y cmake3 &&\
+    ln -s /usr/bin/cmake3 /usr/lib64/ccache/cmake
 
 RUN yum install -y which jq tar unzip zstd bzip2
 
@@ -59,7 +59,7 @@ RUN chmod a+rx /usr/local/bin/python3.8
 RUN chmod a+rx /usr/local/bin/python3
 COPY scripts/pip38.sh /usr/local/bin/pip
 RUN chmod a+rx /usr/local/bin/pip
-RUN pip install -U pip
+RUN pip install --user -U pip
 
 RUN yum -y install rh-python38-python-devel
 

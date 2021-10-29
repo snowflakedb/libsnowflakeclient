@@ -22,6 +22,12 @@ function download_build_component()
 
     local component_version=$($component_script -v)
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
+    if [[ "$ARCH" == "x86_64" || "$ARCH" == "" ]]; then
+        src_url_prefix="s3://sfc-dev1-data/dependency"
+    else
+        src_url_prefix="s3://sfc-dev1-data/dependency/$ARCH"
+    fi
+
     if [[ -n "$GITHUB_ACTIONS" ]]; then
         "$component_script" -t "$build_type"
     else
@@ -32,16 +38,16 @@ function download_build_component()
         else
             rm -rf $DEPENDENCY_DIR/$component_name
             if [[ ! -z "$XP_BUILD" ]] ; then
-              src_path="s3://sfc-dev1-data/dependency/snowflakeclient_for_xp/$component_name"
+              src_path="$src_url_prefix/snowflakeclient_for_xp/$component_name"
             else
-              src_path="s3://sfc-dev1-data/dependency/$component_name"
+              src_path="$src_url_prefix/$component_name"
             fi
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
                 if [[ "$GIT_BRANCH" == "origin/master" ]]; then
                     echo "=== upload $component_name"
-                    upload_to_sfc_dev1_data $component_name $component_version $build_type
+                    # upload_to_sfc_dev1_data $component_name $component_version $build_type
                 else
                     echo "No upload $component_name"
                 fi

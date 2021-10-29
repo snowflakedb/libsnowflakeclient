@@ -103,12 +103,17 @@ function upload_to_sfc_dev1_data()
     local component_name=$1
     local component_version=$2
     local build_type=$3
+    if [[ "$ARCH" == "x86_64" || "$ARCH" == "" ]]; then
+        src_url_prefix="s3://sfc-dev1-data/dependency"
+    else
+        src_url_prefix="s3://sfc-dev1-data/dependency/$ARCH"
+    fi
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ ! -z "$XP_BUILD" ]] ; then
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name s3://sfc-dev1-data/dependency/snowflakeclient_for_xp/$component_name/
+      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $src_url_prefix/snowflakeclient_for_xp/$component_name/
     else
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name s3://sfc-dev1-data/dependency/$component_name/
+      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $src_url_prefix/$component_name/
     fi
 }
 
@@ -119,10 +124,14 @@ function upload_to_sfc_jenkins()
     local build_type=$3
 
     local git_branch_base_name=$(echo $GIT_BRANCH | awk -F/ '{print $2}')
-
+    if [[ "$ARCH" == "x86_64" || "$ARCH" == "" ]]; then
+        src_url_prefix="s3://sfc-jenkins/repository"
+    else
+        src_url_prefix="s3://sfc-jenkins/repository/$ARCH"
+    fi
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ ! -z "$XP_BUILD" ]] ; then
-      local target_path=s3://sfc-jenkins/repository/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
+      local target_path=itory/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
     else
       local target_path=s3://sfc-jenkins/repository/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
     fi

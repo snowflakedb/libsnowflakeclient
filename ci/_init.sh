@@ -1,11 +1,13 @@
 #!/bin/bash -e
 
 sys=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
-arch=$(uname -p)
-if [[ "$sys" == "linux" ]] && [[ "$arch" != "x86_64" ]]; then
-    export PLATFORM=$sys-$arch
+export ARCH=$(uname -p)
+if [[ "$sys" == "linux" ]] && [[ "$ARCH" != "x86_64" ]]; then
+    export PLATFORM=$sys-$ARCH
+    export IMAGE_OS=centos7-$ARCH
 else
     export PLATFORM=$sys
+    export IMAGE_OS=centos6-default
 fi
 
 export INTERNAL_REPO=nexus.int.snowflakecomputing.com:8086
@@ -28,12 +30,13 @@ BUILD_IMAGE_VERSION=1
 TEST_IMAGE_VERSION=1
 
 declare -A BUILD_IMAGE_NAMES=(
-    [$DRIVER_NAME-centos6-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-build:$BUILD_IMAGE_VERSION
+    [$DRIVER_NAME-$IMAGE_OS]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-$IMAGE_OS-build:$BUILD_IMAGE_VERSION
+    [$DRIVER_NAME-$IMAGE_OS]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-$IMAGE_OS-build:$BUILD_IMAGE_VERSION
 )
 export BUILD_IMAGE_NAMES
 
 declare -A TEST_IMAGE_NAMES=(
-    [$DRIVER_NAME-centos6-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-test:$BUILD_IMAGE_VERSION
+    [$DRIVER_NAME-$IMAGE_OS]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-$IMAGE_OS-test:$BUILD_IMAGE_VERSION
 )
 
 export TEST_IMAGE_NAMES

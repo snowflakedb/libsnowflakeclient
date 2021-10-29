@@ -13,6 +13,7 @@ ARTIFACTS_DIR=$DIR/../artifacts
 mkdir -p $ARTIFACTS_DIR
 
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -p)
 
 # Find cmake, gcc and g++ on target machine. Need cmake 3.0+, gcc/g++ 4.9+
 if which cmake3 >& /dev/null; then
