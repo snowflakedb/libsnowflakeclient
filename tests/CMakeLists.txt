@@ -161,9 +161,9 @@ if (LINUX)
             pthread aws-cpp-sdk-core aws-cpp-sdk-s3 -Wl,--no-whole-archive)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} z m "-framework CoreFoundation" -all_load
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} z m "-framework CoreFoundation -framework SystemConfiguration" -all_load
             ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${AWS_CORE_LIB} ${AWS_S3_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation" -all_load ${CURL_LIB}
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration" -all_load ${CURL_LIB}
             ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AWS_CORE_LIB} ${AWS_S3_LIB} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB})
 endif()
 if (WIN32)

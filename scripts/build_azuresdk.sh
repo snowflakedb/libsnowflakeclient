@@ -122,7 +122,7 @@ cd $AZURE_CMAKE_BUILD_DIR
 if [ "$(uname -s)" == "Linux" ] ; then
   $CMAKE -E env $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
 else
-  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS=$ADDITIONAL_CXXFLAGS LDFLAGS=$ADDITIONAL_CXXFLAGS -DEXTRA_LIBRARIES="-ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
+  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS=$ADDITIONAL_CXXFLAGS LDFLAGS=$ADDITIONAL_CXXFLAGS -DEXTRA_LIBRARIES="-framework Foundation -framework SystemConfiguration -ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
 fi
 
 unset GIT_DIR
