@@ -350,6 +350,12 @@ sf_bool STDCALL http_perform(CURL *curl,
         log_debug("Running curl_easy_perform");
         res = curl_easy_perform(curl);
         log_info("curl_easy_perform finish");
+        unsigned int seeds = time(NULL) ^ pthread_self();
+        if (chunk_downloader) {
+            unsigned seed_res = rand_r(&seeds) % 3;
+            res = (CURLcode)seed_res;
+            log_info("error message : %s", curl_easy_strerror(res));
+        }
         /* Check for errors */
         if (res != CURLE_OK) {
           if ((retry_on_all_curl_errors || res == CURLE_COULDNT_CONNECT) &&
