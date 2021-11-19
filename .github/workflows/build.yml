@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
   pull_request:
     branches:
       - "**"
@@ -32,4 +30,5 @@ jobs:
           ./scripts/build_zlib.sh
           ./scripts/build_oob.sh
           ./scripts/build_openssl.sh
-          ./scripts/build_zlib.sh
+          ./scripts/build_uuid.sh
+          ./scripts/build_curl.sh
