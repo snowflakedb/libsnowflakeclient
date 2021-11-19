@@ -1,0 +1,35 @@
+name: Build libsnowflakeclient
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build-linux:
+    name: Build-Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: ["Debug", "Release"]
+        archs: ["x64"]
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
+          architecture: ${{ matrix.arch }}
+      - name: Build
+        shell: bash
+        env:
+          BUILD_TYPE: ${{ matrix.build_type }}
+        run: |
+          ./scripts/build_zlib.sh
+          ./scripts/build_oob.sh
+          ./scripts/build_openssl.sh
+          ./scripts/build_zlib.sh
