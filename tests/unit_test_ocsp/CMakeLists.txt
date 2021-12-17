@@ -6,9 +6,4 @@ add_executable(
         test_ocsp
         test_ocsp.c)
 
-if (LINUX)
-    target_link_libraries(test_ocsp
-            rt dl z m
-            curl ssl crypto
-            )
-endif ()
+target_link_libraries(test_ocsp ${TESTLIB_OPTS_C})
