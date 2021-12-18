@@ -56,7 +56,11 @@
 #pragma GCC visibility pop
 #endif
 
-#include "cJSON.h"
+#include "sf_cJSON.h"
+
+/* ignoring float value comparison warning */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 
 /* define our own boolean type */
 #ifdef true
@@ -3108,3 +3112,4 @@ CJSON_PUBLIC(void) cJSON_free(void *object)
 {
     global_hooks.deallocate(object);
 }
+#pragma GCC diagnostic pop
