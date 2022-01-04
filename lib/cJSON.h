@@ -81,7 +81,7 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 /* project version */
 #define CJSON_VERSION_MAJOR 1
 #define CJSON_VERSION_MINOR 7
-#define CJSON_VERSION_PATCH 12
+#define CJSON_VERSION_PATCH 15
 
 #include <stddef.h>
 
@@ -146,11 +146,13 @@ CJSON_PUBLIC(void) snowflake_cJSON_InitHooks(cJSON_Hooks* hooks);
 /* Memory Management: the caller is always responsible to free the results from all variants of snowflake_cJSON_Parse (with snowflake_cJSON_Delete) and snowflake_cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or snowflake_cJSON_free as appropriate). The exception is snowflake_cJSON_PrintPreallocated, where the caller has full responsibility of the buffer. */
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_Parse(const char *value);
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithLength(const char *value, size_t buffer_length);
 /* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte parsed. */
 /* If you supply a ptr in return_parse_end and parsing fails, then return_parse_end will contain a pointer to the error so will match snowflake_cJSON_GetErrorPtr(). */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithOpts(const char *value,
                                                     const char **return_parse_end,
                                                     cJSON_bool require_null_terminated);
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end, cJSON_bool require_null_terminated);
 
 /* Render a cJSON entity to text for transfer/storage. */
 CJSON_PUBLIC(char *) snowflake_cJSON_Print(const cJSON *item);
@@ -175,8 +177,9 @@ CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_HasObjectItem(const cJSON *object, cons
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when snowflake_cJSON_Parse() returns 0. 0 when snowflake_cJSON_Parse() succeeds. */
 CJSON_PUBLIC(const char *) snowflake_cJSON_GetErrorPtr(void);
 
-/* Check if the item is a string and return its valuestring */
-CJSON_PUBLIC(char *) snowflake_cJSON_GetStringValue(cJSON *item);
+/* Check item type and return its value */
+CJSON_PUBLIC(char *) snowflake_cJSON_GetStringValue(const cJSON * const item);
+CJSON_PUBLIC(double) snowflake_cJSON_GetNumberValue(const cJSON * const item);
 
 /* These functions check the type of an item */
 CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsInvalid(const cJSON * const item);
@@ -210,22 +213,23 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringReference(const char *string);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateObjectReference(const cJSON *child);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateArrayReference(const cJSON *child);
 
-/* These utilities create an Array of count items. */
+/* These utilities create an Array of count items.
+ * The parameter count cannot be greater than the number of elements in the number array, otherwise array access will be out of bounds.*/
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateIntArray(const int *numbers, int count);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFloatArray(const float *numbers, int count);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateDoubleArray(const double *numbers, int count);
-CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringArray(const char **strings, int count);
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateStringArray(const char *const *strings, int count);
 
 /* Append item to the specified array/object. */
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToArray(cJSON *array, cJSON *item);
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_AddItemToArray(cJSON *array, cJSON *item);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
 /* Use this when string is definitely const (i.e. a literal, or as good as), and will definitely survive the cJSON object.
  * WARNING: When this function was used, make sure to always check that (item->type & snowflake_cJSON_StringIsConst) is zero before
  * writing to `item->string` */
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
 /* Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't want to corrupt your existing cJSON. */
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
-CJSON_PUBLIC(void) snowflake_cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
 
 /* Remove/Detach items from Arrays/Objects. */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item);
@@ -237,24 +241,24 @@ CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObject(cJSON *object, const cha
 CJSON_PUBLIC(void) snowflake_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string);
 
 /* Update array items. */
-CJSON_PUBLIC(void) snowflake_cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
 CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement);
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
-CJSON_PUBLIC(void) snowflake_cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object,const char *string,cJSON *newitem);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
+CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object,const char *string,cJSON *newitem);
 
 /* Duplicate a cJSON item */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_Duplicate(const cJSON *item, cJSON_bool recurse);
 /* Duplicate will create a new, identical cJSON item to the one you pass, in new memory that will
-need to be released. With recurse!=0, it will duplicate any children connected to the item.
-The item->next and ->prev pointers are always zero on return from Duplicate. */
+ * need to be released. With recurse!=0, it will duplicate any children connected to the item.
+ * The item->next and ->prev pointers are always zero on return from Duplicate. */
 /* Recursively compare two cJSON items for equality. If either a or b is NULL or invalid, they will be considered unequal.
  * case_sensitive determines if object keys are treated case sensitive (1) or case insensitive (0) */
 CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive);
 
-/* Minify a strings, remove blank characters(such as ' ', '\t', '\r', '\n') from strings */
-/* The input pointer json cannot point to a read-only address area, such as a string constant, 
- * but should point to a readable and writable adress area. */
+/* Minify a strings, remove blank characters(such as ' ', '\t', '\r', '\n') from strings.
+ * The input pointer json cannot point to a read-only address area, such as a string constant, 
+ * but should point to a readable and writable address area. */
 CJSON_PUBLIC(void) snowflake_cJSON_Minify(char *json);
 
 /* Helper functions for creating and adding items to an object at the same time.
@@ -274,6 +278,8 @@ CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddArrayToObject(cJSON * const object, cons
 /* helper for the snowflake_cJSON_SetNumberValue macro */
 CJSON_PUBLIC(double) snowflake_cJSON_SetNumberHelper(cJSON *object, double number);
 #define snowflake_cJSON_SetNumberValue(object, number) ((object != NULL) ? snowflake_cJSON_SetNumberHelper(object, (double)number) : (number))
+/* Change the valuestring of a cJSON_String object, only takes effect when type of object is cJSON_String */
+CJSON_PUBLIC(char*) snowflake_cJSON_SetValuestring(cJSON *object, const char *valuestring);
 
 /* Macro for iterating over an array or object */
 #define snowflake_cJSON_ArrayForEach(element, array) for(element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
