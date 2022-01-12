@@ -1926,8 +1926,13 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
 {
   char cache_dir[PATH_MAX] = "";
   char cache_file[PATH_MAX] = "";
-  char ocsp_resp_cache_str[20 * 1200]; /* TODO: malloc? */
+  char *ocsp_resp_cache_str = NULL;
   FILE* pfile = NULL;
+#ifdef _WIN32
+  struct _stat statbuf;
+#else
+  struct stat statbuf;
+#endif
 
   _mutex_lock(&ocsp_response_cache_mutex);
 
@@ -1958,6 +1963,27 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
     goto end;
   }
 
+  /* get file size */
+#ifdef _WIN32
+  if (_stat(cache_file, &statbuf) != 0)
+#else
+  if (stat(cache_file, &statbuf) != 0)
+#endif
+  {
+    infof(data, "Failed to get cache file size. file: %s", cache_file);
+    sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
+    goto end;
+  }
+
+  /* initialize read buffer */
+  ocsp_resp_cache_str = (char *)malloc(statbuf.st_size + 1);
+  if (ocsp_resp_cache_str == NULL)
+  {
+    infof(data, "Failed to allocate buffer for OCSP cache file. file: %s", cache_file);
+    sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
+    goto end;
+  }
+
   pfile = fopen(cache_file, "r");
   if (pfile == NULL)
   {
@@ -1966,7 +1992,7 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
     goto end;
   }
 
-  if (fgets(ocsp_resp_cache_str, sizeof(ocsp_resp_cache_str), pfile) == NULL) {
+  if (fgets(ocsp_resp_cache_str, statbuf.st_size + 1, pfile) == NULL) {
     infof(data, "Failed to read OCSP response cache file. Ignored");
     goto file_close;
   }
@@ -1989,6 +2015,7 @@ file_close:
   }
 end:
   if (ocsp_cache_root == NULL) ocsp_cache_root = cJSON_CreateObject();
+  if (ocsp_resp_cache_str != NULL) free(ocsp_resp_cache_str);
   _mutex_unlock(&ocsp_response_cache_mutex);
   return;
 }
