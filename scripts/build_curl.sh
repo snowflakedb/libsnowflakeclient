@@ -34,8 +34,10 @@ rm -rf $LIBCURL_BUILD_DIR
 mkdir -p $LIBCURL_BUILD_DIR
 
 export OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
+export ZLIB_BUILD_DIR=$DEPENDENCY_DIR/zlib
 curl_configure_opts+=(
     "--with-ssl=$OPENSSL_BUILD_DIR"
+    "--with-zlib=$ZLIB_BUILD_DIR"
     "--without-nss"
 )
 rm -rf $LIBCURL_BUILD_DIR
@@ -65,7 +67,6 @@ cd $LIBCURL_SOURCE_DIR
 echo "Building Curl with OpenSSL"
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC="${GCC:-gcc52}"
     export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"

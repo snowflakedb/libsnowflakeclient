@@ -581,7 +581,7 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_CA_BUNDLE_FILE:
             if (CA_BUNDLE_FILE) {
-                sb_strncpy(value, size, CA_BUNDLE_FILE, strlen(CA_BUNDLE_FILE) + 1);
+                sb_strncpy(value, size, CA_BUNDLE_FILE, size);
             }
             break;
         case SF_GLOBAL_SSL_VERSION:

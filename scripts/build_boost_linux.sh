@@ -11,14 +11,6 @@ function usage() {
 set -o pipefail
 
 BOOST_VERSION=1.75.0
-#If its not for XP use gcc52
-if [[ -z "$XP_BUILD" ]] ; then
-  export CC="/usr/lib64/ccache/gcc52"
-  export CXX="/usr/lib64/ccache/g++52"
-else
-  export CC="gcc82"
-  export CXX="g++82"
-fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -48,7 +40,7 @@ echo "using gcc : : $CXX ; " >> tools/build/src/user-config.jam
 #When pass CXX to specify the compiler, by default build.sh will set toolset to cxx and skip std=c++11 flag, so we need to set toolset as well
 sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
 CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
-./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -m64 -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 
 cd $DIR
 

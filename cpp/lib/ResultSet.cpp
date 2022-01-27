@@ -123,8 +123,8 @@ void ResultSet::initTzString()
     int hh = (int) absOffset / 60;
     int mm = absOffset % 60;
 
-    char buffer[6];
-    sb_sprintf(buffer, 6, "%c%02d:%02d", signChar, hh, mm);
+    char buffer[100];
+    sb_sprintf(buffer, 100, "%c%02d:%02d", signChar, hh, mm);
 
     m_tzString = std::string(buffer);
 }

@@ -240,7 +240,7 @@ endif()
 
 if (LINUX)
     # Linux
-    if ($ENV{XP_BUILD})
+    if ($ENV{ARROW_FROM_SOURCE})
     else()
         find_library(ARROW_FLATBUFFERS_LIB libflatbuffers.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)
         find_library(ARROW_GFLAGS_LIB libgflags.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED)

@@ -36,11 +36,6 @@ cd $OOB_SOURCE_DIR
 export CURL_DIR=curl-7.78.0
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    if [[ -z "$XP_BUILD" ]] ; then
-      export CC=gcc52
-    else
-      export CC=gcc82
-    fi
     export AR=ar
     export AROPTIONS=rcs
     make distclean clean > /dev/null || true

@@ -12,15 +12,6 @@ set -o pipefail
 
 ARROW_VERSION=0.17.1
 
-#If its not for XP use gcc52
-if [[ -z "$XP_BUILD" ]] ; then
-  export CC="/usr/lib64/ccache/gcc52"
-  export CXX="/usr/lib64/ccache/g++52"
-else
-  export CC="gcc82"
-  export CXX="g++82"
-fi
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
@@ -105,13 +96,17 @@ mkdir $ARROW_DEPS_BUILD_DIR/lib
 mkdir $ARROW_CMAKE_BUILD_DIR
 
 cd $ARROW_CMAKE_BUILD_DIR
-$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -m64 -fPIC -pthread" ../
+$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -fPIC -pthread" ../
 
 make
 make install
 
 #make install does not do much here
 cp -f $ARROW_CMAKE_BUILD_DIR/jemalloc_ep-prefix/src/jemalloc_ep/lib/*.a $ARROW_DEPS_BUILD_DIR/lib/
+# on arm64 linux, the arrow lib might be installed to lib folder
+if [[ ! -d "$ARROW_BUILD_DIR/lib64" ]]; then
+    mv -f $ARROW_BUILD_DIR/lib $ARROW_BUILD_DIR/lib64
+fi
 
 cd $DIR
 

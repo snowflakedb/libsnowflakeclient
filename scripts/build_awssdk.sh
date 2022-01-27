@@ -43,10 +43,18 @@ aws_configure_opts+=(
     "-DOPENSSL_ROOT_DIR=$DEPENDENCY_DIR/openssl"
     "-DOPENSSL_USE_STATIC_LIBS=true"
     "-DCURL_INCLUDE_DIR=$DEPENDENCY_DIR/curl/include"
-    "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib"
+    "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib/libcurl.a"
+    "-DZLIB_INCLUDE_DIR=$DEPENDENCY_DIR/zlib/include"
+    "-DZLIB_LIBRARY=$DEPENDENCY_DIR/zlib/lib/libz.a"
 )
 
 ADDITIONAL_CXXFLAGS=
+if [[ "$PLATFORM" == "linux" ]]; then
+    if [[ "$GCCVERSION" > "9" ]]; then
+        ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-copy"
+    fi
+fi
+
 # Check to see if we are doing a universal build or not.
 # If we are not doing a universal build, pick an arch to
 # build
@@ -79,6 +87,11 @@ unset GIT_DIR
 
 make
 make install
+
+# on arm64 linux, the aws lib might be installed to lib folder
+if [[ "$PLATFORM" == "linux" ]] && [[ ! -d "$AWS_BUILD_DIR/lib64" ]]; then
+    mv -f $AWS_BUILD_DIR/lib $AWS_BUILD_DIR/lib64
+fi
 
 echo === zip_file "aws" "$AWS_VERSION" "$target"
 zip_file "aws" "$AWS_VERSION" "$target"

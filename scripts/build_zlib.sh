@@ -35,11 +35,6 @@ cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    if [[ -z "$XP_BUILD" ]] ; then
-      export CC=gcc52
-    else
-      export CC=gcc82
-    fi
     export CFLAGS="-fPIC"
     make -f Makefile.in distclean > /dev/null || true
     ./configure ${zlib_config_opts[@]} > /dev/null || true

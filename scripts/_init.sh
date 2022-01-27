@@ -23,6 +23,24 @@ else
     export CTEST="$(which ctest)"
 fi
 
+# for XP_BUILD try gcc82 first
+if [[ -n "$XP_BUILD" ]] ; then
+    if which gcc-82 >& /dev/null; then
+        GCC="$(which gcc-82)"
+        GXX="$(which g++-82)"
+    elif which gcc82 >& /dev/null; then
+        GCC="$(which gcc82)"
+        GXX="$(which g++82)"
+    elif which gcc-8 >& /dev/null; then
+        GCC="$(which gcc-8)"
+        GXX="$(which g++-8)"
+    elif which gcc8 >& /dev/null; then
+        GCC="$(which gcc8)"
+        GXX="$(which g++8)"
+    fi
+fi
+
+# Otherwise try gcc52 first and default to gcc.
 if [[ -z "$GCC" || -z "$GXX" ]]; then
     if which gcc-52 >& /dev/null; then
         GCC="$(which gcc-52)"
@@ -30,23 +48,80 @@ if [[ -z "$GCC" || -z "$GXX" ]]; then
     elif which gcc52 >& /dev/null; then
         GCC="$(which gcc52)"
         GXX="$(which g++52)"
+# Don't know why azure build script use gcc in /usr/lib64/ccache but let's keep it
+    elif (test -f "/usr/lib64/ccache/gcc52") && (test -f "/usr/lib64/ccache/g++52"); then
+        GCC="/usr/lib64/ccache/gcc52"
+        GXX="/usr/lib64/ccache/g++52"
+    elif which gcc-5 >& /dev/null; then
+        GCC="$(which gcc-5)"
+        GXX="$(which g++-5)"
+    elif which gcc5 >& /dev/null; then
+        GCC="$(which gcc5)"
+        GXX="$(which g++5)"
+    elif which gcc-62 >& /dev/null; then
+        GCC="$(which gcc-62)"
+        GXX="$(which g++-62)"
     elif which gcc62 >& /dev/null; then
         GCC="$(which gcc62)"
         GXX="$(which g++62)"
+    elif which gcc-6 >& /dev/null; then
+        GCC="$(which gcc-6)"
+        GXX="$(which g++-6)"
+    elif which gcc6 >& /dev/null; then
+        GCC="$(which gcc6)"
+        GXX="$(which g++6)"
+    elif which gcc-72 >& /dev/null; then
+        GCC="$(which gcc-72)"
+        GXX="$(which g++-72)"
     elif which gcc72 >& /dev/null; then
         GCC="$(which gcc72)"
         GXX="$(which g++72)"
+    elif which gcc-7 >& /dev/null; then
+        GCC="$(which gcc-7)"
+        GXX="$(which g++-7)"
+    elif which gcc7 >& /dev/null; then
+        GCC="$(which gcc7)"
+        GXX="$(which g++7)"
+    elif which gcc-82 >& /dev/null; then
+        GCC="$(which gcc-82)"
+        GXX="$(which g++-82)"
     elif which gcc82 >& /dev/null; then
         GCC="$(which gcc82)"
         GXX="$(which g++82)"
+    elif which gcc-8 >& /dev/null; then
+        GCC="$(which gcc-8)"
+        GXX="$(which g++-8)"
+    elif which gcc8 >& /dev/null; then
+        GCC="$(which gcc8)"
+        GXX="$(which g++8)"
+    elif which gcc-92 >& /dev/null; then
+        GCC="$(which gcc-92)"
+        GXX="$(which g++-92)"
     elif which gcc92 >& /dev/null; then
         GCC="$(which gcc92)"
         GXX="$(which g++92)"
+    elif which gcc-9 >& /dev/null; then
+        GCC="$(which gcc-9)"
+        GXX="$(which g++-9)"
+    elif which gcc9 >& /dev/null; then
+        GCC="$(which gcc9)"
+        GXX="$(which g++9)"
     else
         # Default to system
         GCC="$(which gcc)"
         GXX="$(which g++)"
     fi
+fi
+
+if [[ -z "$CC" || -z "$CXX" ]]; then
+    CC=$GCC
+    CXX=$GXX
+fi
+
+export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
+
+if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" || "aarch64"==$(uname -p) ]]; then
+    export ARROW_FROM_SOURCE=1
 fi
 
 if [[ "$PLATFORM" == "darwin" ]]; then

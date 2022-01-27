@@ -7,7 +7,7 @@
 #include "test_setup.h"
 
 // Long path space
-char PERFORMANCE_TEST_RESULTS_PATH[4096];
+char PERFORMANCE_TEST_RESULTS_PATH[5000];
 
 void initialize_test(sf_bool debug) {
     // default location and the maximum logging
@@ -27,9 +27,9 @@ void initialize_test(sf_bool debug) {
     if (!test_log_dir) {
         char tmp_dir[4096];
         sf_get_tmp_dir(tmp_dir);
-        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 4096, "%s%s%s", tmp_dir, sep, perf_test_fn);
+        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 5000, "%s%s%s", tmp_dir, sep, perf_test_fn);
     } else {
-        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 4096, "%s%s%s", test_log_dir, sep, perf_test_fn);
+        snprintf(PERFORMANCE_TEST_RESULTS_PATH, 5000, "%s%s%s", test_log_dir, sep, perf_test_fn);
     }
 }
 
