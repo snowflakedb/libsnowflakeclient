@@ -120,7 +120,7 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
-if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" || "aarch64"==$(uname -p) ]]; then
+if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" || "aarch64" == $(uname -p) ]]; then
     export ARROW_FROM_SOURCE=1
 fi
 
