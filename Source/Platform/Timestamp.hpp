@@ -283,37 +283,7 @@ public:
     return convertTMToSecondsSinceEpoch(tmV,
 	                                needsUTCAdjustment(ltype));
   }
-#endif
-  /**
-   * Converts a given timestamp into a TM representation.
-   * Depending on the timestamp type, UTC or local time is used.
-   */
-  void convertToTM(struct tm *tmP)
-  {
-    switch (m_logicalType)
-    {
-      case LTY_TIMESTAMP_NTZ:
-      case LTY_DATE:
-		// Do localtime-oblivious conversion
-#if defined(WIN32) || defined(_WIN64)
-		gmtime_s(tmP, &m_secondsSinceEpoch);
-#else
-	    gmtime_r( (time_t *) (&m_secondsSinceEpoch), tmP);
-#endif
-		break;
-      default:
-		// Do conversion to the localtime
-#if defined(WIN32) || defined(_WIN64)
-		localtime_s(tmP, &m_secondsSinceEpoch);
-#else
-	    localtime_r( (time_t *) (&m_secondsSinceEpoch), tmP);
-#endif
-		break;
-    }
-  }
 
-#if defined(WIN32) || defined(_WIN64)
-#else
   /**
    * Our version of localtime that uses timezone offset.
    * Glibc version of localtime uses time zone environment variable. It is not
