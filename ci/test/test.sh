@@ -54,7 +54,7 @@ function init_python()
     python3 -m venv $temp_dir/venv
     source $temp_dir/venv/bin/activate
     echo "=== installing pip"
-    curl -s https://bootstrap.pypa.io/get-pip.py | python >& /dev/null
+    curl -s https://bootstrap.pypa.io/get-pip.py | python >& /dev/null || true
     echo "=== installing python connector"
     pip install snowflake-connector-python >&/dev/null
     which python
