@@ -583,8 +583,12 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 
     Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
       encryptionMetadata.iv.data);
-    fileMetadata->encryptionMetadata.enKekEncoded = outcome.GetResult()
-      .GetMetadata().at(AMZ_KEY);
+    if (outcome.GetResult().GetMetadata().find(AMZ_KEY) !=
+        outcome.GetResult().GetMetadata().end())
+    {
+      fileMetadata->encryptionMetadata.enKekEncoded = outcome.GetResult()
+        .GetMetadata().at(AMZ_KEY);
+    }
 
     return RemoteStorageRequestOutcome::SUCCESS;
   }

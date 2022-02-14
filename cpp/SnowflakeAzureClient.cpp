@@ -343,13 +343,19 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
 
         std::size_t pos1 = encHdr.find("EncryptedKey")  + strlen("EncryptedKey") + 3;
         std::size_t pos2 = encHdr.find("\",\"Algorithm\"");
-        fileMetadata->encryptionMetadata.enKekEncoded = encHdr.substr(pos1, pos2-pos1);
+        if ((std::string::npos != pos1) && (std::string::npos != pos2) && (pos2 >= pos1))
+        {
+          fileMetadata->encryptionMetadata.enKekEncoded = encHdr.substr(pos1, pos2 - pos1);
+        }
 
         pos1 = encHdr.find("ContentEncryptionIV")  + strlen("ContentEncryptionIV") + 3;
         pos2 = encHdr.find("\",\"KeyWrappingMetadata\"");
-        std::string iv = encHdr.substr(pos1, pos2-pos1);
-
-        Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->encryptionMetadata.iv.data);
+        std::string iv("");
+        if ((std::string::npos != pos1) && (std::string::npos != pos2) && (pos2 >= pos1))
+        {
+          iv = encHdr.substr(pos1, pos2 - pos1);
+          Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->encryptionMetadata.iv.data);
+        }
 
         fileMetadata->encryptionMetadata.cipherStreamSize = blobProperty.size;
         fileMetadata->srcFileSize = (long)blobProperty.size;

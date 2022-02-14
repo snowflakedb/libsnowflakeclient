@@ -1893,36 +1893,37 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     &sfstmt->put_get_response->client_show_encryption_param,
                     data, "clientShowEncryptionParameter");
 
-                cJSON *enc_mat = snowflake_cJSON_GetObjectItem(data,
-                                                               "encryptionMaterial");
-
-                // In put command response, value of encryptionMaterial is an
-                // object, which in get command response, value is an array of
-                // object since different remote files might have different
-                // encryption material
-                if (snowflake_cJSON_IsArray(enc_mat))
-                {
-                    json_detach_array_from_object(
-                      (cJSON **) (&sfstmt->put_get_response->enc_mat_get),
-                      data, "encryptionMaterial");
-                }
-                else
-                {
-                    json_copy_string(
-                      &sfstmt->put_get_response->enc_mat_put->query_stage_master_key,
-                      enc_mat, "queryStageMasterKey");
-                    json_copy_string_no_alloc(
-                      sfstmt->put_get_response->enc_mat_put->query_id,
-                      enc_mat, "queryId", SF_UUID4_LEN);
-                    json_copy_int(&sfstmt->put_get_response->enc_mat_put->smk_id,
-                                  enc_mat, "smkId");
-                }
-
                 cJSON *stage_info = snowflake_cJSON_GetObjectItem(data,
                                                                   "stageInfo");
+                sf_bool isClientSideEncrypted = SF_BOOLEAN_TRUE;
+                json_copy_bool(&isClientSideEncrypted,
+                               stage_info, "isClientSideEncrypted");
+
+                cJSON *enc_mat = snowflake_cJSON_GetObjectItem(data,
+                                                               "encryptionMaterial");
+                if (SF_BOOLEAN_TRUE == isClientSideEncrypted) {
+                    // In put command response, value of encryptionMaterial is an
+                    // object, which in get command response, value is an array of
+                    // object since different remote files might have different
+                    // encryption material
+                    if (snowflake_cJSON_IsArray(enc_mat)) {
+                        json_detach_array_from_object(
+                          (cJSON **) (&sfstmt->put_get_response->enc_mat_get),
+                          data, "encryptionMaterial");
+                    } else if (snowflake_cJSON_IsObject(enc_mat)) {
+                        json_copy_string(
+                          &sfstmt->put_get_response->enc_mat_put->query_stage_master_key,
+                          enc_mat, "queryStageMasterKey");
+                        json_copy_string_no_alloc(
+                          sfstmt->put_get_response->enc_mat_put->query_id,
+                          enc_mat, "queryId", SF_UUID4_LEN);
+                        json_copy_int(&sfstmt->put_get_response->enc_mat_put->smk_id,
+                                      enc_mat, "smkId");
+                    }
+                }
+
                 cJSON *stage_cred = snowflake_cJSON_GetObjectItem(stage_info,
                                                                   "creds");
-
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->location_type,
                     stage_info, "locationType");
