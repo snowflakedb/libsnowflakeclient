@@ -216,6 +216,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   {
     // No encryption materials for server side encryption
     fileMetadata->encryptionMetadata.cipherStreamSize = fileMetadata->srcFileToUploadSize;
+    fileMetadata->destFileSize = fileMetadata->srcFileToUploadSize;
     fileMetadata->encryptionMetadata.fileKey.nbBits = 0;
     return;
   }
