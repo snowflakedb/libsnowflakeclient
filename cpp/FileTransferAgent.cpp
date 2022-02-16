@@ -192,14 +192,15 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
         break;
       case CommandType::DOWNLOAD:
         {
-        std::string presignedUrl =
-          (m_storageClient->requirePresignedUrl() && (response.presignedUrls.size() > i)) ?
-            response.presignedUrls.at(i) : "";
+          std::string presignedUrl =
+            (m_storageClient->requirePresignedUrl() && (response.presignedUrls.size() > i)) ?
+              response.presignedUrls.at(i) : "";
+          EncryptionMaterial *encMat = (response.encryptionMaterials.size() > i) ?
+                                 &response.encryptionMaterials.at(i) : NULL;
           RemoteStorageRequestOutcome outcome =
             m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
               sourceLocations->at(i), &response.stageInfo.location,
-              m_storageClient, &response.encryptionMaterials.at(i),
-              presignedUrl);
+              m_storageClient, encMat, presignedUrl);
 
           if (outcome == TOKEN_EXPIRED)
           {
@@ -488,15 +489,25 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
       srcFileStream = &fs;
     }
 
-    Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
-                                              Crypto::CryptoOperation::ENCRYPT,
-                                              fileMetadata->encryptionMetadata.fileKey,
-                                              fileMetadata->encryptionMetadata.iv,
-                                              FILE_ENCRYPTION_BLOCK_SIZE);
+    if (fileMetadata->encryptionMetadata.fileKey.nbBits > 0)
+    {
+      Crypto::CipherIOStream inputEncryptStream(*srcFileStream,
+                                                Crypto::CryptoOperation::ENCRYPT,
+                                                fileMetadata->encryptionMetadata.fileKey,
+                                                fileMetadata->encryptionMetadata.iv,
+                                                FILE_ENCRYPTION_BLOCK_SIZE);
 
-    fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
-    // upload stream
-    outcome = client->upload(fileMetadata, &inputEncryptStream);
+      fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
+      // upload stream
+      outcome = client->upload(fileMetadata, &inputEncryptStream);
+    }
+    else
+    {
+      // server side encryption
+      fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_START);
+      // upload stream
+      outcome = client->upload(fileMetadata, srcFileStream);
+    }
     fileMetadata->recordPutGetTimestamp(FileMetadata::PUT_END);
     CXX_LOG_DEBUG("File upload done.");
     if (fs.is_open())
@@ -826,14 +837,22 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
-     Crypto::CipherIOStream decryptOutputStream(
-       dstFile,
-       Crypto::CryptoOperation::DECRYPT,
-       fileMetadata->encryptionMetadata.fileKey,
-       fileMetadata->encryptionMetadata.iv,
-       FILE_ENCRYPTION_BLOCK_SIZE);
+     if (fileMetadata->encryptionMetadata.fileKey.nbBits > 0)
+     {
+       Crypto::CipherIOStream decryptOutputStream(
+         dstFile,
+         Crypto::CryptoOperation::DECRYPT,
+         fileMetadata->encryptionMetadata.fileKey,
+         fileMetadata->encryptionMetadata.iv,
+         FILE_ENCRYPTION_BLOCK_SIZE);
 
-     outcome = client->download(fileMetadata, &decryptOutputStream);
+       outcome = client->download(fileMetadata, &decryptOutputStream);
+     }
+     else
+     {
+       // server side encryption
+       outcome = client->download(fileMetadata, &dstFile);
+     }
      dstFile.close();
      m_executionResults->SetTransferOutCome(outcome, resultIndex);
    } while (getRetryCtx.isRetryable(outcome));

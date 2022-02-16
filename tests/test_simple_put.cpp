@@ -800,6 +800,73 @@ void test_simple_put_overwrite(void **unused)
 
 }
 
+void test_server_side_encryption(void **unused)
+{
+    /* init */
+    SF_STATUS status;
+    SF_CONNECT *sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT *sfstmt = NULL;
+    SF_STATUS ret;
+
+    /* query */
+    sfstmt = snowflake_stmt(sf);
+
+    std::string create_stage("create or replace stage test_sse "
+                             "encryption = (type = 'SNOWFLAKE_SSE');");
+    ret = snowflake_query(sfstmt, create_stage.c_str(), create_stage.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+    std::string dataDir = TestSetup::getDataDir();
+    std::string file = dataDir + "small_file.csv";
+    std::string putCommand = "put file://" + file + " @test_sse";
+
+    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+            <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+
+    // load
+    std::string put_status;
+    ITransferResult * results = agent.execute(&putCommand);
+    while(results->next())
+    {
+        results->getColumnAsString(6, put_status);
+        assert_string_equal("UPLOADED", put_status.c_str());
+    }
+
+    // download
+    char tempDir[MAX_BUF_SIZE] = { 0 };
+    char tempPath[MAX_BUF_SIZE] = "get @test_sse/small_file.csv.gz file://";
+    sf_get_tmp_dir(tempDir);
+#ifdef _WIN32
+    getLongTempPath(tempDir);
+#endif
+    strcat(tempPath, tempDir);
+    std::string get_status;
+    std::string getcmd(tempPath);
+    results = agent.execute(&getcmd);
+    while(results && results->next())
+    {
+        results->getColumnAsString(1, get_status);
+        //Compressed File sizes vary on Windows/Linux, So not verifying size.
+        results->getColumnAsString(2, get_status);
+        assert_string_equal("DOWNLOADED", get_status.c_str());
+        results->getColumnAsString(3, get_status);
+        assert_string_equal("DECRYPTED", get_status.c_str());
+    }
+
+    std::string drop_stage("drop stage test_sse");
+    ret = snowflake_query(sfstmt, drop_stage.c_str(), drop_stage.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+    snowflake_stmt_term(sfstmt);
+
+    /* close and term */
+    snowflake_term(sf); // purge snowflake context
+}
+
 void replaceStrAll(std::string &stringToReplace,
                    std::string const &oldValue,
                    std::string const &newValue) {
@@ -1003,7 +1070,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_uploadfail, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown),
     cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown),
-    cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL, teardown)
+    cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL, teardown),
+    cmocka_unit_test_teardown(test_server_side_encryption, donothing)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

@@ -212,6 +212,15 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   FileMetadata *fileMetadata)
 {
+  if (m_encMat->empty())
+  {
+    // No encryption materials for server side encryption
+    fileMetadata->encryptionMetadata.cipherStreamSize = fileMetadata->srcFileToUploadSize;
+    fileMetadata->destFileSize = fileMetadata->srcFileToUploadSize;
+    fileMetadata->encryptionMetadata.fileKey.nbBits = 0;
+    return;
+  }
+
   std::string randDev = (getRandomDev() == Crypto::CryptoRandomDevice::DEV_RANDOM)? "DEV_RANDOM" : "DEV_URANDOM";
   CXX_LOG_INFO("Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata using random device %s.", randDev.c_str());
   EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)), getRandomDev());
@@ -255,7 +264,14 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush.push_back(fileMetadata);
     metaListToPush.back().srcFileName = fullPath;
     metaListToPush.back().destFileName = dstFileName;
-    EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
+    if (encMat)
+    {
+      EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
+    }
+    else
+    {
+      metaListToPush.back().encryptionMetadata.fileKey.nbBits = 0;
+    }
   }
 
   return outcome;

@@ -164,8 +164,14 @@ void SnowflakeGCSClient::parseEncryptionMetadataFromJSON(std::string const& json
   cJSON* encryptedIv =
           snowflake_cJSON_GetObjectItem(json, "ContentEncryptionIV");
 
-  key64 = encryptedKey->valuestring;
-  iv64 = encryptedIv->valuestring;
+  if (encryptedKey)
+  {
+    key64 = encryptedKey->valuestring;
+  }
+  if (encryptedIv)
+  {
+    iv64 = encryptedIv->valuestring;
+  }
 
   snowflake_cJSON_free(json);
 }

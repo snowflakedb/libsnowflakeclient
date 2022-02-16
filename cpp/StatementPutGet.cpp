@@ -43,10 +43,13 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     putGetParseResponse->command = CommandType::UPLOAD;
 
     putGetParseResponse->threshold = (size_t)response->threshold;
-    putGetParseResponse->encryptionMaterials.emplace_back(
-      response->enc_mat_put->query_stage_master_key,
-      response->enc_mat_put->query_id,
-      response->enc_mat_put->smk_id);
+    if (response->enc_mat_put->query_stage_master_key)
+    {
+      putGetParseResponse->encryptionMaterials.emplace_back(
+        response->enc_mat_put->query_stage_master_key,
+        response->enc_mat_put->query_id,
+        response->enc_mat_put->smk_id);
+    }
   } else if (sf_strncasecmp(response->command, "DOWNLOAD", 8) == 0)
   {
     putGetParseResponse->command = CommandType::DOWNLOAD;
