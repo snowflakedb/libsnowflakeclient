@@ -4,7 +4,7 @@ sys=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 export ARCH=$(uname -p)
 if [[ "$sys" == "linux" ]] && [[ "$ARCH" != "x86_64" ]]; then
     export PLATFORM=$sys-$ARCH
-    export IMAGE_OS=centos7-$ARCH
+    export IMAGE_OS=centos8-$ARCH
 else
     export PLATFORM=$sys
     export IMAGE_OS=centos6-default
