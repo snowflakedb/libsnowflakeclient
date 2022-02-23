@@ -65,9 +65,12 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
-    else
+    elif [[ "$ARCH" == "x64" ]]; then
         echo "[INFO] Building x64 Binary"
         aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+    else
+        echo "[INFO] Building $ARCH Binary"
+        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=$ARCH")
     fi
     ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN}"
 fi

@@ -104,7 +104,7 @@ make install
 #make install does not do much here
 cp -f $ARROW_CMAKE_BUILD_DIR/jemalloc_ep-prefix/src/jemalloc_ep/lib/*.a $ARROW_DEPS_BUILD_DIR/lib/
 # on arm64 linux, the arrow lib might be installed to lib folder
-if [[ ! -d "$ARROW_BUILD_DIR/lib64" ]]; then
+if [[ "$PLATFORM" == "linux" && ! -d "$ARROW_BUILD_DIR/lib64" ]]; then
     mv -f $ARROW_BUILD_DIR/lib $ARROW_BUILD_DIR/lib64
 fi
 

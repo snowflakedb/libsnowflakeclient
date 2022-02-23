@@ -120,7 +120,7 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
-if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" || "aarch64" == $(uname -p) ]]; then
+if [[ -n "$XP_BUILD" || "aarch64" == $(uname -p) || "arm" == $(uname -p) ]]; then
     export ARROW_FROM_SOURCE=1
 fi
 
@@ -134,11 +134,17 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     
     # Check to see if we are doing a universal build
     # By default we do want universal binaries
-    export ARCH=${ARCH:-universal}
+    if [[ "aarch64" == $(uname -p) ]]; then
+        export ARCH=${ARCH:-aarch64}
+    elif [[ "arm" == $(uname -p) ]]; then
+        export ARCH=${ARCH:-arm64}
+    else
+        export ARCH=${ARCH:-universal}
+    fi
 
     # Ensure that the user specifies the right arch, so 
     # we can skip this check in other scripts
-    if [[ "$ARCH" != "x64" && "$ARCH" != "x86" && "$ARCH" != "universal" ]]; then
+    if [[ "$ARCH" != "x64" && "$ARCH" != "x86" && "$ARCH" != "universal" && "$ARCH" != "aarch64" && "$ARCH" != "arm64" ]]; then
         echo "Invalid arch: $ARCH [universal, x86, x64]"; exit 1;
     fi
 else
