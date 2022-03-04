@@ -11,7 +11,7 @@
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
 {
-  char encryptedFileKey[32];
+  char encryptedFileKey[128];
   Crypto::CryptoIV iv;
   Crypto::CryptoKey queryStageMasterKey;
   Crypto::Cryptor::generateIV(iv, randomDevice);
@@ -26,7 +26,7 @@ void Snowflake::Client::EncryptionProvider::encryptFileKey(
   Crypto::CipherContext context =
     Crypto::Cryptor::getInstance().createCipherContext(Crypto::CryptoAlgo::AES,
                                                        Crypto::CryptoMode::ECB,
-                                                       Crypto::CryptoPadding::NONE,
+                                                       Crypto::CryptoPadding::PKCS5,
                                                        queryStageMasterKey,
                                                        iv);
 
@@ -78,7 +78,7 @@ void Snowflake::Client::EncryptionProvider::decryptFileKey(
   Crypto::CipherContext context =
     Crypto::Cryptor::getInstance().createCipherContext(Crypto::CryptoAlgo::AES,
                                                        Crypto::CryptoMode::ECB,
-                                                       Crypto::CryptoPadding::NONE,
+                                                       Crypto::CryptoPadding::PKCS5,
                                                        queryStageMasterKey,
                                                        iv);
 

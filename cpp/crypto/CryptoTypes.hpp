@@ -84,8 +84,11 @@ struct CryptoKey final
   }
 
   size_t nbBits;      /// 128, 192, or 256
+
+  // between 128 and 256 bits of key data, @see nbBits
+  // Add block size of 16 for possible padding
   char data[
-    256 / 8]; /// between 128 and 256 bits of key data, @see nbBits
+    256 / 8 + 16];
 };
 
 /**
