@@ -106,26 +106,6 @@ CipherContext::Impl::Impl(const CryptoAlgo algo,
 
   // Initialize the library context.
   this->ctx = EVP_CIPHER_CTX_new();
-
-  // Set padding.
-  bool pad;
-  switch (padding)
-  {
-    case CryptoPadding::NONE:
-      pad = false;
-      break;
-    case CryptoPadding::PKCS5:
-      pad = true;
-      break;
-    default:
-      //TODO port assertion framework
-      throw;
-  }
-  //TODO
-  if (EVP_CIPHER_CTX_set_padding(this->ctx, pad) != 1)
-    //TODO throw exception
-    throw;
-  //SF_THROW_CRYPTO(pad);
 }
 
 CipherContext::Impl::~Impl() noexcept
@@ -232,6 +212,29 @@ void CipherContext::initialize(const CryptoOperation op,
   if (success == 0)
     throw;
   //SF_THROW_CRYPTO(static_cast<int>(op));
+
+
+  // Set padding.
+  // EVP_CIPHER_CTX_set_padding() must be called after initialize
+  // https://www.openssl.org/docs/manmaster/man3/EVP_CIPHER_CTX_set_padding.html
+  bool pad;
+  switch (impl.padding)
+  {
+  case CryptoPadding::NONE:
+    pad = false;
+    break;
+  case CryptoPadding::PKCS5:
+    pad = true;
+    break;
+  default:
+    //TODO port assertion framework
+    throw;
+  }
+  //TODO
+  if (EVP_CIPHER_CTX_set_padding(impl.ctx, pad) != 1)
+    //TODO throw exception
+    throw;
+  //SF_THROW_CRYPTO(pad);
 
   // Remember operation and offset.
   impl.op = op;
