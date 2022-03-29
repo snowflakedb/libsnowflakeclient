@@ -3,6 +3,13 @@
 
 UTILS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+ARCH=$(uname -p)
+if [[ "$ARCH" == "x86_64" ]]; then
+  REP_URL_PREFIX="s3://sfc-jenkins/repository"
+else
+  REP_URL_PREFIX="s3://sfc-jenkins/repository-$ARCH"
+fi
+
 function init_git_variables()
 {
     echo "== set GIT environment variables"
@@ -106,9 +113,9 @@ function upload_to_sfc_dev1_data()
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ ! -z "$XP_BUILD" ]] ; then
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name s3://sfc-dev1-data/dependency/snowflakeclient_for_xp/$component_name/
+      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/snowflakeclient_for_xp/$component_name/
     else
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name s3://sfc-dev1-data/dependency/$component_name/
+      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/$component_name/
     fi
 }
 
@@ -122,9 +129,9 @@ function upload_to_sfc_jenkins()
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ ! -z "$XP_BUILD" ]] ; then
-      local target_path=s3://sfc-jenkins/repository/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
+      local target_path=$REP_URL_PREFIX/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
     else
-      local target_path=s3://sfc-jenkins/repository/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
+      local target_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
     fi
     echo "=== uploading artifacts/$zip_file_name to $target_path"
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $target_path
@@ -151,9 +158,9 @@ function download_from_sfc_jenkins()
     echo "$component_name $component_version $build_type"
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ ! -z "$XP_BUILD" ]] ; then
-      local source_path=s3://sfc-jenkins/repository/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
+      local source_path=$REP_URL_PREFIX/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
     else
-      local source_path=s3://sfc-jenkins/repository/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
+      local source_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
     fi
     echo "=== downloading $zip_file_name from $source_path/"
     aws s3 cp --only-show-errors $source_path/$zip_file_name $UTILS_DIR/../artifacts/

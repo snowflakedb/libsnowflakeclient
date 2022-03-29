@@ -20,7 +20,7 @@ BUILD_IMAGE_VERSION=1
 # Test Images
 TEST_IMAGE_VERSION=1
 
-ARCH=$(uname -a)
+ARCH=$(uname -p)
 if [[ "$ARCH" == "aarch64" ]]; then
   export DOCKER_MARK="ubuntu20-aarch64" 
   declare -A BUILD_IMAGE_NAMES=(
