@@ -31,12 +31,6 @@ function download_build_component()
             echo "Skip download or build."
         else
             rm -rf $DEPENDENCY_DIR/$component_name
-            ARCH=$(uname -p)
-            if [[ "$ARCH" == "x86_64" ]]; then
-              DEP_URL_PREFIX="s3://sfc-dev1-data/dependency"
-            else
-              DEP_URL_PREFIX="s3://sfc-dev1-data/dependency-$ARCH"
-            fi
 
             if [[ ! -z "$XP_BUILD" ]] ; then
               src_path="$DEP_URL_PREFIX/snowflakeclient_for_xp/$component_name"

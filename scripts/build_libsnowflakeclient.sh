@@ -30,6 +30,7 @@ cmake_opts=(
     "-DCMAKE_C_COMPILER=$GCC"
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
+    "-DCMAKE_OS_ARCH=$ARCH"
 )
 
 # Check to see if we are doing a universal build or not.
