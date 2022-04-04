@@ -31,11 +31,13 @@ function download_build_component()
             echo "Skip download or build."
         else
             rm -rf $DEPENDENCY_DIR/$component_name
+
             if [[ ! -z "$XP_BUILD" ]] ; then
-              src_path="s3://sfc-dev1-data/dependency/snowflakeclient_for_xp/$component_name"
+              src_path="$DEP_URL_PREFIX/snowflakeclient_for_xp/$component_name"
             else
-              src_path="s3://sfc-dev1-data/dependency/$component_name"
+              src_path="$DEP_URL_PREFIX/$component_name"
             fi
+
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"

@@ -230,12 +230,17 @@ else()
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
         add_test(valgrind_${T}
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
                 valgrind
                 --tool=memcheck
                 --leak-check=full
                 --error-exitcode=1
                 --suppressions=${VALGRIND_SUPPRESSION}
                 ./${T})
+          endif()
+        endif()
     ENDFOREACH ()
 
 
@@ -262,13 +267,17 @@ else()
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
                  valgrind
                  --tool=memcheck
                  --leak-check=full
                  --error-exitcode=1
                  --suppressions=${VALGRIND_SUPPRESSION}
                  ./${T})
+          endif()
+        endif()
     ENDFOREACH()
     ENDIF ()
 
