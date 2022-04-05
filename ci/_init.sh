@@ -20,13 +20,27 @@ BUILD_IMAGE_VERSION=1
 # Test Images
 TEST_IMAGE_VERSION=1
 
-declare -A BUILD_IMAGE_NAMES=(
-    [$DRIVER_NAME-centos6-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-build:$BUILD_IMAGE_VERSION
-)
-export BUILD_IMAGE_NAMES
+ARCH=$(uname -p)
+if [[ "$ARCH" == "aarch64" ]]; then
+  export DOCKER_MARK="ubuntu20-aarch64"
+  declare -A BUILD_IMAGE_NAMES=(
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-ubuntu20-aarch64:$BUILD_IMAGE_VERSION
+  )
 
-declare -A TEST_IMAGE_NAMES=(
-    [$DRIVER_NAME-centos6-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-test:$BUILD_IMAGE_VERSION
-)
+  declare -A TEST_IMAGE_NAMES=(
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-ubuntu20-aarch64:$BUILD_IMAGE_VERSION
+  )
+else
+  export DOCKER_MARK="centos6-default"
+  declare -A BUILD_IMAGE_NAMES=(
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-build:$BUILD_IMAGE_VERSION
+  )
+
+  declare -A TEST_IMAGE_NAMES=(
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-test:$BUILD_IMAGE_VERSION
+  )
+fi
+
+export BUILD_IMAGE_NAMES
 
 export TEST_IMAGE_NAMES

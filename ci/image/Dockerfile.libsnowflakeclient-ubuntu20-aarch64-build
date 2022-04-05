@@ -1,0 +1,29 @@
+FROM arm64v8/ubuntu:focal
+
+ENV DEBIAN_FRONTEND="noninteractive" TZ="Etc/UTC"
+
+RUN apt-get update
+
+# dev toolsets
+RUN apt-get install -y git cmake g++ zip python3.8 libre2-dev unixodbc-dev unixodbc libcppunit-dev vim
+
+RUN apt-get install -y gosu \
+    && ln -s /usr/sbin/gosu /usr/local/bin/gosu
+# Java
+RUN apt-get install -y openjdk-8-jdk
+
+RUN apt-get install -y --fix-missing python3-pip valgrind \
+    && ln -s /usr/bin/python3 /usr/local/bin/python
+
+RUN pip install awscli
+
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# workspace
+
+RUN mkdir -p /home/user
+RUN chmod 777 /home/user
+WORKDIR /home/user
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -646,7 +646,7 @@ char * STDCALL encode_url(CURL *curl,
     if (extraUrlParams && !is_string_empty(extraUrlParams))
     {
       sb_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
-      sb_strncat(encoded_url, encoded_url_size, extraUrlParams, strlen(extraUrlParams));
+      sb_strncat(encoded_url, encoded_url_size, extraUrlParams, encoded_url_size);
     }
 
     log_debug("URL: %s", encoded_url);

@@ -34,8 +34,10 @@ rm -rf $LIBCURL_BUILD_DIR
 mkdir -p $LIBCURL_BUILD_DIR
 
 export OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
+export ZLIB_BUILD_DIR=$DEPENDENCY_DIR/zlib
 curl_configure_opts+=(
     "--with-ssl=$OPENSSL_BUILD_DIR"
+    "--with-zlib=$ZLIB_BUILD_DIR"
     "--without-nss"
 )
 rm -rf $LIBCURL_BUILD_DIR
@@ -65,7 +67,6 @@ cd $LIBCURL_SOURCE_DIR
 echo "Building Curl with OpenSSL"
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC="${GCC:-gcc52}"
     export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
@@ -104,10 +105,19 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null
-    else
+    elif [[ "$ARCH" == "x64" ]]; then
         echo "[INFO] Building x64 Binary"
         make distclean clean &> /dev/null || true
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
+        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
+        make > /dev/null
+        make install /dev/null
+    else
+        echo "[INFO] Building $ARCH Binary"
+        make distclean clean &> /dev/null || true
+        export CFLAGS="-arch $ARCH -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}

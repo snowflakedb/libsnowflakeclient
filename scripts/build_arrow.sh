@@ -20,9 +20,9 @@ source $DIR/_init.sh $@
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
-if [[ "$PLATFORM" == "linux" ]] && [[ -n "$XP_BUILD" ]]; then
-    source $DIR/build_boost_linux.sh -t $target
-    source $DIR/build_arrow_linux.sh -t $target
+if [[ -n "$ARROW_FROM_SOURCE" ]]; then
+    $DIR/build_boost_source.sh -t $target
+    $DIR/build_arrow_source.sh -t $target
     exit 0
 fi
 

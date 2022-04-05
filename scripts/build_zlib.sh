@@ -35,39 +35,43 @@ cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    if [[ -z "$XP_BUILD" ]] ; then
-      export CC=gcc52
-    else
-      export CC=gcc82
-    fi
     export CFLAGS="-fPIC"
     make -f Makefile.in distclean > /dev/null || true
     ./configure ${zlib_config_opts[@]} > /dev/null || true
     make install > /dev/null || true
 
 elif [[ "$PLATFORM" == "darwin" ]]; then
-   echo "Now building for x86_64"
-   export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-   BUILD_DIR_64=$BUILD_DIR/zlib_64
-   make -f Makefile.in distclean > /dev/null || true
-   ./configure -s --static --prefix=$BUILD_DIR_64 
-   make install
+   if [[ "$ARCH" == "x86" || "$ARCH" == "x64" || "$ARCH" == "universal" ]]; then
+       # for intel always universal
+       echo "Now building for x86_64"
+       export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+       BUILD_DIR_64=$BUILD_DIR/zlib_64
+       make -f Makefile.in distclean > /dev/null || true
+       ./configure -s --static --prefix=$BUILD_DIR_64 
+       make install
 
-   echo "Now building for i386"
-   make -f Makefile.in distclean > /dev/null || true
-   cd $SOURCE_DIR
-   CFLAGS=""
-   LDFLAGS=""
-   CXXFLAGS=""
-   export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
-   BUILD_DIR_32=$BUILD_DIR/zlib_32
-  ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
-   make install
+       echo "Now building for i386"
+       make -f Makefile.in distclean > /dev/null || true
+       cd $SOURCE_DIR
+       CFLAGS=""
+       LDFLAGS=""
+       CXXFLAGS=""
+       export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
+       BUILD_DIR_32=$BUILD_DIR/zlib_32
+      ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
+       make install
 
-   mkdir -p $BUILD_DIR/{lib,include}
-   cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
-   lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
-   rm -rf $BUILD_DIR_64 $BUILD_DIR_32
+       mkdir -p $BUILD_DIR/{lib,include}
+       cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
+       lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
+       rm -rf $BUILD_DIR_64 $BUILD_DIR_32
+    else
+       echo "Now building for $ARCH"
+       export CFLAGS="-fPIC -arch $ARCH -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+       make -f Makefile.in distclean > /dev/null || true
+       ./configure -s --static --prefix=$BUILD_DIR
+       make install
+    fi
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1

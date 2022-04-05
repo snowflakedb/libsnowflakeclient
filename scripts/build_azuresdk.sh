@@ -12,15 +12,6 @@ set -o pipefail
 
 AZURE_VERSION=0.1.18
 
-#If its not for XP use gcc52
-if [[ -z "$XP_BUILD" ]] ; then 
-  export CC="/usr/lib64/ccache/gcc52"
-  export CXX="/usr/lib64/ccache/g++52"
-else
-  export CC="gcc82"
-  export CXX="g++82"
-fi
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
@@ -75,7 +66,6 @@ azure_configure_opts+=(
     "-DUSE_OPENSSL=true"
     "-DOPENSSL_VERSION_NUMBER=0x11100000L"
     "-DBUILD_SAMPLES=true"
-    "-DBUILD_TESTS=true"
     "-DOPENSSL_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-DOPENSSL_CRYPTO_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
     "-DOPENSSL_SSL_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libssl.a"
@@ -83,6 +73,19 @@ azure_configure_opts+=(
     "-DCURL_LIBRARIES=$DEPENDENCY_DIR/curl/lib/libcurl.a"
     "-DEXTRA_INCLUDE=$DEPENDENCY_DIR/zlib/include"
 )
+
+# azure test case is using old version of catch.hpp which is using
+# asm code and can't be built on arm.
+# Disable building test for now until it move to newer version.
+if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+  azure_configure_opts+=(
+      "-DBUILD_TESTS=false"
+  )
+else
+  azure_configure_opts+=(
+      "-DBUILD_TESTS=true"
+  )
+fi
 
 if [[ "$PLATFORM" == "linux" ]]; then
   azure_configure_opts+=(
@@ -102,9 +105,12 @@ if [[ "$PLATFORM" == "darwin" ]]; then
   elif [[ "$ARCH" == "x86" ]]; then
     echo "[INFO] Building x86 Binary"
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
-  else
+  elif [[ "$ARCH" == "x64" ]]; then
     echo "[INFO] Building x64 Binary"
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+  else
+    echo "[INFO] Building $ARCH Binary"
+    azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=$ARCH")
   fi
   ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN} "
 fi

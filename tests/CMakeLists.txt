@@ -100,6 +100,11 @@ if (UNIX)
 endif ()
 
 if (LINUX)
+    if ($ENV{GCCVERSION} STRGREATER "9")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
+    endif ()
+
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
@@ -224,13 +229,17 @@ else()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
                 valgrind
                 --tool=memcheck
                 --leak-check=full
                 --error-exitcode=1
                 --suppressions=${VALGRIND_SUPPRESSION}
                 ./${T})
+          endif()
+        endif()
     ENDFOREACH ()
 
 
@@ -257,13 +266,17 @@ else()
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
-        add_test(valgrind_${T}
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
                  valgrind
                  --tool=memcheck
                  --leak-check=full
                  --error-exitcode=1
                  --suppressions=${VALGRIND_SUPPRESSION}
                  ./${T})
+          endif()
+        endif()
     ENDFOREACH()
     ENDIF ()
 

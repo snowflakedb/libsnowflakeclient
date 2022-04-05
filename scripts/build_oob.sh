@@ -36,11 +36,6 @@ cd $OOB_SOURCE_DIR
 export CURL_DIR=curl-7.78.0
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    if [[ -z "$XP_BUILD" ]] ; then
-      export CC=gcc52
-    else
-      export CC=gcc82
-    fi
     export AR=ar
     export AROPTIONS=rcs
     make distclean clean > /dev/null || true
@@ -50,12 +45,18 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     export AR=libtool
     export AROPTIONS="-static -o"
     make distclean > /dev/null || true
-    export CFLAGS="-mmacosx-version-min=10.12 -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG" 
-    make LIB=libtelemetry32.a 
-    make clean > /dev/null || true
-    export CFLAGS="-mmacosx-version-min=10.12 -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8"
-    make LIB=libtelemetry64.a 
-    lipo -create $OOB_SOURCE_DIR/libtelemetry64.a $OOB_SOURCE_DIR/libtelemetry32.a -output $OOB_SOURCE_DIR/libtelemetry.a 
+    if [[ "$ARCH" == "x86" || "$ARCH" == "x64" || "$ARCH" == "universal" ]]; then
+        # for intel always universal
+        export CFLAGS="-mmacosx-version-min=10.12 -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG" 
+        make LIB=libtelemetry32.a 
+        make clean > /dev/null || true
+        export CFLAGS="-mmacosx-version-min=10.12 -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8"
+        make LIB=libtelemetry64.a 
+        lipo -create $OOB_SOURCE_DIR/libtelemetry64.a $OOB_SOURCE_DIR/libtelemetry32.a -output $OOB_SOURCE_DIR/libtelemetry.a
+    else
+        export CFLAGS="-mmacosx-version-min=10.12 -arch $ARCH -DSIZEOF_LONG_INT=8"
+        make LIB=libtelemetry.a
+    fi
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1

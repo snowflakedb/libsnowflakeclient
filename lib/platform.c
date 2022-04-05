@@ -806,7 +806,7 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
   }
   else
   {
-    sb_strncpy(tmpDir, 100, tmpEnv, strlen(tmpEnv));
+    sb_strncpy(tmpDir, 100, tmpEnv, 100);
     size_t oldLen = strlen(tmpDir);
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';

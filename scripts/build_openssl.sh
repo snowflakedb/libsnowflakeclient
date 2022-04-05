@@ -43,7 +43,6 @@ fi
 cd $OPENSSL_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CC="${GCC:-gcc52}"
     make distclean clean &> /dev/null || true
     perl ./Configure linux-$(uname -p) "${openssl_config_opts[@]}"
     make depend > /dev/null
@@ -76,9 +75,12 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
             echo "[INFO] Building x86 binary"
             perl ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
             
-        else
+        elif [[ "$ARCH" == "x64" ]]; then
             echo "[INFO] Building x64 binary"
             perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
+        else
+            echo "[INFO] Building $ARCH binary"
+            perl ./Configure darwin64-$ARCH-cc "${openssl_config_opts[@]}"
         fi
         make -j 4 > /dev/null
         make install_sw install_ssldirs > /dev/null

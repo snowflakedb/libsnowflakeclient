@@ -37,7 +37,7 @@ ALGORITHM_TYPE HDR_getAlgorithmType(HEADER cjwt_header)
 const char * HDR_getCustomHeaderEntry(HEADER cjwt_header, const char *entry_type)
 {
     IHeader *hdr = static_cast<IHeader *>(cjwt_header);
-    return (hdr->getCustomHeaderEntry(std::string(entry_type))).c_str();
+    return hdr->getCustomHeaderEntryConstBuf(std::string(entry_type));
 }
 
 void HDR_delete(HEADER cjwt_header)
@@ -79,7 +79,7 @@ void CSET_addIntClaimset(CLAIMSET cjwt_cset, const char *key, long value)
 const char * CSET_getClaimsetString(CLAIMSET cjwt_cset, const char *key)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
-    return (cset->getClaimInString(std::string(key))).c_str();
+    return cset->getClaimInStringConstBuf(std::string(key));
 }
 
 long CSET_getClaimsetLong(CLAIMSET cjwt_cset, const char *key)
@@ -124,7 +124,7 @@ const char * CJWT_serialize(CJWT cjwt_obj, EVP_PKEY *key)
 {
     IJwt *ijwt_obj = static_cast<IJwt *>(cjwt_obj);
 
-    return (ijwt_obj->serialize(key)).c_str();
+    return ijwt_obj->serializeConstBuf(key);
 }
 
 int CJWT_verify(CJWT cjwt_obj, EVP_PKEY *key)

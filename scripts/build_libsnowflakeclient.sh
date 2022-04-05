@@ -42,9 +42,12 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
-    else
+    elif [[ "$ARCH" == "x64" ]]; then
         echo "[INFO] Building x64 Binary"
         cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64")
+    else
+        echo "[INFO] Building $ARCH Binary"
+        cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=$ARCH")
     fi
 fi
 
