@@ -7,7 +7,7 @@
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
-#include "util/Proxy.hpp"
+#include "snowflake/Proxy.hpp"
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
@@ -76,9 +76,21 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   std::string endpoint = account_name + "." + m_stageInfo->endPoint;
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
   std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
-  auto bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile);
+  std::shared_ptr<azure::storage_lite::blob_client> bc;
+  if(transferConfig && transferConfig->proxy) {
+    bc = std::make_shared<azure::storage_lite::blob_client>(
+                account, m_parallel, caBundleFile,
+                transferConfig->proxy->getHost(),
+                transferConfig->proxy->getPort(),
+                transferConfig->proxy->getUser(),
+                transferConfig->proxy->getPwd(),
+                transferConfig->proxy->getNoProxy());
+  }
+  else
+  {
+     bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile);
+  }
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
-
   //Ensure the stage location ended with /
   if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
   {
