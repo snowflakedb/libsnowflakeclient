@@ -3,7 +3,7 @@
  */
 
 #include <cassert>
-#include "util/Proxy.hpp"
+#include "snowflake/Proxy.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 
