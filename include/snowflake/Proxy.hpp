@@ -28,30 +28,42 @@ public:
 
     ~Proxy() = default;
 
-    inline const std::string& getUser()
+    inline const std::string& getUser() const
     {
         return this->m_user;
     }
 
-    inline const std::string& getPwd()
+    inline const std::string& getPwd() const
     {
         return this->m_pwd;
     }
 
-    inline const std::string& getMachine()
+    inline const std::string& getMachine() const
     {
         return this->m_machine;
     }
 
-    inline unsigned getPort()
+    inline unsigned getPort() const
     {
         return this->m_port;
     }
 
-    inline Protocol getScheme()
+    inline Protocol getScheme() const
     {
         return this->m_protocol;
     }
+
+    inline void setNoProxy(const std::string& noProxy)
+    {
+        this->m_noProxy = noProxy;
+    }
+
+    inline const std::string& getNoProxy() const
+    {
+        return this->m_noProxy;
+    }
+
+    std::string getHost() const;
 
     void clearPwd();
 
@@ -63,6 +75,7 @@ private:
     std::string m_machine;
     unsigned m_port = 0;
     Protocol m_protocol = Protocol::NONE;
+    std::string m_noProxy;
 
     void stringToProxyParts(const std::string &proxy);
 };

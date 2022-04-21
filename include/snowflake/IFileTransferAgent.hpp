@@ -8,6 +8,7 @@
 #include "ITransferResult.hpp"
 #include "ISFLogger.hpp"
 #include "IStatementPutGet.hpp"
+#include "Proxy.hpp"
 
 namespace Snowflake
 {
@@ -23,11 +24,13 @@ struct TransferConfig
     caBundleFile(NULL),
     tempDir(NULL),
     useS3regionalUrl(false),
-    compressLevel(-1) {}
+    compressLevel(-1),
+    proxy(NULL) {}
   char * caBundleFile;
   char * tempDir;
   bool useS3regionalUrl;
   int compressLevel;
+  Util::Proxy * proxy;
 };
 
 class IFileTransferAgent
