@@ -780,6 +780,11 @@ int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryNa
 
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {
+  // Check existence before calling system() to prevent command injection.
+  if (!sf_is_directory_exist(directoryName))
+  {
+    return 0;
+  }
 #ifdef _WIN32
   char rmCmd[500];
   sb_strcpy(rmCmd, sizeof(rmCmd), "rd /s /q ");
