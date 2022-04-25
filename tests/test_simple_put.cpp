@@ -567,6 +567,7 @@ void test_simple_put_auto_compress(void **unused)
 void test_simple_put_config_temp_dir(void **unused)
 {
   char tmpDir[MAX_PATH] = {0};
+  char tmpDirInjection[MAX_PATH] = {0};
   char pathSepStr[2] = {PATH_SEP, '\0'};
   sf_get_tmp_dir(tmpDir);
   strcat(tmpDir, "test_config_temp_dir");
@@ -596,6 +597,50 @@ void test_simple_put_config_temp_dir(void **unused)
   assert_true(sf_is_directory_exist(tmpDir));
 
   sf_delete_directory_if_exists(tmpDir);
+
+#ifdef _WIN32
+  #define CMD_SEPARATOR "&"
+#else
+  #define CMD_SEPARATOR ";"
+#endif
+  // make sure the parent folder exists and the folder
+  // for injection test doesn't.
+  sf_get_tmp_dir(tmpDir);
+  if (!sf_is_directory_exist(tmpDir))
+  {
+    sf_create_directory_if_not_exists_recursive(tmpDir);
+  }
+  strcat(tmpDir, "injection");
+  if (sf_is_directory_exist(tmpDir))
+  {
+    sf_delete_directory_if_exists(tmpDir);
+  }
+
+  // try injection the command for folder deletion like
+  // rm -rf xxx ; mkdir <tmpDir>/injection ; xxx
+  sprintf(tmpDirInjection, "xxx %s mkdir %s %s xxx",
+          CMD_SEPARATOR, tmpDir, CMD_SEPARATOR);
+  try
+  {
+    test_simple_put_core("small_file.csv", // filename
+                         "auto", //source compression
+                         true, // auto compress
+                         true, // copyUploadFile
+                         true, // verifyCopyUploadFile
+                         false, // copyTableToStaging
+                         false, // createDupTable
+                         false, // setCustomThreshold
+                         64*1024*1024, // customThreshold
+                         false, // useDevUrand
+                         false, // createSubfolder
+                         tmpDirInjection
+    );
+  }
+  catch (...)
+  {
+    //ignore exception as the failure is expected.
+  }
+  assert_false(sf_is_directory_exist(tmpDir));
 }
 
 void test_simple_put_auto_detect_gzip(void ** unused)

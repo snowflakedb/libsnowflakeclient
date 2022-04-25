@@ -594,20 +594,30 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
     }
   }
   sf_get_uniq_tmp_dir(tempDir);
+  // tempDir could be passed in from application. Check if the folder can be
+  // created successfully to prevent command injection.
+  if (!sf_is_directory_exist(tempDir))
+  {
+    CXX_LOG_ERROR("Failed to create temporary folder %s. Errno: %d", tempDir, errno);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, tempDir, -1);
+  }
+
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 
-  fileMetadata->srcFileToUpload = stagingFile;
   FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
   if( !sourceFile ){
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
-    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileToUpload.c_str(), -1);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileName.c_str(), -1);
   }
-  FILE *destFile = fopen(fileMetadata->srcFileToUpload.c_str(), "w");
+  FILE *destFile = fopen(stagingFile.c_str(), "w");
   if ( !destFile) {
-    CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", fileMetadata->srcFileToUpload.c_str(), errno);
-    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileToUpload.c_str(), -1);
+    CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }
+  // set srcFileToUpload after open file successfully to prevent command injection.
+  fileMetadata->srcFileToUpload = stagingFile;
+
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize, level);
   if (ret != 0)
