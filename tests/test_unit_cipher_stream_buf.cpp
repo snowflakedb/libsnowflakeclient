@@ -41,24 +41,33 @@ void test_cipher_stream_core(int blockSize, const char * testData, int dataSize,
   assert_memory_equal(testData, outputString.str().c_str(), dataSize);
 }
 
+/*
+ * Disable DEV_RANDOM test on Linux as it could be blocked
+ */
 void test_cipher_stream_buf_zero(void **unused)
 {
   const char * testData = "123456789123456789123456789\0";
+#ifndef __linux__
   test_cipher_stream_core(16, testData, strlen(testData), CryptoRandomDevice::DEV_RANDOM);
+#endif
   test_cipher_stream_core(16, testData, strlen(testData), CryptoRandomDevice::DEV_URANDOM);
 }
 
 void test_cipher_stream_buf_one(void **unused)
 {
   const char * testData = "123456789123456789123456789\0";
+#ifndef __linux__
   test_cipher_stream_core(512, testData, strlen(testData), CryptoRandomDevice::DEV_RANDOM);
+#endif
   test_cipher_stream_core(512, testData, strlen(testData), CryptoRandomDevice::DEV_URANDOM);
 }
 
 void test_cipher_stream_buf_two(void **unused)
 {
   const char * testData = "0123456789012345\0";
+#ifndef __linux__
   test_cipher_stream_core(16, testData, strlen(testData), CryptoRandomDevice::DEV_RANDOM);
+#endif
   test_cipher_stream_core(16, testData, strlen(testData), CryptoRandomDevice::DEV_URANDOM);
 }
 
