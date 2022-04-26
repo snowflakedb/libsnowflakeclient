@@ -43,8 +43,14 @@ void test_byte_array_stream(void **unused)
  */
 void test_stream_splitter_appender(void **unused)
 {
+// Disable DEV_RANDOM test on Linux as it could be blocked
+#ifdef __linux__
+  int numDevices = 1;
+  CryptoRandomDevice devices[]={CryptoRandomDevice::DEV_URANDOM};
+#else
   int numDevices = 2;
   CryptoRandomDevice devices[]={CryptoRandomDevice::DEV_RANDOM, CryptoRandomDevice::DEV_URANDOM};
+#endif
   for(int i=0; i< numDevices ; ++i)
   {
     std::string inputStr = "123456789012345678901234567890";
