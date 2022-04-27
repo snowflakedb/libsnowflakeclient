@@ -590,7 +590,12 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
     level = m_transferConfig->compressLevel;
     if (m_transferConfig->tempDir)
     {
-      sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+      std::string tmpDirSetting(m_transferConfig->tempDir);
+      // ban characters that could use for command injection
+      if (std::string::npos == tmpDirSetting.find_first_of("&;\""))
+      {
+        sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+      }
     }
   }
   sf_get_uniq_tmp_dir(tempDir);

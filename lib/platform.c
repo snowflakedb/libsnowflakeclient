@@ -787,13 +787,15 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
   }
 #ifdef _WIN32
   char rmCmd[500];
-  sb_strcpy(rmCmd, sizeof(rmCmd), "rd /s /q ");
+  sb_strcpy(rmCmd, sizeof(rmCmd), "rd /s /q \"");
   sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
+  sb_strcat(rmCmd, sizeof(rmCmd), "\"");
   return system(rmCmd);
 #else
   char rmCmd[500];
-  sb_strcpy(rmCmd, sizeof(rmCmd), "rm -rf ");
+  sb_strcpy(rmCmd, sizeof(rmCmd), "rm -rf \"");
   sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
+  sb_strcat(rmCmd, sizeof(rmCmd), "\"");
   return system(rmCmd);
 #endif
 }
