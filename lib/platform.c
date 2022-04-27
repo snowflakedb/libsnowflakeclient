@@ -778,28 +778,6 @@ int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryNa
   return 0;
 }
 
-int STDCALL sf_delete_directory_if_exists(const char * directoryName)
-{
-  // Check existence before calling system() to prevent command injection.
-  if (!sf_is_directory_exist(directoryName))
-  {
-    return 0;
-  }
-#ifdef _WIN32
-  char rmCmd[500];
-  sb_strcpy(rmCmd, sizeof(rmCmd), "rd /s /q \"");
-  sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
-  sb_strcat(rmCmd, sizeof(rmCmd), "\"");
-  return system(rmCmd);
-#else
-  char rmCmd[500];
-  sb_strcpy(rmCmd, sizeof(rmCmd), "rm -rf \"");
-  sb_strcat(rmCmd, sizeof(rmCmd), directoryName);
-  sb_strcat(rmCmd, sizeof(rmCmd), "\"");
-  return system(rmCmd);
-#endif
-}
-
 void STDCALL sf_get_tmp_dir(char * tmpDir)
 {
 #ifdef _WIN32
