@@ -20,8 +20,8 @@ BUILD_IMAGE_VERSION=1
 # Test Images
 TEST_IMAGE_VERSION=1
 
-ARCH=$(uname -p)
-if [[ "$ARCH" == "aarch64" ]]; then
+PLATFORM_ARCH=$(uname -p)
+if [[ "$PLATFORM_ARCH" == "aarch64" ]]; then
   export DOCKER_MARK="ubuntu20-aarch64"
   declare -A BUILD_IMAGE_NAMES=(
     [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-ubuntu20-aarch64:$BUILD_IMAGE_VERSION
