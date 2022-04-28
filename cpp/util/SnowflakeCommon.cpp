@@ -3,7 +3,9 @@
 */
 #include <string.h>
 #include "boost/regex.hpp"
+#include "boost/filesystem.hpp"
 #include "snowflake/basic_types.h"
+#include "snowflake/platform.h"
 
 /**
  * Validate partner application name.
@@ -28,6 +30,26 @@ sf_bool validate_application(const char* application)
   }
 
   return SF_BOOLEAN_FALSE;
+}
+
+int STDCALL sf_delete_directory_if_exists(const char * directoryName)
+{
+  if (!sf_is_directory_exist(directoryName))
+  {
+    return 0;
+  }
+
+  boost::system::error_code err;
+  try
+  {
+    boost::filesystem::remove_all(boost::filesystem::path(directoryName), err);
+  }
+  catch (...)
+  {
+    return -1;
+  }
+
+  return err.value();
 }
 
 }
