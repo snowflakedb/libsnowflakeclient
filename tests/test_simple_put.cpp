@@ -56,7 +56,8 @@ void test_simple_put_core(const char * fileName,
                           char * tmpDir = nullptr,
                           bool useS3regionalUrl = false,
                           int compressLevel = -1,
-                          bool overwrite = false)
+                          bool overwrite = false,
+                          Util::Proxy * proxy = nullptr)
 {
   /* init */
   SF_STATUS status;
@@ -135,6 +136,11 @@ void test_simple_put_core(const char * fileName,
   if(compressLevel > 0)
   {
     transConfig.compressLevel = compressLevel;
+    transConfigPtr = &transConfig;
+  }
+  if (proxy)
+  {
+    transConfig.proxy = proxy;
     transConfigPtr = &transConfig;
   }
 
@@ -1062,6 +1068,59 @@ void test_simple_put_uploadfail(void **unused) {
   snowflake_term(sf); // purge snowflake context
   sf_delete_directory_if_exists(tmpDir);
 
+}
+
+void test_simple_put_passdown_proxy(void **unused)
+{
+  Util::Proxy proxy;
+  proxy.setProxyFromEnv();
+
+  // Set environment variables explicitly to ensure proxy settings are
+  // passdown correctly and overwrite the environment variable settings
+  std::string envName("all_proxy");
+  std::string envValue("");
+  std::string invalidProxy("a.b.c");
+
+  // backup existing proxy environment variable
+  if (std::getenv("all_proxy")) {
+      envValue = std::getenv("all_proxy");
+  } else if (std::getenv("https_proxy")) {
+      envName = "https_proxy";
+      envValue = std::getenv("https_proxy");
+  } else if (std::getenv("http_proxy")) {
+      envName = "http_proxy";
+      envValue = std::getenv("http_proxy");
+  }
+
+#if defined(WIN32) || defined(_WIN64)
+  _putenv_s(envName.c_str(), invalidProxy.c_str());
+#else
+  setenv(envName.c_str(), invalidProxy.c_str(), 1);
+#endif
+
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false,
+                       false,
+                       false,
+                       false,
+                       false,
+                       100*1024*1024,
+                       false,
+                       false,
+                       nullptr,
+                       false,
+                       -1,
+                       true,
+                       &proxy);
+
+  // restore existing proxy environment variable
+#if defined(WIN32) || defined(_WIN64)
+  _putenv_s(envName.c_str(), envValue.c_str());
+#else
+  setenv(envName.c_str(), envValue.c_str(), 1);
+#endif
 }
 
 int main(void) {
