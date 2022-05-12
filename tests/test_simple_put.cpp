@@ -1175,6 +1175,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown),
     cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL, teardown),
+    cmocka_unit_test_teardown(test_simple_put_passdown_proxy, teardown),
     cmocka_unit_test_teardown(test_server_side_encryption, donothing)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
