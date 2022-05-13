@@ -8,7 +8,7 @@
 #include "snowflake/client.h"
 #include "util/Base64.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
-#include "util/Proxy.hpp"
+#include "snowflake/Proxy.hpp"
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
@@ -119,7 +119,14 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   }
 
   Util::Proxy proxy;
-  proxy.setProxyFromEnv();
+  if ((transferConfig != nullptr) && (transferConfig->proxy != nullptr))
+  {
+    proxy = *(transferConfig->proxy);
+  }
+  else
+  {
+    proxy.setProxyFromEnv();
+  }
 
   // Set Proxy
   if (!proxy.getMachine().empty()) {
@@ -137,6 +144,11 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   if (proxy.getPort() != 0) {
     clientConfiguration.proxyPort = proxy.getPort();
     CXX_LOG_DEBUG("Proxy port: %d", proxy.getPort());
+  }
+
+  if (!proxy.getNoProxy().empty())
+  {
+    clientConfiguration.noProxy = Aws::String(proxy.getNoProxy());
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());

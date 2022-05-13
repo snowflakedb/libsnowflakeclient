@@ -150,7 +150,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/ByteArrayStreamBuf.hpp
         cpp/util/CompressionUtil.cpp
         cpp/util/CompressionUtil.hpp
-        cpp/util/Proxy.hpp
         cpp/util/Proxy.cpp
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
@@ -188,6 +187,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/SnowflakeTransferException.hpp
         include/snowflake/IJwt.hpp
         include/snowflake/IBase64.hpp
+        include/snowflake/Proxy.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER

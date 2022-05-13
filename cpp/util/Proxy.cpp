@@ -2,7 +2,7 @@
  * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "Proxy.hpp"
+#include "snowflake/Proxy.hpp"
 
 Snowflake::Client::Util::Proxy::Proxy(const std::string &proxy_str)
 {
@@ -82,4 +82,35 @@ void Snowflake::Client::Util::Proxy::setProxyFromEnv() {
     }
 
     stringToProxyParts(proxy);
+
+    // Get noproxy string
+    if (std::getenv("no_proxy")) {
+        m_noProxy = std::getenv("no_proxy");
+    } else if (std::getenv("NO_PROXY")) {
+        m_noProxy = std::getenv("NO_PROXY");
+    }
+}
+
+std::string Snowflake::Client::Util::Proxy::getHost() const
+{
+    if (m_machine.empty())
+    {
+        return "";
+    }
+    std::string host;
+    if (Protocol::HTTPS == m_protocol)
+    {
+        host = "https://";
+    }
+    else if (Protocol::HTTP == m_protocol)
+    {
+        host = "http://";
+    }
+    else
+    {
+        return "";
+    }
+    host += m_machine;
+
+    return host;
 }
