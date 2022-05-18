@@ -11,7 +11,8 @@ function usage() {
 }
 set -o pipefail
 
-AWS_VERSION=1.3.50
+AWS_DIR=aws-sdk-cpp-1.3.50
+AWS_VERSION=1.3.50.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -21,7 +22,7 @@ source $DIR/utils.sh
 
 OPENSSL_BUILD_DIR=$DEPENDNCY_DIR/openssl
 LIBCURL_BUILD_DIR=$DEPENDNCY_DIR/curl
-AWS_SOURCE_DIR=$DEPS_DIR/aws-sdk-cpp-${AWS_VERSION}
+AWS_SOURCE_DIR=$DEPS_DIR/${AWS_DIR}
 AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 

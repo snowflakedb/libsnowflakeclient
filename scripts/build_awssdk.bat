@@ -2,7 +2,7 @@
 :: Build Aws sdk 
 ::
 @echo off
-set aws_version=1.3.50
+set aws_version=1.3.50.1
 call %*
 goto :EOF
 
@@ -13,6 +13,7 @@ goto :EOF
 :build
 @echo off
 setlocal
+set aws_dir=aws-sdk-cpp-1.3.50
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -33,7 +34,7 @@ if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
-set AWS_SOURCE_DIR=%scriptdir%..\deps\aws-sdk-cpp-%aws_version%\
+set AWS_SOURCE_DIR=%scriptdir%..\deps\%aws_dir%\
 set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
 set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
