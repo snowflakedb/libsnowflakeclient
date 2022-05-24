@@ -53,11 +53,11 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
+    call :build_component arrow "%arrow_build_script%"
+    if %ERRORLEVEL% NEQ 0 goto :error
     if defined GITHUB_ACTIONS (
         rd /S /Q %scriptdir%\..\deps
     )
-    call :build_component arrow "%arrow_build_script%"
-    if %ERRORLEVEL% NEQ 0 goto :error
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     if defined GITHUB_ACTIONS (
