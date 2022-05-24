@@ -2,21 +2,6 @@
 #
 # build arrow on linux
 #
-function usage() {
-    echo "Usage: `basename $0` [-t <Release|Debug>]"
-    echo "Build ARROW"
-    echo "-t <Release/Debug> : Release or Debug builds"
-    exit 2
-}
-set -o pipefail
-
-ARROW_VERSION=0.17.1
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh $@
-source $DIR/utils.sh
-
-[[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
 
 ARROW_SOURCE_DIR=$DEPS_DIR/arrow
 ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow

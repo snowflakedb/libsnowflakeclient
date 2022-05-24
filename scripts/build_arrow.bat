@@ -16,6 +16,7 @@ setlocal
 set platform=%1
 set build_type=%2
 set vs_version=%3
+set dynamic_runtime=%4
 
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
@@ -28,8 +29,16 @@ cd %dependencydir%
 rd /S /Q %build_dir%\arrow
 rd /S /Q %build_dir%\arrow_deps
 rd /S /Q %build_dir%\boost
-:: Temporarily hard-code vsdir in Arrow archive to vs14.
-7z x arrow_%arcdir%_vs14_%build_type%-%arrow_version%.zip -o%build_dir%
+if "%ARROW_FROM_SOURCE%"=="1" (
+    echo "%scriptdir%build_boost_source.bat"
+    call "%scriptdir%build_boost_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+	if %ERRORLEVEL% NEQ 0 goto :error
+    call "%scriptdir%build_arrow_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+	if %ERRORLEVEL% NEQ 0 goto :error
+) else (
+    :: Temporarily hard-code vsdir in Arrow archive to vs14.
+    7z x arrow_%arcdir%_vs14_%build_type%-%arrow_version%.zip -o%build_dir%
+)
 if defined GITHUB_ACTIONS (
     del %dependencydir%\*.zip
     del %dependencydir%\*.gz

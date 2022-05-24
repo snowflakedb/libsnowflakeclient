@@ -120,6 +120,8 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
+export ARROW_FROM_SOURCE=1
+
 if [[ -n "$XP_BUILD" || "aarch64" == $(uname -p) || "arm" == $(uname -p) ]]; then
     export ARROW_FROM_SOURCE=1
 fi
