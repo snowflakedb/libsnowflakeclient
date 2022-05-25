@@ -33,8 +33,10 @@ if "%ARROW_FROM_SOURCE%"=="1" (
     echo "%scriptdir%build_boost_source.bat"
     call "%scriptdir%build_boost_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 	if %ERRORLEVEL% NEQ 0 goto :error
-    call "%scriptdir%build_arrow_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
-	if %ERRORLEVEL% NEQ 0 goto :error
+	if "%platform%"=="x64" (
+        call "%scriptdir%build_arrow_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+        if %ERRORLEVEL% NEQ 0 goto :error
+    )
 ) else (
     :: Temporarily hard-code vsdir in Arrow archive to vs14.
     7z x arrow_%arcdir%_vs14_%build_type%-%arrow_version%.zip -o%build_dir%
