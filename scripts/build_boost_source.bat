@@ -31,7 +31,7 @@ if "%platform%"=="x64" (
 )
 if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
-	set bitness=64
+	set bitness=32
 )
 
 ::@echo off
