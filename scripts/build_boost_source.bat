@@ -27,9 +27,11 @@ set curdir=%cd%
 
 if "%platform%"=="x64" (
     set engine_dir=Program Files
+	set bitness=64
 )
 if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
+	set bitness=64
 )
 
 ::@echo off
@@ -63,7 +65,7 @@ if /I "%dynamic_runtime%"=="on" (
 
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
 if %ERRORLEVEL% NEQ 0 goto :error
-b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=64 variant=%variant% runtime-debugging=%debugging% install
+b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% install
 if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
