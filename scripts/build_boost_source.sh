@@ -40,7 +40,20 @@ echo "using gcc : : $CXX ; " >> tools/build/src/user-config.jam
 #When pass CXX to specify the compiler, by default build.sh will set toolset to cxx and skip std=c++11 flag, so we need to set toolset as well
 sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
 CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
-./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+
+# Check to see if we are doing a universal build or not.
+# If we are not doing a universal build, build with 64-bit
+if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/64 --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/32 toolset=gcc variant=$VARIANT link=static address-model=32 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+    mkdir $BOOST_BUILD_DIR/lib
+    for static_lib in $BOOST_BUILD_DIR/64/lib/*.a; do
+        lipo -create -arch x86_64 $static_lib -arch i386 $BOOST_BUILD_DIR/32/lib/$(basename $static_lib) -output $BOOST_BUILD_DIR/lib/$(basename $static_lib);
+    done
+    rm -rf $BOOST_BUILD_DIR/64 $BOOST_BUILD_DIR/32
+else
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+fi
 
 cd $DIR
 

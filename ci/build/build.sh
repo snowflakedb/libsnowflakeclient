@@ -68,7 +68,7 @@ function build_component()
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
     # Temporarily disable uploading of Arrow artifacts until we compile from source.
-    if [[ "$component_name" == "arrow" ]]; then return 0; fi
+    if [[ "$component_name" == "arrow" ]] && [[ -z "ARROW_FROM_SOURCE" ]]; then return 0; fi
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         if [[ -z $XP_BUILD ]] ; then  #upload to jenkins if not XP build
           upload_to_sfc_jenkins $component_name $component_version $build_type
@@ -89,7 +89,7 @@ download_build_component curl "$SCRIPTS_DIR/build_curl.sh" "$target"
 download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
-build_component arrow "$SCRIPTS_DIR/build_arrow.sh" "$target"
+download_build_component arrow "$SCRIPTS_DIR/build_arrow.sh" "$target"
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target" "$@"
 
 [[ -n "$WHITESOURCE_API_KEY" ]] && $CI_BUILD_DIR/wss.sh || true

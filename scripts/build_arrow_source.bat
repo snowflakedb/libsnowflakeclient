@@ -108,7 +108,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 
 echo === archiving the library
-call "%scriptdir%utils.bat" :zip_file azure %azure_version%
+call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps boost"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success
