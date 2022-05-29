@@ -57,6 +57,9 @@ fi
 
 cd $DIR
 
+echo === zip_file "boost" "$BOOST_VERSION" "$target"
+zip_file "boost" "$BOOST_VERSION" "$target"
+
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $BOOST_SOURCE_DIR
     rm $BOOST_SINGLE_ZIP

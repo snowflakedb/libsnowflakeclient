@@ -70,6 +70,8 @@ if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
 
+cd "%curdir%"
+
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file boost %boost_version%
 if %ERRORLEVEL% NEQ 0 goto :error

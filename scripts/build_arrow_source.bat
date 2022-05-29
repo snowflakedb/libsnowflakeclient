@@ -106,6 +106,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 msbuild INSTALL.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+cd "%curdir%"
 
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps boost"
