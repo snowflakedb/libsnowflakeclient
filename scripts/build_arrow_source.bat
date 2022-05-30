@@ -3,11 +3,13 @@
 ::
 @echo off
 set arrow_version=0.17.1
+:: The full version number for dependency packaging/uploading/downloading
+set arrow_dep_version=%arrow_version%.1
 call %*
 goto :EOF
 
 :get_version
-    set version=%arrow_version%
+    set version=%arrow_dep_version%
     goto :EOF
 
 :build
@@ -109,7 +111,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 cd "%curdir%"
 
 echo === archiving the library
-call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps boost"
+call "%scriptdir%utils.bat" :zip_files arrow %arrow_dep_version% "arrow arrow_deps boost"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success

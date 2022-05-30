@@ -3,11 +3,13 @@
 ::
 @echo off
 set arrow_version=0.17.1
+:: The full version number for dependency packaging/uploading/downloading
+set arrow_dep_version=%arrow_version%.1
 call %*
 goto :EOF
 
 :get_version
-    set version=%arrow_version%
+    set version=%arrow_dep_version%
     goto :EOF
 
 :build
