@@ -69,9 +69,7 @@ function build_component()
         if [[ -z $XP_BUILD ]] ; then  #upload to jenkins if not XP build
           upload_to_sfc_jenkins $component_name $component_version $build_type
         fi
-        if [[ "$GIT_BRANCH" == "origin/master" ]]; then
-            upload_to_sfc_dev1_data $component_name $component_version $build_type
-        fi
+        upload_to_sfc_dev1_data $component_name $component_version $build_type
     fi
 }
 
