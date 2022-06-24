@@ -4,7 +4,7 @@
 UTILS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 PLATFORM_ARCH=$(uname -p)
-echo "Kiran Test"
+echo ""
 if [[ "$PLATFORM_ARCH" == "x86_64" ]] || [[ "$PLATFORM_ARCH" == "i386" ]]; then
   export REP_URL_PREFIX="s3://sfc-jenkins/repository"
   export DEP_URL_PREFIX="s3://sfc-dev1-data/dependency"
