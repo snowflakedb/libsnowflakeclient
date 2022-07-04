@@ -11,14 +11,15 @@ function usage() {
 }
 set -o pipefail
 
-# Change the version in arrow.mk to build
 ARROW_VERSION=0.17.1
+#The full version number for dependency packaging/uploading/downloading
+ARROW_DEP_VERSION=${ARROW_VERSION}.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 DEPS_BUILD_DIR=$DIR/../deps-build
 source $DIR/_init.sh $@
 
-[[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
+[[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
 
 if [[ -n "$ARROW_FROM_SOURCE" ]]; then
     $DIR/build_boost_source.sh -t $target

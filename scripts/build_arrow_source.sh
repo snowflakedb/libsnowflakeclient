@@ -11,12 +11,14 @@ function usage() {
 set -o pipefail
 
 ARROW_VERSION=0.17.1
+#The full version number for dependency packaging/uploading/downloading
+ARROW_DEP_VERSION=${ARROW_VERSION}.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
+[[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
 
 ARROW_SOURCE_DIR=$DEPS_DIR/arrow
 ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
@@ -50,11 +52,12 @@ else
   git checkout tags/apache-arrow-$ARROW_VERSION -b v$ARROW_VERSION || true
 fi
 
-
+ARROW_CXXFLAGS="-O2 -fPIC -pthread"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
     ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build-debug
+    ARROW_CXXFLAGS="$ARROW_CXXFLAGS -Wno-error=unused-const-variable -Wno-error=unneeded-internal-declaration"
 else
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
 fi
@@ -96,7 +99,15 @@ mkdir $ARROW_DEPS_BUILD_DIR/lib
 mkdir $ARROW_CMAKE_BUILD_DIR
 
 cd $ARROW_CMAKE_BUILD_DIR
-$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="-O2 -fPIC -pthread" ../
+# If we are not doing a universal build, build with 64-bit
+if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
+    arrow_configure_opts+=(
+        "-DCMAKE_OSX_ARCHITECTURES=i386;x86_64"
+    )
+    export CXXFLAGS="-arch i386 -arch x86_64"
+    export CFLAGS="-arch i386 -arch x86_64"
+fi
+$CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="$ARROW_CXXFLAGS" ../
 
 make
 make install
@@ -110,8 +121,8 @@ fi
 
 cd $DIR
 
-echo === zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
-zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
+echo === zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
+zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
 
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $ARROW_SOURCE_DIR

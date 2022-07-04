@@ -14,6 +14,7 @@ if /I "%platform%"=="x64" set platform=x64
 if /I "%platform%"=="x86" set platform=x86
 
 set curdir=%cd%
+set ARROW_FROM_SOURCE=1
 
 if defined arch (
     if not "%platform%"=="" (

@@ -82,6 +82,26 @@ goto :EOF
     if %ERRORLEVEL% NEQ 0 goto :error
     goto :EOF
 
+:zip_files
+    setlocal
+    if not defined JENKINS_URL (
+        echo === No zip file is created if not Jenkins
+        goto :EOF
+    )
+    set component_name=%~1
+    set component_version=%~2
+    set files=%~3
+    if not exist artifacts md artifacts
+    call :get_zip_file_name %component_name% %component_version%
+    del artifacts\%zip_file_name%
+    set curdir=%cd%
+    pushd deps-build\%build_dir%
+        7z a %curdir%\artifacts\%zip_file_name% %files%
+        7z l %curdir%\artifacts\%zip_file_name%
+    popd
+    if %ERRORLEVEL% NEQ 0 goto :error
+    goto :EOF
+
 :check_directory
     setlocal
     set component_name=%~1

@@ -120,7 +120,10 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
-if [[ -n "$XP_BUILD" || "aarch64" == $(uname -p) || "arm" == $(uname -p) ]]; then
+# Linux x86 is the only exception to build arrow from source
+# Centos7 works fine but it crash on centos6 docker, will retry
+# when drop centos6 support and move to centos7
+if [[ "$PLATFORM" != "linux" || "x86_64" != $(uname -p) ]]; then
     export ARROW_FROM_SOURCE=1
 fi
 
