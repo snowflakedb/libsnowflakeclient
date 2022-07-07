@@ -7,16 +7,16 @@ on:
 concurrency: snyk-issue
 
 jobs:
-  whitesource:
+  snyk:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout action
+    - name: Checkout Action
       uses: actions/checkout@v3
       with:
         repository: snowflakedb/whitesource-actions
         token: ${{ secrets.WHITESOURCE_ACTION_TOKEN }}
         path: whitesource-actions
-    - name: set-env
+    - name: Set Env
       run: echo "REPO=$(basename $GITHUB_REPOSITORY)" >> $GITHUB_ENV
     - name: Jira Creation
       uses: ./whitesource-actions/snyk-issue
