@@ -151,7 +151,12 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
-                             int8 retry_on_curle_couldnt_connect_count) {
+                             int8 retry_on_curle_couldnt_connect_count,
+                             int64 renew_timeout,
+                             int8 retry_max_count,
+                             int64 *elapsed_time,
+                             int8 *retried_count,
+                             sf_bool *is_renew) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -161,8 +166,14 @@ sf_bool STDCALL http_perform(CURL *curl,
       16      //cap
     };
     network_timeout = (network_timeout > 0) ? network_timeout : SF_LOGIN_TIMEOUT;
+    if (elapsed_time) {
+        network_timeout -= *elapsed_time;
+        if (network_timeout <= 0) {
+            network_timeout = 1;
+        }
+    }
     RETRY_CONTEXT curl_retry_ctx = {
-            0,      //retry_count
+            retried_count ? *retried_count : 0,      //retry_count
             network_timeout,
             1,      // time to sleep
             &djb    // Decorrelate jitter
@@ -194,6 +205,15 @@ sf_bool STDCALL http_perform(CURL *curl,
         if (request_guid_ptr && uuid4_generate_non_terminated(request_guid_ptr)) {
             log_error("Failed to generate new request GUID");
             break;
+        }
+
+        // Set curl timeout to ensure the request won't wait further when renew
+        // is needed.
+        if (renew_timeout > 0) {
+            int64 curl_timeout = renew_timeout > network_timeout ?
+                                 renew_timeout : network_timeout;
+            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, curl_timeout);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
         }
 
         // Set parameters
@@ -379,8 +399,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
               }
               if (retry &&
-                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout)
-              )
+                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
@@ -409,6 +429,22 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Reset everything
         reset_curl(curl);
         http_code = 0;
+
+        // When renew timeout is reached, stop retry and return to the caller
+        // to renew request
+        if ((retry) && (renew_timeout > 0) &&
+            ((time(NULL) - elapsedRetryTime) >= renew_timeout)) {
+            retry  = SF_BOOLEAN_FALSE;
+            if (elapsed_time) {
+                *elapsed_time += (time(NULL) - elapsedRetryTime);
+            }
+            if (retried_count) {
+                *retried_count = curl_retry_ctx.retry_count;
+            }
+            if (is_renew) {
+                *is_renew = SF_BOOLEAN_TRUE;
+            }
+        }
     }
     while (retry);
 

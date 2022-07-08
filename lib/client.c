@@ -17,6 +17,7 @@
 #include "result_set.h"
 #include "error.h"
 #include "chunk_downloader.h"
+#include "authenticator.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
@@ -377,6 +378,18 @@ static void STDCALL log_term() {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
+    if (AUTH_UNSUPPORTED == auth_type) {
+        // Invalid authenticator
+        log_error(ERR_MSG_AUTHENTICATOR_UNSUPPORTED);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_AUTHENTICATOR_UNSUPPORTED,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
     if (is_string_empty(sf->account)) {
         // Invalid account
         log_error(ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING);
@@ -399,13 +412,24 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (is_string_empty(sf->password)) {
+    if ((AUTH_SNOWFLAKE != auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
             ERR_MSG_PASSWORD_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if ((AUTH_SNOWFLAKE == auth_type) && (is_string_empty(sf->priv_key_file))) {
+        // Invalid key file path
+        log_error(ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -465,6 +489,11 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("authenticator: %s", sf->authenticator);
     log_debug("user: %s", sf->user);
     log_debug("password: %s", sf->password ? "****" : sf->password);
+    if (AUTH_JWT == auth_type) {
+        log_debug("priv_key_file: %s", sf->priv_key_file);
+        log_debug("jwt_timeout: %d", sf->jwt_timeout);
+        log_debug("jwt_cnxn_wait_time: %d", sf->jwt_cnxn_wait_time);
+    }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
     log_debug("account: %s", sf->account);
@@ -623,6 +652,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->timezone = NULL;
         sf->service_name = NULL;
         sf->query_result_format = NULL;
+        sf->auth_object = NULL;
         alloc_buffer_and_copy(&sf->authenticator, SF_AUTHENTICATOR_DEFAULT);
         alloc_buffer_and_copy(&sf->application_name, SF_API_NAME);
         alloc_buffer_and_copy(&sf->application_version, SF_API_VERSION);
@@ -639,10 +669,16 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->request_id[0] = '\0';
         clear_snowflake_error(&sf->error);
 
+        sf->priv_key_file = NULL;
+        sf->priv_key_file_pwd = NULL;
+        sf->jwt_timeout = SF_JWT_TIMEOUT;
+        sf->jwt_cnxn_wait_time = SF_JWT_CNXN_WAIT_TIME;
+
         sf->directURL_param = NULL;
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
+        sf->retry_on_connect_count = 0;
     }
 
     return sf;
@@ -664,7 +700,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         };
         if (request(sf, &resp, DELETE_SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), NULL, NULL,
-                    POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
+                    POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
+                    0, 0, NULL, NULL, NULL)) {
             s_resp = snowflake_cJSON_Print(resp);
             log_trace("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
@@ -674,6 +711,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         snowflake_cJSON_Delete(resp);
         SF_FREE(s_resp);
     }
+
+    auth_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
@@ -701,6 +740,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->directURL);
     SF_FREE(sf->directURL_param);
     SF_FREE(sf->direct_query_token);
+    SF_FREE(sf->priv_key_file);
+    SF_FREE(sf->priv_key_file_pwd);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -761,6 +802,17 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     if (ret != SF_STATUS_SUCCESS) {
         goto cleanup;
     }
+
+    ret = auth_initialize(sf);
+    if (ret != SF_STATUS_SUCCESS) {
+        goto cleanup;
+    }
+
+    ret = auth_authenticate(sf);
+    if (ret != SF_STATUS_SUCCESS) {
+        goto cleanup;
+    }
+
     ret = SF_STATUS_ERROR_GENERAL; // reset to the error
 
     uuid4_generate(sf->request_id);// request id
@@ -781,61 +833,76 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     }
 
     // Send request and get data
-    if (request(sf, &resp, SESSION_URL, url_params,
-                sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
-                POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE)) {
-        s_resp = snowflake_cJSON_Print(resp);
-        log_trace("Here is JSON response:\n%s", s_resp);
-        if ((json_error = json_copy_bool(&success, resp, "success")) !=
-            SF_JSON_ERROR_NONE) {
-            log_error("JSON error: %d", json_error);
-            SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
-                                "No valid JSON response",
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
-            goto cleanup;
-        }
-        if (!success) {
-            cJSON *messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
-            char *message = NULL;
-            cJSON *codeJson = NULL;
-            int64 code = -1;
-            if (messageJson) {
-                message = messageJson->valuestring;
+    // For authentication(JWT) needs renew credentials during retry
+    // make loop to renew credentials as needed and track elapsed_time
+    // and retried_count as well
+    int64 renew_timeout = auth_get_renew_timeout(sf);
+    int64 elapsed_time = 0;
+    int8 retried_count = 0;
+    sf_bool is_renew = SF_BOOLEAN_FALSE;
+    while (!success) {
+        if (request(sf, &resp, SESSION_URL, url_params,
+                    sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
+                    POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
+                    renew_timeout, sf->retry_on_connect_count, &elapsed_time,
+                    &retried_count, &is_renew)) {
+            s_resp = snowflake_cJSON_Print(resp);
+            log_trace("Here is JSON response:\n%s", s_resp);
+            if ((json_error = json_copy_bool(&success, resp, "success")) !=
+                SF_JSON_ERROR_NONE) {
+                log_error("JSON error: %d", json_error);
+                SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
+                                    "No valid JSON response",
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                goto cleanup;
             }
-            codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
-            if (codeJson) {
-                code = strtol(codeJson->valuestring, NULL, 10);
-            } else {
-                log_debug("no code element.");
+            if (!success) {
+                cJSON *messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
+                char *message = NULL;
+                cJSON *codeJson = NULL;
+                int64 code = -1;
+                if (messageJson) {
+                    message = messageJson->valuestring;
+                }
+                codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
+                if (codeJson) {
+                    code = strtol(codeJson->valuestring, NULL, 10);
+                } else {
+                    log_debug("no code element.");
+                }
+
+                SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
+                                    message ? message : "Query was not successful",
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                goto cleanup;
             }
 
-            SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
-                                message ? message : "Query was not successful",
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
-            goto cleanup;
-        }
+            data = snowflake_cJSON_GetObjectItem(resp, "data");
+            if (!set_tokens(sf, data, "token", "masterToken", &sf->error)) {
+                goto cleanup;
+            }
 
-        data = snowflake_cJSON_GetObjectItem(resp, "data");
-        if (!set_tokens(sf, data, "token", "masterToken", &sf->error)) {
+            _mutex_lock(&sf->mutex_parameters);
+            ret = _set_parameters_session_info(sf, data);
+            _mutex_unlock(&sf->mutex_parameters);
+            if (ret > 0) {
+                goto cleanup;
+            }
+        } else {
+            if (is_renew && (renew_timeout > 0)) {
+                auth_renew_json(sf, body);
+                s_body = snowflake_cJSON_Print(body);
+                continue;
+            }
+            log_error("No response");
+            if (sf->error.error_code == SF_STATUS_SUCCESS) {
+                SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
+                                    "No valid JSON response",
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
             goto cleanup;
         }
-
-        _mutex_lock(&sf->mutex_parameters);
-        ret = _set_parameters_session_info(sf, data);
-        _mutex_unlock(&sf->mutex_parameters);
-        if (ret > 0) {
-            goto cleanup;
-        }
-    } else {
-        log_error("No response");
-        if (sf->error.error_code == SF_STATUS_SUCCESS) {
-            SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_JSON,
-                                "No valid JSON response",
-                                SF_SQLSTATE_UNABLE_TO_CONNECT);
-        }
-        goto cleanup;
     }
-
     /* we are done... */
     ret = SF_STATUS_SUCCESS;
 
@@ -850,6 +917,11 @@ cleanup:
         // Write over passcode in memory including null terminator
         memset(sf->passcode, 0, strlen(sf->passcode) + 1);
         SF_FREE(sf->passcode);
+    }
+    if (sf->priv_key_file_pwd) {
+      // Write over priv_key_file_pwd in memory including null terminator
+      memset(sf->priv_key_file_pwd, 0, strlen(sf->priv_key_file_pwd) + 1);
+      SF_FREE(sf->priv_key_file_pwd);
     }
     snowflake_cJSON_Delete(body);
     snowflake_cJSON_Delete(resp);
@@ -972,6 +1044,21 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT:
             sf->retry_on_curle_couldnt_connect_count = value ? *((int8 *) value) : 0;
             break;
+        case SF_CON_PRIV_KEY_FILE:
+            alloc_buffer_and_copy(&sf->priv_key_file, value);
+            break;
+        case SF_CON_PRIV_KEY_FILE_PWD:
+            alloc_buffer_and_copy(&sf->priv_key_file_pwd, value);
+            break;
+        case SF_CON_JWT_TIMEOUT:
+            sf->jwt_timeout = value ? *((int64 *)value) : SF_JWT_TIMEOUT;
+            break;
+        case SF_CON_JWT_CNXN_WAIT_TIME:
+            sf->jwt_cnxn_wait_time = value ? *((int64 *)value) : SF_JWT_CNXN_WAIT_TIME;
+            break;
+        case SF_CON_MAX_CON_RETRY:
+            sf->retry_on_connect_count = value ? *((int8 *)value) : 0;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1072,6 +1159,21 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_QUERY_RESULT_TYPE:
             *value = &sf->query_result_format;
+            break;
+        case SF_CON_PRIV_KEY_FILE:
+            *value = sf->priv_key_file;
+            break;
+        case SF_CON_PRIV_KEY_FILE_PWD:
+            *value = sf->priv_key_file_pwd;
+            break;
+        case SF_CON_JWT_TIMEOUT:
+            *value = &sf->jwt_timeout;
+            break;
+        case SF_CON_JWT_CNXN_WAIT_TIME:
+            *value = sf->jwt_cnxn_wait_time;
+            break;
+        case SF_CON_MAX_CON_RETRY:
+            *value = &sf->retry_on_connect_count;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1847,7 +1949,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         sizeof(url_params) / sizeof(URL_KEY_VALUE) : 0;
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
-                POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command)) {
+                POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command,
+                0, 0, NULL, NULL, NULL)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);

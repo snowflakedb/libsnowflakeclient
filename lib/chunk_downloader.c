@@ -206,7 +206,11 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, NON
     CURL *curl = NULL;
     curl = curl_easy_init();
 
-    if (!curl || !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk, non_json_resp, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT, SF_BOOLEAN_TRUE, error, insecure_mode, 0)) {
+    if (!curl ||
+        !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk,
+                      non_json_resp, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT,
+                      SF_BOOLEAN_TRUE, error, insecure_mode, 0,
+                      0, 0, NULL, NULL, NULL)) {
         // Error set in perform function
         goto cleanup;
     }
