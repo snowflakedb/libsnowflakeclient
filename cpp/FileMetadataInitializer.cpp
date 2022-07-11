@@ -27,7 +27,8 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> &largeFileMetadata) :
   m_smallFileMetadata(smallFileMetadata),
   m_largeFileMetadata(largeFileMetadata),
-  m_autoCompress(true)
+  m_autoCompress(true),
+  m_downloadSizeThreshold(DOWNLOAD_DATA_SIZE_THRESHOLD)
 {
 }
 
@@ -45,7 +46,8 @@ Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::st
   // process compression type
   initCompressionMetadata(fileMetadata);
 
-  std::vector<FileMetadata> &metaListToPush = fileSize > threshold ?
+  fileMetadata.isLarge = fileSize > threshold;
+  std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ?
     m_largeFileMetadata : m_smallFileMetadata;
 
   metaListToPush.push_back(fileMetadata);
@@ -257,8 +259,8 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
     CXX_LOG_DEBUG("Success on getting remote file metadata");
-    std::vector<FileMetadata> &metaListToPush =
-      fileMetadata.srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD ?
+    fileMetadata.isLarge = fileMetadata.srcFileSize > m_downloadSizeThreshold;
+    std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ?
       m_largeFileMetadata : m_smallFileMetadata;
 
     metaListToPush.push_back(fileMetadata);

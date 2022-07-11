@@ -156,6 +156,12 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   m_FileMetadataInitializer.setSourceCompression(response.sourceCompression);
   m_FileMetadataInitializer.setEncryptionMaterials(&response.encryptionMaterials);
   m_FileMetadataInitializer.setRandomDev(m_useDevUrand);
+  if (m_transferConfig &&
+      (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
+  {
+    CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
+    m_FileMetadataInitializer.setDownloadSizeThreshold(m_transferConfig->getSizeThreshold);
+  }
 
   // Upload data from stream in memory
   if ((m_uploadStream) && (CommandType::UPLOAD == response.command))

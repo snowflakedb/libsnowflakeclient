@@ -72,6 +72,11 @@ public:
     return m_randDevice;
   }
 
+  inline void setDownloadSizeThreshold(long threshold)
+  {
+    m_downloadSizeThreshold = threshold;
+  }
+
 private:
   /**
    * Given file name, populate metadata
@@ -101,6 +106,9 @@ private:
 
   /// Random device for crytpo random num generator.
   Crypto::CryptoRandomDevice m_randDevice;
+
+  // The threshold for using multi-parts downloading
+  long m_downloadSizeThreshold;
 };
 }
 }

@@ -88,6 +88,10 @@ struct FileMetadata
   /// Enum for different timestamps
   enum putGetTimestamp{PUTGET_START=0,COMP_START, COMP_END, PUT_START, PUT_END, PUTGET_END, GET_START, GET_END};
 
+  // The flag to indicate if the file is larger than the threshold and needs to
+  // be treated as large file using multi-part uploading/downloading
+  bool isLarge;
+
   inline void recordPutGetTimestamp(putGetTimestamp ts=PUTGET_START)
   {
     tstamps[ts] = std::chrono::steady_clock::now();
