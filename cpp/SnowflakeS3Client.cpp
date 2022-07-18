@@ -471,7 +471,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
 
   Util::StreamAppender appender(dataStream, partNum, m_parallel, DOWNLOAD_DATA_SIZE_THRESHOLD);
   std::vector<MultiDownloadCtx> downloadParts;
-  for (unsigned int i = 0; i < partNum; i++)
+  for (size_t i = 0; i < partNum; i++)
   {
     std::stringstream rangeStream;
     rangeStream << "bytes=" << i * DOWNLOAD_DATA_SIZE_THRESHOLD << '-' <<
@@ -493,7 +493,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
     m_threadPool->AddJob([&]()-> void {
       int partSize = ctx.m_partNumber == partNum - 1 ?
                      (int)(fileMetadata->srcFileSize -
-                       ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
+                       (size_t)ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
                      : DOWNLOAD_DATA_SIZE_THRESHOLD;
       Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
         m_threadPool->GetThreadIdx());
@@ -587,7 +587,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
 
   if (outcome.IsSuccess())
   {
-    fileMetadata->srcFileSize = (long)outcome.GetResult().GetContentLength();
+    fileMetadata->srcFileSize = (size_t)outcome.GetResult().GetContentLength();
     CXX_LOG_INFO("Remote file %s content length: %ld.",
                   key.c_str(), fileMetadata->srcFileSize);
 

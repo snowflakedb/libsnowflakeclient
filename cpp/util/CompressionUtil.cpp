@@ -22,7 +22,7 @@
 
 int Snowflake::Client::Util::CompressionUtil::compressWithGzip(FILE *source,
                                                                FILE *dest,
-                                                               long &destSize,
+                                                               size_t &destSize,
                                                                int level)
 {
   SET_BINARY_MODE(source);

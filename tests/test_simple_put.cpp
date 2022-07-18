@@ -4,6 +4,7 @@
 
 #include <aws/core/Aws.h>
 #include <vector>
+#include <fstream>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -17,6 +18,9 @@
 #define COLUMN_SOURCE_COMPRESSION "SOURCE_COMPRESSION"
 #define COLUMN_TARGET_COMPRESSION "TARGET_COMPRESSION"
 #define COLUMN_ENCRYPTION "encryption"
+
+#define FILE_NAME_2GB "large_2GBfile.csv"
+#define FILE_SIZE_2GB (((size_t)1 << 31) + 1)
 
 #define MAX_BUF_SIZE 4096
 
@@ -734,12 +738,31 @@ void test_large_get(void **unused)
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
+
+  // create large 2GB file
+  char *githubenv = getenv("GITHUB_ACTIONS");
+  if (githubenv && strlen(githubenv) > 0)
+  {
+    char *cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
+      return 0;
+    }
+  }
+
+  std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
+  std::ofstream ofs(file2GB, std::ios::binary | std::ios::out);
+  ofs.seekp(FILE_SIZE_2GB - 1);
+  ofs.write("", 1);
+  ofs.close();
+
   return 0;
 }
 
 static int gr_teardown(void **unused)
 {
   snowflake_global_term();
+  std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
+  remove(file2GB.c_str());
   return 0;
 }
 
@@ -1064,6 +1087,62 @@ void test_simple_put_uploadfail(void **unused) {
 
 }
 
+void test_2GBlarge_put(void **unused)
+{
+  // on github the existing test case for large file put/get is skipped for
+  // aws so do the same. Make it available for manual test though
+  // since we do have code changes for all platforms.
+  char *githubenv = getenv("GITHUB_ACTIONS");
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if (githubenv && strlen(githubenv) > 0)
+  {
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
+      errno = 0;
+      return;
+    }
+  }
+  // put/get for GCP is not supported in libsnowflakeclient
+  // will test that in odbc.
+  if (cenv && !strncmp(cenv, "GCP", 4)) {
+    errno = 0;
+    return;
+  }
+
+  test_simple_put_core(FILE_NAME_2GB, // filename
+                       "none", //source compression
+                       false,   // auto compress
+                       false,   // Load data into table
+                       false,  // Run select * on loaded table
+                       false    // copy data from Table to Staging.
+  );
+}
+
+void test_2GBlarge_get(void **unused)
+{
+  // on github the existing test case for large file put/get is skipped for
+  // aws so do the same. Make it available for manual test though
+  // since we do have code changes for all platforms.
+  char *githubenv = getenv("GITHUB_ACTIONS");
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if (githubenv && strlen(githubenv) > 0)
+  {
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
+      errno = 0;
+      return;
+    }
+  }
+  // put/get for GCP is not supported in libsnowflakeclient
+  // will test that in odbc.
+  if (cenv && !strncmp(cenv, "GCP", 4)) {
+    errno = 0;
+    return;
+  }
+
+  std::string getcmd = std::string("get @%test_small_put/") + FILE_NAME_2GB +
+                       " file://" + TestSetup::getDataDir();
+  test_simple_get_data(getcmd.c_str(), std::to_string(FILE_SIZE_2GB).c_str());
+}
+
 int main(void) {
 
 #ifdef __APPLE__
@@ -1116,7 +1195,9 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom, teardown),
     cmocka_unit_test_teardown(test_simple_put_create_subfolder, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL, teardown),
-    cmocka_unit_test_teardown(test_server_side_encryption, donothing)
+    cmocka_unit_test_teardown(test_server_side_encryption, donothing),
+    cmocka_unit_test_teardown(test_2GBlarge_put, donothing),
+    cmocka_unit_test_teardown(test_2GBlarge_get, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
