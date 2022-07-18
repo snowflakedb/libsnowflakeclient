@@ -264,7 +264,8 @@ static int teardown(void **unused)
   return 0;
 }
 
-void test_simple_get_data(const char *getCommand, const char *size)
+void test_simple_get_data(const char *getCommand, const char *size,
+                          long getThreshold = 0)
 {
     /* init */
     SF_STATUS status;
@@ -281,7 +282,14 @@ void test_simple_get_data(const char *getCommand, const char *size)
     std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
             <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
 
-    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+    TransferConfig transConfig;
+    TransferConfig * transConfigPtr = nullptr;
+    if (getThreshold > 0)
+    {
+        transConfig.getSizeThreshold = getThreshold;
+        transConfigPtr = &transConfig;
+    }
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
     // load first time should return uploaded
     std::string get_status;
@@ -731,6 +739,22 @@ void test_large_get(void **unused)
   test_simple_get_data(tempPath, "5166848");
 }
 
+void test_large_get_threshold(void **unused)
+{
+  char tempDir[MAX_BUF_SIZE] = { 0 };
+  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
+    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
+  sf_get_tmp_dir(tempDir);
+#ifdef _WIN32
+  getLongTempPath(tempDir);
+#endif
+  strcat(tempPath, tempDir);
+  test_simple_get_data(tempPath, "5166848", 1000000);
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -1109,6 +1133,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_get, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress, donothing),
     cmocka_unit_test_teardown(test_large_get, donothing),
+    cmocka_unit_test_teardown(test_large_get_threshold, donothing),
     cmocka_unit_test_teardown(test_large_reupload, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_large_put_threshold, teardown),
