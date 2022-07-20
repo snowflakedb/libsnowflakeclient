@@ -156,7 +156,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              int8 retry_max_count,
                              int64 *elapsed_time,
                              int8 *retried_count,
-                             sf_bool *is_renew) {
+                             sf_bool *is_renew,
+                             sf_bool renew_injection) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -211,7 +212,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // is needed.
         if (renew_timeout > 0) {
             int64 curl_timeout = renew_timeout > network_timeout ?
-                                 renew_timeout : network_timeout;
+                                 network_timeout : renew_timeout;
             curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, curl_timeout);
             curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
         }
@@ -351,6 +352,15 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         log_trace("Running curl call");
         res = curl_easy_perform(curl);
+
+        // forcely trigger renew timeout on the first attempt
+        if ((renew_injection) && (renew_timeout > 0) &&
+            elapsed_time && (*elapsed_time <= 0))
+        {
+            my_sleep_ms(renew_timeout * 1000);
+            res = CURLE_OPERATION_TIMEOUTED;
+        }
+
         /* Check for errors */
         if (res != CURLE_OK) {
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
@@ -364,6 +374,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               my_sleep_ms(next_sleep_in_secs*1000);
+            } else if ((res == CURLE_OPERATION_TIMEOUTED) && (renew_timeout > 0)) {
+               retry = SF_BOOLEAN_TRUE;
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {

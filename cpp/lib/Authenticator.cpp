@@ -11,6 +11,7 @@
 
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
+#include "error.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -71,6 +72,9 @@ extern "C" {
     }
     catch (...)
     {
+      SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
+                          "authenticator initialization failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
@@ -108,6 +112,9 @@ extern "C" {
     }
     catch (...)
     {
+      SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
+                          "authentication failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 

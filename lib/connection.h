@@ -229,13 +229,14 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  *                        timeout last time.
  * @param is_renew        The output paramter to indecate whether curl_post_call()
  *                        returns due to renew timeout.
+ * @param renew_injection For test purpose, forcely trigger renew timeout.
  * @return Success/failure status of post call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, char *body,
                                cJSON **json, SF_ERROR_STRUCT *error,
                                int64 renew_timeout, int8 retry_max_count,
                                int64 *elapsed_time, int8 *retried_count,
-                               sf_bool *is_renew);
+                               sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Used to issue a cURL GET call to Snowflake. Includes support for renew session. If the request was successful,
@@ -423,6 +424,8 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  *                        timeout last time.
  * @param is_renew        The output paramter to indecate whether http_perform()
  *                        returns due to renew timeout.
+ * @param renew_injection For test purpose, forcely trigger the autentication renew.
+ *
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure/renew timeout
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
@@ -431,7 +434,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
-                             sf_bool *is_renew);
+                             sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -478,6 +481,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  *                        timeout last time.
  * @param is_renew        The output paramter to indecate whether http_perform()
  *                        returns due to renew timeout.
+ * @param renew_injection For test purpose only. Forcely trigger renew timeout.
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
@@ -485,7 +489,7 @@ sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_V
                         sf_bool use_application_json_accept_type,
                         int64 renew_timeout, int8 retry_max_count,
                         int64 *elapsed_time, int8 *retried_count,
-                        sf_bool *is_renew);
+                        sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Resets curl instance.

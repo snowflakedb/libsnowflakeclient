@@ -423,7 +423,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if ((AUTH_SNOWFLAKE == auth_type) && (is_string_empty(sf->priv_key_file))) {
+    if ((AUTH_JWT == auth_type) && (is_string_empty(sf->priv_key_file))) {
         // Invalid key file path
         log_error(ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -701,7 +701,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         if (request(sf, &resp, DELETE_SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), NULL, NULL,
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
-                    0, 0, NULL, NULL, NULL)) {
+                    0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
             s_resp = snowflake_cJSON_Print(resp);
             log_trace("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
@@ -840,12 +840,17 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     int64 elapsed_time = 0;
     int8 retried_count = 0;
     sf_bool is_renew = SF_BOOLEAN_FALSE;
+    sf_bool renew_injection = SF_BOOLEAN_FALSE;
+    if ((AUTH_JWT == getAuthenticatorType(sf->authenticator)) &&
+        sf->password && (strcmp(sf->password, "renew injection") == 0)) {
+        renew_injection = SF_BOOLEAN_TRUE;
+    }
     while (!success) {
         if (request(sf, &resp, SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
                     renew_timeout, sf->retry_on_connect_count, &elapsed_time,
-                    &retried_count, &is_renew)) {
+                    &retried_count, &is_renew, renew_injection)) {
             s_resp = snowflake_cJSON_Print(resp);
             log_trace("Here is JSON response:\n%s", s_resp);
             if ((json_error = json_copy_bool(&success, resp, "success")) !=
@@ -1950,7 +1955,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command,
-                0, 0, NULL, NULL, NULL)) {
+                0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
