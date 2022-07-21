@@ -111,8 +111,8 @@ if (LINUX)
     # jwt test needs accoutadmin and it's only available on Linux
     # jwt test need to change setting in user so can't be run in parallel
     # limit it to run only on aws release
-    if ($ENV{CLOUD_PROVIDER} EQUAL "AWS")
-        if (CMAKE_BUILD_TYPE EQUAL "RELEASE")
+    if ($ENV{CLOUD_PROVIDER} STREQUAL "AWS")
+        if (CMAKE_BUILD_TYPE STREQUAL "Release")
             set(TESTS_CXX ${TESTS_CXX} ${TESTS_JWT})
         endif ()
     endif ()
