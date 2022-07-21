@@ -6,6 +6,7 @@
 #include <openssl/pem.h>
 #include <functional>
 #include <memory>
+#include <algorithm>
 #include "snowflake/IBase64.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
