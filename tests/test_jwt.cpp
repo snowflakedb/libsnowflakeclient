@@ -290,6 +290,16 @@ void test_renew(void **unused) {
 }
 
 int main(void) {
+// accountadmin is required for jwt test and it's available in test account only for Linux
+// Since we need to change the user settings the test can't be run in parallel, limit it to aws and release
+#if !defined(__linux__) || defined(_DEBUG)
+  return 0;
+#endif
+  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
+  if(!cloud_provider || ( strcmp(cloud_provider, "AWS") != 0 ) ) {
+    return 0;
+  }
+
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_missing_private_key),
