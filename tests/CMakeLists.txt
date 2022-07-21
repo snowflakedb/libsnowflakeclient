@@ -54,10 +54,12 @@ SET(TESTS_CXX
         test_unit_put_get_fips
         test_unit_thread_pool
         test_unit_base64
-        test_jwt
         #test_cpp_select1
         test_unit_proxy
         test_unit_oob)
+
+SET(TESTS_JWT
+        test_jwt)
 
 SET(TESTS_PUTGET
         test_include_aws
@@ -104,6 +106,15 @@ if (LINUX)
     if ($ENV{GCCVERSION} STRGREATER "9")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
+    endif ()
+
+    # jwt test needs accoutadmin and it's only available on Linux
+    # jwt test need to change setting in user so can't be run in parallel
+    # limit it to run only on aws release
+    if ($ENV{CLOUD_PROVIDER} EQUAL "AWS")
+        if (CMAKE_BUILD_TYPE EQUAL "RELEASE")
+            set(TESTS_CXX ${TESTS_CXX} ${TESTS_JWT})
+        endif ()
     endif ()
 
     # Group all arrow dependencies.
