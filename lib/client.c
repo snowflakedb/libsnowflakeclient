@@ -412,7 +412,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if ((AUTH_SNOWFLAKE != auth_type) && (is_string_empty(sf->password))) {
+    // For now check password if it's not jwt, will add more condition when
+    // support other authentications
+    if ((AUTH_JWT != auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -1175,7 +1177,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = &sf->jwt_timeout;
             break;
         case SF_CON_JWT_CNXN_WAIT_TIME:
-            *value = sf->jwt_cnxn_wait_time;
+            *value = &sf->jwt_cnxn_wait_time;
             break;
         case SF_CON_MAX_CON_RETRY:
             *value = &sf->retry_on_connect_count;

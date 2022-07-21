@@ -211,7 +211,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Set curl timeout to ensure the request won't wait further when renew
         // is needed.
         if (renew_timeout > 0) {
-            int64 curl_timeout = renew_timeout > network_timeout ?
+            long curl_timeout = renew_timeout > network_timeout ?
                                  network_timeout : renew_timeout;
             curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, curl_timeout);
             curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
