@@ -6,7 +6,6 @@
 #include <openssl/pem.h>
 #include <functional>
 #include <memory>
-#include <algorithm>
 #include "snowflake/IBase64.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -132,7 +131,7 @@ private:
 
 };
 
-static void loadPublicKey(KeyPairHolder &keyPairHolder) {
+static bool loadPublicKey(KeyPairHolder &keyPairHolder) {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   SF_STATUS status = snowflake_connect(sf);
@@ -147,8 +146,9 @@ static void loadPublicKey(KeyPairHolder &keyPairHolder) {
   status = snowflake_query(sfstmt, "use role accountadmin;", 0);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
+    // can't use accoutadmin, return false to skip the test
+    return false;
   }
-  assert_int_equal(status, SF_STATUS_SUCCESS);
 
   status = snowflake_query(sfstmt, "set username=CURRENT_USER();", 0);
   if (status != SF_STATUS_SUCCESS) {
@@ -164,6 +164,8 @@ static void loadPublicKey(KeyPairHolder &keyPairHolder) {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   snowflake_term(sf);
+
+  return true;
 }
 
 void test_missing_private_key(void **unused) {
@@ -192,7 +194,9 @@ void test_unencrypted_pem(void **unused) {
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveUnencryptedPrivateKey(keyFilePath);
-  loadPublicKey(keypairHolder);
+  if (!loadPublicKey(keypairHolder)) {
+    return;
+  }
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -213,7 +217,9 @@ void test_encrypted_pem(void **unused) {
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveEncryptedPrivateKey(keyFilePath, "test");
-  loadPublicKey(keypairHolder);
+  if (!loadPublicKey(keypairHolder)) {
+    return;
+  }
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -271,7 +277,9 @@ void test_renew(void **unused) {
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveUnencryptedPrivateKey(keyFilePath);
-  loadPublicKey(keypairHolder);
+  if (!loadPublicKey(keypairHolder)) {
+    return;
+  }
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -293,21 +301,20 @@ void test_renew(void **unused) {
 int main(void) {
 // accountadmin is required for jwt test and it's available in test account only for Linux
 // Since we need to change the user settings the test can't be run in parallel, limit it to aws and release
-#if (!defined(__linux__)) || defined(_DEBUG)
-  return 0;
+  char *genv = getenv("GITHUB_ACTIONS");
+  if (genv) {
+#ifndef __linux__
+    return 0;
 #endif
-  std::string testAccount =  getenv("SNOWFLAKE_TEST_ACCOUNT");
+    char *cenv = getenv("CLOUD_PROVIDER");
+    if ((!cenv) || strncmp(cenv, "AWS", 4)) {
+      return 0;
+    }
 
-  std::for_each(testAccount.begin(), testAccount.end(), [](char & c) {
-      c = ::toupper(c);
-      });
-  if(testAccount.find("GCP") != std::string::npos)
-  {
-    return 0;
-  }
-  else if(testAccount.find("AZURE") != std::string::npos)
-  {
-    return 0;
+    char *benv = getenv("BUILD_TYPE");
+    if ((!benv) || strncmp(cenv, "Release", 8)) {
+      return 0;
+    }
   }
 
   initialize_test(SF_BOOLEAN_FALSE);
