@@ -342,6 +342,7 @@ void test_token_renew_large_file(void ** unused)
   }
   ofs.close();
   test_token_renew_core("large_file.csv");
+  std::remove(fullFileName.c_str());
 }
 
 void test_token_renew_get_remote_meta(void **unused)
@@ -455,7 +456,7 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_parse_exception),
     cmocka_unit_test(test_token_renew_small_files),
-    cmocka_unit_test_teardown(test_token_renew_large_file, large_file_removal),
+    cmocka_unit_test(test_token_renew_large_file),
     cmocka_unit_test(test_token_renew_get_remote_meta),
     cmocka_unit_test(test_transfer_exception_upload),
     cmocka_unit_test(test_transfer_exception_download)
