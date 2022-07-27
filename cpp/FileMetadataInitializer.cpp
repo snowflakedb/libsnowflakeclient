@@ -27,8 +27,7 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> &largeFileMetadata) :
   m_smallFileMetadata(smallFileMetadata),
   m_largeFileMetadata(largeFileMetadata),
-  m_autoCompress(true),
-  m_downloadSizeThreshold(DOWNLOAD_DATA_SIZE_THRESHOLD)
+  m_autoCompress(true)
 {
 }
 
@@ -245,7 +244,8 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                std::string *remoteLocation,
                                IStorageClient *storageClient,
                                EncryptionMaterial *encMat,
-                               std::string const& presignedUrl)
+                               std::string const& presignedUrl,
+                               size_t getThreshold)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
   size_t dirSep = fullPath.find_last_of('/');
@@ -259,7 +259,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
     CXX_LOG_DEBUG("Success on getting remote file metadata");
-    fileMetadata.isLarge = fileMetadata.srcFileSize > m_downloadSizeThreshold;
+    fileMetadata.isLarge = fileMetadata.srcFileSize > getThreshold;
     std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ?
       m_largeFileMetadata : m_smallFileMetadata;
 
