@@ -358,7 +358,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             elapsed_time && (*elapsed_time <= 0))
         {
             my_sleep_ms(renew_timeout * 1000);
-            res = CURLE_OPERATION_TIMEOUTED;
+            res = CURLE_OPERATION_TIMEDOUT;
         }
 
         /* Check for errors */
@@ -374,7 +374,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               my_sleep_ms(next_sleep_in_secs*1000);
-            } else if ((res == CURLE_OPERATION_TIMEOUTED) && (renew_timeout > 0)) {
+            } else if ((res == CURLE_OPERATION_TIMEDOUT) && (renew_timeout > 0)) {
                retry = SF_BOOLEAN_TRUE;
             } else {
               char msg[1024];
