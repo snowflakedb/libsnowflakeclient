@@ -10,7 +10,7 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_VERSION=1.20
+AZURE_VERSION=0.1.20
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
