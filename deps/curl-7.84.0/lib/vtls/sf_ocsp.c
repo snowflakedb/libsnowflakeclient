@@ -607,7 +607,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   }
 
   result = Curl_base64_encode(
-      data, (char *)ocsp_req_der, (size_t)len_ocsp_req_der,
+      (char *)ocsp_req_der, (size_t)len_ocsp_req_der,
       &ocsp_req_base64, &ocsp_req_base64_len);
   if (result != CURLE_OK)
   {
@@ -866,7 +866,7 @@ char* encodeOCSPCertIDToBase64(OCSP_CERTID *certid, struct Curl_easy *data)
     infof(data, "Failed to encode OCSP CertId");
     goto end;
   }
-  result = Curl_base64_encode(data,(char *)der_buf, (size_t)len,
+  result = Curl_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
@@ -899,7 +899,7 @@ char *encodeOCSPRequestToBase64(OCSP_REQUEST *reqp, struct Curl_easy *data)
     goto end;
   }
 
-  result = Curl_base64_encode(data, (char *)der_buf, (size_t)len,
+  result = Curl_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
@@ -934,7 +934,7 @@ char *encodeOCSPResponseToBase64(OCSP_RESPONSE* resp, struct Curl_easy *data)
     goto end;
   }
 
-  result = Curl_base64_encode(data, (char *)der_buf, (size_t)len,
+  result = Curl_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
