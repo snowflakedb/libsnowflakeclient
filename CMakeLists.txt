@@ -214,11 +214,14 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetArrow.hpp
         cpp/lib/ResultSetJson.cpp
         cpp/lib/ResultSetJson.hpp
+        cpp/lib/Authenticator.cpp
+        cpp/lib/Authenticator.hpp
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         lib/result_set.h
         lib/result_set_arrow.h
-        lib/result_set_json.h)
+        lib/result_set_json.h
+        lib/authenticator.h)
 
 if (UNIX)
     # Common to both Linux and Apple

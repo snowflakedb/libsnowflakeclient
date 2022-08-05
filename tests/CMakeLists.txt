@@ -54,6 +54,7 @@ SET(TESTS_CXX
         test_unit_put_get_fips
         test_unit_thread_pool
         test_unit_base64
+        test_jwt
         #test_cpp_select1
         test_unit_proxy
         test_unit_oob)

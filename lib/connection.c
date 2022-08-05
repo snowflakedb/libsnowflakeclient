@@ -10,6 +10,7 @@
 #include "client_int.h"
 #include "constants.h"
 #include "error.h"
+#include "authenticator.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
@@ -179,6 +180,8 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddItemToObject(body, "data", data);
 
+    // update authentication information
+    auth_update_json(sf, data);
 
     return body;
 }
@@ -308,7 +311,13 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                SF_HEADER *header,
                                char *body,
                                cJSON **json,
-                               SF_ERROR_STRUCT *error) {
+                               SF_ERROR_STRUCT *error,
+                               int64 renew_timeout,
+                               int8 retry_max_count,
+                               int64 *elapsed_time,
+                               int8 *retried_count,
+                               sf_bool *is_renew,
+                               sf_bool renew_injection) {
     const char *error_msg;
     SF_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
@@ -325,7 +334,9 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
-                          sf->retry_on_curle_couldnt_connect_count) ||
+                          sf->retry_on_curle_couldnt_connect_count,
+                          renew_timeout, retry_max_count, elapsed_time,
+                          retried_count, is_renew, renew_injection) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -359,7 +370,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                     break;
                 }
                 if (!curl_post_call(sf, curl, url, new_header, body, json,
-                                    error)) {
+                                    error, renew_timeout, retry_max_count,
+                                    elapsed_time, retried_count, is_renew, renew_injection)) {
                     // Error is set in curl call
                     break;
                 }
@@ -393,7 +405,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
             log_trace("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
-                         GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE)) {
+                         GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
+                         0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
                 // Error came from request up, just break
                 stop = SF_BOOLEAN_TRUE;
                 break;
@@ -446,7 +459,8 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
-                          sf->retry_on_curle_couldnt_connect_count) ||
+                          sf->retry_on_curle_couldnt_connect_count,
+                          0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -868,8 +882,14 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         SF_HEADER *header,
                         SF_REQUEST_TYPE request_type,
                         SF_ERROR_STRUCT *error,
-                        sf_bool use_application_json_accept_type) {
-    sf_bool ret = SF_BOOLEAN_FALSE;
+                        sf_bool use_application_json_accept_type,
+                        int64 renew_timeout,
+                        int8 retry_max_count,
+                        int64 *elapsed_time,
+                        int8 *retried_count,
+                        sf_bool *is_renew,
+                        sf_bool renew_injection) {
+  sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     char *encoded_url = NULL;
     SF_HEADER *my_header = NULL;
@@ -898,7 +918,9 @@ sf_bool STDCALL request(SF_CONNECT *sf,
         // Execute request and set return value to result
         if (request_type == POST_REQUEST_TYPE) {
             ret = curl_post_call(sf, curl, encoded_url, my_header, body, json,
-                                 error);
+                                 error, renew_timeout, retry_max_count,
+                                 elapsed_time, retried_count, is_renew,
+                                 renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
             ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
         } else {
@@ -979,7 +1001,8 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
 
     // Successful call, non-null json, successful success code, data object and session token must all be present
     // otherwise set an error
-    if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error) ||
+    if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error,
+                        0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
         !json) {
         // Do nothing, let error propogate up from post call
         log_error("Curl call failed during renew session");

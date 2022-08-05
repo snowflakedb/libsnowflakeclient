@@ -215,10 +215,28 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  * @param body Body passed to cURL for use in the request
  * @param json Reference to a cJSON pointer that is used to store the JSON response upon a successful request
  * @param error Reference to the Snowflake Error object to set an error if one occurs
+ * @param renew_timeout   For key pair authentication. Credentials could expire
+ *                        during the connection retry. Set renew timeout in such
+ *                        case so http_perform will return when renew_timeout is
+ *                        reached and the caller can renew the credentials and
+ *                        then go back to the retry by calling curl_post_call() again.
+ *                        0 means no renew timeout needed.
+ * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param elapsed_time    The in/out paramter to record the elapsed time before
+ *                        curl_post_call() returned due to renew timeout last time
+ * @param retried_count   The in/out paramter to record the number of retry attempts
+ *                        has been done before http_perform() returned due to renew
+ *                        timeout last time.
+ * @param is_renew        The output paramter to indecate whether curl_post_call()
+ *                        returns due to renew timeout.
+ * @param renew_injection For test purpose, forcely trigger renew timeout.
  * @return Success/failure status of post call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, char *body,
-                               cJSON **json, SF_ERROR_STRUCT *error);
+                               cJSON **json, SF_ERROR_STRUCT *error,
+                               int64 renew_timeout, int8 retry_max_count,
+                               int64 *elapsed_time, int8 *retried_count,
+                               sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Used to issue a cURL GET call to Snowflake. Includes support for renew session. If the request was successful,
@@ -392,12 +410,31 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @param insecure_mode Insecure mode disable OCSP check when set to true
  * @param retry_on_curle_couldnt_connect_count number of times retrying server connection on CURLE_COULDNT_CONNECT error
- * @return Success/failure status of http request call. 1 = Success; 0 = Failure
+ * @param renew_timeout   For key pair authentication. Credentials could expire
+ *                        during the connection retry. Set renew timeout in such
+ *                        case so http_perform will return when renew_timeout is
+ *                        reached and the caller can renew the credentials and
+ *                        then go back to the retry by calling http_perform() again.
+ *                        0 means no renew timeout needed.
+ * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param elapsed_time    The in/out paramter to record the elapsed time before
+ *                        http_perform() returned due to renew timeout last time
+ * @param retried_count   The in/out paramter to record the number of retry attempts
+ *                        has been done before http_perform() returned due to renew
+ *                        timeout last time.
+ * @param is_renew        The output paramter to indecate whether http_perform()
+ *                        returns due to renew timeout.
+ * @param renew_injection For test purpose, forcely trigger the autentication renew.
+ *
+ * @return Success/failure status of http request call. 1 = Success; 0 = Failure/renew timeout
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, NON_JSON_RESP* non_json_resp, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error, sf_bool insecure_mode,
-                             int8 retry_on_curle_couldnt_connect_count);
+                             int8 retry_on_curle_couldnt_connect_count,
+                             int64 renew_timeout, int8 retry_max_count,
+                             int64 *elapsed_time, int8 *retried_count,
+                             sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -430,11 +467,29 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  * @param request_type Type of request.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @param use_application_json_accept_type true for put/get command, default is false
+ * @param renew_timeout   For key pair authentication. Credentials could expire
+ *                        during the connection retry. Set renew timeout in such
+ *                        case so request() will return when renew_timeout is
+ *                        reached and the caller can renew the credentials and
+ *                        then go back to the retry by calling request() again.
+ *                        0 means no renew timeout needed.
+ * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param elapsed_time    The in/out paramter to record the elapsed time before
+ *                        request() returned due to renew timeout last time
+ * @param retried_count   The in/out paramter to record the number of retry attempts
+ *                        has been done before request() returned due to renew
+ *                        timeout last time.
+ * @param is_renew        The output paramter to indecate whether http_perform()
+ *                        returns due to renew timeout.
+ * @param renew_injection For test purpose only. Forcely trigger renew timeout.
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
                         char *body, SF_HEADER *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
-                        sf_bool use_application_json_accept_type);
+                        sf_bool use_application_json_accept_type,
+                        int64 renew_timeout, int8 retry_max_count,
+                        int64 *elapsed_time, int8 *retried_count,
+                        sf_bool *is_renew, sf_bool renew_injection);
 
 /**
  * Resets curl instance.
