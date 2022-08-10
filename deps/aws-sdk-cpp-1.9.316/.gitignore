@@ -71,7 +71,6 @@ _build_*
 # Android Junk
 AndroidTestOutput.txt
 curl
-external
 openssl
 zlib
 credentials
