@@ -1,0 +1,43 @@
+{
+    "name": "aws-c-cal",
+    "upstream": [
+        { "name": "aws-c-common" }
+    ],
+    "downstream": [],
+    "targets": {
+        "linux": {
+            "upstream": [
+                { "name": "aws-lc" }
+            ]
+        },
+        "android": {
+            "upstream": [
+                { "name": "aws-lc" }
+            ]
+        }
+    },
+    "variants": {
+        "openssl": {
+            "hosts": {
+                "ubuntu": {
+                    "packages": [
+                        "libssl-dev"
+                    ]
+                }
+            },
+            "targets": {
+                "linux": {
+                    "!upstream": [
+                        { "name": "aws-c-common" }
+                    ]
+                }
+            }
+        }
+    },
+    "test_steps": [
+        "test",
+        [
+            "{install_dir}/bin/sha256_profile"
+        ]
+    ]
+}

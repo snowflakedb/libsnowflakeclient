@@ -1,0 +1,13 @@
+Each of the run-*.sh scripts in this directory is a standalone Litani-based
+build that runs two jobs: echo "foo" and echo something else.
+
+If you wish to run a single build that contains all the jobs except those that
+print foo, you can run run-all.py, which demonstrates how to use the *litani
+transform-jobs* command. This shows how to modify the jobs to be run, without
+needing to manually tweak the run-*.sh scripts.
+
+To try this out, run
+
+    LITANI=../../litani ./run-all.py
+
+in this directory.

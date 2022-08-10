@@ -1,0 +1,12 @@
+The original-run.sh script runs four jobs---three in parallel, and then
+a final job that depends on the three outputs.
+
+If you cannot modify this script, but want to run a job that runs before
+the first three, you can use *litani-transform-jobs(1)* as show in
+run-all.py.
+
+To try this out, run
+
+    LITANI=../../litani ./run-all.py
+
+in this directory.

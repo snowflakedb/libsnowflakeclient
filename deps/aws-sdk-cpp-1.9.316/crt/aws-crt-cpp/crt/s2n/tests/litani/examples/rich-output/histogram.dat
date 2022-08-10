@@ -1,0 +1,7 @@
+set terminal svg noenhanced size 565,1096
+set style data histogram
+set style fill solid border
+set style histogram clustered
+set xtics rotate out
+set yrange [ 0 : 10 ]
+plot for [COL=2:2] 'file.dat' using COL:xticlabels(1) title columnheader

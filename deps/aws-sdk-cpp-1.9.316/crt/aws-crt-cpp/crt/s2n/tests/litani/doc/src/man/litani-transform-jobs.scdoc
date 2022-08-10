@@ -1,0 +1,248 @@
+litani-transform-jobs(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani transform-jobs - Print a list of jobs to be modified before running
+
+
+# DESCRIPTION
+
+This program allows clients to add to, delete from, or modify a list of Litani
+jobs before running them. The program prints out all the jobs that have been
+added to the current run so far, and then expects to read a new list of jobs on
+stdin. This new list of jobs will be 'saved' and run upon invocation of
+*litani-run-build(1)*.
+
+This program prints the list of jobs that have been added so far in JSON format.
+It also expects to read a list of jobs as a JSON list. Each job in the list will
+follow the same schema as the elements of the *["jobs"]["wrapper_arguments"]*
+key in the litani _run.json_ file; see *litani-run.json(5)* for the schema. Most
+users will want to run this program before running *litani run-build*, which
+means that none of the jobs will have started; that means that the JSON schema
+will match that of an unstarted job, meaning the *complete* key will be _false_
+and there will be no *start_time* key.
+
+If this program prints a job, and the JSON list written to stdin contains a job
+with the same job id, then Litani will overwrite the original job with the one
+given on stdin. The 'job id' is the value of *["job_id"]* in the job dictionary,
+as specified in *litani-run.json(5)*.
+
+If this program prints a job, but a job with the same job id does not exist in
+the list of jobs written to this program's stdin, then that job will be deleted.
+
+If this program reads a job on stdin whose job id did not exist in the list of
+jobs printed on stdout, then that job will be added to the list of jobs to be
+executed. However, it is _highly recommended_ to add jobs using
+*litani-add-job(1)* rather than adding a new dict to the JSON list. See
+*CAVEATS* below.
+
+
+# MOTIVATION & BEST PRACTICES
+
+This program allows users to modify Litani-based builds that they do not
+control. Litani-based builds typically use a so-called 'run script' to make the
+following Litani invocations:
+
+. *litani init*, once
+. *litani add-job*, for each job to be added
+. *litani run-build*, once
+
+If you cannot modify the run script, you will not have a chance to add custom
+jobs before running them. However, if the run script includes a way to allow
+users to invoke *litani transform-jobs* after step 2 but before step 3, then
+users who cannot modify the run script can nevertheless add their own jobs.
+
+Here are a couple of suggestions for how to write a run script such that
+downstream users can extend your build with additional jobs.
+
+## Add a --job-transformer flag to specify a custom job-transformer program
+
+Suppose that you have a run script called *run.py* that performs the three steps
+above. Consider adding a flag, (we suggest *--job-transformer* _J_) to the
+script. When users pass this flag to *run.py*, it will run _J_ as a subprocess
+after adding all the jobs but just before running *litani run-build*. Users can
+supply their own _J_, which would run *litani transform-jobs* as a subprocess
+and modify jobs as needed.
+
+
+## Add a --no-standalone flag to suppress `litani init' and `litani run-build'
+
+Suppose that you have various run scripts called *run-1.py*, *run-2.py*, *...*
+that each perform the three steps above, but which each add different jobs to
+the build. Suppose you then add a flag (we suggest *--no-standalone*) to each of
+those scripts, which has the effect of preventing them from running *litani
+init* and *litani run-build*. You can then _combine_ the jobs from all of those
+scripts by running them as follows:
+
+```
+$ litani init                     # run this manually in your shell
+$
+$ ./run-1.py --no-standalone      # add the jobs emitted by run-1.py
+$                                 # without re-initializing the build
+$                                 # or running it yet
+$
+$ ./run-2.py --no-standalone      # same for run-2.py. You could also
+$                                 # run these programs in parallel
+$                                 # because it is safe to run parallel
+$                                 # invocations of litani add-job
+
+...
+
+$ ./transform-all-jobs.sh         # This script invokes `litani
+$                                 # transform-jobs` as a subprocess
+$                                 # and modifies the jobs
+$
+$ litani run-build                # run all jobs added from all scripts
+```
+
+This allows users to 'compose' Litani-based builds that they do not have control
+over, and also modify them before running.
+
+
+# MULTIPROCESS SAFETY
+
+It is safe to run this program in parallel with invocations of
+*litani-add-job(1)*, but this usually doesn't make sense; typically you want to
+ensure that your jobs have been added before transforming them. Therefore, wait
+until all invocations of *litani add-job* have terminated before running this
+program. However, see also *CAVEATS* below for when this does make sense.
+
+It is safe to run several invocations of this program at the same time: this
+program always writes jobs out atomically, so an invocation will never read a
+file that has been half-written by another. However, the result of running
+multiple invocations of this program will be unpredictable if the transformation
+is not idempotent, since one invocation may transform a job that has already
+been transformed.
+
+
+# OPTIONS
+
+This program does not accept any command-line options. It does expect to read a
+list of new jobs on stdin, and will block until stdin is closed. To print the
+entire run without modifying any jobs, use *litani-dump-run(1)* instead.
+
+
+# CAVEATS
+
+It is possible to add new jobs using this command, by appending a dict to the
+output of this command and writing the resulting list back to stdin. However,
+this is _not recommended_, because this avoids the error-checking and
+enforcement of internal invariants that *litani-add-job(1)* performs. Thus, it
+is recommended to use *litani-add-job(1)* to add new jobs, either while you
+run *litani transform-jobs*, or after *transform-jobs* terminates.
+
+
+
+# EXAMPLES
+
+This section contains code snippets illustrating how this command can be used.
+
+
+## Running litani transform-jobs
+
+The following Python fragment illustrates how to invoke *litani transform-jobs*
+from a Python script; read the list of jobs; and then write them back to
+*transform-jobs*.
+
+```
+proc = subprocess.Popen(
+        [litani, "-v", "transform-jobs"], stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, text=True, bufsize=0)
+
+jobs = json.loads(proc.stdout.read())
+
+# jobs is now a list of dicts, which can be processed here
+
+print(json.dumps(jobs), file=proc.stdin)
+proc.stdin.close()
+proc.wait()
+```
+
+
+## Adding a new root node
+
+Sometimes, you want to add a job that runs before all others. That is, you start
+off with a build graph that looks like this:
+
+```
+foo.exe --> foo.out
+                   \\
+                    \\
+bar.exe --> bar.out --> final.exe --> final.out
+                    /
+                   /
+baz.exe --> baz.out
+```
+
+And you want to print `_echo Starting_` before any job starts to run:
+
+```
+                              foo.exe --> foo.out
+                        ________^                \\
+                       /                          \\
+echo 'Start' --> fake.out --> bar.exe --> bar.out --> final.exe --> final.out
+                      \\________                   /
+                               v                 /
+                              baz.exe --> baz.out
+```
+
+The way to accomplish this is
+
+- Add a new job that emits an output file. The output doesn't have to be a real
+  file; you can use *uuidgen(1)* to get a fresh name. You would add this new job
+  using *litani-add-job(1)*.
+- Use *litani-transform-jobs(1)* to modify the _foo_, _bar_, and _baz_ jobs so
+  that their _"inputs"_ key includes the file that the new job outputs.
+
+These steps can be done in either order. Here is a code example:
+
+```
+proc = subprocess.Popen(
+        [litani, "transform-jobs"], stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, text=True, bufsize=0)
+
+jobs = json.loads(proc.stdout.read())
+# A file name that the new root job will output, and which the old
+# root nodes will depend on as an input. This is not a real file that
+# the new root command will write, so we'll pass it to --phony-outputs
+# rather than --outputs.
+dependency_node = str(uuid.uuid4())
+
+for job in jobs:
+        if not job["inputs"]:
+            job["inputs"] = [dependency_node]
+
+print(json.dumps(jobs), file=proc.stdin)
+proc.stdin.close()
+proc.wait()
+
+# Now, add the new root job. (It's also fine to do this before or during the
+# transformation, but remember to skip the new job when iterating!)
+
+subprocess.run([
+        litani, "add-job",
+        "--pipeline", "qux",
+        "--ci-stage", "build",
+        "--command", ">&2 echo Starting && sleep 2",
+        "--phony-outputs", dependency_node,
+], check=True)
+```
+
+
+# SEE ALSO
+
+- *uuidgen(1)*

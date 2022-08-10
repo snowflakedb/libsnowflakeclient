@@ -1,0 +1,14 @@
+test/output
+
+.litani_cache_dir
+
+doc/tmp
+doc/out
+
+examples/rich-output/*.csv
+
+__pycache__/
+
+build.ninja
+
+tmp

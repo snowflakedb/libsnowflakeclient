@@ -1,0 +1,9 @@
+{
+    "name": "aws-c-sdkutils",
+    "upstream": [
+        { "name": "aws-c-common" }
+    ],
+    "test_steps": [
+        "test"
+    ]
+}
