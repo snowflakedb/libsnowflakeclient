@@ -620,14 +620,14 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize, level);
+  fclose(sourceFile);
+  fclose(destFile);
+
   if (ret != 0)
   {
     CXX_LOG_ERROR("Failed to compress source file. Error code: %d", ret);
     throw SnowflakeTransferException(TransferError::COMPRESSION_ERROR, "Failed to compress source file", ret);
   }
-
-  fclose(sourceFile);
-  fclose(destFile);
 }
 
 void Snowflake::Client::FileTransferAgent::download(string *command)
