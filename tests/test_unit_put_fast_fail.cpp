@@ -197,7 +197,7 @@ public:
   virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
     std::string * filePathFull, FileMetadata *fileMetadata)
   {
-    fileMetadata->srcFileSize = filesize;
+    fileMetadata->srcFileSize = (size_t)filesize;
     std::string iv = "fDnCvS9AFFdXnyM9bsEXcA==";
     Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
                          encryptionMetadata.iv.data);

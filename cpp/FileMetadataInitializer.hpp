@@ -77,7 +77,7 @@ private:
    * Given file name, populate metadata
    * @param fileName
    */
-  void initUploadFileMetadata(const std::string &fileDir, const char *fileName, long fileSize, size_t threshold);
+  void initUploadFileMetadata(const std::string &fileDir, const char *fileName, size_t fileSize, size_t threshold);
 
   /**
    * init compression metadata

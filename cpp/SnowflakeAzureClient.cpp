@@ -136,7 +136,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doSingleUpload(FileMetadata *f
   std::vector<std::pair<std::string, std::string>> userMetadata;
   addUserMetadata(&userMetadata, fileMetadata);
   //Calculate the length of the stream.
-  unsigned int len = (unsigned int) ((fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize) ;
+  size_t len = (size_t) ((fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize) ;
 
   //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
   //Do not check if file exists if overwrite is specified.
@@ -182,7 +182,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
     std::vector<std::pair<std::string, std::string>> userMetadata;
     addUserMetadata(&userMetadata, fileMetadata);
     //Calculate the length of the stream.
-    unsigned int len = (unsigned int) ((fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize) ;
+    size_t len = (size_t) ((fileMetadata->encryptionMetadata.cipherStreamSize > 0) ? fileMetadata->encryptionMetadata.cipherStreamSize: fileMetadata->srcFileToUploadSize) ;
     if(! fileMetadata->overWrite ) {
         //Azure does not provide to SHA256 or MD5 or checksum check of a file to check if it already exists.
         bool exists = m_blobclient->blob_exists(containerName, blobName);
@@ -257,7 +257,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartDownload(
     //To fetch size of file.
     auto blobprop = m_blobclient->get_blob_property(cont, blob);
     std::string origEtag = blobprop.etag ;
-    fileMetadata->srcFileSize = (long)blobprop.size;
+    fileMetadata->srcFileSize = (size_t)blobprop.size;
     unsigned int partNum = (unsigned int)(fileMetadata->srcFileSize / DOWNLOAD_DATA_SIZE_THRESHOLD) + 1;
 
     Util::StreamAppender appender(dataStream, partNum, m_parallel, DOWNLOAD_DATA_SIZE_THRESHOLD);
@@ -277,7 +277,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartDownload(
 
             int partSize = ctx.m_partNumber == partNum - 1 ?
                            (int)(fileMetadata->srcFileSize -
-                                 ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
+                                 (size_t)ctx.m_partNumber * DOWNLOAD_DATA_SIZE_THRESHOLD)
                                                            : DOWNLOAD_DATA_SIZE_THRESHOLD;
             Util::ByteArrayStreamBuf * buf = appender.GetBuffer(
                     m_threadPool->GetThreadIdx());
@@ -350,7 +350,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
     auto blobProperty = m_blobclient->get_blob_property(cont, blob  );
     if(blobProperty.valid()) {
         std::string encHdr = blobProperty.metadata[0].second;
-        fileMetadata->srcFileSize = (long)blobProperty.size;
+        fileMetadata->srcFileSize = (size_t)blobProperty.size;
         encHdr.erase(remove(encHdr.begin(), encHdr.end(), ' '), encHdr.end());  //Remove spaces from the string.
 
         std::size_t pos1 = encHdr.find("EncryptedKey")  + strlen("EncryptedKey") + 3;
@@ -370,7 +370,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::GetRemoteFileMetadata(
         }
 
         fileMetadata->encryptionMetadata.cipherStreamSize = blobProperty.size;
-        fileMetadata->srcFileSize = (long)blobProperty.size;
+        fileMetadata->srcFileSize = (size_t)blobProperty.size;
 
         return RemoteStorageRequestOutcome::SUCCESS;
     }

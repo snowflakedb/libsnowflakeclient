@@ -33,7 +33,7 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 
 void
 Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileDir, const char *fileName,
-                                                                   long fileSize, size_t threshold)
+                                                                   size_t fileSize, size_t threshold)
 {
   std::string fileNameFull = fileDir;
   fileNameFull += fileName;
@@ -91,7 +91,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
         LARGE_INTEGER fileSize;
         fileSize.LowPart = fdd.nFileSizeLow;
         fileSize.HighPart = fdd.nFileSizeHigh;
-        initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (long)fileSize.QuadPart, putThreshold);
+        initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (size_t)fileSize.QuadPart, putThreshold);
       }
     }
   } while (FindNextFile(hFind, &fdd) != 0);
@@ -125,7 +125,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
         {
           if (S_ISREG(fileStatus.st_mode)) {
             initUploadFileMetadata(dirPath, dir_entry->d_name,
-                                   (long) fileStatus.st_size, putThreshold);
+                                   (size_t) fileStatus.st_size, putThreshold);
           }
         }
         else
@@ -215,7 +215,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   if (m_encMat->empty())
   {
     // No encryption materials for server side encryption
-    fileMetadata->encryptionMetadata.cipherStreamSize = fileMetadata->srcFileToUploadSize;
+    fileMetadata->encryptionMetadata.cipherStreamSize = (long long)fileMetadata->srcFileToUploadSize;
     fileMetadata->destFileSize = fileMetadata->srcFileToUploadSize;
     fileMetadata->encryptionMetadata.fileKey.nbBits = 0;
     return;
@@ -234,7 +234,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
     ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
     encryptionBlockSize * encryptionBlockSize);
-  fileMetadata->destFileSize = (long)(fileMetadata->encryptionMetadata.cipherStreamSize);
+  fileMetadata->destFileSize = (size_t)(fileMetadata->encryptionMetadata.cipherStreamSize);
 }
 
 Snowflake::Client::RemoteStorageRequestOutcome

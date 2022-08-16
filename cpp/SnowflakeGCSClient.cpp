@@ -106,7 +106,7 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::GetRemoteFileMetadata(
                        fileMetadata->encryptionMetadata.iv.data);
   fileMetadata->encryptionMetadata.enKekEncoded = key;
 
-  fileMetadata->srcFileSize = strtol(headers["Content-Length"].c_str(), NULL, 10);
+  fileMetadata->srcFileSize = strtoull(headers["Content-Length"].c_str(), NULL, 10);
 
   return RemoteStorageRequestOutcome::SUCCESS;
 }

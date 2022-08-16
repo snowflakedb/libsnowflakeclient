@@ -44,19 +44,19 @@ struct FileMetadata
   std::string srcFileName;
 
   /// original source file size
-  long srcFileSize;
+  size_t srcFileSize;
 
   /// Temp file if compressed is required, otherwise same as src file
   std::string srcFileToUpload;
 
   /// Temp file size if compressed is required, otherwise same as src file
-  long srcFileToUploadSize;
+  size_t srcFileToUploadSize;
 
   /// destination file name (no path)
   std::string destFileName;
 
   /// destination file size
-  long destFileSize;
+  size_t destFileSize;
 
   /// Absolute path to the destination (including the filename. /tmp/small_test_file.csv.gz)
   std::string destPath;
@@ -111,7 +111,7 @@ struct FileMetadata
     auto putTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUT_END] - tstamps[PUT_START]).count();
     auto putgetTime = std::chrono::duration_cast<std::chrono::milliseconds>(tstamps[PUTGET_END] - tstamps[PUTGET_START]).count();
 
-    unsigned long fssize = (srcFileToUploadSize > 0)? srcFileToUploadSize : srcFileSize ;
+    size_t fssize = (srcFileToUploadSize > 0)? srcFileToUploadSize : srcFileSize ;
 
     CXX_LOG_DEBUG("Time took for compression: %ld milli seconds, srcFilename:%s, srcFileSize:%ld.",
         compTime, srcFileName.c_str(), srcFileSize );

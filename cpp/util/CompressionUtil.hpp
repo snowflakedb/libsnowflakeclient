@@ -25,7 +25,7 @@ public:
    * @param level compression level
    * @return
    */
-  static int compressWithGzip(FILE *source, FILE *dest, long &destSize, int level = -1);
+  static int compressWithGzip(FILE *source, FILE *dest, size_t &destSize, int level = -1);
 
   /**
    * Compress file with gzip
