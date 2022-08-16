@@ -197,10 +197,17 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
               response.presignedUrls.at(i) : "";
           EncryptionMaterial *encMat = (response.encryptionMaterials.size() > i) ?
                                  &response.encryptionMaterials.at(i) : NULL;
+          size_t getThreshold = DOWNLOAD_DATA_SIZE_THRESHOLD;
+          if (m_transferConfig &&
+            (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
+          {
+            CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
+            getThreshold = m_transferConfig->getSizeThreshold;
+          }
           RemoteStorageRequestOutcome outcome =
             m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
               sourceLocations->at(i), &response.stageInfo.location,
-              m_storageClient, encMat, presignedUrl);
+              m_storageClient, encMat, presignedUrl, getThreshold);
 
           if (outcome == TOKEN_EXPIRED)
           {

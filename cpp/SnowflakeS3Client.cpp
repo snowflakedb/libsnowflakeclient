@@ -445,7 +445,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::download(
   FileMetadata *fileMetadata,
   std::basic_iostream<char>* dataStream)
 {
-  if (fileMetadata->srcFileSize > DOWNLOAD_DATA_SIZE_THRESHOLD)
+  if (fileMetadata->isLarge)
     return doMultiPartDownload(fileMetadata, dataStream);
   else
     return doSingleDownload(fileMetadata, dataStream);
