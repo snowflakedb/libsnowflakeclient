@@ -18,6 +18,7 @@ ARROW_DEP_VERSION=${ARROW_VERSION}.1
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 DEPS_BUILD_DIR=$DIR/../deps-build
 source $DIR/_init.sh $@
+source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
 
