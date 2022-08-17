@@ -67,8 +67,6 @@ function build_component()
     echo "=== build: $component_name ==="
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
-    # Temporarily disable uploading of Arrow artifacts until we compile from source.
-    if [[ "$component_name" == "arrow" ]] && [[ -z "ARROW_FROM_SOURCE" ]]; then return 0; fi
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         if [[ -z $XP_BUILD ]] ; then  #upload to jenkins if not XP build
           upload_to_sfc_jenkins $component_name $component_version $build_type
