@@ -18,6 +18,7 @@ ARROW_DEP_VERSION=${ARROW_VERSION}.1
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 DEPS_BUILD_DIR=$DIR/../deps-build
 source $DIR/_init.sh $@
+source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
 
@@ -39,3 +40,6 @@ if [ -d "arrow" ]; then mv arrow $DEPENDENCY_DIR; fi
 if [ -d "arrow_deps" ]; then mv arrow_deps $DEPENDENCY_DIR; fi
 if [ -d "boost" ]; then mv boost $DEPENDENCY_DIR; fi
 
+cd $DIR
+echo === zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
+zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
