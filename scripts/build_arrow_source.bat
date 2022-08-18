@@ -110,10 +110,6 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 cd "%curdir%"
 
-echo === archiving the library
-call "%scriptdir%utils.bat" :zip_files arrow %arrow_dep_version% "arrow arrow_deps boost"
-if %ERRORLEVEL% NEQ 0 goto :error
-
 goto :success
 
 :success
