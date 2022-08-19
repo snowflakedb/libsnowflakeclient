@@ -65,6 +65,11 @@ if /I "%dynamic_runtime%"=="on" (
 
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
 if %ERRORLEVEL% NEQ 0 goto :error
+echo "platform=%platform% vsversion= %vs_version% arch=%arch%"
+if /I "%vs_version%"=="VS14" (
+    echo "calling %ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %platform%
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %platform%
+)
 b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% install
 if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
