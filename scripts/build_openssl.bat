@@ -67,8 +67,8 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
-echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
-%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
+echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared no-asm enable-fips /ZH:SHA_256 
+%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared no-asm enable-fips /ZH:SHA_256
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -120,6 +120,9 @@ copy /v /y ^
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\libssl.lib" ^
     ".\deps-build\%build_dir%\openssl\lib\%ssl_target_name%"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\*.pdb" ^
+    ".\deps-build\%build_dir%\openssl\lib"
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\include\openssl\*.h" ^
     ".\deps-build\%build_dir%\openssl\include\openssl"
