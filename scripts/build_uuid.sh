@@ -33,7 +33,7 @@ mkdir -p $BUILD_DIR/{lib,include/uuid}
 
 if [[ "$PLATFORM" == "linux" ]]; then
     echo "Building uuid"
-    export CFLAGS="-fPIC -DHAVE_SYS_FILE_H -DHAVE_USLEEP"
+    export CFLAGS="-fPIC -DHAVE_SYS_FILE_H -DHAVE_USLEEP -m32"
     make
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
