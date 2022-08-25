@@ -66,7 +66,7 @@ aws_configure_opts+=(
     "-DZLIB_LIBRARY=$DEPENDENCY_DIR/zlib/lib/libz.a"
 )
 
-ADDITIONAL_CXXFLAGS=
+ADDITIONAL_CXXFLAGS="-m32"
 if [[ "$PLATFORM" == "linux" ]]; then
     if [[ "$GCCVERSION" > "9" ]]; then
         ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-copy"

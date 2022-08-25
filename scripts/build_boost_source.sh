@@ -57,7 +57,7 @@ if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
     rm -rf $BOOST_BUILD_DIR/x64 $BOOST_BUILD_DIR/arm64
 else
     CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system,url
-    ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cxxflags="${CXXFLAGS}" cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=32 cxxflags="${CXXFLAGS}" cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 fi
 
 cd $DIR

@@ -48,7 +48,7 @@ cd $OPENSSL_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     make distclean clean &> /dev/null || true
-    perl ./Configure linux-$(uname -m) "${openssl_config_opts[@]}"
+    perl ./Configure -m32 linux-generic32 "${openssl_config_opts[@]}"
     make depend > /dev/null
     make > /dev/null
     make install_sw install_ssldirs install_fips > /dev/null

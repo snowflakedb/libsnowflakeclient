@@ -22,7 +22,8 @@ ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
-ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread -DBOOST_FILESYSTEM_VERSION=3"
+ARROW_CXXFLAGS="-m32 -std=c++17 -O2 -fPIC -pthread -DBOOST_FILESYSTEM_VERSION=3"
+
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")

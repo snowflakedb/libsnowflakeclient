@@ -129,9 +129,9 @@ cd $LIBCURL_SOURCE_DIR
 echo "Building Curl with OpenSSL"
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CFLAGS="-pthread -fPIC" # required to build with gcc52 or OpenSSL check will fail
+    export CFLAGS="-pthread -fPIC -m32" # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
-    export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
+    export LDFLAGS="-m32 -L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
     PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
     make
     make install
