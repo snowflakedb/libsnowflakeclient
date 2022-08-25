@@ -40,6 +40,7 @@ export CURL_DIR=curl-$CURL_VERSION
 export UUID_DIR=util-linux-$UUID_VERSION
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
+    export CFLAGS="-m32"
     export AR=ar
     export AROPTIONS=rcs
     export CFLAGS="-D_LARGEFILE64_SOURCE"
