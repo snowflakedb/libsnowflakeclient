@@ -47,7 +47,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     echo "Generating UUID build system"
     ./autogen.sh || true
 #    Make sure the compiled binary is position independent as ODBC is a shared library
-    export CFLAGS="-fPIC"
+    export CFLAGS="-fPIC -m32"
     export AL_OPTS="-I/usr/share/aclocal"
     ./configure --disable-bash-completion --disable-all-programs --enable-libuuid --prefix=$DEPENDENCY_DIR/uuid  || true
     echo "Compiling UUID source"
