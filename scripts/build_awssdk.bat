@@ -2,7 +2,7 @@
 :: Build Aws sdk 
 ::
 @echo off
-set aws_version=1.3.50.1
+set aws_version=1.9.316.1
 call %*
 goto :EOF
 
@@ -13,7 +13,7 @@ goto :EOF
 :build
 @echo off
 setlocal
-set aws_dir=aws-sdk-cpp-1.3.50
+set aws_dir=aws-sdk-cpp-1.9.316
 set platform=%1
 set build_type=%2
 set vs_version=%3
@@ -46,13 +46,17 @@ cd %AWS_CMAKE_BUILD_DIR%
 
 REM Keep GIT_DIR. https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
+set CURL_LIB="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib"
+set CURL_INC="%scriptdir%..\deps-build\%build_dir%\curl\include"
+set CURL_LIB=%CURL_LIB:\=/%
+set CURL_INC=%CURL_INC:\=/%
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
 -DBUILD_ONLY=s3 ^
 -DFORCE_CURL=on ^
--DCURL_LIBRARY="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
--DCURL_INCLUDE_DIR="%scriptdir%..\deps-build\%build_dir%\curl\include" ^
+-DCURL_LIBRARY=%CURL_LIB% ^
+-DCURL_INCLUDE_DIR=%CURL_INC% ^
 -DENABLE_TESTING=off ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
 -DBUILD_SHARED_LIBS=off ^

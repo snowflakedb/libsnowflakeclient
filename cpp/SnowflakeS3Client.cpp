@@ -148,7 +148,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
 
   if (!proxy.getNoProxy().empty())
   {
-    clientConfiguration.noProxy = Aws::String(proxy.getNoProxy());
+    clientConfiguration.nonProxyHosts = Aws::Utils::Array<Aws::String>(1);
+    clientConfiguration.nonProxyHosts[0] = Aws::String(proxy.getNoProxy());
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());

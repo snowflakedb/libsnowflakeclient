@@ -2,6 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0.
 
 cmake_minimum_required(VERSION 3.0)
+if (MSVC)
+    if(STATIC_CRT)
+        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+    endif()
+endif ()
 project(aws-c-sdkutils LANGUAGES C VERSION 0.1.0)
 
 if (POLICY CMP0069)
