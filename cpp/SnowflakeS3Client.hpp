@@ -125,7 +125,7 @@ public:
 private:
   Aws::SDKOptions options;
 
-  Aws::Client::ClientConfiguration clientConfiguration;
+  Aws::Client::ClientConfiguration *clientConfiguration;
 
   Aws::S3::S3Client *s3Client;
 
