@@ -71,7 +71,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      unsigned int parallel,
                                      size_t uploadThreshold,
                                      TransferConfig *transferConfig) :
-  clientConfiguration(nullptr),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
@@ -104,21 +103,22 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     s_sdkMutex.unlock();
   }
 
-  clientConfiguration = new Aws::Client::ClientConfiguration;
-  clientConfiguration->region = stageInfo->region;
-  clientConfiguration->caFile = caFile;
-  clientConfiguration->requestTimeoutMs = 40000;
-  clientConfiguration->connectTimeoutMs = 30000;
+  Aws::Client::ClientConfiguration clientConfiguration;
+  clientConfiguration.region = stageInfo->region;
+  clientConfiguration.caFile = caFile;
+  clientConfiguration.requestTimeoutMs = 40000;
+  clientConfiguration.connectTimeoutMs = 30000;
 
   // FIPS mode check
   if (!(m_stageInfo->endPoint.empty())) {
     // FIPS mode is enabled, use the endpoint provided by GS directly
-    clientConfiguration->endpointOverride = Aws::String(stageInfo->endPoint);
+    clientConfiguration.endpointOverride = Aws::String(stageInfo->endPoint);
   } else if (transferConfig != nullptr && transferConfig->useS3regionalUrl) {
-    clientConfiguration->endpointOverride = Aws::String("s3.")
-        + Aws::String(clientConfiguration->region)
+    clientConfiguration.endpointOverride = Aws::String("s3.")
+        + Aws::String(clientConfiguration.region)
         + Aws::String(".amazonaws.com");
   }
+  m_stageEndpoint = clientConfiguration.endpointOverride;
 
   Util::Proxy proxy;
   if ((transferConfig != nullptr) && (transferConfig->proxy != nullptr))
@@ -132,26 +132,26 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
 
   // Set Proxy
   if (!proxy.getMachine().empty()) {
-    clientConfiguration->proxyHost = Aws::String(proxy.getMachine());
-    clientConfiguration->proxyScheme = proxy.getScheme() == Snowflake::Client::Util::Proxy::Protocol::HTTPS ?
+    clientConfiguration.proxyHost = Aws::String(proxy.getMachine());
+    clientConfiguration.proxyScheme = proxy.getScheme() == Snowflake::Client::Util::Proxy::Protocol::HTTPS ?
       Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
     CXX_LOG_DEBUG("Proxy host: %s, proxy scheme: %d", proxy.getMachine().c_str(), static_cast<int>(proxy.getScheme()));
   }
   if (!proxy.getUser().empty() && !proxy.getPwd().empty()) {
-    clientConfiguration->proxyUserName = proxy.getUser();
-    clientConfiguration->proxyPassword = proxy.getPwd();
+    clientConfiguration.proxyUserName = proxy.getUser();
+    clientConfiguration.proxyPassword = proxy.getPwd();
     CXX_LOG_DEBUG("Proxy user: %s, proxy password: XXXXXXXXX", proxy.getUser().c_str());
     proxy.clearPwd();
   }
   if (proxy.getPort() != 0) {
-    clientConfiguration->proxyPort = proxy.getPort();
+    clientConfiguration.proxyPort = proxy.getPort();
     CXX_LOG_DEBUG("Proxy port: %d", proxy.getPort());
   }
 
   if (!proxy.getNoProxy().empty())
   {
-    clientConfiguration->nonProxyHosts = Aws::Utils::Array<Aws::String>(1);
-    clientConfiguration->nonProxyHosts[0] = Aws::String(proxy.getNoProxy());
+    clientConfiguration.nonProxyHosts = Aws::Utils::Array<Aws::String>(1);
+    clientConfiguration.nonProxyHosts[0] = Aws::String(proxy.getNoProxy());
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
@@ -162,7 +162,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     Aws::String(stageInfo->credentials.at(AWS_TOKEN)));
 
   s3Client = new Aws::S3::S3Client(credentials,
-          *clientConfiguration,
+          clientConfiguration,
           Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never,
           true); // explicitly set virtual addressing style to be true
 
@@ -177,10 +177,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
 
 SnowflakeS3Client::~SnowflakeS3Client()
 {
-  if (clientConfiguration)
-  {
-    delete clientConfiguration;
-  }
   delete s3Client;
   if (m_threadPool != nullptr)
   {
@@ -624,7 +620,7 @@ void SnowflakeS3Client::setMaxRetries(unsigned int maxRetries)
 
 const char * SnowflakeS3Client::GetClientConfigStageEndpoint()
 {
-  return clientConfiguration->endpointOverride.c_str();
+  return m_stageEndpoint.c_str();
 }
 
 }
