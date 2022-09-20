@@ -43,7 +43,7 @@ namespace
 {
   struct awsdk_init
   {
-    awsdk_init()
+    awsdk_init() : refCount(0)
     {
       Aws::InitAPI(options);
       Aws::Utils::Logging::InitializeAWSLogging(
@@ -52,9 +52,12 @@ namespace
 
     ~awsdk_init()
     {
+      Aws::Utils::Logging::ShutdownAWSLogging();
+      ShutdownAPI(options);
     }
 
     Aws::SDKOptions options;
+    int refCount;
   };
 
   Snowflake::Client::AwsMutex s_sdkMutex;
@@ -93,15 +96,13 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      "CA bundle file is empty.");
   }
 
+  s_sdkMutex.lock();
   if (!s_awssdk)
   {
-    s_sdkMutex.lock();
-    if (!s_awssdk)
-    {
-      s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
-    }
-    s_sdkMutex.unlock();
+    s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
   }
+  s_awssdk->refCount++;
+  s_sdkMutex.unlock();
 
   Aws::Client::ClientConfiguration clientConfiguration;
   clientConfiguration.region = stageInfo->region;
@@ -182,6 +183,16 @@ SnowflakeS3Client::~SnowflakeS3Client()
   {
     delete m_threadPool;
   }
+  s_sdkMutex.lock();
+  if (s_awssdk)
+  {
+    s_awssdk->refCount--;
+    if (s_awssdk->refCount <= 0)
+    {
+      s_awssdk = NULL;
+    }
+  }
+  s_sdkMutex.unlock();
 }
 
 RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
