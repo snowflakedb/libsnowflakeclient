@@ -1,0 +1,21 @@
+                          Litani Test Suite
+                          =================
+
+The `run` script uses litani to run a variety of unit and system tests.
+The dashboard showing the output of the latest test run will always be
+symlinked from test/output/latest/html/index.html.
+
+# OPTIONS
+
+*--output-dir*
+	Litani will write all of its test output files for this run to this path
+
+*--fast*
+    Do not run tests with SLOW variable set to True
+
+## Writing Tests
+
+Each test is made up of 4 jobs: init, add-jobs, run-build, and check-run
+If --fast flag is passed, each job is given a timeout of 10 seconds.
+In the worst case, a test would take 40 seconds to run.
+For each test, SLOW is set to True if jobs fail to pass the above timeout.

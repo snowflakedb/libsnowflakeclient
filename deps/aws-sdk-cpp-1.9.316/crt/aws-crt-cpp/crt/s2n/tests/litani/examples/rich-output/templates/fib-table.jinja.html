@@ -1,0 +1,45 @@
+<div>
+  <style type="text/css" scoped>
+    table {
+      background-color: white;
+      color: black;
+      text-align: center;
+      padding: 1em;
+      border-radius: 0.3em;
+    }
+    th {
+      border-bottom: 3px solid black;
+    }
+    th, td {
+      padding: 0.5em;
+      margin: 0.3em;
+    }
+    .danger {
+      background-color: #ff8585;
+    }
+    .warning {
+      background-color: #fff5ab;
+    }
+    .good {
+      background-color: #ceffc9;
+    }
+  </style>
+  <table>
+    <th>nth fibonacci number</th>
+    <th>value</th>
+    {% for n, value in data.items() %}
+      <tr>
+        <td>{{ n }}</td>
+        {% if value > 30 %}
+          <td class="danger">
+        {% elif value > 10 %}
+          <td class="warning">
+        {% else %}
+          <td class="good">
+        {% endif %}
+            {{ value }}
+          </td>
+      {% endfor %}
+      </tr>
+  </table>
+</div>

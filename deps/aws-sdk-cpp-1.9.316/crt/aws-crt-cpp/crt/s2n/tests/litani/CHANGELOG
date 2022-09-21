@@ -1,0 +1,355 @@
+                              CHANGELOG
+                              `````````
+
+Version 1.22.0 -- 2022-03-15
+----------------------------
+- Print out stderr when a job fails
+  The entire buffered stderr of a job that fails will now be printed to
+  the terminal after the failing command line. This is to help users
+  quickly debug these jobs without viewing the HTML report.
+
+  This commit fixes #131.
+
+- Fix content colour in dark mode
+
+  Previously, some content would appear in a dark colour in dark mode
+  because the "color" property was set in the .content class for light
+  mode but the <body> element for dark mode.
+
+- Rebuild run graph in transform jobs
+
+  After receiving user input in transform jobs, discard old jobs and make
+  a new run graph using the jobs received on stdin. This makes it so that
+  running add-job in parallel with transform-jobs will fail.
+
+- Add ids to sections on HTML dashboard
+
+  Every major section on the HTML dashboard now has an "id" attribute,
+  making it possible to link to those sections. Prior to this commit, it
+  was not possible to link to specific graphs on the front page, for
+  example. This PR also introduces a CONTRIBUTING.md file that contains
+  guidance to continue this pattern.
+
+- Do not run litani tests if 'no-test' label is set
+
+- Fix space in release script
+
+- Tell release engineer to push develop and release
+
+  Previously, following the instructions would only push the release
+  branch to origin, not the develop branch.
+
+- Fix run-tests workflow file name
+
+
+Version 1.21.0 -- 2022-03-04
+----------------------------
+- Add release script
+  This commit adds a script that creates a new release when run. It takes
+  the following actions:
+
+  - Update the version number in lib/litani.py;
+  - Generate a changelog and prompt the user to edit it;
+  - Merge the release branch into develop, using the changelog for the
+    merge commit;
+  - Tag the release;
+  - Create a new release candidate on the develop branch.
+
+- Litani's homebrew formula is now released on homebrew-core
+
+- Add --out-file flag to litani-dump-run
+
+  With this commit, users can now dump run files to a file instead
+  by passing --out-file flag with the file path to litani dump-run.
+
+- Add run-tests workflow
+  This commit runs Litani's test suite on PRs with label 'test'.
+
+- Render rich output in dashboard, pipeline pages
+
+  This feature allows users to render custom HTML data onto the HTML
+  dashboard, allowing Litani jobs to display their results through tables,
+  graphs, and other HTML format. This can be done both for the front page
+  or on the pipeline page.
+
+  The intention is that individual litani jobs can be used to measure
+  metrics, and then print those metrics out in an easily-viewable format.
+  Jobs that calculate metrics for the entire run can present those metrics
+  as a graph on the front page. Jobs that calculate metrics for a single
+  pipeline (or proof) can display the result on the pipeline page.
+
+  Users use this feature by adding a tag to a litani job, using the --tags
+  flag. If a job is tagged with front-page-text, Litani will render the
+  job's output onto the front page, in its own section. A tag of
+  literal-stdout will make Litani render the job's output onto the
+  pipeline page, but without any HTML escaping.
+
+- Add workflow to update gh-pages on release
+
+- Sort pipelines by status and then name.
+
+  The order with which pipelines appear in both the HTML dashboard is
+  the same as the order with which they appear in the run.json. An e2e
+  test was added to ensure that the order is indeed the intended one.
+
+
+Version 1.20.0 -- 2022-02-11
+----------------------------
+
+This release introduces workflows for Litani that use GitHub Actions. It
+additionally contains bug fixes.
+
+- Workflow were added, which will create a Debian package as well as a PR
+  against the aws/homebrew-tap repository in order to update the brew formula.
+
+Bug fixes:
+
+- Prevent file extension from appearing twice in dot dependency diagram.
+- Litani dump-run will dump the latest run, if no build is concurrently running.
+- Update doc, examples for transform-jobs command.
+
+
+Version 1.19.0 -- 2022-02--01
+----------------------------
+
+- Change man page extension from .roff to its chapter. 
+
+  This commit is in preparation for Litani to be installed on users'
+  systems, where the man pages need to be installed in the correct
+  location and have the correct prefix in order for the man program to
+  find them.
+
+- Inform user that jobs must be added in order for Litani to run a build
+
+
+Version 1.18.0 -- 2022-01-24
+----------------------------
+
+- Add new transform-jobs command
+- Add --fast option to Litani test suite
+- Add --output-dir flag to Litani test suite
+- Litani will no longer print errors when not connected to a tty device
+- Add documentation for new flags
+
+
+Version 1.17.0 -- 2022-01-10
+----------------------------
+
+- Litani will no longer crash when running in a directory where one of the
+subdirectories contains a cache pointer from an earlier run.
+- Litani will distinguish on the pipeline HTML page the jobs that are currently
+running from ones whose execution has not started.
+
+
+Version 1.16.0 -- 2021-12-01
+----------------------------
+
+This is a bugfix release.
+
+- Litani will no longer crash when rendering dependency graphs of command lines
+  containing HTML entities
+- Litani will no longer crash when the graph rendering output fails in general.
+
+
+Version 1.15.0 -- 2021-10-29
+----------------------------
+
+This is a bugfix release. It changes how Litani spawns commands so that it can
+correctly terminate the command and all descendant processes if the job has an
+associated timeout.
+
+
+Version 1.14.0 -- 2021-10-21
+----------------------------
+
+- This release introduces custom stage names to Litani. It also improves the
+  user experience by showcasing better synopses for jobs in the pipeline graphs
+  as well as a pipeline summary at the top of the dashboard. Finally, this
+  release also contains other QoL changes.
+
+
+
+Version 1.13.0 -- 2021-09-29
+----------------------------
+
+- This version fixes a bug where artefact directories were not being
+  copied correctly
+
+
+
+Version 1.12.0 -- 2021-08-24
+----------------------------
+
+- The --phony-outputs flag now has a slightly changed semantic
+    Outputs passed to --phony-outputs no longer need to be also passed
+    to --outputs to be considered an output. That is, the set of outputs
+    of a job is the union of the outputs and the phony outputs. This is
+    a backward-compatible change that should make configure scripts
+    shorter.
+
+- The `dump-run` command is more reliable when being run in parallel
+
+
+
+Version 1.11.1 -- 2021-08-16
+----------------------------
+
+- Make dependency on graphviz optional
+
+
+
+Version 1.11.0 -- 2021-08-13
+----------------------------
+
+- Added --phony-outputs flag to litani add-job
+- Added litani dump-run command
+- Added auto-generated documentation for run.json schema
+- Added more documentation
+
+
+
+Version 1.10.0 -- 2021-07-11
+----------------------------
+
+- "aux" key added to run API
+    This is intended for users to fill out their own custom data when
+    processing the run.json file. The run.json file has a tightly
+    specified schema that allows for no additions, but the "aux" key
+    provides a way to add arbitrary data to a run.
+
+- UI improvements
+    The parallelism graph now shows the number of processing cores as a
+    horizontal line, and the job memory usage section of the dashboard
+    now displays a message if no memory trace was captured.
+
+
+
+Version 1.9.0 -- 2021-06-29
+---------------------------
+
+- Manual pages
+    Litani now has work-in-progress documentation, currently including
+    man pages for the three most commonly-used subcommands
+
+- Gnuplot dependency is now optional
+    This is to support users who run Litani in minimal containers
+
+- Improved usability of output directory symlink
+    Litani init now prints the path to the symlink by default, unless
+    the new --no-print-out-dir flag was passed
+
+
+
+Version 1.8.0 -- 2021-06-24
+---------------------------
+
+- Job pool
+    Users can now add jobs to a particular "job pool", which limits the
+    parallelism of those jobs. Multiple pools can be created, each with
+    their own parallelism limits. This is intended to inhibit the
+    parallelism of jobs that use a contended resource, like disk I/O or
+    network bandwidth.
+
+- UI improvement on pipeline page
+    Each job on the pipeline page now has a hyperlink to that job,
+    making it easy to link to particularly interesting jobs hosted on
+    the web.
+
+- Memory profiler
+    Litani can now profile the memory of particular jobs and display
+    graphs of those jobs' memory use on the dashboard. This can be
+    helpful when deciding when to place particular jobs into a job pool.
+
+- Parallelism measurement
+    Litani now tracks how many jobs are running in parallel at any one
+    moment, and displays that as a graph on the dashboard. This can be
+    helpful when trying to increase CPU core utilization or trying to
+    use cloud resources as efficiently as possible.
+
+
+
+Version 1.7.1 -- 2021-05-13
+---------------------------
+
+- This minor release fixes a bug with the graph renderer.
+
+
+Version 1.7.0 -- 2021-05-12
+---------------------------
+
+- The --outcome-table flag can be used to specify a JSON file that
+  Litani uses to decide whether a job was successful.
+
+- The --output-directory flag can be used to specify where Litani should
+  write its output files.
+
+- The --output-symlink flag can be used to create a symbolic link to the
+  output directory.
+
+- The --output-prefix flag is an alternative to --output-directory that
+  specifies a directory, into which Litani will create a unique
+  directory for writing its output files.
+
+- Litani now displays a table of contents on each pipeline page. Each
+  entry in the table of contents is a hyperlink that points to a job on
+  the page.
+
+- Litani now renders each pipeline as a graph and displays that graph on
+  the pipeline page, allowing users to see the dependency layout of all
+  the jobs in the pipeline.
+
+
+Version 1.6.0 -- 2021-03-10
+---------------------------
+
+This release fixes a bug where litani would crash when given the
+`--timeout` option.
+
+
+Version 1.5.0 -- 2021-03-08
+---------------------------
+
+- The implementation of directory locking no longer releases the lock
+  upon creation. This fixes a problem where external processes could
+  release a lock that a different process had acquired.
+
+
+Version 1.4.0 -- 2021-03-02
+---------------------------
+
+- lib.litani now exposes a LockableDirectory API that can be used to
+  lock directories against concurrent access by more than one process.
+  External processes can use this API to lock report directories while
+  reading or copying them.
+
+- Litani now touches a file called `.litani-expired` in HTML report
+  directories as soon as a new report directory has been written, and
+  after the `html` symbolic link has been updated to point to the new
+  directory. Litani then deletes all report directories that are both
+  expired and unlocked.
+
+
+Version 1.3.0 -- 2021-02-24
+---------------------------
+
+- Litani now has a top-level command called `print-capabilities` that
+  prints out a list of features in either human or machine-readable format.
+  The intention is that any new API-changing features will be accompanied by a
+  new entry in this list
+
+
+Version 1.2.0 -- 2021-02-24
+---------------------------
+
+- Litani now renders the HTML directory atomically. The `html` directory is now
+  a symbolic link that is updated only after the report has been completely
+  written.
+- Added dark mode for all report pages
+
+
+Version 1.1.0 -- 2021-02-03
+---------------------------
+
+- Added a new top-level command, `litani graph`. This dumps a
+  Graphviz-formatted graph to stdout that describes the dependency graph
+  of the jobs that have been added so far.

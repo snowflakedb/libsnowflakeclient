@@ -1,0 +1,220 @@
+#!/bin/sh
+# vim: syntax=make ft=make
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License").
+# You may not use this file except in compliance with the License.
+# A copy of the License is located at #
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# or in the "license" file accompanying this file. This file is distributed
+# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# express or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+
+# This file is a shell script that writes the bottom half of itself to a
+# Makefile, and then runs that Makefile with make. It maintains state in the
+# tmp/litani-release directory, so you can read the files in there to help with
+# debugging.
+
+MAKEFILE_START_LINE=$(\
+  grep -ne '^# 8><' "$0" \
+  | tail -n 1 \
+  | awk -F: '{print $1}')
+
+LITANI_RELEASE=tmp/litani-release
+mkdir -p "${LITANI_RELEASE}"
+
+MAKEFILE=${LITANI_RELEASE}/Makefile
+tail -n+${MAKEFILE_START_LINE} "$0" > "${MAKEFILE}"
+
+make -Bj 1 -f "${MAKEFILE}"
+SUCCESS="$?"
+
+exit "${SUCCESS}"
+
+# 8>< - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# Makefile starts here
+
+TMP=tmp/litani-release
+
+SANITY_CHECKS = \
+	check-upstream-origin \
+	check-branches-up-to-date \
+	check-tac-installed
+
+RELEASE_PROCESS = \
+	checkout-develop \
+	merge-develop-release \
+	commit-changelog \
+	tag-release \
+	create-rc
+
+STATE_FILES = \
+	$(TMP)/current-release-number \
+	$(TMP)/rc-number \
+	$(TMP)/commits.json
+
+create-release: $(SANITY_CHECKS) $(STATE_FILES) $(RELEASE_PROCESS)
+	$(info --- Finished)
+	git checkout release
+	@>&2 printf '\n```````````````````````````````````````````````````````````\n'
+	@>&2 printf "Now run\n\n"
+	@>&2 printf "  git push -u origin release\n"
+	@>&2 printf "  git checkout develop\n"
+	@>&2 printf "  git push -u origin develop\n"
+	@>&2 printf "  git push origin --tags\n\n"
+	@>&2 printf '___________________________________________________________\n'
+
+.PHONY: $(SANITY_CHECKS) $(PHONY_DEPS)
+
+check-upstream-origin:
+	$(info --- Checking that 'origin' remote points to upstream repository)
+	git remote show -n origin \
+	  | grep -e 'Fetch URL:\s\+.\+awslabs/aws-build-accumulator'
+
+check-branches-up-to-date:
+	$(info --- Ensuring local branches track upstream)
+	[ $$(git rev-parse develop) = $$(git rev-parse origin/develop) ]
+	[ $$(git rev-parse release) = $$(git rev-parse origin/release) ]
+
+
+check-tac-installed:
+	$(info --- Testing for 'tac' installation)
+	printf '' | tac
+
+checkout-develop:
+	$(info --- Checking out develop)
+	git checkout develop
+
+create-rc: $(TMP)/rc-number
+	$(info --- Creating new release candidate on develop branching off release)
+	git checkout -B develop
+	new_minor=$$(cat $(TMP)/rc-number); \
+	  sed -E \
+	    -e "s/^VERSION_MINOR.+/VERSION_MINOR = $${new_minor}/g" \
+	    -I '' lib/litani.py
+	sed -E -e 's/^RC *= *False/RC = True/g' -I '' lib/litani.py
+	git add lib/litani.py
+	major=$$(grep -e '^VERSION_MAJOR' lib/litani.py | head -n 1 | awk -F= '{print $$2}'); \
+	minor=$$(cat $(TMP)/rc-number); \
+	  git commit -m "Create version$${major}.$${minor} release candidate"
+
+$(TMP)/rc-number:
+	$(info --- Generating RC number)
+	printf "%d\n" \
+	  $$(( $$(grep -e '^VERSION_MINOR' lib/litani.py | awk '{print $$3}') + 1 )) \
+	  > $@
+	cat $@
+
+$(TMP)/current-release-number:
+	$(info --- Generating current release number)
+	printf "%d.%d.%d\n" \
+	  $$(grep -e '^VERSION_MAJOR' lib/litani.py | awk '{print $$3}') \
+	  $$(grep -e '^VERSION_MINOR' lib/litani.py | awk '{print $$3}') \
+	  $$(grep -e '^VERSION_PATCH' lib/litani.py | awk '{print $$3}') \
+	  > "$@"
+	cat $@
+
+merge-develop-release: $(TMP)/current-release-number
+	$(info --- Merging develop into release branch)
+	git checkout release
+	git merge \
+	  --no-ff \
+	  --message="Bump version to $$(cat $(TMP)/current-release-number)" \
+	  develop
+
+commit-changelog: $(TMP)/updated-changelog
+	$(info --- Turning off '-rc' suffix in version number)
+	sed -e 's/^RC *= *True/RC = False/g' -I '' lib/litani.py
+	$(info --- Adding changelog and updated version number)
+	cp $(TMP)/updated-changelog CHANGELOG
+	git add lib/litani.py CHANGELOG
+	git commit --amend --reuse-message=HEAD
+
+$(TMP)/updated-changelog: \
+	    $(TMP)/current-release-number \
+	    $(TMP)/user-changelog \
+	    $(TMP)/old-changelog
+	$(info --- Assembling new changelog from user input)
+	printf "                              CHANGELOG\n" > $@
+	printf '                              `````````\n\n' >> $@
+	printf "Version %s -- %s\n" \
+	  $$(cat $(TMP)/current-release-number) \
+	  $$(date +%Y-%m-%d) >> $@
+	printf -- "----------------------------\n" >> $@
+	printf "%s" \
+	  "$$(echo "$$(grep -ve '^#' $(TMP)/user-changelog)" | tac)" | tac >> $@
+	printf "\n\n" >> $@
+	cat $(TMP)/old-changelog >> $@
+
+$(TMP)/old-changelog:
+	$(info --- Dumping old changelog)
+	start_line=$$(\
+	  grep -ne '^Version ' CHANGELOG \
+	  | head -n 1 \
+	  | awk -F: '{print $$1}' \
+	); \
+	tail -n+$${start_line} CHANGELOG > $@
+
+$(TMP)/user-changelog: $(TMP)/commits.json
+	$(info --- Generating changelog for this release from feature list)
+	printf "" > $@
+	printf "%s\n" "# This will be the changelog entry for this release." >> $@
+	printf "%s\n" "# Lines beginning with '#' will be ignored." >> $@
+	printf "%s\n" "" >> $@
+	jq -r '[.[] | [ \
+	      "- " + .subject, \
+	      if (.body | length) > 1 \
+	      then "", (.body | .[] | if (. | length) == 0 then "" else "  " + . end) \
+	      else "" end \
+	    ] + [ \
+	      (if (.body | length) > 1 then "", "" else  "" end) \
+	    ] \
+	  ] | .[] | .[]' < $(TMP)/commits.json >> $@
+	vim +4 $@
+
+bump-version:
+	$(info --- Incrementing minor version number)
+	next_minor=$$(( \
+	  $$(grep -e '^VERSION_MINOR' lib/litani.py | awk '{print $$3}') + 1 \
+	)); \
+	sed -E -e 's/^VERSION_MINOR.+/VERSION_MINOR = $${next_minor}/g' \
+	  -I '' lib/litani.py
+
+tag-release: $(TMP)/current-release-number $(TMP)/tag-body
+	$(info --- Tagging release)
+	printf "Release %s\n\n" $$(cat $<) > $(TMP)/tag-file
+	cat $(TMP)/tag-body >> $(TMP)/tag-file
+	git tag --annotate --file=$(TMP)/tag-file $$(cat $<)
+
+$(TMP)/tag-body: $(TMP)/commits.json
+	$(info --- Generating tag body)
+	jq -r '.[] | "- " + .subject' > $@ < $<
+
+$(TMP)/commits.json:
+	$(info --- Generating JSON list of feature commits)
+	commit=HEAD; \
+	while true ; do \
+	  author=$$(git show --no-patch --pretty=format:%an "$${commit}"); \
+	  subject=$$(git show --no-patch --pretty=format:%s "$${commit}"); \
+	  body=$$(git show --no-patch --pretty=format:%b "$${commit}"); \
+	  last_rc=$$(printf "%s\n" "$${subject}" \
+	    | grep "Create version .\+ release candidate"); \
+	  if [ "$${last_rc}" ]; then \
+	    break; \
+	  fi ; \
+	  printf '%s\n%s\n%s' "$${author}" "$${subject}" "$${body}" \
+	    | jq --compact-output --raw-input --slurp \
+	        'split("\n") | {\
+	           "author": .[0], \
+	           "subject": .[1], \
+	           "body": .[2:] \
+	        }'; \
+	  commit="$${commit}~"; \
+	done \
+	| tr '\n' ',' | sed 's/,$$/]\n/; s/^{/[{/' | jq \
+	> $@

@@ -1,0 +1,30 @@
+{
+    "name": "aws-crt-cpp",
+    "hosts": {
+        "manylinux": {
+            "architectures": {
+                "x86": {
+                    "!yum_compiler_packages": []
+                }
+            }
+        }
+    },
+    "build_steps": [
+        "build-crt"
+    ],
+    "variants": {
+        "openssl": {
+            "hosts": {
+                "ubuntu": {
+                    "packages": [
+                        "libssl-dev"
+                    ]
+                }
+            }
+        }
+    },
+    "test_steps": [
+        "test",
+        "elasticurl-tests"
+    ]
+}

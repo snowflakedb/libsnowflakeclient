@@ -1,0 +1,30 @@
+<div>
+  <style type="text/css" scoped>
+    table {
+      background-color: white;
+      color: black;
+      text-align: center;
+      padding: 1em;
+      border-radius: 0.3em;
+      margin: auto;
+      width: 50%;
+    }
+    th {
+      border-bottom: 3px solid black;
+    }
+    th, td {
+      padding: 0.5em;
+      margin: 0.3em;
+    }
+  </style>
+  <table>
+    <th>x</th>
+    <th>sin(x)</th>
+    {% for n, value in data.items() %}
+      <tr>
+        <td>{{ n }}</td>
+        <td>{{ value }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
