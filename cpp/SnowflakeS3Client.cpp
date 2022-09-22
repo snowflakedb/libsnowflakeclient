@@ -254,7 +254,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
     fileMetadata->encryptionMetadata.cipherStreamSize);
   putObjectRequest.SetBody(
     Aws::MakeShared<Aws::IOStream>("", dataStream->rdbuf()));
-
+  putObjectRequest.SetChecksumAlgorithm((Aws::S3::Model::ChecksumAlgorithm)(5));
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
   if (outcome.IsSuccess())
