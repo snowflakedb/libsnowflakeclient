@@ -56,6 +56,8 @@ endif()
 
 # Http client control
 if(NOT NO_HTTP_CLIENT)
+    #add static linking for curl as currently awssdk can't pass this option to crt correctly
+    add_definitions(-DCURL_STATICLIB)
     if(PLATFORM_WINDOWS)
         if(FORCE_CURL)
             set(ENABLE_CURL_CLIENT 1)
