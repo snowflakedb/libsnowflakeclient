@@ -32,7 +32,11 @@ public:
       : Snowflake::Client::IFileTransferAgent(),
       m_stmtPutGet{statement},
       m_transferConfig(transferConfig) {}
-
+    ~MockedPutGetAgent()
+    {
+      // delete storage client to avoid heap issue
+      delete m_storageClient;
+    }
     const char * getStageEndpoint(std::string *command)
     {
       assert_true(m_stmtPutGet->parsePutGetCommand(command,
