@@ -11,8 +11,8 @@ function usage() {
 }
 set -o pipefail
 
-AWS_DIR=aws-sdk-cpp-1.3.50
-AWS_VERSION=1.3.50.1
+AWS_DIR=aws-sdk-cpp-1.9.316
+AWS_VERSION=1.9.316.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -42,6 +42,8 @@ aws_configure_opts+=(
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
     "-DENABLE_TESTING=OFF"
     "-DOPENSSL_ROOT_DIR=$DEPENDENCY_DIR/openssl"
+    "-Dcrypto_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
+    "-Dcrypto_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
     "-DOPENSSL_USE_STATIC_LIBS=true"
     "-DCURL_INCLUDE_DIR=$DEPENDENCY_DIR/curl/include"
     "-DCURL_LIBRARY=$DEPENDENCY_DIR/curl/lib/libcurl.a"
