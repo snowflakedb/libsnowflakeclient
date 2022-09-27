@@ -501,8 +501,10 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartDownload(
       CXX_LOG_DEBUG("Start downloading part %d, range: %s, part size: %d",
                    ctx.m_partNumber, ctx.getObjectRequest.GetRange().c_str(),
                    partSize);
+      // Clear the stream as aws sdk expects a clean stream returned from
+      // response stream factory each time when retry on network errors
       ctx.getObjectRequest.SetResponseStreamFactory([&buf]()-> Aws::IOStream *
-        { return Aws::New<Aws::IOStream>("SF_MULTI_PART_DOWNLOAD", buf); });
+        { buf->reset(); return Aws::New<Aws::IOStream>("SF_MULTI_PART_DOWNLOAD", buf); });
 
       Aws::S3::Model::GetObjectOutcome outcome = s3Client->GetObject(
         ctx.getObjectRequest);
@@ -552,6 +554,9 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleDownload(
 
   std::function<Aws::IOStream *(void)> responseStreamCb = [&]() ->
     Aws::IOStream * {
+      // Clear the stream as aws sdk expects a clean stream returned from
+      // response stream factory each time when retry on network errors
+      dataStream->clear(); dataStream->seekg(0); dataStream->seekp(0);
       return Aws::New<Aws::IOStream>("SF_SINGLE_PART_DOWNLOAD", dataStream->rdbuf());
   };
 

@@ -40,6 +40,8 @@ public:
 
   void * updateSize(long updatedSize);
 
+  void reset();
+
   inline long getSize()
   {
     return size;

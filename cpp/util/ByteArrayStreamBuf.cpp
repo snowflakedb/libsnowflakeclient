@@ -21,6 +21,13 @@ Snowflake::Client::Util::ByteArrayStreamBuf::~ByteArrayStreamBuf()
   delete[] m_dataBuffer;
 }
 
+void Snowflake::Client::Util::ByteArrayStreamBuf::reset()
+{
+  memset(m_dataBuffer, 0, m_capacity);
+  setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + m_capacity);
+  setp(m_dataBuffer, m_dataBuffer + m_capacity);
+}
+
 void * Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
   long updatedSize)
 {

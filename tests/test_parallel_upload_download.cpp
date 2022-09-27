@@ -13,43 +13,40 @@
 #include "FileTransferAgent.hpp"
 
 #define SMALL_FILE_PREFIX "test_small_file_"
-#define LARGE_FILE_NAME "test_large_file.csv"
+#define LARGE_FILE_PREFIX "test_large_file_"
 
 using namespace ::Snowflake::Client;
 
-void populateDataInTestDir(std::string &testDir, int numberOfFiles)
+void populateDataInTestDir(std::string &testDir, int numberOfFiles, int numberOfRows)
 {
   int ret = sf_create_directory_if_not_exists(testDir.c_str());
   assert_int_equal(0, ret);
 
-  if (numberOfFiles == 1)
+  std::string filePrefix;
+  if (numberOfRows == 1)
   {
-    std::string fullFileName = testDir + LARGE_FILE_NAME;
+    filePrefix = SMALL_FILE_PREFIX;
+  }
+  else
+  {
+    filePrefix = LARGE_FILE_PREFIX;
+  }
+
+  for (int i=0; i<numberOfFiles;i ++)
+  {
+    std::string fullFileName = testDir + filePrefix +
+                               std::to_string(i) + ".csv";
     std::ofstream ofs(fullFileName);
     assert_true(ofs.is_open());
-
-    for (int i=0; i<500000; i++)
+    for (int j=0; j<numberOfRows; j++)
     {
       ofs << "test_string11111,test_string222222,test_string333333" << std::endl;
     }
     ofs.close();
   }
-  else
-  {
-    for (int i=0; i<numberOfFiles;i ++)
-    {
-      std::string fullFileName = testDir + SMALL_FILE_PREFIX +
-                                 std::to_string(i) + ".csv";
-      std::ofstream ofs(fullFileName);
-      assert_true(ofs.is_open());
-      ofs << "1,2,test_string" << std::endl;
-      ofs.close();
-    }
-
-  }
 }
 
-void test_parallel_upload_download_core(int fileNumber)
+void test_parallel_upload_download_core(int fileNumber, int numberOfRows = 1)
 {
   /* init */
   SF_STATUS status;
@@ -72,7 +69,7 @@ void test_parallel_upload_download_core(int fileNumber)
   std::string testDir = dataDir + "test_parallel_upload";
   testDir += PATH_SEP;
 
-  populateDataInTestDir(testDir, fileNumber);
+  populateDataInTestDir(testDir, fileNumber, numberOfRows);
 
   std::string files = testDir + "*";
   std::string putCommand = "put file://" + files + " @%test_parallel_upload_download auto_compress=false";
@@ -155,12 +152,17 @@ static int teardown(void **unused)
 
 void test_small_file_concurrent_upload_download(void **unused)
 {
-  test_parallel_upload_download_core(10);
+  test_parallel_upload_download_core(10, 50000);
 }
 
 void test_large_file_multipart_upload(void **unused)
 {
-  test_parallel_upload_download_core(1);
+  test_parallel_upload_download_core(1, 500000);
+}
+
+void test_large_file_concurrent_upload_download(void **unused)
+{
+  test_parallel_upload_download_core(10, 200000);
 }
 
 static int gr_setup(void **unused)
@@ -203,6 +205,7 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_small_file_concurrent_upload_download, teardown),
     cmocka_unit_test_teardown(test_large_file_multipart_upload, teardown),
+    cmocka_unit_test_teardown(test_large_file_concurrent_upload_download, teardown),
   };
   const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
   if( cloud_provider && ( strcmp(cloud_provider,"AWS") == 0 ) ) {
