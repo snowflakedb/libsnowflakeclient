@@ -311,7 +311,7 @@ private:
   long m_lastRefreshTokenSec;
 
   /// config struct that is passed in.
-  TransferConfig * m_transferConfig;
+  TransferConfig m_transferConfig;
 
   /// The stream for uploading data from memory. (NOT OWN)
   std::basic_iostream<char>* m_uploadStream;

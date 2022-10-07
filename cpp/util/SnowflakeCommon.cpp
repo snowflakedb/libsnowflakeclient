@@ -1,11 +1,14 @@
 /*
 * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
 */
+#define CURL_STATICLIB
 #include <string.h>
+#include <curl/curl.h>
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
 #include "snowflake/basic_types.h"
 #include "snowflake/platform.h"
+#include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
 
 using namespace Snowflake;
@@ -71,6 +74,46 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
   CXX_LOG_TRACE("removing folder %s succeeded.", directoryName);
 
   return err.value();
+}
+
+CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy)
+{
+  if (!proxy)
+  {
+    return CURLE_OK;
+  }
+
+  if (!curl)
+  {
+    return CURLE_BAD_FUNCTION_ARGUMENT;
+  }
+
+  CURLcode res;
+  std::string sProxy(proxy);
+
+  Util::Proxy proxySettings(sProxy);
+	if (no_proxy)
+	{
+		proxySettings.setNoProxy(std::string(no_proxy));
+	}
+
+  if (proxySettings.getMachine().empty())
+  {
+    // explicitly disable proxy and ignore settings in environment variables
+    return curl_easy_setopt(curl, CURLOPT_PROXY, "");
+  }
+  else
+  {
+    res = curl_easy_setopt(curl, CURLOPT_PROXY, proxySettings.getHost().c_str());
+    if (res != CURLE_OK) return res;
+    res = curl_easy_setopt(curl, CURLOPT_PROXYPORT, (long)proxySettings.getPort());
+    if (res != CURLE_OK) return res;
+    res = curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, proxySettings.getUser().c_str());
+    if (res != CURLE_OK) return res;
+    res = curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, proxySettings.getPwd().c_str());
+    if (res != CURLE_OK) return res;
+    return curl_easy_setopt(curl, CURLOPT_NOPROXY, proxySettings.getNoProxy().c_str());
+  }
 }
 
 }

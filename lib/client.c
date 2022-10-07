@@ -676,6 +676,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->jwt_timeout = SF_JWT_TIMEOUT;
         sf->jwt_cnxn_wait_time = SF_JWT_CNXN_WAIT_TIME;
 
+        sf->proxy = NULL;
+        sf->no_proxy = NULL;
+
         sf->directURL_param = NULL;
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
@@ -744,6 +747,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->direct_query_token);
     SF_FREE(sf->priv_key_file);
     SF_FREE(sf->priv_key_file_pwd);
+    SF_FREE(sf->proxy);
+    SF_FREE(sf->no_proxy);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -1066,6 +1071,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_MAX_CON_RETRY:
             sf->retry_on_connect_count = value ? *((int8 *)value) : 0;
             break;
+        case SF_CON_PROXY:
+            alloc_buffer_and_copy(&sf->proxy, value);
+            break;
+        case SF_CON_NO_PROXY:
+            alloc_buffer_and_copy(&sf->no_proxy, value);
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1181,6 +1192,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_CON_RETRY:
             *value = &sf->retry_on_connect_count;
+            break;
+        case SF_CON_PROXY:
+            *value = sf->proxy;
+            break;
+        case SF_CON_NO_PROXY:
+            *value = sf->no_proxy;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -2163,7 +2180,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                             4, // fetch slot
                             &sfstmt->error,
                             sfstmt->connection->insecure_mode,
-                            callback_create_resp);
+                            callback_create_resp,
+                            sfstmt->connection->proxy,
+                            sfstmt->connection->no_proxy);
                     if (!sfstmt->chunk_downloader) {
                         // Unable to create chunk downloader.
                         // Error is set in chunk_downloader_init function.

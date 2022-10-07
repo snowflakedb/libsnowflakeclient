@@ -201,7 +201,13 @@ cleanup:
     return ret;
 }
 
-sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, NON_JSON_RESP* non_json_resp, SF_ERROR_STRUCT *error, sf_bool insecure_mode) {
+sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
+                               cJSON **chunk,
+                               NON_JSON_RESP* non_json_resp,
+                               SF_ERROR_STRUCT *error,
+                               sf_bool insecure_mode,
+                               const char *proxy,
+                               const char *no_proxy) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     curl = curl_easy_init();
@@ -210,7 +216,8 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers, cJSON **chunk, NON
         !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk,
                       non_json_resp, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT,
                       SF_BOOLEAN_TRUE, error, insecure_mode, 0,
-                      0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                      0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                      proxy, no_proxy)) {
         // Error set in perform function
         goto cleanup;
     }
@@ -230,13 +237,15 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error,
                                                    sf_bool insecure_mode,
-                                                   NON_JSON_RESP* (*callback_create_resp)(void)) {
+                                                   NON_JSON_RESP* (*callback_create_resp)(void),
+                                                   const char *proxy,
+                                                   const char *no_proxy) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
     const char *error_msg = NULL;
     int chunk_count;
     int i;
     int pthread_ret;
-    size_t qrmk_len = 1;
+    size_t qrmk_len = 1, proxy_len = 1, no_proxy_len = 1;
     // We need thread_count, fetch_slots, chunks, and either qrmk or chunk_headers
     if (thread_count <= 0 ||
             fetch_slots <= 0 ||
@@ -264,6 +273,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->sf_error = sf_error;
     chunk_downloader->insecure_mode = insecure_mode;
     chunk_downloader->callback_create_resp = callback_create_resp;
+    chunk_downloader->proxy = NULL;
+    chunk_downloader->no_proxy = NULL;
 
     // Initialize chunk_headers or qrmk
     if (chunk_headers) {
@@ -274,6 +285,21 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
         qrmk_len += strlen(qrmk);
         chunk_downloader->qrmk = (char *) SF_CALLOC(1, qrmk_len);
         sb_strncpy(chunk_downloader->qrmk, qrmk_len, qrmk, qrmk_len);
+    }
+
+    // Initialize proxy
+    if (proxy)
+    {
+      proxy_len += strlen(proxy);
+      chunk_downloader->proxy = (char *)SF_CALLOC(1, proxy_len);
+      sb_strncpy(chunk_downloader->proxy, proxy_len, proxy, proxy_len);
+
+      if (no_proxy)
+      {
+        no_proxy_len += strlen(no_proxy);
+        chunk_downloader->no_proxy = (char *)SF_CALLOC(1, no_proxy_len);
+        sb_strncpy(chunk_downloader->no_proxy, no_proxy_len, no_proxy, no_proxy_len);
+      }
     }
 
     // Initialize mutexes and conditional variables
@@ -315,6 +341,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
 cleanup:
     if (chunk_downloader) {
         SF_FREE(chunk_downloader->qrmk);
+        SF_FREE(chunk_downloader->proxy);
+        SF_FREE(chunk_downloader->no_proxy);
         sf_header_destroy(chunk_downloader->chunk_headers);
         SF_FREE(chunk_downloader->queue);
         SF_FREE(chunk_downloader->threads);
@@ -392,6 +420,8 @@ sf_bool STDCALL chunk_downloader_term(struct SF_CHUNK_DOWNLOADER *chunk_download
     }
     SF_FREE(chunk_downloader->queue);
     SF_FREE(chunk_downloader->qrmk);
+    SF_FREE(chunk_downloader->proxy);
+    SF_FREE(chunk_downloader->no_proxy);
     sf_header_destroy(chunk_downloader->chunk_headers);
     _critical_section_term(&chunk_downloader->queue_lock);
     _cond_term(&chunk_downloader->producer_cond);
@@ -447,7 +477,8 @@ static void * chunk_downloader_thread(void *downloader) {
             non_json_resp = chunk_downloader->callback_create_resp();
         }
         if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
-          chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode)) {
+          chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode,
+          chunk_downloader->proxy, chunk_downloader->no_proxy)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {
                 copy_snowflake_error(chunk_downloader->sf_error, &err);
