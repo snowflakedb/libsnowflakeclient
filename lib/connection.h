@@ -437,7 +437,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,
-                             char *proxy, char *no_proxy);
+                             const char *proxy, const char *no_proxy);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.

@@ -158,8 +158,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              int8 *retried_count,
                              sf_bool *is_renew,
                              sf_bool renew_injection,
-                             char *proxy,
-                             char *no_proxy) {
+                             const char *proxy,
+                             const char *no_proxy) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
