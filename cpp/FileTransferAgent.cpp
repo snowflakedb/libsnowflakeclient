@@ -67,6 +67,7 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_executionResults(nullptr),
   m_storageClient(nullptr),
   m_lastRefreshTokenSec(0),
+  m_transferConfig(transferConfig),
   m_uploadStream(nullptr),
   m_uploadStreamSize(0),
   m_useDevUrand(false),
@@ -76,14 +77,6 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_getFastFail(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
-  if (transferConfig)
-  {
-    m_transferConfig = *transferConfig;
-  }
-  if (!m_transferConfig.proxy)
-  {
-    m_transferConfig.proxy = m_stmtPutGet->get_proxy();
-  }
 }
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
@@ -128,7 +121,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
                                                     (unsigned int) response.parallel,
                                                     response.threshold,
-                                                    &m_transferConfig,
+                                                    m_transferConfig,
                                                     m_stmtPutGet);
 
   // init file metadata
@@ -205,10 +198,11 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
           EncryptionMaterial *encMat = (response.encryptionMaterials.size() > i) ?
                                  &response.encryptionMaterials.at(i) : NULL;
           size_t getThreshold = DOWNLOAD_DATA_SIZE_THRESHOLD;
-          if (m_transferConfig.getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD)
+          if (m_transferConfig &&
+            (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
           {
-            CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig.getSizeThreshold);
-            getThreshold = m_transferConfig.getSizeThreshold;
+            CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
+            getThreshold = m_transferConfig->getSizeThreshold;
           }
           RemoteStorageRequestOutcome outcome =
             m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
@@ -448,7 +442,8 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
                                                       (unsigned int) response.parallel,
                                                       response.threshold,
-                                                      &m_transferConfig);
+                                                      m_transferConfig,
+                                                      m_stmtPutGet);
     m_lastRefreshTokenSec = now;
   }
 }
@@ -597,10 +592,14 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   CXX_LOG_DEBUG("Starting file compression");
   
   char tempDir[MAX_PATH]={0};
-  int level = m_transferConfig.compressLevel;
-  if (m_transferConfig.tempDir)
+  int level = -1;
+  if (m_transferConfig)
   {
-    sb_strcat(tempDir, sizeof(tempDir), m_transferConfig.tempDir);
+    level = m_transferConfig->compressLevel;
+    if (m_transferConfig->tempDir)
+    {
+      sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+    }
   }
   sf_get_uniq_tmp_dir(tempDir);
   // tempDir could be passed in from application. Check if the folder can be
