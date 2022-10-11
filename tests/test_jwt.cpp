@@ -298,8 +298,6 @@ void test_renew(void **unused) {
   int64 renew_timeout = 5;
   snowflake_set_attribute(sf, SF_CON_JWT_CNXN_WAIT_TIME, &renew_timeout);
   snowflake_set_attribute(sf, SF_CON_PASSWORD, "renew injection");
-  // explicitly unset password to esure we are using key pair auth
-  snowflake_set_attribute(sf, SF_CON_PASSWORD, NULL);
 
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
