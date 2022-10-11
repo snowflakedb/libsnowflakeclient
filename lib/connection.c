@@ -181,7 +181,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     snowflake_cJSON_AddItemToObject(body, "data", data);
 
     // update authentication information
-    auth_update_json(sf, data);
+    auth_update_json(sf, body);
 
     return body;
 }
