@@ -157,7 +157,9 @@ sf_bool STDCALL http_perform(CURL *curl,
                              int64 *elapsed_time,
                              int8 *retried_count,
                              sf_bool *is_renew,
-                             sf_bool renew_injection) {
+                             sf_bool renew_injection,
+                             const char *proxy,
+                             const char *no_proxy) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -238,6 +240,13 @@ sf_bool STDCALL http_perform(CURL *curl,
                 log_error("Failed to set header [%s]", curl_easy_strerror(res));
                 break;
             }
+        }
+
+        // Set proxy
+        res = set_curl_proxy(curl, proxy, no_proxy);
+        if (res != CURLE_OK) {
+          log_error("Failed to set proxy [%s]", curl_easy_strerror(res));
+          break;
         }
 
         // Post type stuffs

@@ -75,7 +75,7 @@ class SnowflakeAzureClient : public Snowflake::Client::IStorageClient
 {
 public:
   SnowflakeAzureClient(StageInfo *stageInfo, unsigned int parallel, size_t uploadThreshold,
-                       TransferConfig *transferConfig);
+                       TransferConfig *transferConfig, IStatementPutGet* statement);
 
   ~SnowflakeAzureClient();
 

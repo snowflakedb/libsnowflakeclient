@@ -26,12 +26,12 @@ IStorageClient * StorageClientFactory::getClient(StageInfo *stageInfo,
   {
     case StageType::S3:
       CXX_LOG_INFO("Creating S3 client");
-      return new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig);
+      return new SnowflakeS3Client(stageInfo, parallel, uploadThreshold, transferConfig, statement);
     case StageType::MOCKED_STAGE_TYPE:
       return injectedClient;
     case StageType::AZURE:
       CXX_LOG_INFO("Creating Azure client");
-      return new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold, transferConfig);
+      return new SnowflakeAzureClient(stageInfo, parallel, uploadThreshold, transferConfig, statement);
     case StageType::GCS:
       CXX_LOG_INFO("Creating GCS client");
       return new SnowflakeGCSClient(stageInfo, parallel, transferConfig, statement);

@@ -9,8 +9,17 @@
 using namespace Snowflake::Client;
 
 StatementPutGet::StatementPutGet(SF_STMT *stmt) :
-  m_stmt(stmt)
+  m_stmt(stmt), m_useProxy(false)
 {
+  if (m_stmt && m_stmt->connection && m_stmt->connection->proxy)
+  {
+    m_useProxy = true;
+    m_proxy = Util::Proxy(std::string(m_stmt->connection->proxy));
+    if (m_stmt->connection->no_proxy)
+    {
+      m_proxy.setNoProxy(std::string(m_stmt->connection->no_proxy));
+    }
+  }
 }
 
 bool StatementPutGet::parsePutGetCommand(std::string *sql,
@@ -101,4 +110,16 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     putGetParseResponse->stageInfo.stageType = StageType::LOCAL_FS;
   }
   return true;
+}
+
+Util::Proxy* StatementPutGet::get_proxy()
+{
+  if (!m_useProxy)
+  {
+    return NULL;
+  }
+  else
+  {
+    return &m_proxy;
+  }
 }

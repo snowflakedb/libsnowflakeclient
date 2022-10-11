@@ -90,7 +90,8 @@ public:
   SnowflakeS3Client(StageInfo *stageInfo,
                     unsigned int parallel,
                     size_t uploadThreshold,
-                    TransferConfig *transferConfig);
+                    TransferConfig *transferConfig,
+                    IStatementPutGet* statement);
 
   ~SnowflakeS3Client();
 

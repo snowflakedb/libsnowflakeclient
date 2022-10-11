@@ -425,6 +425,8 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @param is_renew        The output paramter to indecate whether http_perform()
  *                        returns due to renew timeout.
  * @param renew_injection For test purpose, forcely trigger the autentication renew.
+ * @param proxy           proxy setting
+ * @param no_proxy        exclusion of proxy
  *
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure/renew timeout
  */
@@ -434,7 +436,8 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
-                             sf_bool *is_renew, sf_bool renew_injection);
+                             sf_bool *is_renew, sf_bool renew_injection,
+                             const char *proxy, const char *no_proxy);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -538,6 +541,16 @@ sf_bool STDCALL set_tokens(SF_CONNECT *sf, cJSON *data, const char *session_toke
 SF_HEADER* STDCALL sf_header_create();
 
 void STDCALL sf_header_destroy(SF_HEADER *sf_header);
+
+/**
+* Set proxy settings to curl instance.
+*
+* @param curl The curl instance.
+* @param proxy The proxy setting.
+* @param no_proxy The no proxy setting.
+* @return CURLE_OK if success, curl error code otherwise.
+*/
+CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy);
 
 #ifdef __cplusplus
 }

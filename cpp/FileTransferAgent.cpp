@@ -442,7 +442,8 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
                                                       (unsigned int) response.parallel,
                                                       response.threshold,
-                                                      m_transferConfig);
+                                                      m_transferConfig,
+                                                      m_stmtPutGet);
     m_lastRefreshTokenSec = now;
   }
 }

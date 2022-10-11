@@ -31,7 +31,8 @@ namespace Client
 SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
                                            unsigned int parallel,
                                            size_t uploadThreshold,
-                                           TransferConfig *transferConfig) :
+                                           TransferConfig *transferConfig,
+                                           IStatementPutGet* statement) :
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
@@ -77,14 +78,22 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   std::shared_ptr<azure::storage_lite::storage_credential>  cred = std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas_key);
   std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
   std::shared_ptr<azure::storage_lite::blob_client> bc;
-  if(transferConfig && transferConfig->proxy) {
+
+  Util::Proxy * proxy;
+  if (transferConfig && transferConfig->proxy) {
+    proxy = transferConfig->proxy;
+  }
+  else {
+    proxy = statement->get_proxy();
+  }
+  if (proxy) {
     bc = std::make_shared<azure::storage_lite::blob_client>(
                 account, m_parallel, caBundleFile,
-                transferConfig->proxy->getHost(),
-                transferConfig->proxy->getPort(),
-                transferConfig->proxy->getUser(),
-                transferConfig->proxy->getPwd(),
-                transferConfig->proxy->getNoProxy());
+                proxy->getHost(),
+                proxy->getPort(),
+                proxy->getUser(),
+                proxy->getPwd(),
+                proxy->getNoProxy());
   }
   else
   {

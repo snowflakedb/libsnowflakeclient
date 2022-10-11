@@ -70,7 +70,8 @@ namespace Client
 SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      unsigned int parallel,
                                      size_t uploadThreshold,
-                                     TransferConfig *transferConfig) :
+                                     TransferConfig *transferConfig,
+                                     IStatementPutGet* statement) :
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
@@ -122,6 +123,10 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   if ((transferConfig != nullptr) && (transferConfig->proxy != nullptr))
   {
     proxy = *(transferConfig->proxy);
+  }
+  else if (statement->get_proxy())
+  {
+    proxy = *(statement->get_proxy());
   }
   else
   {

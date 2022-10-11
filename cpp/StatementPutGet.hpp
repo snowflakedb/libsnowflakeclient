@@ -26,8 +26,12 @@ public:
   virtual bool parsePutGetCommand(std::string *sql,
                                   PutGetParseResponse *putGetParseResponse);
 
+  virtual Util::Proxy* get_proxy() override;
+
 private:
   SF_STMT *m_stmt;
+  Util::Proxy m_proxy;
+  bool m_useProxy;
 };
 }
 }

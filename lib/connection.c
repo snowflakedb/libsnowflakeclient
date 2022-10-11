@@ -336,7 +336,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
-                          retried_count, is_renew, renew_injection) ||
+                          retried_count, is_renew, renew_injection,
+                          sf->proxy, sf->no_proxy) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -460,7 +461,8 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
-                          0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
+                          0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                          sf->proxy, sf->no_proxy) ||
             !*json) {
             // Error is set in the perform function
             break;
