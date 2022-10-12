@@ -202,6 +202,8 @@ void test_unencrypted_pem(void **unused) {
 
   snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_JWT);
   snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, keyFilePath.c_str());
+  // explicitly unset password to esure we are using key pair auth, not user/pwd
+  snowflake_set_attribute(sf, SF_CON_PASSWORD, "");
 
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -227,6 +229,8 @@ void test_encrypted_pem(void **unused) {
   snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_JWT);
   snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, keyFilePath.c_str());
   snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE_PWD, "test");
+  // explicitly unset password to esure we are using key pair auth, not user/pwd
+  snowflake_set_attribute(sf, SF_CON_PASSWORD, NULL);
 
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -288,6 +292,8 @@ void test_renew(void **unused) {
   int64 renew_timeout = 5;
   snowflake_set_attribute(sf, SF_CON_JWT_CNXN_WAIT_TIME, &renew_timeout);
   snowflake_set_attribute(sf, SF_CON_PASSWORD, "renew injection");
+  // explicitly unset password to esure we are using key pair auth, not user/pwd
+  snowflake_set_attribute(sf, SF_CON_PASSWORD, "invalid pwd");
 
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {

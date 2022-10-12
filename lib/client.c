@@ -902,7 +902,8 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             }
         } else {
             if (is_renew && (renew_timeout > 0)) {
-                auth_renew_json(sf, body);
+                // renew authentication information in body
+                auth_renew_json_body(sf, body);
                 s_body = snowflake_cJSON_Print(body);
                 continue;
             }

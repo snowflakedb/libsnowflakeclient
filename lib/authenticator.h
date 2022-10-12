@@ -67,7 +67,7 @@ typedef enum authenticator_type
      * @param conn                 The connection
      * @param body                 The json body for connection request
      */
-    void auth_update_json(SF_CONNECT * conn, cJSON* body);
+    void auth_update_json_body(SF_CONNECT * conn, cJSON* body);
 
     /**
      * renew autentication information in json body when renew timeout reached
@@ -75,7 +75,7 @@ typedef enum authenticator_type
      * @param conn                 The connection
      * @param body                 The json body for connection request
      */
-    void auth_renew_json(SF_CONNECT * conn, cJSON* body);
+    void auth_renew_json_body(SF_CONNECT * conn, cJSON* body);
 
     /**
     * Terminate authenticator
