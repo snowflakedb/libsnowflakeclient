@@ -121,7 +121,7 @@ extern "C" {
     return SF_STATUS_SUCCESS;
   }
 
-  void auth_update_json(SF_CONNECT * conn, cJSON* body)
+  void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
   {
     if (!conn || !conn->auth_object)
     {
@@ -141,7 +141,7 @@ extern "C" {
     return;
   }
 
-  void auth_renew_json(SF_CONNECT * conn, cJSON* body)
+  void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
   {
     if (!conn || !conn->auth_object)
     {
