@@ -668,6 +668,13 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     curl_easy_setopt(ocsp_curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(ocsp_curl, CURLOPT_WRITEDATA, &ocsp_response_raw);
 
+    // copy proxy settings from original curl handle if it's set
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPORT, data->set.proxyport);
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+    curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
+
     if (ACTIVATE_SSD)
     {
         curl_easy_setopt(ocsp_curl, CURLOPT_POST, 1L);
