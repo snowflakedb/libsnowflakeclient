@@ -139,7 +139,7 @@ static void dieIfNotSuccess(CURLcode ret)
 }
 
 static void
-checkCertificateRevocationStatus(char *host, char *port, char *cacert)
+checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *proxy, char *no_proxy)
 {
     CURL *ch;
     struct configData config;
@@ -168,6 +168,15 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert)
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_CAINFO, cacert));
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_CAPATH, NULL));
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_CHECK, 1));
+
+    if (proxy)
+    {
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_PROXY, proxy));
+    }
+    if (no_proxy)
+    {
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_NOPROXY, no_proxy));
+    }
 
     dieIfNotSuccess(curl_easy_perform(ch));
 
@@ -215,25 +224,49 @@ int main(int argc, char **argv)
             getenv("HOME"));
 
     printf("===> Case 1: whatever default\n");
-    checkCertificateRevocationStatus(host, port, cacert);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL);
 
     printf("===> Case 2: Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL);
 
     printf("===> Case 3: Delete file cache and Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL);
 
     printf("===> Case 4: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL);
 
     printf("===> Case 5: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL);
+
+    if (getenv("all_proxy") || getenv("https_proxy") ||
+        getenv("http_proxy"))
+    {
+        // skip the test if the test evironment uses proxy already
+        return 0;
+    }
+
+    printf("===> Case 6: Delete file cache and overwrite invalid proxy in env\n");
+    setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
+    setenv("http_proxy", "a.b.c", 1);
+    setenv("https_proxy", "a.b.c", 1);
+    unlink(cache_file);
+    checkCertificateRevocationStatus(host, port, cacert, "", "");
+
+    printf("===> Case 7: Delete file cache and overwrite invalid proxy with no_proxy\n");
+    setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
+    setenv("http_proxy", "a.b.c", 1);
+    setenv("https_proxy", "a.b.c", 1);
+    unlink(cache_file);
+    checkCertificateRevocationStatus(host, port, cacert, "a.b.c", "*");
+
+    unsetenv("http_proxy");
+    unsetenv("https_proxy");
 
     return 0;
 }
