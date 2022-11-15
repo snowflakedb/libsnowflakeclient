@@ -9,7 +9,7 @@
 :: - vs14 / vs15
 
 @echo off
-set OPENSSL_VERSION=1.1.1q
+set OPENSSL_VERSION=3.0.7
 call %*
 goto :EOF
 
@@ -65,10 +65,10 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps
 rd /s /q %OPENSSL_DIR%
-7z x openssl-1.1.1q.zip
+7z x openssl-3.0.7.zip
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
-echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
-%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
+echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
+%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -96,6 +96,24 @@ copy /v /y ^
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\lib\libssl.lib" ^
     ".\deps-build\%build_dir%\openssl\lib\%ssl_target_name%"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\providers\fips.dll" ^
+    ".\deps-build\%build_dir%\openssl\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\providers\fips.pdb" ^
+    ".\deps-build\%build_dir%\openssl\lib"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\bin\openssl.exe" ^
+    ".\deps-build\%build_dir%\openssl\bin"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\bin\openssl.pdb" ^
+    ".\deps-build\%build_dir%\openssl\bin"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\Common Files\SSL\*.cnf" ^
+    ".\deps-build\%build_dir%\openssl"
+copy /v /y ^
+    ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\Common Files\SSL\*.dist" ^
+    ".\deps-build\%build_dir%\openssl"
 copy /v /y ^
     ".\deps\%OPENSSL_DIR%\_install\%engine_dir%\OpenSSL\include\openssl\*.h" ^
     ".\deps-build\%build_dir%\openssl\include\openssl"
