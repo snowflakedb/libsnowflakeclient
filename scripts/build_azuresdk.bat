@@ -2,7 +2,8 @@
 :: Build Azure cpp storage light sdk
 ::
 @echo off
-set azure_version=0.1.20
+set tag_version=0.1.20
+set azure_version="%tag_version%.1"
 call %*
 goto :EOF
 
@@ -38,7 +39,7 @@ set AZURE_CMAKE_BUILD_DIR=%AZURE_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%
 set AZURE_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\azure
 
 set GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
-set VERSION_TAG="v%azure_version%"
+set VERSION_TAG="v%tag_version%"
 
 if exist %AZURE_SOURCE_DIR% rmdir /S /Q %AZURE_SOURCE_DIR%
 

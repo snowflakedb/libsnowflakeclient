@@ -10,7 +10,8 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_VERSION=0.1.20
+AZURE_TAG=0.1.20
+AZURE_VERSION=${AZURE_TAG}.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -42,11 +43,11 @@ if [ ! -d $AZURE_SOURCE_DIR ]; then
   fi  
 
   cd $AZURE_SOURCE_DIR
-  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
+  git checkout tags/v$AZURE_TAG -b v$AZURE_TAG || true
 else
   cd $AZURE_SOURCE_DIR
   git fetch || true
-  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
+  git checkout tags/v$AZURE_TAG -b v$AZURE_TAG || true
 fi
 
 

@@ -2,7 +2,7 @@
 :: Build Aws sdk 
 ::
 @echo off
-set aws_version=1.3.50.1
+set aws_version=1.3.50.2
 call %*
 goto :EOF
 
