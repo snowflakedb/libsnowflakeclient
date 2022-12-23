@@ -18,6 +18,11 @@ namespace
   static const std::string GCS_ENCRYPTIONDATAPROP = "x-goog-meta-encryptiondata";
   static const std::string GCS_MATDESC = "x-goog-meta-matdesc";
   static const std::string SFC_DIGEST = "sfc-digest";
+  static const std::string GCS_TOKEN_KEY = "GCS_ACCESS_TOKEN";
+  // followings are from GCS documentation, XML API
+  // https://cloud.google.com/storage/docs
+  static const std::string GCS_ENDPOINT = "https://storage.googleapis.com";
+  static const std::string GCS_AUTH_HEADER = "Authorization: Bearer ";
 }
 
 namespace Snowflake
@@ -28,9 +33,14 @@ namespace Client
 SnowflakeGCSClient::SnowflakeGCSClient(StageInfo *stageInfo, unsigned int parallel,
   TransferConfig * transferConfig, IStatementPutGet* statement) :
   m_stageInfo(stageInfo),
-  m_statement(statement)
+  m_statement(statement),
+  m_gcsAccessToken(stageInfo ? stageInfo->credentials[GCS_TOKEN_KEY] : "")
 {
-  // Do nothing.
+  //Ensure the stage location ended with /
+  if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
+  {
+    m_stageInfo->location.push_back('/');
+  }
 }
 
 SnowflakeGCSClient::~SnowflakeGCSClient()
@@ -44,12 +54,23 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::upload(FileMetadata *fileMetadat
   CXX_LOG_DEBUG("Start upload for file %s",
     fileMetadata->srcFileToUpload.c_str());
 
-  std::vector<std::string> userMetadata;
-  addUserMetadata(userMetadata, fileMetadata);
+  std::vector<std::string> reqHeaders;
   std::string respHeaders;
+  std::string url;
 
-  if (!m_statement->http_put(fileMetadata->presignedUrl,
-                             userMetadata,
+  if (!m_gcsAccessToken.empty())
+  {
+    std::string filePathFull = m_stageInfo->location + fileMetadata->destFileName;
+    buildGcsRequest(filePathFull, url, reqHeaders);
+  }
+  else
+  {
+    url = fileMetadata->presignedUrl;
+  }
+  addUserMetadata(reqHeaders, fileMetadata);
+
+  if (!m_statement->http_put(url,
+                             reqHeaders,
                              *dataStream,
                              fileMetadata->destFileSize,
                              respHeaders))
@@ -69,8 +90,18 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::download(
 
   std::string headerString;
   std::vector<std::string> reqHeaders;
+  std::string url;
 
-  if (!m_statement->http_get(fileMetadata->presignedUrl,
+  if (!m_gcsAccessToken.empty())
+  {
+    buildGcsRequest(fileMetadata->srcFileName, url, reqHeaders);
+  }
+  else
+  {
+    url = fileMetadata->presignedUrl;
+  }
+
+  if (!m_statement->http_get(url,
                              reqHeaders,
                              dataStream,
                              headerString,
@@ -87,8 +118,18 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::GetRemoteFileMetadata(
 {
   std::string headerString;
   std::vector<std::string> reqHeaders;
+  std::string url;
 
-  if (!m_statement->http_get(fileMetadata->presignedUrl,
+  if (!m_gcsAccessToken.empty())
+  {
+    buildGcsRequest(*filePathFull, url, reqHeaders);
+  }
+  else
+  {
+    url = fileMetadata->presignedUrl;
+  }
+
+  if (!m_statement->http_get(url,
                              reqHeaders,
                              NULL,
                              headerString,
@@ -193,6 +234,60 @@ void SnowflakeGCSClient::parseHttpRespHeaders(std::string const& headerString,
       headers[key] = value;
     }
   }
+}
+
+void SnowflakeGCSClient::buildGcsRequest(const std::string& filePathFull,
+                                         std::string &url,
+                                         std::vector<std::string>& reqHeaders)
+{
+  reqHeaders.push_back(GCS_AUTH_HEADER + m_gcsAccessToken);
+
+  std::string bucket;
+  std::string object;
+  extractBucketAndObject(filePathFull, bucket, object);
+  object = encodeUrlName(object);
+
+  // https://storage.googleapis.com//BUCKET_NAME/OBJECT_NAME
+  url = GCS_ENDPOINT + "/" + bucket + "/" + object;
+
+  return;
+}
+
+void SnowflakeGCSClient::extractBucketAndObject(const std::string &fileFullPath,
+                                                std::string &bucket,
+                                                std::string &object)
+{
+  size_t sepIndex = fileFullPath.find_first_of('/');
+  bucket = fileFullPath.substr(0, sepIndex);
+  object = fileFullPath.substr(sepIndex + 1);
+}
+
+std::string SnowflakeGCSClient::encodeUrlName(const std::string &srcName)
+{
+  std::string encoded;
+  char buf[5];
+  buf[0] = '%';
+
+  // encode all special characters
+  for (size_t pos = 0; pos < srcName.length(); pos++)
+  {
+    // if unreserved, put as is
+    // RFC 3986 section 2.3 Unreserved Characters
+    unsigned char car = srcName[pos];
+    if ((car >= '0' && car <= '9') ||
+        (car >= 'A' && car <= 'Z') ||
+        (car >= 'a' && car <= 'z') ||
+        (car == '-' || car == '_' || car == '.' || car == '~'))
+    {
+      encoded.push_back(car);
+    }
+    else
+    {
+      sb_sprintf(&buf[1], sizeof(buf) - 1, "%.2X", car);
+      encoded.append(buf);
+    }
+  }
+  return encoded;
 }
 
 }
