@@ -36,6 +36,11 @@ SnowflakeGCSClient::SnowflakeGCSClient(StageInfo *stageInfo, unsigned int parall
   m_statement(statement),
   m_gcsAccessToken(stageInfo ? stageInfo->credentials[GCS_TOKEN_KEY] : "")
 {
+  if (!m_gcsAccessToken.empty())
+  {
+    CXX_LOG_INFO("Using GCS down scoped token.");
+  }
+
   //Ensure the stage location ended with /
   if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
   {
@@ -249,6 +254,7 @@ void SnowflakeGCSClient::buildGcsRequest(const std::string& filePathFull,
 
   // https://storage.googleapis.com//BUCKET_NAME/OBJECT_NAME
   url = GCS_ENDPOINT + "/" + bucket + "/" + object;
+  CXX_LOG_DEBUG("Build GCS request for file %s as URL: %s", filePathFull.c_str(), url.c_str());
 
   return;
 }
