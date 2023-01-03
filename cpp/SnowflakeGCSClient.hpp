@@ -54,7 +54,7 @@ public:
 
   virtual bool requirePresignedUrl() override
   {
-    return true;
+    return m_gcsAccessToken.empty();
   }
 
 private:
@@ -82,9 +82,36 @@ private:
   void parseHttpRespHeaders(std::string const& headerString,
                             std::map<std::string, std::string>& headers);
 
+  /**
+  * build gcs request.
+  * @param filePathFull the full path of the object (input)
+  * @param url request url (output)
+  * @param reqHeaders request headers (output)
+  */
+  void buildGcsRequest(const std::string &filePathFull,
+                       std::string &url, std::vector<std::string>& reqHeaders);
+
+  /**
+  * Compose bucket and object value used for gcs request.
+  * @param fileMetadata (input)
+  * @param bucket (output)
+  * @param object (output)
+  */
+  void extractBucketAndObject(const std::string &fileFullPath,
+                              std::string &bucket, std::string &object);
+
+  /**
+  * Encode name to be a part of URL
+  * @param srcName The source name to be encoded
+  * @return The encode name
+  */
+  std::string encodeUrlName(const std::string &srcName);
+
   StageInfo * m_stageInfo;
 
   IStatementPutGet* m_statement;
+
+  std::string m_gcsAccessToken;
 };
 }
 }
