@@ -13,7 +13,8 @@ set curdir=%cd%
 set utils_script="%scriptdir%..\scripts\utils.bat"
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
-
+pip install --upgrade --user awscli
+pip install awscli
 set zlib_build_script="%scriptdir%..\scripts\build_zlib.bat"
 set openssl_build_script="%scriptdir%..\scripts\build_openssl.bat"
 set curl_build_script="%scriptdir%..\scripts\build_curl.bat"
