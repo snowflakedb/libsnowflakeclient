@@ -1,0 +1,32 @@
+# azure-storage-cpplite Azure Pipelines Configuration
+
+jobs:
+
+  - job: Ubuntu_16_04
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+      - script: sudo apt-get install libssl-dev libcurl4-openssl-dev cmake g++ uuid-dev
+        displayName: Install dependencies
+
+      - template: azure/cmake-build.yml
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: 'build.release/libazure-storage-lite.a'
+          artifactName: ubuntu-drop
+
+  - job: macOS
+    pool:
+      vmImage: 'macOS-10.13'
+    steps:
+      - script: brew install openssl curl-openssl
+        displayName: Brew install dependencies
+
+      - template: azure/cmake-build.yml
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: 'build.release/libazure-storage-lite.a'
+          artifactName: macos-drop
+
