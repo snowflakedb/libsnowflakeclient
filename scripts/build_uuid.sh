@@ -21,15 +21,7 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
 
 # build
-UTIL_LINUX_TAR_GZ=$DEPS_DIR/util-linux.tar.gz
-SOURCE_DIR=$DEPS_DIR/util-linux
-
-tar -xzf $UTIL_LINUX_TAR_GZ -C $DEPS_DIR
-
-if [ ! -d "$SOURCE_DIR" ] ; then
-    echo "Could not extract $UTIL_LINUX_TAR_GZ"
-    exit 1
-fi
+SOURCE_DIR=$DEPS_DIR/util-linux-$UUID_VERSION
 
 cd $SOURCE_DIR
 

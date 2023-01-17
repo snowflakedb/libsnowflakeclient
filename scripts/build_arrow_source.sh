@@ -20,37 +20,10 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
 
-ARROW_SOURCE_DIR=$DEPS_DIR/arrow
+ARROW_SOURCE_DIR=$DEPS_DIR/arrow-$ARROW_VERSION
 ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
-
-GIT_REPO="https://github.com/apache/arrow.git"
-CLONE_CMD="git clone -b master $GIT_REPO $ARROW_SOURCE_DIR"
-
-if [ ! -d $ARROW_SOURCE_DIR ]; then
-  n=0
-  # retry 5 times on cloning
-  until [ $n -ge 5 ]
-  do
-    if $CLONE_CMD ; then
-      break
-    fi
-    n=$[$n+1]
-  done
-
-  if [ ! -d $ARROW_SOURCE_DIR ]; then
-    echo "[Error] failed to clone repo from $GIT_REPO"
-    exit 1
-  fi
-
-  cd $ARROW_SOURCE_DIR
-  git checkout tags/apache-arrow-$ARROW_VERSION -b v$ARROW_VERSION || true
-else
-  cd $ARROW_SOURCE_DIR
-  git fetch || true
-  git checkout tags/apache-arrow-$ARROW_VERSION -b v$ARROW_VERSION || true
-fi
 
 ARROW_CXXFLAGS="-O2 -fPIC -pthread"
 arrow_configure_opts=()

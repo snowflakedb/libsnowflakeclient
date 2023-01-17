@@ -63,9 +63,6 @@ set ssl_target_name=libssl_a.lib
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
-cd "%scriptdir%..\deps
-rd /s /q %OPENSSL_DIR%
-7z x openssl-1.1.1q.zip
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
 echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared
 %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared

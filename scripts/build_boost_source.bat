@@ -39,11 +39,6 @@ set DEPS_DIR=%scriptdir%..\deps
 set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_version%
 set BOOST_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\boost
 
-set BOOST_ZIP=%DEPS_DIR%\boost-%boost_version%.zip
-
-if exist "%BOOST_SOURCE_DIR%" rmdir /S /Q "%BOOST_SOURCE_DIR%"
-cd "%DEPS_DIR%"
-7z x "%BOOST_ZIP%"
 cd "%BOOST_SOURCE_DIR%"
 
 rd /S /Q %BOOST_INSTALL_DIR%
