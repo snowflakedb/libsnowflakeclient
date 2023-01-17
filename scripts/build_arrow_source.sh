@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # build arrow on linux
+# GitHub repo: https://github.com/apache/arrow.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"

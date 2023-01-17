@@ -1,5 +1,6 @@
 ::
 :: Build arrow
+:: GitHub repo: https://github.com/apache/arrow.git
 ::
 @echo off
 set arrow_version=0.17.1

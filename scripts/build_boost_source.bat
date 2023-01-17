@@ -1,5 +1,6 @@
 ::
 :: Build boost
+:: GitHub repo: https://github.com/boostorg/boost.git
 ::
 @echo off
 set boost_version=1.75.0

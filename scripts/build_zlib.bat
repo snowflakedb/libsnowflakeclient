@@ -1,5 +1,6 @@
 ::
 :: Build zlib for Windows
+:: GitHub repo: https://github.com/madler/zlib.git
 ::
 :: Prerequisite:
 :: - VC 2015 or 2017

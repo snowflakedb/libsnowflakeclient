@@ -1,5 +1,6 @@
 ::
 :: Build Azure cpp storage light sdk
+:: GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
 ::
 @echo off
 set azure_version=0.1.20

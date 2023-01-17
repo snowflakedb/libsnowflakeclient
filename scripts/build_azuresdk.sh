@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # build azure-cpp-lite
+# GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"

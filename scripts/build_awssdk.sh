@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # build aws-cpp-sdk
+# GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"

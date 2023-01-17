@@ -1,5 +1,6 @@
 ::
 :: Build OpenSSL
+:: GitHub repo: https://github.com/openssl/openssl.git
 ::
 :: Prerequisite:
 :: - VC 2015 or 2017

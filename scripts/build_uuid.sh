@@ -3,6 +3,7 @@
 #!/bin/bash -e
 #
 # Build libuuid
+# GitHub repo: https://github.com/util-linux/util-linux
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
