@@ -19,7 +19,6 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OOB_VERSION && exit 0
 
-[[ ! -e "$DEPS_DIR/util-linux" ]] && tar xzf $DEPS_DIR/util-linux.tar.gz -C $DEPS_DIR
 export OOB_SOURCE_DIR=$DEPS_DIR/oob-$OOB_VERSION/
 
 # build
