@@ -22,9 +22,9 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
 
 # build
-SOURCE_DIR=$DEPS_DIR/util-linux-$UUID_VERSION
+export UUID_SOURCE_DIR=$DEPS_DIR/util-linux-$UUID_VERSION
 
-cd $SOURCE_DIR
+cd $UUID_SOURCE_DIR
 
 BUILD_DIR=$DEPENDENCY_DIR/uuid
 rm -rf $BUILD_DIR
