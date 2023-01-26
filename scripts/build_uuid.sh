@@ -26,6 +26,16 @@ export UUID_SOURCE_DIR=$DEPS_DIR/util-linux-$UUID_VERSION
 
 cd $UUID_SOURCE_DIR
 
+# Git does not preserve file timestamp and causes the error "aclocal-1.16: command not found"
+# during compilation because some files seem to be out of date and trigger the regeneration.
+# Therefore, we need to update the file timestamp to the git commit time.
+for FILE in $(git ls-files)
+do
+    GIT_COMMIT_TIME=$(git log --pretty=format:%cd -n 1 --date=iso $FILE)
+    TIME=`echo $GIT_COMMIT_TIME | sed 's/-//g;s/ //;s/://;s/:/\./;s/ .*//'`
+    touch -m -t $TIME $FILE
+done
+
 BUILD_DIR=$DEPENDENCY_DIR/uuid
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
