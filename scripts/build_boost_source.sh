@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # build boost
+# GitHub repo: https://github.com/boostorg/boost.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
@@ -18,14 +19,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $BOOST_VERSION && exit 0
 
-BOOST_ZIP=$DEPS_DIR/boost-${BOOST_VERSION}.zip
-BOOST_SINGLE_ZIP=$DEPS_DIR/boost.zip
 BOOST_SOURCE_DIR=$DEPS_DIR/boost-${BOOST_VERSION}
-
-rm -rf $BOOST_SOURCE_DIR
-zip -F $BOOST_ZIP --out $BOOST_SINGLE_ZIP
-unzip -q $BOOST_SINGLE_ZIP -d $DEPS_DIR
-
 BOOST_BUILD_DIR=$DEPENDENCY_DIR/boost
 rm -rf $BOOST_BUILD_DIR
 mkdir $BOOST_BUILD_DIR

@@ -1,5 +1,6 @@
 ::
 :: Build arrow
+:: GitHub repo: https://github.com/apache/arrow.git
 ::
 @echo off
 set arrow_version=0.17.1
@@ -34,20 +35,11 @@ if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
-set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow
+set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-%arrow_version%
 set ARROW_CMAKE_BUILD_DIR=%ARROW_SOURCE_DIR%\cpp\cmake-build-%arcdir%-%vs_version%-%build_type%
 set DEPENDENCY_DIR=%scriptdir%..\deps-build\%build_dir%
 set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
 set ARROW_DEPS_INSTALL_DIR=%DEPENDENCY_DIR%\arrow_deps
-
-set GIT_REPO="https://github.com/apache/arrow.git"
-set VERSION_TAG="apache-arrow-%arrow_version%"
-
-if exist %ARROW_SOURCE_DIR% rmdir /S /Q %ARROW_SOURCE_DIR%
-
-git clone %GIT_REPO% %ARROW_SOURCE_DIR%
-cd %ARROW_SOURCE_DIR%
-git checkout tags/%VERSION_TAG% -b %VERSION_TAG%
 
 rd /S /Q %ARROW_CMAKE_BUILD_DIR%
 md %ARROW_CMAKE_BUILD_DIR%

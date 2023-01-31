@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # build azure-cpp-lite
+# GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
@@ -18,37 +19,9 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
 
-AZURE_SOURCE_DIR=$DEPS_DIR/azure-storage-cpplite
+AZURE_SOURCE_DIR=$DEPS_DIR/azure-storage-cpplite-$AZURE_VERSION
 AZURE_BUILD_DIR=$DEPENDENCY_DIR/azure
 AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
-
-GIT_REPO="https://github.com/snowflakedb/azure-storage-cpplite.git"
-CLONE_CMD="git clone -b master $GIT_REPO $AZURE_SOURCE_DIR"
-
-if [ ! -d $AZURE_SOURCE_DIR ]; then
-  n=0 
-  # retry 5 times on cloning
-  until [ $n -ge 5 ] 
-  do
-    if $CLONE_CMD ; then
-      break
-    fi  
-    n=$[$n+1]
-  done
-  
-  if [ ! -d $AZURE_SOURCE_DIR ]; then
-    echo "[Error] failed to clone repo from $GIT_REPO"
-    exit 1
-  fi  
-
-  cd $AZURE_SOURCE_DIR
-  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
-else
-  cd $AZURE_SOURCE_DIR
-  git fetch || true
-  git checkout tags/v$AZURE_VERSION -b v$AZURE_VERSION || true
-fi
-
 
 azure_configure_opts=()
 if [[ "$target" != "Release" ]]; then

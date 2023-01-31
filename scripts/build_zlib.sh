@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # Build zlib
+# GitHub repo: https://github.com/madler/zlib.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
