@@ -1,0 +1,14 @@
+steps:
+- script: |
+    mkdir -p build.release
+  displayName: Make build directories
+
+- task: CMake@1
+  inputs:
+    workingDirectory: 'build.release'
+    cmakeArgs: '.. -DCMAKE_BUILD_TYPE=Release -DUSE_OPENSSL=true'
+
+- script: |
+    cd build.release
+    make -j
+  displayName: 'Run make'
