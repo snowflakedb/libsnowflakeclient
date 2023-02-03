@@ -74,18 +74,11 @@ azure_configure_opts+=(
     "-DEXTRA_INCLUDE=$DEPENDENCY_DIR/zlib/include"
 )
 
-# azure test case is using old version of catch.hpp which is using
-# asm code and can't be built on arm.
+# Azure test case is using old version of catch.hpp which cannot be built.
 # Disable building test for now until it move to newer version.
-if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-  azure_configure_opts+=(
-      "-DBUILD_TESTS=false"
-  )
-else
-  azure_configure_opts+=(
-      "-DBUILD_TESTS=true"
-  )
-fi
+azure_configure_opts+=(
+    "-DBUILD_TESTS=false"
+)
 
 if [[ "$PLATFORM" == "linux" ]]; then
   azure_configure_opts+=(
