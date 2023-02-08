@@ -21,7 +21,7 @@ source $DIR/utils.sh $@
 [[ -n "$GET_VERSION" ]] && echo $LIBSNOWFLAKECLIENT_VERSION && exit 0
 
 cd $DIR/..
-
+CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 CMAKE_DIR=cmake-build-$target
 rm -rf $CMAKE_DIR
 mkdir $CMAKE_DIR
@@ -30,6 +30,7 @@ cmake_opts=(
     "-DCMAKE_C_COMPILER=$GCC"
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
+    "-DCLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE}"
 )
 
 # Check to see if we are doing a universal build or not.

@@ -99,6 +99,17 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
     ci\test.bat
 
 	
+Code Coverage (Linux)
+----------------------------------------------------------------------
+
+Ensure you have lcov 1.11 or later version and have account on AWS and AZURE for test.
+
+- Modify ``script/gen_coverage_report.sh`` to add test account information there, not only the AWS information at the top, but also AZURE information at the bottom.
+- run gen_coverage_report.sh to generate code coverage report
+.. code-block:: bash
+
+    ./scripts/gen_coverage_report.sh
+
 Profiling (Linux and OSX)
 ----------------------------------------------------------------------
 

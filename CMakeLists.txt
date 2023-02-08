@@ -5,6 +5,15 @@
 cmake_minimum_required(VERSION 2.8)
 project(snowflakeclient)
 
+if (CLIENT_CODE_COVERAGE)    # Only when code coverage is enabled
+    #  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
+    message("Code coverage is enabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -fprofile-arcs -ftest-coverage -O0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage -O0 -fno-elide-constructors -fno-inline  -fno-inline-small-functions  -fno-default-inline")
+else()
+    message("Code coverage is disabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
+endif ()
+
 # Enabling tests by Ctest. Don't use INCLUDE(Ctest) as
 # we don't need Dart and other tools.
 enable_testing()
