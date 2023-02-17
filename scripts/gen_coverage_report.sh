@@ -94,7 +94,7 @@ export CLOUD_PROVIDER=AZURE
 
 # generate code coverage report
 cd ../..
-mkdir code_coverage
+mkdir -p code_coverage
 lcov -c -d ./cmake-build-Release/CMakeFiles/snowflakeclient.dir/ --output-file ./code_coverage/client_coverage_all.info
 # remove source code of third-parties
 lcov --remove ./code_coverage/client_coverage_all.info -o ./code_coverage/client_coverage.info '/usr/*' 'deps-build/*' 'lib/cJSON.c'
