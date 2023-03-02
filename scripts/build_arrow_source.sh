@@ -26,7 +26,7 @@ ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
 GIT_REPO="https://github.com/apache/arrow.git"
-CLONE_CMD="git clone -b master $GIT_REPO $ARROW_SOURCE_DIR"
+CLONE_CMD="git clone $GIT_REPO $ARROW_SOURCE_DIR"
 
 if [ ! -d $ARROW_SOURCE_DIR ]; then
   n=0
