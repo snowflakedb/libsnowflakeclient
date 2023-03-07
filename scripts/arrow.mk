@@ -18,10 +18,10 @@ CMAKE_3 = cmake3 -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} -DCMAKE_LI
 #   git checkout --track origin/apache-arrow-sf-0.15.1
 #   cd ..
 #   tar -czvf apache-arrow-sf-0.15.1.tar.gz arrow/
-#   aws s3 cp apache-arrow-sf-0.15.1.tar.gz s3://sfc-eng-jenkins/xp-dependencies/arrow/
+#   aws s3 cp apache-arrow-sf-0.15.1.tar.gz s3://sfc-jenkins/xp-dependencies/arrow/
 
 ARROW_VER := 0.15.0
-SRC_URL := s3://sfc-eng-jenkins/xp-dependencies/arrow/apache-arrow-sf-0.15.1.tar.gz
+SRC_URL := s3://sfc-jenkins/xp-dependencies/arrow/apache-arrow-sf-0.15.1.tar.gz
 SRC_SIG := 8878bf8f728d52f501ad48e311fabbe0fff3ce7f472865890a5a05e6343553c1
 
 SHELL := /bin/bash

@@ -144,8 +144,8 @@ goto :EOF
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
-    echo === uploading %component_name% to s3://sfc-eng-data/dependency/%component_name%/%zip_file_name%
-    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-eng-data/dependency/%component_name%/
+    echo === uploading %component_name% to s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
+    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-dev1-data/dependency/%component_name%/
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF
@@ -170,14 +170,14 @@ goto :EOF
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
-    set target_path=s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    set target_path=s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
     echo === uploading artifacts\%zip_file_name% to %target_path%
     cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% %target_path%
     if %ERRORLEVEL% NEQ 0 goto :error
     echo === uploading artifacts\%zip_cmake_file_name% to %target_path%
     cmd /c aws s3 cp --only-show-errors artifacts\%zip_cmake_file_name% %target_path%
     if %ERRORLEVEL% NEQ 0 goto :error
-    set parent_target_path=s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/
+    set parent_target_path=s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/
     echo === uploading latest_commit to %parent_target_path%
     echo %GIT_COMMIT%>latest_commit
     cmd /c aws s3 cp --only-show-errors latest_commit %parent_target_path%
@@ -202,11 +202,11 @@ goto :EOF
     call :get_zip_file_name %component_name% %component_version%
 
     md artfacts
-    echo === downloading %zip_file_name% from s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
-    cmd /c aws s3 cp --only-show-errors s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
+    echo === downloading %zip_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_file_name% artifacts\
     if %ERRORLEVEL% NEQ 0 goto :error
-    echo === downloading %zip_cmake_file_name% from s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
-    cmd /c aws s3 cp --only-show-errors s3://sfc-eng-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_cmake_file_name% artifacts\
+    echo === downloading %zip_cmake_file_name% from s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/
+    cmd /c aws s3 cp --only-show-errors s3://sfc-jenkins/repository/%component_name%/%arcdir%/%git_branch_base_name%/%GIT_COMMIT%/%zip_cmake_file_name% artifacts\
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF
