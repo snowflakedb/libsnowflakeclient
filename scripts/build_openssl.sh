@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # Build OpenSSL
+# GitHub repo: https://github.com/openssl/openssl.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
@@ -19,11 +20,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
 
-OPENSSL_ZIP=$DEPS_DIR/openssl-${OPENSSL_VERSION}.zip
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-${OPENSSL_VERSION}/
-
-rm -rf $OPENSSL_SOURCE_DIR
-unzip $OPENSSL_ZIP -d $DEPS_DIR
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl

@@ -12,6 +12,8 @@ function usage() {
 set -o pipefail
 
 OOB_VERSION=1.0.4
+CURL_VERSION=7.87.0
+UUID_VERSION=2.36.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -19,7 +21,6 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OOB_VERSION && exit 0
 
-[[ ! -e "$DEPS_DIR/util-linux" ]] && tar xzf $DEPS_DIR/util-linux.tar.gz -C $DEPS_DIR
 export OOB_SOURCE_DIR=$DEPS_DIR/oob-$OOB_VERSION/
 
 # build
@@ -33,7 +34,8 @@ oob_config_opts+=(
     "--prefix=$OOB_BUILD_DIR"
 )
 cd $OOB_SOURCE_DIR
-export CURL_DIR=curl-7.87.0
+export CURL_DIR=curl-$CURL_VERSION
+export UUID_DIR=util-linux-$UUID_VERSION
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export AR=ar

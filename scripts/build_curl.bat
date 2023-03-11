@@ -1,5 +1,6 @@
 ::
 :: Build Curl
+:: GitHub repo: https://github.com/curl/curl.git
 ::
 :: Prerequisite:
 :: - VC 2015 or 2017

@@ -3,6 +3,7 @@
 #!/bin/bash -e
 #
 # Build libuuid
+# GitHub repo: https://github.com/util-linux/util-linux
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"
@@ -21,17 +22,22 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
 
 # build
-UTIL_LINUX_TAR_GZ=$DEPS_DIR/util-linux.tar.gz
-SOURCE_DIR=$DEPS_DIR/util-linux
+export UUID_SOURCE_DIR=$DEPS_DIR/util-linux-$UUID_VERSION
 
-tar -xzf $UTIL_LINUX_TAR_GZ -C $DEPS_DIR
+cd $UUID_SOURCE_DIR
 
-if [ ! -d "$SOURCE_DIR" ] ; then
-    echo "Could not extract $UTIL_LINUX_TAR_GZ"
-    exit 1
-fi
-
-cd $SOURCE_DIR
+# Git does not preserve file timestamp and causes the error "aclocal-1.16: command not found"
+# during compilation because some files seem to be out of date and trigger the regeneration.
+# Therefore, we need to update the file timestamp to the git commit time.
+for FILE in $(git ls-files)
+do
+    GIT_COMMIT_TIME=$(git log --pretty=format:%cd -n 1 --date=iso $FILE)
+    TIME=`echo $GIT_COMMIT_TIME | sed 's/-//g;s/ //;s/://;s/:/\./;s/ .*//'`
+    if [ -z "$TIME" ]; then
+        continue
+    fi
+    touch -m -t $TIME $FILE
+done
 
 BUILD_DIR=$DEPENDENCY_DIR/uuid
 rm -rf $BUILD_DIR

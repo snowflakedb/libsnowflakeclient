@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # Build Curl
+# GitHub repo: https://github.com/curl/curl.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"

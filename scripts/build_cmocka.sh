@@ -1,6 +1,7 @@
 #!/bin/bash -e
 #
 # Build cmocka
+# GitLab repo: https://gitlab.com/cmocka/cmocka.git
 #
 function usage() {
     echo "Usage: `basename $0` [-t <Release|Debug>]"

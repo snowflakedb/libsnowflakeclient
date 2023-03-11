@@ -1,5 +1,6 @@
 ::
 :: Build cmocka
+:: GitLab repo: https://gitlab.com/cmocka/cmocka.git
 ::
 @echo off
 set cmocka_version=1.1.1

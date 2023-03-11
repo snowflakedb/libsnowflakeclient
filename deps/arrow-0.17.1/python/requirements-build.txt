@@ -1,0 +1,3 @@
+cython>=0.29
+numpy>=1.14
+setuptools_scm

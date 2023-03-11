@@ -1,0 +1,175 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+context("Feather")
+
+feather_file <- tempfile()
+tib <- tibble::tibble(x = 1:10, y = rnorm(10), z = letters[1:10])
+
+test_that("Write a feather file", {
+  tib_out <- write_feather(tib, feather_file)
+  expect_true(file.exists(feather_file))
+  # Input is returned unmodified
+  expect_identical(tib_out, tib)
+})
+
+expect_feather_roundtrip <- function(write_fun) {
+  tf2 <- normalizePath(tempfile(), mustWork = FALSE)
+  tf3 <- tempfile()
+  on.exit({
+    unlink(tf2)
+    unlink(tf3)
+  })
+
+  # Write two ways. These are what varies with each run
+  write_fun(tib, tf2)
+  expect_true(file.exists(tf2))
+
+  stream <- FileOutputStream$create(tf3)
+  write_fun(tib, stream)
+  stream$close()
+  expect_true(file.exists(tf3))
+
+  # Read both back
+  tab2 <- read_feather(tf2)
+  expect_is(tab2, "data.frame")
+
+  tab3 <- read_feather(tf3)
+  expect_is(tab3, "data.frame")
+
+  # reading directly from arrow::io::MemoryMappedFile
+  tab4 <- read_feather(mmap_open(tf3))
+  expect_is(tab4, "data.frame")
+
+  # reading directly from arrow::io::ReadableFile
+  tab5 <- read_feather(ReadableFile$create(tf3))
+  expect_is(tab5, "data.frame")
+
+  expect_equal(tib, tab2)
+  expect_equal(tib, tab3)
+  expect_equal(tib, tab4)
+  expect_equal(tib, tab5)
+}
+
+test_that("feather read/write round trip", {
+  expect_feather_roundtrip(function(x, f) write_feather(x, f, version = 1))
+  expect_feather_roundtrip(function(x, f) write_feather(x, f, version = 2))
+  expect_feather_roundtrip(function(x, f) write_feather(x, f, chunk_size = 32))
+  if (codec_is_available("lz4")) {
+    expect_feather_roundtrip(function(x, f) write_feather(x, f, compression = "lz4"))
+  }
+  if (codec_is_available("zstd")) {
+    expect_feather_roundtrip(function(x, f) write_feather(x, f, compression = "zstd"))
+    expect_feather_roundtrip(function(x, f) write_feather(x, f, compression = "zstd", compression_level = 3))
+  }
+
+  # Write from Arrow data structures
+  expect_feather_roundtrip(function(x, f) write_feather(RecordBatch$create(x), f))
+  expect_feather_roundtrip(function(x, f) write_feather(Table$create(x), f))
+})
+
+test_that("write_feather option error handling", {
+  tf <- tempfile()
+  expect_false(file.exists(tf))
+  expect_error(
+    write_feather(tib, tf, version = 1, chunk_size = 1024),
+    "Feather version 1 does not support the 'chunk_size' option"
+  )
+  expect_error(
+    write_feather(tib, tf, version = 1, compression = "lz4"),
+    "Feather version 1 does not support the 'compression' option"
+  )
+  expect_error(
+    write_feather(tib, tf, version = 1, compression_level = 1024),
+    "Feather version 1 does not support the 'compression_level' option"
+  )
+  expect_error(
+    write_feather(tib, tf, compression_level = 1024),
+    "Can only specify a 'compression_level' when 'compression' is 'zstd'"
+  )
+  expect_match_arg_error(write_feather(tib, tf, compression = "bz2"))
+  expect_false(file.exists(tf))
+})
+
+test_that("read_feather supports col_select = <names>", {
+  tab1 <- read_feather(feather_file, col_select = c("x", "y"))
+  expect_is(tab1, "data.frame")
+
+  expect_equal(tib$x, tab1$x)
+  expect_equal(tib$y, tab1$y)
+})
+
+test_that("feather handles col_select = <integer>", {
+  tab1 <- read_feather(feather_file, col_select = 1:2)
+  expect_is(tab1, "data.frame")
+
+  expect_equal(tib$x, tab1$x)
+  expect_equal(tib$y, tab1$y)
+})
+
+test_that("feather handles col_select = <tidyselect helper>", {
+  tab1 <- read_feather(feather_file, col_select = everything())
+  expect_identical(tib, tab1)
+
+  tab2 <- read_feather(feather_file, col_select = starts_with("x"))
+  expect_identical(tab2, tib[, "x", drop = FALSE])
+
+  tab3 <- read_feather(feather_file, col_select = c(starts_with("x"), contains("y")))
+  expect_identical(tab3, tib[, c("x", "y"), drop = FALSE])
+
+  tab4 <- read_feather(feather_file, col_select = -z)
+  expect_identical(tab4, tib[, c("x", "y"), drop = FALSE])
+})
+
+test_that("feather read/write round trip", {
+  tab1 <- read_feather(feather_file, as_data_frame = FALSE)
+  expect_is(tab1, "Table")
+
+  expect_equal(tib, as.data.frame(tab1))
+})
+
+test_that("Read feather from raw vector", {
+  test_raw <- readBin(feather_file, what = "raw", n = 5000)
+  df <- read_feather(test_raw)
+  expect_is(df, "data.frame")
+})
+
+test_that("FeatherReader", {
+  v1 <- tempfile()
+  v2 <- tempfile()
+  on.exit({
+    unlink(v1)
+    unlink(v2)
+  })
+  write_feather(tib, v1, version = 1)
+  write_feather(tib, v2)
+  reader1 <- FeatherReader$create(v1)
+  expect_identical(reader1$version, 1L)
+  reader2 <- FeatherReader$create(v2)
+  expect_identical(reader2$version, 2L)
+})
+
+test_that("read_feather closes connection to file", {
+  tf <- tempfile()
+  write_feather(tib, sink = tf)
+  expect_true(file.exists(tf))
+  read_feather(tf)
+  expect_error(file.remove(tf), NA)
+  expect_false(file.exists(tf))
+})
+
+unlink(feather_file)

@@ -1,5 +1,6 @@
 ::
 :: Build Aws sdk 
+:: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
 set aws_version=1.3.50.1
