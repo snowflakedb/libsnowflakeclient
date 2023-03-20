@@ -4,6 +4,7 @@ about: Suggest a new idea for the project.
 labels: feature
 ---
 
+
 <!--
 If you need urgent assistance then file the feature request using the support process:
 https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge

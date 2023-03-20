@@ -11,7 +11,6 @@ https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowfl
 otherwise continue here. 
 -->
 
-
 Please answer these questions before submitting your issue. 
 In order to accurately debug the issue this information is required. Thanks!
 
