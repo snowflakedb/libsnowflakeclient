@@ -12,7 +12,7 @@ function usage() {
 }
 set -o pipefail
 
-ZLIB_VERSION=1.2.11.1
+ZLIB_VERSION=1.2.13
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
