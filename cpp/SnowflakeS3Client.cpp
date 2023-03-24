@@ -341,7 +341,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
                              Util::ByteArrayStreamBuf * buf = splitter.FillAndGetBuf(tid, partId);
                              uploadParts[partId].buf = buf;
                              char retryPartBuflog[200];
-                             sprintf(retryPartBuflog, "Retrying partNumber=%d threadID=%d partId=%d.", i, tid, partId);
+                             sb_sprintf(retryPartBuflog, sizeof (retryPartBuflog), "Retrying partNumber=%d threadID=%d partId=%d.", i, tid, partId);
                              RetryContext partRetryCtx(retryPartBuflog, m_maxRetries);
                              do
                              {

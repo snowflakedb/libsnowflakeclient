@@ -838,10 +838,12 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         auto values = m_columns[colIdx].arrowBinary->GetValue(m_currRowIndexInBatch, &len);
         std::vector<char> buffer(len * 2 + 1);
         char* ptr = buffer.data();
+        size_t sizeLeft = buffer.size();
         for (int i = 0; i < len; i++)
         {
-            sprintf(ptr, "%02X", values[i]);
+            sb_sprintf(ptr, sizeLeft, "%02X", values[i]);
             ptr += 2;
+            sizeLeft -= 2;
         }
         *ptr = '\0';
         outString = std::string(buffer.data());
