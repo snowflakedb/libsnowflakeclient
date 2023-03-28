@@ -52,6 +52,7 @@ SET(TESTS_CXX
         test_unit_put_retry
         test_unit_put_fast_fail
         test_unit_put_get_fips
+        test_unit_put_get_gcs
         test_unit_thread_pool
         test_unit_base64
         test_jwt
@@ -89,7 +90,7 @@ set(SOURCE_UTILS_CXX
 
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
-if (APPLE OR WIN32)
+if (APPLE OR WIN32 OR CLIENT_CODE_COVERAGE)
     set(TESTS_C ${TESTS_C})
     set(TESTS_CXX ${TESTS_CXX} ${TESTS_PUTGET})
 endif ()
