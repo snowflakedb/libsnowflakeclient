@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 OOB_VERSION=1.0.4
-CURL_VERSION=7.87.0
+CURL_VERSION=7.88.1
 UUID_VERSION=2.36.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

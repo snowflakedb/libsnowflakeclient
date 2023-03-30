@@ -21,7 +21,7 @@ set dynamic_runtime=%4
 
 set scriptdir=%~dp0
 
-set CURL_VERSION=7.87.0
+set CURL_VERSION=7.88.1
 
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
