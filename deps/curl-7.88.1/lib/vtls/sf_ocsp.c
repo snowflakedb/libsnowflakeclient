@@ -190,7 +190,8 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
 static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
-static size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
+// Intentially make it global for test purpose.
+size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
 static int _mutex_lock(SF_MUTEX_HANDLE *lock);
@@ -274,7 +275,7 @@ static const int MAX_RETRY = 1;
  * @param encoded_ptr The allocated buffer filled with encoded data, need to be freed by caller
  * return the size of encoded data
  */
-static size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr)
+size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr)
 {
   // allocate buffer 3 times larger than source data in case every single, add 1 for '\0'
   // character needs to be encoded as %xx
@@ -301,7 +302,7 @@ static size_t encodeUrlData(const char *url_data, size_t data_size, char** encod
     }
     else
     {
-      sb_sprintf(cur_ptr, buf_len - 1, "%%%.2X", car);
+      snprintf(cur_ptr, buf_len, "%%%.2X", car);
       cur_ptr += 3;
       enc_len += 3;
       buf_len -= 3;
@@ -309,6 +310,7 @@ static size_t encodeUrlData(const char *url_data, size_t data_size, char** encod
   }
 
   *cur_ptr = '\0';
+  *encoded_ptr = encode_buf;
   return enc_len;
 }
 
@@ -685,7 +687,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   {
     if (!ACTIVATE_SSD)
     {
-      encodeUrlData(ocsp_req_base64, ocsp_req_base64_len, encoded_ocsp_req_base64);
+      encodeUrlData(ocsp_req_base64, ocsp_req_base64_len, &encoded_ocsp_req_base64);
       snprintf(urlbuf, sizeof(urlbuf),
                ocsp_cache_server_retry_url_pattern,
                host, encoded_ocsp_req_base64);

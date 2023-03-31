@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
+extern size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
+
 struct configData
 {
     char trace_ascii;
@@ -185,6 +187,24 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
     fprintf(stderr, "OK\n");
 }
 
+static void
+checkUrlEncoding(char *urlData, char *expectedEncoding)
+{
+    char *encodedData;
+
+    encodeUrlData(urlData, strlen(urlData), &encodedData);
+    if (strcmp(encodedData, expectedEncoding) != 0)
+    {
+        fprintf(stderr, "checkUrlEncoding FAILED! expected %s but actually returned %s\n",
+                expectedEncoding, encodedData);
+        free(encodedData);
+        exit(1);
+    }
+
+    free(encodedData);
+    fprintf(stderr, "OK\n");
+}
+
 int main(int argc, char **argv)
 {
     char cacert[4096];
@@ -267,6 +287,10 @@ int main(int argc, char **argv)
 
     unsetenv("http_proxy");
     unsetenv("https_proxy");
+
+    printf("===> Case 8: Check URL encoding for OCSP request\n");
+    checkUrlEncoding("Hello @World", "Hello%20%40World");
+    checkUrlEncoding("Test//String", "Test%2F%2FString");
 
     return 0;
 }
