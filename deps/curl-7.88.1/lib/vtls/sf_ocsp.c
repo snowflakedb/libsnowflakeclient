@@ -190,7 +190,7 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
 static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
-// Intentially make it global for test purpose.
+/* Intentially make it global for test purpose */
 size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
@@ -283,9 +283,10 @@ size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr)
   char* encode_buf = (char*)malloc(buf_len);
   char* cur_ptr = encode_buf;
   size_t enc_len = 0;
+  size_t pos = 0;
 
   // encode all special characters
-  for (size_t pos = 0; pos < data_size; pos++)
+  for (pos = 0; pos < data_size; pos++)
   {
     // if unreserved, put as is
     // RFC 3986 section 2.3 Unreserved Characters
