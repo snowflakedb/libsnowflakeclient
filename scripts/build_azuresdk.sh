@@ -11,7 +11,8 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_VERSION=0.1.20
+AZURE_DIR=azure-storage-cpplite-0.1.20
+AZURE_VERSION=0.1.20.1
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -19,7 +20,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $AZURE_VERSION && exit 0
 
-AZURE_SOURCE_DIR=$DEPS_DIR/azure-storage-cpplite-$AZURE_VERSION
+AZURE_SOURCE_DIR=$DEPS_DIR/$AZURE_DIR
 AZURE_BUILD_DIR=$DEPENDENCY_DIR/azure
 AZURE_CMAKE_BUILD_DIR=$AZURE_SOURCE_DIR/cmake-build
 

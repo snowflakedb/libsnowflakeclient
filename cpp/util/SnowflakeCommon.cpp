@@ -108,10 +108,13 @@ CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy)
     if (res != CURLE_OK) return res;
     res = curl_easy_setopt(curl, CURLOPT_PROXYPORT, (long)proxySettings.getPort());
     if (res != CURLE_OK) return res;
-    res = curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, proxySettings.getUser().c_str());
-    if (res != CURLE_OK) return res;
-    res = curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, proxySettings.getPwd().c_str());
-    if (res != CURLE_OK) return res;
+    if (!proxySettings.getUser().empty() || !proxySettings.getPwd().empty())
+    {
+      res = curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, proxySettings.getUser().c_str());
+      if (res != CURLE_OK) return res;
+      res = curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, proxySettings.getPwd().c_str());
+      if (res != CURLE_OK) return res;
+    }
     return curl_easy_setopt(curl, CURLOPT_NOPROXY, proxySettings.getNoProxy().c_str());
   }
 }

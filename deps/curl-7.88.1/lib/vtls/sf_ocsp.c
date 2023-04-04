@@ -671,8 +671,11 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     // copy proxy settings from original curl handle if it's set
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPORT, data->set.proxyport);
-    curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
-    curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+    if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+    {
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
+        curl_easy_setopt(ocsp_curl, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+    }
     curl_easy_setopt(ocsp_curl, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
 
     if (ACTIVATE_SSD)
@@ -1346,6 +1349,16 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data)
   curl_easy_setopt(curlh, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curlh, CURLOPT_WRITEFUNCTION, write_callback);
   curl_easy_setopt(curlh, CURLOPT_WRITEDATA, &ocsp_response_cache_json_mem);
+
+  // copy proxy settings from original curl handle if it's set
+  curl_easy_setopt(curlh, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
+  curl_easy_setopt(curlh, CURLOPT_PROXYPORT, data->set.proxyport);
+  if (data->set.str[STRING_PROXYUSERNAME] || data->set.str[STRING_PROXYPASSWORD])
+  {
+      curl_easy_setopt(curlh, CURLOPT_PROXYUSERNAME, data->set.str[STRING_PROXYUSERNAME]);
+      curl_easy_setopt(curlh, CURLOPT_PROXYPASSWORD, data->set.str[STRING_PROXYPASSWORD]);
+  }
+  curl_easy_setopt(curlh, CURLOPT_NOPROXY, data->set.str[STRING_NOPROXY]);
 
   res = CURLE_OK;
 
