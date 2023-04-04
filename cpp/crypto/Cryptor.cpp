@@ -125,18 +125,6 @@ static void getRandomBytes(char *const out,
 }*/
 
 /**
- * Callback for getting the calling thread's id.
- */
-static void getThreadId(CRYPTO_THREADID *const threadId) noexcept
-{
-  //static_assert(sizeof(pthread_self()) <= sizeof(threadId->val),
-  //              "Unable to store thread id in CRYPTO_THREADID");
-
-  CRYPTO_THREADID_set_pointer(theardId, nullptr);
-  CRYPTO_THREADID_set_numeric(threadId, pthread_self());
-}
-
-/**
  * Callback for dynamically creating a mutex.
  */
 //TODO figure out whether locking is required for openssl
@@ -252,23 +240,14 @@ const EVP_CIPHER *getCipher(const CryptoAlgo algo,
   return nullptr;
 }
 
+/* https://www.openssl.org/docs/man1.1.1/man3/OPENSSL_init_ssl.html
+ * As of version 1.1.0 OpenSSL will automatically allocate all resources that
+ * it needs so no explicit initialisation is required. Similarly it will also
+ * automatically deinitialise as required.
+ */
 Cryptor::Cryptor()
 {
-  // Initialize static mutexes for use by OpenSSL.
-  /*s_mutexes = new MutexVector(CRYPTO_num_locks());
-  for (MutexSlot &slot : *s_mutexes)
-    slot.second = false;
-
-  // Set threading callbacks for OpenSSL.
-  CRYPTO_set_locking_callback(lock);
-  CRYPTO_set_id_callback(pthread_self);
-  CRYPTO_THREADID_set_callback(getThreadId);
-  CRYPTO_set_dynlock_create_callback(dynlockCreate);
-  CRYPTO_set_dynlock_destroy_callback(dynlockDestroy);
-  CRYPTO_set_dynlock_lock_callback(dynlockLock);*/
-
   // Initialize OpenSSL.
-  ERR_load_crypto_strings();
   for (const CryptoAlgo algo : {CryptoAlgo::AES})
     for (const int nbBits : {128, 192, 256})
       for (const CryptoMode mode : {CryptoMode::CBC,
@@ -277,23 +256,11 @@ Cryptor::Cryptor()
                                     CryptoMode::GCM,
                                     CryptoMode::OFB})
         EVP_add_cipher(getCipher(algo, nbBits, mode));
-  OPENSSL_no_config();
 }
 
 Cryptor::~Cryptor()
 {
-  // Tear-down OpenSSL.
-  EVP_cleanup();
-  CRYPTO_cleanup_all_ex_data();
-  //ERR_remove_state(0);
-  ERR_free_strings();
-
-  // Release static mutexes.
-  /*for (MutexSlot &slot : *s_mutexes)
-    if (slot.second)
-      _mutex_term(&slot.first);
-  delete s_mutexes;
-  s_mutexes = nullptr;*/
+  ; // Do nothing
 }
 
 void Cryptor::generateKey(CryptoKey &key,
