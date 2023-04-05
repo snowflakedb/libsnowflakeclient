@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
-extern size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
+extern CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen);
 
 struct configData
 {
@@ -192,7 +192,7 @@ checkUrlEncoding(char *urlData, char *expectedEncoding)
 {
     char *encodedData;
 
-    encodeUrlData(urlData, strlen(urlData), &encodedData);
+    encodeUrlData(urlData, strlen(urlData), &encodedData, NULL);
     if (strcmp(encodedData, expectedEncoding) != 0)
     {
         fprintf(stderr, "checkUrlEncoding FAILED! expected %s but actually returned %s\n",

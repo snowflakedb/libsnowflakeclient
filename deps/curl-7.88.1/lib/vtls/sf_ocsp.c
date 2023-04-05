@@ -190,8 +190,9 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
 static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
+
 /* Intentially make it global for test purpose */
-size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr);
+CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen);
 
 static int _mutex_init(SF_MUTEX_HANDLE *lock);
 static int _mutex_lock(SF_MUTEX_HANDLE *lock);
@@ -270,20 +271,28 @@ static const int MAX_RETRY = 1;
 
 /* Encode request data as a part of URL
  * Encode all characters reserved by URL
- * @param url_data The source data needs to be encoded_ptr
+ * @param url_data The source data needs to be encoded
  * @param data_size The size of the source data
- * @param encoded_ptr The allocated buffer filled with encoded data, need to be freed by caller
- * return the size of encoded data
+ * @param outptr The allocated buffer filled with encoded data, need to be freed by caller
+ * @param outlen If not NULL, output the encoded data length in outptr.
+ * Returns CURLE_OK on success, otherwise specific error code. Function
+ * output shall not be considered valid unless CURLE_OK is returned.
  */
-size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr)
+CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen)
 {
   // allocate buffer 3 times larger than source data in case every single, add 1 for '\0'
   // character needs to be encoded as %xx
   size_t buf_len = data_size * 3 + 1;
-  char* encode_buf = (char*)malloc(buf_len);
+  char* encode_buf = NULL;
   char* cur_ptr = encode_buf;
   size_t enc_len = 0;
   size_t pos = 0;
+
+  encode_buf = (char*)malloc(buf_len);
+  if(!encode_buf)
+  {
+    return CURLE_OUT_OF_MEMORY;
+  }
 
   // encode all special characters
   for (pos = 0; pos < data_size; pos++)
@@ -311,8 +320,12 @@ size_t encodeUrlData(const char *url_data, size_t data_size, char** encoded_ptr)
   }
 
   *cur_ptr = '\0';
-  *encoded_ptr = encode_buf;
-  return enc_len;
+  *outptr = encode_buf;
+  if (outlen)
+  {
+    *outlen = enc_len;
+  }
+  return CURLE_OK;
 }
 
 /* Return error string for last OpenSSL error
@@ -688,7 +701,14 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   {
     if (!ACTIVATE_SSD)
     {
-      encodeUrlData(ocsp_req_base64, ocsp_req_base64_len, &encoded_ocsp_req_base64);
+      result = encodeUrlData(ocsp_req_base64, ocsp_req_base64_len,
+                             &encoded_ocsp_req_base64, NULL);
+      if (result != CURLE_OK)
+      {
+        failf(data, "Failed to encode ocsp requst with URL safe");
+        sf_otd_set_event_sub_type(OCSP_RESPONSE_ENCODE_FAILURE, ocsp_log_data);
+        goto end;
+      }
       snprintf(urlbuf, sizeof(urlbuf),
                ocsp_cache_server_retry_url_pattern,
                host, encoded_ocsp_req_base64);
