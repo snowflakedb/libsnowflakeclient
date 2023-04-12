@@ -192,15 +192,6 @@ public:
     fromFractionalSecondsSinceEpoch(seconds, scale, tzIndex);
   }
 #else // !HAVE_IMPL_INT128
-  /**
-   * Convert the timestamp to number of fractional seconds since Epoch
-   *
-   * @param scale
-   *   target scale
-   * @return
-   *   fractional seconds since Epoch
-   */
-  sb16 toFractionalSecondsSinceEpoch(sb1 scale) const;
 
   /**
    * Convert the fractional seconds since epoch to timestamp
@@ -235,80 +226,6 @@ public:
     m_fractionalSeconds = 0;
     m_secondsSinceEpoch = static_cast<sb8>(daysSinceEpoch) * SECONDS_PER_DAY_CONST;
   }
-
-#if defined(WIN32) || defined(_WIN64)
-#else
-  /**
-   * Our version of mktime that uses timezone offset.
-   * Glibc version of mktime uses time zone environment variable. It is not
-   * thread safe and it requires setting TZ environment variable.
-   */
-  static inline sb8 convertTMToSecondsSinceEpoch(tm &tmV, bool adjustToUTC)
-  {
-    sb8 totalSecondsSinceEpoch;
-
-    if (adjustToUTC)
-    {
-      sb8 gmtoff = tmV.tm_gmtoff;
-
-      // convert the date time to seconds since epoch
-      totalSecondsSinceEpoch = timegm(&tmV);
-
-      // adjust with timezone offset
-      totalSecondsSinceEpoch -= gmtoff;
-    }
-    else
-    {
-      totalSecondsSinceEpoch = timegm(&tmV);
-    }
-
-    return totalSecondsSinceEpoch;
-  }
-#endif
-  /**
-   * For a given logical type, defines if during parsing/conversion the time
-   * should be converted into UTC.
-   * For example, TIMESTAMP and TIMESTAMP_TZ are,
-   * but DATE and TIMESTAMP_NTZ are not.
-   */
-  static bool needsUTCAdjustment(LogicalType_t type);
-
-#if defined(WIN32) || defined(_WIN64)
-#else
-  /**
-   * Converts TM to seconds, with UTC-local adjustment depending on ltype.
-   */
-  static inline sb8 convertTMToSecondsSinceEpoch(tm &tmV, LogicalType_t ltype)
-  {
-    return convertTMToSecondsSinceEpoch(tmV,
-	                                needsUTCAdjustment(ltype));
-  }
-
-  /**
-   * Our version of localtime that uses timezone offset.
-   * Glibc version of localtime uses time zone environment variable. It is not
-   * thread safe and it requires setting TZ environment variable.
-   */
-  static inline void convertSecondsSinceEpochToLocalTime(tm *tmP,
-                                                  sb8 secondsSinceUTC,
-                                                  sb4 GMToffset)
-  {
-    // add gmt offset to simulate the local time in UTC timezone
-    secondsSinceUTC += GMToffset;
-
-    // get the calendar time in UTC timezone
-    gmtime_r( (time_t *) (&secondsSinceUTC), tmP);
-
-    // Change the timezone offset of the calendar time to the offset of the
-    // local time zone
-    tmP->tm_gmtoff = GMToffset;
-  }
-#endif
-  /**
-   * Set the time to epoch time
-   * @param tmV
-   */
-  static void setTimeToEpoch(tm &tmV);
 
   /**
    * Convert the timestamp to the number of days since epoch
