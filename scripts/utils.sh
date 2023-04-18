@@ -6,10 +6,10 @@ UTILS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PLATFORM_ARCH=$(uname -p)
 if [[ "$PLATFORM_ARCH" == "x86_64" ]] || [[ "$PLATFORM_ARCH" == "i386" ]]; then
   export REP_URL_PREFIX="s3://sfc-eng-jenkins/repository"
-  export DEP_URL_PREFIX="s3://sfc-dev1-data/dependency"
+  export DEP_URL_PREFIX="s3://sfc-eng-data/dependency"
 else
   export REP_URL_PREFIX="s3://sfc-eng-jenkins/repository-$PLATFORM_ARCH"
-  export DEP_URL_PREFIX="s3://sfc-dev1-data/dependency-$PLATFORM_ARCH"
+  export DEP_URL_PREFIX="s3://sfc-eng-data/dependency-$PLATFORM_ARCH"
 fi
 
 function init_git_variables()
