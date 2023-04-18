@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
 ::
 @echo off
-set azure_version=0.1.20.1
+set azure_version=0.1.20.2
 call %*
 goto :EOF
 

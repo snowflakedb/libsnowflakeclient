@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 AZURE_DIR=azure-storage-cpplite-0.1.20
-AZURE_VERSION=0.1.20.1
+AZURE_VERSION=0.1.20.2
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -83,11 +83,14 @@ if [[ "$PLATFORM" == "darwin" ]]; then
   ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN} "
 fi
 
+ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations ${ADDITIONAL_CXXFLAGS}"
+
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
 mkdir $AZURE_BUILD_DIR
 mkdir $AZURE_CMAKE_BUILD_DIR
 export CMAKE_CXX_FLAGS=$ADDITIONAL_CXXFLAGS
+export CXXFLAGS+=$ADDITIONAL_CXXFLAGS
 export LDFLAGS+=$ADDITIONAL_CXXFLAGS
 
 export GIT_DIR=/tmp
