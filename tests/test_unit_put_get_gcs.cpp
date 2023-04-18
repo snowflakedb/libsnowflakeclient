@@ -53,7 +53,7 @@ public:
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
-                                  PutGetParseResponse *putGetParseResponse)
+                                  PutGetParseResponse *putGetParseResponse) override
   {
     putGetParseResponse->stageInfo = m_stageInfo;
     if (strcasecmp(sql->substr(0, 3).c_str(), "get") == 0)
@@ -84,7 +84,7 @@ public:
                         std::vector<std::string> const& headers,
                         std::basic_iostream<char>& payload,
                         size_t payloadLen,
-                        std::string& responseHeaders)
+                        std::string& responseHeaders) override
   {
     if (strcasecmp(url.c_str(), m_expectedUrl.c_str()) != 0) return false;
 
