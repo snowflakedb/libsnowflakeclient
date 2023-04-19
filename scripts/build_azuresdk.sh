@@ -96,8 +96,8 @@ export CXXFLAGS+=$ADDITIONAL_CXXFLAGS
 export LDFLAGS+=$ADDITIONAL_CXXFLAGS
 
 export GIT_DIR=/tmp
-export CXXFLAGS="-m32 -Wno-error=type-limits"
-export CFLAGS="-m32 -Wno-error=type-limits"
+export CXXFLAGS="-m32 -Wno-error=type-limits -Wno-error=deprecated-declarations"
+export CFLAGS="-m32 -Wno-error=type-limits -Wno-error=deprecated-declarations"
 cd $AZURE_CMAKE_BUILD_DIR
 if [ "$(uname -s)" == "Linux" ] ; then
   $CMAKE -E env $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
