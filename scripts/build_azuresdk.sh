@@ -82,18 +82,17 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     echo "[INFO] Building $ARCH Binary"
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=$ARCH")
   fi
-  ADDITIONAL_CXXFLAGS="-mmacosx-version-min=${MACOSX_VERSION_MIN} "
 fi
 
-ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations ${ADDITIONAL_CXXFLAGS}"
+ADDITIONAL_CXXFLAGS="-Wno-error=deprecated-declarations"
 
 rm -rf $AZURE_BUILD_DIR
 rm -rf $AZURE_CMAKE_BUILD_DIR
 mkdir $AZURE_BUILD_DIR
 mkdir $AZURE_CMAKE_BUILD_DIR
 export CMAKE_CXX_FLAGS=$ADDITIONAL_CXXFLAGS
-export CXXFLAGS+=$ADDITIONAL_CXXFLAGS
-export LDFLAGS+=$ADDITIONAL_CXXFLAGS
+export CXXFLAGS=$ADDITIONAL_CXXFLAGS
+export LDFLAGS=$ADDITIONAL_CXXFLAGS
 
 export GIT_DIR=/tmp
 
