@@ -115,8 +115,6 @@ void test_connect_with_ocsp_cache_server_off(void **unused) {
     remove(cache_file);
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
     SF_CONNECT *sf = setup_snowflake_connection();
-	sf_bool DEBUG = SF_BOOLEAN_TRUE;
-	snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &DEBUG);
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -135,8 +133,6 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
     remove(cache_file);
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true");
     SF_CONNECT *sf = setup_snowflake_connection();
-	sf_bool DEBUG = SF_BOOLEAN_TRUE;
-	snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &DEBUG);
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
