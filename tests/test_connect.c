@@ -72,6 +72,80 @@ void test_connect_with_full_parameters(void **unused) {
     snowflake_term(sf); // purge snowflake context
 }
 
+void setCacheFile(char *cache_file)
+{
+#ifdef __linux__
+  char *home_env = getenv("HOME");
+  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
+  strcat(cache_file, "/.cache");
+  strcat(cache_file, "/snowflake");
+  strcat(cache_file, "/ocsp_response_cache.json");
+#elif defined(__APPLE__)
+  char *home_env = getenv("HOME");
+  strcpy(cache_file, (home_env == NULL ? (char*)"/tmp" : home_env));
+  strcat(cache_file, "/Library");
+  strcat(cache_file, "/Caches");
+  strcat(cache_file, "/Snowflake");
+  strcat(cache_file, "/ocsp_response_cache.json");
+#elif  defined(_WIN32)
+  char *home_env = getenv("USERPROFILE");
+  if (home_env == NULL)
+  {
+    home_env = getenv("TMP");
+	if (home_env == NULL)
+    {
+      home_env = getenv("TEMP");
+    }
+  }
+  strcpy(cache_file, (home_env == NULL ? (char*)"c:\\temp" : home_env));
+  strcat(cache_file, "\\AppData");
+  strcat(cache_file, "\\Local");
+  strcat(cache_file, "\\Snowflake");
+  strcat(cache_file, "\\Caches");
+  strcat(cache_file, "\\ocsp_response_cache.json");
+#endif
+}
+
+/**
+ * Test connection with OCSP cache server off
+ */
+void test_connect_with_ocsp_cache_server_off(void **unused) {
+    char cache_file[4096];
+    setCacheFile(cache_file);
+    remove(cache_file);
+    sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
+    SF_CONNECT *sf = setup_snowflake_connection();
+	sf_bool DEBUG = SF_BOOLEAN_TRUE;
+	snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &DEBUG);
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf); // purge snowflake context
+}
+
+/**
+ * Test connection with OCSP cache server on
+ */
+void test_connect_with_ocsp_cache_server_on(void **unused) {
+    char cache_file[4096];
+    setCacheFile(cache_file);
+    remove(cache_file);
+    sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true");
+    SF_CONNECT *sf = setup_snowflake_connection();
+	sf_bool DEBUG = SF_BOOLEAN_TRUE;
+	snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &DEBUG);
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf); // purge snowflake context
+}
+
 /**
 * Test connection with proxy parameter
 * We don't really test with proxy because that would need a proxy server to be
@@ -130,6 +204,8 @@ int main(void) {
       cmocka_unit_test(test_no_connection_parameters),
       cmocka_unit_test(test_connect_with_minimum_parameters),
       cmocka_unit_test(test_connect_with_full_parameters),
+      cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
+      cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
