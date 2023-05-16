@@ -200,8 +200,8 @@ int main(void) {
       cmocka_unit_test(test_no_connection_parameters),
       cmocka_unit_test(test_connect_with_minimum_parameters),
       cmocka_unit_test(test_connect_with_full_parameters),
-//      cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
-//      cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
+      cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
+      cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
