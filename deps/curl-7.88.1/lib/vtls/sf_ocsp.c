@@ -284,7 +284,7 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
   // character needs to be encoded as %xx
   size_t buf_len = data_size * 3 + 1;
   char* encode_buf = NULL;
-  char* cur_ptr = encode_buf;
+  char* cur_ptr = NULL;
   size_t enc_len = 0;
   size_t pos = 0;
 
@@ -293,6 +293,7 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
   {
     return CURLE_OUT_OF_MEMORY;
   }
+  cur_ptr = encode_buf;
 
   // encode all special characters
   for (pos = 0; pos < data_size; pos++)

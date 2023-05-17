@@ -10,7 +10,7 @@
 :: - vs14 / vs15
 
 @echo off
-set CURL_VERSION=7.88.1.1
+set CURL_VERSION=7.88.1.2
 call %*
 goto :EOF
 
