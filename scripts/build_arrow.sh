@@ -13,7 +13,7 @@ set -o pipefail
 
 ARROW_VERSION=0.17.1
 #The full version number for dependency packaging/uploading/downloading
-ARROW_DEP_VERSION=${ARROW_VERSION}.1
+ARROW_DEP_VERSION=${ARROW_VERSION}.2
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 DEPS_BUILD_DIR=$DIR/../deps-build
