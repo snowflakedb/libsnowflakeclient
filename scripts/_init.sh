@@ -120,10 +120,12 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
-# Linux x86 is the only exception to build arrow from source
-# Centos7 works fine but it crash on centos6 docker, will retry
-# when drop centos6 support and move to centos7
-if [[ "$PLATFORM" != "linux" || "x86_64" != $(uname -p) ]]; then
+# Moving linux build to centos7 so ARROW_FROM_SOURCE should always
+# be turned on.
+# Keep ARROW_FROM_SOURCE for now in case we need to
+# disable it for some reason. Eventually will remove it when the
+# build on centos7 is stable.
+if [[ -z "ARROW_FROM_SOURCE" ]]; then
     export ARROW_FROM_SOURCE=1
 fi
 

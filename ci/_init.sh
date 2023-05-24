@@ -31,13 +31,13 @@ if [[ "$PLATFORM_ARCH" == "aarch64" ]]; then
     [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-ubuntu20-aarch64:$BUILD_IMAGE_VERSION
   )
 else
-  export DOCKER_MARK="centos6-default"
+  export DOCKER_MARK="centos7-default"
   declare -A BUILD_IMAGE_NAMES=(
-    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-build:$BUILD_IMAGE_VERSION
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-default-build:$BUILD_IMAGE_VERSION
   )
 
   declare -A TEST_IMAGE_NAMES=(
-    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-test:$BUILD_IMAGE_VERSION
+    [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-default-test:$BUILD_IMAGE_VERSION
   )
 fi
 

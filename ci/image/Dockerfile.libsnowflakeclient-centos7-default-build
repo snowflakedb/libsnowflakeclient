@@ -1,0 +1,96 @@
+FROM centos:centos7.9.2009
+
+RUN mkdir -p /usr/lib64/ccache
+ENV PATH="/usr/lib64/ccache:${PATH}"
+
+RUN yum -y update
+RUN yum -y install epel-release
+RUN yum install -y centos-release-scl
+RUN yum install -y yum-utils
+
+RUN yum -y install git openssl wget which bzip2 gcc gcc-c++ make libtool perl-Thread-Queue \
+    && yum clean all
+
+# zlib for libsnowflakeclient as build_zlib.sh is not called in its build script
+RUN yum install -y zlib zlib-devel
+
+# dependencies for libuuid
+RUN yum install -y bison gettext gettext-devel
+
+# cmake3
+RUN yum install -y http://repo.okay.com.mx/centos/7/x86_64/release/okay-release-1-1.noarch.rpm &&\
+    yum install -y cmake3 &&\
+    ln -s /usr/bin/cmake3 /usr/lib64/ccache/cmake
+
+# python
+RUN yum -y install rh-python36
+COPY scripts/python3.6.sh /usr/local/bin/python3.6
+COPY scripts/python3.6.sh /usr/local/bin/python3
+RUN chmod a+x /usr/local/bin/python3.6
+RUN chmod a+x /usr/local/bin/python3
+COPY scripts/pip.sh /usr/local/bin/pip
+RUN chmod a+x /usr/local/bin/pip
+RUN pip install -U pip
+
+# aws
+RUN pip install -U awscli
+COPY scripts/aws.sh /usr/local/bin/aws
+RUN chmod a+x /usr/local/bin/aws
+
+# Dependencies for tests
+# cppunit
+RUN yum install -y cppunit cppunit-devel
+
+# unixodbc
+RUN yum install -y unixODBC.x86_64
+# re2
+RUN yum install -y re2-devel &&\
+    echo '/usr/local/lib' >> /etc/ld.so.conf.d/locallib.conf &&\
+    ldconfig
+
+RUN yum install -y jq
+
+RUN yum install -y tar.x86_64
+
+RUN yum install -y unzip
+
+# gosu
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64"
+RUN chmod +x /usr/local/bin/gosu
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Java
+RUN yum -y install java-1.8.0-openjdk-devel
+
+# gcc
+WORKDIR /tmp/gcc-build
+RUN wget https://ftp.gnu.org/gnu/gcc/gcc-5.5.0/gcc-5.5.0.tar.gz --no-check-certificate &&\
+    tar zxvf gcc-5.5.0.tar.gz &&\
+    cd  gcc-5.5.0 &&\
+    ./contrib/download_prerequisites &&\
+    ./configure --prefix=/usr --disable-multilib --enable-languages=c,c++ &&\
+    make && make install &&\
+    cd /usr/local/bin && ln -s gcc cc
+
+RUN ln -s /usr/bin/gcc /usr/lib64/ccache/gcc52 \
+ && ln -s /usr/bin/g++ /usr/lib64/ccache/g++52
+ENV CC='/usr/lib64/ccache/gcc52' CXX='/usr/lib64/ccache/g++52'
+
+#cppunit
+WORKDIR /tmp/cppunit-build
+RUN git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
+    cd cppunit &&\
+    git checkout tags/cppunit-1.12.1 -b v1.12.1 &&\
+    ./autogen.sh &&\
+    ./configure CXXFLAGS="-std=c++11" &&\
+    make && make install &&\
+    \\cp /usr/local/lib/libppunit* /usr/lib64
+
+# workspace
+
+RUN mkdir -p /home/user
+RUN chmod 777 /home/user
+WORKDIR /home/user
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
