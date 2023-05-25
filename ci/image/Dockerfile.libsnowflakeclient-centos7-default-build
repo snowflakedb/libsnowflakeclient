@@ -8,9 +8,6 @@ RUN yum -y install epel-release
 RUN yum install -y centos-release-scl
 RUN yum install -y yum-utils
 
-RUN yum -y install git openssl wget which bzip2 gcc gcc-c++ make libtool perl-Thread-Queue \
-    && yum clean all
-
 # zlib for libsnowflakeclient as build_zlib.sh is not called in its build script
 RUN yum install -y zlib zlib-devel
 
@@ -39,7 +36,7 @@ RUN chmod a+x /usr/local/bin/aws
 
 # Dependencies for tests
 # cppunit
-RUN yum install -y cppunit cppunit-devel
+RUN yum install -y cppunit cppunit-devel --nogpgcheck
 
 # unixodbc
 RUN yum install -y unixODBC.x86_64
@@ -63,9 +60,12 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Java
 RUN yum -y install java-1.8.0-openjdk-devel
 
+# workspace
+
 # gcc
-WORKDIR /tmp/gcc-build
-RUN wget https://ftp.gnu.org/gnu/gcc/gcc-5.5.0/gcc-5.5.0.tar.gz --no-check-certificate &&\
+RUN yum -y install which wget bzip2 gcc gcc-c++ make libtool perl-Thread-Queue
+RUN mkdir -p /tmp/gcc-build && cd /tmp/gcc-build &&\
+    wget https://ftp.gnu.org/gnu/gcc/gcc-5.5.0/gcc-5.5.0.tar.gz --no-check-certificate &&\
     tar zxvf gcc-5.5.0.tar.gz &&\
     cd  gcc-5.5.0 &&\
     ./contrib/download_prerequisites &&\
@@ -79,8 +79,8 @@ RUN ln -s /usr/bin/gcc /usr/lib64/ccache/gcc52 \
 ENV CC='/usr/lib64/ccache/gcc52' CXX='/usr/lib64/ccache/g++52'
 
 #cppunit
-WORKDIR /tmp/cppunit-build
-RUN git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
+RUN mkdir -p /tmp/cppunit-build && cd /tmp/cppunit-build &&\
+    git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
     cd cppunit &&\
     git checkout tags/cppunit-1.12.1 -b v1.12.1 &&\
     ./autogen.sh &&\
