@@ -41,6 +41,10 @@ fi
 cd $OPENSSL_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
+    # this should be made in docker image just around it for now
+    if [[ "x86_64" == $(uname -p) ]]; then
+        yum install perl-IPC-Cmd
+    fi
     make distclean clean &> /dev/null || true
     perl ./Configure linux-$(uname -p) "${openssl_config_opts[@]}"
     make depend > /dev/null
