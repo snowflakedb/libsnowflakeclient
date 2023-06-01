@@ -144,8 +144,8 @@ goto :EOF
     call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
     call :get_zip_file_name %component_name% %component_version%
 
-    echo === uploading %component_name% to s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name%
-    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-dev1-data/dependency/%component_name%/
+    echo === uploading %component_name% to s3://sfc-eng-data/dependency/%component_name%/%zip_file_name%
+    cmd /c aws s3 cp --only-show-errors artifacts\%zip_file_name% s3://sfc-eng-data/dependency/%component_name%/
     if %ERRORLEVEL% NEQ 0 goto :error
     cd "%curdir%"
     goto :EOF

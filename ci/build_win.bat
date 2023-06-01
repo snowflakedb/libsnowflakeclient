@@ -88,7 +88,7 @@ goto :EOF
             )
         )
         rd /s /q deps-build\%arcdir%\%vsdir%\%build_type%\%component_name%
-        cmd /c aws s3 cp --only-show-errors s3://sfc-dev1-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
+        cmd /c aws s3 cp --only-show-errors s3://sfc-eng-data/dependency/%component_name%/%zip_file_name% %curdir%\artifacts\
         if !ERRORLEVEL! NEQ 0 (
             call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
             if "%GIT_BRANCH%"=="origin/master" (
