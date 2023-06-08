@@ -34,6 +34,9 @@ RUN pip install -U awscli
 COPY scripts/aws.sh /usr/local/bin/aws
 RUN chmod a+x /usr/local/bin/aws
 
+# dependencies for building openssl3
+RUN yum -y install perl-IPC-Cmd perl-Digest-SHA
+
 # Dependencies for tests
 # cppunit
 RUN yum install -y cppunit cppunit-devel --nogpgcheck
