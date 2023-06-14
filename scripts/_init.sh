@@ -125,7 +125,7 @@ export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 # Keep ARROW_FROM_SOURCE for now in case we need to
 # disable it for some reason. Eventually will remove it when the
 # build on centos7 is stable.
-if [[ -z "ARROW_FROM_SOURCE" ]]; then
+if [[ -z "$ARROW_FROM_SOURCE" ]]; then
     export ARROW_FROM_SOURCE=1
 fi
 
