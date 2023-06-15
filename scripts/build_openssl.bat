@@ -65,8 +65,8 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
-echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
-%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
+echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
+%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean
 if %ERRORLEVEL% NEQ 0 goto :error

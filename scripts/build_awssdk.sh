@@ -63,7 +63,7 @@ fi
 if [[ "$PLATFORM" == "darwin" ]]; then
     if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
-        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
     elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")

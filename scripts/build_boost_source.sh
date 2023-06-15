@@ -33,19 +33,20 @@ cd $BOOST_SOURCE_DIR
 echo "using gcc : : $CXX ; " >> tools/build/src/user-config.jam
 #When pass CXX to specify the compiler, by default build.sh will set toolset to cxx and skip std=c++11 flag, so we need to set toolset as well
 sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
-CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
 
 # Check to see if we are doing a universal build or not.
 # If we are not doing a universal build, build with 64-bit
 if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
-    ./b2 stage --stagedir=$BOOST_BUILD_DIR/64 --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
-    ./b2 stage --stagedir=$BOOST_BUILD_DIR/32 toolset=gcc variant=$VARIANT link=static address-model=32 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
+    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=clang-darwin --with-libraries=filesystem,regex,system cxxflags="-arch x86_64 -arch arm64" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64"
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/x64 --includedir=$BOOST_BUILD_DIR/include toolset=clang-darwin target-os=darwin architecture=x86 variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch x86_64" cxxflags="-arch x86_64" linkflags="-arch x86_64" -a install
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/arm64 toolset=clang-darwin variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch arm64" cxxflags="-arch arm64" linkflags="-arch arm64" -a install
     mkdir $BOOST_BUILD_DIR/lib
-    for static_lib in $BOOST_BUILD_DIR/64/lib/*.a; do
-        lipo -create -arch x86_64 $static_lib -arch i386 $BOOST_BUILD_DIR/32/lib/$(basename $static_lib) -output $BOOST_BUILD_DIR/lib/$(basename $static_lib);
+    for static_lib in $BOOST_BUILD_DIR/x64/lib/*.a; do
+        lipo -create -arch x86_64 $static_lib -arch arm64 $BOOST_BUILD_DIR/arm64/lib/$(basename $static_lib) -output $BOOST_BUILD_DIR/lib/$(basename $static_lib);
     done
-    rm -rf $BOOST_BUILD_DIR/64 $BOOST_BUILD_DIR/32
+    rm -rf $BOOST_BUILD_DIR/x64 $BOOST_BUILD_DIR/arm64
 else
+    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
     ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 fi
 

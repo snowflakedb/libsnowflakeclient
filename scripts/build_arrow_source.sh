@@ -78,10 +78,10 @@ cd $ARROW_CMAKE_BUILD_DIR
 # If we are not doing a universal build, build with 64-bit
 if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
     arrow_configure_opts+=(
-        "-DCMAKE_OSX_ARCHITECTURES=i386;x86_64"
+        "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
     )
-    export CXXFLAGS="-arch i386 -arch x86_64"
-    export CFLAGS="-arch i386 -arch x86_64"
+    export CXXFLAGS="-arch arm64 -arch x86_64"
+    export CFLAGS="-arch arm64 -arch x86_64"
 fi
 $CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="$ARROW_CXXFLAGS" ../
 

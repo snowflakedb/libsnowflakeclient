@@ -81,7 +81,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
-        export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+        export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
@@ -89,7 +89,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make install /dev/null
 
         make distclean clean &> /dev/null || true
-        export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+        export CFLAGS="-arch arm64 -Xarch_arm64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}

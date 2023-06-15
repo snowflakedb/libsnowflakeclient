@@ -60,8 +60,8 @@ cd %cmake_dir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 cmake -G "%cmake_generator%" -A %cmake_architecture% ^
-    -DCMAKE_C_FLAGS_DEBUG=/MTd /Zi /Ob0 /Od /RTC1 ^
-    -DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG ^
+    -DCMAKE_C_FLAGS_DEBUG="/MTd /Z7 /Ob0 /Od /RTC1 /ZH:SHA_256" ^
+    -DCMAKE_C_FLAGS_RELEASE="/MT /Z7 /O2 /Ob2 /DNDEBUG /ZH:SHA_256" ^
     ..
 if %ERRORLEVEL% NEQ 0 goto :error
 cmake --build . --config %build_type%

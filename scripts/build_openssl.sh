@@ -52,10 +52,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     # If we are not doing a universal build, pick an arch to
     # build
     if [[ "$ARCH" == "universal" ]]; then
-        # OSX/macos 32 and 64 bit universal
+        # OSX/macos x64 and arm64 bit universal
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
-        perl ./Configure darwin-i386-cc "${openssl_config_opts[@]}"
+        perl ./Configure darwin64-arm64-cc "${openssl_config_opts[@]}"
         make -j 4 build_libs > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
         make distclean clean &> /dev/null || true

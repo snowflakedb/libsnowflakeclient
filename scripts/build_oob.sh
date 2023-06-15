@@ -49,14 +49,14 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     make distclean > /dev/null || true
     if [[ "$ARCH" == "x86" || "$ARCH" == "x64" || "$ARCH" == "universal" ]]; then
         # for intel always universal
-        export CFLAGS="-mmacosx-version-min=10.12 -arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG" 
-        make LIB=libtelemetry32.a 
+        export CFLAGS="-mmacosx-version-min=10.14 -arch x86_64 -Xarch_x86_64"
+        make LIB=libtelemetryx64.a
         make clean > /dev/null || true
-        export CFLAGS="-mmacosx-version-min=10.12 -arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8"
-        make LIB=libtelemetry64.a 
-        lipo -create $OOB_SOURCE_DIR/libtelemetry64.a $OOB_SOURCE_DIR/libtelemetry32.a -output $OOB_SOURCE_DIR/libtelemetry.a
+        export CFLAGS="-mmacosx-version-min=10.14 -arch arm64 -Xarch_arm64"
+        make LIB=libtelemetryarm64.a
+        lipo -create $OOB_SOURCE_DIR/libtelemetryx64.a $OOB_SOURCE_DIR/libtelemetryarm64.a -output $OOB_SOURCE_DIR/libtelemetry.a
     else
-        export CFLAGS="-mmacosx-version-min=10.12 -arch $ARCH -DSIZEOF_LONG_INT=8"
+        export CFLAGS="-mmacosx-version-min=10.14 -arch $ARCH -DSIZEOF_LONG_INT=8"
         make LIB=libtelemetry.a
     fi
 else
