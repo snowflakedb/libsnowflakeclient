@@ -56,7 +56,6 @@ namespace Aws
 
                 void init_static_state()
                 {
-                    ERR_load_CRYPTO_strings();
                     OPENSSL_add_all_algorithms_noconf();
 
 #if OPENSSL_VERSION_LESS_1_1

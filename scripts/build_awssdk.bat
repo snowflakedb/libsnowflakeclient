@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_version=1.3.50.2
+set aws_version=1.3.50.3
 call %*
 goto :EOF
 

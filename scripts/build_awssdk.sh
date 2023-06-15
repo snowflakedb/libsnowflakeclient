@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 AWS_DIR=aws-sdk-cpp-1.3.50
-AWS_VERSION=1.3.50.2
+AWS_VERSION=1.3.50.3
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
