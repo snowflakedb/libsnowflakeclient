@@ -12,7 +12,7 @@ function usage() {
 }
 set -o pipefail
 
-OPENSSL_VERSION=3.0.8
+OPENSSL_VERSION=3.0.9
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
