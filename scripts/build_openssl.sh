@@ -58,17 +58,19 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         perl ./Configure darwin64-arm64-cc "${openssl_config_opts[@]}"
         make -j 4 build_libs > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
+        mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
-        make -j 4 build_libs > /dev/null
-        lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    ./libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a ./libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib ./providers/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib ./providers/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/../legacy.dylib
+        make install_sw install_ssldirs install_fips > /dev/null
+        lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
+        lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
+        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
+        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/../legacy.dylib
         mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
         mv $OPENSSL_BUILD_DIR/lib/../libcrypto.a $OPENSSL_BUILD_DIR/lib/libcrypto.a
         mv $OPENSSL_BUILD_DIR/lib/../fips.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
         mv $OPENSSL_BUILD_DIR/lib/../legacy.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
+        rm -rf $OPENSSL_BUILD_DIR/libarm64
         lipo -info $OPENSSL_BUILD_DIR/lib/libssl.a
         lipo -info $OPENSSL_BUILD_DIR/lib/libcrypto.a
         lipo -info $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib

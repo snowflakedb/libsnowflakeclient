@@ -141,8 +141,6 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     # By default we do want universal binaries
     if [[ "aarch64" == $(uname -p) ]]; then
         export ARCH=${ARCH:-aarch64}
-    elif [[ "arm" == $(uname -p) ]]; then
-        export ARCH=${ARCH:-arm64}
     else
         export ARCH=${ARCH:-universal}
     fi
