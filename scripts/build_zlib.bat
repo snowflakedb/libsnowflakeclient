@@ -10,7 +10,9 @@
 :: - vs14 / vs15
 ::
 @echo off
-set ZLIB_VERSION=1.2.13
+set ZLIB_SRC_VERSION=1.2.13
+set ZLIB_BUILD_VERSION=1
+set ZLIB_VERSION=%ZLIB_SRC_VERSION%.%ZLIB_BUILD_VERSION%
 call %*
 goto :EOF
 
@@ -21,7 +23,7 @@ goto :EOF
 :build
 setlocal
 set PATH=C:\Program Files\7-Zip;%PATH%
-set ZLIB_DIR=zlib-%ZLIB_VERSION%
+set ZLIB_DIR=zlib-%ZLIB_SRC_VERSION%
 
 set platform=%1
 set build_type=%2

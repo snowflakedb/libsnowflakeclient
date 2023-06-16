@@ -12,7 +12,9 @@ function usage() {
 }
 set -o pipefail
 
-OPENSSL_VERSION=3.0.9
+OPENSSL_SRC_VERSION=3.0.9
+OPENSSL_BUILD_VERSION=1
+OPENSSL_VERSION=$OPENSSL_SRC_VERSION.$OPENSSL_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -20,7 +22,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
 
-OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-${OPENSSL_VERSION}/
+OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl-${OPENSSL_SRC_VERSION}/
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl

@@ -2,7 +2,9 @@
 :: Build oob for Windows
 ::
 @echo off
-set OOB_VERSION=1.0.4
+set OOB_SRC_VERSION=1.0.4
+set OOB_BUILD_VERSION=1
+set OOB_VERSION=%OOB_SRC_VERSION%.%OOB_BUILD_VERSION%
 call %*
 goto :EOF
 
@@ -12,7 +14,7 @@ goto :EOF
 
 :build
 setlocal
-set OOB_DIR=oob-%OOB_VERSION%
+set OOB_DIR=oob-%OOB_SRC_VERSION%
 
 set platform=%1
 set build_type=%2

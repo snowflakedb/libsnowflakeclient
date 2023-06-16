@@ -2,14 +2,15 @@
 :: Build ARROW library
 ::
 @echo off
-set arrow_version=0.17.1
+set arrow_src_version=0.17.1
+set arrow_build_version=2
 :: The full version number for dependency packaging/uploading/downloading
-set arrow_dep_version=%arrow_version%.1
+set arrow_version=%arrow_src_version%.%arrow_build_version%
 call %*
 goto :EOF
 
 :get_version
-    set version=%arrow_dep_version%
+    set version=%arrow_version%
     goto :EOF
 
 :build
@@ -41,7 +42,7 @@ if "%ARROW_FROM_SOURCE%"=="1" (
     )
 ) else (
     :: Temporarily hard-code vsdir in Arrow archive to vs14.
-    7z x arrow_%arcdir%_vs14_%build_type%-%arrow_version%.zip -o%build_dir%
+    7z x arrow_%arcdir%_vs14_%build_type%-%arrow_src_version%.zip -o%build_dir%
 )
 if defined GITHUB_ACTIONS (
     del %dependencydir%\*.zip
@@ -51,7 +52,7 @@ if defined GITHUB_ACTIONS (
 cd "%curdir%"
 
 echo === archiving the library
-call "%scriptdir%utils.bat" :zip_files arrow %arrow_dep_version% "arrow arrow_deps boost"
+call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps boost"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success

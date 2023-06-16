@@ -12,8 +12,10 @@ function usage() {
 }
 set -o pipefail
 
-CURL_DIR=7.88.1
-CURL_VERSION=${CURL_DIR}.2
+CURL_SRC_VERSION=7.88.1
+CURL_BUILD_VERSION=3
+CURL_DIR=$CURL_SRC_VERSION
+CURL_VERSION=${CURL_DIR}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh

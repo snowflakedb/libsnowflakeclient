@@ -3,7 +3,9 @@
 :: GitHub repo: https://github.com/snowflakedb/azure-storage-cpplite.git
 ::
 @echo off
-set azure_version=0.1.20.2
+set azure_src_version=0.1.20
+set azure_build_version=3
+set azure_version=%azure_src_version%.%azure_build_version%
 call %*
 goto :EOF
 
@@ -13,7 +15,7 @@ goto :EOF
 
 :build
 setlocal
-set azure_dir=azure-storage-cpplite-0.1.20
+set azure_dir=azure-storage-cpplite-%azure_src_version%
 set platform=%1
 set build_type=%2
 set vs_version=%3

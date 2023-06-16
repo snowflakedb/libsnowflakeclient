@@ -12,7 +12,9 @@ function usage() {
 }
 set -o pipefail
 
-ZLIB_VERSION=1.2.13
+ZLIB_SRC_VERSION=1.2.13
+ZLIB_BUILD_VERSION=1
+ZLIB_VERSION=$ZLIB_SRC_VERSION.$ZLIB_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -31,7 +33,7 @@ zlib_config_opts+=(
     "--prefix=$BUILD_DIR"
 )
 
-SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
+SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_SRC_VERSION}
 cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then

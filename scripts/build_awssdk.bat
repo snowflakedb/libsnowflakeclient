@@ -3,7 +3,9 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_version=1.3.50.3
+set aws_src_version=1.3.50
+set aws_build_version=4
+set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
 
@@ -14,7 +16,7 @@ goto :EOF
 :build
 @echo off
 setlocal
-set aws_dir=aws-sdk-cpp-1.3.50
+set aws_dir=aws-sdk-cpp-%aws_src_version%
 set platform=%1
 set build_type=%2
 set vs_version=%3

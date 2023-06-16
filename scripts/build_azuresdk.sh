@@ -11,8 +11,10 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_DIR=azure-storage-cpplite-0.1.20
-AZURE_VERSION=0.1.20.2
+AZURE_SRC_VERSION=0.1.20
+AZURE_BUILD_VERSION=3
+AZURE_DIR=azure-storage-cpplite-$AZURE_SRC_VERSION
+AZURE_VERSION=$AZURE_SRC_VERSION.$AZURE_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@

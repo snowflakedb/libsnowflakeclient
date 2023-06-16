@@ -11,17 +11,13 @@ function usage() {
 }
 set -o pipefail
 
-ARROW_VERSION=0.17.1
-#The full version number for dependency packaging/uploading/downloading
-ARROW_DEP_VERSION=${ARROW_VERSION}.1
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $ARROW_DEP_VERSION && exit 0
+[[ -n "$GET_VERSION" ]] && echo $ARROW_VERSION && exit 0
 
-ARROW_SOURCE_DIR=$DEPS_DIR/arrow-$ARROW_VERSION
+ARROW_SOURCE_DIR=$DEPS_DIR/arrow-$ARROW_SRC_VERSION
 ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
@@ -97,8 +93,8 @@ fi
 
 cd $DIR
 
-echo === zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
-zip_files "arrow" "$ARROW_DEP_VERSION" "$target" "arrow arrow_deps boost"
+echo === zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
+zip_files "arrow" "$ARROW_VERSION" "$target" "arrow arrow_deps boost"
 
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $ARROW_SOURCE_DIR
