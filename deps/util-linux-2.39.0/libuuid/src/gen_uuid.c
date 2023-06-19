@@ -533,7 +533,7 @@ static int uuid_generate_time_generic(uuid_t out) {
 	const int			cs_max = (1<<18);
 	const int			cs_factor = 2;
 	THREAD_LOCAL int		num = 0;
-	THREAD_LOCAL int		cache_size = cs_min;
+	THREAD_LOCAL int		cache_size = (1<<6);
 	THREAD_LOCAL int		last_used = 0;
 	THREAD_LOCAL struct uuid	uu;
 	THREAD_LOCAL time_t		last_time = 0;
