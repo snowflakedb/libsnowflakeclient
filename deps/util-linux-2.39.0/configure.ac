@@ -2530,11 +2530,13 @@ AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$have_systemd" = xyes])
 
 AC_ARG_WITH([systemdsystemunitdir],
   AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [directory for systemd unit files (requires systemd support)]),
-  [], [
+  [], [with_systemdsystemunitdir=check]
+)
+AS_IF([test "x$with_systemdsystemunitdir" = xcheck], [
   AS_IF([test "x$have_systemd" = xyes], [
-    PKG_CHECK_VAR([with_systemdsystemunitdir], [systemd], [systemdsystemunitdir],
-      [],
-      [with_systemdsystemunitdir=no])
+    with_systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+  ],[
+    with_systemdsystemunitdir=no
   ])
 ])
 AS_IF([test "x$with_systemdsystemunitdir" != "xno"], [
@@ -2587,16 +2589,21 @@ AM_CONDITIONAL([BUILD_BASH_COMPLETION], [test "x$enable_bash_completion" = xyes]
 
 AC_ARG_WITH([bashcompletiondir],
   AS_HELP_STRING([--with-bashcompletiondir=DIR], [Bash completions directory]),
-  [], [
-  AS_IF([test "x$enable_bash_completion" = xyes], [
-    PKG_CHECK_VAR([with_bashcompletiondir], [bash-completion], [completionsdir],
-      [],
-      [with_bashcompletiondir=${datadir}/bash-completion/completions])
+  [],
+  [AS_IF([`$PKG_CONFIG --exists bash-completion`], [
+    with_bashcompletiondir=`$PKG_CONFIG --variable=completionsdir bash-completion`
+  ], [
+    with_bashcompletiondir=${datadir}/bash-completion/completions
   ])
 ])
-AS_IF([test "x$enable_bash_completion" = xyes], [
-  AC_SUBST([bashcompletiondir], [$with_bashcompletiondir])
-])
+AC_SUBST([bashcompletiondir], [$with_bashcompletiondir])
+
+AC_ARG_ENABLE([bash-completion],
+  AS_HELP_STRING([--disable-bash-completion], [do not install bash completion files]),
+  [], [enable_bash_completion=yes]
+)
+
+AM_CONDITIONAL([BUILD_BASH_COMPLETION], [test "x$enable_bash_completion" = xyes])
 
 
 AC_ARG_WITH([python],
