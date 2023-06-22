@@ -39,7 +39,7 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     cmake_opts+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_VERSION_MIN}")
     if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
-        cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+        cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
     elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         cmake_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")

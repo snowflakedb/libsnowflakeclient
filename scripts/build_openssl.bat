@@ -10,7 +10,9 @@
 :: - vs14 / vs15
 
 @echo off
-set OPENSSL_VERSION=3.0.9
+set OPENSSL_SRC_VERSION=3.0.9
+set OPENSSL_BUILD_VERSION=1
+set OPENSSL_VERSION=%OPENSSL_SRC_VERSION%.%OPENSSL_BUILD_VERSION%
 call %*
 goto :EOF
 
@@ -20,7 +22,7 @@ goto :EOF
 
 :build
 setlocal
-set OPENSSL_DIR=openssl-%OPENSSL_VERSION%
+set OPENSSL_DIR=openssl-%OPENSSL_SRC_VERSION%
 
 if defined GITHUB_ACTIONS (
     set PERL_EXE=C:\Strawberry\perl\bin\perl
@@ -65,8 +67,8 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
-echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
-%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips
+echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
+%PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256
 if %ERRORLEVEL% NEQ 0 goto :error
 nmake clean
 if %ERRORLEVEL% NEQ 0 goto :error

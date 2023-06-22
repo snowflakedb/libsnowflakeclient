@@ -3,7 +3,9 @@
 :: GitLab repo: https://gitlab.com/cmocka/cmocka.git
 ::
 @echo off
-set cmocka_version=1.1.1
+set cmocka_src_version=1.1.1
+set cmocka_build_version=1
+set cmocka_version=%cmocka_src_version%.%cmocka_build_version%
 call %*
 goto :EOF
 
@@ -14,7 +16,7 @@ goto :EOF
 :build
 setlocal
 
-set CMOCKA_DIR=cmocka-%cmocka_version%
+set CMOCKA_DIR=cmocka-%cmocka_src_version%
 
 set platform=%1
 set build_type=%2

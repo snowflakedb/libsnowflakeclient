@@ -12,7 +12,9 @@ function usage() {
 }
 set -o pipefail
 
-ZLIB_VERSION=1.2.13
+ZLIB_SRC_VERSION=1.2.13
+ZLIB_BUILD_VERSION=1
+ZLIB_VERSION=$ZLIB_SRC_VERSION.$ZLIB_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -31,7 +33,7 @@ zlib_config_opts+=(
     "--prefix=$BUILD_DIR"
 )
 
-SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_VERSION}
+SOURCE_DIR=$DIR/../deps/zlib-${ZLIB_SRC_VERSION}
 cd $SOURCE_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
@@ -46,26 +48,26 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        # for intel always universal
        echo "Now building for x86_64"
        export CFLAGS="-fPIC -arch x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-       BUILD_DIR_64=$BUILD_DIR/zlib_64
+       BUILD_DIR_X64=$BUILD_DIR/zlib_x64
        make -f Makefile.in distclean > /dev/null || true
-       ./configure -s --static --prefix=$BUILD_DIR_64 
+       ./configure -s --static --prefix=$BUILD_DIR_X64
        make install
 
-       echo "Now building for i386"
+       echo "Now building for arm64"
        make -f Makefile.in distclean > /dev/null || true
        cd $SOURCE_DIR
        CFLAGS=""
        LDFLAGS=""
        CXXFLAGS=""
-       export CFLAGS="-fPIC -arch i386 -mmacosx-version-min=${MACOSX_VERSION_MIN}" 
-       BUILD_DIR_32=$BUILD_DIR/zlib_32
-      ./configure -s --static --prefix=$BUILD_DIR_32  || exit 1
+       export CFLAGS="-fPIC -arch arm64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+       BUILD_DIR_ARM64=$BUILD_DIR/zlib_arm64
+      ./configure -s --static --prefix=$BUILD_DIR_ARM64  || exit 1
        make install
 
        mkdir -p $BUILD_DIR/{lib,include}
-       cp -fr $BUILD_DIR_32/include/* $BUILD_DIR/include
-       lipo -create $BUILD_DIR_64/lib/libz.a $BUILD_DIR_32/lib/libz.a -output $BUILD_DIR/lib/libz.a 
-       rm -rf $BUILD_DIR_64 $BUILD_DIR_32
+       cp -fr $BUILD_DIR_X64/include/* $BUILD_DIR/include
+       lipo -create $BUILD_DIR_X64/lib/libz.a $BUILD_DIR_ARM64/lib/libz.a -output $BUILD_DIR/lib/libz.a
+       rm -rf $BUILD_DIR_X64 $BUILD_DIR_ARM64
     else
        echo "Now building for $ARCH"
        export CFLAGS="-fPIC -arch $ARCH -mmacosx-version-min=${MACOSX_VERSION_MIN}"

@@ -13,7 +13,9 @@ function usage() {
 
 set -o pipefail
 
-CMOCKA_VERSION=1.1.1
+CMOCKA_SRC_VERSION=1.1.1
+CMOCKA_BUILD_VERSION=1
+CMOCKA_VERSION=$CMOCKA_SRC_VERSION.$CMOCKA_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh
@@ -21,7 +23,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $CMOCKA_VERSION && exit 0
 
-SOURCE_DIR=$DEPS_DIR/cmocka-${CMOCKA_VERSION}
+SOURCE_DIR=$DEPS_DIR/cmocka-${CMOCKA_SRC_VERSION}
 
 INSTALL_DIR=/tmp/cmocka
 rm -rf $INSTALL_DIR
@@ -40,7 +42,7 @@ ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
 	if [[ "$ARCH" == "universal" ]]; then
 	    echo "[INFO] Building Universal Binary"
-	    config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+	    config_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 	elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         config_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")

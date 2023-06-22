@@ -3,14 +3,11 @@
 :: GitHub repo: https://github.com/apache/arrow.git
 ::
 @echo off
-set arrow_version=0.17.1
-:: The full version number for dependency packaging/uploading/downloading
-set arrow_dep_version=%arrow_version%.1
 call %*
 goto :EOF
 
 :get_version
-    set version=%arrow_dep_version%
+    set version=%arrow_version%
     goto :EOF
 
 :build
@@ -35,7 +32,7 @@ if "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
-set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-%arrow_version%
+set ARROW_SOURCE_DIR=%scriptdir%..\deps\arrow-%arrow_src_version%
 set ARROW_CMAKE_BUILD_DIR=%ARROW_SOURCE_DIR%\cpp\cmake-build-%arcdir%-%vs_version%-%build_type%
 set DEPENDENCY_DIR=%scriptdir%..\deps-build\%build_dir%
 set ARROW_INSTALL_DIR=%DEPENDENCY_DIR%\arrow
@@ -70,7 +67,7 @@ cmake ..\ ^
 -DCMAKE_INSTALL_PREFIX=%ARROW_INSTALL_DIR% ^
 -DCMAKE_MSVC_RUNTIME_LIBRARY=%runtimelink% ^
 -DCMAKE_C_FLAGS="/guard:cf /wd5105" ^
--DCMAKE_CXX_FLAGS="/guard:cf /wd5105" ^
+-DCMAKE_CXX_FLAGS="/guard:cf /wd5105 /ZH:SHA_256" ^
 -DARROW_USE_STATIC_CRT=ON ^
 -DARROW_BOOST_USE_SHARED=OFF ^
 -DARROW_BUILD_SHARED=OFF ^

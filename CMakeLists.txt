@@ -71,6 +71,10 @@ if (UNIX)
     # Linux and OSX
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -std=gnu99 -g -fPIC -Werror ${MOCK_OBJECT_WRAPPER_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=gnu++11 -fPIC -Werror ${MOCK_OBJECT_WRAPPER_FLAGS}")
+else()
+    # Windows
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /ZH:SHA_256")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZH:SHA_256")
 endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option

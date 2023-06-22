@@ -11,8 +11,10 @@ function usage() {
 }
 set -o pipefail
 
-AZURE_DIR=azure-storage-cpplite-0.1.20
-AZURE_VERSION=0.1.20.2
+AZURE_SRC_VERSION=0.1.20
+AZURE_BUILD_VERSION=3
+AZURE_DIR=azure-storage-cpplite-$AZURE_SRC_VERSION
+AZURE_VERSION=$AZURE_SRC_VERSION.$AZURE_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -69,7 +71,7 @@ ADDITIONAL_CXXFLAGS=
 if [[ "$PLATFORM" == "darwin" ]]; then
   if [[ "$ARCH" == "universal" ]]; then
     echo "[INFO] Building Universal Binary"
-    azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+    azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
   elif [[ "$ARCH" == "x86" ]]; then
     echo "[INFO] Building x86 Binary"
     azure_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
@@ -99,7 +101,7 @@ cd $AZURE_CMAKE_BUILD_DIR
 if [ "$(uname -s)" == "Linux" ] ; then
   $CMAKE -E env $CMAKE ${azure_configure_opts[@]} -DEXTRA_LIBRARIES="-lrt -ldl -pthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
 else
-  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS=$ADDITIONAL_CXXFLAGS LDFLAGS=$ADDITIONAL_CXXFLAGS -DEXTRA_LIBRARIES="-framework Foundation -framework SystemConfiguration -ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
+  $CMAKE -E env $CMAKE ${azure_configure_opts[@]} CXXFLAGS="$ADDITIONAL_CXXFLAGS" LDFLAGS="$ADDITIONAL_CXXFLAGS" -DEXTRA_LIBRARIES="-framework Foundation -framework SystemConfiguration -ldl -lpthread $DEPENDENCY_DIR/zlib/lib/libz.a $DEPENDENCY_DIR/oob/lib/libtelemetry.a" ../
 fi
 
 unset GIT_DIR

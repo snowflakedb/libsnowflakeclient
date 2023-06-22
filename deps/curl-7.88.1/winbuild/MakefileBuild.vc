@@ -48,11 +48,11 @@ CC = cl.exe
 !IF "$(VC)"=="6"
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL
+CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /ZH:SHA_256
 !ELSE
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /D_DEBUG /RTC1 /Z7 /LDd
-CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL
+CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL /ZH:SHA_256
 !ENDIF
 
 LFLAGS     = /nologo /machine:$(MACHINE)

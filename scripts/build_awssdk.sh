@@ -12,8 +12,10 @@ function usage() {
 }
 set -o pipefail
 
-AWS_DIR=aws-sdk-cpp-1.3.50
-AWS_VERSION=1.3.50.3
+AWS_SRC_VERSION=1.3.50
+AWS_BUILD_VERSION=4
+AWS_DIR=aws-sdk-cpp-$AWS_SRC_VERSION
+AWS_VERSION=$AWS_SRC_VERSION.$AWS_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -63,7 +65,7 @@ fi
 if [[ "$PLATFORM" == "darwin" ]]; then
     if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
-        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;i386")
+        aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
     elif [[ "$ARCH" == "x86" ]]; then
         echo "[INFO] Building x86 Binary"
         aws_configure_opts+=("-DCMAKE_OSX_ARCHITECTURES=i386")
