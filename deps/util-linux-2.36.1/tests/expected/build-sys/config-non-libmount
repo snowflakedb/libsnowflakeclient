@@ -1,0 +1,111 @@
+blkid:  libblkid 
+cfdisk:  libblkid libdl libfdisk libncursesw libsmartcols libtinfo libuuid 
+column:  libsmartcols 
+fdisk:  libblkid libfdisk libreadline libsmartcols libtinfo libuuid 
+fincore:  libsmartcols 
+findfs:  libblkid 
+irqtop:  libdl libncursesw librt libsmartcols libtinfo 
+libblkid.so.1.1.0:  
+libfdisk.so.1.1.0:  libblkid libuuid 
+libsmartcols.so.1.1.0:  
+libuuid.so.1.3.0:  
+losetup:  libsmartcols 
+lscpu:  libsmartcols 
+lsipc:  libsmartcols 
+lsirq:  libsmartcols 
+lslogins:  libsmartcols libsystemd 
+lsmem:  libsmartcols 
+mkswap:  libblkid libuuid 
+partx:  libblkid libsmartcols 
+prlimit:  libsmartcols 
+rfkill:  libsmartcols 
+sfdisk:  libblkid libfdisk libreadline libsmartcols libtinfo libuuid 
+swaplabel:  libblkid libuuid 
+uuidd:  librt libsystemd libuuid 
+uuidgen:  libuuid 
+uuidparse:  libsmartcols libuuid 
+wdctl:  libsmartcols 
+wipefs:  libblkid libsmartcols 
+zramctl:  libsmartcols 
+addpart:  
+agetty:  
+blkdiscard:  librt 
+blkid.static: STATIC
+blkzone:  
+blockdev:  
+cal:  libtinfo 
+chcpu:  
+chfn:  libpam libpam_misc libpthread libreadline libuser 
+chmem:  
+choom:  
+chrt:  
+chsh:  libpam libpam_misc libpthread libreadline libuser 
+col:  
+colcrt:  
+colrm:  
+ctrlaltdel:  
+delpart:  
+dmesg:  librt libtinfo 
+fallocate:  
+fdformat:  
+fdisk.static: STATIC
+flock:  librt 
+fsck.cramfs:  libz 
+fsck.minix:  
+fsfreeze:  
+getopt:  
+hardlink:  libpcre2-8 
+hexdump:  libtinfo 
+hwclock:  libm librt 
+ionice:  
+ipcmk:  
+ipcrm:  
+ipcs:  
+isosize:  
+kill:  
+last:  librt 
+ldattach:  
+logger:  libsystemd 
+login:  libpam libpam_misc 
+look:  
+losetup.static: STATIC
+mcookie:  
+mesg:  
+mkfs:  
+mkfs.bfs:  
+mkfs.cramfs:  libz 
+mkfs.minix:  
+more:  libtinfo 
+mount.static: STATIC
+namei:  
+nologin:  
+nsenter:  
+nsenter.static: STATIC
+pivot_root:  
+raw:  
+readprofile:  
+rename:  
+renice:  
+resizepart:  
+rev:  
+rtcwake:  
+runuser:  libpam libpam_misc librt libutil 
+script:  librt libutil 
+scriptlive:  librt libutil 
+scriptreplay:  
+setarch:  
+setpriv:  libcap-ng 
+setsid:  
+setterm:  libtinfo 
+sfdisk.static: STATIC
+su:  libpam libpam_misc librt libutil 
+sulogin:  libcrypt 
+switch_root:  
+taskset:  
+ul:  libtinfo 
+umount.static: STATIC
+unshare:  
+unshare.static: STATIC
+utmpdump:  
+wall:  
+whereis:  
