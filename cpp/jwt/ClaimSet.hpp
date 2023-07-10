@@ -90,14 +90,7 @@ public:
 
   inline std::string serialize(bool format=true) override
   {
-    if (format)
-    {
       return Client::Util::Base64::encodeURLNoPadding(CJSONOperation::serialize(json_root_.get()));
-    }
-    else
-    {
-      return Client::Util::Base64::encodeURLNoPadding(CJSONOperation::serializeUnformatted(json_root_.get()));
-    }
   }
 
   inline void removeClaim(const std::string &key) override

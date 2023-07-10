@@ -191,16 +191,6 @@ namespace Snowflake
 namespace Client
 {
 
-  IAuthenticator *IAuthenticator::buildAuthenticator(AuthenticatorType type, SF_CONNECT *conn)
-  {
-    switch(type) {
-      case AUTH_JWT:
-        return new AuthenticatorJWT(conn);
-      default:
-        return nullptr;
-    }
-  }
-
   void IAuthenticator::renewDataMap(cJSON *dataMap)
   {
     authenticate();

@@ -58,14 +58,7 @@ bool JWTObject::verify(EVP_PKEY *key, bool format)
 
   if (signer == nullptr) return false;
 
-  if (format)
-  {
-    msg = header_->serialize() + '.' + claim_set_->serialize();
-  }
-  else
-  {
-    msg = header_->serialize(false) + '.' + claim_set_->serialize(false);
-  }
+  msg = header_->serialize() + '.' + claim_set_->serialize();
   return signer->verify(key, msg, secret_);
 }
 

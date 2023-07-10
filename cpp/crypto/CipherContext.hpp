@@ -59,42 +59,12 @@ public:
   CipherContext &operator=(CipherContext &&other) noexcept;
 
   /**
-   * Reset into default-constructed state. Frees any underlying library
-   * resources.
-   */
-  void reset() noexcept;
-
-  /**
-   * Create a copy of this cipher context.
-   *
-   * The copy will share the algorithm, mode, padding, key, and initialization
-   * vector with the original context, but it will be in status INVALID,
-   * regardless of whether the original context was performing an active
-   * encryption or decryption operation.
-   *
-   * It is not possible to create a copy which also shares the current
-   * operation state (because the underlying library does not allow it).
-   */
-  CipherContext clone() const;
-
-  /**
    * Whether or not this is a valid context that can be used for encryption
    * or decryption. Returns 'false' for default constructed context object or
    * context objects that have been the source of a move construction or
    * move assignment.
    */
   inline bool isValid() const noexcept;
-
-  /**
-   * Get status of cipher context, consisting of current operation, current
-   * input offset, and current output offset. The input and output offsets may
-   * differ if padding is activated.
-   *
-   * If the current operation is INVALID, the offsets are undefined.
-   */
-  void getStatus(CryptoOperation &op,
-                 size_t &inOff,
-                 size_t &outOff) const noexcept;
 
   /**
    * Swap state of two contexts.

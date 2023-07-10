@@ -27,13 +27,6 @@ namespace Client
   class IAuthenticator
   {
   public:
-    /**
-     * Factory method for Authenticator
-     * @param type type of Authenticator
-     * @param conn connection type
-     * @return pointer to authenticator
-     */
-    static IAuthenticator *buildAuthenticator(AuthenticatorType type, SF_CONNECT * conn);
 
     IAuthenticator() : m_renewTimeout(0)
     {}

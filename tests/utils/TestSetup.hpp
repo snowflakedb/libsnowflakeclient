@@ -11,11 +11,7 @@
 
 class TestSetup {
 public:
-    static Snowflake::Client::Connection *connectionFactory();
 
-    static Snowflake::Client::Connection *connectionWithAutocommitFactory(const std::string timezone,
-                                                                   bool autocommit);
-    
     // Used by put/get tests to get <workspace>/test/data/ directory
     static std::string getDataDir();
 
