@@ -12,6 +12,7 @@ using Snowflake::Client::Jwt::IHeader;
 using Snowflake::Client::Jwt::IClaimSet;
 using Snowflake::Client::Jwt::AlgorithmType;
 using Snowflake::Client::Jwt::JWTObject;
+using Snowflake::Client::Jwt::IJwt;
 using IHeaderUptr = std::unique_ptr<IHeader>;
 using IClaimSetUptr = std::unique_ptr<IClaimSet>;
 using IHeaderSptr = std::shared_ptr<IHeader>;
@@ -126,6 +127,11 @@ void test_sign_verify(void **)
   assert_string_not_equal(result.c_str(), "");
 
   assert_true(jwt.verify(pub_key.get(), true));
+
+  // test JWTObject build from a plain JWT token string
+  IJwt* jwtFromString(IJwt::buildIJwt(result));
+  assert_true(jwtFromString->getHeader().get()->getAlgorithmType(), header->getAlgorithmType());
+  assert_string_equal(jwtFromString->getClaimSet().get()->serialize().c_str(), claim_set->serialize().c_str());
 }
 
 int main()
