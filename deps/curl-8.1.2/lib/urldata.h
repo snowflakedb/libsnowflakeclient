@@ -261,6 +261,8 @@ typedef enum {
 struct ssl_backend_data;
 
 struct ssl_primary_config {
+  bool sf_ocsp_check;    /* set TRUE if client side ocsp check is enabled */
+  bool sf_ocsp_failopen; /* set FALSE if failopen has to be disabled.*/
   char *CApath;          /* certificate dir (doesn't work on windows) */
   char *CAfile;          /* certificate to verify peer against */
   char *issuercert;      /* optional issuer certificate filename */
