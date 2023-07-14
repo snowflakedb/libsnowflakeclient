@@ -1177,7 +1177,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = &sf->retry_on_curle_couldnt_connect_count;
             break;
         case SF_QUERY_RESULT_TYPE:
-            *value = &sf->query_result_format;
+            *value = sf->query_result_format;
             break;
         case SF_CON_PRIV_KEY_FILE:
             *value = sf->priv_key_file;
