@@ -3,7 +3,7 @@
 ::
 @echo off
 set OOB_SRC_VERSION=1.0.4
-set OOB_BUILD_VERSION=1
+set OOB_BUILD_VERSION=2
 set OOB_VERSION=%OOB_SRC_VERSION%.%OOB_BUILD_VERSION%
 call %*
 goto :EOF
@@ -23,7 +23,7 @@ set dynamic_runtime=%4
 
 set scriptdir=%~dp0
 
-set CURL_VERSION=7.88.1
+set CURL_VERSION=8.1.2
 
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
