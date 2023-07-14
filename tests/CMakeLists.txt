@@ -59,7 +59,8 @@ SET(TESTS_CXX
         #test_cpp_select1
         test_unit_proxy
         test_unit_oob
-        test_unit_set_get_attributes)
+        test_unit_set_get_attributes
+        test_unit_snowflake_types_to_string)
 
 SET(TESTS_PUTGET
         test_include_aws
