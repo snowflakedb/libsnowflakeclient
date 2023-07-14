@@ -303,6 +303,7 @@ void test_simple_get_data(const char *getCommand, const char *size,
         transConfig.getSizeThreshold = getThreshold;
         transConfigPtr = &transConfig;
     }
+
     Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
     // load first time should return uploaded
@@ -1181,7 +1182,7 @@ void test_simple_put_with_proxy(void **unused)
 {
   if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
     sf_getenv("http_proxy")) {
-    // skip the test if the test evironment uses proxy already
+    // skip the test if the test environment uses proxy already
     return;
   }
 
@@ -1266,6 +1267,108 @@ void test_simple_put_with_noproxy(void **unused)
   sf_unsetenv("http_proxy");
 }
 
+void test_simple_put_with_proxy_fromenv(void **unused)
+{
+    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
+        sf_getenv("http_proxy")) {
+        // skip the test if the test environment uses proxy already
+        return;
+    }
+
+    // set invalid proxy settings
+    sf_setenv("https_proxy", "a.b.c");
+    sf_unsetenv("http_proxy");
+    sf_setenv("no_proxy", "a.b.c");
+    SF_CONNECT *sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+    assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
+    snowflake_term(sf);
+
+    // test PUT command with valid https_proxy setting
+    sf_setenv("https_proxy", "");
+
+    sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    test_simple_put_core("small_file.csv", // filename
+        "auto", //source compression
+        true, // auto compress
+        true, // copyUploadFile
+        true, // verifyCopyUploadFile
+        false, // copyTableToStaging
+        false, // createDupTable
+        false, // setCustomThreshold
+        64 * 1024 * 1024, // customThreshold
+        false, // useDevUrand
+        false, // createSubfolder
+        nullptr, // tmpDir
+        false, // useS3regionalUrl
+        -1, // compressLevel
+        false, // overwrite
+        sf // connection
+    );
+
+    snowflake_term(sf);
+    sf_unsetenv("https_proxy");
+    sf_unsetenv("http_proxy");
+    sf_unsetenv("no_proxy");
+}
+
+void test_simple_put_with_noproxy_fromenv(void **unused)
+{
+    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
+        sf_getenv("http_proxy")) {
+        // skip the test if the test environment uses proxy already
+        return;
+    }
+
+    // set invalid proxy settings
+    sf_setenv("https_proxy", "a.b.c");
+    sf_setenv("http_proxy", "a.b.c");
+    sf_unsetenv("no_proxy");
+    SF_CONNECT *sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+    assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
+    snowflake_term(sf);
+
+    // test PUT command with valid no_proxy setting
+    sf_setenv("no_proxy", "*");
+
+    sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    test_simple_put_core("small_file.csv", // filename
+        "auto", //source compression
+        true, // auto compress
+        true, // copyUploadFile
+        true, // verifyCopyUploadFile
+        false, // copyTableToStaging
+        false, // createDupTable
+        false, // setCustomThreshold
+        64 * 1024 * 1024, // customThreshold
+        false, // useDevUrand
+        false, // createSubfolder
+        nullptr, // tmpDir
+        false, // useS3regionalUrl
+        -1, // compressLevel
+        false, // overwrite
+        sf // connection
+    );
+
+    snowflake_term(sf);
+    sf_unsetenv("https_proxy");
+    sf_unsetenv("http_proxy");
+    sf_unsetenv("no_proxy");
+}
+
 int main(void) {
 
 #ifdef __APPLE__
@@ -1323,7 +1426,9 @@ int main(void) {
     cmocka_unit_test_teardown(test_2GBlarge_put, donothing),
     cmocka_unit_test_teardown(test_2GBlarge_get, teardown),
     cmocka_unit_test_teardown(test_simple_put_with_proxy, teardown),
-    cmocka_unit_test_teardown(test_simple_put_with_noproxy, teardown)
+    cmocka_unit_test_teardown(test_simple_put_with_noproxy, teardown),
+    cmocka_unit_test_teardown(test_simple_put_with_proxy_fromenv, teardown),
+    cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;

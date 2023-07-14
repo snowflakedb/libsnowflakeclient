@@ -77,11 +77,12 @@ void Snowflake::Client::Util::Proxy::setProxyFromEnv() {
         proxy = std::getenv("https_proxy");
     } else if (std::getenv("http_proxy")) {
         proxy = std::getenv("http_proxy");
-    } else {
-        return;
     }
 
-    stringToProxyParts(proxy);
+    if (!proxy.empty())
+    {
+        stringToProxyParts(proxy);
+    }
 
     // Get noproxy string
     if (std::getenv("no_proxy")) {
