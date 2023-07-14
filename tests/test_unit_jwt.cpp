@@ -130,7 +130,7 @@ void test_sign_verify(void **)
 
   // test JWTObject build from a plain JWT token string
   IJwt* jwtFromString(IJwt::buildIJwt(result));
-  assert_true(jwtFromString->getHeader().get()->getAlgorithmType(), header->getAlgorithmType());
+  assert_true(jwtFromString->getHeader().get()->getAlgorithmType() == header->getAlgorithmType());
   assert_string_equal(jwtFromString->getClaimSet().get()->serialize().c_str(), claim_set->serialize().c_str());
 }
 
