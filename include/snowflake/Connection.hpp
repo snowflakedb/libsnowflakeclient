@@ -19,6 +19,11 @@ namespace Snowflake {
 
             ~Connection(void);
 
+            void connect();
+
+            void setAttribute(SF_ATTRIBUTE type_,
+                const void *value_);
+
         private:
             SF_CONNECT *m_connection;
         };
