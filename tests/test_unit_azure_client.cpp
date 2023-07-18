@@ -3,7 +3,7 @@
  */
 
 /**
- * Testing Put retry
+ * Testing CA bundle file in Azure client
  *
  * Note: Azure client in this class is mocked
  */
@@ -156,7 +156,10 @@ void test_azure_cafile_path_too_long(void ** unused)
     std::string fileName = "small_file.csv.gz";
     std::string expectedErrorMsg = "Internal error: CA bundle file path too long.";
     TransferConfig transferConfig;
-    char cafile[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+
+    char cafile[MAX_PATH + 1] = { 0 };
+    std::string cafileStr(MAX_PATH, 'a');
+    sb_strcpy(cafile, MAX_PATH + 1, cafileStr.c_str());
     transferConfig.caBundleFile = cafile;
 
     IStorageClient* storageClient = createAzureClient(fileName, &transferConfig, expectedErrorMsg);
@@ -275,11 +278,11 @@ void test_azure_cafile_path_too_long_from_env_transferconfig_null(void ** unused
     std::string expectedErrorMsg = "Internal error: CA bundle file path too long.";
     TransferConfig transferConfig;
     transferConfig.caBundleFile = NULL;
-    char cafile[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+    std::string cafile(MAX_PATH, 'a');
 
     // Modify the environment variable temporarily and restore at the end of test
     const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
-    sf_setenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", cafile);
+    sf_setenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", cafile.c_str());
     hasCAfileEnvChanged = true;
 
     char currentCABundleFileGlobal[MAX_PATH] = { 0 };
@@ -308,7 +311,7 @@ void test_azure_cafile_path_too_long_from_global_env_transferconfig_null(void **
     std::string expectedErrorMsg = "Internal error: CA bundle file path too long.";
     TransferConfig transferConfig;
     transferConfig.caBundleFile = NULL;
-    char cafile[] = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+    std::string cafile(MAX_PATH, 'a');
 
     // Modify the environment variable temporarily and restore at the end of test
     const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
@@ -320,7 +323,7 @@ void test_azure_cafile_path_too_long_from_global_env_transferconfig_null(void **
 
     char currentCABundleFileGlobal[MAX_PATH] = { 0 };
     snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, currentCABundleFileGlobal, sizeof(currentCABundleFileGlobal));
-    snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, cafile);
+    snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, cafile.c_str());
     hasCAfileGlobalEnvChanged = true;
 
     IStorageClient* storageClient = createAzureClient(fileName, &transferConfig, expectedErrorMsg);
