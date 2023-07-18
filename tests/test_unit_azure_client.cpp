@@ -12,7 +12,7 @@
 #include "snowflake/PutGetParseResponse.hpp"
 #include <memory>
 #include "FileTransferAgent.hpp"
-#include "SnowflakeAzureClient.hpp""
+#include "SnowflakeAzureClient.hpp"
 #include "StorageClientFactory.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
