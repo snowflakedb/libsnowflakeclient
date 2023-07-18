@@ -44,6 +44,7 @@ void getLongTempPath(char *buffTmpDir)
 	sb_strncpy(buffTmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
 }
 #endif
+
 void test_large_get(void **);
 
 void test_simple_put_core(const char * fileName,
@@ -1369,6 +1370,136 @@ void test_simple_put_with_noproxy_fromenv(void **unused)
     sf_unsetenv("no_proxy");
 }
 
+std::string getLastModifiedFromStage(SF_STMT * sfstmt)
+{
+    const char* expectedValue = NULL;
+    std::string list_stage = "LIST @testStage";
+
+    SF_STATUS status = snowflake_query(sfstmt, list_stage.c_str(), list_stage.size());
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    int numRows = snowflake_num_rows(sfstmt);
+    if (numRows > 0)
+    {
+        status = snowflake_fetch(sfstmt);
+        assert_int_equal(SF_STATUS_SUCCESS, status);
+
+        int64 num_fields = snowflake_num_fields(sfstmt);
+        assert_int_equal(num_fields, 4);
+
+        SF_COLUMN_DESC *descs = snowflake_desc(sfstmt);
+        char* columnName = descs[3].name;
+        assert_string_equal(columnName, "last_modified");
+
+        snowflake_column_as_const_str(sfstmt, 4, &expectedValue);
+
+        status = snowflake_fetch(sfstmt);
+        assert_int_equal(SF_STATUS_EOF, status);
+    }
+
+    if (expectedValue)
+    {
+        return std::string(expectedValue);
+    }
+
+    return std::string();
+}
+
+void test_upload_file_to_stage_using_stream(void **unused)
+{
+    char *cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
+        errno = 0;
+        return;
+    }
+
+    SF_CONNECT* sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+
+    // create a stage for file uploading
+    std::string create_stage = "CREATE OR REPLACE STAGE testStage";
+    status = snowflake_query(sfstmt, create_stage.c_str(), create_stage.size());
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    // note down the last_modified time
+    std::string expectedValue = getLastModifiedFromStage(sfstmt);
+
+    // add 1 sec delay between uploads
+    Sleep(1000);
+
+    std::string dataDir = TestSetup::getDataDir();
+    std::string fileName = "small_file.csv";
+    std::string file = dataDir + fileName;
+    std::string putCommand = "put file://" + file + " @testStage auto_compress=false source_compression=gzip overwrite=true";
+
+    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+        <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+
+    TransferConfig transConfig;
+    TransferConfig* transConfigPtr = nullptr;
+
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
+
+    // create stream from the csv file
+    std::string line;
+    std::ifstream fileStream(file);
+    if (fileStream.is_open())
+    {
+        while (fileStream.good())
+        {
+            getline(fileStream, line);
+        }
+        fileStream.close();
+    }
+    else
+    {
+        assert_true(!line.empty());
+    }
+    std::stringstream stringStream = std::stringstream(line);
+    stringStream.seekg(0, std::ios::end);
+    std::stringstream::pos_type offset = stringStream.tellg();
+    agent.setUploadStream(&stringStream, offset);
+
+    ITransferResult * results = agent.execute(&putCommand);
+    assert_int_equal(1, results->getResultSize());
+
+    // verify the upload results
+    while (results->next())
+    {
+        std::string value;
+        results->getColumnAsString(0, value); // source
+        assert_string_equal(sf_filename_from_path(fileName.c_str()), value.c_str());
+
+        results->getColumnAsString(1, value); // get target
+        assert_string_equal(file.c_str(), value.c_str());
+
+        results->getColumnAsString(4, value); // get source_compression
+        assert_string_equal("gzip", value.c_str());
+
+        results->getColumnAsString(5, value); // get target_compression
+        assert_string_equal("gzip", value.c_str());
+
+        results->getColumnAsString(6, value); // get status
+        assert_string_equal("UPLOADED", value.c_str());
+
+        results->getColumnAsString(7, value); // get encryption
+        assert_string_equal("ENCRYPTED", value.c_str());
+    }
+
+    // check the last_modified time again and make sure it has been updated
+    std::string actualValue = getLastModifiedFromStage(sfstmt);
+    assert_true(expectedValue != actualValue);
+
+    std::string drop_stage = "DROP STAGE if exists testStage";
+    status = snowflake_query(sfstmt, drop_stage.c_str(), drop_stage.size());
+    assert_int_equal(SF_STATUS_SUCCESS, status);
+
+    snowflake_term(sf);
+}
+
 int main(void) {
 
 #ifdef __APPLE__
@@ -1428,7 +1559,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_proxy, teardown),
     cmocka_unit_test_teardown(test_simple_put_with_noproxy, teardown),
     cmocka_unit_test_teardown(test_simple_put_with_proxy_fromenv, teardown),
-    cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown)
+    cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
+    cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
