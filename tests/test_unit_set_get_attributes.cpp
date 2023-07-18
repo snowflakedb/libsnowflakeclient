@@ -68,15 +68,6 @@ std::vector<sf_int_attributes> intAttributes = {
     { SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT, 5 },
 };
 
-typedef struct sf_stmt_attributes {
-    SF_STMT_ATTRIBUTE type;
-    void* value;
-} sf_stmt_attributes;
-
-std::vector<sf_stmt_attributes> stmtAttributes = {
-    { SF_STMT_USER_REALLOC_FUNC, realloc },
-};
-
 // unit test for snowflake_set_attribute and snowflake_get_attribute for all SF_ATTRIBUTE
 void test_set_get_all_attributes(void **unused)
 {
@@ -84,8 +75,8 @@ void test_set_get_all_attributes(void **unused)
     memset(sf, 0, sizeof(SF_CONNECT));
 
     // Connection parameters that cannot be set by user
-    sf->service_name = "test_service_name";
-    sf->query_result_format = "test_query_result_type";
+    sf->service_name = (char*)"test_service_name";
+    sf->query_result_format = (char*)"test_query_result_type";
 
     SF_STATUS status = SF_STATUS_EOF;
     void* value = NULL;
@@ -186,44 +177,9 @@ void test_set_get_all_attributes(void **unused)
     }
 }
 
-// unit test for snowflake_stmt_set_attr and snowflake_stmt_get_attr for all SF_STMT_ATTRIBUTE
-void test_set_get_all_stmt_attributes(void **unused)
-{
-    SF_STMT *sfstmt = (SF_STMT *)SF_CALLOC(1, sizeof(SF_STMT));
-    memset(sfstmt, 0, sizeof(SF_STMT));
-
-    SF_STATUS status = SF_STATUS_EOF;
-    void* value = NULL;
-
-    // set and get stmt attributes
-    for (sf_stmt_attributes attr : stmtAttributes)
-    {
-        status = snowflake_stmt_set_attr(sfstmt, attr.type, attr.value);
-        if (status != SF_STATUS_SUCCESS)
-        {
-            dump_error(&(sfstmt->error));
-        }
-        assert_int_equal(status, SF_STATUS_SUCCESS);
-
-        status = snowflake_stmt_get_attr(sfstmt, attr.type, &value);
-        if (status != SF_STATUS_SUCCESS)
-        {
-            dump_error(&(sfstmt->error));
-        }
-        assert_int_equal(status, SF_STATUS_SUCCESS);
-        assert_true(value == attr.value);
-
-        if (value)
-        {
-            value = NULL;
-        }
-    }
-}
-
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_set_get_all_attributes),
-    cmocka_unit_test(test_set_get_all_stmt_attributes)
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

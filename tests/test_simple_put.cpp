@@ -5,6 +5,8 @@
 #include <aws/core/Aws.h>
 #include <vector>
 #include <fstream>
+#include <chrono>
+#include <thread>
 #include <snowflake/client.h>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -1428,7 +1430,7 @@ void test_upload_file_to_stage_using_stream(void **unused)
     std::string expectedValue = getLastModifiedFromStage(sfstmt);
 
     // add 1 sec delay between uploads
-    Sleep(1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     std::string dataDir = TestSetup::getDataDir();
     std::string fileName = "small_file.csv";

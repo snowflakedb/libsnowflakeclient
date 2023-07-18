@@ -47,6 +47,17 @@ void test_select_long_data_with_small_initial_buffer(void **unused) {
     assert_int_equal(status, SF_STATUS_EOF);
     free(value);
     value = NULL;
+
+    // Verify the value of SF_STMT_USER_REALLOC_FUNC
+    void* attrValue = NULL;
+    status = snowflake_stmt_get_attr(sfstmt, SF_STMT_USER_REALLOC_FUNC, &attrValue);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_true(attrValue == realloc);
+
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
