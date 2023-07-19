@@ -266,8 +266,8 @@ static int gr_setup(void **unused)
 
 int main(void) {
   const struct CMUnitTest tests[] = {
-    //cmocka_unit_test(test_simple_put_stage_endpoint),
-    //cmocka_unit_test(test_s3_cafile_path_empty),
+    cmocka_unit_test(test_simple_put_stage_endpoint),
+    cmocka_unit_test(test_s3_cafile_path_empty),
     cmocka_unit_test(test_s3_cafile_path_too_long),
     cmocka_unit_test(test_s3_global_cafile_path_too_long)
   };
