@@ -35,6 +35,8 @@ public:
 
     IStorageClient* getS3Client(std::string *command, std::string expectedErrorMsg)
     {
+        m_storageClient = NULL;
+
         assert_true(m_stmtPutGet->parsePutGetCommand(command,
             &response));
 
