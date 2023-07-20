@@ -85,7 +85,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
         throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
             "CA bundle file path too long.");
     }
-    CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caFile);
   }
   else
   {
@@ -96,7 +95,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
             "CA bundle file path too long.");
     }
     caFile = Aws::String(caBundleFile);
-    CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if(caFile.empty()){
     CXX_LOG_ERROR("CA Bundle file empty.");
