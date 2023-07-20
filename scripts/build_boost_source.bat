@@ -30,7 +30,7 @@ if "%platform%"=="X64" (
     set engine_dir=Program Files
 	set bitness=64
 )
-if "%platform%"=="x86" (
+if "%platform%"=="X86" (
     set engine_dir=Program Files (x86^)
 	set bitness=32
 )
@@ -59,19 +59,9 @@ if /I "%dynamic_runtime%"=="on" (
     set runtimelink=static
 )
 
-echo Platform = %platform%
-echo Build_type = %build_type%
-echo VS_version = %vs_version%
-echo Dynamic_runtime = %dynamic_runtime%
-echo InstallDir = %BOOST_INSTALL_DIR%
-echo Bitness = %bitness%
-echo Engine_dir = %engine_dir%
-echo Runtimelink = %runtimelink%
-
-
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
 if %ERRORLEVEL% NEQ 0 goto :error
-b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include toolset=msvc-14.0 --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% cxxflags=/ZH:SHA_256 install
+b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% cxxflags=/ZH:SHA_256 install
 if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
