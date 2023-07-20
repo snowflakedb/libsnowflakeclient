@@ -26,7 +26,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 set curdir=%cd%
 
-if "%platform%"=="x64" (
+if "%platform%"=="X64" (
     set engine_dir=Program Files
 	set bitness=64
 )
@@ -65,6 +65,7 @@ echo VS_version = %vs_version%
 echo Dynamic_runtime = %dynamic_runtime%
 echo InstallDir = %BOOST_INSTALL_DIR%
 echo Bitness = %bitness%
+echo Engine_dir = %engine_dir%
 echo Runtimelink = %runtimelink%
 
 
