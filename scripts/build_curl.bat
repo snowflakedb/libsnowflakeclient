@@ -36,11 +36,11 @@ call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
 
-if "%platform%"=="x64" (    
+if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
     set engine_dir=Program Files
 )
-if "%platform%"=="x86" (
+if /I "%platform%"=="x86" (
     set openssl_target=VC-WIN32
     set engine_dir=Program Files (x86^)
 )

@@ -25,10 +25,10 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 set curdir=%cd%
 
-if "%platform%"=="x64" (
+if /I "%platform%"=="x64" (
     set engine_dir=Program Files
 )
-if "%platform%"=="x86" (
+if /I "%platform%"=="x86" (
     set engine_dir=Program Files (x86^)
 )
 
