@@ -612,6 +612,9 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_CA_BUNDLE_FILE:
             if (CA_BUNDLE_FILE) {
+                if (strlen(CA_BUNDLE_FILE) > size - 1) {
+                    return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+                }
                 sb_strncpy(value, size, CA_BUNDLE_FILE, size);
             }
             break;
@@ -1177,7 +1180,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = &sf->retry_on_curle_couldnt_connect_count;
             break;
         case SF_QUERY_RESULT_TYPE:
-            *value = &sf->query_result_format;
+            *value = sf->query_result_format;
             break;
         case SF_CON_PRIV_KEY_FILE:
             *value = sf->priv_key_file;

@@ -17,7 +17,10 @@ void test_column_as_boolean_helper(sf_bool use_arrow) {
 
     snowflake_query(sfstmt, "select 1, 0, 'some string', '', "
                             "to_boolean('yes'), to_boolean('no'), "
-                            "0.000001, 0.0, NULL;", 0);
+                            "0.000001, 0.0, NULL, "
+                            "as_double(1.79769e+308), as_double(2.225074e-308), "
+                            "32767, -32768, 2147483647, -2147483648, "
+                            "9223372036854775807, -9223372036854775808;", 0);
 
     // Stores the result from the fetch operation
     sf_bool out;
@@ -77,14 +80,58 @@ void test_column_as_boolean_helper(sf_bool use_arrow) {
         }
         assert_int_equal(out, SF_BOOLEAN_FALSE);
 
+        // Conversion from DOUBLE to BOOL
+        if (snowflake_column_as_boolean(sfstmt, 10, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        if (snowflake_column_as_boolean(sfstmt, 11, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        // Conversion from INT16 to BOOL
+        if (snowflake_column_as_boolean(sfstmt, 12, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        if (snowflake_column_as_boolean(sfstmt, 13, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        // Conversion from INT32 to BOOL
+        if (snowflake_column_as_boolean(sfstmt, 14, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        if (snowflake_column_as_boolean(sfstmt, 15, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        // Conversion from INT64 to BOOL
+        if (snowflake_column_as_boolean(sfstmt, 16, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
+        if (snowflake_column_as_boolean(sfstmt, 17, &out)) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(out, SF_BOOLEAN_TRUE);
+
         // Out of bounds column check
-        if (!(status = snowflake_column_as_boolean(sfstmt, 10, &out))) {
+        if (!(status = snowflake_column_as_boolean(sfstmt, 18, &out))) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
 
         if (!(status = snowflake_column_as_boolean(sfstmt, -1, &out))) {
-            dump_error(&(sfstmt->error));
+            dump_error(&(sfstmt->error)); 
         }
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }

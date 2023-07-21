@@ -17,15 +17,14 @@ void Snowflake::Client::Connection::connect() {
 
     switch ((int)status) {
         // TODO implement exception throwing based on return status
-        case 0:
-            break;
-        default:
-            break;
+    case 0:
+        break;
+    default:
+        break;
     }
 }
 
 void Snowflake::Client::Connection::setAttribute(SF_ATTRIBUTE type_, const void *value_) {
     // TODO implement this
 }
-
 

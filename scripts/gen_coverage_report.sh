@@ -76,6 +76,8 @@ cd ../..
 ./test_unit_stream_splitter
 ./test_unit_thread_pool
 ./test_variant
+./test_unit_set_get_attributes
+./test_unit_snowflake_types_to_string
 
 # Please edit here to add AZURE account information for test
 export SNOWFLAKE_TEST_ROLE=
@@ -91,6 +93,7 @@ export CLOUD_PROVIDER=AZURE
 # run put get test with AZURE account
 ./test_parallel_upload_download
 ./test_simple_put
+./test_unit_azure_client
 
 # generate code coverage report
 cd ../..

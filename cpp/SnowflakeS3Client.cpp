@@ -81,11 +81,19 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   if ((transferConfig != nullptr) && (transferConfig->caBundleFile != nullptr))
   {
     caFile = Aws::String(transferConfig->caBundleFile);
+    if (caFile.length() > MAX_PATH - 1) {
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+            "CA bundle file path too long.");
+    }
   }
   else
   {
-    char caBundleFile[MAX_PATH + 1] = {0};
-    snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
+    char caBundleFile[MAX_PATH] = {0};
+    SF_STATUS status = snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
+    if (status == SF_STATUS_ERROR_BUFFER_TOO_SMALL) {
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+            "CA bundle file path too long.");
+    }
     caFile = Aws::String(caBundleFile);
   }
   if(caFile.empty()){

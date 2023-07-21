@@ -196,83 +196,6 @@ public:
 
     // Other member getters ========================================================================
 
-    /**
-     * Gets the format of a Binary field.
-     *
-     * @return The format of a Binary field.
-     */
-    std::string getBinaryOutputFormat();
-
-    /**
-     * Gets the format of a Date field.
-     *
-     * @return The format of a Date field.
-     */
-    std::string getDateOutputFormat();
-
-    /**
-     * Gets the format of a Time field.
-     *
-     * @return The format of a Time field.
-     */
-    std::string getTimeOutputFormat();
-
-    /**
-     * Gets the format of a Timestamp field.
-     *
-     * @return The format of a Timestamp field.
-     */
-    std::string getTimestampOutputFormat();
-
-    /**
-     * Gets the format of a Timestamp LTZ (local time zone) field.
-     *
-     * @return The format of a Timestamp LTZ field.
-     */
-    std::string getTimestampLtzOutputFormat();
-
-    /**
-     * Gets the format of a Timestamp NTZ (no time zone) field.
-     *
-     * @return The format of a Timestamp NTZ field.
-     */
-    std::string getTimestampNtzOutputFormat();
-
-    /**
-     * Gets the format of a Timestamp TZ (time zone) field.
-     *
-     * @return The format of a Timestamp TZ field.
-     */
-    std::string getTimestampTzOutputFormat();
-
-    /**
-     * Gets the format of a column in the result set.
-     *
-     * @return The format of a column in the result set.
-     */
-    QueryResultFormat getQueryResultFormat();
-
-    /**
-     * Gets the total number of chunks that the result set is divided into.
-     *
-     * @return The total number of chunks that the result set is divided into.
-     */
-    size_t getTotalChunkCount();
-
-    /**
-     * Gets the total number of columns in the result set.
-     *
-     * @return The total number of columns in the result set.
-     */
-    size_t getTotalColumnCount();
-
-    /**
-     * Gets the total number of rows in the result set.
-     *
-     * @return The total number of rows in the result set.
-     */
-    size_t getTotalRowCount();
-
     SF_STATUS getError()
     {
         return m_error;
@@ -293,18 +216,6 @@ public:
     }
 
 protected:
-
-    // Helper methods ==============================================================================
-
-    /**
-     * Converts the given time zone offset into a time zone string.
-     *
-     * This string will have the format: ±HH:MM.
-     *
-     * Note: The time offset will never be negative, even for negative offsets.
-     * Instead, UTC+0 is stored as 24*60=1440. Thus, values lie in [0, 2880].
-     */
-    void initTzString();
 
     // Protected members ===========================================================================
 

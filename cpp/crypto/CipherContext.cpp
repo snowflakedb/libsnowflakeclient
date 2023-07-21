@@ -139,41 +139,6 @@ CipherContext &
 CipherContext::operator=(CipherContext &&other) noexcept
 = default;
 
-void CipherContext::reset() noexcept
-{
-  m_pimpl.reset();
-}
-
-CipherContext CipherContext::clone() const
-{
-  CipherContext result;
-  if (m_pimpl)
-  {
-    const Impl &impl = *m_pimpl;
-    result.m_pimpl.reset(
-      new Impl(impl.algo, impl.mode, impl.padding,
-               impl.key, impl.iv,
-               impl.externalDecryptErrors));
-  }
-  return result;
-}
-
-void CipherContext::getStatus(CryptoOperation &op,
-                              size_t &inOff,
-                              size_t &outOff) const noexcept
-{
-  if (m_pimpl)
-  {
-    op = m_pimpl->op;
-    inOff = m_pimpl->inOff;
-    outOff = m_pimpl->outOff;
-  } else
-  {
-    op = CryptoOperation::INVALID;
-    inOff = outOff = -1;
-  }
-}
-
 void CipherContext::initialize(const CryptoOperation op,
                                const size_t offset)
 {
