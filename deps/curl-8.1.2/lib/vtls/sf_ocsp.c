@@ -711,9 +711,21 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
         sf_otd_set_event_sub_type(OCSP_RESPONSE_ENCODE_FAILURE, ocsp_log_data);
         goto end;
       }
+
+      /* send the entire OCSP URL to the cache server */
+      char full_url[4096] = "";
+      strcpy(full_url, host ? host : "");
+      if (port)
+      {
+        strcat(full_url, ":");
+        strcat(full_url, port);
+      }
+      strcat(full_url, path ? path : "");
+
       snprintf(urlbuf, sizeof(urlbuf),
                ocsp_cache_server_retry_url_pattern,
-               host, encoded_ocsp_req_base64);
+               full_url,
+               encoded_ocsp_req_base64);
     }
     else
     {
