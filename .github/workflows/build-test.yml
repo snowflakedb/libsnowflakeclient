@@ -108,6 +108,7 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: AWS
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
@@ -115,6 +116,7 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
@@ -125,6 +127,7 @@ jobs:
               continue-on-error: true
               with:
                 gcov: true
+                verbose: true
                 fail_ci_if_error: true
             - name: Upload coverage reports to Codecov with GitHub Action (take 2)
               id: uploadToCodeCovTake2
@@ -133,4 +136,5 @@ jobs:
               uses: codecov/codecov-action@v3
               with:
                 gcov: true
+                verbose: true
                 fail_ci_if_error: true
