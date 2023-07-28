@@ -86,3 +86,51 @@ jobs:
 #                BUILD_TYPE: ${{ matrix.build_type }}
 #                CLOUD_PROVIDER: ${{ matrix.cloud }}
 #              run: /usr/local/bin/bash ./ci/build_mac.sh
+    build-test-codecov:
+        name: Build-Test-CodeCov-Linux
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                build_type: [ 'Release' ]
+        steps:
+            - uses: actions/checkout@v3
+            - name: Build
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
+              run: ci/build_linux.sh
+            - uses: actions/setup-python@v1
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Test on AWS
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLOUD_PROVIDER: AWS
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci/test_linux.sh
+            - name: Test on Azure
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLOUD_PROVIDER: AZURE
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci/test_linux.sh
+            # codecov action sometimes fails but retry works - until action provides retry let's retry on our own https://github.com/codecov/codecov-action/issues/926
+            - name: Upload coverage reports to Codecov with GitHub Action (take 1)
+              id: uploadToCodeCovTake1
+              uses: codecov/codecov-action@v3
+              continue-on-error: true
+              with:
+                gcov: true
+                fail_ci_if_error: true
+            - name: Upload coverage reports to Codecov with GitHub Action (take 2)
+              id: uploadToCodeCovTake2
+              # only run when take 1 failed
+              if: steps.uploadToCodeCovTake1.outcome == 'failure'
+              uses: codecov/codecov-action@v3
+              with:
+                gcov: true
+                fail_ci_if_error: true
