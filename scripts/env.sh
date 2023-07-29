@@ -16,3 +16,5 @@ eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostri
 
 echo "==> Test Connection Parameters"
 env | grep SNOWFLAKE | grep -v PASSWORD
+
+echo "CLOUD_PROVIDER is set to $CLOUD_PROVIDER"
