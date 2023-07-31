@@ -13,8 +13,12 @@ echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
 
 init_git_variables
-set_parameters $cloud_provider
+set_parameters $CLOUD_PROVIDER
 source $SCRIPTS_DIR/env.sh
+
+echo "=== debug test.sh"
+echo "cloud_provider: $cloud_provider"
+echo "CLOUD_PROVIDER: $CLOUD_PROVIDER"
 
 echo "=== setting test schema"
 if [[ -n "$JOB_NAME" ]]; then
@@ -76,8 +80,21 @@ function drop_schema()
     popd
 }
 
+function check_gcno()
+{
+    echo "=== checking if gcno files exist"
+    local build_type=$1
+    local cmake_dir=cmake-build-$build_type
+    if ls $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
+        echo "gcno files exist"
+    else
+        echo "gcno files do not exist"
+    fi
+}
+
 trap drop_schema EXIT
 
 init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
+check_gcno "$BUILD_TYPE"

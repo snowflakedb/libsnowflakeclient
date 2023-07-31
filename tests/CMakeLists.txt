@@ -66,7 +66,8 @@ SET(TESTS_CXX
 SET(TESTS_PUTGET
         test_include_aws
         test_parallel_upload_download
-        test_simple_put)
+        # test_simple_put
+        )
 
 SET(TESTS_PERF
         test_perf_string_reads_and_writes

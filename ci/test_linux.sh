@@ -29,7 +29,7 @@ docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
-        -e cloud_provider \
+        -e CLOUD_PROVIDER \
         -e SNOWFLAKE_TEST_CA_BUNDLE_FILE \
         -e GIT_COMMIT \
         -e GIT_BRANCH \
@@ -46,3 +46,12 @@ docker run \
         -w /mnt/host \
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/ci/test/test.sh"
+
+echo "=== debug test_linux.sh"
+CMAKE_DIR=cmake-build-$target
+if ls /mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
+    echo "gcno files exist"
+else
+    echo "gcno files do not exist"
+fi
+echo "=== debug test_linux.sh ends"
