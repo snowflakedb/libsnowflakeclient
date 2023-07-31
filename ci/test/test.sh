@@ -16,6 +16,8 @@ init_git_variables
 set_parameters $CLOUD_PROVIDER
 source $SCRIPTS_DIR/env.sh
 
+CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
+
 echo "=== debug test.sh"
 echo "cloud_provider: $cloud_provider"
 echo "CLOUD_PROVIDER: $CLOUD_PROVIDER"
