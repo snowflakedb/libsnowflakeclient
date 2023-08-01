@@ -22,6 +22,21 @@ else
     export GIT_COMMIT=${GITHUB_SHA}
 fi
 
+echo "=== debug test_linux.sh"
+CMAKE_DIR=cmake-build-$target
+if [ -f "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a exist"
+else
+    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a does not exist"
+fi
+
+if [ -f "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a exist"
+else
+    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a does not exist"
+fi
+echo "=== debug test_linux.sh ends"
+
 TARGET_DOCKER_TEST_IMAGE=${TARGET_DOCKER_TEST_IMAGE:-$DRIVER_NAME-centos7-default}
 TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$TARGET_DOCKER_TEST_IMAGE]}"
 docker pull "${TEST_IMAGE_NAME}"

@@ -73,6 +73,7 @@ echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")
 if [[ -z "$GITHUB_ACTIONS" ]] && [[ -z "$BUILD_SOURCE_ONLY" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    echo "=== debug build_libsnowflakeclient.sh: tar cvfz artifacts/$cmake_file_name $CMAKE_DIR"
     pushd $DIR/.. >&/dev/null
         tar cvfz artifacts/$cmake_file_name $CMAKE_DIR
     popd >&/dev/null

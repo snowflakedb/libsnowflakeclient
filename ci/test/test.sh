@@ -19,8 +19,19 @@ source $SCRIPTS_DIR/env.sh
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
 echo "=== debug test.sh"
-echo "cloud_provider: $cloud_provider"
-echo "CLOUD_PROVIDER: $CLOUD_PROVIDER"
+CMAKE_DIR=cmake-build-$target
+if [ -f "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a exist"
+else
+    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a does not exist"
+fi
+
+if [ -f "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a exist"
+else
+    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a does not exist"
+fi
+echo "=== debug test.sh ends"
 
 echo "=== setting test schema"
 if [[ -n "$JOB_NAME" ]]; then

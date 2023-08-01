@@ -69,9 +69,11 @@ function build_component()
     local component_version=$("$component_script" -v)
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         if [[ -z $XP_BUILD ]] ; then  #upload to jenkins if not XP build
+          echo "=== debug: calling upload_to_sfc_jenkins $component_name $component_version $build_type"
           upload_to_sfc_jenkins $component_name $component_version $build_type
         fi
         if [[ "$GIT_BRANCH" == "origin/master" ]]; then
+            echo "=== debug: calling upload_to_sfc_dev1_data $component_name $component_version $build_type"
             upload_to_sfc_dev1_data $component_name $component_version $build_type
         fi
     fi
