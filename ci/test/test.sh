@@ -19,11 +19,11 @@ source $SCRIPTS_DIR/env.sh
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
 echo "=== debug test.sh"
-CMAKE_DIR=cmake-build-$target
-if [ -f "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a" ]; then
-    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a exist"
+CMAKE_DIR=cmake-build-$BUILD_TYPE
+if [ -f "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a exist"
 else
-    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a does not exist"
+    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a does not exist"
 fi
 
 if [ -f "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a" ]; then

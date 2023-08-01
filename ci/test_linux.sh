@@ -23,11 +23,11 @@ else
 fi
 
 echo "=== debug test_linux.sh"
-CMAKE_DIR=cmake-build-$target
-if [ -f "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a" ]; then
-    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a exist"
+CMAKE_DIR=cmake-build-$BUILD_TYPE
+if [ -f "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a" ]; then
+    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a exist"
 else
-    echo "/mnt/host/deps-build/linux/Release/lib/libsnowflakeclient.a does not exist"
+    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a does not exist"
 fi
 
 if [ -f "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a" ]; then
@@ -64,10 +64,10 @@ docker run \
         "/mnt/host/ci/test/test.sh"
 
 echo "=== debug test_linux.sh"
-CMAKE_DIR=cmake-build-$target
+CMAKE_DIR=cmake-build-$BUILD_TYPE
 if ls /mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
-    echo "gcno files exist"
+    echo "/mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
 else
-    echo "gcno files do not exist"
+    echo "/mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
 fi
 echo "=== debug test_linux.sh ends"
