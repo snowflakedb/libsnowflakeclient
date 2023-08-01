@@ -99,9 +99,32 @@ function check_gcno()
     local build_type=$1
     local cmake_dir=cmake-build-$build_type
     if ls $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
-        echo "gcno files exist"
+        echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
     else
-        echo "gcno files do not exist"
+        echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
+    fi
+
+    if ls $CI_TEST_DIR/../../*.gcov 1> /dev/null 2>&1; then
+        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files exist"
+    else
+        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files do not exist"
+    fi
+}
+
+function generate_gcov()
+{
+    echo "=== generating gcov files"
+    local build_type=$1
+    local cmake_dir=cmake-build-$build_type
+
+    pushd $SCRIPTS_DIR
+        gen_gcov.sh
+    popd
+
+    if ls $CI_TEST_DIR/../../*.gcov 1> /dev/null 2>&1; then
+        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files exist"
+    else
+        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files do not exist"
     fi
 }
 
@@ -111,3 +134,4 @@ init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
 check_gcno "$BUILD_TYPE"
+generate_gcov "$BUILD_TYPE"
