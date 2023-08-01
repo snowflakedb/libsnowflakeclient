@@ -1,5 +1,5 @@
 breathe
 ipython
 numpydoc
-sphinx==2.4.4
+sphinx==3.3.0
 sphinx_rtd_theme
