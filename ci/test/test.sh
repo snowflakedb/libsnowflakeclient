@@ -126,8 +126,7 @@ function generate_lcov()
     local cmake_dir=cmake-build-$build_type
 
     pushd $SCRIPTS_DIR
-        chmod +x gen_lcov.sh
-        gen_lcov.sh $cmake_dir
+        sh gen_lcov.sh $cmake_dir
     popd
 }
 
