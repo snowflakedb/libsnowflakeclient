@@ -69,6 +69,8 @@ mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
+echo "=== debug build_libsnowflakeclient.sh: Copy from $DIR/../$CMAKE_DIR/libsnowflakeclient.a to $BUILD_DIR/lib"
+
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")

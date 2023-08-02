@@ -100,6 +100,17 @@ function check_gcno()
     local cmake_dir=cmake-build-$build_type
     if ls $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
         echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
+
+        if [ -e $DEPENDENCY_DIR ]; then
+            echo "$DEPENDENCY_DIR exist"
+                BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
+                rm -rf $BUILD_DIR
+                mkdir $BUILD_DIR/test
+                echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $BUILD_DIR/lib"
+                cp -p $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a $BUILD_DIR/test
+        else
+            echo "$DEPENDENCY_DIR does not exist"
+        fi
     else
         echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
     fi
