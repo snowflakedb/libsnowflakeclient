@@ -126,16 +126,13 @@ jobs:
               uses: codecov/codecov-action@v3
               continue-on-error: true
               with:
-                gcov: true
-                gcov_include: /home/runner/work/libsnowflakeclient/libsnowflakeclient/cmake-build-Release/CMakeFiles/snowflakeclient.dir/lib/*
-                verbose: true
                 fail_ci_if_error: true
+                verbose: true
             - name: Upload coverage reports to Codecov (take 2)
               id: uploadToCodeCovTake2
               # only run when take 1 failed
               if: steps.uploadToCodeCovTake1.outcome == 'failure'
               uses: codecov/codecov-action@v3
               with:
-                gcov: true
-                verbose: true
                 fail_ci_if_error: true
+                verbose: true
