@@ -103,10 +103,10 @@ function check_gcno()
 
         if [ -e $DEPENDENCY_DIR ]; then
             echo "$DEPENDENCY_DIR exist"
-                BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
+                BUILD_DIR=$DEPENDENCY_DIR
                 rm -rf $BUILD_DIR
                 mkdir $BUILD_DIR/test
-                echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $BUILD_DIR/lib"
+                echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $BUILD_DIR/test"
                 cp -p $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a $BUILD_DIR/test
         else
             echo "$DEPENDENCY_DIR does not exist"
