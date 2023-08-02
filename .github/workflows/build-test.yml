@@ -127,7 +127,7 @@ jobs:
               continue-on-error: true
               with:
                 gcov: true
-                gcov_include: cmake-build-Release/CMakeFiles/snowflakeclient.dir/lib,cmake-build-Release/CMakeFiles/snowflakeclient.dir/cpp
+                gcov_include: /home/runner/work/libsnowflakeclient/libsnowflakeclient/cmake-build-Release/CMakeFiles/snowflakeclient.dir/lib
                 verbose: true
                 fail_ci_if_error: true
             - name: Upload coverage reports to Codecov (take 2)
