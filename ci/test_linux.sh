@@ -49,7 +49,6 @@ docker run \
         "/mnt/host/ci/test/test.sh"
 
 echo "=== debug test_linux.sh (after test)"
-
 CMAKE_DIR=cmake-build-$BUILD_TYPE
 if ls /mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
     echo "/mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
@@ -86,3 +85,7 @@ else
 fi
 
 echo "=== debug test_linux.sh (after test) ends"
+
+echo "=== running lcov"
+cd $THIS_DIR/..
+sh scripts/gen_lcov.sh $CMAKE_DIR

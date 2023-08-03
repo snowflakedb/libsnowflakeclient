@@ -136,4 +136,4 @@ init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
 check_gcno "$BUILD_TYPE"
-generate_lcov "$BUILD_TYPE"
+# generate_lcov "$BUILD_TYPE"
