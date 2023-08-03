@@ -101,22 +101,22 @@ function check_gcno()
     if ls $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
         echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
 
-        if [ -e $DEPENDENCY_DIR ]; then
-            echo "$DEPENDENCY_DIR exist"
-                echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $DEPENDENCY_DIR"
-                cp -p $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a $DEPENDENCY_DIR
-        else
-            echo "$DEPENDENCY_DIR does not exist"
-        fi
+        # if [ -e $DEPENDENCY_DIR ]; then
+            # echo "$DEPENDENCY_DIR exist"
+                # echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $DEPENDENCY_DIR"
+                # cp -p $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a $DEPENDENCY_DIR
+        # else
+            # echo "$DEPENDENCY_DIR does not exist"
+        # fi
     else
         echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
     fi
 
-    if ls $CI_TEST_DIR/../../*.gcov 1> /dev/null 2>&1; then
-        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files exist"
-    else
-        echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files do not exist"
-    fi
+    # if ls $CI_TEST_DIR/../../*.gcov 1> /dev/null 2>&1; then
+        # echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files exist"
+    # else
+        # echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files do not exist"
+    # fi
 }
 
 function generate_lcov()
