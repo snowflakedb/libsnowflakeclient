@@ -89,3 +89,4 @@ echo "=== debug test_linux.sh (after test) ends"
 echo "=== running lcov"
 cd $THIS_DIR/..
 sh scripts/gen_lcov.sh $CMAKE_DIR
+echo "=== coverage report is generated"
