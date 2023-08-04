@@ -122,11 +122,11 @@ function check_gcno()
 function generate_lcov()
 {
     echo "=== running lcov"
-    local build_type=$1
-    local cmake_dir=cmake-build-$build_type
+    # local build_type=$1
+    # local cmake_dir=cmake-build-$build_type
 
     pushd $SCRIPTS_DIR
-        sh gen_lcov.sh $cmake_dir
+        bash gen_lcov.sh $BUILD_TYPE
     popd
 }
 
@@ -136,4 +136,4 @@ init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
 check_gcno "$BUILD_TYPE"
-# generate_lcov "$BUILD_TYPE"
+generate_lcov "$BUILD_TYPE"

@@ -19,6 +19,29 @@ else
     echo "$working_dir does not exist"
 fi
 
+echo "=== debug gen_lcov.sh: installing lcov"
+if ! command -v lcov &> /dev/null
+then
+    echo "lcov could not be found, installing now"
+    sudo yum -y install lcov
+else
+    lcov -v
+fi
+
+if ! command -v lcov &> /dev/null
+then
+    echo "lcov could not be found"
+else
+    lcov -v
+fi
+
+if ! command -v gcov &> /dev/null
+then
+    echo "gcov could not be found"
+else
+    gcov -v
+fi
+
 echo "=== debug gen_lcov.sh: running lcov"
 
 lcov -c -d ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/ --output-file coverage_unfiltered.info

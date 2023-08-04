@@ -104,9 +104,9 @@ jobs:
               with:
                 python-version: '3.7'
                 architecture: 'x64'
-            - name: Setup LCOV
-              shell: bash
-              run: sudo apt-get -y install lcov
+            # - name: Setup LCOV
+              # shell: bash
+              # run: sudo apt-get -y install lcov
             - name: Test on AWS
               shell: bash
               env:
@@ -123,11 +123,11 @@ jobs:
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
-            - name: Run LCOV
-              shell: bash
-              env:
-                  BUILD_TYPE: ${{ matrix.build_type }}
-              run: scripts/gen_lcov.sh
+            # - name: Run LCOV
+              # shell: bash
+              # env:
+                  # BUILD_TYPE: ${{ matrix.build_type }}
+              # run: scripts/gen_lcov.sh
             # codecov action sometimes fails but retry works - until action provides retry let's retry on our own https://github.com/codecov/codecov-action/issues/926
             - name: Upload coverage reports to Codecov (take 1)
               id: uploadToCodeCovTake1
