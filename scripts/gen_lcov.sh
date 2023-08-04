@@ -23,7 +23,7 @@ echo "=== debug gen_lcov.sh: installing lcov"
 if ! command -v lcov &> /dev/null
 then
     echo "lcov could not be found, installing now"
-    sudo yum -y install lcov
+    yum -y install lcov
 else
     lcov -v
 fi
