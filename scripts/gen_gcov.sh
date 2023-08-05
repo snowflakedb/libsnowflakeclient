@@ -35,6 +35,6 @@ for f in cpp/*/*; do
 done
 
 # remove third-parties source code
-rm *"#deps-build#"*.gcov
-rm *"#lib#cJSON.c.gcov"
-rm *"#usr#"*.gcov
+rm *\#deps-build#*.gcov
+rm *\#lib#cJSON.c.gcov
+rm *\#usr#*.gcov
