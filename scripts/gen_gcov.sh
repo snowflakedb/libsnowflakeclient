@@ -33,3 +33,8 @@ done
 for f in cpp/*/*; do
     gcov --preserve-paths --object-directory ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/${f}.gcno $f
 done
+
+# remove third-parties source code
+rm *"#deps-build#"*.gcov
+rm *"#lib#cJSON.c.gcov"
+rm *"#usr#"*.gcov
