@@ -426,6 +426,7 @@ void test_transfer_exception_download(void **unused)
   if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
   {
     if (cenv && !strncmp(cenv, "AZURE", 5) && !strncmp(codecovenv, "1", 1)) {
+      std::cout << "Not running test_transfer_exception_download because it fails on github when CLOUD_PROVIDER=AZURE and CLIENT_CODE_COVERAGE=1" << std::endl;
       errno = 0;
       return;
     }

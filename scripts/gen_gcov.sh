@@ -12,21 +12,20 @@ cd $THIS_DIR/..
 if ! command -v lcov &> /dev/null
 then
     echo "lcov could not be found"
-else
-    lcov -v
+    yum install -y lcov
 fi
 
-if ! command -v gcov &> /dev/null
-then
-    echo "gcov could not be found"
-else
-    gcov -v
-    gcc -v
-fi
+lcov -v
+gcov -v
+gcc -v
 
 echo "=== debug gen_gcov.sh: running gcov"
 
 for f in lib/*; do
+    gcov --preserve-paths --object-directory ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/${f}.gcno $f
+done
+
+for f in cpp/*; do
     gcov --preserve-paths --object-directory ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/${f}.gcno $f
 done
 

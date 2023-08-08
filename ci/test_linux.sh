@@ -50,23 +50,6 @@ docker run \
 
 echo "=== debug test_linux.sh (after test)"
 CMAKE_DIR=cmake-build-$BUILD_TYPE
-# if ls /mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
-    # echo "/mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
-# else
-    # echo "/mnt/host/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
-# fi
-
-# if ls $BASE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
-    # echo "$BASE_DIR/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
-# else
-    # echo "$BASE_DIR/$CMAKE_DIR/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
-# fi
-
-# if ls $BASE_DIR/*.gcov 1> /dev/null 2>&1; then
-    # echo "$BASE_DIR/*.gcov files exist"
-# else
-    # echo "$BASE_DIR/*.gcov files do not exist"
-# fi
 
 working_dir=/home/runner/work/libsnowflakeclient/libsnowflakeclient
 if [ -e $working_dir ]; then
@@ -76,8 +59,3 @@ else
     echo "$working_dir does not exist"
 fi
 echo "=== debug test_linux.sh (after test) ends"
-
-# echo "=== running lcov"
-# cd $THIS_DIR/..
-# sh scripts/gen_lcov.sh $CMAKE_DIR
-# echo "=== coverage report is generated"

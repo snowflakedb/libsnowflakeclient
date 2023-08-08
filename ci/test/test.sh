@@ -93,51 +93,11 @@ function drop_schema()
     popd
 }
 
-function check_gcno()
-{
-    echo "=== checking if gcno files exist"
-    local build_type=$1
-    local cmake_dir=cmake-build-$build_type
-    if ls $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno 1> /dev/null 2>&1; then
-        echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files exist"
-
-        # if [ -e $DEPENDENCY_DIR ]; then
-            # echo "$DEPENDENCY_DIR exist"
-                # echo "Copy from $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a to $DEPENDENCY_DIR"
-                # cp -p $CI_TEST_DIR/../../$cmake_dir/libsnowflakeclient.a $DEPENDENCY_DIR
-        # else
-            # echo "$DEPENDENCY_DIR does not exist"
-        # fi
-    else
-        echo "=== debug test.sh: $CI_TEST_DIR/../../$cmake_dir/CMakeFiles/snowflakeclient.dir/lib/*.gcno files do not exist"
-    fi
-
-    # if ls $CI_TEST_DIR/../../*.gcov 1> /dev/null 2>&1; then
-        # echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files exist"
-    # else
-        # echo "=== debug test.sh: $CI_TEST_DIR/../../*.gcov files do not exist"
-    # fi
-}
-
 function generate_gcov()
 {
     echo "=== running gcov"
-    # local build_type=$1
-    # local cmake_dir=cmake-build-$build_type
-
     pushd $SCRIPTS_DIR
         bash gen_gcov.sh $BUILD_TYPE
-    popd
-}
-
-function generate_lcov()
-{
-    echo "=== running lcov"
-    # local build_type=$1
-    # local cmake_dir=cmake-build-$build_type
-
-    pushd $SCRIPTS_DIR
-        bash gen_lcov.sh $BUILD_TYPE
     popd
 }
 
@@ -146,5 +106,4 @@ trap drop_schema EXIT
 init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
-check_gcno "$BUILD_TYPE"
 generate_gcov "$BUILD_TYPE"
