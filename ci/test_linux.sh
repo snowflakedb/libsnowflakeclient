@@ -47,15 +47,3 @@ docker run \
         -w /mnt/host \
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/ci/test/test.sh"
-
-echo "=== debug test_linux.sh (after test)"
-CMAKE_DIR=cmake-build-$BUILD_TYPE
-
-working_dir=/home/runner/work/libsnowflakeclient/libsnowflakeclient
-if [ -e $working_dir ]; then
-    find $working_dir
-    echo "=== done: $working_dir"
-else
-    echo "$working_dir does not exist"
-fi
-echo "=== debug test_linux.sh (after test) ends"

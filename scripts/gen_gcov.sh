@@ -9,18 +9,6 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $THIS_DIR/..
 
-if ! command -v lcov &> /dev/null
-then
-    echo "lcov could not be found"
-    yum install -y lcov
-fi
-
-lcov -v
-gcov -v
-gcc -v
-
-echo "=== debug gen_gcov.sh: running gcov"
-
 for f in lib/*; do
     gcov --preserve-paths --object-directory ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/${f}.gcno $f
 done
@@ -33,7 +21,10 @@ for f in cpp/*/*; do
     gcov --preserve-paths --object-directory ./cmake-build-$BUILD_TYPE/CMakeFiles/snowflakeclient.dir/${f}.gcno $f
 done
 
-# remove third-parties source code
-rm *\#deps-build#*.gcov
-rm *\#lib#cJSON.c.gcov
-rm *\#usr#*.gcov
+# Remove third-parties source code
+if rm *\#deps-build#*.gcov 2> /dev/null ||
+   rm *\#lib#cJSON.c.gcov 2> /dev/null ||
+   rm *\#usr#*.gcov 2> /dev/null
+then
+    echo "Removed third-parties source code gcov files"
+fi
