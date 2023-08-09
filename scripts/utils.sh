@@ -64,11 +64,9 @@ function zip_file()
     local build_type=$3
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
-    echo "=== debug utils.sh: zip_file $zip_file_name"
 
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
-        echo "=== debug utils.sh: zip_file $f"
         rm -f $f
         pushd $DEPENDENCY_DIR/
             echo tar cfz $f $component_name

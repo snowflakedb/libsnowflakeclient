@@ -18,21 +18,6 @@ source $SCRIPTS_DIR/env.sh
 
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
-echo "=== debug test.sh"
-CMAKE_DIR=cmake-build-$BUILD_TYPE
-if [ -f "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a" ]; then
-    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a exist"
-else
-    echo "/mnt/host/deps-build/linux/Release/libsnowflakeclient/lib/libsnowflakeclient.a does not exist"
-fi
-
-if [ -f "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a" ]; then
-    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a exist"
-else
-    echo "/mnt/host/$CMAKE_DIR/libsnowflakeclient.a does not exist"
-fi
-echo "=== debug test.sh ends"
-
 echo "=== setting test schema"
 if [[ -n "$JOB_NAME" ]]; then
     export SNOWFLAKE_TEST_SCHEMA=JENKINS_${JOB_NAME//-/_}_${BUILD_NUMBER}
