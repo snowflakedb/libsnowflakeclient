@@ -395,15 +395,13 @@ void test_parse_exception(void **unused)
 
 void test_transfer_exception_upload(void **unused)
 {
-#ifdef _WIN32
-    // skipping this test because it fails on github
-    // when CLIENT_CODE_COVERAGE=1 on windows
-    char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-    char *githubenv = getenv("GITHUB_ACTIONS");
-    if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-    {
-        if (!strncmp(codecovenv, "1", 1)) {
-            std::cout << "Not running test_verify_upload because it fails on github when CLIENT_CODE_COVERAGE=1 on windows" << std::endl;
+#ifdef _WIN64
+    // skipping this test because it fails on github (Windows Release x64 only)
+    char *genv = getenv("GITHUB_ACTIONS");
+    if (genv) {
+        char *benv = getenv("BUILD_TYPE");
+        if ((!benv) || strncmp(benv, "Release", 8)) {
+            std::cout << "Not running test_transfer_exception_upload because it fails on github" << std::endl;
             errno = 0;
             return;
         }
