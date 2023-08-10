@@ -400,7 +400,7 @@ void test_transfer_exception_upload(void **unused)
     char *genv = getenv("GITHUB_ACTIONS");
     if (genv) {
         char *benv = getenv("BUILD_TYPE");
-        if ((!benv) || strncmp(benv, "Release", 8)) {
+        if ((!benv) || !strncmp(benv, "Release", 8)) {
             std::cout << "Not running test_transfer_exception_upload because it fails on github" << std::endl;
             errno = 0;
             return;
