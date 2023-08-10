@@ -311,10 +311,7 @@ void test_simba(void **) {
 
 int main() {
     const struct CMUnitTest tests[] = {
-      // Disable OOB test for now due to the certificate issue on telemetry endpoint
-      // Have sdk issue 376 to follow up and will revisit this when it's solved
-      // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/376
-//            cmocka_unit_test(test_oob),
+            cmocka_unit_test(test_oob),
             cmocka_unit_test(test_dsn),
             cmocka_unit_test(test_simba),
     };
