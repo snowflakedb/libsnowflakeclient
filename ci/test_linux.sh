@@ -29,7 +29,7 @@ docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
-        -e cloud_provider \
+        -e CLOUD_PROVIDER \
         -e SNOWFLAKE_TEST_CA_BUNDLE_FILE \
         -e GIT_COMMIT \
         -e GIT_BRANCH \

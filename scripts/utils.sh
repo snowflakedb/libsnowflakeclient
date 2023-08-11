@@ -173,22 +173,22 @@ function download_from_sfc_jenkins()
 
 function set_parameters()
 {
-    local cloud_provider=$(echo $1 | tr '[:upper:]' '[:lower:]')
-    cloud_provider=${cloud_provider:-aws}
+    local cloud_provider=$(echo $1 | tr '[:lower:]' '[:upper:]')
+    CLOUD_PROVIDER=${cloud_provider:-AWS}
 
     [[ -z "$PARAMETERS_SECRET" ]] && echo "Set PARAMETERS_SECRET" && exit 1
 
-    if [[ "$cloud_provider" == "aws" ]]; then
+    if [[ "$CLOUD_PROVIDER" == "AWS" ]]; then
         echo "== AWS"
         gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_aws_capi.json.gpg
-    elif [[ "$cloud_provider" == "azure" ]]; then
-        echo "== Azure"
+    elif [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
+        echo "== AZURE"
         gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_azure_capi.json.gpg
-    elif [[ "$cloud_provider" == "gcp" ]]; then
+    elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         echo "== GCP"
         gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_gcp_capi.json.gpg
     else
-        echo "Set cloud_provider environment variable: [aws, azure, gcp]"
+        echo "Set CLOUD_PROVIDER environment variable: [AWS, AZURE, GCP]"
         exit 1
     fi
 }

@@ -13,7 +13,7 @@ echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
 
 init_git_variables
-set_parameters $cloud_provider
+set_parameters $CLOUD_PROVIDER
 source $SCRIPTS_DIR/env.sh
 
 echo "=== setting test schema"
