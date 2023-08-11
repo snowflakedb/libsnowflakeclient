@@ -91,4 +91,7 @@ trap drop_schema EXIT
 init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
-generate_gcov "$BUILD_TYPE"
+
+if [[ $CLIENT_CODE_COVERAGE -eq 1 ]]; then
+    generate_gcov "$BUILD_TYPE"
+fi
