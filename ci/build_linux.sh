@@ -37,6 +37,7 @@ docker run \
         -e GITHUB_SHA \
         -e GITHUB_EVENT_NAME \
         -e GITHUB_REF \
+        -e CLIENT_CODE_COVERAGE \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/ci/build/build.sh"

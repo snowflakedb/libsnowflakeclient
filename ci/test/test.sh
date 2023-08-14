@@ -16,6 +16,8 @@ init_git_variables
 set_parameters $CLOUD_PROVIDER
 source $SCRIPTS_DIR/env.sh
 
+CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
+
 echo "=== setting test schema"
 if [[ -n "$JOB_NAME" ]]; then
     export SNOWFLAKE_TEST_SCHEMA=JENKINS_${JOB_NAME//-/_}_${BUILD_NUMBER}
