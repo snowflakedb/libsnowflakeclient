@@ -418,20 +418,6 @@ void test_transfer_exception_upload(void **unused)
 
 void test_transfer_exception_download(void **unused)
 {
-  // Skip this test when CLIENT_CODE_COVERAGE=1 and CLOUD_PROVIDER=AZURE
-  // It fails on linux due to docker issue
-  char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-  {
-    if (cenv && !strncmp(cenv, "AZURE", 5) && !strncmp(codecovenv, "1", 1)) {
-      std::cout << "Not running test_transfer_exception_download because it fails on linux when CLIENT_CODE_COVERAGE=1 and CLOUD_PROVIDER=AZURE" << std::endl;
-      errno = 0;
-      return;
-    }
-  }
-
   MockedExceptionStorageClient * client = new MockedExceptionStorageClient();
   StorageClientFactory::injectMockedClient(client);
 
