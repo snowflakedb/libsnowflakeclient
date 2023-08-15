@@ -371,19 +371,6 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload(void **unused)
 {
-    // skipping this test because it fails on github
-    // when CLIENT_CODE_COVERAGE=1
-    char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-    char *githubenv = getenv("GITHUB_ACTIONS");
-    if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-    {
-        if (!strncmp(codecovenv, "1", 1)) {
-            std::cout << "Not running test_large_reupload because it fails on github when CLIENT_CODE_COVERAGE=1" << std::endl;
-            errno = 0;
-            return;
-        }
-    }
-
 	char *cenv = getenv("CLOUD_PROVIDER");
 	if (cenv && !strncmp(cenv, "AWS", 4)) {
         errno = 0;
@@ -440,19 +427,6 @@ void test_large_reupload(void **unused)
  */
 void test_verify_upload(void **unused)
 {
-    // skipping this test because it fails on github
-    // when CLIENT_CODE_COVERAGE=1
-    char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-    char *githubenv = getenv("GITHUB_ACTIONS");
-    if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-    {
-        if (!strncmp(codecovenv, "1", 1)) {
-            std::cout << "Not running test_verify_upload because it fails on github when CLIENT_CODE_COVERAGE=1" << std::endl;
-            errno = 0;
-            return;
-        }
-    }
-
     if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
@@ -769,19 +743,6 @@ void test_simple_get(void **unused)
 
 void test_large_get(void **unused)
 {
-  // skipping this test because it fails on github
-  // when CLIENT_CODE_COVERAGE=1
-  char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-  {
-      if (!strncmp(codecovenv, "1", 1)) {
-          std::cout << "Not running test_large_get because it fails on github when CLIENT_CODE_COVERAGE=1" << std::endl;
-          errno = 0;
-          return;
-      }
-  }
-
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
     if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
@@ -798,19 +759,6 @@ void test_large_get(void **unused)
 
 void test_large_get_threshold(void **unused)
 {
-  // skipping this test because it fails on github
-  // when CLIENT_CODE_COVERAGE=1
-  char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-  {
-      if (!strncmp(codecovenv, "1", 1)) {
-          std::cout << "Not running test_large_get_threshold because it fails on github when CLIENT_CODE_COVERAGE=1" << std::endl;
-          errno = 0;
-          return;
-      }
-  }
-
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
     if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {

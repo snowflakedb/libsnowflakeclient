@@ -395,19 +395,6 @@ void test_parse_exception(void **unused)
 
 void test_transfer_exception_upload(void **unused)
 {
-#ifdef _WIN64
-    // skipping this test because it fails on github (Windows Release x64 only)
-    char *genv = getenv("GITHUB_ACTIONS");
-    if (genv) {
-        char *benv = getenv("BUILD_TYPE");
-        if ((!benv) || !strncmp(benv, "Release", 8)) {
-            std::cout << "Not running test_transfer_exception_upload because it fails on github" << std::endl;
-            errno = 0;
-            return;
-        }
-    }
-#endif
-
   MockedExceptionStorageClient * client = new MockedExceptionStorageClient();
   StorageClientFactory::injectMockedClient(client);
 
@@ -431,20 +418,6 @@ void test_transfer_exception_upload(void **unused)
 
 void test_transfer_exception_download(void **unused)
 {
-  // skipping this test because it fails on github
-  // when CLOUD_PROVIDER=AZURE and CLIENT_CODE_COVERAGE=1
-  char *codecovenv = getenv("CLIENT_CODE_COVERAGE");
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if (codecovenv && strlen(codecovenv) > 0 && githubenv && strlen(githubenv) > 0)
-  {
-    if (cenv && !strncmp(cenv, "AZURE", 5) && !strncmp(codecovenv, "1", 1)) {
-      std::cout << "Not running test_transfer_exception_download because it fails on github when CLOUD_PROVIDER=AZURE and CLIENT_CODE_COVERAGE=1" << std::endl;
-      errno = 0;
-      return;
-    }
-  }
-
   MockedExceptionStorageClient * client = new MockedExceptionStorageClient();
   StorageClientFactory::injectMockedClient(client);
 
