@@ -78,8 +78,20 @@ function drop_schema()
     popd
 }
 
+function generate_gcov()
+{
+    echo "=== running gcov"
+    pushd $SCRIPTS_DIR
+        bash gen_gcov.sh $BUILD_TYPE
+    popd
+}
+
 trap drop_schema EXIT
 
 init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
+
+if [[ $CLIENT_CODE_COVERAGE -eq 1 ]]; then
+    generate_gcov "$BUILD_TYPE"
+fi
