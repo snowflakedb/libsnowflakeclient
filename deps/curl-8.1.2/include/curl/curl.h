@@ -2217,6 +2217,9 @@ typedef enum {
   /* Snowflake options. True if soft fail is enabled */
   CURLOPT(CURLOPT_SSL_SF_OCSP_FAIL_OPEN, CURLOPTTYPE_LONG, 324),
 
+  /* Snowflake options. True if OOB telemetry is enabled. Defaults to false */
+  CURLOPT(CURLOPT_SSL_SF_OOB_ENABLE, CURLOPTTYPE_LONG, 325),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 

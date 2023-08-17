@@ -1552,6 +1552,7 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
   conn->ssl_config.ssl_options = data->set.ssl.primary.ssl_options;
   conn->ssl_config.sf_ocsp_check = data->set.ssl.primary.sf_ocsp_check;
   conn->ssl_config.sf_ocsp_failopen = data->set.ssl.primary.sf_ocsp_failopen;
+  conn->ssl_config.sf_oob_enable = data->set.ssl.primary.sf_oob_enable;
 #ifndef CURL_DISABLE_PROXY
   conn->proxy_ssl_config.verifystatus =
     data->set.proxy_ssl.primary.verifystatus;
@@ -1562,6 +1563,8 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
     data->set.proxy_ssl.primary.sf_ocsp_check;
   conn->proxy_ssl_config.sf_ocsp_failopen =
     data->set.proxy_ssl.primary.sf_ocsp_failopen;
+  conn->proxy_ssl_config.sf_oob_enable =
+    data->set.proxy_ssl.primary.sf_oob_enable;
 #endif
   conn->ip_version = data->set.ipver;
   conn->connect_only = data->set.connect_only;

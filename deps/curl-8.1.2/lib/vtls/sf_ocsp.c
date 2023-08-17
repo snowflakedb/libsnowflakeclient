@@ -155,7 +155,8 @@ static CURLcode checkOneCert(X509 *cert, X509 *issuer,
                       SF_FAILOPEN_STATUS ocsp_fail_open,
                       struct connectdata *conn,
 					  struct Curl_easy *data,
-                      SF_OTD *ocsp_log_data);
+                      SF_OTD *ocsp_log_data,
+                      bool oob_enable);
 static char* ensureCacheDir(char* cache_dir, struct Curl_easy* data);
 static char* mkdirIfNotExists(char* dir, struct Curl_easy* data);
 static void writeOCSPCacheFile(struct Curl_easy* data);
@@ -186,7 +187,7 @@ static char * getOCSPPostReqData(const char *hname, OCSP_CERTID *cid,
                                  struct Curl_easy *data);
 static int checkSSDStatus(void);
 static void termCertOCSP();
-static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data);
+static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, bool oob_enable);
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
 static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
@@ -1605,7 +1606,7 @@ end:
 }
 
 
-static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data)
+static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, bool oob_enable)
 {
   char *ocsp_log_data = NULL;
   ocsp_log_data = generateOCSPTelemetryData(ocsp_log);
@@ -1615,7 +1616,10 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data)
               "responder. Details:%s",ocsp_log_data);
   if (ocsp_log_data)
   {
-    sendOOBevent(ocsp_log_data);
+    if (oob_enable)
+    {
+      sendOOBevent(ocsp_log_data);
+    }
     if(ocsp_log_data) cJSON_free(ocsp_log_data);
   }
 }
@@ -1660,7 +1664,8 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
                       SF_FAILOPEN_STATUS ocsp_fail_open,
                       struct connectdata *conn,
 					  struct Curl_easy *data,
-                      SF_OTD *ocsp_log_data)
+                      SF_OTD *ocsp_log_data,
+                      bool oob_enable)
 {
   CURLcode result;
   SF_CERT_STATUS sf_cert_status = CERT_STATUS_INVALID;
@@ -1763,7 +1768,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
     if (ocsp_fail_open == ENABLED && sf_cert_status != CERT_STATUS_REVOKED)
     {
       sf_otd_set_fail_open_mode(1, ocsp_log_data);
-      printOCSPFailOpenWarning(ocsp_log_data, data);
+      printOCSPFailOpenWarning(ocsp_log_data, data, oob_enable);
       result = CURLE_OK;
     }
     else
@@ -1773,7 +1778,10 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
       ocsp_log_str = generateOCSPTelemetryData(ocsp_log_data);
       if (ocsp_log_str)
       {
-        sendOOBevent(ocsp_log_str);
+        if (oob_enable)
+        {
+          sendOOBevent(ocsp_log_str);
+        }
         infof(data, ocsp_log_str);
         if(ocsp_log_str) cJSON_free(ocsp_log_str);
       }
@@ -2250,13 +2258,15 @@ static void termCertOCSP()
  * @param ocsp_failopen_cnxn_param connection param setting for
  * failopen. This should be a binary value - either True or False
  * There is no option for this to be in a NOTSET state.
+ * @param oob_enable param setting for enable oob telemetry.
  * @return Curl return code
  */
 SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
                                   struct Curl_easy *data,
-								  STACK_OF(X509) *ch,
-								  X509_STORE *st,
-								  int ocsp_failopen_cnxn_param)
+                                  STACK_OF(X509) *ch,
+                                  X509_STORE *st,
+                                  int ocsp_failopen_cnxn_param,
+                                  bool oob_enable)
 {
   int numcerts;
   int i;
@@ -2316,7 +2326,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
     X509* cert = sk_X509_value(ch, i);
     X509* issuer = sk_X509_value(ch, i+1);
 
-    rs = checkOneCert(cert, issuer, ch, st, ocsp_fail_open, conn, data, &ocsp_log_data);
+    rs = checkOneCert(cert, issuer, ch, st, ocsp_fail_open, conn, data, &ocsp_log_data, oob_enable);
     if (rs != CURLE_OK)
     {
       goto end;

@@ -2033,6 +2033,15 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
               data->set.ssl.primary.sf_ocsp_failopen;
     }
     break;
+  case CURLOPT_SSL_SF_OOB_ENABLE:
+    data->set.ssl.primary.sf_oob_enable = (0 != va_arg(param, long)) ?
+                                         TRUE : FALSE;
+    /* Update the current connection ssl_config. */
+    if(data->conn) {
+      data->conn->ssl_config.sf_oob_enable =
+        data->set.ssl.primary.sf_oob_enable;
+    }
+    break;
   case CURLOPT_SSL_CTX_FUNCTION:
     /*
      * Set a SSL_CTX callback

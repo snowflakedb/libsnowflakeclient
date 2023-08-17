@@ -19,7 +19,8 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
                                   struct Curl_easy *data,
                                   STACK_OF(X509) *ch,
                                   X509_STORE *st,
-                                  int ocsp_failopen);
+                                  int ocsp_failopen,
+                                  bool oob_enable);
 
 
 #endif
