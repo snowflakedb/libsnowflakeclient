@@ -141,7 +141,7 @@ static void dieIfNotSuccess(CURLcode ret)
 }
 
 static void
-checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *proxy, char *no_proxy, int oob_enable)
+checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *proxy, char *no_proxy, int oob_enable, int failopen)
 {
     CURL *ch;
     struct configData config;
@@ -187,7 +187,16 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
     else
     {
         dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OOB_ENABLE, 0));
-	}
+    }
+
+    if (failopen != 0)
+    {
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 1));
+    }
+    else
+    {
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 0));
+    }
 
     dieIfNotSuccess(curl_easy_perform(ch));
 
@@ -253,25 +262,25 @@ int main(int argc, char **argv)
             getenv("HOME"));
 
     printf("===> Case 1: whatever default\n");
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
 
     printf("===> Case 2: Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
 
     printf("===> Case 3: Delete file cache and Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
 
     printf("===> Case 4: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
 
     printf("===> Case 5: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
 
     if (getenv("all_proxy") || getenv("https_proxy") ||
         getenv("http_proxy"))
@@ -285,14 +294,14 @@ int main(int argc, char **argv)
     setenv("http_proxy", "a.b.c", 1);
     setenv("https_proxy", "a.b.c", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, "", "", 0);
+    checkCertificateRevocationStatus(host, port, cacert, "", "", 0, 0);
 
     printf("===> Case 7: Delete file cache and overwrite invalid proxy with no_proxy\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
     setenv("http_proxy", "a.b.c", 1);
     setenv("https_proxy", "a.b.c", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, "a.b.c", "*", 0);
+    checkCertificateRevocationStatus(host, port, cacert, "a.b.c", "*", 0, 0);
 
     unsetenv("http_proxy");
     unsetenv("https_proxy");
@@ -305,13 +314,15 @@ int main(int argc, char **argv)
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     // use random IP address so it will get connection timeout
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", "http://10.24.123.89/ocsp_response_cache.json", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 1);
+    unlink(cache_file);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 1, 1);
 
     printf("===> Case 10: Delete file cache with invalid cache server URL to test OOB disabled\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     // use random IP address so it will get connection timeout
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", "http://10.24.123.89/ocsp_response_cache.json", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0);
+    unlink(cache_file);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 1);
 
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
