@@ -4100,7 +4100,7 @@ static CURLcode servercert(struct Curl_cfilter *cf,
       return CURLE_SSL_INVALIDCERTSTATUS;
     }
 
-    result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen);
+    result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
     if (result)
     {
       X509_free(backend->server_cert);

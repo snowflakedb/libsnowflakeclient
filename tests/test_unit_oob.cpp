@@ -114,7 +114,7 @@ void test_oob(void **) {
                     "AccountAdmin",
                     "0",
                     "dev",
-                    "0"
+                    "2" // ingore timeout as the test endpoint has quite long delay up to 20+ seconds and we reduce oob timeout to 5 seconds.
             },
             // Should fail to send message.
             {
@@ -184,7 +184,7 @@ void test_dsn(void **) {
     const std::vector<std::string> SF_SENSITIVE_KEYS = std::vector<std::string>{"UID", "PWD", "TOKEN", "PASSCODE", "PRIV_KEY_FILE_PWD"};
 
     SF_PAIR dsnParameters[] = {
-            {"SERVER", "snowflake.local.snowflakecomputing.com"},
+            {"SERVER", "sfctest0.snowflakecomputing.com"},
             {"PORT", "443"},
             {"ACCOUNT", "testaccount"},
             {"Uid", "snowman"},
@@ -276,7 +276,7 @@ void test_simba(void **) {
         kvPairs[i] = KeyValuePair{simbaParameters[i].key, simbaParameters[i].val};
     }
     setOOBSimbaInfo(kvPairs, count);
-    setoobConnectioninfo("snowflake.local.snowflakecomputing.com","","","","","","","","","",0);
+    setoobConnectioninfo("sfctest0.snowflakecomputing.com","","","","","","","","","",0);
 
     char connStr[] = "/session/v1/login-request?requestId=c4d53986-ee7a-4f01-9fac-2604653e9c41&request_guid=abbab0e5-5c77-4102-9d29-d44efde6a050&databaseName=testdb&schemaName=testschema&warehouse=regress";
     char url[1024] = {0};

@@ -183,8 +183,9 @@ int sendOOBevent(char *event) {
            field, so we provide one */
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "sfoob/1.0");
 
-        /* complete within 10 seconds */
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 100L);
+        /* collect telemetry but don't want to cause any performance issue,
+           give up if can't finish in 5 seconds */
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
 
         /* Set CAbundle */
         getCabundle(caBundle, 512);
