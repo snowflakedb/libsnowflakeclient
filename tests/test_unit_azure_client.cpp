@@ -360,6 +360,7 @@ int main(void) {
 #endif
     const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
     if (cloud_provider && (strcmp(cloud_provider, "AZURE") != 0)) {
+        std::cout << "Not running azure client unit test. Cloud provider is " << cloud_provider << std::endl;
         return 0;
     }
 

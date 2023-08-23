@@ -29,7 +29,7 @@ docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u $USER) \
-        -e cloud_provider \
+        -e CLOUD_PROVIDER \
         -e SNOWFLAKE_TEST_CA_BUNDLE_FILE \
         -e GIT_COMMIT \
         -e GIT_BRANCH \
@@ -43,6 +43,7 @@ docker run \
         -e GITHUB_ACTIONS \
         -e GITHUB_SHA \
         -e RUNNER_TRACKING_ID \
+        -e CLIENT_CODE_COVERAGE \
         -w /mnt/host \
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/ci/test/test.sh"

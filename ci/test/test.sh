@@ -13,8 +13,10 @@ echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
 
 init_git_variables
-set_parameters $cloud_provider
+set_parameters $CLOUD_PROVIDER
 source $SCRIPTS_DIR/env.sh
+
+CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
 echo "=== setting test schema"
 if [[ -n "$JOB_NAME" ]]; then
@@ -76,8 +78,20 @@ function drop_schema()
     popd
 }
 
+function generate_gcov()
+{
+    echo "=== running gcov"
+    pushd $SCRIPTS_DIR
+        bash gen_gcov.sh $BUILD_TYPE
+    popd
+}
+
 trap drop_schema EXIT
 
 init_python
 create_schema
 test_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$BUILD_TYPE"
+
+if [[ $CLIENT_CODE_COVERAGE -eq 1 ]]; then
+    generate_gcov "$BUILD_TYPE"
+fi
