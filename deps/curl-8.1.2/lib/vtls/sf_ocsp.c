@@ -712,18 +712,21 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
         goto end;
       }
 
-      /* send the entire OCSP URL to the cache server */
+      // send the entire OCSP URL to the cache server
       char full_url[4096] = "";
       strcpy(full_url, host ? host : "");
 
-      /* The port component is optional and defaults to 443 if the scheme is https, else 80 */
-      if (port && atoi(port) > 0)
-      {
-          strcat(full_url, ":");
-          strcat(full_url, port);
-      }
+      // default port numbers will not be added to the url
+      // (443 if the scheme is https, else 80)
+      if (port &&
+          atoi(port) > 0 &&
+          ((use_ssl && atoi(port) != 443) || (!use_ssl && atoi(port) != 80)))
+    {
+        strcat(full_url, ":");
+        strcat(full_url, port);
+    }
 
-      /* path is guaranteed to begin with a / character */
+      // path is guaranteed to begin with a / character
       if (path && (strlen(path) > 1))
       {
           strcat(full_url, path);
