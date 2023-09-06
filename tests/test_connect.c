@@ -72,6 +72,28 @@ void test_connect_with_full_parameters(void **unused) {
     snowflake_term(sf); // purge snowflake context
 }
 
+/**
+* Test connection with disableQueryContextCache
+*/
+void test_connect_with_disable_qcc(void **unused) {
+  SF_CONNECT *sf = setup_snowflake_connection();
+
+  sf_bool disable_qcc = SF_BOOLEAN_TRUE;
+  void* value = NULL;
+  snowflake_set_attribute(sf, SF_CON_DISABLE_QUERY_CONTEXT_CACHE, &disable_qcc);
+
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+    }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  snowflake_get_attribute(sf, SF_CON_DISABLE_QUERY_CONTEXT_CACHE, &value);
+  assert_true(*((sf_bool *)value) == SF_BOOLEAN_TRUE);
+
+  snowflake_term(sf); // purge snowflake context
+}
+
 void setCacheFile(char *cache_file)
 {
 #ifdef __linux__

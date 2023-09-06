@@ -117,6 +117,17 @@ CJSON_PUBLIC(double) snowflake_cJSON_GetNumberValue(const cJSON * const item)
     return item->valuedouble;
 }
 
+CJSON_PUBLIC(uint64) snowflake_cJSON_GetUint64Value(const cJSON * const item)
+{
+  if ((!snowflake_cJSON_IsNumber(item)) ||
+      (item->valuedouble < 0) || (item->valuedouble > SF_UINT64_MAX))
+  {
+    return 0;
+  }
+
+  return item->valueuint64;
+}
+
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
 #if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 7) || (CJSON_VERSION_PATCH != 15)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
@@ -373,6 +384,12 @@ loop_end:
         item->valueint = (int)number;
     }
 
+    // parse again to get accurate uint number
+    if ((number >= 0) && (number <= SF_UINT64_MAX))
+    {
+      item->valueuint64 = strtoull((const char*)number_c_string, (char**)&after_end, 0);
+    }
+
     item->type = cJSON_Number;
 
     input_buffer->offset += (size_t)(after_end - number_c_string);
@@ -558,8 +575,13 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
         return false;
     }
 
+    // try print as uint64 first to avoid losing precision
+    if ((d == floor(d)) && (d > 0) && (d < SF_UINT64_MAX))
+    {
+      length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%llu", item->valueuint64);
+    }
     /* This checks for NaN and Infinity */
-    if (isnan(d) || isinf(d))
+    else if (isnan(d) || isinf(d))
     {
         length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "null");
     }
@@ -2135,6 +2157,18 @@ CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddNumberToObject(cJSON * const object, con
     return NULL;
 }
 
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddUint64ToObject(cJSON * const object, const char * const name, const uint64 number)
+{
+  cJSON *number_item = snowflake_cJSON_CreateUint64(number);
+  if (add_item_to_object(object, name, number_item, &global_hooks, false))
+  {
+    return number_item;
+  }
+
+  snowflake_cJSON_Delete(number_item);
+  return NULL;
+}
+
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
 {
     cJSON *string_item = snowflake_cJSON_CreateString(string);
@@ -2441,9 +2475,27 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNumber(double num)
         {
             item->valueint = (int)num;
         }
+
+        // set uint64 value as well if in range
+        if ((num >= 0) && (num <= SF_UINT64_MAX))
+        {
+          item->valueuint64 = (uint64)num;
+        }
     }
 
     return item;
+}
+
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateUint64(uint64 num)
+{
+  cJSON *item = snowflake_cJSON_New_Item(&global_hooks);
+  if (item)
+  {
+    item->type = cJSON_Number;
+    snowflake_cJSON_SetUint64Value(item, num);
+  }
+
+  return item;
 }
 
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateString(const char *string)
