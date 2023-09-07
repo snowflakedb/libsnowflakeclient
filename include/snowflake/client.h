@@ -232,6 +232,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_CON_RETRY,
     SF_CON_PROXY,
     SF_CON_NO_PROXY,
+    SF_CON_DISABLE_QUERY_CONTEXT_CACHE,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -317,6 +318,14 @@ typedef struct SF_CONNECT {
     // Proxy
     char * proxy;
     char * no_proxy;
+
+    // Query Context Cache
+    // the flag of whether to disable qcc, false by default
+    sf_bool qcc_disable;
+    // the cache capacity
+    uint64 qcc_capacity;
+    // the pointer of qcc instance
+    void * qcc;
 
     // Session info
     char *token;

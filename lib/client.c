@@ -18,6 +18,7 @@
 #include "error.h"
 #include "chunk_downloader.h"
 #include "authenticator.h"
+#include "query_context_cache.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
@@ -185,6 +186,10 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                     strcmp(sf->query_result_format, value->valuestring) != 0) {
                     alloc_buffer_and_copy(&sf->query_result_format, value->valuestring);
                 }
+            }
+            else if (strcmp(name->valuestring, "QUERY_CONTEXT_CACHE_SIZE") == 0) {
+                sf->qcc_capacity = snowflake_cJSON_GetUint64Value(value);
+                qcc_set_capacity(sf, sf->qcc_capacity);
             }
         }
     }
@@ -510,6 +515,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
+    log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
 
     return SF_STATUS_SUCCESS;
 }
@@ -687,6 +693,10 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
         sf->retry_on_connect_count = 0;
+
+        sf->qcc_capacity = QCC_CAPACITY_DEF;
+        sf->qcc_disable = SF_BOOLEAN_FALSE;
+        sf->qcc = NULL;
     }
 
     return sf;
@@ -721,6 +731,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
+
+    qcc_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
@@ -899,6 +911,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
+            qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, QCC_RSP_KEY));
             _mutex_unlock(&sf->mutex_parameters);
             if (ret > 0) {
                 goto cleanup;
@@ -1081,6 +1094,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_NO_PROXY:
             alloc_buffer_and_copy(&sf->no_proxy, value);
             break;
+        case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
+            sf->qcc_disable = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1202,6 +1218,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_NO_PROXY:
             *value = sf->no_proxy;
+            break;
+        case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
+            *value = &sf->qcc_disable;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1967,6 +1986,14 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         /* binding parameters if exists */
       snowflake_cJSON_AddItemToObject(body, "bindings", bindings);
     }
+
+    // send query context cache in query request
+    cJSON * qcc = qcc_serialize(sfstmt->connection);
+    if (qcc != NULL)
+    {
+      snowflake_cJSON_AddItemToObject(body, QCC_REQ_KEY, qcc);
+    }
+
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
@@ -2091,6 +2118,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 /* Set other parameters. Ignore the status */
                 _set_current_objects(sfstmt, data);
                 _set_parameters_session_info(sfstmt->connection, data);
+                qcc_deserialize(sfstmt->connection, snowflake_cJSON_GetObjectItem(data, QCC_RSP_KEY));
                 _mutex_unlock(&sfstmt->connection->mutex_parameters);
                 int64 stmt_type_id;
                 if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {

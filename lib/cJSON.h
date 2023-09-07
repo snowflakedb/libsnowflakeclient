@@ -84,6 +84,7 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 #define CJSON_VERSION_PATCH 15
 
 #include <stddef.h>
+#include "snowflake/basic_types.h"
 
 /* cJSON Types: */
 #define cJSON_Invalid (0)
@@ -115,6 +116,8 @@ typedef struct cJSON
     char *valuestring;
     /* writing to valueint is DEPRECATED, use cJSON_SetNumberValue instead */
     int valueint;
+    /* The item's number as uint64, if type==cJSON_Number */
+    uint64 valueuint64;
     /* The item's number, if type==cJSON_Number */
     double valuedouble;
 
@@ -180,6 +183,7 @@ CJSON_PUBLIC(const char *) snowflake_cJSON_GetErrorPtr(void);
 /* Check item type and return its value */
 CJSON_PUBLIC(char *) snowflake_cJSON_GetStringValue(const cJSON * const item);
 CJSON_PUBLIC(double) snowflake_cJSON_GetNumberValue(const cJSON * const item);
+CJSON_PUBLIC(uint64) snowflake_cJSON_GetUint64Value(const cJSON * const item);
 
 /* These functions check the type of an item */
 CJSON_PUBLIC(cJSON_bool) snowflake_cJSON_IsInvalid(const cJSON * const item);
@@ -199,6 +203,7 @@ CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateTrue(void);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateFalse(void);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateBool(cJSON_bool boolean);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateNumber(double num);
+CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateUint64(uint64 num);
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateString(const char *string);
 /* raw json */
 CJSON_PUBLIC(cJSON *) snowflake_cJSON_CreateRaw(const char *raw);
@@ -268,13 +273,15 @@ CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddTrueToObject(cJSON * const object, const
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddFalseToObject(cJSON * const object, const char * const name);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number);
+CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddUint64ToObject(cJSON * const object, const char * const name, const uint64 number);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddObjectToObject(cJSON * const object, const char * const name);
 CJSON_PUBLIC(cJSON*) snowflake_cJSON_AddArrayToObject(cJSON * const object, const char * const name);
 
 /* When assigning an integer value, it needs to be propagated to valuedouble too. */
-#define snowflake_cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
+#define snowflake_cJSON_SetIntValue(object, number) ((object) ? (object)->valueuint64 = (object)->valueint = (object)->valuedouble = (number) : (number))
+#define snowflake_cJSON_SetUint64Value(object, number) ((object) ? ((object)->valuedouble = (number), (object)->valueuint64 = (number)) : (number))
 /* helper for the snowflake_cJSON_SetNumberValue macro */
 CJSON_PUBLIC(double) snowflake_cJSON_SetNumberHelper(cJSON *object, double number);
 #define snowflake_cJSON_SetNumberValue(object, number) ((object != NULL) ? snowflake_cJSON_SetNumberHelper(object, (double)number) : (number))
