@@ -39,6 +39,7 @@ SET(TESTS_C
         test_native_timestamp
         test_get_query_result_response
         test_get_describe_only_query_result
+        test_stmt_functions
 #        test_stats
         )
 
