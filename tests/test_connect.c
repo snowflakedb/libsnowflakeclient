@@ -94,6 +94,28 @@ void test_connect_with_disable_qcc(void **unused) {
   snowflake_term(sf); // purge snowflake context
 }
 
+/**
+* Test connection with includeRetryContext
+*/
+void test_connect_with_include_retry_context(void **unused) {
+  SF_CONNECT *sf = setup_snowflake_connection();
+
+  sf_bool include_retry_context = SF_BOOLEAN_FALSE;
+  void* value = NULL;
+  snowflake_set_attribute(sf, SF_CON_INCLUDE_RETRY_CONTEXT, &include_retry_context);
+
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  snowflake_get_attribute(sf, SF_CON_INCLUDE_RETRY_CONTEXT, &value);
+  assert_true(*((sf_bool *)value) == SF_BOOLEAN_FALSE);
+
+  snowflake_term(sf); // purge snowflake context
+}
+
 void setCacheFile(char *cache_file)
 {
 #ifdef __linux__

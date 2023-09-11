@@ -10,6 +10,7 @@ include_directories(
 SET(TESTS_C
         test_unit_connect_parameters
         test_unit_logger
+        test_unit_retry_context
         test_connect
         test_connect_negative
         test_bind_params

@@ -122,6 +122,9 @@ typedef struct DECORRELATE_JITTER_BACKOFF {
 typedef struct RETRY_CONTEXT {
     // Number of retries
     uint64 retry_count;
+    // http error code as retry reason, 0 for the cases that http error code
+    // not available such as network error
+    uint32 retry_reason;
     // Retry timeout in number of seconds.
     uint64 retry_timeout;
     // Time to sleep in seconds
@@ -437,7 +440,8 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,
-                             const char *proxy, const char *no_proxy);
+                             const char *proxy, const char *no_proxy,
+                             sf_bool include_retry_context);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -524,6 +528,19 @@ RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout);
  * @return Returns number of seconds to sleep.
  */
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx);
+
+/**
+* Update request url with retry retryCount, retryReason and renewed request guid.
+* Only update urls generated with encode_url(), which have request guid at the end.
+* As a side effect will set context's retry_reason to 0 as the initial value for
+* the next retry attempt.
+*
+* @param retry_ctx Retry Context object, where the retry count and retry reason from.
+* @param url The request url to be updated.
+* @return SF_BOOLEAN_TRUE if succeeded, otherwise SF_BOOLEAN_FALSE.
+*/
+sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx, char* url,
+                                     sf_bool include_retry_context);
 
 /**
  * Convenience function to set tokens in Snowflake Connect object from cJSON blob. Returns success/failure.

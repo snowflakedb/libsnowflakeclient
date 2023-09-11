@@ -27,6 +27,13 @@
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
 
+#define URL_PARAM_REQEST_GUID "request_guid="
+#define URL_PARAM_RETRY_COUNT "retryCount="
+#define URL_PARAM_RETRY_REASON "retryReason="
+// having extra size in url buffer for retry context or something else could
+// be added in the future.
+#define URL_EXTRA_SIZE 256
+
 #define URL_QUERY_DELIMITER "?"
 #define URL_PARAM_DELIM "&"
 
