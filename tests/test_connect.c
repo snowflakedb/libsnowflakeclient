@@ -95,14 +95,14 @@ void test_connect_with_disable_qcc(void **unused) {
 }
 
 /**
-* Test connection with includeRetryContext
+* Test connection with includeRetryReason
 */
 void test_connect_with_include_retry_context(void **unused) {
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  sf_bool include_retry_context = SF_BOOLEAN_FALSE;
+  sf_bool include_retry_reason = SF_BOOLEAN_FALSE;
   void* value = NULL;
-  snowflake_set_attribute(sf, SF_CON_INCLUDE_RETRY_CONTEXT, &include_retry_context);
+  snowflake_set_attribute(sf, SF_CON_INCLUDE_RETRY_REASON, &include_retry_reason);
 
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -110,7 +110,7 @@ void test_connect_with_include_retry_context(void **unused) {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  snowflake_get_attribute(sf, SF_CON_INCLUDE_RETRY_CONTEXT, &value);
+  snowflake_get_attribute(sf, SF_CON_INCLUDE_RETRY_REASON, &value);
   assert_true(*((sf_bool *)value) == SF_BOOLEAN_FALSE);
 
   snowflake_term(sf); // purge snowflake context

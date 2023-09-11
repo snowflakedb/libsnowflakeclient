@@ -337,7 +337,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
                           retried_count, is_renew, renew_injection,
-                          sf->proxy, sf->no_proxy, sf->include_retry_context) ||
+                          sf->proxy, sf->no_proxy, sf->include_retry_reason) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -1082,7 +1082,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
 
 sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
                                      char* url,
-                                     sf_bool include_retry_context) {
+                                     sf_bool include_retry_reason) {
     char *request_guid_ptr = strstr(url, URL_PARAM_REQEST_GUID);
     if (!request_guid_ptr)
     {
@@ -1113,30 +1113,30 @@ sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
       return SF_BOOLEAN_TRUE;
     }
 
-    if (include_retry_context == SF_BOOLEAN_TRUE)
+    char * retry_context_ptr = strstr(url, URL_PARAM_RETRY_COUNT);
+    if (!retry_context_ptr)
     {
-      char * retry_context_ptr = strstr(url, URL_PARAM_RETRY_COUNT);
-      if (!retry_context_ptr)
-      {
-        // original url that doesn't have retry context yet, replace start from guid
-        retry_context_ptr = request_guid_ptr;
-      }
+      // original url that doesn't have retry context yet, replace start from guid
+      retry_context_ptr = request_guid_ptr;
+    }
 
-      // retry count
-      SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_RETRY_COUNT);
-      SPRINT_TO_BUFFER(retry_context_ptr, "%llu", retry_ctx->retry_count);
-      SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_DELIM);
+    // retry count
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_RETRY_COUNT);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%llu", retry_ctx->retry_count);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_DELIM);
 
+    if (include_retry_reason == SF_BOOLEAN_TRUE)
+    {
       // retry reason
       SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_RETRY_REASON);
       SPRINT_TO_BUFFER(retry_context_ptr, "%lu", retry_ctx->retry_reason);
       SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_DELIM);
       // clear retry reason for the next retry attempt
       retry_ctx->retry_reason = 0;
-
-      // add request guid after retry context
-      request_guid_ptr = retry_context_ptr;
     }
+
+    // add request guid after retry context
+    request_guid_ptr = retry_context_ptr;
 
     SPRINT_TO_BUFFER(request_guid_ptr, "%s", URL_PARAM_REQEST_GUID);
     if (uuid4_generate(request_guid_ptr)) {

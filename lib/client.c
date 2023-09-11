@@ -516,7 +516,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
     log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
-    log_debug("include_retry_context: %s", sf->include_retry_context ? "true" : "false");
+    log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
 
     return SF_STATUS_SUCCESS;
 }
@@ -662,7 +662,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
-        sf->include_retry_context = SF_BOOLEAN_TRUE;
+        sf->include_retry_reason = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
         sf->service_name = NULL;
         sf->query_result_format = NULL;
@@ -1100,8 +1100,8 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
             sf->qcc_disable = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
             break;
-        case SF_CON_INCLUDE_RETRY_CONTEXT:
-            sf->include_retry_context = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
+        case SF_CON_INCLUDE_RETRY_REASON:
+            sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1228,8 +1228,8 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
             *value = &sf->qcc_disable;
             break;
-        case SF_CON_INCLUDE_RETRY_CONTEXT:
-            *value = &sf->include_retry_context;
+        case SF_CON_INCLUDE_RETRY_REASON:
+            *value = &sf->include_retry_reason;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,

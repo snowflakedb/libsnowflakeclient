@@ -441,7 +441,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,
                              const char *proxy, const char *no_proxy,
-                             sf_bool include_retry_context);
+                             sf_bool include_retry_reason);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -540,7 +540,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx);
 * @return SF_BOOLEAN_TRUE if succeeded, otherwise SF_BOOLEAN_FALSE.
 */
 sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx, char* url,
-                                     sf_bool include_retry_context);
+                                     sf_bool include_retry_reason);
 
 /**
  * Convenience function to set tokens in Snowflake Connect object from cJSON blob. Returns success/failure.

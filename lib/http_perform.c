@@ -158,7 +158,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool renew_injection,
                              const char *proxy,
                              const char *no_proxy,
-                             sf_bool include_retry_context) {
+                             sf_bool include_retry_reason) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -198,7 +198,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         buffer.size = 0;
 
         // Generate new request guid, if request guid exists in url
-        if (SF_BOOLEAN_TRUE != retry_ctx_update_url(&curl_retry_ctx, url, include_retry_context)) {
+        if (SF_BOOLEAN_TRUE != retry_ctx_update_url(&curl_retry_ctx, url, include_retry_reason)) {
             log_error("Failed to update request url");
             break;
         }
