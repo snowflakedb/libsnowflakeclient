@@ -217,7 +217,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                       non_json_resp, DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT,
                       SF_BOOLEAN_TRUE, error, insecure_mode, 0,
                       0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
-                      proxy, no_proxy)) {
+                      proxy, no_proxy, SF_BOOLEAN_FALSE)) {
         // Error set in perform function
         goto cleanup;
     }

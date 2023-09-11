@@ -233,6 +233,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_PROXY,
     SF_CON_NO_PROXY,
     SF_CON_DISABLE_QUERY_CONTEXT_CACHE,
+    SF_CON_INCLUDE_RETRY_REASON,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -326,6 +327,9 @@ typedef struct SF_CONNECT {
     uint64 qcc_capacity;
     // the pointer of qcc instance
     void * qcc;
+
+    // whether to include retry reason in retry for query request
+    sf_bool include_retry_reason;
 
     // Session info
     char *token;

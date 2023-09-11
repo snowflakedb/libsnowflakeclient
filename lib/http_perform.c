@@ -29,8 +29,6 @@
 #include "constants.h"
 #include "client_int.h"
 
-#define REQUEST_GUID_KEY_SIZE 13
-
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
      char nohex);
@@ -159,7 +157,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool *is_renew,
                              sf_bool renew_injection,
                              const char *proxy,
-                             const char *no_proxy) {
+                             const char *no_proxy,
+                             sf_bool include_retry_reason) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -177,6 +176,7 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     RETRY_CONTEXT curl_retry_ctx = {
             retried_count ? *retried_count : 0,      //retry_count
+            0,      // retry reason
             network_timeout,
             1,      // time to sleep
             &djb    // Decorrelate jitter
@@ -192,21 +192,14 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     //TODO set error buffer
 
-    // Find request GUID in the supplied URL
-    char *request_guid_ptr = strstr(url, "request_guid=");
-    // Set pointer to the beginning of the UUID string if request GUID exists
-    if (request_guid_ptr) {
-        request_guid_ptr = request_guid_ptr + REQUEST_GUID_KEY_SIZE;
-    }
-
     do {
         // Reset buffer since this may not be our first rodeo
         SF_FREE(buffer.buffer);
         buffer.size = 0;
 
         // Generate new request guid, if request guid exists in url
-        if (request_guid_ptr && uuid4_generate_non_terminated(request_guid_ptr)) {
-            log_error("Failed to generate new request GUID");
+        if (SF_BOOLEAN_TRUE != retry_ctx_update_url(&curl_retry_ctx, url, include_retry_reason)) {
+            log_error("Failed to update request url");
             break;
         }
 
@@ -418,6 +411,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_STATUS_ERROR_RETRY,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
+              } else {
+                curl_retry_ctx.retry_reason = (uint32)http_code;
               }
               if (retry &&
                   ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
