@@ -174,7 +174,7 @@ void test_oob(void **) {
         free(oobevent);
         oobevent = nullptr;
         // take timeout as expected result as we reduce oob timeout to 5 seconds.
-        assert_true((rc = atoi(testcase[evnt].rc)) || (rc == 2));
+        assert_true((rc == atoi(testcase[evnt].rc)) || (rc == 2));
     }
 }
 
@@ -253,7 +253,7 @@ void test_dsn(void **) {
     free(oobevent);
     oobevent = nullptr;
     // take timeout as expected result as we reduce oob timeout to 5 seconds.
-    assert_true((rc = 0) || (rc == 2));
+    assert_true((rc == 0) || (rc == 2));
 }
 
 void test_simba(void **) {
@@ -309,7 +309,7 @@ void test_simba(void **) {
     free(oobevent);
     oobevent = nullptr;
     // take timeout as expected result as we reduce oob timeout to 5 seconds.
-    assert_true((rc = 0) || (rc == 2));
+    assert_true((rc == 0) || (rc == 2));
 }
 
 int main() {
