@@ -7,7 +7,7 @@
 #include "utils/test_setup.h"
 
 void test_sfqid(void **unused) {
-	char qid[SF_UUID4_LEN] = '\0';
+    char qid[SF_UUID4_LEN] = '\0';
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -23,17 +23,17 @@ void test_sfqid(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-	// returns valid query in success case
-	sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
-	assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
+    // returns valid query in success case
+    sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
+    assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
 
     SF_STMT *sfstmt = snowflake_stmt(sf);
     status = snowflake_query(sfstmt, "select * from table_not_exists;", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-	// returns valid query in fail case
-	sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
-	assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
+    // returns valid query in fail case
+    sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
+    assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
