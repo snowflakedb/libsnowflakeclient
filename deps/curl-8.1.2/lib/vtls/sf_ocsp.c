@@ -95,6 +95,9 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 // Max number of connection retry attempts for OCSP Cache Server
 #define OCSP_CACHE_SERVER_MAX_RETRY 1
 
+// Max length of buffer
+#define MAX_BUFFER_LENGTH 4096
+
 typedef enum
 {
     INVALID,
@@ -211,9 +214,9 @@ static int ocsp_cache_server_enabled = 0;
 
 static char* ocsp_cache_server_url_env = NULL;
 
-static char ocsp_cache_server_url[4096] = "";
+static char ocsp_cache_server_url[MAX_BUFFER_LENGTH] = "";
 
-static char ocsp_cache_server_retry_url_pattern[4096];
+static char ocsp_cache_server_retry_url_pattern[MAX_BUFFER_LENGTH];
 
 /* Mutex */
 int _mutex_init(SF_MUTEX_HANDLE *lock) {
@@ -645,7 +648,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   CURLcode result;
   int use_ssl;
   char *host = NULL, *port = NULL, *path = NULL;
-  char urlbuf[4096];
+  char urlbuf[MAX_BUFFER_LENGTH];
   int ocsp_retry_cnt = 0;
 
   char *ocsp_post_data = NULL;
@@ -711,9 +714,31 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
         sf_otd_set_event_sub_type(OCSP_RESPONSE_ENCODE_FAILURE, ocsp_log_data);
         goto end;
       }
+
+      // send the entire OCSP URL to the cache server
+      char full_url[MAX_BUFFER_LENGTH] = "";
+      strcpy(full_url, host ? host : "");
+
+      // default port numbers will not be added to the url
+      // (443 if the scheme is https, else 80)
+      if (port &&
+          atoi(port) > 0 &&
+          ((use_ssl && atoi(port) != 443) || (!use_ssl && atoi(port) != 80)))
+    {
+        strcat(full_url, ":");
+        strcat(full_url, port);
+    }
+
+      // path is guaranteed to begin with a / character
+      if (path && (strlen(path) > 1))
+      {
+          strcat(full_url, path);
+      }
+
       snprintf(urlbuf, sizeof(urlbuf),
                ocsp_cache_server_retry_url_pattern,
-               host, encoded_ocsp_req_base64);
+               full_url,
+               encoded_ocsp_req_base64);
     }
     else
     {
@@ -771,7 +796,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
 
     while(ocsp_retry_cnt < max_retry)
     {
-      char error_msg[4096];
+      char error_msg[MAX_BUFFER_LENGTH];
       CURLcode res = curl_easy_perform(ocsp_curl);
 
       if (res != CURLE_OK)
