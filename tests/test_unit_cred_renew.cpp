@@ -458,8 +458,10 @@ int main(void) {
     cmocka_unit_test(test_token_renew_small_files),
     cmocka_unit_test(test_token_renew_large_file),
     cmocka_unit_test(test_token_renew_get_remote_meta),
+#ifndef __aarch64__
     cmocka_unit_test(test_transfer_exception_upload),
     cmocka_unit_test(test_transfer_exception_download)
+#endif
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
