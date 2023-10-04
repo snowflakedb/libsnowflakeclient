@@ -18,6 +18,7 @@ else()
 endif()
 
 if (LINUX)
+    add_compile_options(-m32)
     # Profiler for Linux
     if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
         add_compile_options(-pg)
