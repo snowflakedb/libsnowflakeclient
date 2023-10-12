@@ -32,7 +32,7 @@ FILE *tool_stderr;
 
 void tool_init_stderr(void)
 {
-  /* !checksrc! disable STDERR 1 */
+  /* !check-src! disable STDERR 1 */
   tool_stderr = stderr;
 }
 
@@ -59,13 +59,13 @@ void tool_set_stderr_file(struct GlobalConfig *global, char *filename)
 
   /* freopen the actual stderr (stdio.h stderr) instead of tool_stderr since
      the latter may be set to stdout. */
-  /* !checksrc! disable STDERR 1 */
+  /* !check-src! disable STDERR 1 */
   fp = freopen(filename, FOPEN_WRITETEXT, stderr);
   if(!fp) {
     /* stderr may have been closed by freopen. there is nothing to be done. */
     DEBUGASSERT(0);
     return;
   }
-  /* !checksrc! disable STDERR 1 */
+  /* !check-src! disable STDERR 1 */
   tool_stderr = stderr;
 }
