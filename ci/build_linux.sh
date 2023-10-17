@@ -17,6 +17,12 @@ else
     export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
     export GIT_BRANCH=origin/$(basename ${GITHUB_REF})
     export GIT_COMMIT=${GITHUB_SHA}
+    # remove unnecssary files to save disk space on github
+    # base on the workaround provided here:
+    # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+    sudo rm -rf /usr/share/dotnet
+    sudo rm -rf /opt/ghc
+    sudo rm -rf "/usr/local/share/boost"
 fi
 
 BUILD_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$DOCKER_MARK]}"
