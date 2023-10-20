@@ -66,6 +66,8 @@ std::vector<sf_int_attributes> intAttributes = {
     { SF_CON_JWT_CNXN_WAIT_TIME, 987 },
     { SF_CON_MAX_CON_RETRY, 6 },
     { SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT, 5 },
+    { SF_CON_LOGIN_TIMEOUT, 456 },
+    { SF_CON_MAX_CON_RETRY, 8 },
 };
 
 // unit test for snowflake_set_attribute and snowflake_get_attribute for all SF_ATTRIBUTE
@@ -160,14 +162,30 @@ void test_set_get_all_attributes(void **unused)
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
+        // for SF_CON_MAX_CON_RETRY and SF_CON_LOGIN_TIMEOUT application
+        // can only increase the default value.
         if (attr.type == SF_CON_MAX_CON_RETRY ||
             attr.type == SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT)
         {
-            assert_int_equal(*((int8 *)value), attr.value);
+            if ((attr.type == SF_CON_MAX_CON_RETRY) && (attr.value < 7))
+            {
+                assert_int_equal(*((int8 *)value), 7);
+            }
+            else
+            {
+                assert_int_equal(*((int8 *)value), attr.value);
+            }
         }
         else
         {
-            assert_int_equal(*((int64 *)value), attr.value);
+            if ((attr.type == SF_CON_LOGIN_TIMEOUT) && (attr.value < 300))
+            {
+                assert_int_equal(*((int64 *)value), 300);
+            }
+            else
+            {
+                assert_int_equal(*((int64 *)value), attr.value);
+            }
         }
 
         if (value)

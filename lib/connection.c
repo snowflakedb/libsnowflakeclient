@@ -160,11 +160,11 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();
-    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_ID", int_app_name);
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_ID_KEY, int_app_name);
 #ifdef MOCK_ENABLED
-    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", "0.0.0");
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, "0.0.0");
 #else
-    snowflake_cJSON_AddStringToObject(data, "CLIENT_APP_VERSION", int_app_version);
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, int_app_version);
 #endif
     snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
     snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
@@ -330,14 +330,28 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     // Set to 0
     memset(query_code, 0, QUERYCODE_LEN);
 
+    int64 timeout;
+    sf_bool is_login_request = is_login_url(url);
+    if (SF_BOOLEAN_TRUE == is_login_request)
+    {
+      timeout = sf->login_timeout;
+      if (!add_appinfo_header(sf, header, error)) {
+        return ret;
+      }
+    }
+    else
+    {
+      timeout = sf->network_timeout;
+    }
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error,
+                          timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
                           retried_count, is_renew, renew_injection,
-                          sf->proxy, sf->no_proxy, sf->include_retry_reason) ||
+                          sf->proxy, sf->no_proxy, sf->include_retry_reason,
+                          is_login_request) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -462,7 +476,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
                           0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
-                          sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE) ||
+                          sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -542,7 +556,9 @@ decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
     {
       sleep = 4;
     }
-    return ((uint32)(sleep/2) + (uint32) (rand() % (sleep/2)));
+    // (sleep/2) + (random from 0 to sleep) = random from sleep/2 to sleep + sleep/2
+    // = sleep +-50%
+    return ((uint32)(sleep/2) + (uint32) (rand() % (sleep + 1)));
 }
 
 char * STDCALL encode_url(CURL *curl,
@@ -874,7 +890,7 @@ json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
 
 sf_bool STDCALL is_retryable_http_code(long int code) {
     return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
-            code == 408) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            code == 408 || code == 429) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 
 sf_bool STDCALL request(SF_CONNECT *sf,
@@ -1006,7 +1022,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     // Successful call, non-null json, successful success code, data object and session token must all be present
     // otherwise set an error
     if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error,
-                        0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
+                        0, sf->retry_on_connect_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
         !json) {
         // Do nothing, let error propogate up from post call
         log_error("Curl call failed during renew session");
@@ -1063,21 +1079,21 @@ void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx) {
     SF_FREE(retry_ctx);
 }
 
-RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout) {
-    RETRY_CONTEXT *retry_ctx = (RETRY_CONTEXT *) SF_CALLOC(1,
-                                                           sizeof(RETRY_CONTEXT));
-    retry_ctx->retry_timeout = timeout;
-    retry_ctx->retry_count = 0;
-    retry_ctx->retry_reason = 0;
-    retry_ctx->sleep_time = 1;
-    retry_ctx->djb = decorrelate_jitter_init(1, 16);
-    return retry_ctx;
-}
-
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
-    retry_ctx->sleep_time = decorrelate_jitter_next_sleep(retry_ctx->djb, retry_ctx->sleep_time * 2);
+  uint32 jittered_sleep = decorrelate_jitter_next_sleep(retry_ctx->djb, retry_ctx->sleep_time);
+    retry_ctx->sleep_time = retry_ctx->sleep_time * 2;
     ++retry_ctx->retry_count;
-    return retry_ctx->sleep_time;
+
+    // limit the sleep time within retry timeout
+    uint32 time_elapsed = time(NULL) - retry_ctx->start_time;
+    if (time_elapsed >= retry_ctx->retry_timeout)
+    {
+      // retry timeout is checked before calling retry_ctx_next_sleep
+      // so we just get bad timing here, sleep 1 seconds so the timeout
+      // can be caught right after
+      return 1;
+    }
+    return uimin(jittered_sleep, (uint32)(retry_ctx->retry_timeout - time_elapsed));
 }
 
 sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
@@ -1178,6 +1194,8 @@ SF_HEADER* STDCALL sf_header_create() {
     sf_header->header_direct_query_token = NULL;
     sf_header->header_service_name = NULL;
     sf_header->header_token = NULL;
+    sf_header->header_app_id = NULL;
+    sf_header->header_app_version = NULL;
     sf_header->use_application_json_accept_type = SF_BOOLEAN_FALSE;
     sf_header->renew_session = SF_BOOLEAN_FALSE;
     return sf_header;
@@ -1191,6 +1209,73 @@ void STDCALL sf_header_destroy(SF_HEADER *sf_header) {
     SF_FREE(sf_header->header_token);
     SF_FREE(sf_header->header_service_name);
     SF_FREE(sf_header->header_direct_query_token);
+    SF_FREE(sf_header->header_app_id);
+    SF_FREE(sf_header->header_app_version);
     curl_slist_free_all(sf_header->header);
     SF_FREE(sf_header);
+}
+
+sf_bool is_login_url(const char * url)
+{
+  if (!url)
+  {
+    return SF_BOOLEAN_FALSE;
+  }
+
+  if (strstr(url, SESSION_URL) ||
+      strstr(url, RENEW_SESSION_URL) ||
+      strstr(url, AUTHENTICATOR_URL))
+  {
+    return SF_BOOLEAN_TRUE;
+  }
+
+  return SF_BOOLEAN_FALSE;
+}
+
+sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *error) {
+  sf_bool ret = SF_BOOLEAN_FALSE;
+  size_t header_appid_size;
+  size_t header_appver_size;
+
+  // Generate header tokens
+  header_appid_size = strlen(HEADER_CLIENT_APP_ID_FORMAT) - 2 +
+    strlen(sf->application_name) + 1;
+  header_appver_size = strlen(HEADER_CLIENT_APP_VERSION_FORMAT) - 2 +
+    strlen(sf->application_version) + 1;
+
+  // check NULL first to ensure the header won't be added twice
+  if (!header->header_app_id)
+  {
+    header->header_app_id = (char *)SF_CALLOC(1, header_appid_size);
+    if (!header->header_app_id) {
+      SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+        "Ran out of memory trying to create header CLIENT_APP_ID",
+        SF_SQLSTATE_UNABLE_TO_CONNECT);
+      goto error;
+    }
+    sb_sprintf(header->header_app_id, header_appid_size,
+      HEADER_CLIENT_APP_ID_FORMAT, sf->application_name);
+    header->header = curl_slist_append(header->header, header->header_app_id);
+  }
+
+  if (!header->header_app_version)
+  {
+    header->header_app_version = (char *)SF_CALLOC(1, header_appver_size);
+    if (!header->header_app_version) {
+      SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+        "Ran out of memory trying to create header CLIENT_APP_VERSION",
+        SF_SQLSTATE_UNABLE_TO_CONNECT);
+      goto error;
+    }
+    sb_sprintf(header->header_app_version, header_appver_size,
+      HEADER_CLIENT_APP_VERSION_FORMAT, sf->application_version);
+    header->header = curl_slist_append(header->header, header->header_app_version);
+  }
+
+  log_trace("Added application infor header");
+
+  ret = SF_BOOLEAN_TRUE;
+
+error:
+  return ret;
 }
