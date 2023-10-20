@@ -14,6 +14,10 @@
 #define URL_NO_GUID "http://snowflake.com/other-path"
 #define GUID_LENGTH strlen("request_guid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
 
+#define URL_LOGIN "http://snowflake.com/session/v1/login-request"
+#define URL_TOKEN "http://snowflake.com/session/token-request"
+#define URL_AUTHENTICATOR "http://snowflake.com/session/authenticator-request"
+
 void test_update_url_no_guid(void **unused) {
     char urlbuf[512];
     sb_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
@@ -171,12 +175,108 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   assert_int_equal(strncmp(URL_QUERY, urlbuf, strlen(urlbuf)), 0);
 }
 
+void test_login_retry_strategy(void **unused) {
+  DECORRELATE_JITTER_BACKOFF djb = {
+    SF_LOGIN_BACKOFF_BASE,    //base
+    SF_LOGIN_BACKOFF_CAP      //cap
+  };
+  RETRY_CONTEXT curl_retry_ctx = {
+    0,      //retry_count
+    0,      // retry reason
+    SF_LOGIN_TIMEOUT,
+    djb.base,      // time to sleep
+    &djb,    // Decorrelate jitter
+    time(NULL)
+  };
+
+  uint32 error_codes[SF_LOGIN_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
+  uint32 backoff = SF_LOGIN_BACKOFF_BASE;
+  uint32 next_sleep_in_secs = 0;;
+  uint32 total_backoff = 0;
+  int retry_count = 0;
+  for (;retry_count < SF_LOGIN_MAX_RETRY; retry_count++)
+  {
+    assert_int_equal(is_retryable_http_code(error_codes[retry_count]), SF_BOOLEAN_TRUE);
+    next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+    // change the start time to mock the time elapsed
+    curl_retry_ctx.start_time -= next_sleep_in_secs;
+    total_backoff += next_sleep_in_secs;
+
+    if (total_backoff + next_sleep_in_secs >= SF_LOGIN_TIMEOUT)
+    {
+      // the last backoff is capped by login timeout
+      assert_in_range(next_sleep_in_secs, 0, backoff / 2 + backoff);
+      retry_count++;
+      break;
+    }
+    assert_in_range(next_sleep_in_secs, backoff / 2, backoff / 2 + backoff);
+
+    backoff = backoff * 2;
+  }
+  // minmum total backoff time, jetter -50% each time:
+  // 2, 4, 8, 16, 32, 64, 64 = 250
+  assert_in_range(total_backoff, 250, SF_LOGIN_TIMEOUT + 1);
+  // minmum retry count, jetter +50% each time
+  // 6, 12, 24, 48, 96, 114 = 300
+  assert_in_range(retry_count, 6, SF_LOGIN_MAX_RETRY);
+}
+
+void test_login_request_header(void **unused) {
+  struct TESTCASE {
+    const char* url;
+    sf_bool has_app_header;
+  };
+
+  struct TESTCASE cases[] = {
+    { URL_LOGIN, SF_BOOLEAN_TRUE },
+    { URL_TOKEN, SF_BOOLEAN_TRUE },
+    { URL_AUTHENTICATOR, SF_BOOLEAN_TRUE },
+    { URL_QUERY, SF_BOOLEAN_FALSE },
+  };
+
+  int casenum = sizeof(cases) / sizeof(struct TESTCASE);
+
+  SF_HEADER* header = NULL;
+  SF_CONNECT sf;
+  sf.application_name = "test_app_name";
+  sf.application_version = "0.0.0";
+  for (int i = 0; i < casenum; i++)
+  {
+    header = sf_header_create();
+    if (is_login_url(cases[i].url))
+    {
+      add_appinfo_header(&sf, header, NULL);
+    }
+    sf_bool has_app_id = SF_BOOLEAN_FALSE;
+    sf_bool has_app_ver = SF_BOOLEAN_FALSE;
+    struct curl_slist* header_item = header->header;
+    while (header_item)
+    {
+      if (stricmp(header_item->data, "CLIENT_APP_ID: test_app_name") == 0)
+      {
+        has_app_id = SF_BOOLEAN_TRUE;
+      }
+      if (stricmp(header_item->data, "CLIENT_APP_VERSION: 0.0.0") == 0)
+      {
+        has_app_ver = SF_BOOLEAN_TRUE;
+      }
+      header_item = header_item->next;
+    }
+    assert_int_equal(has_app_id, cases[i].has_app_header);
+    assert_int_equal(has_app_ver, cases[i].has_app_header);
+
+    sf_header_destroy(header);
+  }
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_update_url_no_guid),
         cmocka_unit_test(test_update_other_url_with_guid),
         cmocka_unit_test(test_update_query_url_with_retry_reason_disabled),
         cmocka_unit_test(test_update_query_url_with_retry_reason_enabled),
+        cmocka_unit_test(test_login_retry_strategy),
+        cmocka_unit_test(test_login_request_header),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
