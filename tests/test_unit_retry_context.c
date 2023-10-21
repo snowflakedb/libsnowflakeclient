@@ -252,11 +252,11 @@ void test_login_request_header(void **unused) {
     struct curl_slist* header_item = header->header;
     while (header_item)
     {
-      if (stricmp(header_item->data, "CLIENT_APP_ID: test_app_name") == 0)
+      if (strcmp(header_item->data, "CLIENT_APP_ID: test_app_name") == 0)
       {
         has_app_id = SF_BOOLEAN_TRUE;
       }
-      if (stricmp(header_item->data, "CLIENT_APP_VERSION: 0.0.0") == 0)
+      if (strcmp(header_item->data, "CLIENT_APP_VERSION: 0.0.0") == 0)
       {
         has_app_ver = SF_BOOLEAN_TRUE;
       }
