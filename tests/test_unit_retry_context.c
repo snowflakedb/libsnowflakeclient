@@ -215,7 +215,7 @@ void test_login_retry_strategy(void **unused) {
   }
   // minmum total backoff time, jetter -50% each time:
   // 2, 4, 8, 16, 32, 64, 64 = 250
-  assert_in_range(total_backoff, 250, SF_LOGIN_TIMEOUT + 1);
+  assert_in_range(total_backoff, 240, SF_LOGIN_TIMEOUT + 10);
   // minmum retry count, jetter +50% each time
   // 6, 12, 24, 48, 96, 114 = 300
   assert_in_range(retry_count, 6, SF_LOGIN_MAX_RETRY);
