@@ -1,8 +1,14 @@
-name: snyk-pr
+name: Snyk-PR
 on:
   pull_request:
     branches:
       - master
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   snyk:
     runs-on: ubuntu-latest
