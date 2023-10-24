@@ -13,6 +13,7 @@
 #include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
+#include "boost/filesystem.hpp"
 
 #define COLUMN_STATUS "STATUS"
 #define COLUMN_SOURCE "SOURCE"
@@ -27,6 +28,50 @@
 #define MAX_BUF_SIZE 4096
 
 using namespace ::Snowflake::Client;
+using namespace boost::filesystem;
+
+static std::string PLATFORM_STR = "\xe9";
+static std::string UTF8_STR = "\xc3\xa9";
+
+bool replaceInPlace( std::string& str, std::string const& replaceThis, std::string const& withThis ) {
+    bool replaced = false;
+    std::size_t i = str.find( replaceThis );
+    while( i != std::string::npos ) {
+        replaced = true;
+        str = str.substr( 0, i ) + withThis + str.substr( i+replaceThis.size() );
+        if( i < str.size()-withThis.size() )
+            i = str.find( replaceThis, i+withThis.size() );
+        else
+            i = std::string::npos;
+    }
+    return replaced;
+}
+
+namespace Snowflake
+{
+namespace Client
+{
+class StatementPutGetUnicode : public Snowflake::Client::StatementPutGet
+{
+public:
+  StatementPutGetUnicode(SF_STMT *stmt) : StatementPutGet(stmt) {}
+  virtual std::string UTF8ToPlatformString(const std::string& utf8_str)
+  {
+    std::string result = utf8_str;
+    replaceInPlace(result, UTF8_STR, PLATFORM_STR);
+    return result;
+  }
+
+  virtual std::string platformStringToUTF8(const std::string& platform_str)
+  {
+    std::string result = platform_str;
+    replaceInPlace(result, PLATFORM_STR, UTF8_STR);
+    return result;
+  }
+};
+
+}
+}
 
 //File list to be made available to re-upload.
 static std::vector<std::string> fileList;
@@ -64,11 +109,13 @@ void test_simple_put_core(const char * fileName,
                           bool useS3regionalUrl = false,
                           int compressLevel = -1,
                           bool overwrite = false,
-                          SF_CONNECT * connection = nullptr)
+                          SF_CONNECT * connection = nullptr,
+                          bool testUnicode = false)
 {
   /* init */
   SF_STATUS status;
   SF_CONNECT *sf;
+
   if (!connection) {
     sf = setup_snowflake_connection();
     status = snowflake_connect(sf);
@@ -103,14 +150,15 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
-  std::string putCommand = "put file://" + file + " @%test_small_put";
+  replaceInPlace(file, "\\", "\\\\");
+  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
   if(createDupTable)
   {
-      putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
+      putCommand = "put 'file://" + std::string(fileName) + "' @%test_small_put_dup";
   }
   else if (createSubfolder)
   {
-       putCommand = "put file://" + file + " @%test_small_put/subfolder";
+       putCommand = "put 'file://" + file + "' @%test_small_put/subfolder";
   }
 
   if (!autoCompress)
@@ -132,8 +180,17 @@ void test_simple_put_core(const char * fileName,
   {
       putCommand += " overwrite=true";
   }
-  std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
-    <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+  std::unique_ptr<IStatementPutGet> stmtPutGet;
+  if (testUnicode)
+  {
+    stmtPutGet = std::unique_ptr
+      <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
+  }
+  else
+  {
+    stmtPutGet = std::unique_ptr
+      <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+  }
 
   TransferConfig transConfig;
   TransferConfig * transConfigPtr = nullptr;
@@ -282,7 +339,7 @@ static int teardown(void **unused)
 }
 
 void test_simple_get_data(const char *getCommand, const char *size,
-                          long getThreshold = 0)
+                          long getThreshold = 0, bool testUnicode = false)
 {
     /* init */
     SF_STATUS status;
@@ -296,8 +353,17 @@ void test_simple_get_data(const char *getCommand, const char *size,
     /* query */
     sfstmt = snowflake_stmt(sf);
 
-    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
-            <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    std::unique_ptr<IStatementPutGet> stmtPutGet;
+    if (testUnicode)
+    {
+      stmtPutGet = std::unique_ptr
+        <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
+    }
+    else
+    {
+      stmtPutGet = std::unique_ptr
+        <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    }
 
     TransferConfig transConfig;
     TransferConfig * transConfigPtr = nullptr;
@@ -1502,6 +1568,37 @@ void test_upload_file_to_stage_using_stream(void **unused)
     snowflake_term(sf);
 }
 
+void test_put_get_with_unicode(void **unused)
+{
+  std::string dataDir = TestSetup::getDataDir();
+  std::string filename=PLATFORM_STR + ".csv";
+  copy_file(dataDir + "small_file.csv", dataDir + filename, copy_option::overwrite_if_exists);
+  filename = UTF8_STR + ".csv";
+  test_simple_put_core(
+      filename.c_str(), // filename
+      "auto", //source compression
+      true, // auto compress
+      true, // copyUploadFile
+      true, // verifyCopyUploadFile
+      false, // copyTableToStaging
+      false, // createDupTable
+      false, // setCustomThreshold
+      64 * 1024 * 1024, // customThreshold
+      false, // useDevUrand
+      false, // createSubfolder
+      nullptr, // tmpDir
+      false, // useS3regionalUrl
+      -1, // compressLevel
+      false, // overwrite
+      nullptr, // connection
+      true // testUnicode
+  );
+
+  std::string getcmd = std::string("get '@%test_small_put/") + UTF8_STR +".csv.gz'"
+                       " file://" + TestSetup::getDataDir();
+  test_simple_get_data(getcmd.c_str(), "48", 0, true);
+}
+
 int main(void) {
 
 #ifdef __APPLE__
@@ -1533,6 +1630,7 @@ int main(void) {
   }
 
   const struct CMUnitTest tests[] = {
+    cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),

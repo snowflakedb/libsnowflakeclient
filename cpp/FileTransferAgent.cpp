@@ -63,7 +63,7 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   IStatementPutGet *statement,
   TransferConfig *transferConfig) :
   m_stmtPutGet(statement),
-  m_FileMetadataInitializer(m_smallFilesMeta, m_largeFilesMeta),
+  m_FileMetadataInitializer(m_smallFilesMeta, m_largeFilesMeta, statement),
   m_executionResults(nullptr),
   m_storageClient(nullptr),
   m_lastRefreshTokenSec(0),
@@ -488,7 +488,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
       srcFileStream = m_uploadStream;
     } else {
       try {
-        fs = ::std::fstream(fileMetadata->srcFileToUpload.c_str(),
+        fs = ::std::fstream(m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileToUpload).c_str(),
                             ::std::ios_base::in |
                             ::std::ios_base::binary);
       }
@@ -613,12 +613,13 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   }
 
   std::string stagingFile(tempDir);
-  stagingFile += fileMetadata->destFileName;
+  stagingFile += m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destFileName);
+  std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
-  FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
+  FILE *sourceFile = fopen(srcFileNamePlatform.c_str(), "r");
   if( !sourceFile ){
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
-    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileName.c_str(), -1);
+    throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, srcFileNamePlatform.c_str(), -1);
   }
   FILE *destFile = fopen(stagingFile.c_str(), "w");
   if ( !destFile) {
@@ -626,7 +627,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }
   // set srcFileToUpload after open file successfully to prevent command injection.
-  fileMetadata->srcFileToUpload = stagingFile;
+  fileMetadata->srcFileToUpload = m_stmtPutGet->platformStringToUTF8(stagingFile);
 
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
                                           fileMetadata->srcFileToUploadSize, level);
@@ -829,6 +830,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
 {
    fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
+   std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
 
    RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::FAILED;
    RetryContext getRetryCtx(fileMetadata->srcFileName, m_maxGetRetries);
@@ -839,7 +841,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
 
      std::basic_fstream<char> dstFile;
      try {
-       dstFile = std::basic_fstream<char>(fileMetadata->destPath.c_str(),
+       dstFile = std::basic_fstream<char>(destPathPlatform.c_str(),
                                           std::ios_base::out | std::ios_base::binary);
      }
      catch (...) {

@@ -24,10 +24,12 @@
 
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> &smallFileMetadata,
-  std::vector<FileMetadata> &largeFileMetadata) :
+  std::vector<FileMetadata> &largeFileMetadata,
+  IStatementPutGet *stmtPutGet) :
   m_smallFileMetadata(smallFileMetadata),
   m_largeFileMetadata(largeFileMetadata),
-  m_autoCompress(true)
+  m_autoCompress(true),
+  m_stmtPutGet(stmtPutGet)
 {
 }
 
@@ -39,9 +41,9 @@ Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::st
   fileNameFull += fileName;
 
   FileMetadata fileMetadata;
-  fileMetadata.srcFileName = fileNameFull;
+  fileMetadata.srcFileName = m_stmtPutGet->platformStringToUTF8(fileNameFull);
   fileMetadata.srcFileSize = fileSize;
-  fileMetadata.destFileName = std::string(fileName);
+  fileMetadata.destFileName = m_stmtPutGet->platformStringToUTF8(std::string(fileName));
   // process compression type
   initCompressionMetadata(fileMetadata);
 
@@ -56,9 +58,11 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
                                                                               size_t putThreshold)
 {
 // looking for files on disk. 
+  std::string srcLocationPlatform = m_stmtPutGet->UTF8ToPlatformString(sourceLocation);
+
 #ifdef _WIN32
   WIN32_FIND_DATA fdd;
-  HANDLE hFind = FindFirstFile(sourceLocation.c_str(), &fdd);
+  HANDLE hFind = FindFirstFile(srcLocationPlatform.c_str(), &fdd);
   if (hFind == INVALID_HANDLE_VALUE)
   {
     DWORD dwError = GetLastError();
@@ -73,7 +77,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     {
       CXX_LOG_ERROR("Failed on FindFirstFile. Error: %d", dwError);
       throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
-        sourceLocation.c_str(), dwError);
+        srcLocationPlatform.c_str(), dwError);
     }
   }
 
@@ -81,14 +85,14 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
     {
       std::string fileFullPath = std::string(fdd.cFileName);
-      size_t dirSep = sourceLocation.find_last_of(PATH_SEP);
+      size_t dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
       if (dirSep == std::string::npos) 
       {
         dirSep = sourceLocation.find_last_of(ALTER_PATH_SEP);
       }
       if (dirSep != std::string::npos) 
       {
-        std::string dirPath = sourceLocation.substr(0, dirSep + 1);
+        std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
         LARGE_INTEGER fileSize;
         fileSize.LowPart = fdd.nFileSizeLow;
         fileSize.HighPart = fdd.nFileSizeHigh;
@@ -102,14 +106,14 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   {
     CXX_LOG_ERROR("Failed on FindNextFile. Error: %d", dwError);
     throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
-      sourceLocation.c_str(), dwError);
+      srcLocationPlatform.c_str(), dwError);
   }
   FindClose(hFind);
 
 #else
-  unsigned long dirSep = sourceLocation.find_last_of(PATH_SEP);
-  std::string dirPath = sourceLocation.substr(0, dirSep + 1);
-  std::string filePattern = sourceLocation.substr(dirSep + 1);
+  unsigned long dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
+  std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
+  std::string filePattern = srcLocationPlatform.substr(dirSep + 1);
 
   DIR * dir = nullptr;
   struct dirent * dir_entry;
@@ -133,7 +137,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
         {
           CXX_LOG_ERROR("Cannot read path struct");
           throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
-                                           sourceLocation.c_str(), ret);
+                                           srcLocationPlatform.c_str(), ret);
         }
       }
     }
