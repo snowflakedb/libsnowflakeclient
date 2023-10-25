@@ -66,6 +66,18 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::upload(FileMetadata *fileMetadat
   if (!m_gcsAccessToken.empty())
   {
     std::string filePathFull = m_stageInfo->location + fileMetadata->destFileName;
+
+    //check if file exists if overwrite is not specified.
+    if (!fileMetadata->overWrite)
+    {
+      RemoteStorageRequestOutcome outcome = GetRemoteFileMetadata(&filePathFull, fileMetadata);
+      if (RemoteStorageRequestOutcome::SUCCESS == outcome)
+      {
+        CXX_LOG_DEBUG("File already exists skipping the file upload %s",
+                      fileMetadata->srcFileToUpload.c_str());
+        return RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE;
+      }
+    }
     buildGcsRequest(filePathFull, url, reqHeaders);
   }
   else
@@ -134,12 +146,21 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::GetRemoteFileMetadata(
     url = fileMetadata->presignedUrl;
   }
 
-  if (!m_statement->http_get(url,
-                             reqHeaders,
-                             NULL,
-                             headerString,
-                             true))
+  try
   {
+    if (!m_statement->http_get(url,
+                               reqHeaders,
+                               NULL,
+                               headerString,
+                               true))
+    {
+      return RemoteStorageRequestOutcome::FAILED;
+    }
+  }
+  catch (...)
+  {
+    // It's expected to fail when file doesn't exist, while http_get()
+    // could throw excpetion on that. Catch that and return FAILED
     return RemoteStorageRequestOutcome::FAILED;
   }
 

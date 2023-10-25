@@ -32,7 +32,10 @@ class MockedGCSStatement : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedGCSStatement(bool useGcsToken)
-    : m_useGcsToken(useGcsToken), Snowflake::Client::IStatementPutGet()
+    : m_useGcsToken(useGcsToken),
+      m_firstTime(true),
+      m_isPut(false),
+      Snowflake::Client::IStatementPutGet()
   {
     m_stageInfo.stageType = Snowflake::Client::StageType::GCS;
     if (m_useGcsToken)
@@ -63,9 +66,18 @@ public:
     }
     else
     {
+      m_isPut = true;
       putGetParseResponse->command = CommandType::UPLOAD;
       putGetParseResponse->srcLocations = m_srcLocationsPut;
       putGetParseResponse->threshold = DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD;
+      if (sql->find("OVERWRITE=true") != std::string::npos)
+      {
+        putGetParseResponse->overwrite = true;
+      }
+      else
+      {
+        putGetParseResponse->overwrite = false;
+      }
     }
     if (!m_useGcsToken)
     {
@@ -106,8 +118,17 @@ public:
                         std::string& responseHeaders,
                         bool headerOnly) override
   {
-    if (headerOnly)
+    if (headerOnly) // try getting metadata
     {
+      if (m_isPut)
+      {
+        if ((strcasecmp(url.c_str(), m_expectedUrl.c_str()) == 0) && m_firstTime)
+        {
+          // first time retry false to mock the case of file doesn't exist
+          m_firstTime = false;
+          return false;
+        }
+      }
       responseHeaders = "HTTP/1.1 200 OK\n"
                         "x-goog-meta-encryptiondata: {\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"MyZBZNLcndKTeR+xC8Msle5IcSYKsx/nYNn93OONSqs=\",\"Algorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"30fmhKrf1aKyWidrv06NNA==\"}\n"
                         "Content-Type: application/octet-stream\n"
@@ -143,12 +164,16 @@ private:
   bool m_useGcsToken;
 
   std::string m_expectedUrl;
+
+  bool m_firstTime;
+
+  bool m_isPut;
 };
 
 // test helper for put
 void put_gcs_test_core(bool useGcsToken)
 {
-  std::string cmd = std::string("put file://small_file.csv.gz @odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
+  std::string cmd = std::string("put file://small_file.csv.gz @odbctestStage AUTO_COMPRESS=false");
 
   MockedGCSStatement mockedStatementPut(useGcsToken);
 
@@ -157,6 +182,24 @@ void put_gcs_test_core(bool useGcsToken)
   ITransferResult * result = agent.execute(&cmd);
 
   std::string put_status;
+  while (result->next())
+  {
+    result->getColumnAsString(6, put_status);
+    assert_string_equal("UPLOADED", put_status.c_str());
+  }
+
+  if (useGcsToken)
+  {
+    result = agent.execute(&cmd);
+    while (result->next())
+    {
+      result->getColumnAsString(6, put_status);
+      assert_string_equal("SKIPPED", put_status.c_str());
+    }
+  }
+
+  cmd += " OVERWRITE=true";
+  result = agent.execute(&cmd);
   while (result->next())
   {
     result->getColumnAsString(6, put_status);
