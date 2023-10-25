@@ -77,12 +77,14 @@ Snowflake::Client::FileTransferAgent::FileTransferAgent(
   m_getFastFail(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
+  _mutex_init(&m_parallelFailedMsgMutex);
 }
 
 Snowflake::Client::FileTransferAgent::~FileTransferAgent()
 {
   reset();
   _mutex_term(&m_parallelTokRenewMutex);
+  _mutex_term(&m_parallelFailedMsgMutex);
 }
 
 void Snowflake::Client::FileTransferAgent::reset()
