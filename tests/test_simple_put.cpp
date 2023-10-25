@@ -30,7 +30,11 @@
 using namespace ::Snowflake::Client;
 using namespace boost::filesystem;
 
+#ifdef _WIN32
 static std::string PLATFORM_STR = "\xe9";
+#else
+static std::string  PLATFORM_STR = "é";
+#endif
 static std::string UTF8_STR = "\xc3\xa9";
 
 bool replaceInPlace( std::string& str, std::string const& replaceThis, std::string const& withThis ) {
@@ -150,15 +154,20 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
-  replaceInPlace(file, "\\", "\\\\");
-  std::string putCommand = "put 'file://" + file + "' @%test_small_put";
+  std::string putCommand = "put file://" + file + " @%test_small_put";
+  if (testUnicode)
+  {
+    replaceInPlace(file, "\\", "\\\\");
+    putCommand = "put 'file://" + file + "' @%test_small_put";
+  }
+
   if(createDupTable)
   {
-      putCommand = "put 'file://" + std::string(fileName) + "' @%test_small_put_dup";
+      putCommand = "put file://" + std::string(fileName) + " @%test_small_put_dup";
   }
   else if (createSubfolder)
   {
-       putCommand = "put 'file://" + file + "' @%test_small_put/subfolder";
+       putCommand = "put file://" + file + " @%test_small_put/subfolder";
   }
 
   if (!autoCompress)
@@ -1630,7 +1639,6 @@ int main(void) {
   }
 
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -1661,6 +1669,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_proxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
+    cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
