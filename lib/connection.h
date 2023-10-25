@@ -276,7 +276,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *
  * @param sleep Duration of last sleep in seconds.
  * @return Number of seconds to sleep.
  */
-uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
+uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
 
 /**
  * Creates a URL that is safe to use with cURL. Caller must free the memory associated with the encoded URL.

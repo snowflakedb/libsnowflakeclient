@@ -548,7 +548,7 @@ STDCALL decorrelate_jitter_init(uint32 base, uint32 cap) {
 }
 
 uint32
-decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
+get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
     sleep = uimin(sleep, djb->cap);
     // Prevents division by 0 when sleep = 1
     // and if sleep == 2 the value of sleep time returned never changes.
@@ -1080,7 +1080,7 @@ void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx) {
 }
 
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
-  uint32 jittered_sleep = decorrelate_jitter_next_sleep(retry_ctx->djb, retry_ctx->sleep_time);
+  uint32 jittered_sleep = get_next_sleep_with_jitter(retry_ctx->djb, retry_ctx->sleep_time);
     retry_ctx->sleep_time = retry_ctx->sleep_time * 2;
     ++retry_ctx->retry_count;
 
