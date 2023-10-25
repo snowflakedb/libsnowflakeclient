@@ -317,12 +317,25 @@ int main(int argc, char **argv)
     unlink(cache_file);
     checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 1, 1);
 
-    printf("===> Case 10: Delete file cache with invalid cache server URL to test OOB disabled\n");
+    printf("===> Case 10: Delete file cache with invalid cache server URL to test delay on failure and OOB disabled\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     // use random IP address so it will get connection timeout
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", "http://10.24.123.89/ocsp_response_cache.json", 1);
     unlink(cache_file);
+
+    time_t start_time = time(NULL);
     checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 1);
+    time_t end_time = time(NULL);
+    // should be around 5 seconds but no longer than 10.
+    if ((end_time - start_time) > 10)
+    {
+        fprintf(stderr, "Delay check FAILED! Delayed %d seconds\n", end_time - start_time);
+        exit(1);
+    }
+    else
+    {
+        fprintf(stderr, "Delay check OK\n");
+    }
 
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
