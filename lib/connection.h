@@ -106,6 +106,15 @@ typedef struct URL_KEY_VALUE {
     size_t value_size;
 } URL_KEY_VALUE;
 
+// internal definition for backoff time
+#define SF_BACKOFF_BASE 1
+#define SF_BACKOFF_CAP 16
+// to meet 300 seconds timetout with 7 retries
+// 4 + 8 + 16 + 32 + 64 + 128 + 45
+// the CAP of 128 would keep the backoff time with a reasonable value in case
+// customer increate the login timeout and retry number.
+#define SF_LOGIN_BACKOFF_BASE 4
+#define SF_LOGIN_BACKOFF_CAP 128
 /**
  * Used to keep track of min and max backoff time for a connection retry
  */
@@ -131,6 +140,8 @@ typedef struct RETRY_CONTEXT {
     uint32 sleep_time;
     // Decorrelate Jitter is used to determine sleep time
     DECORRELATE_JITTER_BACKOFF *djb;
+    // start time to track on retry timeout
+    time_t start_time;
 } RETRY_CONTEXT;
 
 typedef struct SF_HEADER {
@@ -138,6 +149,8 @@ typedef struct SF_HEADER {
     char *header_direct_query_token;
     char *header_service_name;
     char *header_token;
+    char *header_app_id;
+    char *header_app_version;
 
     sf_bool use_application_json_accept_type;
     sf_bool renew_session;
@@ -263,7 +276,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *
  * @param sleep Duration of last sleep in seconds.
  * @return Number of seconds to sleep.
  */
-uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
+uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
 
 /**
  * Creates a URL that is safe to use with cURL. Caller must free the memory associated with the encoded URL.
@@ -441,7 +454,8 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,
                              const char *proxy, const char *no_proxy,
-                             sf_bool include_retry_reason);
+                             sf_bool include_retry_reason,
+                             sf_bool is_login_request);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -513,14 +527,6 @@ void STDCALL reset_curl(CURL *curl);
 void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx);
 
 /**
- * Creates a retry context object and returns it
- *
- * @param timeout the initial value to set the context's retry_timeout to
- * @return Returns an initialized RETRY_CONTEXT object
- */
-RETRY_CONTEXT *STDCALL retry_ctx_init(uint64 timeout);
-
-/**
  * Determines next sleep duration for request retry. Sets new sleep duration value in Retry Context.
  *
  * As a side effect will set context's retry_count with the new value and increment retry_count
@@ -568,6 +574,20 @@ void STDCALL sf_header_destroy(SF_HEADER *sf_header);
 * @return CURLE_OK if success, curl error code otherwise.
 */
 CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy);
+
+/**
+* Determines if the url is login request against to
+* login-request
+* authenticator-request
+* token-request
+*
+* @param url Url string to check
+* @return True (1) if it's login request, False (0) if not.
+*/
+sf_bool is_login_url(const char * url);
+
+// add CLIENT_APP_ID/CLIENT_APP_VERSION in header for login rquests
+sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *error);
 
 #ifdef __cplusplus
 }

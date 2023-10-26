@@ -677,7 +677,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->token = NULL;
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
-        sf->network_timeout = 0;
+        sf->network_timeout = SF_NETWORK_TIMEOUT;
         sf->sequence_counter = 0;
         _mutex_init(&sf->mutex_sequence_counter);
         sf->request_id[0] = '\0';
@@ -695,7 +695,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
-        sf->retry_on_connect_count = 0;
+        sf->retry_on_connect_count = SF_LOGIN_MAX_RETRY;
 
         sf->qcc_capacity = QCC_CAPACITY_DEF;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
@@ -1054,9 +1054,13 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
+            if (sf->login_timeout < SF_LOGIN_TIMEOUT)
+            {
+              sf->login_timeout = SF_LOGIN_TIMEOUT;
+            }
             break;
         case SF_CON_NETWORK_TIMEOUT:
-            sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
+            sf->network_timeout = value ? *((int64 *) value) : SF_NETWORK_TIMEOUT;
             break;
         case SF_CON_AUTOCOMMIT:
             sf->autocommit = value ? *((sf_bool *) value) : SF_BOOLEAN_TRUE;
@@ -1089,7 +1093,11 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->jwt_cnxn_wait_time = value ? *((int64 *)value) : SF_JWT_CNXN_WAIT_TIME;
             break;
         case SF_CON_MAX_CON_RETRY:
-            sf->retry_on_connect_count = value ? *((int8 *)value) : 0;
+            sf->retry_on_connect_count = value ? *((int8 *)value) : SF_LOGIN_MAX_RETRY;
+            if (sf->retry_on_connect_count < SF_LOGIN_MAX_RETRY)
+            {
+              sf->retry_on_connect_count = SF_LOGIN_MAX_RETRY;
+            }
             break;
         case SF_CON_PROXY:
             alloc_buffer_and_copy(&sf->proxy, value);
