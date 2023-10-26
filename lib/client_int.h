@@ -18,6 +18,8 @@
 #define HEADER_C_API_USER_AGENT_MAX_LEN 256
 #define HEADER_DIRECT_QUERY_TOKEN_FORMAT "Authorization: %s"
 #define HEADER_SERVICE_NAME_FORMAT "X-Snowflake-Service: %s"
+#define HEADER_CLIENT_APP_ID_FORMAT "CLIENT_APP_ID: %s"
+#define HEADER_CLIENT_APP_VERSION_FORMAT "CLIENT_APP_VERSION: %s"
 
 #define DEFAULT_SNOWFLAKE_BASE_URL "snowflakecomputing.com"
 #define DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT 60
@@ -26,10 +28,16 @@
 #define QUERY_URL "/queries/v1/query-request"
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
+// not used for now but add for URL checking on connection requests
+#define AUTHENTICATOR_URL "/session/authenticator-request"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
 #define URL_PARAM_RETRY_REASON "retryReason="
+
+#define CLIENT_APP_ID_KEY "CLIENT_APP_ID"
+#define CLIENT_APP_VERSION_KEY "CLIENT_APP_VERSION"
+
 // having extra size in url buffer for retry context or something else could
 // be added in the future.
 #define URL_EXTRA_SIZE 256

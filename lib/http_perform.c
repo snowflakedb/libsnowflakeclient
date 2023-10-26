@@ -158,16 +158,23 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool renew_injection,
                              const char *proxy,
                              const char *no_proxy,
-                             sf_bool include_retry_reason) {
+                             sf_bool include_retry_reason,
+                             sf_bool is_login_request) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
     long int http_code = 0;
     DECORRELATE_JITTER_BACKOFF djb = {
-      1,      //base
-      16      //cap
+      SF_BACKOFF_BASE,      //base
+      SF_BACKOFF_CAP      //cap
     };
-    network_timeout = (network_timeout > 0) ? network_timeout : SF_LOGIN_TIMEOUT;
+    if (SF_BOOLEAN_TRUE == is_login_request)
+    {
+      djb.base = SF_LOGIN_BACKOFF_BASE;
+      djb.cap = SF_LOGIN_BACKOFF_CAP;
+    }
+
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_NETWORK_TIMEOUT;
     if (elapsed_time) {
         network_timeout -= *elapsed_time;
         if (network_timeout <= 0) {
@@ -178,8 +185,9 @@ sf_bool STDCALL http_perform(CURL *curl,
             retried_count ? *retried_count : 0,      //retry_count
             0,      // retry reason
             network_timeout,
-            1,      // time to sleep
-            &djb    // Decorrelate jitter
+            djb.base,      // time to sleep
+            &djb,    // Decorrelate jitter
+            time(NULL)
     };
     time_t elapsedRetryTime = time(NULL);
     RAW_JSON_BUFFER buffer = {NULL, 0};
