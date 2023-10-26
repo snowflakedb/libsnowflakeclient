@@ -12,6 +12,10 @@
 #include <unordered_set>
 #include <iostream>
 #include <map>
+#include <vector>
+#include <memory>
+#include "snowflake/IStatementPutGet.hpp"
+#include "StatementPutGet.hpp"
 
 #define FILES_IN_DIR "file1.csv", "file2.csv", "file3.csv", "file4.csv", "file1.gz"
 
@@ -70,13 +74,18 @@ std::vector<std::string> getListOfTestFileMatchDir()
 void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
                                   const char *filePattern)
 {
+  SF_CONNECT *sf = snowflake_init();
+  SF_STMT *sfstmt = snowflake_stmt(sf);
+  std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+      <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+
   std::vector<std::string> listTestDir = getListOfTestFileMatchDir();
   for (auto testDir : listTestDir)
   {
     std::vector<FileMetadata> smallFileMetadata;
     std::vector<FileMetadata> largeFileMetadata;
 
-    FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata);
+    FileMetadataInitializer initializer(smallFileMetadata, largeFileMetadata, stmtPutGet.get());
     initializer.setSourceCompression((char *)"none");
 
     std::string fullFilePattern = testDir + filePattern;

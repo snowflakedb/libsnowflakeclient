@@ -9,6 +9,7 @@
 #include <vector>
 #include "FileMetadata.hpp"
 #include "IStorageClient.hpp"
+#include "snowflake/IStatementPutGet.hpp"
 
 // used to decide whether to upload in sequence or in parallel
 #define DEFAULT_UPLOAD_DATA_SIZE_THRESHOLD 209715200 //200Mb
@@ -25,7 +26,8 @@ class FileMetadataInitializer
 {
 public:
   FileMetadataInitializer(std::vector<FileMetadata> &smallFileMetadata,
-                          std::vector<FileMetadata> &largeFileMetadata);
+                          std::vector<FileMetadata> &largeFileMetadata,
+                          IStatementPutGet *stmtPutGet);
 
   /**
    * Given a source locations, find all files that match the location pattern,
@@ -101,6 +103,9 @@ private:
 
   /// Random device for crytpo random num generator.
   Crypto::CryptoRandomDevice m_randDevice;
+
+  // statement which provides encoding conversion funcationality
+  IStatementPutGet *m_stmtPutGet;
 };
 }
 }
