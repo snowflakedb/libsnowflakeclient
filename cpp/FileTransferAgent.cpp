@@ -618,7 +618,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
   FILE *sourceFile = NULL;
-  if (sb_fopen(&sourceFile, srcFileNamePlatformta->srcFileName.c_str(), "r") == NULL) {
+  if (sb_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, srcFileNamePlatform.c_str(), -1);
   }
