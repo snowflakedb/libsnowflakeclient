@@ -349,14 +349,14 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
         if (mkpath(LOG_PATH) == -1) {
-            fprintf(stderr, "Error creating log directory. Error code: %s\n",
-                    strerror(errno));
+            sb_fprintf(stderr, "Error creating log directory. Error code: %s\n",
+                    sf_strerror(errno));
             goto cleanup;
         }
         // Set the log path only, the log file will be created when actual log output is needed.
         log_set_path(LOG_PATH);
     } else {
-        fprintf(stderr,
+        sb_fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
         goto cleanup;
     }
@@ -539,7 +539,7 @@ SF_STATUS STDCALL snowflake_global_init(
     sf_error_init();
     if (!log_init(log_path, log_level)) {
         // no way to log error because log_init failed.
-        fprintf(stderr, "Error during log initialization");
+        sb_fprintf(stderr, "Error during log initialization");
         goto cleanup;
     }
     CURLcode curl_ret = curl_global_init(CURL_GLOBAL_DEFAULT);

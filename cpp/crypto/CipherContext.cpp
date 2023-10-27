@@ -307,7 +307,7 @@ size_t CipherContext::finalize(void *const out)
       //             EXTERNAL_DECRYPT_ERROR_MSG);
     else
     {
-      printf("Finialize failed, op %d", static_cast<int>(impl.op));
+      sb_printf("Finialize failed, op %d", static_cast<int>(impl.op));
       throw;
     }
     //SF_THROW_CRYPTO(static_cast<int>(impl.op));

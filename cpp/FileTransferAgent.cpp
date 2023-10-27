@@ -19,6 +19,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
@@ -616,13 +617,13 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   stagingFile += m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destFileName);
   std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
-  FILE *sourceFile = fopen(srcFileNamePlatform.c_str(), "r");
-  if( !sourceFile ){
+  FILE *sourceFile = NULL;
+  if (sb_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, srcFileNamePlatform.c_str(), -1);
   }
-  FILE *destFile = fopen(stagingFile.c_str(), "w");
-  if ( !destFile) {
+  FILE *destFile = NULL;
+  if (sb_fopen(&destFile, stagingFile.c_str(), "w") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }
@@ -847,7 +848,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      catch (...) {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), std::strerror(errno));
+                     fileMetadata->destPath.c_str(), sf_strerror(errno));
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
@@ -855,7 +856,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), std::strerror(errno));
+                     fileMetadata->destPath.c_str(), sf_strerror(errno));
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }

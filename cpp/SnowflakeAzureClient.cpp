@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -60,7 +61,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if( caBundleFile[0] == 0 ) {
-      const char* capath = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+      const char* capath = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
       if (capath) {
           if (strlen(capath) > MAX_PATH - 1) {
               throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,

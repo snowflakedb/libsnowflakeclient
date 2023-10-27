@@ -266,12 +266,12 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 #endif
 }
 
-char *STDCALL sf_getenv(const char *name) {
+char * STDCALL sf_getenv(const char *name) {
 #ifdef _WIN32
     return getenv(name);
-#else
+#   else
     return getenv(name);
-#endif
+#   endif
 }
 
 int STDCALL sf_unsetenv(const char *name) {
@@ -289,6 +289,16 @@ int STDCALL sf_mkdir(const char *path) {
     return mkdir(path, 0755);
 #endif
 }
+
+char* STDCALL sf_strerror(int in_errNumber)
+{
+#ifdef _WIN32
+    return strerror(in_errNumber);
+#else
+    return strerror(in_errNumber);
+#endif
+}
+
 
 
 int STDCALL
