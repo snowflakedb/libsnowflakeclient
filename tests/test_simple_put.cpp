@@ -30,10 +30,14 @@
 using namespace ::Snowflake::Client;
 using namespace boost::filesystem;
 
+// use encoding directly instead of actual character to avoid
+// build issue with encoding on different platforms
+// it's character é which is 0xe9 in Windows-1252 and 0xc3 0xa9 in UTF-8
+// On windows the default encoding is Windows-1252 on Linux/Mac it's UTF-8
 #ifdef _WIN32
 static std::string PLATFORM_STR = "\xe9";
 #else
-static std::string  PLATFORM_STR = "é";
+static std::string  PLATFORM_STR = "\xc3\xa9";
 #endif
 static std::string UTF8_STR = "\xc3\xa9";
 
