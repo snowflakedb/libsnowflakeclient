@@ -51,18 +51,18 @@ void dump(const char *text,
         /* without the hex output, we can fit more on screen */
         width = 0x40;
 
-    fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
+    sb_fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
             text, (long) size, (long) size);
 
     for (i = 0; i < size; i += width) {
 
-        fprintf(stream, "%4.4lx: ", (long) i);
+        sb_fprintf(stream, "%4.4lx: ", (long) i);
 
         if (!nohex) {
             /* hex not disabled, show it */
             for (c = 0; c < width; c++)
                 if (i + c < size)
-                    fprintf(stream, "%02x ", ptr[i + c]);
+                    sb_fprintf(stream, "%02x ", ptr[i + c]);
                 else
                     fputs("   ", stream);
         }
@@ -74,7 +74,7 @@ void dump(const char *text,
                 i += (c + 2 - width);
                 break;
             }
-            fprintf(stream, "%c",
+            sb_fprintf(stream, "%c",
                     (ptr[i + c] >= 0x20) && (ptr[i + c] < 0x80) ? ptr[i + c]
                                                                 : '.');
             /* check again for 0D0A, to avoid an extra \n if it's at width */
@@ -99,7 +99,7 @@ int my_trace(CURL *handle, curl_infotype type,
 
     switch (type) {
         case CURLINFO_TEXT:
-            fprintf(stderr, "== Info: %s", data);
+            sb_fprintf(stderr, "== Info: %s", data);
             /* FALLTHROUGH */
         default: /* in case a new one is introduced to shock us */
             return 0;

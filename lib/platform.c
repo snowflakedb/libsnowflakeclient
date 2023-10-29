@@ -266,9 +266,11 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 #endif
 }
 
-char *STDCALL sf_getenv(const char *name) {
+char * STDCALL sf_getenv(const char *name) {
 #ifdef _WIN32
-    return getenv(name);
+    static char buf[BUFSIZ];
+    size_t len = 0;    // We don't use it, but Windows version doesn't like to pass NULL as lenght pointer. It crashes.
+    return getenv_s(&len, buf, sizeof(buf) - 1, name) ? NULL : buf;
 #else
     return getenv(name);
 #endif
@@ -289,6 +291,18 @@ int STDCALL sf_mkdir(const char *path) {
     return mkdir(path, 0755);
 #endif
 }
+
+char* STDCALL sf_strerror(int in_errNumber)
+{
+#ifdef _WIN32
+    static char    errStr[256];
+    strerror_s(errStr, sizeof(errStr), in_errNumber);
+    return errStr;
+#else
+    return strerror(in_errNumber);
+#endif
+}
+
 
 
 int STDCALL

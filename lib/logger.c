@@ -120,12 +120,12 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
     /* Log to stderr */
     if (!L.quiet) {
 #ifdef LOG_USE_COLOR
-        fprintf(
+        sb_fprintf(
             stderr, SF_LOG_TIMESTAMP_FORMAT_COLOR,
             tsbuf, level_colors[level], level_names[level], ns, basename,
             line);
 #else
-        fprintf(
+        sb_fprintf(
             stderr, SF_LOG_TIMESTAMP_FORMAT,
              buf, level_names[level], namespace, basename, line);
 #endif
@@ -135,7 +135,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         va_copy(copy, args);
         log_masked_va_list(stderr, fmt, copy);
         va_end(copy);
-        fprintf(stderr, "\n");
+        sb_fprintf(stderr, "\n");
         fflush(stderr);
     }
 
@@ -145,22 +145,22 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
      */
     if (!(L.fp) && L.path)
     {
-        L.fp = fopen(L.path, "w+");
+        sb_fopen(&L.fp, L.path, "w+");
         if (!(L.fp))
         {
-            fprintf(stderr,
+            sb_fprintf(stderr,
                 "Error opening file from file path: %s\nError code: %s\n",
-                L.path, strerror(errno));
+                L.path, sf_strerror(errno));
             L.path = NULL;
         }
     }
 
     if (L.fp) {
-        fprintf(
+        sb_fprintf(
             L.fp, SF_LOG_TIMESTAMP_FORMAT,
             tsbuf, level_names[level], ns, basename, line);
         log_masked_va_list(L.fp, fmt, args);
-        fprintf(L.fp, "\n");
+        sb_fprintf(L.fp, "\n");
         fflush(L.fp);
     }
 

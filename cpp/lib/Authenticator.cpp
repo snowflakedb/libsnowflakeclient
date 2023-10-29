@@ -201,7 +201,7 @@ namespace Client
                                         const std::string &passcode)
   {
     FILE *file;
-    file = fopen(privateKeyFile.c_str(), "r");
+    file = sb_fopen(&file, privateKeyFile.c_str(), "r");
     if (file == nullptr)
     {
       CXX_LOG_ERROR("Failed to open private key file. Errno: %d", errno);

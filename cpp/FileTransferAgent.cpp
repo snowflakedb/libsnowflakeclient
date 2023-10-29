@@ -19,6 +19,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
@@ -613,12 +614,14 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 
-  FILE *sourceFile = fopen(fileMetadata->srcFileName.c_str(), "r");
+  FILE *sourceFile;
+  sb_fopen(&sourceFile, fileMetadata->srcFileName.c_str(), "r");
   if( !sourceFile ){
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileName.c_str(), -1);
   }
-  FILE *destFile = fopen(stagingFile.c_str(), "w");
+  FILE *destFile;
+  sb_fopen(&destFile, stagingFile.c_str(), "w");
   if ( !destFile) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
@@ -843,7 +846,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      catch (...) {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), std::strerror(errno));
+                     fileMetadata->destPath.c_str(), sf_strerror(errno));
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
@@ -851,7 +854,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), std::strerror(errno));
+                     fileMetadata->destPath.c_str(), sf_strerror(errno));
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
