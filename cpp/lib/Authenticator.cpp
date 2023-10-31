@@ -200,9 +200,8 @@ namespace Client
   void AuthenticatorJWT::loadPrivateKey(const std::string &privateKeyFile,
                                         const std::string &passcode)
   {
-    FILE *file;
-    file = sb_fopen(&file, privateKeyFile.c_str(), "r");
-    if (file == nullptr)
+    FILE *file = nullptr;
+    if (sb_fopen(&file, privateKeyFile.c_str(), "r") == NULL)
     {
       CXX_LOG_ERROR("Failed to open private key file. Errno: %d", errno);
       JWT_THROW("Failed to open private key file");

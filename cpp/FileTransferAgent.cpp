@@ -614,15 +614,13 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   std::string stagingFile(tempDir);
   stagingFile += fileMetadata->destFileName;
 
-  FILE *sourceFile;
-  sb_fopen(&sourceFile, fileMetadata->srcFileName.c_str(), "r");
-  if( !sourceFile ){
+  FILE *sourceFile = NULL;
+  if (sb_fopen(&sourceFile, fileMetadata->srcFileName.c_str(), "r") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, fileMetadata->srcFileName.c_str(), -1);
   }
-  FILE *destFile;
-  sb_fopen(&destFile, stagingFile.c_str(), "w");
-  if ( !destFile) {
+  FILE *destFile = NULL;
+  if (sb_fopen(&destFile, stagingFile.c_str(), "w") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }
@@ -845,16 +843,20 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      }
      catch (...) {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
+       char* str_error = sf_strerror(errno);
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), sf_strerror(errno));
+                     fileMetadata->destPath.c_str(), str_error);
+       sf_free_s(str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
      if (!dstFile.is_open())
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
+       char* str_error = sf_strerror(errno);
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), sf_strerror(errno));
+                     fileMetadata->destPath.c_str(), str_error);
+       sf_free_s(str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }

@@ -349,8 +349,9 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
         if (mkpath(LOG_PATH) == -1) {
-            sb_fprintf(stderr, "Error creating log directory. Error code: %s\n",
-                    sf_strerror(errno));
+            char* str_error = sf_strerror(errno);
+            sb_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
+            sf_free_s(str_error);
             goto cleanup;
         }
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -364,6 +365,10 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     ret = SF_BOOLEAN_TRUE;
 
 cleanup:
+    if (sf_log_path != log_path) {
+        sf_free_s((char*) sf_log_path);
+    }
+    sf_free_s((char*) sf_log_level_str);
     return ret;
 }
 

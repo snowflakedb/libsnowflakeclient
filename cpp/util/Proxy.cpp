@@ -4,6 +4,19 @@
 
 #include "snowflake/Proxy.hpp"
 #include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/platform.h"
+
+namespace {
+    char* get_env_or(const char* name) {
+        return sf_getenv(name);
+    }
+    template <typename... Args>
+    char* get_env_or(const char* prime, Args... fallback)
+    {
+        char* value = get_env_or(prime);
+        return value ? value : get_env_or(fallback...);
+    }
+}
 
 Snowflake::Client::Util::Proxy::Proxy(const std::string &proxy_str)
 {
@@ -69,27 +82,18 @@ void Snowflake::Client::Util::Proxy::clearPwd() {
 }
 
 void Snowflake::Client::Util::Proxy::setProxyFromEnv() {
-    std::string proxy;
-
-    // Get proxy string and set scheme
-    if (sf_getenv("all_proxy")) {
-        proxy = sf_getenv("all_proxy");
-    } else if (sf_getenv("https_proxy")) {
-        proxy = sf_getenv("https_proxy");
-    } else if (sf_getenv("http_proxy")) {
-        proxy = sf_getenv("http_proxy");
-    }
-
-    if (!proxy.empty())
-    {
+    char* env_value = get_env_or("all_proxy", "https_proxy", "http_proxy");
+    if (env_value != nullptr) {
+        std::string proxy(env_value);
+        sf_free_s(env_value);
         stringToProxyParts(proxy);
     }
 
     // Get noproxy string
-    if (sf_getenv("no_proxy")) {
-        m_noProxy = sf_getenv("no_proxy");
-    } else if (sf_getenv("NO_PROXY")) {
-        m_noProxy = sf_getenv("NO_PROXY");
+    env_value = get_env_or("no_proxy", "NO_PROXY");
+    if (env_value != nullptr) {
+        m_noProxy = env_value;
+        sf_free_s(env_value);
     }
 }
 
