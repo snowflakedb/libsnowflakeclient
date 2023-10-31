@@ -5,7 +5,7 @@
 @echo off
 setlocal
 if not defined GITHUB_ACTIONS (
-    set "path=C:\Program Files\7-Zip;C:\Python37;C:\python37\scripts;%path%"
+    set "path=C:\Program Files\7-Zip;%path%"
 )
 set scriptdir=%~dp0
 set curdir=%cd%
@@ -87,11 +87,13 @@ exit /b 0
 :init_python
     @echo off
     echo === creating venv
-    python -m venv venv
+    py -3.7 -m venv venv
     call venv\scripts\activate
     python -m pip install -U pip > nul 2>&1
     if %ERRORLEVEL% NEQ 0 goto :error
     pip install snowflake-connector-python > nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto :error
+    python -m pip install -U awscli > nul 2>&1
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
