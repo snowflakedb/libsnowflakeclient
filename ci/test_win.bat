@@ -91,6 +91,10 @@ exit /b 0
     call venv\scripts\activate
     python -m pip install -U pip > nul 2>&1
     if %ERRORLEVEL% NEQ 0 goto :error
+    pip install --upgrade --user awscli > nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto :error
+    pip install awscli > nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto :error
     pip install snowflake-connector-python > nul 2>&1
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
