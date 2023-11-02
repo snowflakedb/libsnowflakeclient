@@ -194,6 +194,9 @@ void test_new_retry_strategy(void **unused) {
   uint32 next_sleep_in_secs = 0;
   uint32 total_backoff = 0;
   int retry_count = 0;
+
+  srand(time(NULL));
+
   for (;retry_count < SF_MAX_RETRY; retry_count++)
   {
     assert_int_equal(is_retryable_http_code(error_codes[retry_count]), SF_BOOLEAN_TRUE);

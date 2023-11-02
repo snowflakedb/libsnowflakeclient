@@ -647,6 +647,8 @@ SF_CONNECT *STDCALL snowflake_init() {
 
     // Make sure memory was actually allocated
     if (sf) {
+        // seed the rand
+        srand(time(NULL));
         // Initialize object with default values
         sf->host = NULL;
         sf->port = NULL;
