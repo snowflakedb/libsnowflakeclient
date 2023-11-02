@@ -547,7 +547,7 @@ uint32
 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep, uint64 retry_count) {
   float cur_wait_time = sleep;
   cur_wait_time = choose_random(cur_wait_time + get_jitter(sleep),
-                                2 * retry_count + get_jitter(sleep));
+                                pow(2, retry_count) + get_jitter(sleep));
   // no cap for new retry strategy while keep the existing cap for other requests
   if ((djb->cap != SF_NEW_STRATEGY_BACKOFF_CAP) && (cur_wait_time > djb->cap))
   {
