@@ -314,6 +314,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                SF_ERROR_STRUCT *error,
                                int64 renew_timeout,
                                int8 retry_max_count,
+                               int64 retry_timeout,
                                int64 *elapsed_time,
                                int8 *retried_count,
                                sf_bool *is_renew,
@@ -330,28 +331,23 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     // Set to 0
     memset(query_code, 0, QUERYCODE_LEN);
 
-    int64 timeout;
-    sf_bool is_login_request = is_login_url(url);
-    if (SF_BOOLEAN_TRUE == is_login_request)
+    sf_bool is_new_strategy_url = is_new_retry_strategy_url(url);
+    if (SF_BOOLEAN_TRUE == is_new_strategy_url)
     {
-      timeout = sf->login_timeout;
       if (!add_appinfo_header(sf, header, error)) {
         return ret;
       }
     }
-    else
-    {
-      timeout = sf->network_timeout;
-    }
+
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
-                          timeout, SF_BOOLEAN_FALSE, error,
+                          retry_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
                           retried_count, is_renew, renew_injection,
                           sf->proxy, sf->no_proxy, sf->include_retry_reason,
-                          is_login_request) ||
+                          is_new_strategy_url) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -385,7 +381,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                     break;
                 }
                 if (!curl_post_call(sf, curl, url, new_header, body, json,
-                                    error, renew_timeout, retry_max_count,
+                                    error, renew_timeout, retry_max_count, retry_timeout,
                                     elapsed_time, retried_count, is_renew, renew_injection)) {
                     // Error is set in curl call
                     break;
@@ -421,7 +417,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             log_trace("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
-                         0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                         0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
                 // Error came from request up, just break
                 stop = SF_BOOLEAN_TRUE;
                 break;
@@ -472,10 +468,10 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
-                          sf->network_timeout, SF_BOOLEAN_FALSE, error,
+                          get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
-                          0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                          0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -548,17 +544,22 @@ STDCALL decorrelate_jitter_init(uint32 base, uint32 cap) {
 }
 
 uint32
-get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep) {
-    sleep = uimin(sleep, djb->cap);
-    // Prevents division by 0 when sleep = 1
-    // and if sleep == 2 the value of sleep time returned never changes.
-    if(sleep <= 2)
-    {
-      sleep = 4;
-    }
-    // (sleep/2) + (random from 0 to sleep) = random from sleep/2 to sleep + sleep/2
-    // = sleep +-50%
-    return ((uint32)(sleep/2) + (uint32) (rand() % (sleep + 1)));
+get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep, uint64 retry_count) {
+  float cur_wait_time = sleep;
+  cur_wait_time = choose_random(cur_wait_time + get_jitter(sleep),
+                                2 * retry_count + get_jitter(sleep));
+  // no cap for new retry strategy while keep the existing cap for other requests
+  if ((djb->cap != SF_NEW_STRATEGY_BACKOFF_CAP) && (cur_wait_time > djb->cap))
+  {
+    cur_wait_time = djb->cap;
+  }
+  // at least wait for 1 seconds
+  if (cur_wait_time < 1)
+  {
+    cur_wait_time = 1;
+  }
+
+  return (uint32)cur_wait_time;
 }
 
 char * STDCALL encode_url(CURL *curl,
@@ -905,6 +906,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool use_application_json_accept_type,
                         int64 renew_timeout,
                         int8 retry_max_count,
+                        int64 retry_timeout,
                         int64 *elapsed_time,
                         int8 *retried_count,
                         sf_bool *is_renew,
@@ -938,7 +940,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
         // Execute request and set return value to result
         if (request_type == POST_REQUEST_TYPE) {
             ret = curl_post_call(sf, curl, encoded_url, my_header, body, json,
-                                 error, renew_timeout, retry_max_count,
+                                 error, renew_timeout, retry_max_count, retry_timeout,
                                  elapsed_time, retried_count, is_renew,
                                  renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
@@ -1022,7 +1024,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     // Successful call, non-null json, successful success code, data object and session token must all be present
     // otherwise set an error
     if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error,
-                        0, sf->retry_on_connect_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
+                        0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
         !json) {
         // Do nothing, let error propogate up from post call
         log_error("Curl call failed during renew session");
@@ -1080,9 +1082,10 @@ void STDCALL retry_ctx_free(RETRY_CONTEXT *retry_ctx) {
 }
 
 uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
-  uint32 jittered_sleep = get_next_sleep_with_jitter(retry_ctx->djb, retry_ctx->sleep_time);
-    retry_ctx->sleep_time = retry_ctx->sleep_time * 2;
+    uint32 cur_wait_time = retry_ctx->sleep_time;
     ++retry_ctx->retry_count;
+    // caculate next sleep time
+    retry_ctx->sleep_time = get_next_sleep_with_jitter(retry_ctx->djb, retry_ctx->sleep_time, retry_ctx->retry_count);
 
     // limit the sleep time within retry timeout
     uint32 time_elapsed = time(NULL) - retry_ctx->start_time;
@@ -1093,7 +1096,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
       // can be caught right after
       return 1;
     }
-    return uimin(jittered_sleep, (uint32)(retry_ctx->retry_timeout - time_elapsed));
+    return uimin(cur_wait_time, (uint32)(retry_ctx->retry_timeout - time_elapsed));
 }
 
 sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
@@ -1215,7 +1218,7 @@ void STDCALL sf_header_destroy(SF_HEADER *sf_header) {
     SF_FREE(sf_header);
 }
 
-sf_bool is_login_url(const char * url)
+sf_bool is_new_retry_strategy_url(const char * url)
 {
   if (!url)
   {
@@ -1278,4 +1281,47 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
 
 error:
   return ret;
+}
+
+float choose_random(float min, float max)
+{
+  // get a number between 0 ~ 1
+  float scale = rand() / (float)RAND_MAX;
+  // scale to min ~ max
+  return min + scale * (max - min);
+}
+
+float get_jitter(int cur_wait_time) {
+  float multiplication_factor = choose_random(-1, 1);
+  float jitter_amount = 0.5 * cur_wait_time * multiplication_factor;
+  return jitter_amount;
+}
+
+// utility function to get the less one, take 0 as special value for unlimited
+int64 get_less_one(int64 a, int64 b)
+{
+  if (a == 0)
+  {
+    return b;
+  }
+  if (b == 0)
+  {
+    return a;
+  }
+  return a < b ? a : b;
+}
+
+int64 get_login_timeout(SF_CONNECT *sf)
+{
+  return get_less_one(sf->login_timeout, sf->retry_timeout);
+}
+
+int64 get_retry_timeout(SF_CONNECT *sf)
+{
+  return get_less_one(sf->network_timeout, sf->retry_timeout);
+}
+
+int8 get_login_retry_count(SF_CONNECT *sf)
+{
+  return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
 }

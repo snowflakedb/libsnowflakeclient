@@ -109,12 +109,8 @@ typedef struct URL_KEY_VALUE {
 // internal definition for backoff time
 #define SF_BACKOFF_BASE 1
 #define SF_BACKOFF_CAP 16
-// to meet 300 seconds timetout with 7 retries
-// 4 + 8 + 16 + 32 + 64 + 128 + 45
-// the CAP of 128 would keep the backoff time with a reasonable value in case
-// customer increate the login timeout and retry number.
-#define SF_LOGIN_BACKOFF_BASE 4
-#define SF_LOGIN_BACKOFF_CAP 128
+// max uint32 value to mark no backoff cap for new retry strategy
+#define SF_NEW_STRATEGY_BACKOFF_CAP 0xFFFFFFFF
 /**
  * Used to keep track of min and max backoff time for a connection retry
  */
@@ -238,6 +234,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  *                        then go back to the retry by calling curl_post_call() again.
  *                        0 means no renew timeout needed.
  * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
  * @param elapsed_time    The in/out paramter to record the elapsed time before
  *                        curl_post_call() returned due to renew timeout last time
  * @param retried_count   The in/out paramter to record the number of retry attempts
@@ -250,7 +247,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  */
 sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, char *body,
                                cJSON **json, SF_ERROR_STRUCT *error,
-                               int64 renew_timeout, int8 retry_max_count,
+                               int64 renew_timeout, int8 retry_max_count, int64 retry_timeout,
                                int64 *elapsed_time, int8 *retried_count,
                                sf_bool *is_renew, sf_bool renew_injection);
 
@@ -274,9 +271,10 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *
  *
  * @param djb Decorrelate Jitter Backoff object used to determine min and max backoff time.
  * @param sleep Duration of last sleep in seconds.
+ * @param the current number of retry.
  * @return Number of seconds to sleep.
  */
-uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
+uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep, uint64 retry_count);
 
 /**
  * Creates a URL that is safe to use with cURL. Caller must free the memory associated with the encoded URL.
@@ -508,7 +506,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
 sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
                         char *body, SF_HEADER *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
                         sf_bool use_application_json_accept_type,
-                        int64 renew_timeout, int8 retry_max_count,
+                        int64 renew_timeout, int8 retry_max_count, int64 retry_timeout,
                         int64 *elapsed_time, int8 *retried_count,
                         sf_bool *is_renew, sf_bool renew_injection);
 
@@ -576,18 +574,50 @@ void STDCALL sf_header_destroy(SF_HEADER *sf_header);
 CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy);
 
 /**
-* Determines if the url is login request against to
+* Determines if the url is request against to
 * login-request
 * authenticator-request
 * token-request
 *
 * @param url Url string to check
-* @return True (1) if it's login request, False (0) if not.
+* @return True (1) if it's request needs new retry strategy, False (0) if not.
 */
-sf_bool is_login_url(const char * url);
+sf_bool is_new_retry_strategy_url(const char * url);
+
+/**
+* Utility function to choose a random float number in range
+*
+* @param min The minimum value of the range
+* @param max the maximum value of the range
+* @return A random float number between min and max
+*/
+float choose_random(float min, float max);
+
+/**
+* Utility function to caculate jitter from current wait time
+*
+* @param cur_wait_time the current wait time.
+* @return A random float number between +/-50%
+*/
+float get_jitter(int cur_wait_time);
 
 // add CLIENT_APP_ID/CLIENT_APP_VERSION in header for login rquests
 sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *error);
+
+/*
+* Get login timeout from connection
+*/
+int64 get_login_timeout(SF_CONNECT *sf);
+
+/*
+* Get max retry number for connection
+*/
+int8 get_login_retry_count(SF_CONNECT *sf);
+
+/*
+* Get retry timeout from connection
+*/
+int64 get_retry_timeout(SF_CONNECT *sf);
 
 #ifdef __cplusplus
 }

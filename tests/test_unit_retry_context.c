@@ -175,26 +175,26 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   assert_int_equal(strncmp(URL_QUERY, urlbuf, strlen(urlbuf)), 0);
 }
 
-void test_login_retry_strategy(void **unused) {
+void test_new_retry_strategy(void **unused) {
   DECORRELATE_JITTER_BACKOFF djb = {
-    SF_LOGIN_BACKOFF_BASE,    //base
-    SF_LOGIN_BACKOFF_CAP      //cap
+    SF_BACKOFF_BASE,    //base
+    SF_NEW_STRATEGY_BACKOFF_CAP      //cap
   };
   RETRY_CONTEXT curl_retry_ctx = {
     0,      //retry_count
     0,      // retry reason
-    SF_LOGIN_TIMEOUT,
+    SF_RETRY_TIMEOUT,
     djb.base,      // time to sleep
     &djb,    // Decorrelate jitter
     time(NULL)
   };
 
-  uint32 error_codes[SF_LOGIN_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
-  uint32 backoff = SF_LOGIN_BACKOFF_BASE;
-  uint32 next_sleep_in_secs = 0;;
+  uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
+  uint32 backoff = SF_BACKOFF_BASE;
+  uint32 next_sleep_in_secs = 0;
   uint32 total_backoff = 0;
   int retry_count = 0;
-  for (;retry_count < SF_LOGIN_MAX_RETRY; retry_count++)
+  for (;retry_count < SF_MAX_RETRY; retry_count++)
   {
     assert_int_equal(is_retryable_http_code(error_codes[retry_count]), SF_BOOLEAN_TRUE);
     next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
@@ -204,24 +204,26 @@ void test_login_retry_strategy(void **unused) {
 
     if (total_backoff + next_sleep_in_secs >= SF_LOGIN_TIMEOUT)
     {
-      // the last backoff is capped by login timeout
-      assert_in_range(next_sleep_in_secs, 0, backoff / 2 + backoff);
       retry_count++;
       break;
     }
-    assert_in_range(next_sleep_in_secs, backoff / 2, backoff / 2 + backoff);
-
-    backoff = backoff * 2;
   }
-  // minmum total backoff time, jetter -50% each time:
-  // 2, 4, 8, 16, 32, 64, 64 = 250
-  assert_in_range(total_backoff, 240, SF_LOGIN_TIMEOUT + 10);
-  // minmum retry count, jetter +50% each time
-  // 6, 12, 24, 48, 96, 114 = 300
-  assert_in_range(retry_count, 6, SF_LOGIN_MAX_RETRY);
+
+  int delta = 10; // delta in case the time counter is not accurate
+  if (total_backoff < SF_RETRY_TIMEOUT - delta)
+  {
+    // not reached the timeout, must reached the retry number first
+    assert_int_equal(retry_count, SF_MAX_RETRY);
+  }
+  else
+  {
+    // reached the timeout
+    assert_in_range(retry_count, 0, SF_MAX_RETRY);
+    assert_in_range(total_backoff, SF_RETRY_TIMEOUT - delta, SF_RETRY_TIMEOUT + delta);
+  }
 }
 
-void test_login_request_header(void **unused) {
+void test_retry_request_header(void **unused) {
   struct TESTCASE {
     const char* url;
     sf_bool has_app_header;
@@ -243,7 +245,7 @@ void test_login_request_header(void **unused) {
   for (int i = 0; i < casenum; i++)
   {
     header = sf_header_create();
-    if (is_login_url(cases[i].url))
+    if (is_new_retry_strategy_url(cases[i].url))
     {
       add_appinfo_header(&sf, header, NULL);
     }
@@ -275,8 +277,8 @@ int main(void) {
         cmocka_unit_test(test_update_other_url_with_guid),
         cmocka_unit_test(test_update_query_url_with_retry_reason_disabled),
         cmocka_unit_test(test_update_query_url_with_retry_reason_enabled),
-        cmocka_unit_test(test_login_retry_strategy),
-        cmocka_unit_test(test_login_request_header),
+        cmocka_unit_test(test_new_retry_strategy),
+        cmocka_unit_test(test_retry_request_header),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

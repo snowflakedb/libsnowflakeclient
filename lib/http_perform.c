@@ -159,7 +159,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              const char *proxy,
                              const char *no_proxy,
                              sf_bool include_retry_reason,
-                             sf_bool is_login_request) {
+                             sf_bool is_new_strategy_request) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -168,13 +168,12 @@ sf_bool STDCALL http_perform(CURL *curl,
       SF_BACKOFF_BASE,      //base
       SF_BACKOFF_CAP      //cap
     };
-    if (SF_BOOLEAN_TRUE == is_login_request)
+    if (SF_BOOLEAN_TRUE == is_new_strategy_request)
     {
-      djb.base = SF_LOGIN_BACKOFF_BASE;
-      djb.cap = SF_LOGIN_BACKOFF_CAP;
+      djb.cap = SF_NEW_STRATEGY_BACKOFF_CAP;
     }
 
-    network_timeout = (network_timeout > 0) ? network_timeout : SF_NETWORK_TIMEOUT;
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_RETRY_TIMEOUT;
     if (elapsed_time) {
         network_timeout -= *elapsed_time;
         if (network_timeout <= 0) {

@@ -515,6 +515,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
+    log_debug("retry_timeout: %d", sf->retry_timeout);
+    log_debug("retry_count: %d", sf->retry_count);
     log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
     log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
 
@@ -677,7 +679,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->token = NULL;
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
-        sf->network_timeout = SF_NETWORK_TIMEOUT;
+        sf->network_timeout = 0;
+        sf->retry_timeout = SF_RETRY_TIMEOUT;
         sf->sequence_counter = 0;
         _mutex_init(&sf->mutex_sequence_counter);
         sf->request_id[0] = '\0';
@@ -695,7 +698,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->directURL = NULL;
         sf->direct_query_token = NULL;
         sf->retry_on_curle_couldnt_connect_count = 0;
-        sf->retry_on_connect_count = SF_LOGIN_MAX_RETRY;
+        sf->retry_on_connect_count = 0;
+        sf->retry_count = SF_MAX_RETRY;
 
         sf->qcc_capacity = QCC_CAPACITY_DEF;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
@@ -722,7 +726,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
         if (request(sf, &resp, DELETE_SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), NULL, NULL,
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
-                    0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                    0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
             s_resp = snowflake_cJSON_Print(resp);
             log_trace("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
@@ -874,7 +878,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         if (request(sf, &resp, SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
-                    renew_timeout, sf->retry_on_connect_count, &elapsed_time,
+                    renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), &elapsed_time,
                     &retried_count, &is_renew, renew_injection)) {
             s_resp = snowflake_cJSON_Print(resp);
             log_trace("Here is JSON response:\n%s", s_resp);
@@ -1054,14 +1058,17 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
-            if (sf->login_timeout < SF_LOGIN_TIMEOUT)
-            {
-              sf->login_timeout = SF_LOGIN_TIMEOUT;
-            }
             break;
         case SF_CON_NETWORK_TIMEOUT:
-            sf->network_timeout = value ? *((int64 *) value) : SF_NETWORK_TIMEOUT;
+            sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
+        case SF_CON_RETRY_TIMEOUT:
+          sf->retry_timeout = value ? *((int64 *)value) : SF_RETRY_TIMEOUT;
+          if (sf->retry_timeout < SF_RETRY_TIMEOUT)
+          {
+            sf->retry_timeout = SF_RETRY_TIMEOUT;
+          }
+          break;
         case SF_CON_AUTOCOMMIT:
             sf->autocommit = value ? *((sf_bool *) value) : SF_BOOLEAN_TRUE;
             break;
@@ -1093,12 +1100,15 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->jwt_cnxn_wait_time = value ? *((int64 *)value) : SF_JWT_CNXN_WAIT_TIME;
             break;
         case SF_CON_MAX_CON_RETRY:
-            sf->retry_on_connect_count = value ? *((int8 *)value) : SF_LOGIN_MAX_RETRY;
-            if (sf->retry_on_connect_count < SF_LOGIN_MAX_RETRY)
-            {
-              sf->retry_on_connect_count = SF_LOGIN_MAX_RETRY;
-            }
+            sf->retry_on_connect_count = value ? *((int8 *)value) : SF_MAX_RETRY;
             break;
+        case SF_CON_MAX_RETRY:
+          sf->retry_count = value ? *((int8 *)value) : SF_MAX_RETRY;
+          if (sf->retry_count < SF_MAX_RETRY)
+          {
+            sf->retry_count = SF_MAX_RETRY;
+          }
+          break;
         case SF_CON_PROXY:
             alloc_buffer_and_copy(&sf->proxy, value);
             break;
@@ -1188,6 +1198,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_NETWORK_TIMEOUT:
             *value = &sf->network_timeout;
             break;
+        case SF_CON_RETRY_TIMEOUT:
+          *value = &sf->retry_timeout;
+          break;
         case SF_CON_AUTOCOMMIT:
             *value = &sf->autocommit;
             break;
@@ -1227,6 +1240,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_MAX_CON_RETRY:
             *value = &sf->retry_on_connect_count;
             break;
+        case SF_CON_MAX_RETRY:
+          *value = &sf->retry_count;
+          break;
         case SF_CON_PROXY:
             *value = sf->proxy;
             break;
@@ -2022,7 +2038,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (request(sfstmt->connection, &resp, queryURL, url_params,
                 url_paramSize , s_body, NULL,
                 POST_REQUEST_TYPE, &sfstmt->error, is_put_get_command,
-                0, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                0, sfstmt->connection->retry_count, get_retry_timeout(sfstmt->connection),
+                NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
