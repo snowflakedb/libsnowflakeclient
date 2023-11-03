@@ -66,7 +66,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   if (hFind == INVALID_HANDLE_VALUE)
   {
     DWORD dwError = GetLastError();
-    if (dwError == ERROR_NO_MORE_FILES || dwError == ERROR_FILE_NOT_FOUND)
+    if (dwError == ERROR_NO_MORE_FILES || dwError == ERROR_FILE_NOT_FOUND ||
+        dwError == ERROR_PATH_NOT_FOUND)
     {
       CXX_LOG_ERROR("No file matching pattern %s has been found. Error: %d", 
         sourceLocation.c_str(), dwError);
