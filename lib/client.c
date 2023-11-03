@@ -1066,7 +1066,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_RETRY_TIMEOUT:
           sf->retry_timeout = value ? *((int64 *)value) : SF_RETRY_TIMEOUT;
-          if (sf->retry_timeout < SF_RETRY_TIMEOUT)
+          if ((sf->retry_timeout < SF_RETRY_TIMEOUT) && (sf->retry_timeout != 0))
           {
             sf->retry_timeout = SF_RETRY_TIMEOUT;
           }
@@ -1106,7 +1106,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_MAX_RETRY:
           sf->retry_count = value ? *((int8 *)value) : SF_MAX_RETRY;
-          if (sf->retry_count < SF_MAX_RETRY)
+          if ((sf->retry_count < SF_MAX_RETRY) && (sf->retry_count != 0))
           {
             sf->retry_count = SF_MAX_RETRY;
           }
