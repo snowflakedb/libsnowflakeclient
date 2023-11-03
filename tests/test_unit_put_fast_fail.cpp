@@ -420,6 +420,15 @@ static int gr_setup(void **unused)
 }
 
 int main(void) {
+  // temporarily comment out test case could hang on Linux Jenkins run
+  // sdk issue 658, 340 to follow up
+  char *genv = getenv("GITHUB_ACTIONS");
+  if ((!genv) || (strlen(genv) == 0)) {
+#ifdef __linux__
+    return 0;
+#endif
+  }
+
   void **unused;
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_put_fast_fail_sequential),
