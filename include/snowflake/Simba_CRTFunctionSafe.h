@@ -35,6 +35,8 @@ extern char* STDCALL sf_strerror(int);
 
 #if defined(WIN32) || defined(_WIN64)   // For Windows
 
+    #define sf_free_s(x)        free(x)
+
     /// @brief Copy a string.
     /// 
     /// @param out_dest         Destination string buffer. (NOT OWN)
@@ -244,10 +246,13 @@ extern char* STDCALL sf_strerror(int);
     }
 
 
-#define sb_getenv   sf_getenv
-#define sb_strerror sf_strerror
+    #define sb_getenv sf_getenv
+    #define sb_strerror sf_strerror
+
 
 #else   // For all other platforms except Windows
+
+    #define sf_free_s(x)
 
     /// @brief Copy a string.
     /// 
@@ -404,12 +409,14 @@ extern char* STDCALL sf_strerror(int);
     static inline FILE* sb_fopen(FILE** out_file, const char* in_filename, const char* in_mode)
     {
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
-        return fopen_s(out_file, in_filename, in_mode) ? NULL : *out_file;
+        // to simulate fopen, *out_file is guaranteed to be set, fopen_s don't change out_file on error
+        return fopen_s(out_file, in_filename, in_mode) ? (*out_file = NULL) : *out_file;
 #else
         return *out_file = fopen(in_filename, in_mode);
 #endif
     }
 
+#define sb_free_s       sf_free_s
 
 
 #ifdef __cplusplus

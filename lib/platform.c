@@ -268,7 +268,8 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 
 char * STDCALL sf_getenv(const char *name) {
 #ifdef _WIN32
-    return getenv(name);
+    char* result = NULL;
+    return _dupenv_s(&result, NULL, name) ? NULL : result;
 #   else
     return getenv(name);
 #   endif
@@ -293,7 +294,11 @@ int STDCALL sf_mkdir(const char *path) {
 char* STDCALL sf_strerror(int in_errNumber)
 {
 #ifdef _WIN32
-    return strerror(in_errNumber);
+    char* buf = (char*)malloc(BUFSIZ);
+    if (buf && 0 == strerror_s(buf, BUFSIZ, in_errNumber))
+        return buf;
+    free(buf);
+    return NULL;
 #else
     return strerror(in_errNumber);
 #endif
