@@ -309,7 +309,8 @@ void test_token_renew_core(std::string fileName)
   MockedStatementPut mockedStatementPut(fileName);
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
-
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
   ITransferResult * result = agent.execute(&cmd);
 
   std::string put_status;
@@ -355,7 +356,8 @@ void test_token_renew_get_remote_meta(void **unused)
   MockedStatementGet mockedStatementGet;
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementGet);
-
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
   ITransferResult * result = agent.execute(&cmd);
 
   std::string get_status;
@@ -377,6 +379,8 @@ void test_parse_exception(void **unused)
   MockedFailedParseStmt failedParseStmt;
 
   Snowflake::Client::FileTransferAgent agent(&failedParseStmt);
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
 
   try
   {
@@ -404,6 +408,8 @@ void test_transfer_exception_upload(void **unused)
   MockedStatementPut mockedStatementPut("small*");
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
 
   try
   {
@@ -426,7 +432,8 @@ void test_transfer_exception_download(void **unused)
   MockedStatementGetSmall mockedStatementGetSmall;
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementGetSmall);
-
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
   ITransferResult * result = agent.execute(&cmd);
 
   std::string get_status;
@@ -453,14 +460,6 @@ static int gr_setup(void **unused)
 }
 
 int main(void) {
-  // temporarily comment out test case could hang on Linux Jenkins run
-  // sdk issue 658, 340 to follow up
-  char *genv = getenv("GITHUB_ACTIONS");
-  if ((!genv) || (strlen(genv) == 0)) {
-#ifdef __linux__
-    return 0;
-#endif
-  }
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_parse_exception),
     cmocka_unit_test(test_token_renew_small_files),
