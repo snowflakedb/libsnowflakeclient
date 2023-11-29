@@ -155,7 +155,7 @@ private:
 class MockedStorageClient : public Snowflake::Client::IStorageClient
 {
 public:
-  MockedStorageClient() : m_failedTimes(0)
+  MockedStorageClient(bool sleepAfterSuccess) : m_failedTimes(0), m_sleepAfterSuccess(sleepAfterSuccess)
   {
   }
 
@@ -186,11 +186,14 @@ public:
     }
     //Lets make succesful files wait
     //So the failed ones can catch up with retries and set fastFail.
+    if (m_sleepAfterSuccess)
+    {
 #ifdef _WIN32
-	Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+      Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
-	std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+      std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
 #endif
+    }
     return SUCCESS;
   }
 
@@ -221,23 +224,30 @@ public:
     }
     //Lets make succesful files wait
     //So the failed ones can catch up with retries and set fastFail.
+    if (m_sleepAfterSuccess)
+    {
 #ifdef _WIN32
-    Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+      Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
-    std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+      std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
 #endif
+    }
     return SUCCESS;
   }
 
 private:
   int m_failedTimes;
+  bool m_sleepAfterSuccess;
 };
 
 void test_put_fast_fail_core(bool successWithRetry)
 {
   std::string matchDir = getTestFileMatchDir();
   matchDir += "*.csv";
-  IStorageClient * client = new MockedStorageClient();
+  // no need to wait for failed ones when all success (successWithRetry=true)
+  // or run in sequence (parallel = 1)
+  bool sleepAfterSuccess = !successWithRetry && (parallelThreads != 1);
+  IStorageClient * client = new MockedStorageClient(sleepAfterSuccess);
   StorageClientFactory::injectMockedClient(client);
 
   std::string cmd = std::string("put file://") + matchDir + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
@@ -245,7 +255,8 @@ void test_put_fast_fail_core(bool successWithRetry)
   MockedStatementPut mockedStatementPut("*.csv");
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
-
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
   agent.setPutFastFail(true);
 
   if (successWithRetry)
@@ -292,7 +303,10 @@ void test_put_fast_fail_core(bool successWithRetry)
 void test_get_fast_fail_core(bool successWithRetry)
 {
   std::string matchDir = getTestFileMatchDir();
-  IStorageClient * client = new MockedStorageClient();
+  // no need to wait for failed ones when all success (successWithRetry=true)
+  // or run in sequence (parallel = 1)
+  bool sleepAfterSuccess = !successWithRetry && (parallelThreads != 1);
+  IStorageClient * client = new MockedStorageClient(sleepAfterSuccess);
   StorageClientFactory::injectMockedClient(client);
 
   std::string cmd = std::string("get @odbctestStage file://") + matchDir;
@@ -300,7 +314,8 @@ void test_get_fast_fail_core(bool successWithRetry)
   MockedStatementGet mockedStatementget;
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementget);
-
+  // use urandom to avoid blocking
+  agent.setRandomDeviceAsUrand(true);
   agent.setGetFastFail(true);
 
   if (successWithRetry)
@@ -420,15 +435,6 @@ static int gr_setup(void **unused)
 }
 
 int main(void) {
-  // temporarily comment out test case could hang on Linux Jenkins run
-  // sdk issue 658, 340 to follow up
-  char *genv = getenv("GITHUB_ACTIONS");
-  if ((!genv) || (strlen(genv) == 0)) {
-#ifdef __linux__
-    return 0;
-#endif
-  }
-
   void **unused;
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_put_fast_fail_sequential),

@@ -306,7 +306,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
 
   if (!m_failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.", command);
+    CXX_LOG_DEBUG("%s command FAILED.", command->c_str());
     if (isPutFastFailEnabled())
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS, m_failedTransfers.c_str());
@@ -704,7 +704,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
 
   if (!m_failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.", command);
+    CXX_LOG_DEBUG("%s command FAILED.", command->c_str());
     if (isGetFastFailEnabled())
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_DOWNLOADS, m_failedTransfers.c_str());
