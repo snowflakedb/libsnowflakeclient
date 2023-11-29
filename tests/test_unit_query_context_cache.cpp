@@ -3,7 +3,7 @@
  */
 
 #include <string>
-#include "./lib/QueryContextCache.hpp"
+#include "./lib/ClientQueryContextCache.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 
@@ -19,7 +19,7 @@ static const uint64 BASE_PRIORITY = 0;
 class QueryContextCacheTestHelper
 {
 public:
-  Snowflake::Client::QueryContextCache qcc;
+  Snowflake::Client::ClientQueryContextCache qcc;
   std::vector<uint64> expectedIDs;
   std::vector<uint64> expectedReadTimestamp;
   std::vector<uint64> expectedPriority;

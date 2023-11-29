@@ -210,6 +210,17 @@ typedef enum SF_STATUS {
 #define SF_SQLSTATE_INVALID_CURSOR_POSITION "HY108"
 #define SF_SQLSTATE_OPTIONAL_FEATURE_NOT_IMPLEMENTED "HYC00"
 
+// For Query Context Cache
+#define QCC_CAPACITY_DEF        5
+#define QCC_RSP_KEY             "queryContext"
+#define QCC_REQ_KEY             "queryContextDTO"
+#define QCC_ENTRIES_KEY         "entries"
+#define QCC_ID_KEY              "id"
+#define QCC_PRIORITY_KEY        "priority"
+#define QCC_TIMESTAMP_KEY       "timestamp"
+#define QCC_CONTEXT_KEY         "context"
+#define QCC_CONTEXT_VALUE_KEY   "base64Data"
+
 /**
  * Attributes for Snowflake database session context.
  */

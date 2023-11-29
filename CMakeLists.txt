@@ -210,6 +210,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Param.hpp
         include/snowflake/Exceptions.hpp
         include/snowflake/jwtWrapper.h
+        include/snowflake/QueryContextCache.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -219,7 +220,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/DataConversion.cpp
         cpp/lib/DataConversion.hpp
         cpp/lib/QueryContextCache.cpp
-        cpp/lib/QueryContextCache.hpp
+        cpp/lib/ClientQueryContextCache.cpp
+        cpp/lib/ClientQueryContextCache.hpp
         cpp/lib/result_set.cpp
         cpp/lib/result_set_arrow.cpp
         cpp/lib/result_set_json.cpp
