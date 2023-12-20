@@ -30,10 +30,37 @@ public:
                           IStatementPutGet *stmtPutGet);
 
   /**
-   * Given a source locations, find all files that match the location pattern,
+   * Given a source location, find all files that match the location pattern,
    * init file metadata, and divide them into different vector according to size
    */
   void populateSrcLocUploadMetadata(std::string &sourceLocation, size_t putThreshold);
+
+
+  /**
+  * Utility function to replace all matching instances in a string.
+  */
+  static void replaceStrAll(std::string& stringToReplace, std::string const& oldValue,
+                            std::string const& newValue);
+  /**
+  * Given a source location, find all files match the partern, recursively include
+  * all subfolders if the pattern is **
+  * Utility function called from populateSrcLocUploadMetadata.
+  *
+  * @param sourceLocation The source location could have pattern at the end.
+  * @param fileList Output the files with the full path.
+  *
+  * @return True when succeeded, false when no file matches with the source location.
+  * @throw SnowflakeTransferException on unexpected error.
+  */
+  bool listFiles(const std::string &sourceLocation, std::vector<std::string> & fileList);
+
+  /**
+  * Given a full path of a folder, add all files in the folder recursively including subfolders.
+  *
+  * @param folderPath The full path of a folder.
+  * @param fileList Output the files in the folder recursively including subfolders.
+  */
+  void includeSubfolderFilesRecursive(const std::string &folderPath, std::vector<std::string> & fileList);
 
   /**
    * Given a source location, find out file size to determine use parallel
@@ -79,7 +106,8 @@ private:
    * Given file name, populate metadata
    * @param fileName
    */
-  void initUploadFileMetadata(const std::string &fileDir, const char *fileName, size_t fileSize, size_t threshold);
+  void initUploadFileMetadata(const std::string &fileNameFull, const std::string &destPath,
+                              const std::string &fileName, size_t fileSize, size_t threshold);
 
   /**
    * init compression metadata
