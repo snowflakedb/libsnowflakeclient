@@ -14,7 +14,8 @@ if /I "%platform%"=="x64" set platform=x64
 if /I "%platform%"=="x86" set platform=x86
 
 set curdir=%cd%
-set ARROW_FROM_SOURCE=1
+:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
+:: set ARROW_FROM_SOURCE=1
 
 if defined arch (
     if not "%platform%"=="" (

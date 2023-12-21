@@ -10,7 +10,9 @@ call %*
 goto :EOF
 
 :get_version
-    set version=%arrow_version%
+:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
+::    set version=%arrow_version%
+    set version=0.17.1
     goto :EOF
 
 :build
