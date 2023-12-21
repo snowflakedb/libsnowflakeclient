@@ -1116,7 +1116,13 @@ sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
     // macro to simplify the code
     #define SPRINT_TO_BUFFER(ptr, fmt, param)                       \
     {                                                               \
-      written_bytes = sb_sprintf(ptr, buf_size, fmt, param);        \
+      if (1 < buf_size) { /* at least 1 char available */           \
+        written_bytes = sb_sprintf(ptr, buf_size, fmt, param);      \
+      }                                                             \
+      if (1 >= buf_size || 0 == written_bytes) {                    \
+        log_error("Out of space: retry_ctx_update_url");            \
+        return SF_BOOLEAN_FALSE;                                    \
+      }                                                             \
       ptr += written_bytes;                                         \
       buf_size -= written_bytes;                                    \
     }
