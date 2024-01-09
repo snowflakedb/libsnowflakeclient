@@ -1,9 +1,11 @@
 /*
  * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
  */
-#include <string.h>
-#include <cJSON.h>
 #include "utils/test_setup.h"
+#include <cJSON.h>
+#include <string.h>
+#include <connection.h>
+#include <error.h>
 
 #define MAX_LOB_SIZE    (16 * 1024 * 1024)
 #define LARGE_SIZE      (MAX_LOB_SIZE / 2)
