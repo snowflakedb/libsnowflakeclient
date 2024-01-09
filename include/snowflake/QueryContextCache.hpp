@@ -1,21 +1,16 @@
 /*
-* File:   QueryContextCache.hpp
-* Author: harryx
-*
-* Copyright (c) 2023 Snowflake Computing
-*
-* Created on August 31, 2023, 4:05 PM
-*/
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #pragma once
 #ifndef QUERY_CONTEXT_CACHE_HPP
 #define QUERY_CONTEXT_CACHE_HPP
 
-#include "query_context_cache.h"
 #include <mutex>
 #include <map>
 #include <set>
 #include <vector>
+#include "snowflake/client.h"
 
 namespace Snowflake
 {
@@ -61,20 +56,6 @@ public:
   void setCapacity(size_t capacity);
 
   /**
-  * @param data: the JSON value of QueryContext Object
-  */
-  void deserializeQueryContext(cJSON * data);
-
-  cJSON * serializeQueryContext();
-
-  /**
-  * for test purpose only, deserialize from JSON value serialized from cache
-  * for sending request
-  * @param data: the JSON value of QueryContext Object
-  */
-  void deserializeQueryContextReq(cJSON * data);
-
-  /**
   * Merge a new element comes from the server with the existing cache. Merge is based on read time
   * stamp for the same id and based on priority for two different ids.
   *
@@ -108,15 +89,24 @@ public:
                      std::vector<uint64>& priorities,
                      std::vector<std::string>& contexts);
 
+protected:
+  /**
+  * Update Query Context Cache
+  *
+  * @param entries Query context entries to be updated to cache.
+  */
+  void UpdateQueryContextCache(const std::vector<QueryContextElement>& entries);
+
+  /**
+  * Get entries from Query Context Cache
+  *
+  * @param entries Output all entries in cache.
+  *
+  * @return the number of the entries.
+  */
+  size_t GetQueryContextEntries(std::vector<QueryContextElement>& entries);
+
 private:
-  bool deserializeQueryContextElement(cJSON * entryNode,
-                                      QueryContextElement & contextElement);
-
-  // for test purpose only, deserializeQueryContextElement from serialized
-  // JSON value for request
-  bool deserializeQueryContextElementReq(cJSON * entryNode,
-                                         QueryContextElement & contextElement);
-
   /**
   * Add an element in the cache.
   *
@@ -152,7 +142,7 @@ private:
 
   /** Debugging purpose, log the all entries in the cache. */
   void logCacheEntries();
-
+  
   // The mutex protecting access to the query context cache
   std::recursive_mutex m_mutex;
 

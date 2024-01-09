@@ -708,7 +708,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->retry_on_connect_count = 0;
         sf->retry_count = SF_MAX_RETRY;
 
-        sf->qcc_capacity = QCC_CAPACITY_DEF;
+        sf->qcc_capacity = SF_QCC_CAPACITY_DEF;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->qcc = NULL;
     }
@@ -925,7 +925,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
-            qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, QCC_RSP_KEY));
+            qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
             _mutex_unlock(&sf->mutex_parameters);
             if (ret > 0) {
                 goto cleanup;
@@ -2031,7 +2031,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     cJSON * qcc = qcc_serialize(sfstmt->connection);
     if (qcc != NULL)
     {
-      snowflake_cJSON_AddItemToObject(body, QCC_REQ_KEY, qcc);
+      snowflake_cJSON_AddItemToObject(body, SF_QCC_REQ_KEY, qcc);
     }
 
     s_body = snowflake_cJSON_Print(body);
@@ -2159,7 +2159,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 /* Set other parameters. Ignore the status */
                 _set_current_objects(sfstmt, data);
                 _set_parameters_session_info(sfstmt->connection, data);
-                qcc_deserialize(sfstmt->connection, snowflake_cJSON_GetObjectItem(data, QCC_RSP_KEY));
+                qcc_deserialize(sfstmt->connection, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
                 _mutex_unlock(&sfstmt->connection->mutex_parameters);
                 int64 stmt_type_id;
                 if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {

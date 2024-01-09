@@ -8,16 +8,6 @@
 #include "snowflake/client.h"
 #include "cJSON.h"
 
-#define QCC_CAPACITY_DEF        5
-#define QCC_RSP_KEY             "queryContext"
-#define QCC_REQ_KEY             "queryContextDTO"
-#define QCC_ENTRIES_KEY         "entries"
-#define QCC_ID_KEY              "id"
-#define QCC_PRIORITY_KEY        "priority"
-#define QCC_TIMESTAMP_KEY       "timestamp"
-#define QCC_CONTEXT_KEY         "context"
-#define QCC_CONTEXT_VALUE_KEY   "base64Data"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
