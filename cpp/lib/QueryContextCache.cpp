@@ -1,11 +1,6 @@
 /*
-* File:   QueryContextCache.cpp
-* Author: harryx
-*
-* Copyright (c) 2023 Snowflake Computing
-*
-* Created on August 31, 2023, 4:05 PM
-*/
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "snowflake/QueryContextCache.hpp"
 #include "../logger/SFLogger.hpp"

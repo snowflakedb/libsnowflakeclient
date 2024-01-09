@@ -1,11 +1,6 @@
 /*
-* File:   ClientQueryContextCache.cpp
-* Author: harryx
-*
-* Copyright (c) 2023 Snowflake Computing
-*
-* Created on November 29, 2023, 12:40 PM
-*/
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "ClientQueryContextCache.hpp"
 #include "../logger/SFLogger.hpp"
@@ -14,9 +9,18 @@
 // wrapper functions for C
 extern "C" {
 
+  sf_bool is_qcc_enabled(SF_CONNECT * conn)
+  {
+    if (!conn || conn->qcc_disable)
+    {
+      return SF_BOOLEAN_FALSE;
+    }
+    return SF_BOOLEAN_TRUE;
+  }
+
   void qcc_initialize(SF_CONNECT * conn)
   {
-    if (!conn || conn->qcc_disable || conn->qcc)
+    if (!is_qcc_enabled(conn) || conn->qcc)
     {
       return;
     }
@@ -26,7 +30,7 @@ extern "C" {
 
   void qcc_set_capacity(SF_CONNECT * conn, uint64 capacity)
   {
-    if (!conn || conn->qcc_disable)
+    if (!is_qcc_enabled(conn))
     {
       return;
     }
@@ -39,7 +43,7 @@ extern "C" {
 
   cJSON* qcc_serialize(SF_CONNECT * conn)
   {
-    if (!conn || conn->qcc_disable || !conn->qcc)
+    if (!is_qcc_enabled(conn) || !conn->qcc)
     {
       return NULL;
     }
@@ -49,7 +53,7 @@ extern "C" {
 
   void qcc_deserialize(SF_CONNECT * conn, cJSON* query_context)
   {
-    if (!conn || conn->qcc_disable)
+    if (!is_qcc_enabled(conn))
     {
       return;
     }
@@ -112,7 +116,7 @@ void ClientQueryContextCache::deserializeQueryContext(cJSON * data)
   //     }
   //   ]
   std::vector<QueryContextElement> elements;
-  cJSON * entries = snowflake_cJSON_GetObjectItem(data, QCC_ENTRIES_KEY);
+  cJSON * entries = snowflake_cJSON_GetObjectItem(data, SF_QCC_ENTRIES_KEY);
   if ((entries) && (entries->type == cJSON_Array))
   {
     int arraySize = snowflake_cJSON_GetArraySize(entries);
@@ -146,7 +150,7 @@ void ClientQueryContextCache::deserializeQueryContextReq(cJSON * data)
   }
 
   std::vector<QueryContextElement> elements;
-  cJSON * entries = snowflake_cJSON_GetObjectItem(data, QCC_ENTRIES_KEY);
+  cJSON * entries = snowflake_cJSON_GetObjectItem(data, SF_QCC_ENTRIES_KEY);
   int arraySize = snowflake_cJSON_GetArraySize(entries);
   if ((entries) && (entries->type == cJSON_Array))
   {
@@ -180,19 +184,19 @@ cJSON * ClientQueryContextCache::serializeQueryContext()
   for (auto itr = elements.begin(); itr != elements.end(); itr++)
   {
     cJSON * entry = snowflake_cJSON_CreateObject();
-    snowflake_cJSON_AddUint64ToObject(entry, QCC_ID_KEY, itr->id);
-    snowflake_cJSON_AddUint64ToObject(entry, QCC_PRIORITY_KEY, itr->priority);
-    snowflake_cJSON_AddUint64ToObject(entry, QCC_TIMESTAMP_KEY, itr->readTimestamp);
+    snowflake_cJSON_AddUint64ToObject(entry, SF_QCC_ID_KEY, itr->id);
+    snowflake_cJSON_AddUint64ToObject(entry, SF_QCC_PRIORITY_KEY, itr->priority);
+    snowflake_cJSON_AddUint64ToObject(entry, SF_QCC_TIMESTAMP_KEY, itr->readTimestamp);
     cJSON * context = snowflake_cJSON_CreateObject();
     if (!itr->context.empty())
     {
-      snowflake_cJSON_AddStringToObject(context, QCC_CONTEXT_VALUE_KEY, itr->context.c_str());
+      snowflake_cJSON_AddStringToObject(context, SF_QCC_CONTEXT_VALUE_KEY, itr->context.c_str());
     }
-    snowflake_cJSON_AddItemToObject(entry, QCC_CONTEXT_KEY, context);
+    snowflake_cJSON_AddItemToObject(entry, SF_QCC_CONTEXT_KEY, context);
     snowflake_cJSON_AddItemToArray(entries, entry);
   }
 
-  snowflake_cJSON_AddItemToObject(queryContext, QCC_ENTRIES_KEY, entries);
+  snowflake_cJSON_AddItemToObject(queryContext, SF_QCC_ENTRIES_KEY, entries);
 
   return queryContext;
 }
@@ -201,7 +205,7 @@ cJSON * ClientQueryContextCache::serializeQueryContext()
 bool ClientQueryContextCache::deserializeQueryContextElement(cJSON * entryNode,
                                                        QueryContextElement & contextElement)
 {
-  cJSON * id = snowflake_cJSON_GetObjectItem(entryNode, QCC_ID_KEY);
+  cJSON * id = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_ID_KEY);
   if (id && (id->type == cJSON_Number))
   {
     contextElement.id = snowflake_cJSON_GetUint64Value(id);
@@ -212,7 +216,7 @@ bool ClientQueryContextCache::deserializeQueryContextElement(cJSON * entryNode,
     return false;
   }
 
-  cJSON * timestamp = snowflake_cJSON_GetObjectItem(entryNode, QCC_TIMESTAMP_KEY);
+  cJSON * timestamp = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_TIMESTAMP_KEY);
   if (timestamp && (timestamp->type == cJSON_Number))
   {
     contextElement.readTimestamp = snowflake_cJSON_GetUint64Value(timestamp);
@@ -223,7 +227,7 @@ bool ClientQueryContextCache::deserializeQueryContextElement(cJSON * entryNode,
     return false;
   }
 
-  cJSON * priority = snowflake_cJSON_GetObjectItem(entryNode, QCC_PRIORITY_KEY);
+  cJSON * priority = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_PRIORITY_KEY);
   if (priority && (priority->type == cJSON_Number))
   {
     contextElement.priority = snowflake_cJSON_GetUint64Value(priority);
@@ -234,7 +238,7 @@ bool ClientQueryContextCache::deserializeQueryContextElement(cJSON * entryNode,
     return false;
   }
 
-  cJSON * context = snowflake_cJSON_GetObjectItem(entryNode, QCC_CONTEXT_KEY);
+  cJSON * context = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_CONTEXT_KEY);
   if (!context || context->type == cJSON_NULL)
   {
     return true;
@@ -255,7 +259,7 @@ bool ClientQueryContextCache::deserializeQueryContextElement(cJSON * entryNode,
 bool ClientQueryContextCache::deserializeQueryContextElementReq(cJSON * entryNode,
                                                           QueryContextElement & contextElement)
 {
-  cJSON * id = snowflake_cJSON_GetObjectItem(entryNode, QCC_ID_KEY);
+  cJSON * id = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_ID_KEY);
   if (id && (id->type == cJSON_Number))
   {
     contextElement.id = snowflake_cJSON_GetUint64Value(id);
@@ -266,7 +270,7 @@ bool ClientQueryContextCache::deserializeQueryContextElementReq(cJSON * entryNod
     return false;
   }
 
-  cJSON * timestamp = snowflake_cJSON_GetObjectItem(entryNode, QCC_TIMESTAMP_KEY);
+  cJSON * timestamp = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_TIMESTAMP_KEY);
   if (timestamp && (timestamp->type == cJSON_Number))
   {
     contextElement.readTimestamp = snowflake_cJSON_GetUint64Value(timestamp);
@@ -277,7 +281,7 @@ bool ClientQueryContextCache::deserializeQueryContextElementReq(cJSON * entryNod
     return false;
   }
 
-  cJSON * priority = snowflake_cJSON_GetObjectItem(entryNode, QCC_PRIORITY_KEY);
+  cJSON * priority = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_PRIORITY_KEY);
   if (priority && (priority->type == cJSON_Number))
   {
     contextElement.priority = snowflake_cJSON_GetUint64Value(priority);
@@ -288,7 +292,7 @@ bool ClientQueryContextCache::deserializeQueryContextElementReq(cJSON * entryNod
     return false;
   }
 
-  cJSON * context = snowflake_cJSON_GetObjectItem(entryNode, QCC_CONTEXT_KEY);
+  cJSON * context = snowflake_cJSON_GetObjectItem(entryNode, SF_QCC_CONTEXT_KEY);
   if (!context || context->type == cJSON_NULL)
   {
     return true;
@@ -298,7 +302,7 @@ bool ClientQueryContextCache::deserializeQueryContextElementReq(cJSON * entryNod
     return false;
   }
 
-  cJSON * contextValue = snowflake_cJSON_GetObjectItem(context, QCC_CONTEXT_VALUE_KEY);
+  cJSON * contextValue = snowflake_cJSON_GetObjectItem(context, SF_QCC_CONTEXT_VALUE_KEY);
   if (!contextValue || contextValue->type == cJSON_NULL)
   {
     return true;

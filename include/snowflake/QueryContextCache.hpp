@@ -1,11 +1,6 @@
 /*
-* File:   QueryContextCache.hpp
-* Author: harryx
-*
-* Copyright (c) 2023 Snowflake Computing
-*
-* Created on August 31, 2023, 4:05 PM
-*/
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #pragma once
 #ifndef QUERY_CONTEXT_CACHE_HPP
