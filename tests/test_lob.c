@@ -7,7 +7,7 @@
 #include <connection.h>
 #include <error.h>
 
-#define MAX_LOB_SIZE    (16 * 1024 * 1024)
+#define MAX_LOB_SIZE    (128 * 1024 * 1024)
 #define LARGE_SIZE      (MAX_LOB_SIZE / 2)
 #define MEDIUM_SIZE     (LARGE_SIZE / 2)
 #define ORIGIN_SIZE     (16 * 1024 * 1024)
