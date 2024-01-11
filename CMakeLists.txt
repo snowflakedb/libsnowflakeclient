@@ -115,7 +115,7 @@ set(SOURCE_FILES
         lib/rbtree.h
         lib/rbtree.c
         lib/memory.h
-        lib/memory.c
+        lib/memory.cpp
         lib/connection.h
         lib/connection.c
         lib/constants.h

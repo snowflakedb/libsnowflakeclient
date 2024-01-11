@@ -5,6 +5,7 @@
 #include <snowflake/logger.h>
 #include "memory.h"
 #include "snowflake/platform.h"
+#include <stdexcept>
 
 // Basic hashing function. Works well for memory addresses
 #define sf_ptr_hash(p, t) (((unsigned long) ((unsigned long long)p) >> 3) & (sizeof (t)/sizeof ((t)[0]) - 1))
@@ -31,7 +32,7 @@ static struct allocation *alloc_find(const void *ptr) {
 }
 
 static void alloc_insert(const void *ptr, size_t size, const char *file, int line) {
-    struct allocation *alloc = malloc(sizeof(struct allocation));
+    struct allocation *alloc = (struct allocation*) malloc(sizeof(struct allocation));
     alloc->ptr = ptr;
     alloc->size = size;
     alloc->file = file;
@@ -84,7 +85,7 @@ void *sf_malloc(size_t size, const char *file, int line) {
     // If we could not allocate the needed data, exit
     if (data == NULL) {
         log_fatal("Could not allocate %zu bytes of memory. Most likely out of memory. Exiting...", size);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("fail to alloc memory");
     }
 
     _mutex_lock(&allocation_lock);
@@ -103,7 +104,7 @@ void *sf_calloc(size_t num, size_t size, const char *file, int line) {
     // If we could not allocate the needed data, exit
     if (data == NULL) {
         log_fatal("Could not allocate %zu bytes of memory. Most likely out of memory. Exiting...", (num * size));
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("fail to calloc memory");
     }
 
     _mutex_lock(&allocation_lock);
@@ -120,7 +121,7 @@ void *sf_realloc(void *ptr, size_t size, const char *file, int line) {
     // If we could not allocate the needed data, exit
     if (data == NULL && size > 0) {
         log_fatal("Could not allocate %zu bytes of memory. Most likely out of memory. Exiting...", size);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("fail to realloc memory");
     }
 
     _mutex_lock(&allocation_lock);
