@@ -5,14 +5,14 @@
 set arrow_src_version=0.17.1
 set arrow_build_version=2
 :: The full version number for dependency packaging/uploading/downloading
-set arrow_version=%arrow_src_version%.%arrow_build_version%
+:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
+:: set arrow_version=%arrow_src_version%.%arrow_build_version%
+set arrow_version=%arrow_src_version%
 call %*
 goto :EOF
 
 :get_version
-:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
-::    set version=%arrow_version%
-    set version=0.17.1
+    set version=%arrow_version%
     goto :EOF
 
 :build
