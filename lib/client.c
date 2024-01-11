@@ -351,7 +351,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         if (mkpath(LOG_PATH) == -1) {
             char* str_error = sf_strerror(errno);
             sb_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
-            sf_free_s(str_error);
+            free(str_error);
             goto cleanup;
         }
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -366,9 +366,9 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
 
 cleanup:
     if (sf_log_path != log_path) {
-        sf_free_s((char*) sf_log_path);
+        free((char*) sf_log_path);
     }
-    sf_free_s((char*) sf_log_level_str);
+    free((char*) sf_log_level_str);
     return ret;
 }
 
@@ -544,6 +544,7 @@ SF_STATUS STDCALL snowflake_global_init(
     _snowflake_memory_hooks_setup(hooks);
     sf_memory_init();
     sf_error_init();
+    sf_platform_init();
     if (!log_init(log_path, log_level)) {
         // no way to log error because log_init failed.
         sb_fprintf(stderr, "Error during log initialization");
@@ -584,6 +585,7 @@ SF_STATUS STDCALL snowflake_global_term() {
 
     log_term();
     sf_alloc_map_to_log(SF_BOOLEAN_TRUE);
+    sf_platform_term();
     sf_error_term();
     sf_memory_term();
     return SF_STATUS_SUCCESS;
@@ -3092,7 +3094,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
          * so that localtime_tz honors it.
          */
         _mutex_lock(&gmlocaltime_lock);
-        const char *prev_tz_ptr = sf_getenv("TZ");
+        char *prev_tz_ptr = sf_getenv("TZ");
         sf_setenv("TZ", tzptr);
         sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */
@@ -3107,6 +3109,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
         } else {
             sf_unsetenv("TZ");
         }
+        free(prev_tz_ptr);
         sf_tzset();
         _mutex_unlock(&gmlocaltime_lock);
     }

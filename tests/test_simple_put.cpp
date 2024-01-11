@@ -14,6 +14,8 @@
 #include "StatementPutGet.hpp"
 #include "FileTransferAgent.hpp"
 #include "boost/filesystem.hpp"
+#include "snowflake/Util.hpp"
+
 
 #define COLUMN_STATUS "STATUS"
 #define COLUMN_SOURCE "SOURCE"
@@ -32,7 +34,7 @@ using namespace boost::filesystem;
 
 // use encoding directly instead of actual character to avoid
 // build issue with encoding on different platforms
-// it's character é which is 0xe9 in Windows-1252 and 0xc3 0xa9 in UTF-8
+// it's character ï¿½ which is 0xe9 in Windows-1252 and 0xc3 0xa9 in UTF-8
 // On windows the default encoding is Windows-1252 on Linux/Mac it's UTF-8
 #ifdef _WIN32
 static std::string PLATFORM_STR = "\xe9";
@@ -1260,13 +1262,17 @@ void test_2GBlarge_get(void **unused)
   test_simple_get_data(getcmd.c_str(), std::to_string(FILE_SIZE_2GB).c_str());
 }
 
+// check if the test environment uses proxy already
+// many tests skip in this case
+static bool is_use_proxy()
+{
+    cbuf_t proxy_value(sf_getenv_or("all_proxy", "https_proxy", "http_proxy"));
+    return (proxy_value) ? true : false;
+}
+
 void test_simple_put_with_proxy(void **unused)
 {
-  if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-    sf_getenv("http_proxy")) {
-    // skip the test if the test environment uses proxy already
-    return;
-  }
+  if (is_use_proxy()) return;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1306,11 +1312,7 @@ void test_simple_put_with_proxy(void **unused)
 
 void test_simple_put_with_noproxy(void **unused)
 {
-  if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-    sf_getenv("http_proxy")) {
-    // skip the test if the test evironment uses proxy already
-    return;
-  }
+  if (is_use_proxy()) return;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1351,11 +1353,7 @@ void test_simple_put_with_noproxy(void **unused)
 
 void test_simple_put_with_proxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+  if (is_use_proxy()) return;
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");
@@ -1402,11 +1400,7 @@ void test_simple_put_with_proxy_fromenv(void **unused)
 
 void test_simple_put_with_noproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+  if (is_use_proxy()) return;
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");

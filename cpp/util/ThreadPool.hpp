@@ -11,6 +11,8 @@
 #include <pthread.h>
 #endif
 
+#include <cstdlib>
+
 #include <vector>
 #include <deque>
 #include <functional>
@@ -155,7 +157,9 @@ public:
     int err = pthread_key_create(&key, NULL);
     if (err)
     {
-      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", strerror(err));
+      char* str_err = sf_strerror(err);
+      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", str_err);
+      free(str_err);
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                                        "Thread context fail to initialize");
     }

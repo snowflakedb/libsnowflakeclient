@@ -20,6 +20,7 @@
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
 #include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/Util.hpp"
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
@@ -847,20 +848,18 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      }
      catch (...) {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-       char* str_error = sf_strerror(errno);
+       cbuf_t str_error(sf_strerror(errno));
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), str_error);
-       sf_free_s(str_error);
+                     fileMetadata->destPath.c_str(), (char*)str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
      if (!dstFile.is_open())
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-       char* str_error = sf_strerror(errno);
+       cbuf_t str_error(sf_strerror(errno));
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                     fileMetadata->destPath.c_str(), str_error);
-       sf_free_s(str_error);
+                     fileMetadata->destPath.c_str(), (char*)str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }

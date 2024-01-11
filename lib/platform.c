@@ -103,6 +103,7 @@ static const int cumulMonthDays[2][12] = {
     }
 };
 
+
 BOOL isLeapYear(int year)
 {
     // Hackish is-leap-year implementation from http://jsperf.com/find-leap-year/4
@@ -221,6 +222,7 @@ struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
 
       if (!SystemTimeToTzSpecificLocalTime(NULL, &gmTime, &localTime))
       {
+        free(tzptr);
         return NULL;
       }
       tm->tm_year = localTime.wYear - 1900;
@@ -230,9 +232,30 @@ struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
       tm->tm_min = localTime.wMinute;
       tm->tm_sec = localTime.wSecond;
   }
+  free(tzptr);
   return tm;
 }
 #endif
+
+
+#ifndef _WIN32
+static SF_MUTEX_HANDLE s_mutex_env;
+#endif
+
+void STDCALL sf_platform_init()
+{
+#ifndef _WIN32
+    _mutex_init(&s_mutex_env);
+#endif
+}
+
+void STDCALL sf_platform_term()
+{
+#ifndef _WIN32
+    _mutex_term(&s_mutex_env);
+#endif
+}
+
 
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
@@ -258,29 +281,44 @@ void STDCALL sf_tzset(void) {
 #endif
 }
 
-int STDCALL sf_setenv(const char *name, const char *value) {
+int STDCALL sf_setenv(const char *name, const char *value)
+{
+    int ret;
 #ifdef _WIN32
-    return _putenv_s(name, value);
+    ret = _putenv_s(name, value);
 #else
-    return setenv(name, value, 1);
+    _mutex_lock(&s_mutex_env);
+    ret = setenv(name, value, 1);
+    _mutex_unlock(&s_mutex_env);
 #endif
+    return ret;
 }
 
-char * STDCALL sf_getenv(const char *name) {
-#ifdef _WIN32
+char * STDCALL sf_getenv(const char *name)
+{
     char* result = NULL;
-    return _dupenv_s(&result, NULL, name) ? NULL : result;
-#   else
-    return getenv(name);
-#   endif
+#ifdef _WIN32
+    result = _dupenv_s(&result, NULL, name) ? NULL : result;
+#else
+    _mutex_lock(&s_mutex_env);
+    result = getenv(name);
+    if (result) 
+        result = strdup(result);
+    _mutex_unlock(&s_mutex_env);
+#endif
+    return result;
 }
 
 int STDCALL sf_unsetenv(const char *name) {
+    int ret;
 #ifdef _WIN32
-    return _putenv_s(name, "");
+    ret = _putenv_s(name, "");
 #else
-    return unsetenv(name);
+    _mutex_lock(&s_mutex_env);
+    ret = unsetenv(name);
+    _mutex_unlock(&s_mutex_env);
 #endif
+    return ret;
 }
 
 int STDCALL sf_mkdir(const char *path) {
@@ -293,15 +331,15 @@ int STDCALL sf_mkdir(const char *path) {
 
 char* STDCALL sf_strerror(int in_errNumber)
 {
-#ifdef _WIN32
     char* buf = (char*)malloc(BUFSIZ);
+#ifdef _WIN32
     if (buf && 0 == strerror_s(buf, BUFSIZ, in_errNumber))
+#else
+    if (buf && 0 == strerror_r(in_errNumber, buf, BUFSIZ))
+#endif
         return buf;
     free(buf);
     return NULL;
-#else
-    return strerror(in_errNumber);
-#endif
 }
 
 
@@ -798,7 +836,8 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 #ifdef _WIN32
   GetTempPath(100, tmpDir);
 #else
-  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+  char * tmpEnv = sf_getenv("TMP");
+  if (!tmpEnv) tmpEnv = sf_getenv("TEMP");
 
   if (!tmpEnv)
   {
@@ -810,6 +849,7 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
     size_t oldLen = strlen(tmpDir);
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';
+    free(tmpEnv);
   }
 #endif
 }

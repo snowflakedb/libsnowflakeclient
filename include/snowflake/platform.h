@@ -63,14 +63,8 @@ int STDCALL sf_unsetenv(const char *name);
 
 int STDCALL sf_mkdir(const char *path);
 
-/* on Windows, this function allocate new memory, caller should free it */
+/* this function allocate new memory, caller should free it */
 char* STDCALL sf_strerror(int errnum);
-
-#ifdef _WIN32
-#define sf_free_s(x)       free(x)
-#else
-#define sf_free_s(x)
-#endif
 
 int STDCALL
 _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg);
@@ -143,6 +137,10 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir);
 void STDCALL sf_get_username(char * username, int bufLen);
 
 void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile);
+
+void STDCALL sf_platform_init();
+void STDCALL sf_platform_term();
+
 
 #ifdef __cplusplus
 }

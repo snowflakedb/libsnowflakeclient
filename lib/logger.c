@@ -151,7 +151,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
             sb_fprintf(stderr,
                 "Error opening file from file path: %s\nError code: %s\n",
                 L.path, str_error);
-            sf_free_s(str_error);
+            free(str_error);
             L.path = NULL;
         }
     }

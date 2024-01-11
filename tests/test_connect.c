@@ -3,6 +3,7 @@
 //
 
 #include "utils/test_setup.h"
+#include "snowflake/Util.hpp"
 
 /**
  * Test connection with null context
@@ -194,12 +195,9 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
 * in parameter are being used.
 */
 void test_connect_with_proxy(void **unused) {
-  if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-    sf_getenv("http_proxy"))
-  {
-    // skip the test if the test evironment uses proxy already
-    return;
-  }
+  cbuf_t proxy_value(sf_getenv_or("all_proxy", "https_proxy", "http_proxy"));
+  if (proxy_value)
+    return;    // skip the test if the test evironment uses proxy already
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");

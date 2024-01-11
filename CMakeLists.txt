@@ -210,6 +210,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Param.hpp
         include/snowflake/Exceptions.hpp
         include/snowflake/jwtWrapper.h
+        include/snowflake/Util.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp

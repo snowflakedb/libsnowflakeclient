@@ -3,6 +3,7 @@
  */
 
 #include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/Util.hpp"
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -61,17 +62,15 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if( caBundleFile[0] == 0 ) {
-      char* capath = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+      cbuf_t capath(sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
       if (capath) {
           if (strlen(capath) > MAX_PATH - 1) {
-              sf_free_s(capath);
               throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                   "CA bundle file path too long.");
           }
           if (!sb_strcpy(caBundleFile, (size_t)MAX_PATH, capath)) {
               caBundleFile[0] = 0;
           }
-          sf_free_s(capath);
           CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
       }
   }
