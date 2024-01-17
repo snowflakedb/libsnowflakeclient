@@ -10,9 +10,12 @@
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
+#include <stdexcept>
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
+
+static bool exit_on_memory_error = true;
 
 /**
  * Validate partner application name.
@@ -117,6 +120,20 @@ CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy)
     }
     return curl_easy_setopt(curl, CURLOPT_NOPROXY, proxySettings.getNoProxy().c_str());
   }
+}
+
+void STDCALL sf_disable_exit_on_memory_failure()
+{
+  // should be called by odbc driver snowflake_global_init
+  exit_on_memory_error = false;
+}
+
+void STDCALL sf_memory_error_handler()
+{
+  if (exit_on_memory_error)
+    exit(1);
+
+  throw std::runtime_error("fail to alloc memory");
 }
 
 }

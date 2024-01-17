@@ -144,6 +144,9 @@ void STDCALL sf_get_username(char * username, int bufLen);
 
 void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile);
 
+// this should be called by odbc driver before any calls of sfclient
+void STDCALL sf_disable_exit_on_memory_failure();
+
 #ifdef __cplusplus
 }
 #endif
