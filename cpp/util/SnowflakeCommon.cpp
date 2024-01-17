@@ -133,7 +133,7 @@ void STDCALL sf_memory_error_handler()
   if (exception_on_memory_error)
     throw std::bad_alloc();
   
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 }
