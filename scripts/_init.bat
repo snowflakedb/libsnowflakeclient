@@ -61,6 +61,10 @@ if "%target_name%"=="" (
 
 set cmake_generator=
 set vsdir=
+if /I "%vs_version%"=="VS17" (
+    set cmake_generator=Visual Studio 17 2022
+    set vsdir=vs17
+)
 if /I "%vs_version%"=="VS16" (
     set cmake_generator=Visual Studio 16 2019
     set vsdir=vs16
@@ -74,7 +78,7 @@ if /I "%vs_version%"=="VS14" (
     set vsdir=vs14
 )
 if "%cmake_generator%"=="" (
-    echo Specify the VS_VERSION to the Visual Studio Version [VS16, VS15, VS14]
+    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15, VS14]
     goto :error
 )
 
