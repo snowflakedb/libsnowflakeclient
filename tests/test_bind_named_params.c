@@ -19,6 +19,7 @@ void test_bind_named_parameters(void **unused) {
 
     /* Connect with all parameters set */
     SF_CONNECT *sf = setup_snowflake_connection();
+    SF_STMT *stmt = NULL;
     status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
@@ -28,7 +29,7 @@ void test_bind_named_parameters(void **unused) {
     }
 
     /* Create a statement once and reused */
-    SF_STMT *stmt = snowflake_stmt(sf);
+    stmt = snowflake_stmt(sf);
     /* NOTE: the numeric type here should fit into int64 otherwise
      * it is taken as a float */
     status = snowflake_query(

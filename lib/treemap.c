@@ -82,7 +82,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_insert_node(unsigned long index, TREE_MAP *tr
 
 SF_INT_RET_CODE STDCALL sf_treemap_extract_node(TREE_MAP *tree_map, int idx, char *key, void **ret_param)
 {
-    TREE_MAP *cur_node;
+    TREE_MAP *cur_node = NULL;
     SF_INT_RET_CODE retval = SF_INT_RET_CODE_ERROR;
     if (tree_map && (cur_node = &tree_map[idx]))
     {
