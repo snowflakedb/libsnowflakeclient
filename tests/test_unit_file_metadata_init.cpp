@@ -101,6 +101,8 @@ void test_file_pattern_match_core(std::vector<std::string> *expectedFiles,
     for (auto i = expectedFiles->begin(); i != expectedFiles->end(); i++) 
     {
       std::string expectedFileFull = testDir + *i;
+      // the src file path would use platform path separator
+      replaceStrAll(expectedFileFull, "/", std::string() + PATH_SEP);
       expectedFilesFull.insert(expectedFileFull);
     }
 

@@ -8,6 +8,7 @@
 #include "snowflake/platform.h"
 #include "snowflake/SnowflakeTransferException.hpp"
 #include <cerrno>
+#include "boost/filesystem.hpp"
 
 #define COMPRESSION_AUTO "AUTO"
 #define COMPRESSION_AUTO_DETECT "AUTO_DETECT"
@@ -20,7 +21,7 @@
 #include <fnmatch.h>
 #endif
 
-
+using namespace boost::filesystem;
 
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
   std::vector<FileMetadata> &smallFileMetadata,
@@ -34,16 +35,16 @@ Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
 }
 
 void
-Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileDir, const char *fileName,
+Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileNameFull,
+                                                                   const std::string &destPath,
+                                                                   const std::string &fileName,
                                                                    size_t fileSize, size_t threshold)
 {
-  std::string fileNameFull = fileDir;
-  fileNameFull += fileName;
-
   FileMetadata fileMetadata;
   fileMetadata.srcFileName = m_stmtPutGet->platformStringToUTF8(fileNameFull);
   fileMetadata.srcFileSize = fileSize;
-  fileMetadata.destFileName = m_stmtPutGet->platformStringToUTF8(std::string(fileName));
+  fileMetadata.destPath = m_stmtPutGet->platformStringToUTF8(destPath);
+  fileMetadata.destFileName = m_stmtPutGet->platformStringToUTF8(fileName);
   // process compression type
   initCompressionMetadata(fileMetadata);
 
@@ -57,8 +58,53 @@ Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::st
 void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(std::string &sourceLocation,
                                                                               size_t putThreshold)
 {
+  // looking for files on disk.
+  std::string srcLocationPlatform = m_stmtPutGet->UTF8ToPlatformString(sourceLocation);
+  replaceStrAll(srcLocationPlatform, "/", std::string() + PATH_SEP);
+  size_t dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
+  std::string basePath = srcLocationPlatform.substr(0, dirSep + 1);
+
+  std::vector<std::string> fileList;
+  if (!listFiles(srcLocationPlatform, fileList))
+  {
+    CXX_LOG_ERROR("Failed on finding files for uploading.");
+    return;
+  }
+
+  for (auto file = fileList.begin(); file != fileList.end(); file++)
+  {
+    path p(*file);
+    size_t fileSize = file_size(p);
+    std::string fileNameFull = p.string();
+    std::string fileName = p.filename().string();
+    //make the path on stage by removing base path and file name from full path
+    std::string destPath = fileNameFull.substr(basePath.length(),
+                                               fileNameFull.length() - basePath.length() - fileName.length());
+    initUploadFileMetadata(fileNameFull, destPath, fileName, fileSize, putThreshold);
+  }
+}
+
+void Snowflake::Client::FileMetadataInitializer::includeSubfolderFilesRecursive(const std::string &folderPath,
+                                                                                std::vector<std::string> & fileList)
+{
+  for (auto const& entry : recursive_directory_iterator(folderPath))
+  {
+    if (is_regular_file(entry))
+    {
+      fileList.push_back(entry.path().string());
+    }
+  }
+}
+
+bool Snowflake::Client::FileMetadataInitializer::listFiles(const std::string &sourceLocation,
+                                                                    std::vector<std::string> & fileList)
+{
 // looking for files on disk. 
   std::string srcLocationPlatform = m_stmtPutGet->UTF8ToPlatformString(sourceLocation);
+  size_t dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
+  std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
+  std::string filePattern = srcLocationPlatform.substr(dirSep + 1);
+  bool includeSubfolder = filePattern == "**";
 
 #ifdef _WIN32
   WIN32_FIND_DATA fdd;
@@ -71,8 +117,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     {
       CXX_LOG_ERROR("No file matching pattern %s has been found. Error: %d", 
         sourceLocation.c_str(), dwError);
-      FindClose(hFind);
-      return;
+      return false;
     }
     else if (dwError != ERROR_SUCCESS)
     {
@@ -85,37 +130,29 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   do {
     if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
     {
-      std::string fileFullPath = std::string(fdd.cFileName);
-      size_t dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
-      if (dirSep == std::string::npos) 
+      fileList.push_back(dirPath + fdd.cFileName);
+    }
+    else
+    {
+      if (includeSubfolder &&
+          (std::string(fdd.cFileName) != ".") &&
+          (std::string(fdd.cFileName) != ".."))
       {
-        dirSep = sourceLocation.find_last_of(ALTER_PATH_SEP);
-      }
-      if (dirSep != std::string::npos) 
-      {
-        std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
-        LARGE_INTEGER fileSize;
-        fileSize.LowPart = fdd.nFileSizeLow;
-        fileSize.HighPart = fdd.nFileSizeHigh;
-        initUploadFileMetadata(dirPath, (char *)fdd.cFileName, (size_t)fileSize.QuadPart, putThreshold);
+        includeSubfolderFilesRecursive(dirPath + fdd.cFileName, fileList);
       }
     }
   } while (FindNextFile(hFind, &fdd) != 0);
 
   DWORD dwError = GetLastError();
+  FindClose(hFind);
   if (dwError != ERROR_NO_MORE_FILES)
   {
     CXX_LOG_ERROR("Failed on FindNextFile. Error: %d", dwError);
     throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
       srcLocationPlatform.c_str(), dwError);
   }
-  FindClose(hFind);
 
 #else
-  unsigned long dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
-  std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
-  std::string filePattern = srcLocationPlatform.substr(dirSep + 1);
-
   DIR * dir = nullptr;
   struct dirent * dir_entry;
   if ((dir = opendir(dirPath.c_str())) != NULL)
@@ -130,8 +167,14 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
         if (!ret)
         {
           if (S_ISREG(fileStatus.st_mode)) {
-            initUploadFileMetadata(dirPath, dir_entry->d_name,
-                                   (size_t) fileStatus.st_size, putThreshold);
+            fileList.push_back(dirPath + dir_entry->d_name);
+          }
+          else if (includeSubfolder &&
+                   (S_ISDIR(fileStatus.st_mode)) &&
+                   (std::string(dir_entry->d_name) != ".") &&
+                   (std::string(dir_entry->d_name) != ".."))
+          {
+            includeSubfolderFilesRecursive(dirPath + dir_entry->d_name, fileList);
           }
         }
         else
@@ -153,6 +196,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
                                      dirPath.c_str(), errno);
   }
 #endif
+  return true;
 }
 
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
@@ -168,8 +212,10 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
   {
     // guess
     CXX_LOG_INFO("Auto detect on compression type");
-    fileMetadata.sourceCompression = FileCompressionType::guessCompressionType(
+    std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(
       fileMetadata.srcFileName);
+    fileMetadata.sourceCompression = FileCompressionType::guessCompressionType(
+      srcFileNamePlatform);
   }
   else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
                         sizeof(COMPRESSION_NONE)))
@@ -253,8 +299,9 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
                                size_t getThreshold)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
-  size_t dirSep = fullPath.find_last_of('/');
-  std::string dstFileName = fullPath.substr(dirSep + 1);
+  size_t dirSep = sourceLocation.find_last_of('/');
+  std::string dstFileName = sourceLocation.substr(dirSep + 1);
+  std::string dstPath = sourceLocation.substr(0, dirSep + 1);
 
   FileMetadata fileMetadata;
   fileMetadata.presignedUrl = presignedUrl;
@@ -271,6 +318,7 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
     metaListToPush.push_back(fileMetadata);
     metaListToPush.back().srcFileName = fullPath;
     metaListToPush.back().destFileName = dstFileName;
+    metaListToPush.back().destPath = dstPath;
     if (encMat)
     {
       EncryptionProvider::decryptFileKey(&(metaListToPush.back()), encMat, getRandomDev());
@@ -284,4 +332,29 @@ populateSrcLocDownloadMetadata(std::string &sourceLocation,
   return outcome;
 }
 
+void Snowflake::Client::FileMetadataInitializer::
+replaceStrAll(std::string& stringToReplace,
+              std::string const& oldValue,
+              std::string const& newValue)
+{
+  size_t oldValueLen = oldValue.length();
+  size_t newValueLen = newValue.length();
+  if (0 == oldValueLen)
+  {
+    return;
+  }
+
+  size_t index = 0;
+  while (true) {
+    /* Locate the substring to replace. */
+    index = stringToReplace.find(oldValue, index);
+    if (index == std::string::npos) break;
+
+    /* Make the replacement. */
+    stringToReplace.replace(index, oldValueLen, newValue);
+
+    /* Advance index forward so the next iteration doesn't pick it up as well. */
+    index += newValueLen;
+  }
+}
 

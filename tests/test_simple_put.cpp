@@ -4,6 +4,7 @@
 
 #include <aws/core/Aws.h>
 #include <vector>
+#include <set>
 #include <fstream>
 #include <chrono>
 #include <thread>
@@ -118,7 +119,8 @@ void test_simple_put_core(const char * fileName,
                           int compressLevel = -1,
                           bool overwrite = false,
                           SF_CONNECT * connection = nullptr,
-                          bool testUnicode = false)
+                          bool testUnicode = false,
+                          bool uploadFolder = false)
 {
   /* init */
   SF_STATUS status;
@@ -146,7 +148,16 @@ void test_simple_put_core(const char * fileName,
                                     ", c2 number, c3 string)");
       create_table = create_table_temp ;
       createOnlyOnce = false;
+  }
+  else if (uploadFolder) {
+    std::string create_table_temp("create table if not exists test_small_put(c1 number"
+      ", c2 number, c3 string)");
+    create_table = create_table_temp;
   } else if(! createDupTable  ){
+      std::string create_table_temp("create or replace table test_small_put(c1 number"
+                                    ", c2 number, c3 string)");
+      create_table = create_table_temp ;
+  }else if(! createDupTable  ){
       std::string create_table_temp("create or replace table test_small_put(c1 number"
                                     ", c2 number, c3 string)");
       create_table = create_table_temp ;
@@ -158,6 +169,11 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
+  if (uploadFolder)
+  {
+    file += PATH_SEP;
+    file += "**";
+  }
   std::string putCommand = "put file://" + file + " @%test_small_put";
   if (testUnicode)
   {
@@ -171,7 +187,7 @@ void test_simple_put_core(const char * fileName,
   }
   else if (createSubfolder)
   {
-       putCommand = "put file://" + file + " @%test_small_put/subfolder";
+       putCommand += "/subfolder";
   }
 
   if (!autoCompress)
@@ -230,29 +246,34 @@ void test_simple_put_core(const char * fileName,
   }
 
   ITransferResult * results = agent.execute(&putCommand);
-  assert_int_equal(1, results->getResultSize());
+  if (!uploadFolder)
+  {
+    assert_int_equal(1, results->getResultSize());
+  }
 
   while(results->next())
   {
     std::string value;
-    results->getColumnAsString(0, value); // source
-    assert_string_equal( sf_filename_from_path(fileName), value.c_str());
+    if (!uploadFolder)
+    {
+      results->getColumnAsString(0, value); // source
+      assert_string_equal(sf_filename_from_path(fileName), value.c_str());
+      std::string expectedTarget = (autoCompress && !strstr(fileName, ".gz")) ?
+        std::string(fileName) + ".gz" :
+        std::string(fileName);
+      results->getColumnAsString(1, value); // get target
+      assert_string_equal(sf_filename_from_path(expectedTarget.c_str()), value.c_str());
 
-    std::string expectedTarget = (autoCompress && !strstr(fileName, ".gz")) ?
-                                 std::string(fileName) + ".gz" :
-                                 std::string(fileName);
-    results->getColumnAsString(1, value); // get target
-    assert_string_equal(sf_filename_from_path(expectedTarget.c_str()), value.c_str());
+      std::string expectedSourceCompression = !strstr(fileName, ".gz") ?
+        "none" : "gzip";
+      results->getColumnAsString(4, value); // get source_compression
+      assert_string_equal(expectedSourceCompression.c_str(), value.c_str());
 
-    std::string expectedSourceCompression = !strstr(fileName, ".gz") ?
-                                            "none" : "gzip";
-    results->getColumnAsString(4, value); // get source_compression
-    assert_string_equal(expectedSourceCompression.c_str(), value.c_str());
-
-    std::string expectedTargetCompression = (!autoCompress &&
-      !strstr(fileName, ".gz")) ? "none" : "gzip";
-    results->getColumnAsString(5, value); // get target_compression
-    assert_string_equal(expectedTargetCompression.c_str(), value.c_str());
+      std::string expectedTargetCompression = (!autoCompress &&
+        !strstr(fileName, ".gz")) ? "none" : "gzip";
+      results->getColumnAsString(5, value); // get target_compression
+      assert_string_equal(expectedTargetCompression.c_str(), value.c_str());
+    }
 
     results->getColumnAsString(6, value); // get encryption
     assert_string_equal("UPLOADED", value.c_str());
@@ -352,13 +373,22 @@ static int teardown(void **unused)
 }
 
 void test_simple_get_data(const char *getCommand, const char *size,
-                          long getThreshold = 0, bool testUnicode = false)
+                          long getThreshold = 0, bool testUnicode = false,
+                          SF_CONNECT * connection = nullptr)
 {
     /* init */
     SF_STATUS status;
-    SF_CONNECT *sf = setup_snowflake_connection();
-    status = snowflake_connect(sf);
-    assert_int_equal(SF_STATUS_SUCCESS, status);
+    SF_CONNECT *sf;
+
+    if (!connection) {
+      sf = setup_snowflake_connection();
+      status = snowflake_connect(sf);
+      assert_int_equal(SF_STATUS_SUCCESS, status);
+    }
+    else {
+      // use the connection passed from test case
+      sf = connection;
+    }
 
     SF_STMT *sfstmt = NULL;
     SF_STATUS ret;
@@ -405,8 +435,9 @@ void test_simple_get_data(const char *getCommand, const char *size,
     snowflake_stmt_term(sfstmt);
 
     /* close and term */
-    snowflake_term(sf); // purge snowflake context
-
+    if (!connection) {
+      snowflake_term(sf); // purge snowflake context
+    }
 }
 
 void test_large_put_auto_compress(void **unused)
@@ -850,6 +881,171 @@ void test_large_get_threshold(void **unused)
 #endif
   strcat(tempPath, tempDir);
   test_simple_get_data(tempPath, "5166848", 1000000);
+}
+
+/*
+ * 1. generate local files with nested subfolders
+ * 2. put command to upload files with subfolders
+ * 3. get command to download uploaded files with subfolders
+ * 4. put command to upload downloaded files with subfolders
+ * 5. list command to confirm all expected files on stage
+ */
+void test_putget_subfolder_core(bool testUnicode)
+{
+  std::string dataDir = TestSetup::getDataDir();
+  std::string filename = "small_file.csv";
+  if (testUnicode)
+  {
+    filename = PLATFORM_STR + ".csv";
+    copy_file(dataDir + "small_file.csv", dataDir + filename, copy_option::overwrite_if_exists);
+    filename = UTF8_STR + ".csv";
+  }
+
+  SF_CONNECT *sf = setup_snowflake_connection();
+  snowflake_set_attribute(sf, SF_CON_PROXY, "");
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  // generate files on stage with subfolders
+  // create a simple file on stage first
+  test_simple_put_core(filename.c_str(), // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false, // copyUploadFile
+                       false, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64 * 1024 * 1024, // customThreshold
+                       false, // useDevUrand
+                       false, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, // compressLevel
+                       false, // overwrite
+                       sf, // connection
+                       testUnicode
+  );
+
+  // use get command to have local files in nested subfolder
+  std::string cmd = "get '@%test_small_put/" + filename + ".gz' ";
+  std::string sub2 = "sub2";
+  std::string localPath = "file://";
+
+  localPath += dataDir + "subfoldertest" + PATH_SEP + "sub1";
+  test_simple_get_data((cmd + localPath).c_str(), "48", 0, testUnicode, sf);
+
+  if (testUnicode)
+  {
+    sub2 += UTF8_STR;
+  }
+  localPath += PATH_SEP;
+  localPath += sub2;
+  if (testUnicode)
+  {
+    localPath = "'" + localPath + "'";
+    replaceInPlace(localPath, "\\", "\\\\");
+  }
+  test_simple_get_data((cmd + localPath).c_str(), "48", 0, testUnicode, sf);
+
+  // the files returned in alphabetical order, use set to get expected files sorted
+  std::set<std::string> expectedFiles;
+  // put command to upload files with subfolders to stage
+  // uploadFolder=true
+  // createSubfolder=true as well so  the uploaded files will be in path of
+  // "subfolder" which would be easier to check later
+  std::string basePath = "subfolder/";
+  test_simple_put_core("subfoldertest", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false, // copyUploadFile
+                       false, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64 * 1024 * 1024, // customThreshold
+                       false, // useDevUrand
+                       true, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, // compressLevel
+                       false, // overwrite
+                       sf, // connection
+                       testUnicode, // testUnicode
+                       true // uploadFolder
+  );
+  expectedFiles.insert(basePath + "sub1/" + filename + ".gz");
+  expectedFiles.insert(basePath + "sub1/" + sub2 + "/" + filename + ".gz");
+
+  // get command to download uploaded files into a new folder sub3
+  cmd = "get @%test_small_put/subfolder file://" + 
+         dataDir + "subfoldertest" + PATH_SEP + "put2" + PATH_SEP + "sub3";
+  test_simple_get_data(cmd.c_str(), "48", 0, testUnicode, sf);
+
+  // put command to upload downloaded file again
+  std::string put2Path = std::string("subfoldertest") + PATH_SEP + "put2";
+  test_simple_put_core(put2Path.c_str(), // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       false, // copyUploadFile
+                       false, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64 * 1024 * 1024, // customThreshold
+                       false, // useDevUrand
+                       true, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, // compressLevel
+                       false, // overwrite
+                       sf, // connection
+                       testUnicode, // testUnicode
+                       true // uploadFolder
+  );
+  expectedFiles.insert(basePath + "sub3/subfolder/sub1/" + filename + ".gz");
+  expectedFiles.insert(basePath + "sub3/subfolder/sub1/" + sub2 + "/" + filename + ".gz");
+
+  // run list command to check result
+  SF_STMT *sfstmt = NULL;
+  SF_STATUS ret;
+
+  /* query */
+  sfstmt = snowflake_stmt(sf);
+  std::string listFiles = "list @%test_small_put/subfolder";
+  ret = snowflake_query(sfstmt, listFiles.c_str(), listFiles.size());
+  assert_int_equal(SF_STATUS_SUCCESS, ret);
+
+  assert_int_equal(4, snowflake_num_rows(sfstmt));
+  auto expectedItr = expectedFiles.begin();
+  for (int i = 0; i < 4; i++)
+  {
+    const char* value;
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    snowflake_column_as_const_str(sfstmt, 1, &value);
+    assert_string_equal(expectedItr->c_str(), value);
+    expectedItr++;
+  }
+  ret = snowflake_fetch(sfstmt);
+  assert_int_equal(SF_STATUS_EOF, ret);
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+  remove_all(dataDir + "subfoldertest");
+}
+
+void test_putget_subfolder(void **unused)
+{
+  test_putget_subfolder_core(false);
+}
+
+void test_putget_subfolder_with_unicode(void **unused)
+{
+  test_putget_subfolder_core(true);
 }
 
 static int gr_setup(void **unused)
@@ -1643,6 +1839,8 @@ int main(void) {
   }
 
   const struct CMUnitTest tests[] = {
+    cmocka_unit_test_teardown(test_putget_subfolder, teardown),
+    cmocka_unit_test_teardown(test_putget_subfolder_with_unicode, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),

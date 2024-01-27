@@ -33,31 +33,6 @@ using ::Snowflake::Client::RemoteStorageRequestOutcome;
 namespace
 {
   const std::string FILE_PROTOCOL = "file://";
-
-  void replaceStrAll(std::string& stringToReplace,
-                  std::string const& oldValue,
-                  std::string const& newValue)
-  {
-    size_t oldValueLen = oldValue.length();
-    size_t newValueLen = newValue.length();
-    if (0 == oldValueLen)
-    {
-      return;
-    }
-
-    size_t index = 0;
-    while (true) {
-      /* Locate the substring to replace. */
-      index = stringToReplace.find(oldValue, index);
-      if (index == std::string::npos) break;
-
-      /* Make the replacement. */
-      stringToReplace.replace(index, oldValueLen, newValue);
-
-      /* Advance index forward so the next iteration doesn't pick it up as well. */
-      index += newValueLen;
-    }
-  }
 }
 
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
@@ -468,6 +443,12 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
   }
+
+  // after compress replace PATH_SEP with / in destPath as that's
+  // what needed on stage side
+  FileMetadataInitializer::replaceStrAll(fileMetadata->destPath, std::string() + PATH_SEP, "/");
+  fileMetadata->destFileName = fileMetadata->destPath + fileMetadata->destFileName;
+
   CXX_LOG_TRACE("Update File digest metadata start");
 
   // calculate digest
@@ -614,6 +595,24 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   }
 
   std::string stagingFile(tempDir);
+
+  if (!fileMetadata->destPath.empty())
+  {
+    std::string subfolder = fileMetadata->destPath;
+    FileMetadataInitializer::replaceStrAll(subfolder, "/", std::string() + PATH_SEP);
+    std::string subfolderPlatform = m_stmtPutGet->UTF8ToPlatformString(subfolder);
+    subfolder = std::string(tempDir) + subfolder;
+    subfolderPlatform = std::string(tempDir) + subfolderPlatform;
+
+    int ret = sf_create_directory_if_not_exists_recursive(subfolderPlatform.c_str());
+    if (ret != 0)
+    {
+      CXX_LOG_ERROR("Failed to create temporary folder %s. Errno: %d", subfolder, errno);
+      throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, subfolder, -1);
+    }
+    stagingFile = subfolderPlatform;
+  }
+
   stagingFile += m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destFileName);
   std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
@@ -647,12 +646,13 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
   m_executionResults = new FileTransferExecutionResult(CommandType::DOWNLOAD,
     m_largeFilesMeta.size() + m_smallFilesMeta.size());
 
-  int ret = sf_create_directory_if_not_exists((const char *)response.localLocation);
+  std::string localLocationPlatform = m_stmtPutGet->UTF8ToPlatformString(response.localLocation);
+  int ret = sf_create_directory_if_not_exists_recursive((const char *)localLocationPlatform.c_str());
   if (ret != 0)
   {
     CXX_LOG_ERROR("Filed to create directory %s", response.localLocation);
     throw SnowflakeTransferException(TransferError::MKDIR_ERROR, 
-      response.localLocation, ret);
+      localLocationPlatform, ret);
   }
 
   if (m_largeFilesMeta.size() > 0)
@@ -829,11 +829,28 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   FileMetadata *fileMetadata,
   size_t resultIndex)
 {
-   fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
-    fileMetadata->destFileName;
-   std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
-
    RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::FAILED;
+
+   // create subfolder first befor adding file name
+   FileMetadataInitializer::replaceStrAll(fileMetadata->destPath, "/", std::string() + PATH_SEP);
+   fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
+     fileMetadata->destPath;
+   std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
+   int ret = sf_create_directory_if_not_exists_recursive(destPathPlatform.c_str());
+   if (ret != 0)
+   {
+     char* str_error = sf_strerror(errno);
+     CXX_LOG_DEBUG("Filed to create directory: %s",
+                   fileMetadata->destPath.c_str(), str_error);
+     sf_free_s(str_error);
+     m_executionResults->SetTransferOutCome(outcome, resultIndex);
+
+     return outcome;
+   }
+
+   fileMetadata->destPath += fileMetadata->destFileName;
+   destPathPlatform += m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destFileName);
+
    RetryContext getRetryCtx(fileMetadata->srcFileName, m_maxGetRetries);
    do
    {
@@ -846,7 +863,6 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
                                           std::ios_base::out | std::ios_base::binary);
      }
      catch (...) {
-       std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        char* str_error = sf_strerror(errno);
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), str_error);
@@ -856,7 +872,6 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      }
      if (!dstFile.is_open())
      {
-       std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
        char* str_error = sf_strerror(errno);
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), str_error);
@@ -894,7 +909,7 @@ void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
   // need to replace file://mypath/myfile?.csv with file://mypath/myfile1.csv.gz
   std::string presignedUrlCommand = command;
   std::string localFilePath = getLocalFilePathFromCommand(command, false);
-  replaceStrAll(presignedUrlCommand, localFilePath, fileMetadata.destFileName);
+  FileMetadataInitializer::replaceStrAll(presignedUrlCommand, localFilePath, fileMetadata.destFileName);
   // then hand that to GS to get the actual presigned URL we'll use
   PutGetParseResponse rsp;
   if (!m_stmtPutGet->parsePutGetCommand(&presignedUrlCommand, &rsp))
@@ -940,7 +955,7 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
     // unescape backslashes to match the file name from GS
     if (unescape)
     {
-      replaceStrAll(localFilePath, "\\\\\\\\", "\\\\");
+      FileMetadataInitializer::replaceStrAll(localFilePath, "\\\\\\\\", "\\\\");
     }
   }
   else
