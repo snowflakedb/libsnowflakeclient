@@ -1,0 +1,13 @@
+#
+# Note: keep this file in sync with conda_env_sphinx.txt !
+#
+
+breathe
+ipython
+numpydoc
+pydata-sphinx-theme==0.14
+sphinx-autobuild
+sphinx-design
+sphinx-copybutton
+sphinx==6.2
+pandas

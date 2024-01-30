@@ -1,0 +1,101 @@
+# -*- ruby -*-
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+require "English"
+require "json"
+
+require_relative "../../release/binary-task"
+require_relative "helper"
+
+packages = [
+  "apache-arrow",
+  "apache-arrow-apt-source",
+  "apache-arrow-release",
+]
+
+
+namespace :apt do
+  desc "Build deb packages"
+  task :build do
+    packages.each do |package|
+      cd(package) do
+        ruby("-S", "rake", "apt:build")
+      end
+    end
+  end
+end
+
+namespace :yum do
+  desc "Build RPM packages"
+  task :build do
+    packages.each do |package|
+      cd(package) do
+        ruby("-S", "rake", "yum:build")
+      end
+    end
+  end
+end
+
+namespace :version do
+  desc "Update versions"
+  task :update do
+    packages.each do |package|
+      cd(package) do
+        ruby("-S", "rake", "version:update")
+      end
+    end
+  end
+end
+
+namespace :docker do
+  desc "Pull built images"
+  task :pull do
+    packages.each do |package|
+      cd(package) do
+        ruby("-S", "rake", "docker:pull")
+      end
+    end
+  end
+
+  desc "Push built images"
+  task :push do
+    packages.each do |package|
+      cd(package) do
+        ruby("-S", "rake", "docker:push")
+      end
+    end
+  end
+end
+
+
+class ApacheArrowLocalBinaryTask < LocalBinaryTask
+  include Helper::ApacheArrow
+
+  def initialize(packages)
+    super(packages, File.expand_path(arrow_source_dir))
+  end
+
+  private
+  def version
+    @version ||= detect_version(detect_release_time)
+  end
+end
+
+local_binary_task = ApacheArrowLocalBinaryTask.new(packages)
+local_binary_task.define
