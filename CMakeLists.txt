@@ -73,8 +73,8 @@ if (UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -std=gnu++11 -fPIC -Werror -Wno-error=deprecated-declarations ${MOCK_OBJECT_WRAPPER_FLAGS}")
 else()
     # Windows
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl /wd4996")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl /wd4996")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl")
 endif ()
 if (LINUX)
     # Linux. MacOS doesn't require pthread option
