@@ -96,7 +96,7 @@ void getLongTempPath(char *buffTmpDir)
 	}
 	std::cout << "Short path is : " << buffTmpDir << std::endl;
 	std::cout << "Long  path is : " << longtmpDir << std::endl;
-	sb_strncpy(buffTmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
+	sf_strncpy(buffTmpDir, MAX_BUF_SIZE, longtmpDir, MAX_BUF_SIZE);
 }
 #endif
 

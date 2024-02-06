@@ -6,7 +6,7 @@
 #define SNOWFLAKECLIENT_CRYPTOTYPES_HPP
 
 #include <cstring>
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 
 namespace Snowflake
 {
@@ -74,7 +74,7 @@ struct CryptoKey final
   inline CryptoKey(const CryptoKey &other) : CryptoKey()
   {
     nbBits = other.nbBits;
-    sb_memcpy(data, sizeof(data), other.data, sizeof(data));
+    sf_memcpy(data, sizeof(data), other.data, sizeof(data));
   }
 
   inline ~CryptoKey() noexcept

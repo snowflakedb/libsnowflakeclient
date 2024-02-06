@@ -310,7 +310,7 @@ std::string SnowflakeGCSClient::encodeUrlName(const std::string &srcName)
     }
     else
     {
-      sb_sprintf(&buf[1], sizeof(buf) - 1, "%.2X", car);
+      sf_sprintf(&buf[1], sizeof(buf) - 1, "%.2X", car);
       encoded.append(buf);
     }
   }

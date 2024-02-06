@@ -19,7 +19,7 @@
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "snowflake/platform.h"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 #include <chrono>
 #ifdef _WIN32
 #include <windows.h>
@@ -601,7 +601,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
     level = m_transferConfig->compressLevel;
     if (m_transferConfig->tempDir)
     {
-      sb_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
+      sf_strcat(tempDir, sizeof(tempDir), m_transferConfig->tempDir);
     }
   }
   sf_get_uniq_tmp_dir(tempDir);
@@ -618,12 +618,12 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
   FILE *sourceFile = NULL;
-  if (sb_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL) {
+  if (sf_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, srcFileNamePlatform.c_str(), -1);
   }
   FILE *destFile = NULL;
-  if (sb_fopen(&destFile, stagingFile.c_str(), "w") == NULL) {
+  if (sf_fopen(&destFile, stagingFile.c_str(), "w") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }

@@ -201,27 +201,27 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
     switch (c_type) {
         case SF_C_TYPE_INT8:
             ret = (char *) SF_CALLOC(1, size);
-            sb_sprintf(ret, size, "%d", *(int8 *) value);
+            sf_sprintf(ret, size, "%d", *(int8 *) value);
             return ret;
         case SF_C_TYPE_UINT8:
             ret = (char *) SF_CALLOC(1, size);
-            sb_sprintf(ret, size, "%u", *(uint8 *) value);
+            sf_sprintf(ret, size, "%u", *(uint8 *) value);
             return ret;
         case SF_C_TYPE_INT64:
             ret = (char *) SF_CALLOC(1, size);
-            sb_sprintf(ret, size, "%lld", *(int64 *) value);
+            sf_sprintf(ret, size, "%lld", *(int64 *) value);
             return ret;
         case SF_C_TYPE_UINT64:
             ret = (char *) SF_CALLOC(1, size);
-            sb_sprintf(ret, size, "%llu", *(uint64 *) value);
+            sf_sprintf(ret, size, "%llu", *(uint64 *) value);
             return ret;
         case SF_C_TYPE_FLOAT64:
             ret = (char *) SF_CALLOC(1, size);
-            sb_sprintf(ret, size, "%f", *(float64 *) value);
+            sf_sprintf(ret, size, "%f", *(float64 *) value);
             return ret;
         case SF_C_TYPE_BOOLEAN:
             ret = (char*) SF_CALLOC(1, size + 1);
-            sb_strncpy(ret, size + 1, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR, size + 1);
+            sf_strncpy(ret, size + 1, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR, size + 1);
             return ret;
         case SF_C_TYPE_BINARY:
             size = (size_t)len * 2 + 1;
@@ -232,7 +232,7 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
         case SF_C_TYPE_STRING:
             size = (size_t)len + 1;
             ret = (char *) SF_CALLOC(1, size);
-            sb_strncpy(ret, size, (const char *) value, size);
+            sf_strncpy(ret, size, (const char *) value, size);
             return ret;
         case SF_C_TYPE_TIMESTAMP:
             // TODO Add timestamp case

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "snowflake/SnowflakeTransferException.hpp"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 
 // keep same order as entries in enum TransferError, so that error message can
 // be matched correspondingly
@@ -37,7 +37,7 @@ Snowflake::Client::SnowflakeTransferException::SnowflakeTransferException(
 #if defined(__APPLE__)
 #pragma clang diagnostic pop
 #endif
-  sb_vsnprintf(m_msg, sizeof(m_msg), sizeof(m_msg) - 1, msgFmt, args);
+  sf_vsnprintf(m_msg, sizeof(m_msg), sizeof(m_msg) - 1, msgFmt, args);
   va_end(args);
 }
 

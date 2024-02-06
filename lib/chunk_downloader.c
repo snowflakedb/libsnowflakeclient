@@ -187,7 +187,7 @@ sf_bool STDCALL create_chunk_headers(struct SF_CHUNK_DOWNLOADER *chunk_downloade
 
         // Type conversion is safe since we know that header_field_size must be positive
         header_item = (char *) SF_CALLOC(1, header_field_size + 1);
-        sb_sprintf(header_item, header_field_size + 1, "%s: %s", key, item->valuestring);
+        sf_sprintf(header_item, header_field_size + 1, "%s: %s", key, item->valuestring);
         chunk_downloader->chunk_headers->header = curl_slist_append(chunk_downloader->chunk_headers->header, header_item);
         SF_FREE(header_item);
     }
@@ -284,7 +284,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     } else if (qrmk) {
         qrmk_len += strlen(qrmk);
         chunk_downloader->qrmk = (char *) SF_CALLOC(1, qrmk_len);
-        sb_strncpy(chunk_downloader->qrmk, qrmk_len, qrmk, qrmk_len);
+        sf_strncpy(chunk_downloader->qrmk, qrmk_len, qrmk, qrmk_len);
     }
 
     // Initialize proxy
@@ -292,13 +292,13 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     {
       proxy_len += strlen(proxy);
       chunk_downloader->proxy = (char *)SF_CALLOC(1, proxy_len);
-      sb_strncpy(chunk_downloader->proxy, proxy_len, proxy, proxy_len);
+      sf_strncpy(chunk_downloader->proxy, proxy_len, proxy, proxy_len);
 
       if (no_proxy)
       {
         no_proxy_len += strlen(no_proxy);
         chunk_downloader->no_proxy = (char *)SF_CALLOC(1, no_proxy_len);
-        sb_strncpy(chunk_downloader->no_proxy, no_proxy_len, no_proxy, no_proxy_len);
+        sf_strncpy(chunk_downloader->no_proxy, no_proxy_len, no_proxy, no_proxy_len);
       }
     }
 

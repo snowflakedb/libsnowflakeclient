@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 #include "oobtelemetry.h"
 
 struct MemoryStruct {
@@ -75,7 +75,7 @@ void getdeploymenttype(const char *event, char *dep, int depSize) {
         del = strstr(depStart + 1, "\"");
         len = (int) (del - depStart - 1);
         len = (depSize - 1 < len) ? depSize - 1 : len;
-        sb_strncpy(dep, depSize, depStart + 1, len);
+        sf_strncpy(dep, depSize, depStart + 1, len);
     }
     dep[len] = 0;
     return;
@@ -110,7 +110,7 @@ static size_t read_callback(void *dest, size_t size, size_t nmemb, void *userp) 
         size_t copy_this_much = wt->sizeleft;
         if (copy_this_much > buffer_size)
             copy_this_much = buffer_size;
-        sb_memcpy(dest, buffer_size, wt->readptr, copy_this_much);
+        sf_memcpy(dest, buffer_size, wt->readptr, copy_this_much);
 
         wt->readptr += copy_this_much;
         wt->sizeleft -= copy_this_much;

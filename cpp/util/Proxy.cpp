@@ -3,7 +3,7 @@
  */
 
 #include "snowflake/Proxy.hpp"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 #include "snowflake/platform.h"
 
 namespace {
