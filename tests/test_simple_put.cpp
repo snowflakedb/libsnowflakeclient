@@ -1262,11 +1262,7 @@ void test_2GBlarge_get(void **unused)
 
 void test_simple_put_with_proxy(void **unused)
 {
-  if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-    sf_getenv("http_proxy")) {
-    // skip the test if the test environment uses proxy already
-    return;
-  }
+  SKIP_IF_PROXY_ENV_IS_SET
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1306,11 +1302,7 @@ void test_simple_put_with_proxy(void **unused)
 
 void test_simple_put_with_noproxy(void **unused)
 {
-  if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-    sf_getenv("http_proxy")) {
-    // skip the test if the test evironment uses proxy already
-    return;
-  }
+  SKIP_IF_PROXY_ENV_IS_SET
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1351,11 +1343,7 @@ void test_simple_put_with_noproxy(void **unused)
 
 void test_simple_put_with_proxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");
@@ -1402,11 +1390,7 @@ void test_simple_put_with_proxy_fromenv(void **unused)
 
 void test_simple_put_with_noproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");

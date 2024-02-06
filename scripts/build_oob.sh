@@ -42,6 +42,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     export AR=ar
     export AROPTIONS=rcs
+    export CFLAGS="-D_LARGEFILE64_SOURCE"
     make distclean clean > /dev/null || true
     make LIB=libtelemetry.a
 elif [[ "$PLATFORM" == "darwin" ]]; then

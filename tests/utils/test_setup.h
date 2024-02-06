@@ -20,6 +20,15 @@ extern "C" {
 #include <snowflake/client.h>
 #include <snowflake/platform.h>
 
+#define SKIP_IF_PROXY_ENV_IS_SET \
+{                                                                                                               \
+    char envbuf[1024];                                                                                          \
+    if (sf_getenv("all_proxy", envbuf, sizeof(envbuf)) || sf_getenv("https_proxy", envbuf, sizeof(envbuf)) ||   \
+        sf_getenv("http_proxy", envbuf, sizeof(envbuf))) {                                                      \
+        return;                                                                                                 \
+    }                                                                                                           \
+}
+
 void initialize_test(sf_bool debug);
 
 SF_STATUS STDCALL enable_arrow_force(SF_CONNECT *sf);

@@ -308,19 +308,22 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     time_info = localtime(&current_time);
     strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", time_info);
     const char *sf_log_path;
+    char log_path_buf[MAX_PATH];
     const char *sf_log_level_str;
+    char log_level_buf[64];
     SF_LOG_LEVEL sf_log_level = log_level;
+    char strerror_buf[1024];
 
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
 
     /* The environment variables takes precedence over the specified parameters */
-    sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH");
+    sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
     if (sf_log_path == NULL && log_path) {
         sf_log_path = log_path;
     }
 
-    sf_log_level_str = sf_getenv("SNOWFLAKE_LOG_LEVEL");
+    sf_log_level_str = sf_getenv("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
         sf_log_level = log_from_str_to_level(sf_log_level_str);
     }
@@ -349,9 +352,8 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
         if (mkpath(LOG_PATH) == -1) {
-            char* str_error = sf_strerror(errno);
+            char* str_error = sf_strerror(errno, strerror_buf, sizeof(strerror_buf));
             sb_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
-            sf_free_s(str_error);
             goto cleanup;
         }
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -365,10 +367,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     ret = SF_BOOLEAN_TRUE;
 
 cleanup:
-    if (sf_log_path != log_path) {
-        sf_free_s((char*) sf_log_path);
-    }
-    sf_free_s((char*) sf_log_level_str);
     return ret;
 }
 
@@ -3092,7 +3090,8 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
          * so that localtime_tz honors it.
          */
         _mutex_lock(&gmlocaltime_lock);
-        const char *prev_tz_ptr = sf_getenv("TZ");
+        char tzbuf[128];
+        const char *prev_tz_ptr = sf_getenv("TZ", tzbuf, sizeof(tzbuf));
         sf_setenv("TZ", tzptr);
         sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */

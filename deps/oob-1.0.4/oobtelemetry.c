@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/sb_CRTFunctionSafe.h"
 #include "oobtelemetry.h"
 
 struct MemoryStruct {

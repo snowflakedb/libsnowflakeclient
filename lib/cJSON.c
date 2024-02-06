@@ -57,7 +57,7 @@
 #endif
 
 #include "cJSON.h"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/sb_CRTFunctionSafe.h"
 
 /* define our own boolean type */
 #ifdef true

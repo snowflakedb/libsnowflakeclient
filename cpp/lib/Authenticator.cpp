@@ -19,7 +19,7 @@
 
 #include <fstream>
 
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/sb_CRTFunctionSafe.h"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
