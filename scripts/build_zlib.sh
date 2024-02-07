@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 ZLIB_SRC_VERSION=1.2.13
-ZLIB_BUILD_VERSION=1
+ZLIB_BUILD_VERSION=2
 ZLIB_VERSION=$ZLIB_SRC_VERSION.$ZLIB_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
