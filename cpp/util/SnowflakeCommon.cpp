@@ -10,9 +10,12 @@
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
+#include <stdexcept>
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
+
+static bool exception_on_memory_error = false;
 
 /**
  * Validate partner application name.
@@ -117,6 +120,21 @@ CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy)
     }
     return curl_easy_setopt(curl, CURLOPT_NOPROXY, proxySettings.getNoProxy().c_str());
   }
+}
+
+void STDCALL sf_exception_on_memory_failure()
+{
+  exception_on_memory_error = true;
+}
+
+void STDCALL sf_memory_error_handler()
+{
+  if (exception_on_memory_error)
+  {
+    throw std::bad_alloc();
+  }
+
+  exit(EXIT_FAILURE);
 }
 
 }
