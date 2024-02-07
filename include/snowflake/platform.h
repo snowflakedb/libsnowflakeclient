@@ -62,6 +62,7 @@ int STDCALL sf_unsetenv(const char *name);
 
 int STDCALL sf_mkdir(const char *path);
 
+#define SF_ERROR_BUFSIZE  1024
 char* STDCALL sf_strerror(int errnum, char* outbuf, size_t bufsize);
 
 int STDCALL

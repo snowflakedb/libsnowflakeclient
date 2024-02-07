@@ -312,7 +312,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     const char *sf_log_level_str;
     char log_level_buf[64];
     SF_LOG_LEVEL sf_log_level = log_level;
-    char strerror_buf[1024];
+    char strerror_buf[SF_ERROR_BUFSIZE];
 
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);

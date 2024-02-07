@@ -194,7 +194,7 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
 * in parameter are being used.
 */
 void test_connect_with_proxy(void **unused) {
-  SKIP_IF_PROXY_ENV_IS_SET
+  SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");

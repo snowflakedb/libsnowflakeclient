@@ -1262,7 +1262,7 @@ void test_2GBlarge_get(void **unused)
 
 void test_simple_put_with_proxy(void **unused)
 {
-  SKIP_IF_PROXY_ENV_IS_SET
+  SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1302,7 +1302,7 @@ void test_simple_put_with_proxy(void **unused)
 
 void test_simple_put_with_noproxy(void **unused)
 {
-  SKIP_IF_PROXY_ENV_IS_SET
+  SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
@@ -1343,7 +1343,7 @@ void test_simple_put_with_noproxy(void **unused)
 
 void test_simple_put_with_proxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");
@@ -1390,7 +1390,7 @@ void test_simple_put_with_proxy_fromenv(void **unused)
 
 void test_simple_put_with_noproxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     // set invalid proxy settings
     sf_setenv("https_proxy", "a.b.c");

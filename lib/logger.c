@@ -109,7 +109,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         return;
     }
 
-    char strerr_buf[1024];
+    char strerr_buf[SF_ERROR_BUFSIZE];
     char tsbuf[50];    /* timestamp buffer*/
     sf_log_timestamp(tsbuf, sizeof(tsbuf));
 
