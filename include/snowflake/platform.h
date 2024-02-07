@@ -146,7 +146,7 @@ void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile);
 
 void STDCALL sf_memory_error_handler();
 
-// this should be called by odbc driver before any calls of sfclient
+// this should be called by application before any calls of sfclient
 void STDCALL sf_exception_on_memory_failure();
 
 #ifdef __cplusplus

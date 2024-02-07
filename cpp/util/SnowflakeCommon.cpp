@@ -124,15 +124,16 @@ CURLcode set_curl_proxy(CURL *curl, const char* proxy, const char* no_proxy)
 
 void STDCALL sf_exception_on_memory_failure()
 {
-  // should be called by odbc driver snowflake_global_init
   exception_on_memory_error = true;
 }
 
 void STDCALL sf_memory_error_handler()
 {
   if (exception_on_memory_error)
+  {
     throw std::bad_alloc();
-  
+  }
+
   exit(EXIT_FAILURE);
 }
 
