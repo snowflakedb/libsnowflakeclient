@@ -631,7 +631,9 @@ void STDCALL sf_os_version(char *ret, size_t size) {
     int majorVersion = 0;
     int minorVersion = 0;
 
-    if (IsWindows10OrGreater())
+    // keep the compatibility with vs2015 which by defult using windows sdk 8.1
+    // and IsWindows10OrGreater is not available there
+    if (IsWindowsVersionOrGreater(10, 0, 0))
     {
       majorVersion = 10;
     }
