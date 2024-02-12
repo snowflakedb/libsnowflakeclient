@@ -16,6 +16,11 @@ if [[ -z "$GITHUB_ACTIONS" ]]; then
     export GIT_URL=${GIT_URL:-https://github.com/snowflakedb/libsnowflakeclient.git}
     export GIT_BRANCH=${GIT_BRANCH:-origin/$(git rev-parse --abbrev-ref HEAD)}
     export GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}
+    # Jenkins build exposes cloud_provider parameter with lower cased name of cloud provider
+    export CLOUD_PROVIDER=$(echo $cloud_provider | tr '[:lower:]' '[:upper:]')
+    echo "BUILD_TYPE is ${BUILD_TYPE}"
+    echo "cloud_provider is ${cloud_provider}"
+    echo "CLOUD_PROVIDER is ${CLOUD_PROVIDER}"
 else
     export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
     export GIT_BRANCH=origin/$(basename ${GITHUB_REF})

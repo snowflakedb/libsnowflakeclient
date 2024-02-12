@@ -305,21 +305,32 @@ void test_renew(void **unused) {
 
 int main(void) {
 // accountadmin is required for jwt test and it's available in test account only for Linux
-// Since we need to change the user settings the test can't be run in parallel, limit it to aws and release
-  char *genv = getenv("GITHUB_ACTIONS");
-  if (genv) {
+// Since we need to change the user settings the test can't be run in parallel, limit it to Linux x86_64, AWS and Release
 #ifndef __linux__
+  printf("Skipping - not build on linux\n");
+  return 0;
+#endif
+#ifndef __x86_64__
+    printf("Skipping - not build on x86_64\n");
     return 0;
 #endif
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if ((!cenv) || strncmp(cenv, "AWS", 4)) {
-      return 0;
-    }
 
-    char *benv = getenv("BUILD_TYPE");
-    if ((!benv) || strncmp(cenv, "Release", 8)) {
-      return 0;
-    }
+  char *genv = getenv("GITHUB_ACTIONS");
+  if (genv) {
+    printf("Skipping - this test run only on jenkins\n");
+    return 0;
+  }
+
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if ((!cenv) || strncmp(cenv, "AWS", 4)) {
+    printf("Skipping - not build with AWS\n");
+    return 0;
+  }
+
+  char *benv = getenv("BUILD_TYPE");
+  if ((!benv) || strncmp(benv, "Release", 8)) {
+    printf("Skipping - not Release build\n");
+    return 0;
   }
 
   initialize_test(SF_BOOLEAN_FALSE);
