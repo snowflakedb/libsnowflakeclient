@@ -32,6 +32,7 @@
 
 #ifdef _WIN32
 #include <stdint.h>
+#include <VersionHelpers.h>
 
 // gmttime(), localtime() don't support negative epoch on Windows.
 // Take the implementation from ODBC/DataConversion.cpp
@@ -627,21 +628,37 @@ void STDCALL sf_os_version(char *ret, size_t size) {
         sb_strcpy(ret, size, envbuf.release);
     }
 #elif _WIN32
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
-    // Version  Actual Windows Version
-    //    10.0  Windows 10.0/Server 2016
-    //     6.3  Windows  8.1/Server 2012 R2
-    //     6.2  Windows  8.0/Server 2012 R1
-    //     6.1  Windows  7.0/Server 2008 R2
-    //     6.0  Windows  Vist/Server 2008 R1 (Not supported)
-    OSVERSIONINFOEX info;
-    ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
-    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    GetVersionEx((LPOSVERSIONINFO)&info);
+    int majorVersion = 0;
+    int minorVersion = 0;
+
+    // keep the compatibility with vs2015 which by defult using windows sdk 8.1
+    // and IsWindows10OrGreater is not available there
+    if (IsWindowsVersionOrGreater(10, 0, 0))
+    {
+      majorVersion = 10;
+    }
+    else if (IsWindows8Point1OrGreater())
+    {
+      majorVersion = 8;
+      minorVersion = 1;
+    }
+    else if (IsWindows8OrGreater())
+    {
+      majorVersion = 8;
+    }
+    else if (IsWindows7OrGreater())
+    {
+      majorVersion = 7;
+    }
+    else if (IsWindowsVistaOrGreater())
+    {
+      majorVersion = 6;
+    }
+    // xp or before is too old leave version number as 0.
 
     sb_sprintf(ret, size, "%d.%d-%s",
-        (int)info.dwMajorVersion,
-        (int)info.dwMinorVersion,
+        majorVersion,
+        minorVersion,
 #if _WIN64
         "x86_64"
 #else

@@ -7,6 +7,13 @@ goto :EOF
 
 :: VC16 is for Github Workflow windows-2019 virtual machine
 :setup_visual_studio
+    if /I "%~1"=="VS17" (
+        if not "%VisualStudioVersion%"=="17.0" (
+            echo === setting up the Visual Studio 17 environments
+            call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %arch%
+        )
+        goto :EOF
+    )
     if /I "%~1"=="VS16" (
         if not "%VisualStudioVersion%"=="16.0" (
             echo === setting up the Visual Studio 16 environments

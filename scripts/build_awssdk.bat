@@ -4,7 +4,7 @@
 ::
 @echo off
 set aws_src_version=1.3.50
-set aws_build_version=5
+set aws_build_version=6
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -58,7 +58,7 @@ cmake %AWS_SOURCE_DIR% ^
 -DCURL_INCLUDE_DIR="%scriptdir%..\deps-build\%build_dir%\curl\include" ^
 -DENABLE_TESTING=off ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
--DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /EHsc /GR /ZH:SHA_256" ^
+-DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /EHsc /GR /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
 -DBUILD_SHARED_LIBS=off ^
 -DSTATIC_LINKING=on ^
 -DENABLE_UNITY_BUILD=on ^

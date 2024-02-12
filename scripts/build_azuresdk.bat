@@ -4,7 +4,7 @@
 ::
 @echo off
 set azure_src_version=0.1.20
-set azure_build_version=4
+set azure_build_version=5
 set azure_version=%azure_src_version%.%azure_build_version%
 call %*
 goto :EOF
@@ -62,7 +62,7 @@ cmake %AZURE_SOURCE_DIR% ^
 -DOPENSSL_SSL_LIBRARY="%scriptdir%..\deps-build\%build_dir%\openssl\lib\libssl_a.lib" ^
 -DCURL_INCLUDE_DIR="%scriptdir%..\deps-build\%build_dir%\curl\include" ^
 -DCURL_LIBRARY="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
--DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /EHsc /GR /ZH:SHA_256" ^
+-DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /EHsc /GR /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
 -DBUILD_TESTS=false ^
 -DBUILD_SAMPLES=false
 

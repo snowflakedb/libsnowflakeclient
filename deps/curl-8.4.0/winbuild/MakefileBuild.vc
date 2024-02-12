@@ -48,14 +48,14 @@ CC = cl.exe
 !IF "$(VC)"=="6"
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /ZH:SHA_256
+CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /ZH:SHA_256 /guard:cf /Qspectre /sdl
 !ELSE
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /D_DEBUG /RTC1 /Z7 /LDd
-CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL /ZH:SHA_256
+CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL /ZH:SHA_256 /guard:cf /Qspectre /sdl
 !ENDIF
 
-LFLAGS     = /nologo /machine:$(MACHINE)
+LFLAGS     = /nologo /machine:$(MACHINE) /CETCOMPAT
 LNKDLL     = link.exe /DLL
 # Use lib.exe instead of link.exe as link.exe /lib has the following bad habits:
 # - optimizing options like /opt:ref raises warnings (at least in Visual Studio 2015)
