@@ -15,6 +15,7 @@ jobs:
         name: Build-Test-Linux
         runs-on: ubuntu-latest
         strategy:
+            fail-fast: false
             matrix:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
@@ -40,6 +41,7 @@ jobs:
         name: Build-Test-Win
         runs-on: windows-2019
         strategy:
+            fail-fast: false
             matrix:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
@@ -71,6 +73,7 @@ jobs:
 #        name: Build-Test-Mac
 #        runs-on: macos-10.15
 #        strategy:
+#            fail-fast: false
 #            matrix:
 #                build_type: [ 'Debug' ]
 #                cloud_provider: [ 'AWS' ]
@@ -91,6 +94,7 @@ jobs:
         name: Build-Test-CodeCov-Linux
         runs-on: ubuntu-latest
         strategy:
+            fail-fast: false
             matrix:
                 build_type: [ 'Release' ]
         steps:
