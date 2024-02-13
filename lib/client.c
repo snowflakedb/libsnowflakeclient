@@ -318,12 +318,12 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     log_path_size += strlen(time_str);
 
     /* The environment variables takes precedence over the specified parameters */
-    sf_log_path = sf_getenv("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
+    sf_log_path = sf_getenv_s("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
     if (sf_log_path == NULL && log_path) {
         sf_log_path = log_path;
     }
 
-    sf_log_level_str = sf_getenv("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
+    sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
         sf_log_level = log_from_str_to_level(sf_log_level_str);
     }
@@ -352,7 +352,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (LOG_PATH != NULL) {
         // Create log file path (if it already doesn't exist)
         if (mkpath(LOG_PATH) == -1) {
-            char* str_error = sf_strerror(errno, strerror_buf, sizeof(strerror_buf));
+            char* str_error = sf_strerror_s(errno, strerror_buf, sizeof(strerror_buf));
             sb_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
             goto cleanup;
         }
@@ -3091,7 +3091,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
          */
         _mutex_lock(&gmlocaltime_lock);
         char tzbuf[128];
-        const char *prev_tz_ptr = sf_getenv("TZ", tzbuf, sizeof(tzbuf));
+        const char *prev_tz_ptr = sf_getenv_s("TZ", tzbuf, sizeof(tzbuf));
         sf_setenv("TZ", tzptr);
         sf_tzset();
         sec += tzoffset * 60 * 2; /* adjust for TIMESTAMP_TZ */

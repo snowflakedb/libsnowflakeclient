@@ -8,7 +8,7 @@
 
 #include "../logger/SFLogger.hpp"
 #include "snowflake/platform.h"
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include "DataConversion.hpp"
 #include "ResultSet.hpp"
 

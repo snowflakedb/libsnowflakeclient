@@ -180,7 +180,7 @@ void test_azure_empty_cafile_noenv(void ** unused)
 
     // Modify the environment variable temporarily and restore at the end of test
     char caenvbuf[MAX_PATH];
-    const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
+    const char* currentCABundleFile = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
     if (currentCABundleFile)
     {
         hasCAfileEnvChanged = true;
@@ -217,7 +217,7 @@ void test_azure_empty_cafile_from_env(void ** unused)
 
     // Modify the environment variable temporarily and restore at the end of test
     char caenvbuf[MAX_PATH];
-    const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
+    const char* currentCABundleFile = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
     sf_setenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", "/tmp/cafile/p1.pem");
     hasCAfileEnvChanged = true;
 
@@ -251,7 +251,7 @@ void test_azure_empty_cafile_from_global_env(void ** unused)
 
     // Modify the environment variable temporarily and restore at the end of test
     char caenvbuf[MAX_PATH];
-    const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
+    const char* currentCABundleFile = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
     if (currentCABundleFile)
     {
         hasCAfileEnvChanged = true;
@@ -285,7 +285,7 @@ void test_azure_cafile_path_too_long_from_env_transferconfig_null(void ** unused
 
     // Modify the environment variable temporarily and restore at the end of test
     char caenvbuf[MAX_PATH];
-    const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE",caenvbuf, sizeof(caenvbuf));
+    const char* currentCABundleFile = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE",caenvbuf, sizeof(caenvbuf));
     sf_setenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", cafile.c_str());
     hasCAfileEnvChanged = true;
 
@@ -319,7 +319,7 @@ void test_azure_cafile_path_too_long_from_global_env_transferconfig_null(void **
 
     // Modify the environment variable temporarily and restore at the end of test
     char caenvbuf[MAX_PATH];
-    const char* currentCABundleFile = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
+    const char* currentCABundleFile = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", caenvbuf, sizeof(caenvbuf));
     if (currentCABundleFile)
     {
         hasCAfileEnvChanged = true;

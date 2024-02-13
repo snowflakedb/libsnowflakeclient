@@ -6,7 +6,7 @@
 #define SNOWFLAKECLIENT_CRYPTOTYPES_HPP
 
 #include <cstring>
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 
 namespace Snowflake
 {

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 
 #include "sf_ocsp_telemetry_data.h"
 

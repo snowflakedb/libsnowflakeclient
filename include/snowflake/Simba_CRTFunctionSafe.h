@@ -2,8 +2,8 @@
  * Copyright (c) 2019-2024 Snowflake Computing, Inc. All rights reserved.
  */
 
-#ifndef _SB_CRTFUNCTIONSAFE_H_
-#define _SB_CRTFUNCTIONSAFE_H_
+#ifndef _SIMBA_CRTFUNCTIONSAFE_H_
+#define _SIMBA_CRTFUNCTIONSAFE_H_
 
 #define __STDC_WANT_LIB_EXT1__ 1
 
@@ -26,8 +26,20 @@ extern "C" {
     #endif
 #endif
 
-extern char* STDCALL sf_getenv(const char *name, char *outbuf, size_t bufsize);
-extern char* STDCALL sf_strerror(int errnum, char* outbuf, size_t bufsize);
+// Defined for #pragma warning messages.
+#define MACRO_TO_STRING2(x) #x
+#define MACRO_TO_STRING(x) MACRO_TO_STRING2(x)
+
+#if defined(_MSC_VER)
+#define SF_MACRO_DEPRECATED_WARNING(MSG) __pragma(message ( __FILE__ "(" MACRO_TO_STRING(__LINE__) ") : warning C4996: " MSG))
+#else
+#define SF_MACRO_DEPRECATED_WARNING(MSG)  _Pragma(MACRO_TO_STRING(GCC warning MSG))
+#endif
+
+// sf_getenv and sf_strerror is unsafe and deprecated.
+// Please change to use sf_getenv_s and sf_strerror_s.
+#define sf_getenv SF_MACRO_DEPRECATED_WARNING("sf_getenv is deprecated, please use sf_getenv_s instead.") getenv
+#define sf_strerror SF_MACRO_DEPRECATED_WARNING("sf_strerror is deprecated, please use sf_strerror_s instead.") strerror
 
     /// @brief Copy bytes between buffers.
     ///

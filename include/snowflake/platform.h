@@ -46,7 +46,7 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 
 #endif
 
-#include "sb_CRTFunctionSafe.h"
+#include "Simba_CRTFunctionSafe.h"
 
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result);
 
@@ -56,14 +56,14 @@ void STDCALL sf_tzset(void);
 
 int STDCALL sf_setenv(const char *name, const char *value);
 
-char *STDCALL sf_getenv(const char *name, char *outbuf, size_t bufsize);
+char *STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize);
 
 int STDCALL sf_unsetenv(const char *name);
 
 int STDCALL sf_mkdir(const char *path);
 
 #define SF_ERROR_BUFSIZE  1024
-char* STDCALL sf_strerror(int errnum, char* outbuf, size_t bufsize);
+char* STDCALL sf_strerror_s(int errnum, char* outbuf, size_t bufsize);
 
 int STDCALL
 _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg);

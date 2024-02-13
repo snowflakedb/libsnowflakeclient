@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -62,7 +62,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   }
   if( caBundleFile[0] == 0 ) {
       char capath_buf[MAX_PATH + 2];
-      char* capath = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE", capath_buf, sizeof(capath_buf));
+      char* capath = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", capath_buf, sizeof(capath_buf));
       if (capath) {
           if (strlen(capath) > MAX_PATH - 1) {
               throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,

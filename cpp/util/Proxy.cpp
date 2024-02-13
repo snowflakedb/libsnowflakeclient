@@ -3,12 +3,12 @@
  */
 
 #include "snowflake/Proxy.hpp"
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 #include "snowflake/platform.h"
 
 namespace {
     char* get_env_or(char* outbuf, size_t bufsize, const char* name) {
-        return sf_getenv(name, outbuf, bufsize);
+        return sf_getenv_s(name, outbuf, bufsize);
     }
     template <typename... Args>
     char* get_env_or(char *outbuf, size_t bufsize, const char* prime, Args... fallback)

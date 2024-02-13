@@ -23,8 +23,8 @@ extern "C" {
 #define SKIP_IF_PROXY_ENV_IS_SET \
 {                                                                                                               \
     char envbuf[1024];                                                                                          \
-    if (sf_getenv("all_proxy", envbuf, sizeof(envbuf)) || sf_getenv("https_proxy", envbuf, sizeof(envbuf)) ||   \
-        sf_getenv("http_proxy", envbuf, sizeof(envbuf))) {                                                      \
+    if (sf_getenv_s("all_proxy", envbuf, sizeof(envbuf)) || sf_getenv_s("https_proxy", envbuf, sizeof(envbuf)) ||   \
+        sf_getenv_s("http_proxy", envbuf, sizeof(envbuf))) {                                                      \
         return;                                                                                                 \
     }                                                                                                           \
 }

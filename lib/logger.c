@@ -148,7 +148,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
     {
         if (sb_fopen(&L.fp, L.path, "w+") == NULL)
         {
-            char* str_error = sf_strerror(errno, strerr_buf, sizeof(strerr_buf));
+            char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
             sb_fprintf(stderr,
                 "Error opening file from file path: %s\nError code: %s\n",
                 L.path, str_error);

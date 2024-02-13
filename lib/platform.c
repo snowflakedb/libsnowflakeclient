@@ -193,7 +193,7 @@ struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
 {
   time_t t = *timep;
   char tzbuf[128];
-  char * tzptr = sf_getenv("TZ", tzbuf, sizeof(tzbuf));
+  char * tzptr = sf_getenv_s("TZ", tzbuf, sizeof(tzbuf));
 
   // use TZ environemt variable setting for timestamp_tz
   if (tzptr && (strlen(tzptr) >= 3) && (strncmp(tzptr, "UTC", 3) == 0))
@@ -268,7 +268,7 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 #endif
 }
 
-char * STDCALL sf_getenv(const char *name, char *outbuf, size_t bufsize) {
+char * STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize) {
 #ifdef _WIN32
     size_t len;
     return getenv_s(&len, outbuf, bufsize, name) ? NULL : outbuf;
@@ -299,7 +299,7 @@ int STDCALL sf_mkdir(const char *path) {
 #endif
 }
 
-char* STDCALL sf_strerror(int in_errNumber, char* outbuf, size_t bufsize)
+char* STDCALL sf_strerror_s(int in_errNumber, char* outbuf, size_t bufsize)
 {
 // return "" in error case. Failing to get error message can be ignored and that
 // would be better than possiblly causing crash on callder side.
@@ -821,8 +821,8 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
   GetTempPath(100, tmpDir);
 #else
   char envbuf[MAX_PATH + 1];
-  const char * tmpEnv = sf_getenv("TMP", envbuf, sizeof(envbuf)) ?
-    sf_getenv("TMP", envbuf, sizeof(envbuf)) : sf_getenv("TEMP", envbuf, sizeof(envbuf));
+  const char * tmpEnv = sf_getenv_s("TMP", envbuf, sizeof(envbuf)) ?
+    sf_getenv_s("TMP", envbuf, sizeof(envbuf)) : sf_getenv_s("TEMP", envbuf, sizeof(envbuf));
 
   if (!tmpEnv)
   {

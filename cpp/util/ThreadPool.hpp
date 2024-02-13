@@ -156,7 +156,7 @@ public:
     if (err)
     {
       char strerrbuf[SF_ERROR_BUFSIZE];
-      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", sf_strerror(err, strerrbuf, sizeof(strerrbuf)));
+      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", sf_strerror_s(err, strerrbuf, sizeof(strerrbuf)));
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                                        "Thread context fail to initialize");
     }

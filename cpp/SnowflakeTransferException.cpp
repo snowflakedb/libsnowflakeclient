@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "snowflake/SnowflakeTransferException.hpp"
-#include "snowflake/sb_CRTFunctionSafe.h"
+#include "snowflake/Simba_CRTFunctionSafe.h"
 
 // keep same order as entries in enum TransferError, so that error message can
 // be matched correspondingly
