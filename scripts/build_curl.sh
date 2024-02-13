@@ -12,8 +12,8 @@ function usage() {
 }
 set -o pipefail
 
-CURL_SRC_VERSION=8.4.0
-CURL_BUILD_VERSION=2
+CURL_SRC_VERSION=8.6.0
+CURL_BUILD_VERSION=1
 CURL_DIR=$CURL_SRC_VERSION
 CURL_VERSION=${CURL_DIR}.${CURL_BUILD_VERSION}
 
@@ -51,6 +51,7 @@ curl_configure_opts+=(
     "--without-libssh2"
     "--without-brotli"
     "--without-zstd"
+    "--without-libpsl"
     "--disable-rtsp"
     "--disable-ldap"
     "--disable-ldaps"

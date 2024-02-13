@@ -63,6 +63,7 @@
 #include "multiif.h"
 #include "strerror.h"
 #include "curl_printf.h"
+#include "sf_ocsp.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -1747,6 +1748,9 @@ static int ossl_init(void)
 #endif
 
   Curl_tls_keylog_open();
+
+  /* init Cert OCSP revocation checks */
+  initCertOCSP();
 
   return 1;
 }
@@ -4206,6 +4210,39 @@ static CURLcode servercert(struct Curl_cfilter *cf,
     failf(data, "SSL: couldn't get peer certificate");
     return CURLE_PEER_FAILED_VERIFICATION;
   }
+
+  /* !!! Starting Snowflake OCSP !!! */
+  if (conn_config->sf_ocsp_check)
+  {
+    STACK_OF(X509) *ch = NULL;
+    X509_STORE     *st = NULL;
+
+    ch = SSL_get_peer_cert_chain(backend->handle);
+    if (!ch)
+    {
+      failf(data, "Out of memory. Failed to get certificate chain");
+      X509_free(backend->server_cert);
+      backend->server_cert = NULL;
+      return CURLE_OUT_OF_MEMORY;
+    }
+    st = SSL_CTX_get_cert_store(backend->ctx);
+    if (!st)
+    {
+      failf(data, "NULL data store");
+      X509_free(backend->server_cert);
+      backend->server_cert = NULL;
+      return CURLE_SSL_INVALIDCERTSTATUS;
+    }
+
+    result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
+    if (result)
+    {
+      X509_free(backend->server_cert);
+      backend->server_cert = NULL;
+      return result;
+    }
+  }
+  /* !!! End of Snowflake OCSP !!! */
 
   infof(data, "%s certificate:",
         Curl_ssl_cf_is_proxy(cf)? "Proxy" : "Server");

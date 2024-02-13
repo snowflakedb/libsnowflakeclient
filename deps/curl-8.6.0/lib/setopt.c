@@ -2003,6 +2003,21 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
     data->set.doh_verifystatus = (0 != va_arg(param, long));
     break;
 #endif
+  case CURLOPT_SSL_SF_OCSP_CHECK:
+    data->set.ssl.primary.sf_ocsp_check = (0 != va_arg(param, long)) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OCSP_FAIL_OPEN:
+    data->set.ssl.primary.sf_ocsp_failopen = (0 != va_arg(param, long)) ?
+                                         TRUE:FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OOB_ENABLE:
+    data->set.ssl.primary.sf_oob_enable = (0 != va_arg(param, long)) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
   case CURLOPT_SSL_CTX_FUNCTION:
     /*
      * Set a SSL_CTX callback
