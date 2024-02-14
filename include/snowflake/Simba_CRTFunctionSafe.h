@@ -40,6 +40,8 @@ extern "C" {
 // Please change to use sf_getenv_s and sf_strerror_s.
 #define sf_getenv SF_MACRO_DEPRECATED_WARNING("sf_getenv is deprecated, please use sf_getenv_s instead.") getenv
 #define sf_strerror SF_MACRO_DEPRECATED_WARNING("sf_strerror is deprecated, please use sf_strerror_s instead.") strerror
+// sf_free_s is deprecated. It does nothing and should not be called anymore.
+#define sf_free_s SF_MACRO_DEPRECATED_WARNING("sf_free_s is deprecated and it does nothing.")
 
     /// @brief Copy bytes between buffers.
     ///
