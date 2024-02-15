@@ -192,7 +192,8 @@ struct tm* sfchrono_gmtime(const time_t *timep, struct tm *tm)
 struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
 {
   time_t t = *timep;
-  char * tzptr = sf_getenv("TZ");
+  char tzbuf[128];
+  char * tzptr = sf_getenv_s("TZ", tzbuf, sizeof(tzbuf));
 
   // use TZ environemt variable setting for timestamp_tz
   if (tzptr && (strlen(tzptr) >= 3) && (strncmp(tzptr, "UTC", 3) == 0))
@@ -267,13 +268,19 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 #endif
 }
 
-char * STDCALL sf_getenv(const char *name) {
+char * STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize) {
 #ifdef _WIN32
-    char* result = NULL;
-    return _dupenv_s(&result, NULL, name) ? NULL : result;
-#   else
-    return getenv(name);
-#   endif
+    size_t len;
+    return getenv_s(&len, outbuf, bufsize, name) ? NULL : outbuf;
+#else
+    char* envval = getenv(name);
+    if (!envval)
+    {
+        return NULL;
+    }
+
+    return sb_strcpy(outbuf, bufsize, envval);
+#endif
 }
 
 int STDCALL sf_unsetenv(const char *name) {
@@ -292,16 +299,14 @@ int STDCALL sf_mkdir(const char *path) {
 #endif
 }
 
-char* STDCALL sf_strerror(int in_errNumber)
+char* STDCALL sf_strerror_s(int in_errNumber, char* outbuf, size_t bufsize)
 {
+// return "" in error case. Failing to get error message can be ignored and that
+// would be better than possiblly causing crash on callder side.
 #ifdef _WIN32
-    char* buf = (char*)malloc(BUFSIZ);
-    if (buf && 0 == strerror_s(buf, BUFSIZ, in_errNumber))
-        return buf;
-    free(buf);
-    return NULL;
+  return strerror_s(outbuf, bufsize, in_errNumber) ? "" : outbuf;
 #else
-    return strerror(in_errNumber);
+  return strerror_r(in_errNumber, outbuf, bufsize) ? "" : outbuf;
 #endif
 }
 
@@ -815,7 +820,9 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 #ifdef _WIN32
   GetTempPath(100, tmpDir);
 #else
-  const char * tmpEnv = getenv("TMP") ? getenv("TMP") : getenv("TEMP");
+  char envbuf[MAX_PATH + 1];
+  const char * tmpEnv = sf_getenv_s("TMP", envbuf, sizeof(envbuf)) ?
+    sf_getenv_s("TMP", envbuf, sizeof(envbuf)) : sf_getenv_s("TEMP", envbuf, sizeof(envbuf));
 
   if (!tmpEnv)
   {

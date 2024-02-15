@@ -155,7 +155,8 @@ public:
     int err = pthread_key_create(&key, NULL);
     if (err)
     {
-      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", strerror(err));
+      char strerrbuf[SF_ERROR_BUFSIZE];
+      CXX_LOG_ERROR("Thread pool creating key failed with error: %s", sf_strerror_s(err, strerrbuf, sizeof(strerrbuf)));
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                                        "Thread context fail to initialize");
     }

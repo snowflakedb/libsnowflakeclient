@@ -109,6 +109,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
         return;
     }
 
+    char strerr_buf[SF_ERROR_BUFSIZE];
     char tsbuf[50];    /* timestamp buffer*/
     sf_log_timestamp(tsbuf, sizeof(tsbuf));
 
@@ -147,11 +148,10 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
     {
         if (sb_fopen(&L.fp, L.path, "w+") == NULL)
         {
-            char* str_error = sf_strerror(errno);
+            char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
             sb_fprintf(stderr,
                 "Error opening file from file path: %s\nError code: %s\n",
                 L.path, str_error);
-            sf_free_s(str_error);
             L.path = NULL;
         }
     }

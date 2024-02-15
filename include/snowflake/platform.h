@@ -56,21 +56,14 @@ void STDCALL sf_tzset(void);
 
 int STDCALL sf_setenv(const char *name, const char *value);
 
-/* on Windows, this function allocate new memory, caller should free it */
-char *STDCALL sf_getenv(const char *name);
+char *STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize);
 
 int STDCALL sf_unsetenv(const char *name);
 
 int STDCALL sf_mkdir(const char *path);
 
-/* on Windows, this function allocate new memory, caller should free it */
-char* STDCALL sf_strerror(int errnum);
-
-#ifdef _WIN32
-#define sf_free_s(x)       free(x)
-#else
-#define sf_free_s(x)
-#endif
+#define SF_ERROR_BUFSIZE  1024
+char* STDCALL sf_strerror_s(int errnum, char* outbuf, size_t bufsize);
 
 int STDCALL
 _thread_init(SF_THREAD_HANDLE *thread, void *(*proc)(void *), void *arg);

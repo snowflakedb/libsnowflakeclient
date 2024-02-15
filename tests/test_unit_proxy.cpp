@@ -66,11 +66,7 @@ void test_proxy_empty(void **unused)
 
 void test_allproxy_noproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     sf_setenv("all_proxy", "https://someuser:somepwd@somewhere.com:5050");
     sf_setenv("no_proxy", "proxyserver.com");
@@ -81,11 +77,7 @@ void test_allproxy_noproxy_fromenv(void **unused)
 
 void test_httpsproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     sf_setenv("https_proxy", "https://someuser:somepwd@somewhere.com:5050");
     test_proxy_parts_equality("", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "", true);
@@ -94,11 +86,7 @@ void test_httpsproxy_fromenv(void **unused)
 
 void test_httpproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     sf_setenv("http_proxy", "http://username:password@proxyserver.company.com:80");
     test_proxy_parts_equality("", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP, "", true);
@@ -107,11 +95,7 @@ void test_httpproxy_fromenv(void **unused)
 
 void test_noproxy_fromenv(void **unused)
 {
-    if (sf_getenv("all_proxy") || sf_getenv("https_proxy") ||
-        sf_getenv("http_proxy")) {
-        // skip the test if the test environment uses proxy already
-        return;
-    }
+    SKIP_IF_PROXY_ENV_IS_SET;
 
     sf_setenv("NO_PROXY", "proxyserver.company.com");
     test_proxy_parts_equality("", "", "", "", 0, Proxy::Protocol::NONE, "proxyserver.company.com", true);

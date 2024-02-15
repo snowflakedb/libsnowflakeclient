@@ -21,7 +21,7 @@ Snowflake::Client::ISFLogger * Snowflake::Client::SFLogger::getExternalLogger()
 void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
 {
   std::string maskedMsg = Snowflake::Client::SFLogger::getMaskedMsgVA(fmt, args);
-  fprintf(fp, "%s", maskedMsg.c_str());
+  sb_fprintf(fp, "%s", maskedMsg.c_str());
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)

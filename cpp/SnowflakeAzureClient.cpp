@@ -61,17 +61,16 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if( caBundleFile[0] == 0 ) {
-      char* capath = sf_getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+      char capath_buf[MAX_PATH + 2];
+      char* capath = sf_getenv_s("SNOWFLAKE_TEST_CA_BUNDLE_FILE", capath_buf, sizeof(capath_buf));
       if (capath) {
           if (strlen(capath) > MAX_PATH - 1) {
-              sf_free_s(capath);
               throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                   "CA bundle file path too long.");
           }
           if (!sb_strcpy(caBundleFile, (size_t)MAX_PATH, capath)) {
               caBundleFile[0] = 0;
           }
-          sf_free_s(capath);
           CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
       }
   }

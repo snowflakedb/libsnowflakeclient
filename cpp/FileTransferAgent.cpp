@@ -829,6 +829,8 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
   FileMetadata *fileMetadata,
   size_t resultIndex)
 {
+   char strerr_buf[SF_ERROR_BUFSIZE];
+
    fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
     fileMetadata->destFileName;
    std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
@@ -847,20 +849,18 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingle
      }
      catch (...) {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-       char* str_error = sf_strerror(errno);
+       char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), str_error);
-       sf_free_s(str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
      if (!dstFile.is_open())
      {
        std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-       char* str_error = sf_strerror(errno);
+       char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
        CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
                      fileMetadata->destPath.c_str(), str_error);
-       sf_free_s(str_error);
        m_executionResults->SetTransferOutCome(outcome, resultIndex);
        break;
      }
