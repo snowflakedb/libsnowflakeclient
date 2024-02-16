@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"
 #include "snowflake/client.h"
@@ -47,7 +47,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
         throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
             "CA bundle file path too long.");
       }
-      if( ! sb_strcpy(caBundleFile, (size_t)MAX_PATH, transferConfig->caBundleFile) ) {
+      if( ! sf_strcpy(caBundleFile, (size_t)MAX_PATH, transferConfig->caBundleFile) ) {
         caBundleFile[0] = 0;
       }
       CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
@@ -68,7 +68,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
               throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
                   "CA bundle file path too long.");
           }
-          if (!sb_strcpy(caBundleFile, (size_t)MAX_PATH, capath)) {
+          if (!sf_strcpy(caBundleFile, (size_t)MAX_PATH, capath)) {
               caBundleFile[0] = 0;
           }
           CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
@@ -222,7 +222,7 @@ RemoteStorageRequestOutcome SnowflakeAzureClient::doMultiPartUpload(FileMetadata
 std::string buildEncryptionMetadataJSON(std::string iv64, std::string enkek64)
 {
   char buf[512];
-  sb_sprintf(buf, sizeof(buf), "{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", enkek64.c_str(), iv64.c_str());
+  sf_sprintf(buf, sizeof(buf), "{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\", \"KeyWrappingMetadata\":{\"EncryptionLibrary\":\"Java 5.3.0\"}}", enkek64.c_str(), iv64.c_str());
 
   return std::string(buf);
 }

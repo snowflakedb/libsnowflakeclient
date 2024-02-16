@@ -39,18 +39,18 @@ void dump(const char *text,
         /* without the hex output, we can fit more on screen */
         width = 0x40;
 
-    sb_fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
+    sf_fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
             text, (long) size, (long) size);
 
     for (i = 0; i < size; i += width) {
 
-        sb_fprintf(stream, "%4.4lx: ", (long) i);
+        sf_fprintf(stream, "%4.4lx: ", (long) i);
 
         if (!nohex) {
             /* hex not disabled, show it */
             for (c = 0; c < width; c++)
                 if (i + c < size)
-                    sb_fprintf(stream, "%02x ", ptr[i + c]);
+                    sf_fprintf(stream, "%02x ", ptr[i + c]);
                 else
                     fputs("   ", stream);
         }
@@ -62,7 +62,7 @@ void dump(const char *text,
                 i += (c + 2 - width);
                 break;
             }
-            sb_fprintf(stream, "%c",
+            sf_fprintf(stream, "%c",
                     (ptr[i + c] >= 0x20) && (ptr[i + c] < 0x80) ? ptr[i + c]
                                                                 : '.');
             /* check again for 0D0A, to avoid an extra \n if it's at width */
@@ -87,7 +87,7 @@ int my_trace(CURL *handle, curl_infotype type,
 
     switch (type) {
         case CURLINFO_TEXT:
-            sb_fprintf(stderr, "== Info: %s", data);
+            sf_fprintf(stderr, "== Info: %s", data);
             /* FALLTHROUGH */
         default: /* in case a new one is introduced to shock us */
             return 0;
@@ -242,7 +242,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        sb_sprintf(header->header_token, header_token_size,
+        sf_sprintf(header->header_token, header_token_size,
                  HEADER_SNOWFLAKE_TOKEN_FORMAT, token);
     } else if (sf->direct_query_token) {
         header_direct_query_token_size = strlen(HEADER_DIRECT_QUERY_TOKEN_FORMAT) - 2 +
@@ -254,7 +254,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        sb_sprintf(header->header_direct_query_token, header_direct_query_token_size,
+        sf_sprintf(header->header_direct_query_token, header_direct_query_token_size,
                  HEADER_DIRECT_QUERY_TOKEN_FORMAT, sf->direct_query_token);
     }
 
@@ -269,7 +269,7 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             goto error;
         }
-        sb_sprintf(header->header_service_name, header_service_name_size,
+        sf_sprintf(header->header_service_name, header_service_name_size,
                  HEADER_SERVICE_NAME_FORMAT, sf->service_name);
     }
 
@@ -659,29 +659,29 @@ char * STDCALL encode_url(CURL *curl,
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
     }
-    sb_sprintf(encoded_url, base_url_size, format, protocol, account, host, port,
+    sf_sprintf(encoded_url, base_url_size, format, protocol, account, host, port,
              url);
 
     // Initially add the query delimiter "?"
-    sb_strncat(encoded_url, encoded_url_size, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
+    sf_strncat(encoded_url, encoded_url_size, URL_QUERY_DELIMITER, strlen(URL_QUERY_DELIMITER));
 
     // Add encoded URL parameters to encoded_url buffer
     for (i = 0; i < num_args; i++) {
-        sb_strncat(encoded_url, encoded_url_size, vars[i].formatted_key, vars[i].key_size);
-        sb_strncat(encoded_url, encoded_url_size, vars[i].formatted_value, vars[i].value_size);
-        sb_strncat(encoded_url, encoded_url_size, amp, amp_size);
+        sf_strncat(encoded_url, encoded_url_size, vars[i].formatted_key, vars[i].key_size);
+        sf_strncat(encoded_url, encoded_url_size, vars[i].formatted_value, vars[i].value_size);
+        sf_strncat(encoded_url, encoded_url_size, amp, amp_size);
     }
 
     // Add encoded request_guid to encoded_url buffer
-    sb_strncat(encoded_url, encoded_url_size, request_guid.formatted_key, request_guid.key_size);
-    sb_strncat(encoded_url, encoded_url_size, request_guid.formatted_value, request_guid.value_size);
+    sf_strncat(encoded_url, encoded_url_size, request_guid.formatted_key, request_guid.key_size);
+    sf_strncat(encoded_url, encoded_url_size, request_guid.formatted_value, request_guid.value_size);
 
     // Adding the extra url param (setter of extraUrlParams is responsible to make
     // sure extraUrlParams is correct)
     if (extraUrlParams && !is_string_empty(extraUrlParams))
     {
-      sb_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
-      sb_strncat(encoded_url, encoded_url_size, extraUrlParams, encoded_url_size);
+      sf_strncat(encoded_url, encoded_url_size, URL_PARAM_DELIM, 1);
+      sf_strncat(encoded_url, encoded_url_size, extraUrlParams, encoded_url_size);
     }
 
     log_debug("URL: %s", encoded_url);
@@ -725,7 +725,7 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         if (!*dest) {
             return SF_JSON_ERROR_OOM;
         }
-        sb_strncpy(*dest, blob_size, blob->valuestring, blob_size);
+        sf_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
         if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0) {
             log_debug("Item and Value; %s: ******", item);
@@ -748,7 +748,7 @@ json_copy_string_no_alloc(char *dest, cJSON *data, const char *item,
     } else if (!snowflake_cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
     } else {
-        sb_strncpy(dest, dest_size, blob->valuestring, dest_size);
+        sf_strncpy(dest, dest_size, blob->valuestring, dest_size);
         // If string is not null terminated, then add the terminator yourself
         if (dest[dest_size - 1] != '\0') {
             dest[dest_size - 1] = '\0';
@@ -882,7 +882,7 @@ json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     raw_json->buffer = (char *) SF_REALLOC(raw_json->buffer,
                                            raw_json->size + data_size + 1);
     // Start copying where last null terminator existed
-    sb_memcpy(&raw_json->buffer[raw_json->size], data_size, data, data_size);
+    sf_memcpy(&raw_json->buffer[raw_json->size], data_size, data, data_size);
     raw_json->size += data_size;
     // Set null terminator
     raw_json->buffer[raw_json->size] = '\0';
@@ -1117,7 +1117,7 @@ sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
     #define SPRINT_TO_BUFFER(ptr, fmt, param)                       \
     {                                                               \
       if (1 < buf_size) { /* at least 1 char available */           \
-        written_bytes = sb_sprintf(ptr, buf_size, fmt, param);      \
+        written_bytes = sf_sprintf(ptr, buf_size, fmt, param);      \
       }                                                             \
       if (1 >= buf_size || 0 == written_bytes) {                    \
         log_error("Out of space: retry_ctx_update_url");            \
@@ -1262,7 +1262,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
         SF_SQLSTATE_UNABLE_TO_CONNECT);
       goto error;
     }
-    sb_sprintf(header->header_app_id, header_appid_size,
+    sf_sprintf(header->header_app_id, header_appid_size,
       HEADER_CLIENT_APP_ID_FORMAT, sf->application_name);
     header->header = curl_slist_append(header->header, header->header_app_id);
   }
@@ -1276,7 +1276,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
         SF_SQLSTATE_UNABLE_TO_CONNECT);
       goto error;
     }
-    sb_sprintf(header->header_app_version, header_appver_size,
+    sf_sprintf(header->header_app_version, header_appver_size,
       HEADER_CLIENT_APP_VERSION_FORMAT, sf->application_version);
     header->header = curl_slist_append(header->header, header->header_app_version);
   }

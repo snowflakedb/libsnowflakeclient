@@ -51,18 +51,18 @@ void dump(const char *text,
         /* without the hex output, we can fit more on screen */
         width = 0x40;
 
-    sb_fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
+    sf_fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
             text, (long) size, (long) size);
 
     for (i = 0; i < size; i += width) {
 
-        sb_fprintf(stream, "%4.4lx: ", (long) i);
+        sf_fprintf(stream, "%4.4lx: ", (long) i);
 
         if (!nohex) {
             /* hex not disabled, show it */
             for (c = 0; c < width; c++)
                 if (i + c < size)
-                    sb_fprintf(stream, "%02x ", ptr[i + c]);
+                    sf_fprintf(stream, "%02x ", ptr[i + c]);
                 else
                     fputs("   ", stream);
         }
@@ -74,7 +74,7 @@ void dump(const char *text,
                 i += (c + 2 - width);
                 break;
             }
-            sb_fprintf(stream, "%c",
+            sf_fprintf(stream, "%c",
                     (ptr[i + c] >= 0x20) && (ptr[i + c] < 0x80) ? ptr[i + c]
                                                                 : '.');
             /* check again for 0D0A, to avoid an extra \n if it's at width */
@@ -99,7 +99,7 @@ int my_trace(CURL *handle, curl_infotype type,
 
     switch (type) {
         case CURLINFO_TEXT:
-            sb_fprintf(stderr, "== Info: %s", data);
+            sf_fprintf(stderr, "== Info: %s", data);
             /* FALLTHROUGH */
         default: /* in case a new one is introduced to shock us */
             return 0;
@@ -352,7 +352,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                 buffer.buffer = (char *)SF_CALLOC(1,
                   2); // Don't forget null terminator
                 buffer.size = 1;
-                sb_strncpy(buffer.buffer, 2, "[", 2);
+                sf_strncpy(buffer.buffer, 2, "[", 2);
             }
         }
 
@@ -388,11 +388,11 @@ sf_bool STDCALL http_perform(CURL *curl,
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
-                sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
                         curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
                 }
                 else {
-                sb_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
                 }
                 msg[sizeof(msg)-1] = (char)0;
                 log_error(msg);
@@ -412,7 +412,7 @@ sf_bool STDCALL http_perform(CURL *curl,
               retry = is_retryable_http_code(http_code);
               if (!retry) {
                 char msg[1024];
-                sb_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
+                sf_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
                            http_code);
                 SET_SNOWFLAKE_ERROR(error,
                                     SF_STATUS_ERROR_RETRY,
@@ -435,7 +435,7 @@ sf_bool STDCALL http_perform(CURL *curl,
               }
               else {
                 char msg[1024];
-                sb_sprintf(msg, sizeof(msg),
+                sf_sprintf(msg, sizeof(msg),
                            "Exceeded the retry_timeout , http code: [%d]",
                            http_code);
                 SET_SNOWFLAKE_ERROR(error,
@@ -476,7 +476,7 @@ sf_bool STDCALL http_perform(CURL *curl,
       if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
-            sb_memcpy(&buffer.buffer[buffer.size], 1, "]", 1);
+            sf_memcpy(&buffer.buffer[buffer.size], 1, "]", 1);
             buffer.size += 1;
             // Set null terminator
             buffer.buffer[buffer.size] = '\0';

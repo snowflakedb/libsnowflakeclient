@@ -57,7 +57,7 @@
 #endif
 
 #include "cJSON.h"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 
 /* define our own boolean type */
 #ifdef true
@@ -136,7 +136,7 @@ CJSON_PUBLIC(uint64) snowflake_cJSON_GetUint64Value(const cJSON * const item)
 CJSON_PUBLIC(const char*) snowflake_cJSON_Version(void)
 {
     static char version[15];
-    sb_sprintf(version, sizeof(version), "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
+    sf_sprintf(version, sizeof(version), "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
 
     return version;
 }
@@ -213,7 +213,7 @@ static unsigned char* snowflake_cJSON_strdup(const unsigned char* string, const 
     {
         return NULL;
     }
-    sb_memcpy(copy, length, string, length);
+    sf_memcpy(copy, length, string, length);
 
     return copy;
 }
@@ -425,7 +425,7 @@ CJSON_PUBLIC(char*) snowflake_cJSON_SetValuestring(cJSON *object, const char *va
     }
     if (strlen(valuestring) <= strlen(object->valuestring))
     {
-        sb_strcpy(object->valuestring, strlen(object->valuestring), valuestring);
+        sf_strcpy(object->valuestring, strlen(object->valuestring), valuestring);
         return object->valuestring;
     }
     copy = (char*) snowflake_cJSON_strdup((const unsigned char*)valuestring, &global_hooks);
@@ -530,7 +530,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed)
             return NULL;
         }
         
-        sb_memcpy(newbuffer, newsize, p->buffer, p->offset + 1);
+        sf_memcpy(newbuffer, newsize, p->buffer, p->offset + 1);
         p->hooks.deallocate(p->buffer);
     }
     p->length = newsize;
@@ -578,23 +578,23 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
     // try print as uint64 first to avoid losing precision
     if ((d == floor(d)) && (d > 0) && (d < SF_UINT64_MAX))
     {
-      length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%llu", item->valueuint64);
+      length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "%llu", item->valueuint64);
     }
     /* This checks for NaN and Infinity */
     else if (isnan(d) || isinf(d))
     {
-        length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "null");
+        length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "null");
     }
     else
     {
         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
-        length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.15g", d);
+        length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.15g", d);
 
         /* Check whether the original double can be recovered */
-        if ((sb_sscanf((char*)number_buffer, "%lg", &test) != 1) || !compare_double((double)test, d))
+        if ((sf_sscanf((char*)number_buffer, "%lg", &test) != 1) || !compare_double((double)test, d))
         {
             /* If not, print with 17 decimal places of precision */
-            length = sb_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.17g", d);
+            length = sf_sprintf((char*)number_buffer, sizeof(number_buffer), "%1.17g", d);
         }
     }
 
@@ -940,7 +940,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
         {
             return false;
         }
-        sb_strcpy((char*)output, sizeof("\"\""), "\"\"");
+        sf_strcpy((char*)output, sizeof("\"\""), "\"\"");
 
         return true;
     }
@@ -981,7 +981,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
     if (escape_characters == 0)
     {
         output[0] = '\"';
-        sb_memcpy(output + 1, output_length, input, output_length);
+        sf_memcpy(output + 1, output_length, input, output_length);
         output[output_length + 1] = '\"';
         output[output_length + 2] = '\0';
 
@@ -1027,7 +1027,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                     break;
                 default:
                     /* escape and print as unicode codepoint */
-                    sb_sprintf((char*)output_pointer,
+                    sf_sprintf((char*)output_pointer,
                         output_length - (output_pointer - output),
                         "u%04x", *input_pointer);
                     output_pointer += 4;
@@ -1246,7 +1246,7 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
         {
             goto fail;
         }
-        sb_memcpy(printed, buffer->offset + 1, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1));
+        sf_memcpy(printed, buffer->offset + 1, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1));
         printed[buffer->offset] = '\0'; /* just to be sure */
 
         /* free the buffer */
@@ -1402,7 +1402,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            sb_strcpy((char*)output, 5, "null");
+            sf_strcpy((char*)output, 5, "null");
             return true;
 
         case cJSON_False:
@@ -1411,7 +1411,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            sb_strcpy((char*)output, 6, "false");
+            sf_strcpy((char*)output, 6, "false");
             return true;
 
         case cJSON_True:
@@ -1420,7 +1420,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            sb_strcpy((char*)output, 5, "true");
+            sf_strcpy((char*)output, 5, "true");
             return true;
 
         case cJSON_Number:
@@ -1440,7 +1440,7 @@ static cJSON_bool print_value(const cJSON * const item, printbuffer * const outp
             {
                 return false;
             }
-            sb_memcpy(output, raw_length, item->valuestring, raw_length);
+            sf_memcpy(output, raw_length, item->valuestring, raw_length);
             return true;
         }
 
@@ -1967,7 +1967,7 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
         return NULL;
     }
 
-    sb_memcpy(reference, sizeof(cJSON), item, sizeof(cJSON));
+    sf_memcpy(reference, sizeof(cJSON), item, sizeof(cJSON));
     reference->string = NULL;
     reference->type |= cJSON_IsReference;
     reference->next = reference->prev = NULL;

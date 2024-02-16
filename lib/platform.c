@@ -279,7 +279,7 @@ char * STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize) {
         return NULL;
     }
 
-    return sb_strcpy(outbuf, bufsize, envval);
+    return sf_strcpy(outbuf, bufsize, envval);
 #endif
 }
 
@@ -618,7 +618,7 @@ const char *STDCALL sf_os_name() {
  * Get Operating System version
  */
 void STDCALL sf_os_version(char *ret, size_t size) {
-    sb_strcpy(ret, size, "0.0.0"); /* unknown version */
+    sf_strcpy(ret, size, "0.0.0"); /* unknown version */
 #ifdef __APPLE__
     // Version  OS Name
     //  17.x.x  macOS 10.13.x High Sierra
@@ -630,7 +630,7 @@ void STDCALL sf_os_version(char *ret, size_t size) {
     // Kernel version
     struct utsname envbuf;
     if (uname(&envbuf) == 0) {
-        sb_strcpy(ret, size, envbuf.release);
+        sf_strcpy(ret, size, envbuf.release);
     }
 #elif _WIN32
     int majorVersion = 0;
@@ -661,7 +661,7 @@ void STDCALL sf_os_version(char *ret, size_t size) {
     }
     // xp or before is too old leave version number as 0.
 
-    sb_sprintf(ret, size, "%d.%d-%s",
+    sf_sprintf(ret, size, "%d.%d-%s",
         majorVersion,
         minorVersion,
 #if _WIN64
@@ -733,17 +733,17 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     struct tm *lt = gmtime(&tmnow.tv_sec);
     char msec[10];    /* Microsecond buffer */
 
-    sb_sprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
+    sf_sprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);
 
     /* Timestamp */
     strftime(tsbuf, tsbufsize, "%Y-%m-%d %H:%M:%S", lt);
-    sb_strcat(tsbuf, tsbufsize, ".");
-    sb_strcat(tsbuf, tsbufsize, msec);
+    sf_strcat(tsbuf, tsbufsize, ".");
+    sf_strcat(tsbuf, tsbufsize, msec);
 #else /* Windows */
     SYSTEMTIME t;
     // Get the system time, which is expressed in UTC
     GetSystemTime(&t);
-    sb_sprintf(tsbuf, tsbufsize, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+    sf_sprintf(tsbuf, tsbufsize, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
         t.wYear, t.wMonth, t.wDay,
         t.wHour, t.wMinute, t.wSecond, t.wMilliseconds);
 #endif
@@ -781,26 +781,26 @@ int STDCALL sf_create_directory_if_not_exists_recursive(const char * directoryNa
   char* token = NULL;
   char *next = NULL;
 
-  sb_strcpy(fullPath, sizeof(fullPath), directoryName);
+  sf_strcpy(fullPath, sizeof(fullPath), directoryName);
 
 #ifdef _WIN32
   token = strtok_s(fullPath, pathSepStr, &next);
   while (token)
   {
-    sb_strcat(partPath, sizeof(partPath), token);
+    sf_strcat(partPath, sizeof(partPath), token);
     token = strtok_s(NULL, pathSepStr, &next);
 #else
   if ('/' == fullPath[0])
   {
-    sb_strcat(partPath, sizeof(partPath), "/");
+    sf_strcat(partPath, sizeof(partPath), "/");
   }
   token = strtok_r(fullPath, pathSepStr, &next);
   while (token)
   {
-    sb_strcat(partPath, sizeof(partPath), token);
+    sf_strcat(partPath, sizeof(partPath), token);
     token = strtok_r(NULL, pathSepStr, &next);
 #endif
-    sb_strcat(partPath, sizeof(partPath), pathSepStr);
+    sf_strcat(partPath, sizeof(partPath), pathSepStr);
     if (sf_is_directory_exist(partPath))
     {
       continue;
@@ -826,11 +826,11 @@ void STDCALL sf_get_tmp_dir(char * tmpDir)
 
   if (!tmpEnv)
   {
-    sb_strncpy(tmpDir, 100, "/tmp/", sizeof("/tmp/"));
+    sf_strncpy(tmpDir, 100, "/tmp/", sizeof("/tmp/"));
   }
   else
   {
-    sb_strncpy(tmpDir, 100, tmpEnv, 100);
+    sf_strncpy(tmpDir, 100, tmpEnv, 100);
     size_t oldLen = strlen(tmpDir);
     tmpDir[oldLen] = PATH_SEP;
     tmpDir[oldLen+1] = '\0';
@@ -857,18 +857,18 @@ void STDCALL sf_get_uniq_tmp_dir(char * tmpDir)
     sf_get_tmp_dir(tmpDir);
     if (tmpDir[strlen(tmpDir) - 1] != PATH_SEP)
     {
-      sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+      sf_strcat(tmpDir, MAX_PATH, pathSepStr);
     }
-    sb_strcat(tmpDir, MAX_PATH, "snowflakeTmp_");
-    sb_strcat(tmpDir, MAX_PATH, username);
-    sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+    sf_strcat(tmpDir, MAX_PATH, "snowflakeTmp_");
+    sf_strcat(tmpDir, MAX_PATH, username);
+    sf_strcat(tmpDir, MAX_PATH, pathSepStr);
   }
   else if (tmpDir[strlen(tmpDir) - 1] != PATH_SEP)
   {
-    sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+    sf_strcat(tmpDir, MAX_PATH, pathSepStr);
   }
-  sb_strcat(tmpDir, MAX_PATH, uuid_cstr);
-  sb_strcat(tmpDir, MAX_PATH, pathSepStr);
+  sf_strcat(tmpDir, MAX_PATH, uuid_cstr);
+  sf_strcat(tmpDir, MAX_PATH, pathSepStr);
   sf_create_directory_if_not_exists_recursive(tmpDir);
 }
 
@@ -900,7 +900,7 @@ void STDCALL sf_get_username(char * username, int bufLen)
   }
   else
   {
-    sb_strcpy(username, bufLen, pw.pw_name);
+    sf_strcpy(username, bufLen, pw.pw_name);
   }
 #endif
 }
@@ -910,7 +910,7 @@ void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
     size_t i=0;
     size_t len=0; 
     char fpath[MAX_PATH];
-    sb_strcpy(fpath, sizeof(fpath), tmpfile);     
+    sf_strcpy(fpath, sizeof(fpath), tmpfile);     
     len=strlen(fpath);
     for(i=len ; i > 0 ; i--)
     {   

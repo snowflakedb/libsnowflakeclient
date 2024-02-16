@@ -20,7 +20,7 @@
 
 void test_update_url_no_guid(void **unused) {
     char urlbuf[512];
-    sb_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
+    sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
     RETRY_CONTEXT retry_ctx = {
       1,      //retry_count
       0,      // retry reason
@@ -36,7 +36,7 @@ void test_update_url_no_guid(void **unused) {
 
 void test_update_other_url_with_guid(void **unused) {
   char urlbuf[512];
-  sb_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NON_QUERY_WITH_GUID);
+  sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NON_QUERY_WITH_GUID);
   RETRY_CONTEXT retry_ctx = {
     1,      //retry_count
     0,      // retry reason
@@ -61,7 +61,7 @@ void test_update_other_url_with_guid(void **unused) {
 
 void test_update_query_url_with_retry_reason_disabled(void **unused) {
   char urlbuf[512];
-  sb_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
+  sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
     1,      //retry_count
     429,    // retry reason
@@ -123,7 +123,7 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
 
 void test_update_query_url_with_retry_reason_enabled(void **unused) {
   char urlbuf[512];
-  sb_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
+  sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
     1,      //retry_count
     429,    // retry reason

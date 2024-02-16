@@ -19,7 +19,7 @@
 
 #include <fstream>
 
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -201,7 +201,7 @@ namespace Client
                                         const std::string &passcode)
   {
     FILE *file = nullptr;
-    if (sb_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
+    if (sf_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
     {
       CXX_LOG_ERROR("Failed to open private key file. Errno: %d", errno);
       JWT_THROW("Failed to open private key file");

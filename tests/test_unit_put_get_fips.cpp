@@ -228,7 +228,7 @@ void test_s3_cafile_path_too_long(void ** unused)
 
     char cafile[MAX_PATH + 1] = { 0 };
     std::string cafileStr(MAX_PATH, 'a');
-    sb_strcpy(cafile, MAX_PATH + 1, cafileStr.c_str());
+    sf_strcpy(cafile, MAX_PATH + 1, cafileStr.c_str());
     transferConfig.caBundleFile = cafile;
 
     IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, &transferConfig, expectedErrorMsg);

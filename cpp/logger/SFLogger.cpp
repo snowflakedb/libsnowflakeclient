@@ -21,7 +21,7 @@ Snowflake::Client::ISFLogger * Snowflake::Client::SFLogger::getExternalLogger()
 void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
 {
   std::string maskedMsg = Snowflake::Client::SFLogger::getMaskedMsgVA(fmt, args);
-  sb_fprintf(fp, "%s", maskedMsg.c_str());
+  sf_fprintf(fp, "%s", maskedMsg.c_str());
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)
@@ -49,7 +49,7 @@ std::string Snowflake::Client::SFLogger::getMaskedMsgVA(const char* fmt, va_list
     // with larger buffer size.
     va_list copy;
     va_copy(copy, args);
-    ret = sb_vsnprintf(buf.data(), bufLen, bufLen - 1, fmt, copy);
+    ret = sf_vsnprintf(buf.data(), bufLen, bufLen - 1, fmt, copy);
     va_end(copy);
     if (ret < 0)
     {

@@ -4,7 +4,7 @@
 #include <time.h>
 #include "jsonutil.h"
 #include "sf_cJSON.h"
-#include "snowflake/Simba_CRTFunctionSafe.h"
+#include "snowflake/SF_CRTFunctionSafe.h"
 #ifdef _WIN32
 #include <combaseapi.h>
 #include <objbase.h>
@@ -120,13 +120,13 @@ char* prepareOOBevent(oobOcspData* ocspevent)
     cJSON_AddItemToObject(tags, "connectionString", key);
   }
   else if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
-    sb_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, ocspevent->sfc_peer_host, connectionInfo.port);
+    sf_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, ocspevent->sfc_peer_host, connectionInfo.port);
     key = cJSON_CreateString(connectionInfo.ctxStr);
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "connectionString", key);
   }
   else if( connectionInfo.ctxStr[0] == 0 ){
-    sb_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, connectionInfo.host, connectionInfo.port);
+    sf_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, connectionInfo.host, connectionInfo.port);
     key = cJSON_CreateString( connectionInfo.ctxStr );
     if( ! key ) goto end;
     cJSON_AddItemToObject(tags, "connectionString", key);
@@ -349,7 +349,7 @@ void copyString(const char* src, char* dst, int dstlen)
   //Care has been taken that src always fits in dst.
   long long len = strlen(src);
   len = (dstlen-1 > len)? len:(dstlen-1);
-  sb_strncpy(dst, dstlen, src, len);
+  sf_strncpy(dst, dstlen, src, len);
   dst[len]=0;
   return;
 }
@@ -445,27 +445,27 @@ void setdeployment(const char *host)
 {
   const char* tmp=NULL;
   if( !host || host[0] == 0) {
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Ignore");
+    sf_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "Ignore");
     return;
   }
 
   if( (strstr(host, "local") != NULL) || (strstr(host, "reg") != NULL) ){
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "dev");
+    sf_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "dev");
   }
 
   else if( (strstr(host, "qa1") != NULL) || (strstr(host, "preprod") != NULL)){
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "qa1");
+    sf_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "qa1");
   }
 
   else 
-    sb_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "prod");
+    sf_strcpy(connectionInfo.dep, sizeof(connectionInfo.dep), "prod");
 }
 
 void setConnectionString(char const* connStr)
 {
   if(connStr && connStr[0] != 0 )
   {
-    sb_strcpy(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), connStr);
+    sf_strcpy(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), connStr);
   }
 }
 
@@ -488,7 +488,7 @@ void gettime( char *buffer)
   SYSTEMTIME t;
   // Get the system time, which is expressed in UTC
   GetSystemTime(&t);
-  sb_sprintf(buffer, TMP_BUF_LEN, "%04d-%02d-%02d %02d:%02d:%02d",
+  sf_sprintf(buffer, TMP_BUF_LEN, "%04d-%02d-%02d %02d:%02d:%02d",
       t.wYear, t.wMonth, t.wDay,
       t.wHour, t.wMinute, t.wSecond);
 #endif
@@ -497,7 +497,7 @@ void gettime( char *buffer)
 
 void getCabundle(char *cabundle, int maxlen)
 {
-  sb_strncpy(cabundle, maxlen, connectionInfo.cabundle, sizeof(connectionInfo.cabundle));
+  sf_strncpy(cabundle, maxlen, connectionInfo.cabundle, sizeof(connectionInfo.cabundle));
   cabundle[maxlen-1]=0;
   return;
 }
@@ -507,7 +507,7 @@ void getuuid(char* guid)
 #ifdef _WIN32
   GUID out = {0} ;
   CoCreateGuid(&out);
-  sb_sprintf(guid, TMP_BUF_LEN,"%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", out.Data1, out.Data2, out.Data3, out.Data4[0], out.Data4[1], out.Data4[2], out.Data4[3], out.Data4[4], out.Data4[5], out.Data4[6], out.Data4[7]);
+  sf_sprintf(guid, TMP_BUF_LEN,"%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", out.Data1, out.Data2, out.Data3, out.Data4[0], out.Data4[1], out.Data4[2], out.Data4[3], out.Data4[4], out.Data4[5], out.Data4[6], out.Data4[7]);
   for ( ; *guid; ++guid) *guid = tolower(*guid); // To lower one-liner
 #else
   uuid_t binuuid;

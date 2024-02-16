@@ -841,7 +841,7 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         size_t sizeLeft = buffer.size();
         for (int i = 0; i < len; i++)
         {
-            sb_sprintf(ptr, sizeLeft, "%02X", values[i]);
+            sf_sprintf(ptr, sizeLeft, "%02X", values[i]);
             ptr += 2;
             sizeLeft -= 2;
         }
@@ -1051,12 +1051,12 @@ ArrowChunkIterator::getCellAsTimestamp(size_t colIdx, SF_TIMESTAMP * out_data)
 
     if (fracSeconds)
     {
-        sb_sprintf(buf, sizeof(buf), ".%09d", (uint32)fracSeconds);
+        sf_sprintf(buf, sizeof(buf), ".%09d", (uint32)fracSeconds);
         tsString += std::string(buf);
     }
     if (tz)
     {
-        sb_sprintf(buf, sizeof(buf), " %d", tz);
+        sf_sprintf(buf, sizeof(buf), " %d", tz);
         tsString += std::string(buf);
     }
 

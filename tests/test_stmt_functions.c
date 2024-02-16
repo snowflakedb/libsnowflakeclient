@@ -24,7 +24,7 @@ void test_sfqid(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // returns valid query in success case
-    sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
+    sf_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
     assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
 
     sfstmt = snowflake_stmt(sf);
@@ -35,7 +35,7 @@ void test_sfqid(void **unused) {
     assert_string_not_equal(qid, snowflake_sfqid(sfstmt));
 
     // returns valid query in fail case
-    sb_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
+    sf_strncpy(qid, SF_UUID4_LEN, snowflake_sfqid(sfstmt), SF_UUID4_LEN);
     assert_int_equal(strlen(qid), SF_UUID4_LEN - 1);
 
     snowflake_stmt_term(sfstmt);
