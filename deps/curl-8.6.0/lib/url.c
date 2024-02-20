@@ -1406,6 +1406,18 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
   conn->connect_only = data->set.connect_only;
   conn->transport = TRNSPRT_TCP; /* most of them are TCP streams */
 
+  conn->ssl_config.sf_ocsp_check = data->set.ssl.primary.sf_ocsp_check;
+  conn->ssl_config.sf_ocsp_failopen = data->set.ssl.primary.sf_ocsp_failopen;
+  conn->ssl_config.sf_oob_enable = data->set.ssl.primary.sf_oob_enable;
+#ifndef CURL_DISABLE_PROXY
+  conn->proxy_ssl_config.sf_ocsp_check =
+    data->set.proxy_ssl.primary.sf_ocsp_check;
+  conn->proxy_ssl_config.sf_ocsp_failopen =
+    data->set.proxy_ssl.primary.sf_ocsp_failopen;
+  conn->proxy_ssl_config.sf_oob_enable =
+    data->set.proxy_ssl.primary.sf_oob_enable;
+#endif
+
 #if !defined(CURL_DISABLE_HTTP) && defined(USE_NTLM) && \
     defined(NTLM_WB_ENABLED)
   conn->ntlm.ntlm_auth_hlpr_socket = CURL_SOCKET_BAD;
