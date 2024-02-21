@@ -118,7 +118,7 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 BUILD_TYPE: ${{ matrix.build_type }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
               run: /usr/local/bin/bash ./ci/build_mac.sh
     build-test-codecov:
         needs: [build-test-linux, build-test-win]
