@@ -1,8 +1,5 @@
 FROM centos:7
 
-RUN mkdir -p /usr/lib64/ccache
-ENV PATH="/usr/lib64/ccache:${PATH}"
-
 RUN yum -y update
 RUN yum -y install epel-release
 RUN yum install -y centos-release-scl
@@ -16,8 +13,7 @@ RUN yum install -y bison gettext gettext-devel
 
 # cmake3
 RUN yum install -y http://repo.okay.com.mx/centos/7/x86_64/release/okay-release-1-1.noarch.rpm &&\
-    yum install -y cmake3 &&\
-    ln -s /usr/bin/cmake3 /usr/lib64/ccache/cmake
+    yum install -y cmake3
 
 # python
 RUN yum -y install rh-python36
@@ -69,12 +65,12 @@ RUN mkdir -p /tmp/gcc-build
 
 WORKDIR /tmp/gcc-build
 
-RUN wget https://ftp.gnu.org/gnu/gcc/gcc-5.5.0/gcc-5.5.0.tar.gz --no-check-certificate && \
-    tar zxvf gcc-5.5.0.tar.gz && \
-    cd gcc-5.5.0 && \
+RUN wget https://ftp.gnu.org/gnu/gcc/gcc-8.3.0/gcc-8.3.0.tar.gz --no-check-certificate && \
+    tar zxvf gcc-8.3.0.tar.gz && \
+    cd gcc-8.3.0 && \
     ./contrib/download_prerequisites
 
-WORKDIR /tmp/gcc-build/gcc-5.5.0
+WORKDIR /tmp/gcc-build/gcc-8.3.0
 
 RUN ./configure --prefix=/usr --disable-multilib --enable-languages=c,c++ && \
     make && \
@@ -84,12 +80,6 @@ WORKDIR /usr/local/bin
 
 RUN ln -s gcc cc
 
-RUN rm -rf /tmp/gcc-build
-
-RUN ln -s /usr/bin/gcc /usr/lib64/ccache/gcc52 \
- && ln -s /usr/bin/g++ /usr/lib64/ccache/g++52
-ENV CC='/usr/lib64/ccache/gcc52' CXX='/usr/lib64/ccache/g++52'
-
 #cppunit
 RUN mkdir -p /tmp/cppunit-build && cd /tmp/cppunit-build &&\
     git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
@@ -98,8 +88,7 @@ RUN mkdir -p /tmp/cppunit-build && cd /tmp/cppunit-build &&\
     ./autogen.sh &&\
     ./configure CXXFLAGS="-std=c++11" &&\
     make && make install &&\
-    cp /usr/local/lib/libcppunit* /usr/lib64 &&\
-    rm -rf /tmp/cppunit-build
+    cp /usr/local/lib/libcppunit* /usr/lib64
 
 # workspace
 
@@ -108,3 +97,4 @@ RUN chmod 777 /home/user
 WORKDIR /home/user
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
