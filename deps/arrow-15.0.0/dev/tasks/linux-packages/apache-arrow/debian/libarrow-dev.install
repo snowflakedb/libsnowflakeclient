@@ -1,0 +1,13 @@
+usr/include/arrow/
+usr/lib/*/cmake/Arrow/
+usr/lib/*/libarrow.a
+usr/lib/*/libarrow.so
+usr/lib/*/libarrow_bundled_dependencies.a
+usr/lib/*/pkgconfig/arrow-compute.pc
+usr/lib/*/pkgconfig/arrow-csv.pc
+usr/lib/*/pkgconfig/arrow-filesystem.pc
+usr/lib/*/pkgconfig/arrow-json.pc
+usr/lib/*/pkgconfig/arrow-orc.pc
+usr/lib/*/pkgconfig/arrow.pc
+usr/share/arrow/gdb/
+usr/share/gdb/auto-load/
