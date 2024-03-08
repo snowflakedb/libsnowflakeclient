@@ -15,7 +15,7 @@ fi
 export DRIVER_NAME=libsnowflakeclient
 
 # Build images
-BUILD_IMAGE_VERSION_X64=1
+BUILD_IMAGE_VERSION_X64=2
 BUILD_IMAGE_VERSION_AARCH64=3
 
 # Test Images

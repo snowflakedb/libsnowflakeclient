@@ -67,28 +67,18 @@ RUN yum -y install java-1.8.0-openjdk-devel
 RUN yum -y install which wget bzip2 gcc gcc-c++ make libtool file perl-Thread-Queue
 RUN mkdir -p /tmp/gcc-build
 
-WORKDIR /tmp/gcc-build
-
-RUN wget https://ftp.gnu.org/gnu/gcc/gcc-5.5.0/gcc-5.5.0.tar.gz --no-check-certificate && \
-    tar zxvf gcc-5.5.0.tar.gz && \
-    cd gcc-5.5.0 && \
+RUN cd /tmp/gcc-build && wget https://ftp.gnu.org/gnu/gcc/gcc-8.3.0/gcc-8.3.0.tar.gz --no-check-certificate && \
+    tar zxvf gcc-8.3.0.tar.gz && \
+    cd gcc-8.3.0 && \
     ./contrib/download_prerequisites
 
-WORKDIR /tmp/gcc-build/gcc-5.5.0
-
-RUN ./configure --prefix=/usr --disable-multilib --enable-languages=c,c++ && \
+RUN cd /tmp/gcc-build/gcc-8.3.0 && ./configure --prefix=/usr --disable-multilib --enable-languages=c,c++ && \
     make && \
-    make install
+    make install && cd /usr/local/bin && rm -rf /tmp/gcc-build
 
 WORKDIR /usr/local/bin
 
 RUN ln -s gcc cc
-
-RUN rm -rf /tmp/gcc-build
-
-RUN ln -s /usr/bin/gcc /usr/lib64/ccache/gcc52 \
- && ln -s /usr/bin/g++ /usr/lib64/ccache/g++52
-ENV CC='/usr/lib64/ccache/gcc52' CXX='/usr/lib64/ccache/g++52'
 
 #cppunit
 RUN mkdir -p /tmp/cppunit-build && cd /tmp/cppunit-build &&\
@@ -99,7 +89,7 @@ RUN mkdir -p /tmp/cppunit-build && cd /tmp/cppunit-build &&\
     ./configure CXXFLAGS="-std=c++11" &&\
     make && make install &&\
     cp /usr/local/lib/libcppunit* /usr/lib64 &&\
-    rm -rf /tmp/cppunit-build
+    cd /usr/local/bin && rm -rf /tmp/cppunit-build
 
 # workspace
 
