@@ -1,0 +1,4 @@
+click
+pygithub>=1.59.0
+python-dotenv
+ruamel.yaml

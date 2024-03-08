@@ -1,0 +1,58 @@
+{
+  "name": "arrow",
+  "version-string": "15.0.0",
+  "dependencies": [
+    "abseil",
+    {
+      "name": "aws-sdk-cpp",
+      "features": [
+        "config",
+        "cognito-identity",
+        "identity-management",
+        "s3",
+        "sts",
+        "transfer"
+      ]
+    },
+    "benchmark",
+    "boost-filesystem",
+    "boost-multiprecision",
+    "boost-process",
+    "boost-system",
+    "boost-crc",
+    "brotli",
+    "bzip2",
+    "c-ares",
+    "curl",
+    "flatbuffers",
+    "gflags",
+    "glog",
+    {
+      "name":"google-cloud-cpp",
+      "version>=": "1.32.1",
+      "default-features": false,
+      "features": [
+        "storage"
+      ]
+    },
+    "grpc",
+    "gtest",
+    "lz4",
+    "openssl",
+    "orc",
+    "protobuf",
+    "rapidjson",
+    "re2",
+    "snappy",
+    "sqlite3",
+    "thrift",
+    "utf8proc",
+    "xsimd",
+    "zlib",
+    "zstd"
+  ],
+  "overrides": [
+    { "name": "gtest", "version": "1.10.0", "port-version": 4 }
+  ],
+  "builtin-baseline": "3d8f78171a2a37d461077bf8d063256b63e25a4f"
+}
