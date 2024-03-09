@@ -11,3 +11,4 @@ sphinx-design
 sphinx-copybutton
 sphinx==6.2
 pandas
+tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
