@@ -33,6 +33,12 @@ public:
       m_stmtPutGet{statement},
       m_transferConfig(transferConfig) {}
 
+    ~MockedPutGetAgent()
+    {
+      // delete storage client to avoid heap issue
+      delete m_storageClient;
+    }
+
     IStorageClient* getS3Client(std::string *command, std::string expectedErrorMsg)
     {
         m_storageClient = NULL;
