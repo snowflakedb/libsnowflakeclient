@@ -100,9 +100,9 @@ set(SOURCE_UTILS_CXX
 set(AWS_ALL_LIBS
         ${AWS_S3_LIB}
         ${AWS_CORE_LIB}
+        ${AWS_CRT_CPP_LIB}
         ${AWS_C_EVENT_STREAM_LIB}
         ${AWS_C_CHECKSUMS_LIB}
-        ${AWS_CRT_CPP_LIB}
         ${AWS_C_S3_LIB}
         ${AWS_C_AUTH_LIB}
         ${AWS_C_HTTP_LIB}
