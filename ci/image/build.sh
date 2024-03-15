@@ -8,7 +8,7 @@ source $THIS_DIR/../_init.sh
 
 for name in "${!BUILD_IMAGE_NAMES[@]}"; do
     echo $name
-    docker build \
+    docker buildx build --platform linux/$TARGET_PLATFORM \
         --file $THIS_DIR/Dockerfile.$name-build \
         --label snowflake \
         --label $DRIVER_NAME \
@@ -16,7 +16,7 @@ for name in "${!BUILD_IMAGE_NAMES[@]}"; do
 done
 
 for name in "${!TEST_IMAGE_NAMES[@]}"; do
-    docker build \
+    docker buildx build --platform linux/$TARGET_PLATFORM \
         --file $THIS_DIR/Dockerfile.$name-test \
         --label snowflake \
         --label $DRIVER_NAME \
