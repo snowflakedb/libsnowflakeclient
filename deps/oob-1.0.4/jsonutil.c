@@ -73,263 +73,263 @@ char* prepareOOBevent(oobOcspData* ocspevent)
   char* driver_name = NULL;
   char* driver_version = NULL;
 
-  root = cJSON_CreateArray();
+  root = sf_curl_cJSON_CreateArray();
 
   //Add list to the Array.
-  list = cJSON_CreateObject();
-  cJSON_AddItemToObject(root, "list", list);
+  list = sf_curl_cJSON_CreateObject();
+  sf_curl_cJSON_AddItemToObject(root, "list", list);
 
   gettime(buffer);
-  key = cJSON_CreateString(buffer);
+  key = sf_curl_cJSON_CreateString(buffer);
   if( ! key ) goto end;
-  cJSON_AddItemToObject(list, "Created_On", key);
+  sf_curl_cJSON_AddItemToObject(list, "Created_On", key);
 
   if(ocspevent && ocspevent->event_type[0] != 0){
-    key = cJSON_CreateString(ocspevent->event_type);
+    key = sf_curl_cJSON_CreateString(ocspevent->event_type);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(list, "Name", key);
+    sf_curl_cJSON_AddItemToObject(list, "Name", key);
   }
   else if(oobevent.name[0] != 0){
-    key = cJSON_CreateString(oobevent.name);
+    key = sf_curl_cJSON_CreateString(oobevent.name);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(list, "Name", key);
+    sf_curl_cJSON_AddItemToObject(list, "Name", key);
   }
 
   if (ocspevent && ocspevent->event_sub_type[0] != 0) {
-    key = cJSON_CreateString(ocspevent->event_sub_type);
+    key = sf_curl_cJSON_CreateString(ocspevent->event_sub_type);
     if ( ! key ) goto end;
-    cJSON_AddItemToObject(list, "SubCategory", key);
+    sf_curl_cJSON_AddItemToObject(list, "SubCategory", key);
   }
 
-  key = cJSON_CreateNumber(1);
+  key = sf_curl_cJSON_CreateNumber(1);
   if( ! key ) goto end;
-  cJSON_AddItemToObject(list, "SchemaVersion", key);
+  sf_curl_cJSON_AddItemToObject(list, "SchemaVersion", key);
 
-  tags = cJSON_CreateObject();
+  tags = sf_curl_cJSON_CreateObject();
   if( ! tags ) goto end;
-  cJSON_AddItemToObject(list, "Tags", tags);
+  sf_curl_cJSON_AddItemToObject(list, "Tags", tags);
 
   getuuid(uuid);
-  key = cJSON_CreateString(uuid);
+  key = sf_curl_cJSON_CreateString(uuid);
   if( ! key ) goto end;
-  cJSON_AddItemToObject(tags, "UUID", key);
+  sf_curl_cJSON_AddItemToObject(tags, "UUID", key);
 
   if( connectionInfo.ctxStr[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.ctxStr );
+    key = sf_curl_cJSON_CreateString( connectionInfo.ctxStr );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "connectionString", key);
+    sf_curl_cJSON_AddItemToObject(tags, "connectionString", key);
   }
   else if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
     sf_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, ocspevent->sfc_peer_host, connectionInfo.port);
-    key = cJSON_CreateString(connectionInfo.ctxStr);
+    key = sf_curl_cJSON_CreateString(connectionInfo.ctxStr);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "connectionString", key);
+    sf_curl_cJSON_AddItemToObject(tags, "connectionString", key);
   }
   else if( connectionInfo.ctxStr[0] == 0 ){
     sf_sprintf(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), "%s://%s:%s", connectionInfo.protocol, connectionInfo.host, connectionInfo.port);
-    key = cJSON_CreateString( connectionInfo.ctxStr );
+    key = sf_curl_cJSON_CreateString( connectionInfo.ctxStr );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "connectionString", key);
+    sf_curl_cJSON_AddItemToObject(tags, "connectionString", key);
   }
 
   if( connectionInfo.account[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.account );
+    key = sf_curl_cJSON_CreateString( connectionInfo.account );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "ctx_account", key);
+    sf_curl_cJSON_AddItemToObject(tags, "ctx_account", key);
   }
 
   if( connectionInfo.host[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.host );
+    key = sf_curl_cJSON_CreateString( connectionInfo.host );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "ctx_host", key);
+    sf_curl_cJSON_AddItemToObject(tags, "ctx_host", key);
   }
 
   if( connectionInfo.port[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.port );
+    key = sf_curl_cJSON_CreateString( connectionInfo.port );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "ctx_port", key);
+    sf_curl_cJSON_AddItemToObject(tags, "ctx_port", key);
   }
 
   if( connectionInfo.protocol[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.protocol );
+    key = sf_curl_cJSON_CreateString( connectionInfo.protocol );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "ctx_protocol", key);
+    sf_curl_cJSON_AddItemToObject(tags, "ctx_protocol", key);
   }
 
   if( connectionInfo.user[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.user );
+    key = sf_curl_cJSON_CreateString( connectionInfo.user );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "ctx_user", key);
+    sf_curl_cJSON_AddItemToObject(tags, "ctx_user", key);
   }
 
   driver_name = getenv("SF_DRIVER_NAME");
   if (driver_name == NULL)
   {
-    key = cJSON_CreateString("ODBC");
+    key = sf_curl_cJSON_CreateString("ODBC");
   }
   else
   {
-    key = cJSON_CreateString(driver_name);
+    key = sf_curl_cJSON_CreateString(driver_name);
   }
   if( ! key ) goto end;
-  cJSON_AddItemToObject(tags, "driver", key);
+  sf_curl_cJSON_AddItemToObject(tags, "driver", key);
 
   driver_version = getenv("SF_DRIVER_VERSION");
   if (driver_version == NULL)
   {
-    key = cJSON_CreateString("99.0.0");
+    key = sf_curl_cJSON_CreateString("99.0.0");
   }
   else
   {
-    key = cJSON_CreateString(driver_version);
+    key = sf_curl_cJSON_CreateString(driver_version);
   }
   if( ! key ) goto end;
-  cJSON_AddItemToObject(tags, "version", key);
+  sf_curl_cJSON_AddItemToObject(tags, "version", key);
 
 #if defined(__linux__) 
-  key = cJSON_CreateString("Linux");
+  key = sf_curl_cJSON_CreateString("Linux");
 #elif defined(__APPLE__)
-  key = cJSON_CreateString("Apple");
+  key = sf_curl_cJSON_CreateString("Apple");
 #elif defined(WIN32) 
-  key = cJSON_CreateString("Win32");
+  key = sf_curl_cJSON_CreateString("Win32");
 #elif defined(_WIN64)
-  key = cJSON_CreateString("Win64");
+  key = sf_curl_cJSON_CreateString("Win64");
 #endif
   if( ! key ) goto end;
-  cJSON_AddItemToObject(tags, "hostOs", key);
+  sf_curl_cJSON_AddItemToObject(tags, "hostOs", key);
 
   if(connectionInfo.dep[0] != 0) {
-    key = cJSON_CreateString( connectionInfo.dep );
+    key = sf_curl_cJSON_CreateString( connectionInfo.dep );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
+    sf_curl_cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
   }else {
-    key = cJSON_CreateString( "prod" );
+    key = sf_curl_cJSON_CreateString( "prod" );
     if( ! key ) goto end;
-    cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
+    sf_curl_cJSON_AddItemToObject(tags, "telemetryServerDeployment", key);
   }
 
-  key = cJSON_CreateString("Log");
+  key = sf_curl_cJSON_CreateString("Log");
   if( ! key ) goto end;
-  cJSON_AddItemToObject(list, "Type", key);
+  sf_curl_cJSON_AddItemToObject(list, "Type", key);
 
-  key = cJSON_CreateString(uuid);
+  key = sf_curl_cJSON_CreateString(uuid);
   if( ! key ) goto end;
-  cJSON_AddItemToObject(list, "UUID", key);
+  sf_curl_cJSON_AddItemToObject(list, "UUID", key);
 
   if(oobevent.urgent) {
-    key = cJSON_CreateTrue();
+    key = sf_curl_cJSON_CreateTrue();
   }
   else {
-    key = cJSON_CreateFalse();
+    key = sf_curl_cJSON_CreateFalse();
   }
   if( ! key ) goto end;
-  cJSON_AddItemToObject(list, "Urgent", key);
+  sf_curl_cJSON_AddItemToObject(list, "Urgent", key);
 
-  vals = cJSON_CreateObject();
-  cJSON_AddItemToObject(list, "Value", vals);
+  vals = sf_curl_cJSON_CreateObject();
+  sf_curl_cJSON_AddItemToObject(list, "Value", vals);
 
-  cJSON_AddItemToObject(vals, "DSN", dsn);
-  cJSON_AddItemToObject(vals, "Simba", simba);
+  sf_curl_cJSON_AddItemToObject(vals, "DSN", dsn);
+  sf_curl_cJSON_AddItemToObject(vals, "Simba", simba);
 
   if(ocspevent && ocspevent->sfc_peer_host[0] != 0 ) {
-    key = cJSON_CreateString(ocspevent->sfc_peer_host);
+    key = sf_curl_cJSON_CreateString(ocspevent->sfc_peer_host);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "sfcPeerHost", key);
+    sf_curl_cJSON_AddItemToObject(vals, "sfcPeerHost", key);
   }
 
   if(ocspevent && ocspevent->cert_id[0] != 0 ) {
-    key = cJSON_CreateString(ocspevent->cert_id);
+    key = sf_curl_cJSON_CreateString(ocspevent->cert_id);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "certId", key);
+    sf_curl_cJSON_AddItemToObject(vals, "certId", key);
   }
 
   if(ocspevent && ocspevent->ocsp_req_b64[0] != 0 ) {
-    key = cJSON_CreateString(ocspevent->ocsp_req_b64);
+    key = sf_curl_cJSON_CreateString(ocspevent->ocsp_req_b64);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "ocspRequestBase64", key);
+    sf_curl_cJSON_AddItemToObject(vals, "ocspRequestBase64", key);
   }
 
   if(ocspevent && ocspevent->ocsp_responder_url[0] != 0 ) {
-    key = cJSON_CreateString(ocspevent->ocsp_responder_url);
+    key = sf_curl_cJSON_CreateString(ocspevent->ocsp_responder_url);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "ocspResponderURL", key);
+    sf_curl_cJSON_AddItemToObject(vals, "ocspResponderURL", key);
   }
 
   if(ocspevent && ocspevent->error_msg[0] != 0 ) {
-    key = cJSON_CreateString(ocspevent->error_msg);
+    key = sf_curl_cJSON_CreateString(ocspevent->error_msg);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "errorMessage", key);
+    sf_curl_cJSON_AddItemToObject(vals, "errorMessage", key);
   }
 
   if(ocspevent ) {
-    key = cJSON_CreateNumber(ocspevent->insecure_mode);
+    key = sf_curl_cJSON_CreateNumber(ocspevent->insecure_mode);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "insecureMode", key);
+    sf_curl_cJSON_AddItemToObject(vals, "insecureMode", key);
   }
 
   if(ocspevent ) {
-    key = cJSON_CreateNumber(ocspevent->failopen_mode);
+    key = sf_curl_cJSON_CreateNumber(ocspevent->failopen_mode);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "failopenMode", key);
+    sf_curl_cJSON_AddItemToObject(vals, "failopenMode", key);
   }
 
   if(ocspevent ) {
-    key = cJSON_CreateNumber(ocspevent->cache_enabled);
+    key = sf_curl_cJSON_CreateNumber(ocspevent->cache_enabled);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "cacheEnabled", key);
+    sf_curl_cJSON_AddItemToObject(vals, "cacheEnabled", key);
   }
 
   if(ocspevent ) {
-    key = cJSON_CreateNumber(ocspevent->cache_hit);
+    key = sf_curl_cJSON_CreateNumber(ocspevent->cache_hit);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "cacheHit", key);
+    sf_curl_cJSON_AddItemToObject(vals, "cacheHit", key);
   }
 
   if(oobevent.errorCode != 0){
-    key = cJSON_CreateNumber( oobevent.errorCode);
+    key = sf_curl_cJSON_CreateNumber( oobevent.errorCode);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "errorCode", key);
+    sf_curl_cJSON_AddItemToObject(vals, "errorCode", key);
   }
 
   if(oobevent.responsestatuscode[0] != 0){
-    key = cJSON_CreateString( oobevent.responsestatuscode);
+    key = sf_curl_cJSON_CreateString( oobevent.responsestatuscode);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "responsestatuscode", key);
+    sf_curl_cJSON_AddItemToObject(vals, "responsestatuscode", key);
   }
 
   if(oobevent.exceptionMessage[0] != 0){
-    key = cJSON_CreateString( oobevent.exceptionMessage);
+    key = sf_curl_cJSON_CreateString( oobevent.exceptionMessage);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "exceptionMessage", key);
+    sf_curl_cJSON_AddItemToObject(vals, "exceptionMessage", key);
   }
 
   if(oobevent.exceptionStackTrace[0] != 0){
-    key = cJSON_CreateArray();
+    key = sf_curl_cJSON_CreateArray();
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "exceptionStackTrace", key);
+    sf_curl_cJSON_AddItemToObject(vals, "exceptionStackTrace", key);
 
-    key = cJSON_CreateString( oobevent.exceptionMessage);
+    key = sf_curl_cJSON_CreateString( oobevent.exceptionMessage);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "exceptionStackTrace", key);
+    sf_curl_cJSON_AddItemToObject(vals, "exceptionStackTrace", key);
   }
 
   if(oobevent.request[0] != 0){
     maskSecrets(oobevent.request);
-    key = cJSON_CreateString( oobevent.request);
+    key = sf_curl_cJSON_CreateString( oobevent.request);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "request", key);
+    sf_curl_cJSON_AddItemToObject(vals, "request", key);
   }
 
   if(connectionInfo.sqlstate[0] != 0 ){
-    key = cJSON_CreateString( connectionInfo.sqlstate);
+    key = sf_curl_cJSON_CreateString( connectionInfo.sqlstate);
     if( ! key ) goto end;
-    cJSON_AddItemToObject(vals, "sqlState", key);
+    sf_curl_cJSON_AddItemToObject(vals, "sqlState", key);
   }
 
   if (root)
   {
-    str = cJSON_Print(root);
-    cJSON_Delete(root);
+    str = sf_curl_cJSON_Print(root);
+    sf_curl_cJSON_Delete(root);
   }
 
   freeAll();
@@ -338,7 +338,7 @@ char* prepareOOBevent(oobOcspData* ocspevent)
 end:
   freeAll();
   if(root) {
-    cJSON_Delete(root);
+    sf_curl_cJSON_Delete(root);
   }
   return NULL;
 
@@ -421,10 +421,10 @@ void setoobConnectioninfo(const char* host,
 }
 
 void setOOBDsnInfo(KeyValuePair kvPair[], int num) {
-    dsn = cJSON_CreateObject();
+    dsn = sf_curl_cJSON_CreateObject();
     for (int i = 0; i < num; ++i) {
-        cJSON* val = cJSON_CreateString(kvPair[i].val);
-        cJSON_AddItemToObject(dsn, kvPair[i].key, val);
+        cJSON* val = sf_curl_cJSON_CreateString(kvPair[i].val);
+        sf_curl_cJSON_AddItemToObject(dsn, kvPair[i].key, val);
         if (!strcasecmp(kvPair[i].key, "server")) {
             setdeployment(kvPair[i].val);
         }
@@ -433,10 +433,10 @@ void setOOBDsnInfo(KeyValuePair kvPair[], int num) {
 }
 
 void setOOBSimbaInfo(KeyValuePair kvPair[], int num) {
-    simba = cJSON_CreateObject();
+    simba = sf_curl_cJSON_CreateObject();
     for (int i = 0; i < num; ++i) {
-        cJSON* val = cJSON_CreateString(kvPair[i].val);
-        cJSON_AddItemToObject(simba, kvPair[i].key, val);
+        cJSON* val = sf_curl_cJSON_CreateString(kvPair[i].val);
+        sf_curl_cJSON_AddItemToObject(simba, kvPair[i].key, val);
     }
     return;
 }
