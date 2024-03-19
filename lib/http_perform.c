@@ -210,14 +210,15 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-        // Set curl timeout to ensure the request won't wait further when renew
-        // is needed.
+        // Set curl timeout to ensure the request won't exceed network timeout when
+        // there is delay due to network issue
+        long curl_timeout = network_timeout;
         if (renew_timeout > 0) {
-            long curl_timeout = renew_timeout > network_timeout ?
-                                 network_timeout : renew_timeout;
-            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, curl_timeout);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
+            curl_timeout = renew_timeout > network_timeout ?
+              network_timeout : renew_timeout;
         }
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, curl_timeout);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
 
         // Set parameters
         res = curl_easy_setopt(curl, CURLOPT_URL, url);

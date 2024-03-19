@@ -2253,7 +2253,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                             sfstmt->connection->insecure_mode,
                             callback_create_resp,
                             sfstmt->connection->proxy,
-                            sfstmt->connection->no_proxy);
+                            sfstmt->connection->no_proxy,
+                            get_retry_timeout(sfstmt->connection),
+                            sfstmt->connection->retry_count);
                     if (!sfstmt->chunk_downloader) {
                         // Unable to create chunk downloader.
                         // Error is set in chunk_downloader_init function.
