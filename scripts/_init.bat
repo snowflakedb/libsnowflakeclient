@@ -64,6 +64,16 @@ set vsdir=
 if /I "%vs_version%"=="VS17" (
     set cmake_generator=Visual Studio 17 2022
     set vsdir=vs17
+    if "%VCINSTALLDIR%" == "" (
+        if exist "c:\Program Files\Microsoft Visual Studio\2022\Community\VC" (
+            set VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC
+        ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC" (
+            set VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC
+        ) else (
+            echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
+            goto :error
+        )
+    )
 )
 if /I "%vs_version%"=="VS16" (
     set cmake_generator=Visual Studio 16 2019
