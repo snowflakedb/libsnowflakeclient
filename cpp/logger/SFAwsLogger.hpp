@@ -56,6 +56,10 @@ public:
   * Writes the stream to the output stream.
   */
   virtual void LogStream(LogLevel logLevel, const char* tag, const Aws::OStringStream &messageStream);
+  /**
+   * Writes any buffered messages to the underlying device if the logger supports buffering.
+   */
+  virtual void Flush();
 
 private:
 

@@ -77,6 +77,11 @@ void Snowflake::Client::SFAwsLogger::LogStream(LogLevel logLevel,
   this->Log(logLevel, tag, "%s", logStr.c_str());
 }
 
+void Snowflake::Client::SFAwsLogger::Flush()
+{
+  ; // Do nothing
+}
+
 int Snowflake::Client::SFAwsLogger::toSFLogeLevel(LogLevel logLevel)
 {
   return 6 - (int)logLevel;

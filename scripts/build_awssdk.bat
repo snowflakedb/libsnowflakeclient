@@ -3,8 +3,8 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_src_version=1.3.50
-set aws_build_version=7
+set aws_src_version=1.11.283
+set aws_build_version=1
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -47,6 +47,10 @@ rd /S /Q %AWS_INSTALL_DIR%
 md %AWS_INSTALL_DIR%
 cd %AWS_CMAKE_BUILD_DIR%
 
+set CURL_LIB_PATH="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib"
+set CURL_LIB_PATH=%CURL_LIB_PATH:\=/%
+set CURL_INC_PATH="%scriptdir%..\deps-build\%build_dir%\curl\include"
+set CURL_INC_PATH=%CURL_INC_PATH:\=/%
 REM Keep GIT_DIR. https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
@@ -54,11 +58,13 @@ cmake %AWS_SOURCE_DIR% ^
 -A "%cmake_architecture%" ^
 -DBUILD_ONLY=s3 ^
 -DFORCE_CURL=on ^
--DCURL_LIBRARY="%scriptdir%..\deps-build\%build_dir%\curl\lib\libcurl_a.lib" ^
--DCURL_INCLUDE_DIR="%scriptdir%..\deps-build\%build_dir%\curl\include" ^
+-DCURL_LIBRARY="%CURL_LIB_PATH%" ^
+-DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
 -DENABLE_TESTING=off ^
+-DAWS_STATIC_MSVC_RUNTIME_LIBRARY=ON ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
--DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /EHsc /GR /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
+-DCMAKE_C_FLAGS="/D CURL_STATICLIB" ^
+-DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /D CURL_STATICLIB /wd4244 /EHsc /GR /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
 -DBUILD_SHARED_LIBS=off ^
 -DSTATIC_LINKING=on ^
 -DENABLE_UNITY_BUILD=on ^

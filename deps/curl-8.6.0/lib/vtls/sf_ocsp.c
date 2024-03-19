@@ -81,8 +81,8 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define OCSP_RESPONSE_CACHE_URL "%s/%s"
 #define OCSP_RESPONDER_RETRY_URL "http://ocsp.snowflakecomputing.com/retry"
 
-#define GET_STR_OCSP_LOG(X,Y) X->Y ? cJSON_CreateString(X->Y) : NULL
-#define GET_BOOL_OCSP_LOG(X,Y) X->Y ? cJSON_CreateString("True") : cJSON_CreateString("False")
+#define GET_STR_OCSP_LOG(X,Y) X->Y ? sf_curl_cJSON_CreateString(X->Y) : NULL
+#define GET_BOOL_OCSP_LOG(X,Y) X->Y ? sf_curl_cJSON_CreateString("True") : sf_curl_cJSON_CreateString("False")
 #define FREE_OCSP_LOG(X) if (X) free(X)
 
 // Connection timeout in seconds for CA OCSP Responder
@@ -619,23 +619,23 @@ static char * getOCSPPostReqData(const char *hname,
                                  struct Curl_easy *data)
 {
     char *ret_data = NULL;
-    cJSON *hostname = cJSON_CreateString(hname);
-    cJSON *ocsp_request = cJSON_CreateString(ocsp_req);
-    cJSON *cert_id = cJSON_CreateString(encodeOCSPCertIDToBase64(cid, data));
-    cJSON *ocsp_responder_url = cJSON_CreateString(ocsp_url);
+    cJSON *hostname = sf_curl_cJSON_CreateString(hname);
+    cJSON *ocsp_request = sf_curl_cJSON_CreateString(ocsp_req);
+    cJSON *cert_id = sf_curl_cJSON_CreateString(encodeOCSPCertIDToBase64(cid, data));
+    cJSON *ocsp_responder_url = sf_curl_cJSON_CreateString(ocsp_url);
 
-    cJSON *ocsp_post = cJSON_CreateObject();
+    cJSON *ocsp_post = sf_curl_cJSON_CreateObject();
 
     if (!ocsp_post)
     {
         goto end;
     }
 
-    cJSON_AddItemToObject(ocsp_post, "cert_id", cert_id);
-    cJSON_AddItemToObject(ocsp_post, "ocsp_request", ocsp_request);
-    cJSON_AddItemToObject(ocsp_post, "ocsp_responder_url",ocsp_responder_url);
-    cJSON_AddItemToObject(ocsp_post, "hostname", hostname);
-    ret_data = cJSON_PrintUnformatted(ocsp_post);
+    sf_curl_cJSON_AddItemToObject(ocsp_post, "cert_id", cert_id);
+    sf_curl_cJSON_AddItemToObject(ocsp_post, "ocsp_request", ocsp_request);
+    sf_curl_cJSON_AddItemToObject(ocsp_post, "ocsp_responder_url",ocsp_responder_url);
+    sf_curl_cJSON_AddItemToObject(ocsp_post, "hostname", hostname);
+    ret_data = sf_curl_cJSON_PrintUnformatted(ocsp_post);
     end:
     return ret_data;
 }
@@ -965,22 +965,22 @@ void updateOCSPResponseInMem(OCSP_CERTID *certid, OCSP_RESPONSE *resp,
   unix_time = (unsigned long)time(NULL);
 
   /* write to mem cache */
-  cache_val_array = cJSON_CreateArray();
-  cJSON_AddItemToArray(cache_val_array, cJSON_CreateNumber((double) unix_time));
-  cJSON_AddItemToArray(cache_val_array, cJSON_CreateString(ocsp_response_encode));
+  cache_val_array = sf_curl_cJSON_CreateArray();
+  sf_curl_cJSON_AddItemToArray(cache_val_array, sf_curl_cJSON_CreateNumber((double) unix_time));
+  sf_curl_cJSON_AddItemToArray(cache_val_array, sf_curl_cJSON_CreateString(ocsp_response_encode));
 
   _mutex_lock(&ocsp_response_cache_mutex);
   if (ocsp_cache_root == NULL)
   {
-    ocsp_cache_root = cJSON_CreateObject();
+    ocsp_cache_root = sf_curl_cJSON_CreateObject();
   }
   found = getCacheEntry(certid, data);
   if (found != NULL)
   {
     /* delete existing entry first if exists. */
-    cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
+    sf_curl_cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
   }
-  cJSON_AddItemToObject(ocsp_cache_root, cert_id_encode, cache_val_array);
+  sf_curl_cJSON_AddItemToObject(ocsp_cache_root, cert_id_encode, cache_val_array);
   _mutex_unlock(&ocsp_response_cache_mutex);
 end:
   if (cert_id_encode) curl_free(cert_id_encode);
@@ -1266,18 +1266,18 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
   cJSON * last_query_time = NULL;
   OCSP_RESPONSE *resp = NULL;
 
-  if (cache_value == NULL || !cJSON_IsArray(cache_value))
+  if (cache_value == NULL || !sf_curl_cJSON_IsArray(cache_value))
   {
     infof(data, "OCSP Cache value is invalid");
     goto end;
   }
 
   /* First item is the timestamp when the cache entry was created. */
-  last_query_time = cJSON_GetArrayItem(cache_value, 0);
-  if (!cJSON_IsNumber(last_query_time))
+  last_query_time = sf_curl_cJSON_GetArrayItem(cache_value, 0);
+  if (!sf_curl_cJSON_IsNumber(last_query_time))
   {
     infof(data, "OCSP Cache Last query time is invalid");
-    cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
+    sf_curl_cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
                                             cache_value->string);
     goto end;
   }
@@ -1292,11 +1292,11 @@ OCSP_RESPONSE* extractOCSPRespFromValue(cJSON *cache_value, struct Curl_easy *da
   }
 
   /* Second item is the actual OCSP response data */
-  resp_bas64_j = cJSON_GetArrayItem(cache_value, 1);
-  if (!cJSON_IsString(resp_bas64_j) || resp_bas64_j->valuestring == NULL)
+  resp_bas64_j = sf_curl_cJSON_GetArrayItem(cache_value, 1);
+  if (!sf_curl_cJSON_IsString(resp_bas64_j) || resp_bas64_j->valuestring == NULL)
   {
     infof(data, "OCSP Response cache is invalid. Deleting it from the cache.");
-    cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
+    sf_curl_cJSON_DeleteItemFromObjectCaseSensitive(ocsp_cache_root,
                                             cache_value->string);
     goto end;
   }
@@ -1357,10 +1357,10 @@ cJSON *getCacheEntry(OCSP_CERTID* certid, struct Curl_easy *data)
 
   if (ocsp_cache_root == NULL)
   {
-    ocsp_cache_root = cJSON_CreateObject();
+    ocsp_cache_root = sf_curl_cJSON_CreateObject();
   }
 
-  cJSON_ArrayForEach(element_pointer, ocsp_cache_root)
+  sf_curl_cJSON_ArrayForEach(element_pointer, ocsp_cache_root)
   {
     int cmp = 0;
     OCSP_CERTID *target_certid = decodeOCSPCertIDFromBase64(
@@ -1395,7 +1395,7 @@ void deleteCacheEntry(OCSP_CERTID* certid, struct Curl_easy *data)
   found = getCacheEntry(certid, data);
   if (found)
   {
-    cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
+    sf_curl_cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
   }
   _mutex_unlock(&ocsp_response_cache_mutex);
 }
@@ -1412,7 +1412,7 @@ void updateCacheWithBulkEntries(cJSON* tmp_cache, struct Curl_easy *data)
   cJSON *new_value = NULL;
 
   /* Detect the existing elements */
-  cJSON_ArrayForEach(element_pointer, tmp_cache)
+  sf_curl_cJSON_ArrayForEach(element_pointer, tmp_cache)
   {
     OCSP_CERTID *cert_id = decodeOCSPCertIDFromBase64(
       element_pointer->string, data);
@@ -1423,12 +1423,12 @@ void updateCacheWithBulkEntries(cJSON* tmp_cache, struct Curl_easy *data)
     }
     found = getCacheEntry(cert_id, data);
     OCSP_CERTID_free(cert_id);
-    new_value = cJSON_Duplicate(element_pointer, 1);
+    new_value = sf_curl_cJSON_Duplicate(element_pointer, 1);
     if (found != NULL)
     {
-      cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
+      sf_curl_cJSON_DeleteItemFromObject(ocsp_cache_root, found->string);
     }
-    cJSON_AddItemToObject(ocsp_cache_root, element_pointer->string, new_value);
+    sf_curl_cJSON_AddItemToObject(ocsp_cache_root, element_pointer->string, new_value);
   }
 }
 
@@ -1544,18 +1544,18 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last
   _mutex_lock(&ocsp_response_cache_mutex);
   if (ocsp_cache_root == NULL)
   {
-    ocsp_cache_root = cJSON_CreateObject();
+    ocsp_cache_root = sf_curl_cJSON_CreateObject();
   }
-  tmp_cache = cJSON_Parse(ocsp_response_cache_json_mem.memory_ptr);
+  tmp_cache = sf_curl_cJSON_Parse(ocsp_response_cache_json_mem.memory_ptr);
 
   /* update OCSP cache with the downloaded cache */
   updateCacheWithBulkEntries(tmp_cache, data);
   infof(data, "Number of cache entries: %d",
-        cJSON_GetArraySize(ocsp_cache_root));
+        sf_curl_cJSON_GetArraySize(ocsp_cache_root));
 
   _mutex_unlock(&ocsp_response_cache_mutex);
 end:
-  if (tmp_cache) cJSON_Delete(tmp_cache);
+  if (tmp_cache) sf_curl_cJSON_Delete(tmp_cache);
   if (curlh) curl_easy_cleanup(curlh);
   if (headers) curl_slist_free_all(headers);
   if (host) OPENSSL_free(host);
@@ -1703,7 +1703,7 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, b
     {
       sendOOBevent(ocsp_log_data);
     }
-    if(ocsp_log_data) cJSON_free(ocsp_log_data);
+    if(ocsp_log_data) sf_curl_cJSON_free(ocsp_log_data);
   }
 }
 
@@ -1867,7 +1867,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
           sendOOBevent(ocsp_log_str);
         }
         infof(data, ocsp_log_str);
-        if(ocsp_log_str) cJSON_free(ocsp_log_str);
+        if(ocsp_log_str) sf_curl_cJSON_free(ocsp_log_str);
       }
     }
   }
@@ -2075,7 +2075,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
     infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
     goto end;
   }
-  jsonText = cJSON_PrintUnformatted(ocsp_cache_root);
+  jsonText = sf_curl_cJSON_PrintUnformatted(ocsp_cache_root);
   if (fprintf(fp, "%s", jsonText) < 0)
   {
     infof(data, "Failed to write OCSP response cache file. Skipping");
@@ -2088,7 +2088,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   infof(data, "Write OCSP Response to cache file");
 
   /* deallocate json string */
-  cJSON_free(jsonText);
+  sf_curl_cJSON_free(jsonText);
 
   if (remove(cache_lock_file) != 0)
   {
@@ -2097,7 +2097,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
 end:
   if (ocsp_cache_root != NULL)
   {
-    cJSON_Delete(ocsp_cache_root);
+    sf_curl_cJSON_Delete(ocsp_cache_root);
     ocsp_cache_root = NULL;
   }
   _mutex_unlock(&ocsp_response_cache_mutex);
@@ -2182,7 +2182,7 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
     goto file_close;
   }
   /* just attached the whole JSON object */
-  ocsp_cache_root = cJSON_Parse(ocsp_resp_cache_str);
+  ocsp_cache_root = sf_curl_cJSON_Parse(ocsp_resp_cache_str);
   if (ocsp_cache_root == NULL)
   {
     infof(data, "Failed to parse cache file content in json format");
@@ -2199,7 +2199,7 @@ file_close:
     goto end;
   }
 end:
-  if (ocsp_cache_root == NULL) ocsp_cache_root = cJSON_CreateObject();
+  if (ocsp_cache_root == NULL) ocsp_cache_root = sf_curl_cJSON_CreateObject();
   if (ocsp_resp_cache_str != NULL) free(ocsp_resp_cache_str);
   _mutex_unlock(&ocsp_response_cache_mutex);
   return;

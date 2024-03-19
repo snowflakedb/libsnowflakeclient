@@ -126,8 +126,6 @@ public:
 private:
   Aws::SDKOptions options;
 
-  Aws::Client::ClientConfiguration clientConfiguration;
-
   Aws::S3::S3Client *s3Client;
 
   StageInfo * m_stageInfo;
@@ -137,6 +135,8 @@ private:
   const size_t m_uploadThreshold;
 
   unsigned int m_parallel;
+
+  Aws::String m_stageEndpoint;
 
   /**
    * Max retries for multipart upload
