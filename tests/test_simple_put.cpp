@@ -1569,7 +1569,7 @@ void test_put_get_with_unicode(void **unused)
 {
   std::string dataDir = TestSetup::getDataDir();
   std::string filename=PLATFORM_STR + ".csv";
-  copy_file(dataDir + "small_file.csv", dataDir + filename, copy_option::overwrite_if_exists);
+  copy_file(dataDir + "small_file.csv", dataDir + filename, copy_options::overwrite_existing);
   filename = UTF8_STR + ".csv";
   test_simple_put_core(
       filename.c_str(), // filename
