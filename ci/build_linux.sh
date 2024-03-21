@@ -48,3 +48,8 @@ docker run \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/ci/build/build.sh"
 
+#remove image to save disk space on github
+if [[ -n "$GITHUB_ACTIONS" ]]; then
+    docker rm -vf $(docker ps -aq --filter ancestor=${BUILD_IMAGE_NAME})
+	docker rmi -f "${BUILD_IMAGE_NAME}"
+fi

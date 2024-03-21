@@ -15,7 +15,7 @@ fi
 export DRIVER_NAME=libsnowflakeclient
 
 # Build images
-BUILD_IMAGE_VERSION_X64=1
+BUILD_IMAGE_VERSION_X64=2
 BUILD_IMAGE_VERSION_AARCH64=3
 
 # Test Images
@@ -23,7 +23,14 @@ TEST_IMAGE_VERSION_X64=1
 TEST_IMAGE_VERSION_AARCH64=3
 
 PLATFORM_ARCH=$(uname -p)
-if [[ "$PLATFORM_ARCH" == "aarch64" ]]; then
+if [[ -z "$TARGET_PLATFORM" ]]; then
+  if [[ "$PLATFORM_ARCH" == "aarch64" ]]; then
+    export TARGET_PLATFORM=arm64
+  else
+    export TARGET_PLATFORM=amd64
+  fi
+fi
+if [[ "$TARGET_PLATFORM" == "arm64" ]]; then
   export DOCKER_MARK="ubuntu20-aarch64"
   declare -A BUILD_IMAGE_NAMES=(
     [$DRIVER_NAME-$DOCKER_MARK]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-ubuntu20-aarch64:$BUILD_IMAGE_VERSION_AARCH64

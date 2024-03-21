@@ -143,7 +143,6 @@ void test_chunk_downloading_timeout(void** unused) {
   snowflake_set_attribute(sf, SF_CON_NO_PROXY, "snowflakecomputing.com");
   int64 timeout = 10;
   int64 delta = 2;
-  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
 
   SF_STMT* sfstmt = NULL;
   SF_STATUS status = snowflake_connect(sf);
@@ -162,6 +161,7 @@ void test_chunk_downloading_timeout(void** unused) {
   /* query */
   sfstmt = snowflake_stmt(sf);
 
+  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   status = snowflake_query(sfstmt, sql_buf, 0);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
