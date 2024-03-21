@@ -122,8 +122,8 @@ if (APPLE OR WIN32 OR CLIENT_CODE_COVERAGE)
 endif ()
 
 if (UNIX)
-    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
-    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib/ REQUIRED)
+    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
@@ -164,7 +164,7 @@ if (APPLE)
 endif ()
 
 if (WIN32)
-    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED)
+    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 
     # Groups all Arrow dependencies.
     set(ARROW_ALL_LIBS
