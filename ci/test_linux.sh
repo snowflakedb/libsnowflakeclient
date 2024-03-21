@@ -28,7 +28,13 @@ else
 fi
 
 TARGET_DOCKER_TEST_IMAGE=${TARGET_DOCKER_TEST_IMAGE:-$DRIVER_NAME-centos7-default}
-TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$TARGET_DOCKER_TEST_IMAGE]}"
+if [[ $CLIENT_CODE_COVERAGE -eq 1 ]]; then
+    # we need build docker image to have gcov match the gcc version being used
+    TEST_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$DOCKER_MARK]}"
+else
+    TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$TARGET_DOCKER_TEST_IMAGE]}"
+fi
+echo $TEST_IMAGE_NAME
 docker pull "${TEST_IMAGE_NAME}"
 docker run \
         -v $(cd $THIS_DIR/.. && pwd):/mnt/host \
