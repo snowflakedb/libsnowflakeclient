@@ -161,13 +161,13 @@ void test_chunk_downloading_timeout(void** unused) {
   /* query */
   sfstmt = snowflake_stmt(sf);
 
-  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   status = snowflake_query(sfstmt, sql_buf, 0);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
+  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   unsigned long start_time = (unsigned long)time(NULL);
   // we could have some rows returned in query response so fetch
   // might succeed at first
