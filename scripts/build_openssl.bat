@@ -37,7 +37,6 @@ set vs_version=%3
 set dynamic_runtime=%4
 
 set scriptdir=%~dp0
-set "path=%scriptdir%..\ci\tools;%path%"
 
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error

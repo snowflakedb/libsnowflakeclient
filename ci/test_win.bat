@@ -4,9 +4,6 @@
 
 @echo off
 setlocal
-if not defined GITHUB_ACTIONS (
-    set "path=C:\Program Files\7-Zip;%path%"
-)
 set scriptdir=%~dp0
 set curdir=%cd%
 
