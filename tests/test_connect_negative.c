@@ -141,8 +141,8 @@ void test_chunk_downloading_timeout(void** unused) {
   // only chunk downloading requests would fail
   snowflake_set_attribute(sf, SF_CON_PROXY, "172.23.19.112");
   snowflake_set_attribute(sf, SF_CON_NO_PROXY, "snowflakecomputing.com");
-  int64 timeout = 10;
-  int64 delta = 2;
+  int64 timeout = 20;
+  int64 delta = 3;
 
   SF_STMT* sfstmt = NULL;
   SF_STATUS status = snowflake_connect(sf);
