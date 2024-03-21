@@ -69,6 +69,8 @@ if /I "%vs_version%"=="VS17" (
             set VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC
         ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC" (
             set VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC
+        ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC" (
+            set VCINSTALLDIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\2022\BuildTools\VC
         ) else (
             echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
             goto :error
