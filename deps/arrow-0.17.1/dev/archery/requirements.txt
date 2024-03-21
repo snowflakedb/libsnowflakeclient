@@ -1,3 +1,0 @@
-click
-pygithub
-ruamel.yaml
