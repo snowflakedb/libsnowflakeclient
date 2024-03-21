@@ -4,7 +4,7 @@
 ::
 @echo off
 set aws_src_version=1.11.283
-set aws_build_version=1
+set aws_build_version=2
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF

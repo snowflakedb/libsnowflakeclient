@@ -3,7 +3,7 @@
 ::
 @echo off
 set arrow_src_version=0.17.1
-set arrow_build_version=2
+set arrow_build_version=3
 :: The full version number for dependency packaging/uploading/downloading
 :: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
 :: set arrow_version=%arrow_src_version%.%arrow_build_version%

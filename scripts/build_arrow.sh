@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 export ARROW_SRC_VERSION=0.17.1
-export ARROW_BUILD_VERSION=2
+export ARROW_BUILD_VERSION=3
 #The full version number for dependency packaging/uploading/downloading
 export ARROW_VERSION=${ARROW_SRC_VERSION}.${ARROW_BUILD_VERSION}
 
