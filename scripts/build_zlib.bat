@@ -22,7 +22,6 @@ goto :EOF
 
 :build
 setlocal
-set PATH=C:\Program Files\7-Zip;%PATH%
 set ZLIB_DIR=zlib-%ZLIB_SRC_VERSION%
 
 set platform=%1

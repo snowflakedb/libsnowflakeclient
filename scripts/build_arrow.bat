@@ -2,12 +2,16 @@
 :: Build ARROW library
 ::
 @echo off
-set arrow_src_version=0.17.1
-set arrow_build_version=3
+set arrow_src_version=15.0.0
+set arrow_build_version=1
 :: The full version number for dependency packaging/uploading/downloading
-:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
-:: set arrow_version=%arrow_src_version%.%arrow_build_version%
-set arrow_version=%arrow_src_version%
+if "%ARROW_FROM_SOURCE%"=="1" (
+    set arrow_version=%arrow_src_version%.%arrow_build_version%
+) else (
+:: Use pre-build package of 0.17.1
+    set arrow_version=0.17.1
+)
+
 call %*
 goto :EOF
 
@@ -44,7 +48,7 @@ if "%ARROW_FROM_SOURCE%"=="1" (
     )
 ) else (
     :: Temporarily hard-code vsdir in Arrow archive to vs14.
-    7z x arrow_%arcdir%_vs14_%build_type%-%arrow_src_version%.zip -o%build_dir%
+    7z x arrow_%arcdir%_vs14_%build_type%-0.17.1.zip -o%build_dir%
 )
 if defined GITHUB_ACTIONS (
     del %dependencydir%\*.zip

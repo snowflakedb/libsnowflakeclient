@@ -14,8 +14,7 @@ if /I "%platform%"=="x64" set platform=x64
 if /I "%platform%"=="x86" set platform=x86
 
 set curdir=%cd%
-:: SNOW-937196: temporarily disable building arrow from source to revert to pre-build arrow on Windows and Linux x86
-:: set ARROW_FROM_SOURCE=1
+set ARROW_FROM_SOURCE=1
 
 if defined arch (
     if not "%platform%"=="" (
@@ -69,6 +68,8 @@ if /I "%vs_version%"=="VS17" (
             set VCINSTALLDIR=c:\Program Files\Microsoft Visual Studio\2022\Community\VC
         ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC" (
             set VCINSTALLDIR=%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC
+        ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC" (
+            set VCINSTALLDIR=C:\Program Files ^(x86^)\Microsoft Visual Studio\2022\BuildTools\VC
         ) else (
             echo Set environment variable VCINSTALLDIR to sepecify Visual Studio 2022 install path.
             goto :error
@@ -86,6 +87,7 @@ if /I "%vs_version%"=="VS15" (
 if /I "%vs_version%"=="VS14" (
     set cmake_generator=Visual Studio 14 2015
     set vsdir=vs14
+    set ARROW_FROM_SOURCE=0
 )
 if "%cmake_generator%"=="" (
     echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15, VS14]

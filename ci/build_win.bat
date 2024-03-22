@@ -13,8 +13,11 @@ set curdir=%cd%
 set utils_script="%scriptdir%..\scripts\utils.bat"
 call %utils_script% :init_git_variables
 if %ERRORLEVEL% NEQ 0 goto :error
-pip install --upgrade --user awscli
-pip install awscli
+echo === creating venv
+py -3.7 -m venv venv
+call venv\scripts\activate
+python -m pip install -U pip > nul 2>&1
+python -m pip install -U awscli > nul 2>&1
 set zlib_build_script="%scriptdir%..\scripts\build_zlib.bat"
 set openssl_build_script="%scriptdir%..\scripts\build_openssl.bat"
 set curl_build_script="%scriptdir%..\scripts\build_curl.bat"

@@ -28,8 +28,9 @@ else
 fi
 
 TARGET_DOCKER_TEST_IMAGE=${TARGET_DOCKER_TEST_IMAGE:-$DRIVER_NAME-centos7-default}
-if [[ $CLIENT_CODE_COVERAGE -eq 1 ]]; then
+if [[ $CLIENT_CODE_COVERAGE -eq 1 ]] || [[ "$BUILD_TYPE" == "Debug" ]]; then
     # we need build docker image to have gcov match the gcc version being used
+    # for debug build we also need to reuse build docker image to save disk space on github
     TEST_IMAGE_NAME="${BUILD_IMAGE_NAMES[$DRIVER_NAME-$DOCKER_MARK]}"
 else
     TEST_IMAGE_NAME="${TEST_IMAGE_NAMES[$TARGET_DOCKER_TEST_IMAGE]}"
