@@ -1,9 +1,9 @@
 project(test_bind_ds)
 
 if (UNIX)
-    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED)
+    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 else()
-    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED)
+    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/${VSDIR}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 endif ()
 
 add_executable(test_unit_rbtree test_unit_rbtree.c)
