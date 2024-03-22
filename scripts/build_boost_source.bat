@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/boostorg/boost.git
 ::
 @echo off
-set boost_version=1.81.0
+set boost_version=1.75.0
 call %*
 goto :EOF
 

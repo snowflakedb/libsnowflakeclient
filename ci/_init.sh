@@ -15,7 +15,8 @@ fi
 export DRIVER_NAME=libsnowflakeclient
 
 # Build images
-BUILD_IMAGE_VERSION_X64=2
+# We have build image version 2 with gcc8 already but stay on old one with gcc5 for now
+BUILD_IMAGE_VERSION_X64=1
 BUILD_IMAGE_VERSION_AARCH64=3
 
 # Test Images

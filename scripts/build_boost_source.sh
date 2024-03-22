@@ -11,7 +11,7 @@ function usage() {
 }
 set -o pipefail
 
-BOOST_VERSION=1.81.0
+BOOST_VERSION=1.75.0
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
