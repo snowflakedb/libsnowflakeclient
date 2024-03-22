@@ -4,7 +4,7 @@
 ::
 @echo off
 set cmocka_src_version=1.1.1
-set cmocka_build_version=2
+set cmocka_build_version=3
 set cmocka_version=%cmocka_src_version%.%cmocka_build_version%
 call %*
 goto :EOF

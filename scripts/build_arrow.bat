@@ -2,8 +2,8 @@
 :: Build ARROW library
 ::
 @echo off
-set arrow_src_version=15.0.0
-set arrow_build_version=1
+set arrow_src_version=0.17.1
+set arrow_build_version=3
 :: The full version number for dependency packaging/uploading/downloading
 if "%ARROW_FROM_SOURCE%"=="1" (
     set arrow_version=%arrow_src_version%.%arrow_build_version%
