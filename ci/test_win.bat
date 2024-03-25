@@ -97,7 +97,7 @@ exit /b 0
 :create_schema
     @echo off
     echo === creating schema
-    pushd scripts
+    pushd %scriptdir%..\scripts
         python create_schema.py
         if %ERRORLEVEL% NEQ 0 goto :error
     popd
@@ -106,7 +106,7 @@ exit /b 0
 :drop_schema
     @echo off
     echo === dropping schema
-    pushd scripts
+    pushd %scriptdir%..\scripts
         python drop_schema.py
         if %ERRORLEVEL% NEQ 0 goto :error
     popd
