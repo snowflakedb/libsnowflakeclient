@@ -73,7 +73,8 @@ exit /b 0
         if !ERRORLEVEL! NEQ 0 goto :error
     )
     pushd %cmake_dir%
-        set APPVEYOR_BUILD_FOLDER=%scriptdir%..
+        ::temporary set to wrong one to see if this actually work
+        set APPVEYOR_BUILD_FOLDER=%scriptdir%..\tests
         ctest -V -E "valgrind.*"
         if %ERRORLEVEL% NEQ 0 (
             call :drop_schema
