@@ -229,6 +229,8 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        endlocal
+        set CLOUD_PROVIDER=AWS
     )
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
@@ -236,6 +238,8 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        endlocal
+        set CLOUD_PROVIDER=AZURE
     )
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
@@ -243,6 +247,8 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        endlocal
+        set CLOUD_PROVIDER=GCP
     )
     if defined CLOUD_PROVIDER (
         echo === Cloud Provider: %CLOUD_PROVIDER%
