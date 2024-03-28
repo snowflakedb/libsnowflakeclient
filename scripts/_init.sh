@@ -134,7 +134,12 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     export CXX=clang++
     export GCC=$CC
     export GXX=$CXX
-    export MACOSX_VERSION_MIN=10.14
+    if [[ -z "$GITHUB_ACTIONS" ]]; then
+      export MACOSX_VERSION_MIN=10.14
+    else
+      # On GH we are running tests on macos-11 which is version 11.0
+      export MACOSX_VERSION_MIN=11.0
+    fi
     export MKTEMP="mktemp -t snowflake"
     
     # Check to see if we are doing a universal build
