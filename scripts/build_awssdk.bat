@@ -1,10 +1,10 @@
 ::
-:: Build Aws sdk 
+:: Build Aws sdk
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_src_version=1.11.283
-set aws_build_version=3
+set aws_src_version=1.3.50
+set aws_build_version=8
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -30,7 +30,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 set curdir=%cd%
 
-if /I "%platform%"=="x64" (    
+if /I "%platform%"=="x64" (
     set engine_dir=Program Files
 )
 if /I "%platform%"=="x86" (
@@ -71,7 +71,7 @@ cmake %AWS_SOURCE_DIR% ^
 -DFORCE_SHARED_CRT=%force_shared_crt%
 
 if %ERRORLEVEL% NEQ 0 goto :error
-    
+
 msbuild INSTALL.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
