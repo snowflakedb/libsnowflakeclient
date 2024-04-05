@@ -3,8 +3,8 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_src_version=1.3.50
-set aws_build_version=8
+set aws_src_version=1.11.283
+set aws_build_version=4
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -68,6 +68,7 @@ cmake %AWS_SOURCE_DIR% ^
 -DBUILD_SHARED_LIBS=off ^
 -DSTATIC_LINKING=on ^
 -DENABLE_UNITY_BUILD=on ^
+-DENABLE_CURL_LOGGING=off ^
 -DFORCE_SHARED_CRT=%force_shared_crt%
 
 if %ERRORLEVEL% NEQ 0 goto :error

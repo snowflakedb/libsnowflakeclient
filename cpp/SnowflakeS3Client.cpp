@@ -41,9 +41,16 @@
 
 namespace
 {
+  /*
+   * With newer version of aws sdk (when updating to 1.11.283) ShutdownAWSLogging()
+   * and ShutdownAPI() need to be called after aws API usage is done otherwise
+   * it could throw exception when the application ends.
+   * Call them in destructor and add refCount to ensure no other S3Client instance
+   * in use.
+   */
   struct awsdk_init
   {
-    awsdk_init()
+    awsdk_init() : refCount(0)
     {
       Aws::InitAPI(options);
       Aws::Utils::Logging::InitializeAWSLogging(
@@ -52,13 +59,18 @@ namespace
 
     ~awsdk_init()
     {
+      Aws::Utils::Logging::ShutdownAWSLogging();
+      ShutdownAPI(options);
     }
 
     Aws::SDKOptions options;
+    int refCount;
   };
 
   Snowflake::Client::AwsMutex s_sdkMutex;
   std::unique_ptr<struct awsdk_init> s_awssdk;
+
+  const Aws::S3::Model::ChecksumAlgorithm INVALID_CHECKSUM = (Aws::S3::Model::ChecksumAlgorithm)(10);
 }
 
 namespace Snowflake
@@ -102,16 +114,18 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      "CA bundle file is empty.");
   }
 
+  s_sdkMutex.lock();
   if (!s_awssdk)
   {
-    s_sdkMutex.lock();
-    if (!s_awssdk)
-    {
-      s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
-    }
-    s_sdkMutex.unlock();
+    s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
   }
+  s_awssdk->refCount++;
+  s_sdkMutex.unlock();
 
+  // ClientConfiguration needs to be initialized after Aws::InitAPI() is called
+  // so we can't keep it in member variable. Add a new member variable m_stageEndpoint
+  // to keep the overriden endpoint.
+  Aws::Client::ClientConfiguration clientConfiguration;
   clientConfiguration.region = stageInfo->region;
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
@@ -126,6 +140,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
         + Aws::String(clientConfiguration.region)
         + Aws::String(".amazonaws.com");
   }
+  m_stageEndpoint = clientConfiguration.endpointOverride;
 
   Util::Proxy proxy;
   if ((transferConfig != nullptr) && (transferConfig->proxy != nullptr))
@@ -161,7 +176,9 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
 
   if (!proxy.getNoProxy().empty())
   {
-    clientConfiguration.noProxy = Aws::String(proxy.getNoProxy());
+    auto nonProxyHosts = Aws::Utils::StringUtils::Split(Aws::String(proxy.getNoProxy()), ',');
+    clientConfiguration.nonProxyHosts = Aws::Utils::Array<Aws::String>(
+                                          nonProxyHosts.data(), nonProxyHosts.size());
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());
@@ -192,6 +209,16 @@ SnowflakeS3Client::~SnowflakeS3Client()
   {
     delete m_threadPool;
   }
+  s_sdkMutex.lock();
+  if (s_awssdk)
+  {
+    s_awssdk->refCount--;
+    if (s_awssdk->refCount <= 0)
+    {
+      s_awssdk = NULL;
+    }
+  }
+  s_sdkMutex.unlock();
 }
 
 RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
@@ -254,6 +281,14 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
   putObjectRequest.SetBody(
     Aws::MakeShared<Aws::IOStream>("", dataStream->rdbuf()));
 
+  // In newer version of aws sdk (when updating to 1.11.283), it forcely use
+  // checksum that requires the data stream to be read by twice (one for
+  // checksum and one for uploading) while the cipherStream can only be read
+  // once and the second time will return error. It's defaults to MD5 when
+  // set it to NOT_SET so the only way to disable it is to set it to an
+  // invalid value.
+  putObjectRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
+
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
   if (outcome.IsSuccess())
@@ -279,6 +314,7 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
   uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
+  uploadPartRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
 
   Aws::S3::Model::UploadPartOutcome outcome = s3Client->UploadPart(uploadPartRequest);
 
@@ -635,7 +671,7 @@ void SnowflakeS3Client::setMaxRetries(unsigned int maxRetries)
 
 const char * SnowflakeS3Client::GetClientConfigStageEndpoint()
 {
-  return clientConfiguration.endpointOverride.c_str();
+  return m_stageEndpoint.c_str();
 }
 
 }
