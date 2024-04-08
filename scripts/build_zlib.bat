@@ -38,6 +38,12 @@ set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set curdir=%cd%
+if not defined GITHUB_ACTIONS (
+    if not defined WORKSPACE set WORKSPACE=%curdir%
+    echo WORKSPACE=%WORKSPACE%
+    set curdir=%WORKSPACE%
+    cd %curdir%
+)
 
 set target_name=zlib_a.lib
 if "%build_type%"=="Debug" (
@@ -47,9 +53,19 @@ if "%build_type%"=="Release" (
     set target_name=zlib_a.lib
 )
 
+echo The curdir before installing VS is %curdir%
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+echo The curdir after installing VS is %curdir%
 
 echo === building zlib
+echo The curdir is %curdir%
+
+if not defined GITHUB_ACTIONS (
+    echo WORKSPACE=%WORKSPACE%
+    set curdir=%WORKSPACE%
+    echo Changed the curdir to %curdir%
+)
+
 echo %curdir%\deps\%ZLIB_DIR%
 cd %curdir%\deps\%ZLIB_DIR%
 if %ERRORLEVEL% NEQ 0 goto :error
