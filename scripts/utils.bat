@@ -82,12 +82,6 @@ goto :EOF
     call :get_zip_file_name %component_name% %component_version%
     del artifacts\%zip_file_name%
     set curdir=%cd%
-    if not defined GITHUB_ACTIONS (
-       if not defined WORKSPACE set WORKSPACE=%curdir%
-       echo WORKSPACE=%WORKSPACE%
-       set curdir=%WORKSPACE%
-       cd %curdir%
-    )
     pushd deps-build\%build_dir%
         7z a %curdir%\artifacts\%zip_file_name% %component_name%
         7z l %curdir%\artifacts\%zip_file_name%
@@ -108,12 +102,6 @@ goto :EOF
     call :get_zip_file_name %component_name% %component_version%
     del artifacts\%zip_file_name%
     set curdir=%cd%
-    if not defined GITHUB_ACTIONS (
-        if not defined WORKSPACE set WORKSPACE=%curdir%
-        echo WORKSPACE=%WORKSPACE%
-        set curdir=%WORKSPACE%
-        cd %curdir%
-    )
     pushd deps-build\%build_dir%
         7z a %curdir%\artifacts\%zip_file_name% %files%
         7z l %curdir%\artifacts\%zip_file_name%

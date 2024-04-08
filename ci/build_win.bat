@@ -9,12 +9,6 @@ if not defined GITHUB_ACTIONS (
 )
 set scriptdir=%~dp0
 set curdir=%cd%
-if not defined GITHUB_ACTIONS (
-    if not defined WORKSPACE set WORKSPACE=%curdir%
-    echo WORKSPACE=%WORKSPACE%
-    set curdir=%WORKSPACE%
-    cd %curdir%
-)
 
 set utils_script="%scriptdir%..\scripts\utils.bat"
 call %utils_script% :init_git_variables
