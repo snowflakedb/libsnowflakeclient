@@ -100,20 +100,19 @@ set(SOURCE_UTILS_CXX
 set(AWS_ALL_LIBS
         ${AWS_S3_LIB}
         ${AWS_CORE_LIB}
-# comment out for now to revert to old aws sdk 1.3.50
-#        ${AWS_CRT_CPP_LIB}
-#        ${AWS_C_EVENT_STREAM_LIB}
-#        ${AWS_C_CHECKSUMS_LIB}
-#        ${AWS_C_S3_LIB}
-#        ${AWS_C_AUTH_LIB}
-#        ${AWS_C_HTTP_LIB}
-#        ${AWS_C_COMPRESSION_LIB}
-#        ${AWS_C_IO_LIB}
-#        ${AWS_C_CAL_LIB}
-#        ${AWS_C_MQTT_LIB}
-#        ${AWS_S2N_LIB}
-#        ${AWS_C_COMMON_LIB}
-#        ${AWS_C_SDKUTILS_LIB}
+        ${AWS_CRT_CPP_LIB}
+        ${AWS_C_EVENT_STREAM_LIB}
+        ${AWS_C_CHECKSUMS_LIB}
+        ${AWS_C_S3_LIB}
+        ${AWS_C_AUTH_LIB}
+        ${AWS_C_HTTP_LIB}
+        ${AWS_C_COMPRESSION_LIB}
+        ${AWS_C_IO_LIB}
+        ${AWS_C_CAL_LIB}
+        ${AWS_C_MQTT_LIB}
+        ${AWS_S2N_LIB}
+        ${AWS_C_COMMON_LIB}
+        ${AWS_C_SDKUTILS_LIB}
     )
 
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
