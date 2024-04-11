@@ -37,7 +37,8 @@ static uint64_t xorshift128plus(uint64_t *s) {
 static int init_seed(void) {
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
     size_t res;
-    FILE *fp = fopen("/dev/urandom", "rb");
+    FILE *fp;
+    fp = sf_fopen(&fp, "/dev/urandom", "rb");
     if (!fp) {
         return UUID4_EFAILURE;
     }

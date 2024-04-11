@@ -730,7 +730,8 @@ void STDCALL sf_log_timestamp(char *tsbuf, size_t tsbufsize) {
     /* Get current time */
     struct timeval tmnow;
     gettimeofday(&tmnow, NULL);
-    struct tm *lt = gmtime(&tmnow.tv_sec);
+    struct tm tmbuf;
+    struct tm *lt = sf_gmtime(&tmnow.tv_sec, &tmbuf);
     char msec[10];    /* Microsecond buffer */
 
     sf_sprintf(msec, sizeof(msec), "%03d", (int) tmnow.tv_usec / 1000);

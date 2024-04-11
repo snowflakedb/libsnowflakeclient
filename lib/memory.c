@@ -32,6 +32,10 @@ static struct allocation *alloc_find(const void *ptr) {
 
 static void alloc_insert(const void *ptr, size_t size, const char *file, int line) {
     struct allocation *alloc = (struct allocation*) malloc(sizeof(struct allocation));
+    if (alloc == NULL) {
+      log_fatal("Could not allocate %zu bytes of memory. Most likely out of memory. Exiting...", sizeof(struct allocation));
+      sf_memory_error_handler();
+    }
     alloc->ptr = ptr;
     alloc->size = size;
     alloc->file = file;

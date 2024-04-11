@@ -305,7 +305,8 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     struct tm *time_info;
     char time_str[15];
     time(&current_time);
-    time_info = localtime(&current_time);
+    struct tm tmbuf;
+    time_info = sf_localtime(&current_time, &tmbuf);
     strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", time_info);
     const char *sf_log_path;
     char log_path_buf[MAX_PATH];
@@ -2323,7 +2324,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             }
             codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
             if (codeJson) {
-                code = (int64) atol(codeJson->valuestring);
+                code = (int64) strtol(codeJson->valuestring, NULL, 10);
             } else {
                 log_debug("no code element.");
             }
