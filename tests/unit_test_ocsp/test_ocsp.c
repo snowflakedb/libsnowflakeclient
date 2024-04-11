@@ -219,7 +219,6 @@ checkUrlEncoding(char *urlData, char *expectedEncoding)
         exit(1);
     }
 
-    free(encodedData);
     fprintf(stderr, "OK\n");
 }
 
@@ -233,7 +232,19 @@ int main(int argc, char **argv)
     char cache_file[4096];
 
     host[0] = (char) 0;
+    if (getenv("SNOWFLAKE_TEST_HOST"))
+    {
+        strcpy(host, getenv("SNOWFLAKE_TEST_HOST"));
+    }
+    else if (getenv("SNOWFLAKE_TEST_ACCOUNT"))
+    {
+        sprintf(host, "%s.snowflakecomputing.com", getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    }
     cacert[0] = (char) 0;
+    if (getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"))
+    {
+        strcpy(cacert, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
+    }
 
     while ((c = getopt(argc, argv, "h:p:c:")) != -1)
     {

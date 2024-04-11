@@ -334,6 +334,7 @@ else()
 
 endif()
 
-# Uncomment when you want to run the OCSP unit tests. Do not run as part of normal Travis testing
-# add_subdirectory(unit_test_ocsp)
+if (UNIX)
+    add_subdirectory(unit_test_ocsp)
+endif()
 add_subdirectory(test_bind_datastructures)
