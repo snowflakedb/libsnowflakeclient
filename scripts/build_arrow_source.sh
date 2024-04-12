@@ -28,7 +28,7 @@ if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
     ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build-debug
     if [[ "$PLATFORM" == "darwin" ]]; then
-        ARROW_CXXFLAGS="$ARROW_CXXFLAGS -Wno-error=unused-const-variable -Wno-error=unneeded-internal-declaration"
+        ARROW_CXXFLAGS="$ARROW_CXXFLAGS -Wno-error=unused-const-variable -Wno-error=unneeded-internal-declaration -Wno-error=deprecated-declarations"
     fi
 else
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
