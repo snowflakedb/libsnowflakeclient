@@ -3,7 +3,7 @@
 ::
 @echo off
 set OOB_SRC_VERSION=1.0.4
-set OOB_BUILD_VERSION=9
+set OOB_BUILD_VERSION=10
 set OOB_VERSION=%OOB_SRC_VERSION%.%OOB_BUILD_VERSION%
 call %*
 goto :EOF
@@ -22,8 +22,6 @@ set vs_version=%3
 set dynamic_runtime=%4
 
 set scriptdir=%~dp0
-
-set CURL_VERSION=8.6.0
 
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -56,7 +54,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 set OOB_SOURCE_DIR=%curdir%\deps\%OOB_DIR%
 
 cd %OOB_SOURCE_DIR%
-set CURL_DIR=curl-%CURL_VERSION%
+set CURL_DIR=curl
 nmake -f Makefile.msc clean
 nmake -f Makefile.msc
 

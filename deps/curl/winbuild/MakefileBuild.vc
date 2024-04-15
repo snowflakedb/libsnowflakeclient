@@ -48,14 +48,14 @@ CC = cl.exe
 !IF "$(VC)"=="6"
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL
+CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl
 !ELSE
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /D_DEBUG /RTC1 /Z7 /LDd
-CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL
+CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl
 !ENDIF
 
-LFLAGS     = /nologo /machine:$(MACHINE)
+LFLAGS     = /nologo /machine:$(MACHINE) /CETCOMPAT
 LNKDLL     = link.exe /DLL
 # Use lib.exe instead of link.exe as link.exe /lib has the following bad habits:
 # - optimizing options like /opt:ref raises warnings (at least in Visual Studio 2015)
@@ -69,7 +69,11 @@ LFLAGS_PDB = /incremental:no /opt:ref,icf /DEBUG
 
 CFLAGS_LIBCURL_STATIC  = /DCURL_STATICLIB
 
-WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib
+!IF "$(MACHINE)"=="x64"
+WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib ole32.lib
+!ELSE
+WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib msvcrt.lib ole32.lib
+!ENDIF
 
 BASE_NAME              = libcurl
 BASE_NAME_DEBUG        = $(BASE_NAME)_debug
@@ -277,6 +281,10 @@ ZLIB        = static
 ZLIB_CFLAGS = /DHAVE_LIBZ $(ADDITIONAL_ZLIB_CFLAGS) /I"$(ZLIB_INC_DIR)"
 !ENDIF
 
+OOB_LIBS	= libtelemetry_a.lib
+OOBLIB		= static
+OOB_CFLAGS	=
+OOB_LFLAGS	=
 
 !IFDEF SSH2_PATH
 SSH2_INC_DIR= $(SSH2_PATH)\include
@@ -460,11 +468,14 @@ PDB      = $(PDB_NAME_STATIC_DEBUG)
 TARGET   = $(LIB_NAME_STATIC)
 PDB      = $(PDB_NAME_STATIC)
 !ENDIF
-LNK      = $(LNKLIB) /out:$(LIB_DIROBJ)\$(TARGET)
+LNK      = $(LNKLIB) $(WIN_LIBS) /out:$(LIB_DIROBJ)\$(TARGET)
 CURL_CC  = $(CURL_CC) $(CFLAGS_LIBCURL_STATIC)
 
 # AS_DLL
 !ENDIF
+
+CFLAGS = $(CFLAGS) $(OOB_CFLAGS)
+LFLAGS = $(LFLAGS) $(OOB_LFLAGS) $(OOB_LIBS)
 
 !IF "$(USE_SSL)"=="true"
 CFLAGS = $(CFLAGS) $(SSL_CFLAGS)
