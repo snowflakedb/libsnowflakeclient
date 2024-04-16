@@ -10,8 +10,8 @@
 :: - vs14 / vs15
 
 @echo off
-set CURL_SRC_VERSION=8.6.0
-set CURL_BUILD_VERSION=6
+set CURL_SRC_VERSION=8.7.1
+set CURL_BUILD_VERSION=1
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -23,7 +23,7 @@ goto :EOF
 :build
 @echo off
 setlocal
-set CURL_DIR=curl-%CURL_SRC_VERSION%
+set CURL_DIR=curl
 
 
 set platform=%1
