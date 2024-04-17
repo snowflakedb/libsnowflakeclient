@@ -58,7 +58,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make LIB=libtelemetryarm64.a
         lipo -create $OOB_SOURCE_DIR/libtelemetryx64.a $OOB_SOURCE_DIR/libtelemetryarm64.a -output $OOB_SOURCE_DIR/libtelemetry.a
     else
-        export CFLAGS="-mmacosx-version-min=10.14 -arch $ARCH -DSIZEOF_LONG_INT=8"
+        export CFLAGS="-mmacosx-version-min=10.14 -arch $ARCH  -Xarch_$ARCH"
         make LIB=libtelemetry.a
     fi
 else

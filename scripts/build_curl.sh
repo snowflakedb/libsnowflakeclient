@@ -120,7 +120,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     else
         echo "[INFO] Building $ARCH Binary"
         make clean &> /dev/null || true
-        export CFLAGS="-arch $ARCH -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+        export CFLAGS="-arch $ARCH -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}

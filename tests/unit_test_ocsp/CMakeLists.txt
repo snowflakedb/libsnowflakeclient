@@ -1,6 +1,6 @@
 project(test_ocsp)
 
-set(CMAKE_C_FLAGS "-std=c++14 -pthread -DSIMBA -D_REENTRANT -DCLUNIX -Wall")
+set(CMAKE_C_FLAGS "-pthread -DSIMBA -D_REENTRANT -DCLUNIX -Wall")
 
 add_executable(
         test_ocsp
