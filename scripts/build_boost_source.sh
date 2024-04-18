@@ -38,8 +38,8 @@ sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
 # If we are not doing a universal build, build with 64-bit
 if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
     CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=clang --with-libraries=filesystem,regex,system cxxflags="-arch x86_64 -arch arm64" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64"
-    ./b2 stage --stagedir=$BOOST_BUILD_DIR/x64 --includedir=$BOOST_BUILD_DIR/include toolset=clang target-os=darwin architecture=x86 variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch x86_64" cxxflags="-arch x86_64" linkflags="-arch x86_64" -a install
-    ./b2 stage --stagedir=$BOOST_BUILD_DIR/arm64 toolset=clang variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch arm64" cxxflags="-arch arm64" linkflags="-arch arm64" -a install
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/x64 --includedir=$BOOST_BUILD_DIR/include toolset=clang target-os=darwin architecture=x86 variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch x86_64" cxxflags="-arch x86_64 -DBOOST_REGEX_MAX_CACHE_BLOCKS=0" linkflags="-arch x86_64" -a install
+    ./b2 stage --stagedir=$BOOST_BUILD_DIR/arm64 toolset=clang variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch arm64" cxxflags="-arch arm64 -DBOOST_REGEX_MAX_CACHE_BLOCKS=0" linkflags="-arch arm64" -a install
     mkdir $BOOST_BUILD_DIR/lib
     for static_lib in $BOOST_BUILD_DIR/x64/lib/*.a; do
         lipo -create -arch x86_64 $static_lib -arch arm64 $BOOST_BUILD_DIR/arm64/lib/$(basename $static_lib) -output $BOOST_BUILD_DIR/lib/$(basename $static_lib);
