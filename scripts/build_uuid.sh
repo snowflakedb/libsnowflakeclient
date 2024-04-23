@@ -15,7 +15,7 @@ function usage() {
 
 set -o pipefail
 UUID_SRC_VERSION=2.39.0
-UUID_BUILD_VERSION=2
+UUID_BUILD_VERSION=3
 UUID_VERSION=$UUID_SRC_VERSION.$UUID_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
