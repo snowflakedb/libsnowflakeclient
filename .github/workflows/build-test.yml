@@ -73,6 +73,7 @@ jobs:
         name: Build-Test-Win-vs2022
         runs-on: windows-2022
         strategy:
+            fail-fast: false
             matrix:
                 platform: [ 'x64', 'x86' ]
                 build_type: [ 'Debug', 'Release' ]
