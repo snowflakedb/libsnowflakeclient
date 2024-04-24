@@ -25,7 +25,7 @@ else
     sudo rm -rf "/usr/local/share/boost"
 fi
 
-BUILD_IMAGE_NAME="nexus.int.snowflakecomputing.com:8086/docker/client-odbc-centos7-default-build:3"
+BUILD_IMAGE_NAME="snowflakedb/client-odbc-centos7-default-build:3"
 echo $BUILD_IMAGE_NAME
 docker pull "${BUILD_IMAGE_NAME}"
 docker run \
