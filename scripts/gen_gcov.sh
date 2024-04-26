@@ -22,8 +22,8 @@ for f in cpp/*/*; do
 done
 
 # Remove third-parties source code
-if rm *\#deps-build#*.gcov 2> /dev/null ||
-   rm *\#lib#cJSON.c.gcov 2> /dev/null ||
+if rm *\#deps-build#*.gcov 2> /dev/null &&
+   rm *\#lib#cJSON.c.gcov 2> /dev/null &&
    rm *\#usr#*.gcov 2> /dev/null
 then
     echo "Removed third-parties source code gcov files"
