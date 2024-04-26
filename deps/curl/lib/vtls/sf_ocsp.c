@@ -836,7 +836,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
             strcpy(last_timeout_host, host);
           }
           snprintf(error_msg, OCSP_TELEMETRY_ERROR_MSG_MAX_LEN,
-                  "OCSP checking curl_easy_perform() failed: %s\n",
+                  "OCSP checking curl_easy_perform() failed: %s",
                   curl_easy_strerror(res));
           sf_otd_set_error_msg(error_msg, ocsp_log_data);
           sf_otd_set_event_sub_type(OCSP_RESPONSE_FETCH_FAILURE, ocsp_log_data);
@@ -1866,7 +1866,8 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
         {
           sendOOBevent(ocsp_log_str);
         }
-        infof(data, ocsp_log_str);
+        // multiple line logging is not allowed in curl
+        // infof(data, ocsp_log_str);
         if(ocsp_log_str) sf_curl_cJSON_free(ocsp_log_str);
       }
     }

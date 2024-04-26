@@ -141,7 +141,7 @@ static void dieIfNotSuccess(CURLcode ret)
 }
 
 static void
-checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *proxy, char *no_proxy, int oob_enable, int failopen)
+checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *proxy, char *no_proxy, int oob_enable, int failopen, int expect_fail)
 {
     CURL *ch;
     struct configData config;
@@ -198,7 +198,19 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
         dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 0));
     }
 
-    dieIfNotSuccess(curl_easy_perform(ch));
+    CURLcode ret = curl_easy_perform(ch);
+    if (expect_fail == 0)
+    {
+        dieIfNotSuccess(ret);
+    }
+    else
+    {
+        if (ret == CURLE_OK)
+        {
+            fprintf(stderr, "FAILED!\n");
+            exit(1);
+        }        
+    }
 
     curl_easy_cleanup(ch);
     curl_global_cleanup();
@@ -269,29 +281,36 @@ int main(int argc, char **argv)
         return 2;
     }
     printf("host: %s, port: %s, cacert: %s\n", host, port, cacert);
+#ifdef __linux__
     sprintf(cache_file, "%s/.cache/snowflake/ocsp_response_cache.json",
             getenv("HOME"));
+#elif defined(__APPLE__)
+    sprintf(cache_file, "%s/Library/Caches//Snowflake/ocsp_response_cache.json",
+            getenv("HOME"));
+#else
+    return 0;
+#endif
 
     printf("===> Case 1: whatever default\n");
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
 
     printf("===> Case 2: Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
 
     printf("===> Case 3: Delete file cache and Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
 
     printf("===> Case 4: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
 
     printf("===> Case 5: No Delete file cache and No Use Cache Server\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
 
     if (getenv("all_proxy") || getenv("https_proxy") ||
         getenv("http_proxy"))
@@ -305,14 +324,14 @@ int main(int argc, char **argv)
     setenv("http_proxy", "a.b.c", 1);
     setenv("https_proxy", "a.b.c", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, "", "", 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, "", "", 0, 0, 0);
 
     printf("===> Case 7: Delete file cache and overwrite invalid proxy with no_proxy\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
     setenv("http_proxy", "a.b.c", 1);
     setenv("https_proxy", "a.b.c", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, "a.b.c", "*", 0, 0);
+    checkCertificateRevocationStatus(host, port, cacert, "a.b.c", "*", 0, 0, 0);
 
     unsetenv("http_proxy");
     unsetenv("https_proxy");
@@ -326,7 +345,7 @@ int main(int argc, char **argv)
     // use random IP address so it will get connection timeout
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", "http://10.24.123.89/ocsp_response_cache.json", 1);
     unlink(cache_file);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 1, 1);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 1, 1, 0);
 
     printf("===> Case 10: Delete file cache with invalid cache server URL to test delay on failure and OOB disabled\n");
     setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false", 1);
@@ -335,7 +354,7 @@ int main(int argc, char **argv)
     unlink(cache_file);
 
     time_t start_time = time(NULL);
-    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 1);
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 1, 0);
     time_t end_time = time(NULL);
     // should be around 5 seconds but no longer than 10.
     if ((end_time - start_time) > 10)
@@ -347,6 +366,14 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "Delay check OK\n");
     }
+
+    printf("===> Case 11: Delete file cache with invalid cache server URL test with fail close\n");
+    setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "true", 1);
+    // use random IP address so it will get connection timeout
+    setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", "http://10.24.123.89/ocsp_response_cache.json", 1);
+    unlink(cache_file);
+
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 1);
 
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
