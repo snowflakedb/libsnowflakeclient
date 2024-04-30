@@ -315,12 +315,6 @@ int main(void) {
     return 0;
 #endif
 
-  char *genv = getenv("GITHUB_ACTIONS");
-  if (genv) {
-    printf("Skipping - this test run only on jenkins\n");
-    return 0;
-  }
-
   char *cenv = getenv("CLOUD_PROVIDER");
   if ((!cenv) || strncmp(cenv, "AWS", 4)) {
     printf("Skipping - not build with AWS\n");

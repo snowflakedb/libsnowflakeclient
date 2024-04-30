@@ -53,6 +53,7 @@ cd ../..
 ./test_select1
 ./test_simple_put
 ./test_stmt_with_bad_connect
+./test_stmt_functions
 ./test_time
 ./test_timestamp_ltz
 ./test_timestamp_ntz
@@ -73,11 +74,16 @@ cd ../..
 ./test_unit_put_get_fips
 ./test_unit_put_get_gcs
 ./test_unit_put_retry
+./test_unit_query_context_cache
+./test_unit_retry_context
 ./test_unit_stream_splitter
 ./test_unit_thread_pool
 ./test_variant
 ./test_unit_set_get_attributes
 ./test_unit_snowflake_types_to_string
+cd unit_test_ocsp
+./test_ocsp
+cd ..
 
 # Please edit here to add AZURE account information for test
 export SNOWFLAKE_TEST_ROLE=
