@@ -189,9 +189,9 @@ if (LINUX)
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
             pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
 endif ()
 if (APPLE)
