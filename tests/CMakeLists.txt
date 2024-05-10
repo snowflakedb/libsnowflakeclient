@@ -67,7 +67,8 @@ SET(TESTS_CXX
         test_unit_set_get_attributes
         test_unit_snowflake_types_to_string
         test_unit_azure_client
-        test_unit_query_context_cache)
+        test_unit_query_context_cache
+        test_unit_sfurl)
 
 SET(TESTS_PUTGET
         test_include_aws

@@ -81,6 +81,7 @@ cd ../..
 ./test_variant
 ./test_unit_set_get_attributes
 ./test_unit_snowflake_types_to_string
+./test_unit_sfurl
 cd unit_test_ocsp
 ./test_ocsp
 cd ..
