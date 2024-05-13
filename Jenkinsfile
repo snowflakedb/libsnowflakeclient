@@ -17,13 +17,13 @@ timestamps {
     ]
     stage('Build and Test') {
       def jobs = [
-        'Linux' : build job: 'LibSnowflakeClient-Linux-Release', parameters: params,
-        'Linux-aarch64' : build job: 'LibSnowflakeClient-Linux-aarch64-Release', parameters: params,
-        'Win32-VS14' : build job: 'LibSnowflakeClient-Win32-VS14-Release', parameters: params,
-        'Win32-VS17' : build job: 'LibSnowflakeClient-Win32-VS17-Release', parameters: params,
-        'Win64-VS14' : build job: 'LibSnowflakeClient-Win64-VS14-Release', parameters: params,
-        'Win64-VS17' : build job: 'LibSnowflakeClient-Win64-VS17-Release', parameters: params,
-        'Macaarch64' : build job: 'LibSnowflakeClient-Macaarch64-Universal-Release', parameters: params
+        'Linux' : { build job: 'LibSnowflakeClient-Linux-Release', parameters: params },
+        'Linux-aarch64' : { build job: 'LibSnowflakeClient-Linux-aarch64-Release', parameters: params },
+        'Win32-VS14' : { build job: 'LibSnowflakeClient-Win32-VS14-Release', parameters: params },
+        'Win32-VS17' : { build job: 'LibSnowflakeClient-Win32-VS17-Release', parameters: params },
+        'Win64-VS14' : { build job: 'LibSnowflakeClient-Win64-VS14-Release', parameters: params },
+        'Win64-VS17' : { build job: 'LibSnowflakeClient-Win64-VS17-Release', parameters: params },
+        'Macaarch64' : { build job: 'LibSnowflakeClient-Macaarch64-Universal-Release', parameters: params }
       ]
       parallel jobs
     }
