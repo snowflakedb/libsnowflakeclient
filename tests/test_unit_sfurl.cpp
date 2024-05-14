@@ -16,7 +16,7 @@ void test_parse_basic(void ** unused)
   // Only scheme and host
   url = SFURL::parse("https://snowflake.com");
   assert_string_equal(url.scheme().c_str(), "https");
-  assert_string_equal(url.host().c_str(), "https");
+  assert_string_equal(url.host().c_str(), "snowflake.com");
 
   // Only scheme and path
   url = SFURL::parse("http:///request_path");
