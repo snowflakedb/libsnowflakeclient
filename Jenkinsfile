@@ -23,7 +23,7 @@ timestamps {
         'Win32-VS17' : { build job: 'LibSnowflakeClient-Win32-VS17-Release', parameters: params },
         'Win64-VS14' : { build job: 'LibSnowflakeClient-Win64-VS14-Release', parameters: params },
         'Win64-VS17' : { build job: 'LibSnowflakeClient-Win64-VS17-Release', parameters: params },
-        'Macaarch64' : { build job: 'LibSnowflakeClient-Macaarch64-Universal-Release', parameters: params }
+        'Macaarch64' : { build job: 'LibSnowflakeClient-Macaarch64-Universal-Release_v2', parameters: params }
       ]
       parallel jobs
     }
