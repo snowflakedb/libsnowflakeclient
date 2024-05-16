@@ -8,11 +8,6 @@ void test_large_result_set_helper(sf_bool use_arrow) {
 
     int rows = 100000; // total number of rows
 
-// fix test failure on github with mac.
-#ifdef __APPLE__
-    rows = 10000;
-#endif
-
     SF_STMT *sfstmt = NULL;
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
@@ -20,8 +15,6 @@ void test_large_result_set_helper(sf_bool use_arrow) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    log_set_fp(stderr);
 
     char sql_buf[1024];
     sprintf(
