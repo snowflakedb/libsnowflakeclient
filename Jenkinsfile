@@ -17,7 +17,7 @@ timestamps {
     ]
     stage('Build and Test') {
       def jobs = [
-        'Linux' : { build job: 'LibSnowflakeClient-Linux-Release', parameters: params },
+        'Linux' : { build job: 'LibSnowflakeClient-Linux-Release_v2', parameters: params },
         'Linux-aarch64' : { build job: 'LibSnowflakeClient-Linux-aarch64-Release_v2', parameters: params },
         'Win32-VS14' : { build job: 'LibSnowflakeClient-Win32-VS14-Release_v2', parameters: params },
         'Win32-VS17' : { build job: 'LibSnowflakeClient-Win32-VS17-Release_v2', parameters: params },
