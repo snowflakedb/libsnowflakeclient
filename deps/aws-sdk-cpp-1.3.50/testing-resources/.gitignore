@@ -1,3 +1,0 @@
-# exceptions due to naming conflicts between our external projects and implementations that use similar names
-!source/external
-!include/aws/external
