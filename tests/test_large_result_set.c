@@ -2,6 +2,7 @@
  * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 #include "utils/test_setup.h"
+#include <stdio.h>
 
 
 void test_large_result_set_helper(sf_bool use_arrow) {
@@ -38,6 +39,7 @@ void test_large_result_set_helper(sf_bool use_arrow) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    log_set_fp(stderr);
     status = snowflake_query(sfstmt, sql_buf, 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
