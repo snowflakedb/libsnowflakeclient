@@ -11,7 +11,7 @@ void test_large_result_set_helper(sf_bool use_arrow) {
     SF_STMT *sfstmt = NULL;
     SF_CONNECT *sf = setup_snowflake_connection();
 #ifdef __APPLE__
-    bool insecure_mode = true;
+    sf_bool insecure_mode = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &insecure_mode);
 #endif
     SF_STATUS status = snowflake_connect(sf);
