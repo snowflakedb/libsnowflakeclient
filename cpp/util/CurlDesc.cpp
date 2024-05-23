@@ -58,7 +58,9 @@ namespace Client
 
       // set shared descriptor if any
       if (m_shareCurl)
+      {
         curl_easy_setopt(m_curl, CURLOPT_SHARE, m_shareCurl);
+      }
     }
     else
     {

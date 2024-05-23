@@ -97,7 +97,10 @@ private:
     inline void renewQueryParam(const std::string &paramName, const std::string &paramValue)
     {
       auto iter = m_map.find(paramName);
-      if (iter == m_map.end()) return;
+      if (iter == m_map.end())
+      {
+        return;
+      }
 
       renewQueryParam(iter->second, paramValue);
     }
@@ -114,7 +117,10 @@ private:
      */
     void flushStr()
     {
-      if (m_list.size() == 0) return;
+      if (m_list.size() == 0)
+      {
+        return;
+      }
 
       auto iter = m_list.rbegin();
 
@@ -299,7 +305,7 @@ public:
   };
 
   /**
-   * Port setter
+   * fragment setter
    * @return reference to current SFURL to allow chaining
    */
   inline SFURL &fragment(const std::string &fragment)

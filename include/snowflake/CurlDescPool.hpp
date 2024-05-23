@@ -40,6 +40,9 @@ public:
      *
      * @param (IN/NULL) curlShareDesc
      *   curl shared descriptor to use if non null
+     *
+     * @param parentPool
+     *   reference to parent pool instance.
      */
     SubPool(const std::string &endPointName,
             CURLSH *curlShareDesc, CurlDescPool& parentPool);
@@ -66,6 +69,10 @@ public:
     /** lock the sub pool */
     std::mutex  m_lockSubPool;
 
+    /**
+     * reference to parent pool instance.
+     * used to call createCurlDesc there to allow overriding CurlDesc.
+     */
     CurlDescPool& m_parentPool;
 
     /**

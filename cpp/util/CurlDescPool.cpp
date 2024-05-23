@@ -92,6 +92,7 @@ extern "C" {
     }
 
     ((CURL_DESC_S*)curl_desc)->sub_pool->freeCurlDesc(((CURL_DESC_S*)curl_desc)->curl_desc);
+    delete (CURL_DESC_S*)curl_desc;
   }
 } // extern "C"
 
@@ -149,7 +150,7 @@ namespace Client
                       curlShareCode, curl_share_strerror(curlShareCode));       
       }
 
-      // set lock function
+      // set unlock function
       if ((curlShareCode = curl_share_setopt(m_curlShared, CURLSHOPT_UNLOCKFUNC,
                                   CurlDescPool::curlShareUnlock)) != CURLSHE_OK)
       {
@@ -226,11 +227,17 @@ namespace Client
     CurlDescPool &curlDescPool = *((CurlDescPool *)ctx);
 
     if (data == CURL_LOCK_DATA_DNS)
+    {
       curlDescPool.m_lockSharedDns.lock();
+    }
     else if (data == CURL_LOCK_DATA_SSL_SESSION)
+    {
       curlDescPool.m_lockSharedSsl.lock();
+    }
     else if (data == CURL_LOCK_DATA_SHARE)
+    {
       curlDescPool.m_lockSharedShare.lock();
+    }
   }
 
   /**
@@ -251,11 +258,17 @@ namespace Client
     CurlDescPool &curlDescPool = *((CurlDescPool *)ctx);
 
     if (data == CURL_LOCK_DATA_DNS)
+    {
       curlDescPool.m_lockSharedDns.unlock();
+    }
     else if (data == CURL_LOCK_DATA_SSL_SESSION)
+    {
       curlDescPool.m_lockSharedSsl.unlock();
+    }
     else if (data == CURL_LOCK_DATA_SHARE)
+    {
       curlDescPool.m_lockSharedShare.unlock();
+    }
   }
 
   /**
@@ -263,9 +276,6 @@ namespace Client
    *
    * @param url
    *   url we are accessing
-   *
-   * @param isMulti
-   *   true if we are using multi curl descriptors
    */
   CurlDescPool::SubPool &CurlDescPool::getSubPool(const SFURL &url)
   {
@@ -308,7 +318,9 @@ namespace Client
       m_subPools[endPointName] = std::move(subPoolPt);
     }
     else
+    {
       subPool = subPoolIterator->second.get();
+    }
 
     // trace
     CXX_LOG_TRACE("CurlDescPool::getSubPool(): Getting subpool for endPoint=%s res=%p",
@@ -326,6 +338,9 @@ namespace Client
    *
    * @param (IN/NULL) curlShareDesc
    *   curl shared descriptor to use if non null
+   *
+   * @param parentPool
+   *   reference to parent pool instance.
    */
   CurlDescPool::SubPool::SubPool(const std::string &endPointName,
                                  CURLSH *curlShareDesc,
@@ -356,7 +371,9 @@ namespace Client
         // if pool empty, allocate new one
         isEmpty = m_curlDescPool.empty();
         if (isEmpty)
+        {
           curlDescPt = std::move(m_parentPool.createCurlDesc(m_curlShareDesc));
+        }
         else
         {
           // transfer element

@@ -16,7 +16,9 @@ SFURL::QueryParams::QueryParams(const SFURL::QueryParams &params, bool &cacheVal
 {
   m_list = params.m_list;
   for (auto iter = m_list.begin(); iter != m_list.end(); iter++)
+  {
     m_map[iter->m_key] = iter;
+  }
 }
 
 void SFURL::QueryParams::parse(size_t &i)
@@ -51,7 +53,9 @@ void SFURL::QueryParams::parse(size_t &i)
           pre = i + 1; // skip the current & or #
 
           if (c == '#')
+          {
             return;
+          }
 
           s = KEY;
         }
@@ -61,7 +65,9 @@ void SFURL::QueryParams::parse(size_t &i)
   } // for loop
 
   if (s != VALUE)
+  {
     throw SFURLParseError("error parsing Url [***]: empty value");
+  }
 
   std::string value = m_cacheURL->substr(pre, i - pre);
   this->addQueryParam(key, value, pre);
@@ -71,7 +77,9 @@ const std::string &SFURL::QueryParams::getQueryParam(const std::string &key) con
 {
   auto iter = m_map.find(key);
   if (iter == m_map.cend())
+  {
     return empty;
+  }
 
   return iter->second->m_value;
 }
@@ -127,7 +135,9 @@ std::string SFURL::QueryParams::encodeParam(const std::string &srcParam)
       encoded.push_back(car);
     }
     else if (car == ' ')
+    {
       encoded.push_back('+');
+    }
     else
     {
       sf_sprintf(&buf[1], sizeof(buf) - 1, "%.2X", car);
@@ -155,7 +165,10 @@ SFURL::SFURL(const SFURL &copy)
 
 SFURL &SFURL::operator= (const SFURL &copy)
 {
-  if (this == &copy)  return *this;
+  if (this == &copy)
+  {
+    return *this;
+  }
 
   m_cacheURL = copy.m_cacheURL;
   m_cacheValid = copy.m_cacheValid;
@@ -201,24 +214,33 @@ SFURL SFURL::parse(const std::string &url)
 
       case SCHEME_END:
         if (url.substr(i, 2) != "//")
+        {
           throw SFURLParseError("error scheme ending for"
                                     " Url [***]: empty value");
+        }
         s = AUTH_OR_PATH;
         break;
 
       case AUTH_OR_PATH:
         pre = i + 1;  // skip the last '/' for "://"
         if (url.substr(i, 2) == "//")
+        {
           s = PATH;
+        }
         else
+        {
           s = AUTHORITY;
+        }
         break;
 
       case AUTHORITY:
       {
         parseAuthority(sfurl, i);
         // already reach the end of string;
-        if (i == url.length())  return sfurl;
+        if (i == url.length())
+        {
+          return sfurl;
+        }
 
         // end with one of # / or ?
         s = url[i] == '#' ? FRAGMENT : (url[i] == '/' ? PATH : QUERY);
@@ -244,7 +266,10 @@ SFURL SFURL::parse(const std::string &url)
       case QUERY:
         sfurl.m_params.parse(i);
         sfurl.m_cacheValid = true;
-        if (i == url.length())  return sfurl;
+        if (i == url.length())
+        {
+          return sfurl;
+        }
 
         // end with one of #
         s = FRAGMENT;
@@ -289,7 +314,9 @@ void SFURL::parseAuthority(SFURL &sfurl, size_t &i)
           sfurl.m_host = sfurl.m_cacheURL.substr(pre, i - pre);
 
           if (c == '/' || c == '?')
+          {
             return;
+          }
 
           pre = i + 1;
           s = PORT;
@@ -302,7 +329,9 @@ void SFURL::parseAuthority(SFURL &sfurl, size_t &i)
           sfurl.m_host = sfurl.m_cacheURL.substr(pre, i - pre);
 
           if (c == '/' || c == '#' || c == '?')
+          {
             return;
+          }
 
           pre = i + 1;
           s = PORT;
@@ -316,8 +345,10 @@ void SFURL::parseAuthority(SFURL &sfurl, size_t &i)
           return;
         }
         else if (c < '0' || c > '9')
+        {
             throw SFURLParseError("Error parsing port from"
                                       " Url [***]");
+        }
 
         break;
     }
@@ -337,23 +368,32 @@ void SFURL::parseAuthority(SFURL &sfurl, size_t &i)
 std::string SFURL::authority() const
 {
   if (m_host.empty())
+  {
     return "";
+  }
 
   std::stringstream ss;
   if (!m_userinfo.empty())
+  {
     ss << m_userinfo << '@';
+  }
 
   ss << m_host;
 
   if (!m_port.empty())
+  {
     ss << ':' << m_port;
+  }
 
   return ss.str();
 }
 
 std::string SFURL::toString()
 {
-  if (m_cacheValid) return m_cacheURL;
+  if (m_cacheValid)
+  {
+    return m_cacheURL;
+  }
 
   m_cacheURL.clear();
 
@@ -362,21 +402,29 @@ std::string SFURL::toString()
   if (!m_host.empty())
   {
     if (!m_userinfo.empty())
+    {
       m_cacheURL.append(m_userinfo + "@");
+    }
 
     m_cacheURL.append(m_host);
 
     if (!m_port.empty())
+    {
       m_cacheURL.append(":" + m_port);
+    }
   }
 
   if (!m_path.empty())
+  {
     m_cacheURL.append(m_path);
+  }
 
   m_params.flushStr();
 
   if (!m_fragment.empty())
+  {
     m_cacheURL.append("#" + m_fragment);
+  }
 
   m_cacheValid = true;
   return m_cacheURL;
