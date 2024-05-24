@@ -5,9 +5,14 @@
 #include <snowflake/logger.h>
 #include <string.h>
 #include "test_setup.h"
+#include <stdlib.h>
+#include <time.h>
 
 // Long path space
 char PERFORMANCE_TEST_RESULTS_PATH[5000];
+
+// random database namespace
+char RANDOM_DATABASE_NAME[100];
 
 void initialize_test(sf_bool debug) {
     // default location and the maximum logging
@@ -126,4 +131,90 @@ void process_results(struct timespec begin, struct timespec end, int num_iterati
     fprintf(results_file, "%s, %lf, %i\n", label, time_elapsed, num_iterations);
     //printf("%s, %lf, %i\n", label, time_elapsed, num_iterations);
     fclose(results_file);
+}
+
+int setup_random_database()
+{
+    SF_STATUS status;
+    SF_CONNECT *sf;
+    SF_STMT *sfstmt;
+    char random_db_name[100];
+    char query[200];
+    time_t t;
+
+    if (strlen(RANDOM_DATABASE_NAME) > 0)
+    {
+        // already setup
+        return 1;
+    }
+
+    srand((unsigned) time(&t));
+    sprintf(random_db_name, "random_test_db_%d", rand());
+
+    sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        return 0;
+    }
+    sfstmt = snowflake_stmt(sf);
+
+    sprintf(query, "create or replace database %s", random_db_name);
+    status = snowflake_query(
+      sfstmt,
+      query,
+      0);
+    if (status != SF_STATUS_SUCCESS) {
+      // ingore in case the test account doesn't have privilege to create database
+      snowflake_stmt_term(sfstmt);
+      snowflake_term(sf);
+	  return 0;
+    }
+
+    sprintf(query, "create or replace schema %s", getenv("SNOWFLAKE_TEST_SCHEMA"));
+    status = snowflake_query(
+      sfstmt,
+      query,
+      0);
+    if (status != SF_STATUS_SUCCESS) {
+      // ingore in case the test account doesn't have privilege to create database
+      snowflake_stmt_term(sfstmt);
+      snowflake_term(sf);
+	  return 0;
+    }
+
+    sf_setenv("SNOWFLAKE_TEST_DATABASE", random_db_name);
+    strcpy(RANDOM_DATABASE_NAME, random_db_name);
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+    return 1;
+}
+
+void drop_random_database()
+{
+    SF_STATUS status;
+    SF_CONNECT *sf;
+    SF_STMT *sfstmt;
+    char query[200];
+
+    if (strlen(RANDOM_DATABASE_NAME) == 0)
+    {
+        // not setup
+        return;
+    }
+
+    sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    sfstmt = snowflake_stmt(sf);
+
+    sprintf(query, "drop database %s", RANDOM_DATABASE_NAME);
+    status = snowflake_query(
+      sfstmt,
+      query,
+      0);
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
 }

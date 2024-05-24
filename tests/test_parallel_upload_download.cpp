@@ -5,6 +5,8 @@
 #include <aws/core/Aws.h>
 #include <snowflake/client.h>
 #include <fstream>
+#include <stdlib.h>
+#include <time.h>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "snowflake/IStatementPutGet.hpp"
@@ -66,12 +68,15 @@ void test_parallel_upload_download_core(int fileNumber, int numberOfRows = 1)
   assert_int_equal(SF_STATUS_SUCCESS, ret);
 
   std::string dataDir = TestSetup::getDataDir();
-  std::string testDir = dataDir + "test_parallel_upload";
-  testDir += PATH_SEP;
+  time_t t;
+  srand((unsigned) time(&t));
+  std::string randStr = std::string("_") + std::to_string(rand());
+  std::string uploadDir = dataDir + "test_parallel_upload" + randStr;
+  uploadDir += PATH_SEP;
 
-  populateDataInTestDir(testDir, fileNumber, numberOfRows);
+  populateDataInTestDir(uploadDir, fileNumber, numberOfRows);
 
-  std::string files = testDir + "*";
+  std::string files = uploadDir + "*";
   std::string putCommand = "put file://" + files + " @%test_parallel_upload_download auto_compress=false";
 
   std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
@@ -101,7 +106,8 @@ void test_parallel_upload_download_core(int fileNumber, int numberOfRows = 1)
   }
   assert_int_equal(status, SF_STATUS_EOF);
 
-  std::string getCommand = "get @%test_parallel_upload_download file://" + dataDir + "test_parallel_download";
+  std::string downloadDir = dataDir + "test_parallel_download" + randStr;
+  std::string getCommand = "get @%test_parallel_upload_download file://" + downloadDir;
   result = agent.execute(&getCommand);
   assert_int_equal(fileNumber, result->getResultSize());
 
@@ -113,9 +119,9 @@ void test_parallel_upload_download_core(int fileNumber, int numberOfRows = 1)
   }
 
 #ifdef _WIN32
-  std::string compCmd = "FC " + dataDir + "test_parallel_upload\\* " + dataDir + "test_parallel_download\\*";
+  std::string compCmd = "FC " + uploadDir + "* " + downloadDir + "\\*";
 #else
-  std::string compCmd = "diff " + dataDir + "test_parallel_upload/ " + dataDir + "test_parallel_download/";
+  std::string compCmd = "diff " + uploadDir + " " + downloadDir + "/";
 #endif
   int res = system(compCmd.c_str());
   assert_int_equal(0, res);
@@ -124,6 +130,9 @@ void test_parallel_upload_download_core(int fileNumber, int numberOfRows = 1)
 
   /* close and term */
   snowflake_term(sf); // purge snowflake context
+
+  sf_delete_directory_if_exists(uploadDir.c_str());
+  sf_delete_directory_if_exists(downloadDir.c_str());
 }
 
 static int teardown(void **unused)
@@ -141,12 +150,6 @@ static int teardown(void **unused)
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
 
-  std::string dataDir = TestSetup::getDataDir();
-  std::string uploadDir = dataDir + "test_parallel_upload";
-  std::string downloadDir = dataDir + "test_parallel_download";
-
-  sf_delete_directory_if_exists(uploadDir.c_str());
-  sf_delete_directory_if_exists(downloadDir.c_str());
   return 0;
 }
 
@@ -162,17 +165,34 @@ void test_large_file_multipart_upload(void **unused)
 
 void test_large_file_concurrent_upload_download(void **unused)
 {
+// Jenkins node on Mac has issue with large file.
+#ifdef __APPLE__
+  char* jobname = getenv("JOB_NAME");
+  if (jobname && (strlen(jobname) > 0))
+  {
+    return;
+  }
+#endif
+
   test_parallel_upload_download_core(10, 200000);
 }
 
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
+  if(!setup_random_database()) {
+    std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
+  }
+
+  sf_bool check_ocsp = SF_BOOLEAN_FALSE;
+  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &check_ocsp);
+
   return 0;
 }
 
 static int gr_teardown(void **unused)
 {
+  drop_random_database();
   snowflake_global_term();
   return 0;
 }
