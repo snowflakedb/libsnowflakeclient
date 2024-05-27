@@ -123,28 +123,6 @@ static void alloc_buffer_and_copy(char **var, const char *str) {
 }
 
 /**
- * Make a directory with the mode
- * @param file_path directory name
- * @param mode mode
- * @return 0 if success otherwise -1
- */
-static int mkpath(char *file_path) {
-    assert(file_path && *file_path);
-    char *p;
-    for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
-        *p = '\0';
-        if (sf_mkdir(file_path) == -1) {
-            if (errno != EEXIST) {
-                *p = '/';
-                return -1;
-            }
-        }
-        *p = '/';
-    }
-    return 0;
-}
-
-/**
  * Lock/Unlock log file for writing by mutex
  * @param udata user data (not used)
  * @param lock non-zere for lock or zero for unlock
@@ -351,12 +329,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
                  (char *) time_str);
     }
     if (LOG_PATH != NULL) {
-        // Create log file path (if it already doesn't exist)
-        if (mkpath(LOG_PATH) == -1) {
-            char* str_error = sf_strerror_s(errno, strerror_buf, sizeof(strerror_buf));
-            sf_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
-            goto cleanup;
-        }
         // Set the log path only, the log file will be created when actual log output is needed.
         log_set_path(LOG_PATH);
     } else {

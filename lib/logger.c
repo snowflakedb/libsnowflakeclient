@@ -28,6 +28,8 @@
 #include <snowflake/logger.h>
 #include <snowflake/platform.h>
 #include <string.h>
+#include <assert.h>
+#include "memory.h"
 
 static struct {
     void *udata;
@@ -63,6 +65,27 @@ static void unlock(void) {
     }
 }
 
+/**
+ * Make a directory with the mode
+ * @param file_path directory name
+ * @param mode mode
+ * @return 0 if success otherwise -1
+ */
+static int mkpath(char* file_path) {
+  assert(file_path && *file_path);
+  char* p;
+  for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
+    *p = '\0';
+    if (sf_mkdir(file_path) == -1) {
+      if (errno != EEXIST) {
+        *p = '/';
+        return -1;
+      }
+    }
+    *p = '/';
+  }
+  return 0;
+}
 
 void log_set_udata(void *udata) {
     L.udata = udata;
@@ -146,7 +169,16 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
      */
     if (!(L.fp) && L.path)
     {
-        if (sf_fopen(&L.fp, L.path, "w+") == NULL)
+        size_t log_path_size = strlen(L.path) + 1;
+        char* log_path = (char*)SF_CALLOC(1, log_path_size);
+        sf_strcpy(log_path, log_path_size, L.path);
+        // Create log file path (if it doesn't exist)
+        if (mkpath(log_path) == -1)
+        {
+            char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
+            sf_fprintf(stderr, "Error creating log directory. Error code: %s\n", str_error);
+        }
+        else if (sf_fopen(&L.fp, L.path, "w+") == NULL)
         {
             char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
             sf_fprintf(stderr,
@@ -154,6 +186,7 @@ log_log_va_list(int level, const char *file, int line, const char *ns,
                 L.path, str_error);
             L.path = NULL;
         }
+        SF_FREE(log_path);
     }
 
     if (L.fp) {
