@@ -100,11 +100,13 @@ class MockedStatementPut : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementPut(std::string fileName,
-                     std::string stageEndpoint)
+                     std::string stageEndpoint,
+                     std::string region)
     : IStatementPutGet()
   {
     m_stageInfo.stageType = StageType::S3;
     m_stageInfo.endPoint = stageEndpoint;
+    m_stageInfo.region = region;
     char aws_token[] = "AWS_TOKEN";
     char aws_key_id[] = "AWS_KEY_ID";
     char aws_secret_key[] = "AWS_SECRET_KEY";
@@ -147,12 +149,13 @@ private:
 IStorageClient* createS3Client(
     std::string fileName,
     std::string stageEndpoint,
+    std::string region,
     TransferConfig *transferConfig,
     std::string expectedErrorMsg)
 {
     std::string cmd = std::string("put file://") + fileName + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
 
-    MockedStatementPut mockedStatementPut(fileName, stageEndpoint);
+    MockedStatementPut mockedStatementPut(fileName, stageEndpoint, region);
 
     MockedPutGetAgent agent(&mockedStatementPut, transferConfig);
 
@@ -170,7 +173,8 @@ void test_simple_put_stage_endpoint_core(std::string fileName,
   std::string cmd = std::string("put file://") + fileName + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
 
   MockedStatementPut mockedStatementPut(fileName,
-                                        stageEndpoint);
+                                        stageEndpoint,
+                                        "");
 
   MockedPutGetAgent agent(&mockedStatementPut, transferConfig);
 
@@ -208,8 +212,39 @@ void test_simple_put_stage_endpoint(void ** unused)
   test_simple_put_stage_endpoint_no_regional("small_file.csv.gz",
                                              "abc.testendpoint.us-east-1.snowflakecomputing.com");
 
-  //test_simple_put_stage_endpoint_with_regional("small_file.csv.gz",
-  //                                             "abc.testendpoint.us-east-1.snowflakecomputing.com");
+  test_simple_put_stage_endpoint_with_regional("small_file.csv.gz",
+                                               "abc.testendpoint.us-east-1.snowflakecomputing.com");
+}
+
+void test_simple_put_stage_regional_core(std::string fileName,
+  std::string region,
+  std::string expectedStageEndpoint)
+{
+  std::string cmd = std::string("put file://") + fileName + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
+
+  MockedStatementPut mockedStatementPut(fileName, "", region);
+
+  TransferConfig transferConfig;
+  transferConfig.useS3regionalUrl = true;
+  transferConfig.caBundleFile = nullptr;
+
+  MockedPutGetAgent agent(&mockedStatementPut, &transferConfig);
+
+  const char* cfg_stageEndpoint = agent.getStageEndpoint(&cmd);
+
+  assert_non_null(cfg_stageEndpoint);
+  assert_string_equal(expectedStageEndpoint.c_str(), cfg_stageEndpoint);
+}
+
+void test_simple_put_stage_regional(void** unused)
+{
+  test_simple_put_stage_regional_core("small_file.csv.gz",
+                                      "us-east-1",
+                                      "s3.us-east-1.amazonaws.com");
+
+  test_simple_put_stage_regional_core("small_file.csv.gz",
+                                      "cn-northwest-1",
+                                      "s3.cn-northwest-1.amazonaws.com.cn");
 }
 
 void test_s3_cafile_path_empty(void ** unused)
@@ -221,7 +256,7 @@ void test_s3_cafile_path_empty(void ** unused)
     char cafile[] = "";
     transferConfig.caBundleFile = cafile;
 
-    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, &transferConfig, expectedErrorMsg);
+    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, "", & transferConfig, expectedErrorMsg);
     assert_null(storageClient);
 }
 
@@ -237,7 +272,7 @@ void test_s3_cafile_path_too_long(void ** unused)
     sf_strcpy(cafile, MAX_PATH + 1, cafileStr.c_str());
     transferConfig.caBundleFile = cafile;
 
-    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, &transferConfig, expectedErrorMsg);
+    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, "", & transferConfig, expectedErrorMsg);
     assert_null(storageClient);
 }
 
@@ -255,7 +290,7 @@ void test_s3_global_cafile_path_too_long(void ** unused)
     snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, currentCABundleFileGlobal, sizeof(currentCABundleFileGlobal));
     snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, cafile.c_str());
 
-    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, &transferConfig, expectedErrorMsg);
+    IStorageClient* storageClient = createS3Client(fileName, stageEndpoint, "", & transferConfig, expectedErrorMsg);
 
     // Restore the original value of the environment variables
     if (currentCABundleFileGlobal[0] != 0)
@@ -275,6 +310,7 @@ static int gr_setup(void **unused)
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_simple_put_stage_endpoint),
+    cmocka_unit_test(test_simple_put_stage_regional),
     cmocka_unit_test(test_s3_cafile_path_empty),
     cmocka_unit_test(test_s3_cafile_path_too_long),
     cmocka_unit_test(test_s3_global_cafile_path_too_long)
