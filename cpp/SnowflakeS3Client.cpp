@@ -71,6 +71,12 @@ namespace
   std::unique_ptr<struct awsdk_init> s_awssdk;
 
   const Aws::S3::Model::ChecksumAlgorithm INVALID_CHECKSUM = (Aws::S3::Model::ChecksumAlgorithm)(10);
+
+  std::string getDomainSuffixForRegionalUrl(const std::string& regionName)
+  {
+    // use .cn if the region name starts with "cn-"
+    return (regionName.find("cn-") == 0) ? "amazonaws.com.cn" : "amazonaws.com";
+  }
 }
 
 namespace Snowflake
@@ -138,7 +144,8 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   } else if (transferConfig != nullptr && transferConfig->useS3regionalUrl) {
     clientConfiguration.endpointOverride = Aws::String("s3.")
         + Aws::String(clientConfiguration.region)
-        + Aws::String(".amazonaws.com");
+        + Aws::String(".")
+        + Aws::String(getDomainSuffixForRegionalUrl(stageInfo->region));
   }
   m_stageEndpoint = clientConfiguration.endpointOverride;
 
