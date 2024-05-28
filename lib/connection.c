@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "error.h"
 #include "authenticator.h"
+#include "curl_desc_pool.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
@@ -912,10 +913,10 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool *is_renew,
                         sf_bool renew_injection) {
   sf_bool ret = SF_BOOLEAN_FALSE;
-    CURL *curl = NULL;
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    CURL *curl = get_curl_from_desc(curl_desc);
     char *encoded_url = NULL;
     SF_HEADER *my_header = NULL;
-    curl = curl_easy_init();
     if (curl) {
         // Use passed in header if one exists
         if (header) {
@@ -958,7 +959,7 @@ cleanup:
     if (!header) {
         sf_header_destroy(my_header);
     }
-    curl_easy_cleanup(curl);
+    free_curl_desc(curl_desc);
     SF_FREE(encoded_url);
 
     return ret;

@@ -9,6 +9,7 @@
 #include "connection.h"
 #include "error.h"
 #include "client_int.h"
+#include "curl_desc_pool.h"
 
 static void* chunk_downloader_thread(void *downloader);
 static void STDCALL set_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader, sf_bool value);
@@ -211,8 +212,8 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                int64 network_timeout,
                                int8 retry_max_count) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    CURL *curl = NULL;
-    curl = curl_easy_init();
+    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy);
+    CURL *curl = get_curl_from_desc(curl_desc);
 
     if (!curl ||
         !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk,
@@ -227,7 +228,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
     ret = SF_BOOLEAN_TRUE;
 
 cleanup:
-    curl_easy_cleanup(curl);
+    free_curl_desc(curl_desc);
 
     return ret;
 }
