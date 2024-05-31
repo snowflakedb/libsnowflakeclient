@@ -20,7 +20,7 @@ namespace Client
 ResultSetJson::ResultSetJson() :
     ResultSet()
 {
-    m_queryResultFormat = QueryResultFormat::JSON;
+    m_queryResultFormat = SF_JSON_FORMAT;
 }
 
 ResultSetJson::ResultSetJson(
@@ -30,7 +30,7 @@ ResultSetJson::ResultSetJson(
 ) :
     ResultSet(metadata, tzString)
 {
-    m_queryResultFormat = QueryResultFormat::JSON;
+    m_queryResultFormat = SF_JSON_FORMAT;
     m_chunk = nullptr;
     appendChunk(rowset);
 }
