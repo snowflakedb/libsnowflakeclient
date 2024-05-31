@@ -1443,14 +1443,11 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     sfstmt->sql_text = NULL;
 
     if (sfstmt->result_set) {
-        rs_destroy(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
+        rs_destroy(sfstmt->result_set);
     }
     sfstmt->result_set = NULL;
 
-    if (sfstmt->qrf) {
-        SF_FREE(sfstmt->qrf);
-    }
-    sfstmt->qrf = NULL;
+    sfstmt->qrf = SF_FORMAT_MAX;
 
     if (_snowflake_get_current_param_style(sfstmt) == NAMED)
     {
@@ -1771,12 +1768,11 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         sfstmt->result_set = rs_create_with_chunk(
                             sfstmt->chunk_downloader->queue[index].chunk,
                             sfstmt->desc,
-                            (QueryResultFormat_t *) sfstmt->qrf,
+                            sfstmt->qrf,
                             sfstmt->connection->timezone);
                     } else {
                         rs_append_chunk(
                             sfstmt->result_set,
-                            (QueryResultFormat_t *) sfstmt->qrf,
                             sfstmt->chunk_downloader->queue[index].chunk);
                     }
 
@@ -2207,7 +2203,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 // Determine query result format and detach rowset object from data.
                 cJSON * qrf = snowflake_cJSON_GetObjectItem(data, "queryResultFormat");
                 char * qrf_str = snowflake_cJSON_GetStringValue(qrf);
-                sfstmt->qrf = SF_CALLOC(1, sizeof(QueryResultFormat_t));
                 cJSON * rowset = NULL;
 
                 if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
@@ -2219,7 +2214,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
                     return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
 #endif
-                    *((QueryResultFormat_t *) sfstmt->qrf) = ARROW_FORMAT;
+                    sfstmt->qrf = SF_ARROW_FORMAT;
                     rowset = snowflake_cJSON_DetachItemFromObject(data, "rowsetBase64");
                     if (!rowset)
                     {
@@ -2233,7 +2228,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     }
                 }
                 else if (strcmp(qrf_str, "json") == 0) {
-                    *((QueryResultFormat_t *) sfstmt->qrf) = JSON_FORMAT;
+                    sfstmt->qrf = SF_JSON_FORMAT;
                     if (json_detach_array_from_object((cJSON **)(&rowset), data, "rowset"))
                     {
                         log_error("No valid rowset found in response");
@@ -2262,7 +2257,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     json_copy_string(&qrmk, data, "qrmk");
                     chunk_headers = snowflake_cJSON_GetObjectItem(data, "chunkHeaders");
                     NON_JSON_RESP* (*callback_create_resp)(void) = NULL;
-                    if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf)) {
+                    if (SF_ARROW_FORMAT == sfstmt->qrf) {
                         callback_create_resp = callback_create_arrow_resp;
                     }
 
@@ -2290,13 +2285,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->result_set = rs_create_with_json_result(
                         rowset,
                         sfstmt->desc,
-                        (QueryResultFormat_t *)sfstmt->qrf,
+                        sfstmt->qrf,
                         sfstmt->connection->timezone);
 
                     // Update chunk row count. Controls the chunk downloader.
                     sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                        sfstmt->result_set,
-                        (QueryResultFormat_t *) sfstmt->qrf);
+                        sfstmt->result_set);
 
                     // Update total row count. Used in snowflake_num_rows().
                     if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
@@ -2309,13 +2303,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->result_set = rs_create_with_json_result(
                         rowset,
                         sfstmt->desc,
-                        (QueryResultFormat_t *) sfstmt->qrf,
+                        sfstmt->qrf,
                         sfstmt->connection->timezone);
 
                     // Update chunk row count. Controls the chunk downloader.
                     sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                        sfstmt->result_set,
-                        (QueryResultFormat_t *) sfstmt->qrf);
+                        sfstmt->result_set);
 
                     // Update total row count. Used in snowflake_num_rows().
                     if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
@@ -2525,7 +2518,7 @@ SF_STATUS STDCALL _snowflake_column_null_checks(SF_STMT *sfstmt, void *value_ptr
 }
 
 SF_STATUS STDCALL _snowflake_next(SF_STMT *sfstmt) {
-    return rs_next(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
+    return rs_next(sfstmt->result_set);
 }
 
 SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr) {
@@ -2536,9 +2529,9 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
     }
 
     if ((status = rs_get_cell_as_bool(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2551,9 +2544,9 @@ SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *val
     }
 
     if ((status = rs_get_cell_as_uint8(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2566,9 +2559,9 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
     }
 
     if ((status = rs_get_cell_as_uint32(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2581,9 +2574,9 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *v
     }
 
     if ((status = rs_get_cell_as_uint64(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2596,9 +2589,9 @@ SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value
     }
 
     if ((status = rs_get_cell_as_int8(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2611,9 +2604,9 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
     }
 
     if ((status = rs_get_cell_as_int32(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2626,9 +2619,9 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *val
     }
 
     if ((status = rs_get_cell_as_int64(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2641,9 +2634,9 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
     }
 
     if ((status = rs_get_cell_as_float32(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2656,9 +2649,9 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 
     }
 
     if ((status = rs_get_cell_as_float64(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2671,9 +2664,9 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
     }
 
     if ((status = rs_get_cell_as_timestamp(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2686,9 +2679,9 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
     }
 
     if ((status = rs_get_cell_as_const_string(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2909,16 +2902,15 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
     const char* str_val = NULL;
     if ((status = rs_get_cell_as_const_string(
             sfstmt->result_set,
-            sfstmt->qrf,
             idx,
             &str_val)) != SF_STATUS_SUCCESS)
     {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
         return status;
     }
 
-    if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf))
+    if (SF_ARROW_FORMAT == sfstmt->qrf)
     {
         // For Arrow the const string is formatted already
         return snowflake_raw_value_to_str_rep(sfstmt, str_val,
@@ -2949,9 +2941,9 @@ SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *valu
     }
 
     if ((status = rs_get_cell_strlen(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2964,9 +2956,9 @@ SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *va
     }
 
     if ((status = rs_is_cell_null(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }

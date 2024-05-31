@@ -442,6 +442,16 @@ typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
  */
 typedef struct SF_PUT_GET_RESPONSE SF_PUT_GET_RESPONSE;
 
+typedef void* result_set_ptr;
+
+/**
+ * An enumeration over all supported query result formats.
+ */
+typedef enum QueryResultFormat
+{
+  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_FORMAT_MAX
+} QueryResultFormat_t;
+
 /**
  * Statement context
  */
@@ -451,9 +461,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    void *qrf;
+    QueryResultFormat_t qrf;
     char *sql_text;
-    void *result_set;
+    result_set_ptr result_set;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
