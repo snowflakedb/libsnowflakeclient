@@ -12,20 +12,12 @@
 #include "cJSON.h"
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
+#include "result_set.h"
 
 namespace Snowflake
 {
 namespace Client
 {
-
-/**
- * Enumeration over valid query result formats.
- */
-enum QueryResultFormat
-{
-    ARROW,
-    JSON
-};
 
 /**
  * The implementation of a base result set.
@@ -194,6 +186,13 @@ public:
      */
     virtual SF_STATUS STDCALL isCellNull(size_t idx, sf_bool * out_data) = 0;
 
+    /**
+     * Gets the total number of rows in the current chunk being processed.
+     *
+     * @return the number of rows in the current chunk.
+     */
+    virtual size_t getRowCountInChunk() = 0;
+
     // Other member getters ========================================================================
 
     SF_STATUS getError()
@@ -213,6 +212,11 @@ public:
         {
             m_errMsg = errMsg;
         }
+    }
+
+    QueryResultFormat_t getResultFormat()
+    {
+        return m_queryResultFormat;
     }
 
 protected:
@@ -303,7 +307,7 @@ protected:
     /**
      * The format of the result set.
      */
-    QueryResultFormat m_queryResultFormat;
+    QueryResultFormat_t m_queryResultFormat;
 
     /**
      * The tz string to use when dealing with time or timestamp values.
