@@ -467,6 +467,8 @@ typedef struct SF_STMT {
     SF_STATS *stats;
     void *stmt_attrs;
     sf_bool is_dml;
+    sf_bool is_multi_stmt;
+    void* multi_stmt_result_ids;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -783,6 +785,15 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
  */
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture);
+
+/**
+ * Determines whether more results are available and, if so,
+ * initializes processing for the next one.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ *
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer
