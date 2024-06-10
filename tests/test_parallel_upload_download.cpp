@@ -184,9 +184,6 @@ static int gr_setup(void **unused)
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
   }
 
-  sf_bool check_ocsp = SF_BOOLEAN_FALSE;
-  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &check_ocsp);
-
   return 0;
 }
 
