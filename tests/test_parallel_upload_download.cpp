@@ -184,11 +184,18 @@ static int gr_setup(void **unused)
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
   }
 
+  // debug code, will remove
+  log_set_fp(stdout);
+  log_set_level(0);
+
   return 0;
 }
 
 static int gr_teardown(void **unused)
 {
+  // debug code, will remove
+  log_set_fp(NULL);
+
   drop_random_database();
   snowflake_global_term();
   return 0;

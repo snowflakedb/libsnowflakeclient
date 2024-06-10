@@ -860,6 +860,10 @@ static int gr_setup(void **unused)
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
   }
 
+  // debug code, will remove
+  log_set_fp(stdout);
+  log_set_level(0);
+
   // create large 2GB file
   char *githubenv = getenv("GITHUB_ACTIONS");
   if (githubenv && strlen(githubenv) > 0)
@@ -889,6 +893,9 @@ static int gr_setup(void **unused)
 
 static int gr_teardown(void **unused)
 {
+  // debug code, will remove
+  log_set_fp(NULL);
+
   drop_random_database();
   snowflake_global_term();
   std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
