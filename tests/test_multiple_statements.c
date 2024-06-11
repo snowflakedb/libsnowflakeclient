@@ -185,7 +185,7 @@ void test_multi_stmt_with_large_result(void **unused)
 
     int counter = 0;
     int64 intout;
-	char* strout;
+	const char* strout;
 	char strexp[64];
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &intout);
