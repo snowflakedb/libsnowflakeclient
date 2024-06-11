@@ -18,7 +18,7 @@ extern "C" {
 /**
  * API Name
  */
-#define SF_API_NAME "C API"
+#define SF_API_NAME "ODBC"
 
 /**
  * SQLState code length
@@ -281,8 +281,11 @@ typedef enum SF_GLOBAL_ATTRIBUTE {
  * Attributes for Snowflake statement context.
  */
 typedef enum SF_STMT_ATTRIBUTE {
-    SF_STMT_USER_REALLOC_FUNC
+    SF_STMT_USER_REALLOC_FUNC,
+    SF_STMT_MULTI_STMT_COUNT
 } SF_STMT_ATTRIBUTE;
+#define SF_MULTI_STMT_COUNT_UNSET (-1)
+#define SF_MULTI_STMT_COUNT_UNLIMITED 0
 
 /**
  * Snowflake Error
@@ -469,6 +472,7 @@ typedef struct SF_STMT {
     sf_bool is_dml;
     sf_bool is_multi_stmt;
     void* multi_stmt_result_ids;
+    int64 multi_stmt_count;
 
     /**
      * User realloc function used in snowflake_fetch

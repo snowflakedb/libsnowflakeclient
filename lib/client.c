@@ -1285,6 +1285,16 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
     qcc_deserialize(sfstmt->connection, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
     _mutex_unlock(&sfstmt->connection->mutex_parameters);
 
+    // clean up from preivous result
+    sfstmt->chunk_rowcount = -1;
+    sfstmt->total_rowcount = -1;
+    sfstmt->total_fieldcount = -1;
+    sfstmt->total_row_index = -1;
+
+    // Destroy chunk downloader
+    chunk_downloader_term(sfstmt->chunk_downloader);
+    sfstmt->chunk_downloader = NULL;
+
     int64 stmt_type_id;
     if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
         /* failed to get statement type id */
@@ -1294,9 +1304,9 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
     }
     cJSON* rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
     if (snowflake_cJSON_IsArray(rowtype)) {
+        _snowflake_stmt_desc_reset(sfstmt);
         sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
           rowtype);
-        _snowflake_stmt_desc_reset(sfstmt);
         sfstmt->desc = set_description(rowtype);
     }
     cJSON* stats = snowflake_cJSON_GetObjectItem(data, "stats");
@@ -1468,7 +1478,7 @@ static sf_bool setup_multi_stmt_result(SF_STMT* sfstmt, cJSON* data)
         if (!end)
         {
             // last part, set to end of the entire string
-            end = result_ids + len - 1;
+            end = result_ids + len;
         }
         *end = '\0';
         snowflake_cJSON_AddItemToArray(result_ids_json, snowflake_cJSON_CreateString(start));
@@ -1500,6 +1510,7 @@ SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt)
             "Empty result id found in multiple statements response.",
             SF_SQLSTATE_GENERAL_ERROR,
             sfstmt->sfqid);
+        snowflake_cJSON_Delete(result_id_json);
         return SF_STATUS_ERROR_BAD_RESPONSE;
     }
 
@@ -1513,9 +1524,11 @@ SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt)
             "Run out of memory trying to create result url.",
             SF_SQLSTATE_MEMORY_ALLOCATION_ERROR,
             sfstmt->sfqid);
+        snowflake_cJSON_Delete(result_id_json);
         return SF_STATUS_ERROR_OUT_OF_MEMORY;
     }
     sf_sprintf(result_url, url_size, QUERY_RESULT_URL_FORMAT, result_id);
+    snowflake_cJSON_Delete(result_id_json);
 
     cJSON* result = NULL;
     if (!request(sfstmt->connection, &result, result_url, NULL, 0, NULL, NULL,
@@ -1792,7 +1805,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
     if (sfstmt) {
         _snowflake_stmt_reset(sfstmt);
         sfstmt->connection = sf;
-
+        sfstmt->multi_stmt_count = SF_MULTI_STMT_COUNT_UNSET;
     }
     return sfstmt;
 }
@@ -2287,7 +2300,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
                                   is_string_empty(sfstmt->connection->directURL) ?
-                                  NULL : sfstmt->request_id, is_describe_only);
+                                  NULL : sfstmt->request_id, is_describe_only,
+                                  sfstmt->multi_stmt_count);
     if (bindings != NULL) {
         /* binding parameters if exists */
       snowflake_cJSON_AddItemToObject(body, "bindings", bindings);
@@ -2569,6 +2583,9 @@ SF_STATUS STDCALL snowflake_stmt_get_attr(
         case SF_STMT_USER_REALLOC_FUNC:
             *value = sfstmt->user_realloc_func;
             break;
+        case SF_STMT_MULTI_STMT_COUNT:
+            *value = &sfstmt->multi_stmt_count;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(
                 &sfstmt->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -2588,6 +2605,9 @@ SF_STATUS STDCALL snowflake_stmt_set_attr(
     switch(type) {
         case SF_STMT_USER_REALLOC_FUNC:
             sfstmt->user_realloc_func = (void*(*)(void*, size_t))value;
+            break;
+        case SF_STMT_MULTI_STMT_COUNT:
+            sfstmt->multi_stmt_count = value ? *((int64*)value) : SF_MULTI_STMT_COUNT_UNSET;
             break;
         default:
             SET_SNOWFLAKE_ERROR(
