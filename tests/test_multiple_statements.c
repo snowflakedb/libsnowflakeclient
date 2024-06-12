@@ -148,6 +148,16 @@ void test_multi_stmt_with_large_result(void **unused)
 {
 	const int rownum = 100000;
     SF_CONNECT *sf = setup_snowflake_connection();
+
+#ifdef __APPLE__
+    char *githubenv = getenv("GITHUB_ACTIONS");
+    if (githubenv && strlen(githubenv) > 0)
+    {
+        sf_bool insecure_mode = SF_BOOLEAN_TRUE;
+        snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &insecure_mode);
+    }
+#endif
+
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
