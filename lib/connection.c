@@ -225,6 +225,9 @@ cJSON *STDCALL create_query_json_body(const char *sql_text,
         parameters = snowflake_cJSON_CreateObject();
     }
     snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
+
+    // temporary code to fake as ODBC to have multiple statements enabled
+    snowflake_cJSON_AddStringToObject(parameters, "ODBC_QUERY_RESULT_FORMAT", "JSON");
 #endif
     if (parameters)
     {
