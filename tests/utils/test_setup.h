@@ -42,6 +42,11 @@ void setup_and_run_query(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char *query)
 
 void process_results(struct timespec begin, struct timespec end, int num_iterations, const char *label);
 
+// Setup database with random name for test, return 1 if succeeded, 0 otherwise.
+int setup_random_database();
+
+void drop_random_database();
+
 /**
  * Dump error
  * @param error SF_ERROR_STRUCT

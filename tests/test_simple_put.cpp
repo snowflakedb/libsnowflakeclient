@@ -856,6 +856,10 @@ static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
 
+  if(!setup_random_database()) {
+    std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
+  }
+
   // create large 2GB file
   char *githubenv = getenv("GITHUB_ACTIONS");
   if (githubenv && strlen(githubenv) > 0)
@@ -865,6 +869,14 @@ static int gr_setup(void **unused)
       return 0;
     }
   }
+// Jenkins node on Mac has issue with large file.
+#ifdef __APPLE__
+  char* jobname = getenv("JOB_NAME");
+  if (jobname && (strlen(jobname) > 0))
+  {
+    return 0;
+  }
+#endif
 
   std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
   std::ofstream ofs(file2GB, std::ios::binary | std::ios::out);
@@ -877,6 +889,7 @@ static int gr_setup(void **unused)
 
 static int gr_teardown(void **unused)
 {
+  drop_random_database();
   snowflake_global_term();
   std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
   remove(file2GB.c_str());
@@ -1225,6 +1238,15 @@ void test_2GBlarge_put(void **unused)
     return;
   }
 
+// Jenkins node on Mac has issue with large file.
+#ifdef __APPLE__
+  char* jobname = getenv("JOB_NAME");
+  if (jobname && (strlen(jobname) > 0))
+  {
+    return;
+  }
+#endif
+
   test_simple_put_core(FILE_NAME_2GB, // filename
                        "none", //source compression
                        false,   // auto compress
@@ -1254,6 +1276,15 @@ void test_2GBlarge_get(void **unused)
     errno = 0;
     return;
   }
+
+// Jenkins node on Mac has issue with large file.
+#ifdef __APPLE__
+  char* jobname = getenv("JOB_NAME");
+  if (jobname && (strlen(jobname) > 0))
+  {
+    return;
+  }
+#endif
 
   std::string getcmd = std::string("get @%test_small_put/") + FILE_NAME_2GB +
                        " file://" + TestSetup::getDataDir();
