@@ -3,10 +3,13 @@
  */
 
 #include <snowflake/logger.h>
+#include "snowflake/client.h"
 #include <string.h>
 #include "test_setup.h"
 #include <stdlib.h>
 #include <time.h>
+
+extern int uuid4_generate(char *dst);
 
 // Long path space
 char PERFORMANCE_TEST_RESULTS_PATH[5000];
@@ -139,8 +142,8 @@ int setup_random_database()
     SF_CONNECT *sf;
     SF_STMT *sfstmt;
     char random_db_name[100];
+    char uuid[SF_UUID4_LEN];
     char query[200];
-    time_t t;
 
     if (strlen(RANDOM_DATABASE_NAME) > 0)
     {
@@ -148,8 +151,15 @@ int setup_random_database()
         return 1;
     }
 
-    srand((unsigned) time(&t));
-    sprintf(random_db_name, "random_test_db_%d", rand());
+    uuid4_generate(uuid);
+    for (int i = 0; i < sizeof(uuid); i++)
+    {
+        if (uuid[i] == '-')
+        {
+            uuid[i] = '_';
+        }
+    }
+    sprintf(random_db_name, "random_test_db_%s", uuid);
 
     sf = setup_snowflake_connection();
     status = snowflake_connect(sf);
