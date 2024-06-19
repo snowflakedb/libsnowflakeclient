@@ -884,11 +884,17 @@ static int gr_setup(void **unused)
   ofs.write("", 1);
   ofs.close();
 
+// debug code, will remove
+  log_set_fp(stdout);
+  log_set_level(0);
   return 0;
 }
 
 static int gr_teardown(void **unused)
 {
+// debug code, will remove
+  log_set_fp(NULL);
+
   drop_random_database();
   snowflake_global_term();
   std::string file2GB = TestSetup::getDataDir() + FILE_NAME_2GB;
