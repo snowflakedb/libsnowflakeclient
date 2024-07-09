@@ -270,8 +270,10 @@ int STDCALL sf_setenv(const char *name, const char *value) {
 
 char * STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize) {
 #ifdef _WIN32
-    size_t len;
-    return getenv_s(&len, outbuf, bufsize, name) ? NULL : outbuf;
+    size_t len = 0;
+    // SNOW-1526802 on Windows environment variable can't be set to empty
+    // and getenv_s returns 0 with length of 0 for environment variables not being set
+    return getenv_s(&len, outbuf, bufsize, name) || (len == 0) ? NULL : outbuf;
 #else
     char* envval = getenv(name);
     if (!envval)
