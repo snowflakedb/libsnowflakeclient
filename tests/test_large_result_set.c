@@ -10,6 +10,7 @@ void test_large_result_set_helper(sf_bool use_arrow) {
     SF_STMT *sfstmt = NULL;
     SF_CONNECT *sf = setup_snowflake_connection();
 
+    // TODO SNOW-1526335
     // Sometime we can't get OCSP response from cache server or responder
     // Usually happen on GCP and should be ignored by FAIL_OPEN
     // Unfortunately libsnowflakeclient doesn't support FAIL_OPEN for now
