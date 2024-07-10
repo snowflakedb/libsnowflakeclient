@@ -66,8 +66,6 @@ void test_proxy_empty(void **unused)
 
 void test_allproxy_noproxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET;
-
     sf_setenv("all_proxy", "https://someuser:somepwd@somewhere.com:5050");
     sf_setenv("no_proxy", "proxyserver.com");
     test_proxy_parts_equality("", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "proxyserver.com", true);
@@ -77,8 +75,6 @@ void test_allproxy_noproxy_fromenv(void **unused)
 
 void test_httpsproxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET;
-
     sf_setenv("https_proxy", "https://someuser:somepwd@somewhere.com:5050");
     test_proxy_parts_equality("", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "", true);
     sf_unsetenv("https_proxy");
@@ -86,8 +82,6 @@ void test_httpsproxy_fromenv(void **unused)
 
 void test_httpproxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET;
-
     sf_setenv("http_proxy", "http://username:password@proxyserver.company.com:80");
     test_proxy_parts_equality("", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP, "", true);
     sf_unsetenv("http_proxy");
@@ -95,8 +89,6 @@ void test_httpproxy_fromenv(void **unused)
 
 void test_noproxy_fromenv(void **unused)
 {
-    SKIP_IF_PROXY_ENV_IS_SET;
-
     sf_setenv("NO_PROXY", "proxyserver.company.com");
     test_proxy_parts_equality("", "", "", "", 0, Proxy::Protocol::NONE, "proxyserver.company.com", true);
     sf_unsetenv("NO_PROXY");
