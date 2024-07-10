@@ -376,6 +376,7 @@ void aws_json_module_init(struct aws_allocator *allocator) {
 void aws_json_module_cleanup(void) {
     if (s_aws_json_module_initialized) {
         s_aws_json_module_allocator = NULL;
+        cJSON_InitHooks(NULL); // custom change to keep
         s_aws_json_module_initialized = false;
     }
 }
