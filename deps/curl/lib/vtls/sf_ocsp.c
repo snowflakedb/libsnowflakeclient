@@ -41,6 +41,9 @@
 #include <direct.h>
 #include <time.h>
 
+#include <Shellapi.h>
+#define strncasecmp _strnicmp
+
 typedef HANDLE SF_THREAD_HANDLE;
 typedef CONDITION_VARIABLE SF_CONDITION_HANDLE;
 typedef CRITICAL_SECTION SF_CRITICAL_SECTION_HANDLE;
@@ -76,10 +79,11 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define strcasecmp _stricmp
 #endif
 
-#define DEFAULT_OCSP_RESPONSE_CACHE_HOST "http://ocsp.snowflakecomputing.com"
+#define DEFAULT_OCSP_RESPONSE_CACHE_HOST "http://ocsp.snowflakecomputing.%s"
 #define OCSP_RESPONSE_CACHE_JSON "ocsp_response_cache.json"
 #define OCSP_RESPONSE_CACHE_URL "%s/%s"
-#define OCSP_RESPONDER_RETRY_URL "http://ocsp.snowflakecomputing.com/retry"
+#define OCSP_RESPONDER_RETRY_URL "http://ocsp.snowflakecomputing.%s/retry"
+#define MAX_DOMAIN_LEN 64 //max 63 characters + terminator
 
 #define GET_STR_OCSP_LOG(X,Y) X->Y ? sf_curl_cJSON_CreateString(X->Y) : NULL
 #define GET_BOOL_OCSP_LOG(X,Y) X->Y ? sf_curl_cJSON_CreateString("True") : sf_curl_cJSON_CreateString("False")
@@ -226,6 +230,28 @@ static char* ocsp_cache_server_url_env = NULL;
 static char ocsp_cache_server_url[MAX_BUFFER_LENGTH] = "";
 
 static char ocsp_cache_server_retry_url_pattern[MAX_BUFFER_LENGTH];
+
+static char default_ocsp_cache_host[sizeof(DEFAULT_OCSP_RESPONSE_CACHE_HOST) + MAX_DOMAIN_LEN] = "";
+
+static char default_ocsp_cache_retry_url[sizeof(OCSP_RESPONDER_RETRY_URL) + MAX_DOMAIN_LEN] = "";
+
+// functions for test purpose only
+SF_PUBLIC(CURLcode) checkTelemetryHosts(char *hostname)
+{
+  struct connectdata conn;
+  conn.host.name = hostname;
+  return checkCertOCSP(&conn, NULL, NULL, NULL, 0, 0);
+}
+
+void get_cache_server_url(char* buf, size_t bufsize)
+{
+  strncpy(buf, ocsp_cache_server_url, bufsize);
+}
+
+void get_cache_retry_url_pattern(char* buf, size_t bufsize)
+{
+  strncpy(buf, ocsp_cache_server_retry_url_pattern, bufsize);
+}
 
 /* Mutex */
 int _mutex_init(SF_MUTEX_HANDLE *lock) {
@@ -2244,10 +2270,24 @@ void initOCSPCacheServer(struct Curl_easy *data)
 
   if (ocsp_cache_server_url_env == NULL)
   {
+    char* top_domain = strrchr(data->conn->host.name, '.');
+    if (top_domain)
+    {
+      top_domain++;
+    }
+    else
+    {
+      // It's basically impossible not finding top domain in host.
+      // Use "com" as default just in case.
+      top_domain = "com";
+    }
+
     /* default URL */
+    snprintf(default_ocsp_cache_host, sizeof(default_ocsp_cache_host),
+             DEFAULT_OCSP_RESPONSE_CACHE_HOST, top_domain);
     snprintf(ocsp_cache_server_url, sizeof(ocsp_cache_server_url),
              OCSP_RESPONSE_CACHE_URL,
-             DEFAULT_OCSP_RESPONSE_CACHE_HOST,
+             default_ocsp_cache_host,
              OCSP_RESPONSE_CACHE_JSON);
 
     if (!ACTIVATE_SSD)
@@ -2261,9 +2301,11 @@ void initOCSPCacheServer(struct Curl_easy *data)
        * Non private link customers always go to default
        * retry URL for OCSP retries
        */
+      snprintf(default_ocsp_cache_retry_url, sizeof(default_ocsp_cache_retry_url),
+               OCSP_RESPONDER_RETRY_URL, top_domain);
       strncpy(ocsp_cache_server_retry_url_pattern,
-              OCSP_RESPONDER_RETRY_URL,
-              sizeof(OCSP_RESPONDER_RETRY_URL));
+              default_ocsp_cache_retry_url,
+              strlen(default_ocsp_cache_retry_url) + 1);
     }
   }
   else
@@ -2360,15 +2402,22 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
   SF_FAILOPEN_STATUS ocsp_fail_open = ENABLED;
   char last_timeout_host[MAX_BUFFER_LENGTH];
   last_timeout_host[0] = '\0';
-
+  // SNOW-1526511 ignore top level domain name to be more flexible
+  const char* telemetry_endpoints[] = {
+    "sfctest.client-telemetry.snowflakecomputing.",
+    "sfcdev.client-telemetry.snowflakecomputing.",
+    "client-telemetry.snowflakecomputing."
+  };
+  const int telemetry_endpoints_num = sizeof(telemetry_endpoints) / sizeof(char*);
 
 // These end points are Out of band telemetry end points.
 // Do not use OCSP/failsafe on Out of band telemetry endpoints
-  if ( (strcmp(conn->host.name, "sfctest.client-telemetry.snowflakecomputing.com") == 0 )
-      || (strcmp(conn->host.name, "sfcdev.client-telemetry.snowflakecomputing.com") == 0 )
-      || (strcmp(conn->host.name, "client-telemetry.snowflakecomputing.com") == 0 )
-      ) {
-    return rs;
+  for (int i = 0; i < telemetry_endpoints_num; i++)
+  {
+    if (strncasecmp(conn->host.name, telemetry_endpoints[i], strlen(telemetry_endpoints[i])) == 0)
+    {
+      return rs;
+    }
   }
 
   SF_OTD ocsp_log_data;

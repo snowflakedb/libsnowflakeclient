@@ -21,7 +21,6 @@
 #define HEADER_CLIENT_APP_ID_FORMAT "CLIENT_APP_ID: %s"
 #define HEADER_CLIENT_APP_VERSION_FORMAT "CLIENT_APP_VERSION: %s"
 
-#define DEFAULT_SNOWFLAKE_BASE_URL "snowflakecomputing.com"
 #define DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT 60
 
 #define SESSION_URL "/session/v1/login-request"

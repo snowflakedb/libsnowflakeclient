@@ -12,6 +12,12 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
+extern CURLcode checkTelemetryHosts(char *hostname);
+
+extern void get_cache_server_url(char* buf, size_t bufsize);
+
+extern void get_cache_retry_url_pattern(char* buf, size_t bufsize);
+
 extern CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen);
 
 struct configData
@@ -234,6 +240,47 @@ checkUrlEncoding(char *urlData, char *expectedEncoding)
     fprintf(stderr, "OK\n");
 }
 
+static void
+checkDefaultURLDomain(char *host, char *port, char *cacert)
+{
+// Max length of buffer
+#define MAX_BUFFER_LENGTH 4096
+    char expectedCacheServerURL[MAX_BUFFER_LENGTH];
+    char expectedRetryURL[MAX_BUFFER_LENGTH];
+    char buf[MAX_BUFFER_LENGTH];
+
+    // unset environment variables to use default behavior
+    unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
+    unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
+    // test default URL being used when ACTIVATE_SSD is on
+    setenv("SF_OCSP_ACTIVATE_SSD", "true", 1);
+
+    char * domain = strrchr(host, '.') + 1;
+    sprintf(expectedCacheServerURL, "http://ocsp.snowflakecomputing.%s/ocsp_response_cache.json", domain);
+    sprintf(expectedRetryURL, "http://ocsp.snowflakecomputing.%s/retry", domain);
+
+    checkCertificateRevocationStatus(host, port, cacert, NULL, NULL, 0, 0, 0);
+
+    get_cache_server_url(buf, sizeof(buf));
+    if (strcmp(buf, expectedCacheServerURL) != 0)
+    {
+        fprintf(stderr, "checkDefaultURLDomain FAILED! expected cache server URL %s but actually %s\n",
+                expectedCacheServerURL, buf);
+        exit(1);
+    }
+
+    get_cache_retry_url_pattern(buf, sizeof(buf));
+    if (strcmp(buf, expectedRetryURL) != 0)
+    {
+        fprintf(stderr, "checkDefaultURLDomain FAILED! expected retry URL %s but actually %s\n",
+                expectedRetryURL, buf);
+        exit(1);
+    }
+
+    unsetenv("SF_OCSP_ACTIVATE_SSD");
+    fprintf(stderr, "OK\n");
+}
+
 int main(int argc, char **argv)
 {
     char cacert[4096];
@@ -378,5 +425,13 @@ int main(int argc, char **argv)
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
     unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
 
+    printf("===> Case 12: Ignore top level domain when checking telemetry endpoints\n");
+    dieIfNotSuccess(checkTelemetryHosts("sfctest.client-telemetry.snowflakecomputing.com"));
+    dieIfNotSuccess(checkTelemetryHosts("sfcdev.client-telemetry.snowflakecomputing.cn"));
+    dieIfNotSuccess(checkTelemetryHosts("client-telemetry.snowflakecomputing.mil"));
+    fprintf(stderr, "OK\n");
+
+    printf("===> Case 13: Top level domain used in default OCSP URLs\n");
+    checkDefaultURLDomain(host, port, cacert);
     return 0;
 }

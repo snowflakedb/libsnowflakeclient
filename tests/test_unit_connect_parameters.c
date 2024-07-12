@@ -53,6 +53,23 @@ void test_connection_parameters_with_region(void **unused) {
 }
 
 /**
+ * Test with cn region
+ */
+void test_connection_parameters_with_cn_region(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+    sf->account = "testaccount";
+    sf->user = "testuser";
+    sf->password = "testpassword";
+    sf->region = "cn-somewhere";
+    assert_int_equal(
+        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+    assert_string_equal(sf->host,
+                        "testaccount.cn-somewhere.snowflakecomputing.cn");
+
+    SF_FREE(sf);
+}
+
+/**
  * Test account including region
  */
 void test_connection_parameters_including_region(void **unused) {
@@ -208,6 +225,7 @@ int main(void) {
         cmocka_unit_test(test_connection_parameters_default_port),
         cmocka_unit_test(test_connection_parameters_no_host),
         cmocka_unit_test(test_connection_parameters_with_region),
+        cmocka_unit_test(test_connection_parameters_with_cn_region),
         cmocka_unit_test(test_connection_parameters_including_region),
         cmocka_unit_test(test_connection_parameters_including_region_including_dot),
         cmocka_unit_test(test_connection_parameters_for_global_url_basic),

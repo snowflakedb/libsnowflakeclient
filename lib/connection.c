@@ -565,7 +565,6 @@ get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep, uint64
 
 char * STDCALL encode_url(CURL *curl,
                  const char *protocol,
-                 const char *account,
                  const char *host,
                  const char *port,
                  const char *url,
@@ -594,34 +593,29 @@ char * STDCALL encode_url(CURL *curl,
     const char *amp = "&";
     size_t amp_size = strlen(amp);
 
+    if (host_empty)
+    {
+      SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                          "Invalid host trying to create encoded url",
+                          SF_SQLSTATE_UNABLE_TO_CONNECT);
+      goto cleanup;
+    }
+
     // Set proper format based on variables passed into encode URL.
     // The format includes format specifiers that will be consumed by empty fields
     // (i.e if port is empty, add an extra specifier so that we have 1 call to snprintf, vs. 4 different calls)
-    // Format specifier order is protocol, then account, then host, then port, then url.
+    // Format specifier order is protocol, then then host, then port, then url.
     // Base size increases reflect the number of static characters in the format string (i.e. ':', '/', '.')
-    if (!port_empty && !host_empty) {
-        format = "%s://%s%s:%s%s";
+    if (!port_empty) {
+        format = "%s://%s:%s%s";
         base_url_size += 4;
-        // Set account to an empty string since host overwrites account
-        account = "";
-    } else if (port_empty && !host_empty) {
-        format = "%s://%s%s%s%s";
-        base_url_size += 3;
-        port = "";
-        // Set account to an empty string since host overwrites account
-        account = "";
-    } else if (!port_empty && host_empty) {
-        format = "%s://%s.%s:%s%s";
-        base_url_size += 5;
-        host = DEFAULT_SNOWFLAKE_BASE_URL;
     } else {
-        format = "%s://%s.%s%s%s";
-        base_url_size += 4;
-        host = DEFAULT_SNOWFLAKE_BASE_URL;
+        format = "%s://%s%s%s";
+        base_url_size += 3;
         port = "";
     }
     base_url_size +=
-      strlen(protocol) + strlen(account) + strlen(host) + strlen(port) +
+      strlen(protocol) + strlen(host) + strlen(port) +
       strlen(url) + strlen(URL_QUERY_DELIMITER);
 
     encoded_url_size = base_url_size;
@@ -660,7 +654,7 @@ char * STDCALL encode_url(CURL *curl,
                             SF_SQLSTATE_UNABLE_TO_CONNECT);
         goto cleanup;
     }
-    sf_sprintf(encoded_url, base_url_size, format, protocol, account, host, port,
+    sf_sprintf(encoded_url, base_url_size, format, protocol, host, port,
              url);
 
     // Initially add the query delimiter "?"
@@ -931,7 +925,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
             }
         }
 
-        encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
+        encoded_url = encode_url(curl, sf->protocol, sf->host,
                                  sf->port, url, url_params, num_url_params,
                                  error, sf->directURL_param);
         if (encoded_url == NULL) {
@@ -1015,7 +1009,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
     // Create request id, set in url parameter and encode url
     uuid4_generate(request_id);
     url_params[0].value = request_id;
-    encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host,
+    encoded_url = encode_url(curl, sf->protocol, sf->host,
                              sf->port, RENEW_SESSION_URL, url_params, 1, error,
                              sf->directURL_param);
     if (!encoded_url) {

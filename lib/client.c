@@ -20,6 +20,11 @@
 #include "authenticator.h"
 #include "query_context_cache.h"
 
+#ifdef _WIN32
+#include <Shellapi.h>
+#define strncasecmp _strnicmp
+#endif
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
 // Define internal constants
@@ -432,8 +437,17 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         // construct a host parameter if not specified,
         char buf[1024];
         if (sf->region) {
-            sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
-                     sf->account, sf->region);
+            if (strncasecmp(sf->region, "cn-", 3) == 0)
+            {
+                //region started with "cn-", use "cn" for top domain
+                sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.cn",
+                         sf->account, sf->region);
+            }
+            else
+            {
+                sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
+                         sf->account, sf->region);
+            }
         } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
                      sf->account);
