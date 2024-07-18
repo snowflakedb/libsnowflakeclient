@@ -442,21 +442,40 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                 //region started with "cn-", use "cn" for top domain
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.cn",
                          sf->account, sf->region);
-                log_info("Connecting to CHINA Snowflake domain");
             }
             else
             {
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
                          sf->account, sf->region);
-                log_info("Connecting to GLOBAL Snowflake domain");
             }
         } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
                      sf->account);
-            log_info("Connecting to GLOBAL Snowflake domain");
         }
         alloc_buffer_and_copy(&sf->host, buf);
     }
+
+    char* top_domain = strrchr(sf->host, '.');
+    if (top_domain)
+    {
+        top_domain++;
+    }
+    else
+    {
+        // It's basically impossible not finding top domain in host.
+        // Log the entire host just in case.
+        top_domain = sf->host;
+    }
+
+    if (strcasecmp(top_domain, "com") == 0)
+    {
+        log_info("Connecting to GLOBAL Snowflake domain");
+    }
+    else
+    {
+        log_info("Connecting to Snowflake domain: %s", top_domain);
+    }
+
     // split account and region if connected by a dot.
     char *dot_ptr = strchr(sf->account, (int) '.');
     if (dot_ptr) {

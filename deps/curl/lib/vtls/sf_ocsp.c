@@ -2283,15 +2283,6 @@ void initOCSPCacheServer(struct Curl_easy *data)
       top_domain = "com";
     }
 
-    if (strcasecmp(top_domain, "com") == 0)
-    {
-      infof(data, "Connecting to GLOBAL Snowflake domain");
-    }
-    else
-    {
-      infof(data, "Connecting to Snowflake domain: %s", top_domain);
-    }
-
     /* default URL */
     snprintf(default_ocsp_cache_host, sizeof(default_ocsp_cache_host),
              DEFAULT_OCSP_RESPONSE_CACHE_HOST, top_domain);
