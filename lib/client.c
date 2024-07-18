@@ -23,6 +23,7 @@
 #ifdef _WIN32
 #include <Shellapi.h>
 #define strncasecmp _strnicmp
+#define strcasecmp _stricmp
 #endif
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
