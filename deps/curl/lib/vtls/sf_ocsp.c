@@ -43,6 +43,7 @@
 
 #include <Shellapi.h>
 #define strncasecmp _strnicmp
+#define strcasecmp _stricmp
 
 typedef HANDLE SF_THREAD_HANDLE;
 typedef CONDITION_VARIABLE SF_CONDITION_HANDLE;
@@ -2280,6 +2281,15 @@ void initOCSPCacheServer(struct Curl_easy *data)
       // It's basically impossible not finding top domain in host.
       // Use "com" as default just in case.
       top_domain = "com";
+    }
+
+    if (strcasecmp(top_domain, "com") == 0)
+    {
+      infof(data, "Connecting to GLOBAL Snowflake domain");
+    }
+    else
+    {
+      infof(data, "Connecting to Snowflake domain: %s", top_domain);
     }
 
     /* default URL */

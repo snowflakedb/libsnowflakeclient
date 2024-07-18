@@ -442,15 +442,18 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                 //region started with "cn-", use "cn" for top domain
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.cn",
                          sf->account, sf->region);
+                log_info("Connecting to CHINA Snowflake domain");
             }
             else
             {
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
                          sf->account, sf->region);
+                log_info("Connecting to GLOBAL Snowflake domain");
             }
         } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
                      sf->account);
+            log_info("Connecting to GLOBAL Snowflake domain");
         }
         alloc_buffer_and_copy(&sf->host, buf);
     }
