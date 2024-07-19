@@ -468,14 +468,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         top_domain = sf->host;
     }
 
-    if (strcasecmp(top_domain, "com") == 0)
-    {
-        log_info("Connecting to GLOBAL Snowflake domain");
-    }
-    else
-    {
-        log_info("Connecting to Snowflake domain: %s", top_domain);
-    }
+    log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
 
     // split account and region if connected by a dot.
     char *dot_ptr = strchr(sf->account, (int) '.');
