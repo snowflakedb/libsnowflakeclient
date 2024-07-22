@@ -204,7 +204,7 @@ Aws::Client::RequestCompression::uncompress(std::shared_ptr<Aws::IOStream> input
     {
         // calculating stream size
         input->seekg(0, input->end);
-        size_t streamSize = input->tellg();
+        size_t streamSize = (size_t)input->tellg();
         input->seekg(0, input->beg);
 
         AWS_LOGSTREAM_TRACE(AWS_REQUEST_COMPRESSION_LOG_TAG, "Uncompressing request of " << streamSize << " bytes.");
