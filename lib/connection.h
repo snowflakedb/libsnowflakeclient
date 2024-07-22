@@ -281,8 +281,7 @@ uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep,
  *
  * @param curl cURL object for the request.
  * @param protocol Protocol to use in the request. Either HTTP or HTTPS.
- * @param account Snowflake account name. This should be the account of the user.
- * @param host Host to connect to. Used when connecting to different Snowflake deployments
+ * @param host Host to connect to. Must be set using SF_CONNECT.host which has been set already before connection.
  * @param port Port to connect to. Used when connecting to a non-conventional port.
  * @param url URL path to use.
  * @param vars URL parameters to add to the encoded URL.
@@ -292,7 +291,7 @@ uint32 get_next_sleep_with_jitter(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep,
  * to XP resources)
  * @return Returns a pointer to a string which is the the encoded URL.
  */
-char * STDCALL encode_url(CURL *curl, const char *protocol, const char *account, const char *host, const char *port,
+char * STDCALL encode_url(CURL *curl, const char *protocol, const char *host, const char *port,
                           const char *url, URL_KEY_VALUE* vars, int num_args, SF_ERROR_STRUCT *error, char *extraUrlParams);
 
 /**

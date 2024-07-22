@@ -20,6 +20,12 @@
 #include "authenticator.h"
 #include "query_context_cache.h"
 
+#ifdef _WIN32
+#include <Shellapi.h>
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
 // Define internal constants
@@ -432,14 +438,38 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         // construct a host parameter if not specified,
         char buf[1024];
         if (sf->region) {
-            sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
-                     sf->account, sf->region);
+            if (strncasecmp(sf->region, "cn-", 3) == 0)
+            {
+                //region started with "cn-", use "cn" for top domain
+                sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.cn",
+                         sf->account, sf->region);
+            }
+            else
+            {
+                sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
+                         sf->account, sf->region);
+            }
         } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
                      sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
     }
+
+    char* top_domain = strrchr(sf->host, '.');
+    if (top_domain)
+    {
+        top_domain++;
+    }
+    else
+    {
+        // It's basically impossible not finding top domain in host.
+        // Log the entire host just in case.
+        top_domain = sf->host;
+    }
+
+    log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
+
     // split account and region if connected by a dot.
     char *dot_ptr = strchr(sf->account, (int) '.');
     if (dot_ptr) {
