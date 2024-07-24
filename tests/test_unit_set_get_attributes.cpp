@@ -7,6 +7,7 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "memory.h"
+#include "../lib/client_int.h"
 #include <vector>
 
 typedef struct sf_string_attributes {

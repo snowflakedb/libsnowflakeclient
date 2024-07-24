@@ -57,9 +57,9 @@ extern "C" {
 #define SF_COMMAND_LEN 10
 
 /**
- * The default maximum object size
+ * The maximum object size
  */
-#define SF_DEFAULT_MAX_OBJECT_SIZE 16777216
+#define SF_MAX_OBJECT_SIZE SF_MACRO_DEPRECATED_WARNING("SF_MAX_OBJECT_SIZE is deprecated, please use snowflake_get_attribute() instead to retrieve the max LOB size.") 16777216 
 
 /**
  * Login timeout in seconds

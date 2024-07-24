@@ -17,7 +17,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
 
     SF_COLUMN_DESC *descs = snowflake_desc(sfstmt);
     uint64* max_varchar_size_p = NULL;
-    snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, &max_varchar_size_p);
+    snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
     int i;
     for (i = 0; i < num_fields; ++i) {
         switch (i) {
