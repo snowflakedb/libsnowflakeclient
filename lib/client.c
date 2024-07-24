@@ -175,6 +175,13 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                 sf->qcc_capacity = snowflake_cJSON_GetUint64Value(value);
                 qcc_set_capacity(sf, sf->qcc_capacity);
             }
+            else if (strcmp(name->valuestring, "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT") == 0) {
+                sf->max_varchar_size = snowflake_cJSON_GetUint64Value(value);
+                sf->max_binary_size = sf->max_varchar_size / 2;
+            }
+            else if (strcmp(name->valuestring, "VARIANT_MAX_SIZE_IN_RESULT") == 0) {
+                sf->max_variant_size = snowflake_cJSON_GetUint64Value(value);
+            }
         }
     }
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -712,6 +719,10 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->qcc_capacity = SF_QCC_CAPACITY_DEF;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->qcc = NULL;
+
+        sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+        sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
+        sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
     }
 
     return sf;
@@ -1262,6 +1273,15 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_INCLUDE_RETRY_REASON:
             *value = &sf->include_retry_reason;
+            break;
+        case SF_CON_MAX_VARCHAR_SIZE:
+            *value = &sf->max_varchar_size;
+            break;
+        case SF_CON_MAX_BINARY_SIZE:
+            *value = &sf->max_binary_size;
+            break;
+        case SF_CON_MAX_VARIANT_SIZE:
+            *value = &sf->max_variant_size;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
