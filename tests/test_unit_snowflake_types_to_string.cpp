@@ -4,10 +4,10 @@
 
 #include <cassert>
 #include <string>
-#include "utils/test_setup.h"
-#include "utils/TestSetup.hpp"
 #include "memory.h"
 #include <vector>
+#include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 
 typedef struct sf_db_types {
     SF_DB_TYPE sf_dbType;

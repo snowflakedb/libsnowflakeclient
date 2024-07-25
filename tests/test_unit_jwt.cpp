@@ -2,11 +2,11 @@
  * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 
-#include "utils/TestSetup.hpp"
-#include "utils/test_setup.h"
-#include <jwt/Jwt.hpp>
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
+#include <jwt/Jwt.hpp>
+#include "utils/TestSetup.hpp"
+#include "utils/test_setup.h"
 
 using Snowflake::Client::Jwt::IHeader;
 using Snowflake::Client::Jwt::IClaimSet;
