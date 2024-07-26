@@ -4,10 +4,11 @@
 
 #include <cassert>
 #include <string>
+#include "memory.h"
+#include "../lib/client_int.h"
+#include <vector>
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
-#include "memory.h"
-#include <vector>
 
 typedef struct sf_string_attributes {
     SF_ATTRIBUTE type;
@@ -72,13 +73,15 @@ std::vector<sf_int_attributes> intAttributes = {
     { SF_CON_MAX_RETRY, 6 },
     { SF_CON_RETRY_TIMEOUT, 0 },
     { SF_CON_MAX_RETRY, 0 },
+    { SF_CON_MAX_VARCHAR_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE },
+    { SF_CON_MAX_BINARY_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE / 2 },
+    { SF_CON_MAX_VARIANT_SIZE, SF_DEFAULT_MAX_OBJECT_SIZE },
 };
 
 // unit test for snowflake_set_attribute and snowflake_get_attribute for all SF_ATTRIBUTE
 void test_set_get_all_attributes(void **unused)
 {
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
-    memset(sf, 0, sizeof(SF_CONNECT));
+    SF_CONNECT *sf = snowflake_init();
 
     // Connection parameters that cannot be set by user
     sf->service_name = (char*)"test_service_name";
@@ -152,12 +155,17 @@ void test_set_get_all_attributes(void **unused)
     // set and get int attributes
     for (sf_int_attributes attr : intAttributes)
     {
-        status = snowflake_set_attribute(sf, attr.type, &attr.value);
-        if (status != SF_STATUS_SUCCESS)
+        if ((attr.type != SF_CON_MAX_VARCHAR_SIZE) &&
+            (attr.type != SF_CON_MAX_BINARY_SIZE) &&
+            (attr.type != SF_CON_MAX_VARIANT_SIZE))
         {
-            dump_error(&(sf->error));
+            status = snowflake_set_attribute(sf, attr.type, &attr.value);
+            if (status != SF_STATUS_SUCCESS)
+            {
+                dump_error(&(sf->error));
+            }
+            assert_int_equal(status, SF_STATUS_SUCCESS);
         }
-        assert_int_equal(status, SF_STATUS_SUCCESS);
 
         status = snowflake_get_attribute(sf, attr.type, &value);
         if (status != SF_STATUS_SUCCESS)

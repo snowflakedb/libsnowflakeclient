@@ -16,6 +16,8 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
     assert_int_equal(num_fields, 2);
 
     SF_COLUMN_DESC *descs = snowflake_desc(sfstmt);
+    uint64* max_varchar_size_p = NULL;
+    snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
     int i;
     for (i = 0; i < num_fields; ++i) {
         switch (i) {
@@ -35,8 +37,8 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
                 assert_int_equal(descs[i].idx, 2);
                 assert_int_equal(descs[i].type, SF_DB_TYPE_TEXT);
                 assert_int_equal(descs[i].c_type, SF_C_TYPE_STRING);
-                assert_int_equal(descs[i].byte_size, 16777216);
-                assert_int_equal(descs[i].internal_size, 16777216);
+                assert_int_equal(descs[i].byte_size, *max_varchar_size_p);
+                assert_int_equal(descs[i].internal_size, *max_varchar_size_p);
                 assert_int_equal(descs[i].precision, 0);
                 assert_int_equal(descs[i].scale, 0);
                 assert_int_equal(descs[i].null_ok, 1);

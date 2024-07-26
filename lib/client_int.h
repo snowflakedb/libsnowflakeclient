@@ -23,6 +23,8 @@
 
 #define DEFAULT_SNOWFLAKE_REQUEST_TIMEOUT 60
 
+#define SF_DEFAULT_MAX_OBJECT_SIZE 16777216
+
 #define SESSION_URL "/session/v1/login-request"
 #define QUERY_URL "/queries/v1/query-request"
 #define RENEW_SESSION_URL "/session/token-request"

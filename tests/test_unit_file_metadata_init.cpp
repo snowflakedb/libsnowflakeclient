@@ -6,8 +6,6 @@
 #include <FileMetadataInitializer.hpp>
 #include "FileMetadata.hpp"
 #include "FileCompressionType.hpp"
-#include "utils/test_setup.h"
-#include "utils/TestSetup.hpp"
 #include "snowflake/platform.h"
 #include <unordered_set>
 #include <iostream>
@@ -16,6 +14,8 @@
 #include <memory>
 #include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
+#include "utils/test_setup.h"
+#include "utils/TestSetup.hpp"
 
 #define FILES_IN_DIR "file1.csv", "file2.csv", "file3.csv", "file4.csv", "file1.gz"
 
