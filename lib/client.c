@@ -1447,7 +1447,7 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     }
     sfstmt->result_set = NULL;
 
-    sfstmt->qrf = SF_FORMAT_MAX;
+    sfstmt->qrf = SF_FORMAT_UNKNOWN;
 
     if (_snowflake_get_current_param_style(sfstmt) == NAMED)
     {

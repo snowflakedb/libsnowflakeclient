@@ -32,7 +32,7 @@ public:
     /**
      * Default constructor.
      */
-    ResultSet();
+    ResultSet(QueryResultFormat format);
 
     /**
      * Parameterized constructor.
@@ -40,7 +40,7 @@ public:
      * @param metadata                  The metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString, QueryResultFormat format);
 
     /**
      * Destructor.
@@ -214,7 +214,7 @@ public:
         }
     }
 
-    QueryResultFormat_t getResultFormat()
+    QueryResultFormat getResultFormat()
     {
         return m_queryResultFormat;
     }
@@ -307,7 +307,7 @@ protected:
     /**
      * The format of the result set.
      */
-    QueryResultFormat_t m_queryResultFormat;
+    QueryResultFormat m_queryResultFormat;
 
     /**
      * The tz string to use when dealing with time or timestamp values.

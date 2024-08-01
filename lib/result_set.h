@@ -28,7 +28,7 @@ extern "C" {
     result_set_ptr rs_create_with_json_result(
         cJSON * json_rowset,
         SF_COLUMN_DESC * metadata,
-        QueryResultFormat_t query_result_format,
+        QueryResultFormat query_result_format,
         const char * tz_string);
 
     /**
@@ -45,7 +45,7 @@ extern "C" {
     result_set_ptr rs_create_with_chunk(
         void * initial_chunk,
         SF_COLUMN_DESC * metadata,
-        QueryResultFormat_t query_result_format,
+        QueryResultFormat query_result_format,
         const char * tz_string);
 
     /**

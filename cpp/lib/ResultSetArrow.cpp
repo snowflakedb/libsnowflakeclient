@@ -21,9 +21,9 @@ namespace Client
 
 
 ResultSetArrow::ResultSetArrow() :
-    Snowflake::Client::ResultSet()
+    Snowflake::Client::ResultSet(SF_ARROW_FORMAT)
 {
-    m_queryResultFormat = SF_ARROW_FORMAT;
+    ; // Do nothing
 }
 
 ResultSetArrow::ResultSetArrow(
@@ -31,10 +31,8 @@ ResultSetArrow::ResultSetArrow(
     SF_COLUMN_DESC * metadata,
     std::string tzString
 ) :
-    ResultSet(metadata, tzString)
+    ResultSet(metadata, tzString, SF_ARROW_FORMAT)
 {
-    m_queryResultFormat = SF_ARROW_FORMAT;
-
     this->appendChunk(initialChunk);
 
     // Reset row indices so that they can be re-used by public API.
@@ -48,10 +46,8 @@ ResultSetArrow::ResultSetArrow(
     SF_COLUMN_DESC * metadata,
     std::string tzString
 ) :
-    ResultSet(metadata, tzString)
+    ResultSet(metadata, tzString, SF_ARROW_FORMAT)
 {
-    m_queryResultFormat = SF_ARROW_FORMAT;
-
     arrow::BufferBuilder* bufferBuilder = NULL;
     if (jsonRowset64)
     {

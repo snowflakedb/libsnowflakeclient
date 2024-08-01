@@ -447,10 +447,10 @@ typedef void* result_set_ptr;
 /**
  * An enumeration over all supported query result formats.
  */
-typedef enum QueryResultFormat
+typedef enum QueryResultFormat_e
 {
-  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_FORMAT_MAX
-} QueryResultFormat_t;
+  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_FORMAT_UNKNOWN
+} QueryResultFormat;
 
 /**
  * Statement context
@@ -461,7 +461,7 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    QueryResultFormat_t qrf;
+    QueryResultFormat qrf;
     char *sql_text;
     result_set_ptr result_set;
     int64 chunk_rowcount;
