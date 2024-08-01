@@ -29,6 +29,7 @@
 #define QUERY_URL "/queries/v1/query-request"
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
+#define QUERY_RESULT_URL_FORMAT "/queries/%s/result"
 // not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 
