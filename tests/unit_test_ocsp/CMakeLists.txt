@@ -6,6 +6,6 @@ add_executable(
         test_ocsp
         test_ocsp.c)
 
-target_link_libraries(test_ocsp ${TESTLIB_OPTS_C})
+target_link_libraries(test_ocsp ${TESTLIB_OPTS_C_UNIT})
 
 add_test(test_ocsp test_ocsp)
