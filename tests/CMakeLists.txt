@@ -8,9 +8,6 @@ include_directories(
 )
 
 SET(TESTS_C
-        test_unit_connect_parameters
-        test_unit_logger
-        test_unit_retry_context
         test_connect
         test_connect_negative
         test_bind_params
@@ -51,6 +48,11 @@ SET(TESTS_C
 # This test needs the Oauth token, so it should be run manually
        test_manual_connect
         )
+
+SET (TESTS_C_UNIT
+        test_unit_connect_parameters
+        test_unit_logger
+        test_unit_retry_context)
 
 SET(TESTS_CXX
         test_unit_jwt
@@ -104,24 +106,6 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.h
         utils/mock_setup.c)
 
-set(AWS_ALL_LIBS
-        ${AWS_S3_LIB}
-        ${AWS_CORE_LIB}
-        ${AWS_CRT_CPP_LIB}
-        ${AWS_C_EVENT_STREAM_LIB}
-        ${AWS_C_CHECKSUMS_LIB}
-        ${AWS_C_S3_LIB}
-        ${AWS_C_AUTH_LIB}
-        ${AWS_C_HTTP_LIB}
-        ${AWS_C_COMPRESSION_LIB}
-        ${AWS_C_IO_LIB}
-        ${AWS_C_CAL_LIB}
-        ${AWS_C_MQTT_LIB}
-        ${AWS_S2N_LIB}
-        ${AWS_C_COMMON_LIB}
-        ${AWS_C_SDKUTILS_LIB}
-    )
-
 SET(TEST_DATA
         TestOrcFile.test1.orc
         brotli_sample.txt.br
@@ -162,59 +146,15 @@ if (LINUX)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
     endif ()
-
-    # Group all arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
-        ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
-        ${ARROW_DOUBLECONVERSION_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOCPIC_LIB}
-        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZSTD_LIB})
-endif ()
-
-if (APPLE)
-    # Group all Arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
-        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOCPIC_LIB}
-        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZSTD_LIB})
 endif ()
 
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
-
     if ($ENV{ARROW_FROM_SOURCE})
         set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
     else ()
         set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_REGEX_LIB})
     endif ()
-    # Groups all Arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_ALL_LIBS}
-        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
-        ${ARROW_BZ2_LIB}
-        ${ARROW_DOUBLECONVERSION_LIB}
-        ${ARROW_EVENT_LIB} ${ARROW_EVENTCORE_LIB} ${ARROW_EVENTEXTRA_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_LZ4_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
@@ -222,6 +162,7 @@ if (LINUX)
     message("libuuid.a is located at " ${UUID_LIB})
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
+
 if (LINUX)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
@@ -246,6 +187,10 @@ if (WIN32)
         set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
                 Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
     endif()
+endif()
+set(TESTLIB_OPTS_C_UNIT ${TESTLIB_OPTS_C})
+if (BUILD_SHARED_LIBS)
+    set(TESTLIB_OPTS_C snowflakeclient_dynamic ${CMOCKA_LIB})
 endif()
 
 if (MOCK)
@@ -305,6 +250,36 @@ else()
         endif()
     ENDFOREACH ()
 
+    FOREACH (T ${TESTS_C_UNIT})
+        add_executable(${T} ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            )
+            set_target_properties(
+		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+        else()
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
+        target_link_libraries(${T} ${TESTLIB_OPTS_C_UNIT})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T})
+          endif()
+        endif()
+    ENDFOREACH ()
 
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails

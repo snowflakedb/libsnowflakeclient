@@ -17,8 +17,8 @@ else()
     target_include_directories(test_unit_treemap PUBLIC ../../../deps-build/${PLATFORM}/${VSDIR}/cmocka/include)
 endif()
 
-target_link_libraries(test_unit_rbtree ${TESTLIB_OPTS_C})
-target_link_libraries(test_unit_treemap ${TESTLIB_OPTS_C})
+target_link_libraries(test_unit_rbtree ${TESTLIB_OPTS_C_UNIT})
+target_link_libraries(test_unit_treemap ${TESTLIB_OPTS_C_UNIT})
 
 add_test(test_unit_rbtree test_unit_rbtree)
 add_test(test_unit_treemap test_unit_treemap)

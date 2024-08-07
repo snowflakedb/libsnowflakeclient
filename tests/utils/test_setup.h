@@ -19,6 +19,8 @@ extern "C" {
 #include <time.h>
 #include <snowflake/client.h>
 #include <snowflake/platform.h>
+#define SF_BOOLEAN_FALSE 0
+#define SF_BOOLEAN_TRUE 1
 
 #define SKIP_IF_PROXY_ENV_IS_SET \
 {                                                                                                               \

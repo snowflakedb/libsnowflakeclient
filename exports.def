@@ -1,0 +1,81 @@
+
+
+SECTIONS
+
+EXPORTS
+
+
+    snowflake_query_result_capture_init            @1
+    snowflake_global_init                          @2
+    snowflake_global_term                          @3
+    snowflake_global_set_attribute                 @4
+    snowflake_global_get_attribute                 @5
+    snowflake_init                                 @6
+    snowflake_term                                 @7
+    snowflake_connect                              @8
+    snowflake_set_attribute                        @9
+    snowflake_get_attribute                        @10
+    snowflake_stmt                                 @11
+    snowflake_query_result_capture_term            @12
+    snowflake_stmt_term                            @13
+    snowflake_trans_begin                          @14
+    snowflake_trans_commit                         @15
+    snowflake_trans_rollback                       @16
+    snowflake_stmt_error                           @17
+    snowflake_error                                @18
+    snowflake_propagate_error                      @19
+    snowflake_query                                @20
+    snowflake_affected_rows                        @21
+    snowflake_num_rows                             @22
+    snowflake_num_fields                           @23
+    snowflake_sqlstate                             @24
+    snowflake_desc                                 @25
+    snowflake_prepare                              @26
+    snowflake_stmt_set_attr                        @27
+    snowflake_stmt_get_attr                        @28
+    snowflake_execute                              @29
+    snowflake_execute_with_capture                 @30
+    snowflake_describe_with_capture                @31
+    snowflake_fetch                                @32
+    snowflake_num_params                           @33
+    snowflake_bind_input_init                      @34
+    snowflake_bind_param                           @35
+    snowflake_bind_param_array                     @36
+    snowflake_sfqid                                @37
+    snowflake_type_to_string                       @38
+    snowflake_c_type_to_string                     @39
+    snowflake_column_as_boolean                    @40
+    snowflake_column_as_uint8                      @41
+    snowflake_column_as_uint32                     @42
+    snowflake_column_as_uint64                     @43
+    snowflake_column_as_int8                       @44
+    snowflake_column_as_int32                      @45
+    snowflake_column_as_int64                      @46
+    snowflake_column_as_float32                    @47
+    snowflake_column_as_float64                    @48
+    snowflake_column_as_timestamp                  @49
+    snowflake_column_as_const_str                  @50
+    snowflake_raw_value_to_str_rep                 @51
+    snowflake_column_as_str                        @52
+    snowflake_column_strlen                        @53
+    snowflake_column_is_null                       @54
+    snowflake_timestamp_from_parts                 @55
+    snowflake_timestamp_from_epoch_seconds         @56
+    snowflake_timestamp_to_string                  @57
+    snowflake_timestamp_get_epoch_seconds          @58
+    snowflake_timestamp_get_nanoseconds            @59
+    snowflake_timestamp_get_seconds                @60
+    snowflake_timestamp_get_minutes                @61
+    snowflake_timestamp_get_hours                  @62
+    snowflake_timestamp_get_wday                   @63
+    snowflake_timestamp_get_mday                   @64
+    snowflake_timestamp_get_yday                   @65
+    snowflake_timestamp_get_month                  @66
+    snowflake_timestamp_get_year                   @67
+    snowflake_timestamp_get_tzoffset               @68
+    snowflake_timestamp_get_scale                  @69
+    sf_setenv                                      @70
+    sf_unsetenv                                    @71
+    sf_getenv_s                                    @72
+    sf_get_tmp_dir                                 @73
+    uuid4_generate                                 @74
