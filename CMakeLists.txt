@@ -591,7 +591,7 @@ endif ()
 
 if (BUILD_SHARED_LIBS)
     if (LINUX)
-        set(DYNAMICLIB_LINK_OPTS  rt dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+        set(DYNAMICLIB_LINK_OPTS  rt dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB}
                 pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++ -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports_Linux.map)
     elseif (APPLE)
         set(DYNAMICLIB_LINK_OPTS  dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load ${CURL_LIB}
