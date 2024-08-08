@@ -35,8 +35,6 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
-        test_get_query_result_response
-        test_get_describe_only_query_result
         test_stmt_functions
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
@@ -47,7 +45,9 @@ SET(TESTS_C
 SET (TESTS_C_UNIT
         test_unit_connect_parameters
         test_unit_logger
-        test_unit_retry_context)
+        test_unit_retry_context
+        test_get_query_result_response
+        test_get_describe_only_query_result)
 
 SET(TESTS_CXX
         test_unit_jwt
