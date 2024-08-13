@@ -18,26 +18,70 @@ Build and Tests
 Build
 ----------------------------------------------------------------------
 
-Ensure you have cmake 2.8 or later version.
+Prerequisite
+ - Ensure you have cmake 2.8 or later version.
+ - For Windows, require: one of Visual Studio [VS14, VS15, VS16, VS17]
+ - For Linux, require: gcc, g++
 
 Linux and OSX
 ^^^^^^^^^^^^^
 
 .. code-block:: bash
 
+    ./scripts/buildDependencies.sh
     ./scripts/build_libsnowflakeclient.sh
 
 Windows
-^^^^^^^^^^
+^^^^^^^
 
 Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
-
     set platform=x64
     set build_type=Debug
-    set vs_version=VS14
-    ci\build.bat
+    set vs_version=VS17
+    ci\\build_win.bat
+
+Manual Build
+^^^^^^^^^^^^
+You need to build thd dependencies with the following order:
+ - build_uuid (needed on Linux only)
+ - build_oob
+ - build_zlib
+ - build_openssl
+ - build_curl
+ - build_awssdk
+ - build_azuresdk
+ - build_arrow
+ - build_cmocka.sh
+
+Windows
+.. code-block:: bash
+
+    .\scripts\build_oob.bat x64 Debug VS17 OFF
+
+Linux/Mac
+.. code-block:: bash
+
+    ./scripts/build_oob.sh -t Debug
+
+Proxy
+^^^^^^^^^^
+
+Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
+
+- http_proxy
+- https_proxy
+- no_proxy
+
+.. code-block:: bash
+
+    export http_proxy="[protocol://][user:password@]machine[:port]"
+    export https_proxy="[protocol://][user:password@]machine[:port]"
+
+More info can be found on the `libcurl tutorial`__ page.
+
+.. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
 
 Prepare for Test
 ----------------------------------------------------------------------
@@ -58,23 +102,6 @@ Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
         }
     }
 
-Proxy
-^^^^^^^^^^
-
-Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
-
-- http_proxy
-- https_proxy
-- no_proxy
-
-.. code-block:: bash
-
-    export http_proxy="[protocol://][user:password@]machine[:port]"
-    export https_proxy="[protocol://][user:password@]machine[:port]"
-
-More info can be found on the `libcurl tutorial`__ page.
-
-.. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
 
 Run Tests
 ----------------------------------------------------------------------
@@ -86,7 +113,7 @@ Linux and OSX
 
 .. code-block:: bash
 
-    ./scripts/run_tests.sh
+    .ci/scripts/test_linux.sh
 
 Windows
 ^^^^^^^^^^
@@ -98,7 +125,7 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
     set platform=x64
     set build_type=Debug
     set vs_version=VS14
-    ci\test.bat
+    ci\test_win.bat
 
 	
 Code Coverage (Linux)

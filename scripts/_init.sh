@@ -157,7 +157,9 @@ fi
 export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
 export GET_VERSION=
-target=Release
+if [ -z "$target" ]; then
+    target="Release"
+fi
 while getopts ":hvpt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;

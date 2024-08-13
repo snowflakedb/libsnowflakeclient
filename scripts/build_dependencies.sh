@@ -10,16 +10,20 @@ function usage() {
 }
 set -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-target=Debug
-source $DIR/_init.sh $@
-if [[ "$PLATFORM" == "linux" ]]; then
-    source $DIR/build_uuid.sh -t $target
+if [ "$#" -eq 0 ]; then
+    target="-t Release"
+else
+    target="$@"
 fi
-source $DIR/build_zlib.sh -t $target
-source $DIR/build_openssl.sh -t $target
-source $DIR/build_oob.sh -t $target
-source $DIR/build_curl.sh    -t $target
-source $DIR/build_awssdk.sh  -t $target
-source $DIR/build_arrow.sh  -t $target
-source $DIR/build_cmocka.sh  -t Debug
-source $DIR/build_azuresdk.sh -t $target
+source $DIR/_init.sh $target
+if [[ "$PLATFORM" == "linux" ]]; then
+    source $DIR/build_uuid.sh $target
+fi
+source $DIR/build_zlib.sh $target
+source $DIR/build_openssl.sh $target
+source $DIR/build_oob.sh $target
+source $DIR/build_curl.sh $target
+source $DIR/build_awssdk.sh $target
+source $DIR/build_arrow.sh  $target
+source $DIR/build_cmocka.sh $target
+source $DIR/build_azuresdk.sh $target
