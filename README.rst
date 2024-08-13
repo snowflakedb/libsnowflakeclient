@@ -20,6 +20,7 @@ Build
 
 Prerequisite
 ^^^^^^^^^^^^^
+
  - Ensure you have cmake 2.8 or later version.
  - For Windows, require: one of Visual Studio C++ [VS15, VS16, VS17], Perl, Windows SDK 10.0
  - For Linux, require: gcc, g++
@@ -48,6 +49,7 @@ Manual Build
 
 The list of dependencies
 ----------------------------------------------------------------------
+
  - uuid (needed on Linux only)
  - oob
  - zlib
