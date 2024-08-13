@@ -44,7 +44,8 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
     ci\\build_win.bat
 
 Manual Build
-^^^^^^^^^^^^
+----------------------------------------------------------------------
+
 The list of dependencies
  - build_uuid (needed on Linux only)
  - build_oob
@@ -55,6 +56,10 @@ The list of dependencies
  - build_azuresdk
  - build_arrow
  - build_cmocka.sh
+
+
+Example
+----------------------------------------------------------------------
 
 Windows
 ^^^^^^^
