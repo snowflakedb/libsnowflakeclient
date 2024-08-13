@@ -21,7 +21,7 @@ Build
 Prerequisite
 ^^^^^^^^^^^^^
  - Ensure you have cmake 2.8 or later version.
- - For Windows, require: one of Visual Studio [VS14, VS15, VS16, VS17]
+ - For Windows, require: one of Visual Studio [VS15, VS16, VS17]
  - For Linux, require: gcc, g++
 
 Linux and OSX
@@ -29,13 +29,13 @@ Linux and OSX
 
 .. code-block:: bash
 
-    ./scripts/buildDependencies.sh
+    ./scripts/build_dependencies.sh
     ./scripts/build_libsnowflakeclient.sh
 
 Windows
 ^^^^^^^
 
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
     set platform=x64
@@ -47,15 +47,16 @@ Manual Build
 ----------------------------------------------------------------------
 
 The list of dependencies
- - build_uuid (needed on Linux only)
- - build_oob
- - build_zlib
- - build_openssl
- - build_curl
- - build_awssdk
- - build_azuresdk
- - build_arrow
- - build_cmocka.sh
+----------------------------------------------------------------------
+ - uuid (needed on Linux only)
+ - oob
+ - zlib
+ - openssl
+ - curl
+ - awssdk
+ - azuresdk
+ - arrow
+ - cmocka
 
 
 Example
@@ -128,13 +129,13 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
 
     set platform=x64
     set build_type=Debug
-    set vs_version=VS14
+    set vs_version=VS15
     ci\test_win.bat
 
 	
