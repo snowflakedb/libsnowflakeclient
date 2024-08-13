@@ -44,7 +44,7 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
 
 Manual Build
 ^^^^^^^^^^^^
-You need to build thd dependencies with the following order:
+The list of dependencies
  - build_uuid (needed on Linux only)
  - build_oob
  - build_zlib
