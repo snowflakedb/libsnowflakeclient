@@ -19,6 +19,7 @@ Build
 ----------------------------------------------------------------------
 
 Prerequisite
+^^^^^^^^^^^^^
  - Ensure you have cmake 2.8 or later version.
  - For Windows, require: one of Visual Studio [VS14, VS15, VS16, VS17]
  - For Linux, require: gcc, g++
@@ -56,11 +57,15 @@ The list of dependencies
  - build_cmocka.sh
 
 Windows
+^^^^^^^
+
 .. code-block:: bash
 
     .\scripts\build_oob.bat x64 Debug VS17 OFF
 
 Linux/Mac
+^^^^^^^^^
+
 .. code-block:: bash
 
     ./scripts/build_oob.sh -t Debug
