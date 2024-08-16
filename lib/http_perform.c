@@ -143,8 +143,10 @@ sf_bool STDCALL http_perform(CURL *curl,
                              char *url,
                              SF_HEADER *header,
                              char *body,
+                             PUT_PAYLOAD* put_payload,
                              cJSON **json,
                              NON_JSON_RESP *non_json_resp,
+                             char** resp_headers,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
@@ -189,7 +191,8 @@ sf_bool STDCALL http_perform(CURL *curl,
             time(NULL)
     };
     time_t elapsedRetryTime = time(NULL);
-    RAW_JSON_BUFFER buffer = {NULL, 0};
+    RAW_CHAR_BUFFER buffer = {NULL, 0};
+    RAW_CHAR_BUFFER headerBuffer = { NULL, 0 };
     struct data config;
     config.trace_ascii = 1;
 
@@ -203,6 +206,8 @@ sf_bool STDCALL http_perform(CURL *curl,
         // Reset buffer since this may not be our first rodeo
         SF_FREE(buffer.buffer);
         buffer.size = 0;
+        SF_FREE(headerBuffer.buffer);
+        headerBuffer.size = 0;
 
         // Generate new request guid, if request guid exists in url
         if (SF_BOOLEAN_TRUE != retry_ctx_update_url(&curl_retry_ctx, url, include_retry_reason)) {
@@ -268,6 +273,46 @@ sf_bool STDCALL http_perform(CURL *curl,
                 break;
             }
         }
+        else if (request_type == HEAD_REQUEST_TYPE)
+        {
+            /** we want response header only */
+            curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+        }
+        else if (request_type == PUT_REQUEST_TYPE)
+        {
+            // we need to upload the data
+            curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+            if (!put_payload)
+            {
+                log_error("Invalid payload for put request");
+                break;
+            }
+            /** set read callback function */
+            res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, put_payload->read_callback);
+            if (res != CURLE_OK) {
+                log_error("Failed to set read function [%s]", curl_easy_strerror(res));
+                break;
+            }
+
+            /** set data object to pass to callback function */
+            res = curl_easy_setopt(curl, CURLOPT_READDATA, put_payload->buffer);
+            if (res != CURLE_OK) {
+                log_error("Failed to set read data [%s]", curl_easy_strerror(res));
+                break;
+            }
+
+            /** set size of put */
+            if (put_payload->length <= SF_INT32_MAX)
+            {
+                res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, (long)put_payload->length);
+            }
+            else
+            {
+                res = curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)put_payload->length);
+            }
+        }
+
 
         if (!json && non_json_resp)
         {
@@ -275,7 +320,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
         else
         {
-          res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&json_resp_cb);
+          res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (void*)&char_resp_cb);
         }
         if (res != CURLE_OK) {
             log_error("Failed to set writer [%s]", curl_easy_strerror(res));
@@ -291,8 +336,20 @@ sf_bool STDCALL http_perform(CURL *curl,
             res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
         }
         if (res != CURLE_OK) {
-          log_error("Failed to set write data [%s]", curl_easy_strerror(res));
-          break;
+            log_error("Failed to set write data [%s]", curl_easy_strerror(res));
+            break;
+        }
+
+        res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&headerBuffer);
+        if (res != CURLE_OK) {
+            log_error("Failed to set header data [%s]", curl_easy_strerror(res));
+            break;
+        }
+
+        res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, (void*)&char_resp_cb);
+        if (res != CURLE_OK) {
+            log_error("Failed to set header function [%s]", curl_easy_strerror(res));
+            break;
         }
 
         if (DISABLE_VERIFY_PEER) {
@@ -497,6 +554,15 @@ sf_bool STDCALL http_perform(CURL *curl,
 
     SF_FREE(buffer.buffer);
 
+    if (resp_headers)
+    {
+        *resp_headers = headerBuffer.buffer;
+    }
+    else
+    {
+        SF_FREE(headerBuffer.buffer);
+    }
+
     return ret;
 }
 
@@ -507,8 +573,10 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
                                     char *url,
                                     SF_HEADER *header,
                                     char *body,
+                                    PUT_PAYLOAD* put_payload,
                                     cJSON **json,
                                     NON_JSON_RESP *non_json_resp,
+                                    char** resp_headers,
                                     int64 network_timeout,
                                     sf_bool chunk_downloader,
                                     SF_ERROR_STRUCT *error,

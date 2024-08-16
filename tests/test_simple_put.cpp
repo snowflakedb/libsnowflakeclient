@@ -856,6 +856,19 @@ static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
 
+  // TODO SNOW-1526335
+  // Sometime we can't get OCSP response from cache server or responder
+  // Usually happen on GCP and should be ignored by FAIL_OPEN
+  // Unfortunately libsnowflakeclient doesn't support FAIL_OPEN for now
+  // so we have to disable OCSP validation to around it.
+  // Will remove this code when adding support for FAIL_OPEN (which is
+  // the default behavior for all other drivers)
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if (cenv && !strncmp(cenv, "GCP", 4)) {
+    sf_bool value = SF_BOOLEAN_FALSE;
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
+  }
+
   if(!setup_random_database()) {
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
   }
@@ -1231,12 +1244,6 @@ void test_2GBlarge_put(void **unused)
       return;
     }
   }
-  // put/get for GCP is not supported in libsnowflakeclient
-  // will test that in odbc.
-  if (cenv && !strncmp(cenv, "GCP", 4)) {
-    errno = 0;
-    return;
-  }
 
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
@@ -1269,12 +1276,6 @@ void test_2GBlarge_get(void **unused)
       errno = 0;
       return;
     }
-  }
-  // put/get for GCP is not supported in libsnowflakeclient
-  // will test that in odbc.
-  if (cenv && !strncmp(cenv, "GCP", 4)) {
-    errno = 0;
-    return;
   }
 
 // Jenkins node on Mac has issue with large file.
@@ -1637,7 +1638,7 @@ int main(void) {
       }); 
   if(testAccount.find("GCP") != std::string::npos)
   {
-    setenv("CLOUD_PROVIDER", "GCP", 1); 
+    setenv("CLOUD_PROVIDER", "GCP", 1);
   }
   else if(testAccount.find("AZURE") != std::string::npos)
   {
@@ -1651,11 +1652,6 @@ int main(void) {
   char *cp = getenv("CLOUD_PROVIDER");
   std::cout << "Cloud provider is " << cp << std::endl; 
 #endif
-  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-  if(cloud_provider && ( strcmp(cloud_provider, "GCP") == 0 ) ) {
-    std::cout << "GCP put/get feature is not available in libsnowflakeclient." << std::endl;
-    return 0;
-  }
 
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
