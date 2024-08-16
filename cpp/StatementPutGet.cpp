@@ -3,10 +3,34 @@
  */
 
 #include <client_int.h>
+#include "connection.h"
 #include "snowflake/PutGetParseResponse.hpp"
 #include "StatementPutGet.hpp"
+#include "curl_desc_pool.h"
 
 using namespace Snowflake::Client;
+
+static size_t file_get_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+  size_t data_size = size * nmemb;
+  std::basic_iostream<char>* recvStream = (std::basic_iostream<char>*)(userdata);
+  if (recvStream)
+  {
+    recvStream->write(static_cast<const char*>(ptr), data_size);
+  }
+
+  return data_size;
+}
+
+static size_t file_put_read_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
+{
+  std::basic_iostream<char>* payload = (std::basic_iostream<char>*)(userdata);
+  size_t data_size = size * nmemb;
+
+  payload->read(static_cast<char*>(ptr), data_size);
+  size_t ret = payload->gcount();
+  return payload->gcount();
+}
 
 StatementPutGet::StatementPutGet(SF_STMT *stmt) :
   m_stmt(stmt), m_useProxy(false)
@@ -45,6 +69,17 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   {
     cJSON *val = snowflake_cJSON_GetArrayItem(src, i);
     putGetParseResponse->srcLocations.emplace_back(val->valuestring);
+  }
+
+  cJSON* presignedUrls = (cJSON*)response->presigned_urls;
+  int url_size = snowflake_cJSON_GetArraySize(presignedUrls);
+  for (int i = 0; i < url_size; i++)
+  {
+    cJSON* val = snowflake_cJSON_GetArrayItem(presignedUrls, i);
+    if (val && val->valuestring)
+    {
+      putGetParseResponse->presignedUrls.emplace_back(val->valuestring);
+    }
   }
 
   if (sf_strncasecmp(response->command, "UPLOAD", 6) == 0)
@@ -104,6 +139,18 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
       };
     putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
 
+  }
+  else if (sf_strncasecmp(response->stage_info->location_type, "gcs", 3) == 0)
+  {
+    putGetParseResponse->stageInfo.stageType = StageType::GCS;
+    if (response->stage_info->presignedURL)
+    {
+      putGetParseResponse->stageInfo.presignedUrl = response->stage_info->presignedURL;
+    }
+    putGetParseResponse->stageInfo.credentials = {
+            {"GCS_ACCESS_TOKEN",     response->stage_info->stage_cred->gcs_access_token}
+    };
+
   } else if (sf_strncasecmp(response->stage_info->location_type,
                             "local_fs", 8) == 0)
   {
@@ -122,4 +169,125 @@ Util::Proxy* StatementPutGet::get_proxy()
   {
     return &m_proxy;
   }
+}
+
+bool StatementPutGet::http_put(std::string const& url,
+                               std::vector<std::string> const& headers,
+                               std::basic_iostream<char>& payload,
+                               size_t payloadLen,
+                               std::string& responseHeaders)
+{
+  if (!m_stmt || !m_stmt->connection)
+  {
+    return false;
+  }
+  SF_CONNECT* sf = m_stmt->connection;
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  CURL* curl = get_curl_from_desc(curl_desc);
+  if (!curl)
+  {
+    return false;
+  }
+
+  char* urlbuf = (char*)SF_CALLOC(1, url.length() + 1);
+  sf_strcpy(urlbuf, url.length() + 1, url.c_str());
+
+  SF_HEADER reqHeaders;
+  reqHeaders.header = NULL;
+  for (auto itr = headers.begin(); itr != headers.end(); itr++)
+  {
+    reqHeaders.header = curl_slist_append(reqHeaders.header, itr->c_str());
+  }
+
+  PUT_PAYLOAD putPayload;
+  putPayload.buffer = &payload;
+  putPayload.length = payloadLen;
+  putPayload.read_callback = file_put_read_callback;
+
+  char* respHeaders = NULL;
+  sf_bool success = SF_BOOLEAN_FALSE;
+
+  success = http_perform(curl, PUT_REQUEST_TYPE, urlbuf, &reqHeaders, NULL, &putPayload, NULL,
+                         NULL, &respHeaders, get_retry_timeout(sf),
+                         SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode,
+                         sf->retry_on_curle_couldnt_connect_count,
+                         0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                         sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+
+  free_curl_desc(curl_desc);
+  SF_FREE(urlbuf);
+  curl_slist_free_all(reqHeaders.header);
+  if (respHeaders)
+  {
+    responseHeaders = respHeaders;
+    SF_FREE(respHeaders);
+  }
+
+  return success;
+}
+
+bool StatementPutGet::http_get(std::string const& url,
+                               std::vector<std::string> const& headers,
+                               std::basic_iostream<char>* payload,
+                               std::string& responseHeaders,
+                               bool headerOnly)
+{
+  SF_REQUEST_TYPE reqType = GET_REQUEST_TYPE;
+  if (headerOnly)
+  {
+    reqType = HEAD_REQUEST_TYPE;
+  }
+
+  if (!m_stmt || !m_stmt->connection)
+  {
+    return false;
+  }
+  SF_CONNECT* sf = m_stmt->connection;
+
+  void* curl_desc = get_curl_desc_from_pool(url.c_str(), sf->proxy, sf->no_proxy);
+  CURL* curl = get_curl_from_desc(curl_desc);
+  if (!curl)
+  {
+    return false;
+  }
+
+  char* urlbuf = (char*)SF_CALLOC(1, url.length() + 1);
+  sf_strcpy(urlbuf, url.length() + 1, url.c_str());
+
+  SF_HEADER reqHeaders;
+  reqHeaders.header = NULL;
+  for (auto itr = headers.begin(); itr != headers.end(); itr++)
+  {
+    reqHeaders.header = curl_slist_append(reqHeaders.header, itr->c_str());
+  }
+
+  NON_JSON_RESP resp;
+  resp.buffer = payload;
+  resp.write_callback = file_get_write_callback;
+
+  char* respHeaders = NULL;
+  sf_bool success = SF_BOOLEAN_FALSE;
+
+  success = http_perform(curl, reqType, urlbuf, &reqHeaders, NULL, NULL, NULL,
+                         &resp, &respHeaders, get_retry_timeout(sf),
+                         SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode,
+                         sf->retry_on_curle_couldnt_connect_count,
+                         0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                         sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+
+  free_curl_desc(curl_desc);
+  SF_FREE(urlbuf);
+  curl_slist_free_all(reqHeaders.header);
+  if (respHeaders)
+  {
+    responseHeaders = respHeaders;
+    SF_FREE(respHeaders);
+  }
+
+  if (payload)
+  {
+    payload->flush();
+  }
+
+  return success;
 }

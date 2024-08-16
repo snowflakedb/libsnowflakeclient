@@ -18,7 +18,7 @@ extern "C" {
 /**
  * API Name
  */
-#define SF_API_NAME "C API"
+#define SF_API_NAME "ODBC"
 
 /**
  * SQLState code length
