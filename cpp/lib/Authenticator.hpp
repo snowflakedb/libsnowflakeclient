@@ -19,91 +19,86 @@
 
 namespace Snowflake
 {
-  namespace Client
+namespace Client
+{
+  /**
+   * Authenticator
+   */
+  class IAuthenticator
   {
-    /**
-     * Authenticator
-     */
-    class IAuthenticator
+  public:
+
+    IAuthenticator() : m_renewTimeout(0)
+    {}
+
+    virtual ~IAuthenticator()
+    {}
+
+    virtual void authenticate()=0;
+
+    virtual void updateDataMap(cJSON * dataMap)=0;
+
+    // Retrieve authenticator renew timeout, return 0 if not available.
+    // When the authenticator renew timeout is available, the connection should
+    // renew the authentication (call renewDataMap) for each time the
+    // authenticator specific timeout exceeded within the entire login timeout.
+    int64 getAuthRenewTimeout()
     {
-    public:
-      IAuthenticator() : m_renewTimeout(0)
-      {
-      }
+      return m_renewTimeout;
+    }
 
-      virtual ~IAuthenticator()
-      {
-      }
+    // Renew the autentication and update datamap.
+    // The default behavior is to call authenticate() and updateDataMap().
+    virtual void renewDataMap(cJSON * dataMap);
 
-      virtual void authenticate() = 0;
+  protected:
+    int64 m_renewTimeout;
+  };
 
-      virtual void updateDataMap(cJSON *dataMap) = 0;
+  /**
+   * JWT Authenticator
+   */
+  class AuthenticatorJWT : public IAuthenticator
+  {
+  public:
+    AuthenticatorJWT(SF_CONNECT *conn);
 
-      // Retrieve authenticator renew timeout, return 0 if not available.
-      // When the authenticator renew timeout is available, the connection should
-      // renew the authentication (call renewDataMap) for each time the
-      // authenticator specific timeout exceeded within the entire login timeout.
-      int64 getAuthRenewTimeout()
-      {
-        return m_renewTimeout;
-      }
+    ~AuthenticatorJWT();
 
-      // Renew the autentication and update datamap.
-      // The default behavior is to call authenticate() and updateDataMap().
-      virtual void renewDataMap(cJSON *dataMap);
+    void authenticate();
 
-    protected:
-      int64 m_renewTimeout;
-    };
+    void updateDataMap(cJSON* dataMap);
 
-    /**
-     * JWT Authenticator
-     */
-    class AuthenticatorJWT : public IAuthenticator
-    {
-    public:
-      AuthenticatorJWT(SF_CONNECT *conn);
+  private:
+    void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
 
-      ~AuthenticatorJWT();
+    typedef Snowflake::Client::Jwt::IJwt Jwt;
+    typedef Snowflake::Client::Jwt::IClaimSet ClaimSet;
+    typedef Snowflake::Client::Jwt::IHeader Header;
+    typedef Snowflake::Client::Util::IBase64 Base64;
+    typedef std::unique_ptr<Jwt> JwtPtr;
 
-      void authenticate();
+    EVP_PKEY *m_privKey;
+    int64 m_timeOut;
+    JwtPtr m_jwt;
 
-      void updateDataMap(cJSON *dataMap);
+    static std::string extractPublicKey(EVP_PKEY *privKey);
 
-    private:
-      void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
+    static std::vector<char> SHA256(const std::vector<char> &message);
+  };
 
-      typedef Snowflake::Client::Jwt::IJwt Jwt;
-      typedef Snowflake::Client::Jwt::IClaimSet ClaimSet;
-      typedef Snowflake::Client::Jwt::IHeader Header;
-      typedef Snowflake::Client::Util::IBase64 Base64;
-      typedef std::unique_ptr<Jwt> JwtPtr;
+  class AuthenticatorUserMFA : public IAuthenticator
+  {
+  public:
+      AuthenticatorUserMFA(SF_CONNECT* conn);
 
-      EVP_PKEY *m_privKey;
-      int64 m_timeOut;
-      JwtPtr m_jwt;
+      void updateDataMap(cJSON* dataMap);
 
-      static std::string extractPublicKey(EVP_PKEY *privKey);
-
-      static std::vector<char> SHA256(const std::vector<char> &message);
-    };
-
-    class AuthenticatorUserMFA : public IAuthenticator
-    {
-    public:
-      AuthenticatorUserMFA(SF_CONNECT *conn);
-
-      ~AuthenticatorUserMFA();
-
-      void authenticate();
-
-      void updateDataMap(cJSON *dataMap);
-
-    private:
+  private:
       std::string m_passcode;
       bool m_passcodeInPassword;
-    };
+  };
 
-  } // namespace Client
+} // namespace Client
 } // namespace Snowflake
-#endif // PROJECT_AUTHENTICATOR_HPP
+#endif //PROJECT_AUTHENTICATOR_HPP
