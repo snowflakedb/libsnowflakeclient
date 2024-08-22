@@ -41,11 +41,6 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
 
- /**
-  *  Authenticator, user MFA
-  */
-#define SF_AUTHENTICATOR_USR_PWD_MFA "username_password_mfa"
-
 /**
  * UUID4 length
  */

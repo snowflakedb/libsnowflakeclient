@@ -87,18 +87,6 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
-  class AuthenticatorUserMFA : public IAuthenticator
-  {
-  public:
-      AuthenticatorUserMFA(SF_CONNECT* conn);
-
-      void updateDataMap(cJSON* dataMap);
-
-  private:
-      std::string m_passcode;
-      bool m_passcodeInPassword;
-  };
-
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP

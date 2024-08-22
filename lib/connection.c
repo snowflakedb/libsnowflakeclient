@@ -172,6 +172,19 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     // Add password if one exists
     if (sf->password && *(sf->password)) {
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
+
+        if (sf->passcode_in_password) {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
+        }
+        else if (sf->passcode && *(sf->passcode))
+        {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
+            snowflake_cJSON_AddStringToObject(data, "PASSCODE", sf->passcode);
+        }
+        else
+        {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
+        }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",

@@ -345,44 +345,5 @@ namespace Client
     return coded;
   }
 
-  AuthenticatorUserMFA::AuthenticatorUserMFA(SF_CONNECT* conn)
-  {
-      m_passcodeInPassword = false;
-      if (conn && conn->passcode_in_password)
-      {
-          m_passcodeInPassword = conn->passcode_in_password;
-      }
-      if (conn && conn->passcode)
-      {
-          m_passcode = conn->passcode;
-      }
-  }
-
-  void AuthenticatorUserMFA::updateDataMap(cJSON* dataMap)
-  {
-      cJSON* data = snowflake_cJSON_GetObjectItem(dataMap, "data");
-      if (!data)
-      {
-          data = snowflake_cJSON_CreateObject();
-          snowflake_cJSON_AddItemToObject(dataMap, "data", data);
-      }
-      snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-      snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
-      snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_USR_PWD_MFA);
-
-      if (m_passcodeInPassword)
-      {
-          snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
-      }
-      else if (!m_passcode.empty())
-      {
-          snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
-          snowflake_cJSON_AddStringToObject(data, "PASSCODE", m_passcode.c_str());
-      }
-      else
-      {
-          snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
-      }
-  }
 } // namespace Client
 } // namespace Snowflake
