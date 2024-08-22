@@ -344,6 +344,5 @@ namespace Client
 
     return coded;
   }
-
 } // namespace Client
 } // namespace Snowflake
