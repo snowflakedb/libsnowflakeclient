@@ -68,7 +68,7 @@ int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_json_data_In_MFA_Auth),
+        cmocka_unit_test(test_json_data_in_MFA_Auth),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
