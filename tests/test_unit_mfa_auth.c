@@ -1,15 +1,14 @@
-//
-// Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
-//
+/*
+ * Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include <string.h>
 #include "utils/test_setup.h"
 #include "connection.h"
 #include "memory.h"
 
-
 /**
- * Test connection with Duo Push
+ * Test json body is properly updated.
  */
 void test_json_data_in_MFA_Auth(void **unused)
 {
@@ -62,7 +61,6 @@ void test_json_data_in_MFA_Auth(void **unused)
 
     SF_FREE(sf);
 }
-
 
 int main(void)
 {

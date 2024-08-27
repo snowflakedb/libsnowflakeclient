@@ -1,12 +1,9 @@
-//
-// Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
-//
+/*
+ * Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #include "utils/test_setup.h"
 
-/**
- * Test connection with Duo Push
- */
 void test_connect_with_duo_push(void **unused)
 {
     SF_CONNECT *sf = snowflake_init();
@@ -41,9 +38,6 @@ void test_connect_with_duo_push(void **unused)
     snowflake_term(sf);
 }
 
-/**
- * Test connection with Duo Push
- */
 void test_connect_with_duo_passcode(void **unused)
 {
     SF_CONNECT *sf = snowflake_init();
@@ -86,9 +80,6 @@ void test_connect_with_duo_passcode(void **unused)
     snowflake_term(sf);
 }
 
-/**
- * Test connection with Duo Push
- */
 void test_connect_with_duo_passcodeInPassword(void** unused)
 {
     SF_CONNECT* sf = snowflake_init();
