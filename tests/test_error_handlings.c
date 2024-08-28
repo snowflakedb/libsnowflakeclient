@@ -31,9 +31,10 @@ void test_incorrect_password(void **unused) {
     SF_STATUS status = snowflake_connect(sf);
     assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
 
-
-/* temporarily disable error code check as currently it's returning
- * error of IP address not allowed due to server change on test account
+/* SNOW-1639914: Currently getting error of IP address not allowed
+ * instead of incorrect user/password, likely due to change on test
+ * account. Temporarily disable the checking until the issue solved
+ * on server side.
     SF_ERROR_STRUCT *error = snowflake_error(sf);
     if (error->error_code != (SF_STATUS)390100) {
         dump_error(&(sf->error));
