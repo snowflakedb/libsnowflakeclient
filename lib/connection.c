@@ -175,6 +175,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
         if (sf->passcode_in_password) {
             snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
+            snowflake_cJSON_AddBoolToObject(data, "passcodeInPassword", SF_BOOLEAN_TRUE);
         }
         else if (sf->passcode && *(sf->passcode))
         {
