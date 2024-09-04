@@ -9,6 +9,7 @@
 #include "FileTransferAgent.hpp"
 #include "snowflake/SnowflakeTransferException.hpp"
 #include "snowflake/IStatementPutGet.hpp"
+#include "StatementPutGet.hpp"
 #include "util/Base64.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
@@ -18,6 +19,7 @@
 #include "util/ThreadPool.hpp"
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
+#include "error.h"
 #include "snowflake/platform.h"
 #include "snowflake/SF_CRTFunctionSafe.h"
 #include <chrono>
@@ -960,4 +962,59 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
   }
 
   return localFilePath;
+}
+
+using namespace Snowflake::Client;
+extern "C" {
+  SF_STATUS STDCALL _snowflake_execute_put_get_native(
+                        SF_STMT* sfstmt,
+                        struct SF_QUERY_RESULT_CAPTURE* result_capture)
+  {
+    if (!sfstmt)
+    {
+      return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+    SF_CONNECT* sfconn = sfstmt->connection;
+    if (!sfconn)
+    {
+      return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
+    }
+    StatementPutGet stmtPutGet(sfstmt);
+    TransferConfig transConfig;
+    transConfig.caBundleFile = NULL; // use the one from global settings
+    transConfig.compressLevel = sfconn->put_compress_level;
+    transConfig.getSizeThreshold = sfconn->get_threshold;
+    transConfig.proxy = NULL; // use the one from statement
+    transConfig.tempDir = sfconn->put_temp_dir;
+    transConfig.useS3regionalUrl = sfconn->use_s3_regional_url;
+    string command(sfstmt->sql_text);
+
+    FileTransferAgent agent(&stmtPutGet, &transConfig);
+    agent.setPutFastFail(sfconn->put_fastfail);
+    agent.setPutMaxRetries(sfconn->put_maxretries);
+    agent.setGetFastFail(sfconn->get_fastfail);
+    agent.setGetMaxRetries(sfconn->get_maxretries);
+    agent.setRandomDeviceAsUrand(sfconn->put_use_urand_dev);
+
+    ITransferResult* result;
+    try
+    {
+      result = agent.execute(&command);
+    }
+    catch (std::exception& e)
+    {
+      std::string errmsg("File transfer failed: ");
+      errmsg += e.what();
+      SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_FILE_TRANSFER,
+                          errmsg.c_str(), SF_SQLSTATE_GENERAL_ERROR);
+      return SF_STATUS_ERROR_FILE_TRANSFER;
+    }
+    catch (...)
+    {
+      std::string errmsg("File transfer failed with unknown exception.");
+      SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_FILE_TRANSFER,
+                          errmsg.c_str(), SF_SQLSTATE_GENERAL_ERROR);
+      return SF_STATUS_ERROR_FILE_TRANSFER;
+    }
+  }
 }
