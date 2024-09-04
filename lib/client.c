@@ -183,6 +183,9 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if (strcmp(name->valuestring, "VARIANT_MAX_SIZE_IN_RESULT") == 0) {
                 sf->max_variant_size = snowflake_cJSON_GetUint64Value(value);
             }
+            else if (strcmp(name->valuestring, "ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1") == 0) {
+                sf->use_s3_regional_url = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            }
         }
     }
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -534,6 +537,15 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("retry_count: %d", sf->retry_count);
     log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
     log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
+    log_debug("use_s3_regional_url: %s", sf->use_s3_regional_url ? "true" : "false");
+    log_debug("put_use_urand_dev: %s", sf->put_use_urand_dev ? "true" : "false");
+    log_debug("put_compress_level: %d", sf->put_compress_level);
+    log_debug("put_temp_dir: %s", sf->put_temp_dir ? sf->put_temp_dir : "");
+    log_debug("put_fastfail: %s", sf->put_fastfail ? "true" : "false");
+    log_debug("put_maxretries: %d", sf->put_maxretries);
+    log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
+    log_debug("get_maxretries: %d", sf->get_maxretries);
+    log_debug("get_threshold: %d", sf->get_threshold);
 
     return SF_STATUS_SUCCESS;
 }
@@ -726,6 +738,16 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
         sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+
+        sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
+        sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
+        sf->put_compress_level = SF_DEFAULT_PUT_COMPRESS_LEVEL;
+        sf->put_temp_dir = NULL;
+        sf->put_fastfail = SF_BOOLEAN_FALSE;
+        sf->put_maxretries = SF_DEFAULT_PUT_MAX_RETRIES;
+        sf->get_fastfail = SF_BOOLEAN_FALSE;
+        sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
+        sf->get_threshold = SF_DEFAULT_GET_THRESHOLD;
     }
 
     return sf;
@@ -1146,6 +1168,45 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_PUT_TEMPDIR:
+            alloc_buffer_and_copy(&sf->put_temp_dir, value);
+            break;
+        case SF_CON_PUT_COMPRESSLV:
+            sf->put_compress_level = value ? *((int8 *)value) : SF_DEFAULT_PUT_COMPRESS_LEVEL;
+            if ((sf->put_compress_level > SF_MAX_PUT_COMPRESS_LEVEL) ||
+                (sf->put_compress_level < 0))
+            {
+                sf->put_compress_level = SF_DEFAULT_PUT_COMPRESS_LEVEL;
+            }
+            break;
+        case SF_CON_PUT_USE_URANDOM_DEV:
+            sf->put_use_urand_dev = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_PUT_FASTFAIL:
+            sf->put_fastfail = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_PUT_MAXRETRIES:
+            sf->put_maxretries = value ? *((int8 *)value) : SF_DEFAULT_PUT_MAX_RETRIES;
+            if ((sf->put_maxretries > SF_MAX_PUT_MAX_RETRIES) ||
+                (sf->put_maxretries < 0))
+            {
+                sf->put_maxretries = SF_DEFAULT_PUT_MAX_RETRIES;
+            }
+            break;
+        case SF_CON_GET_FASTFAIL:
+            sf->get_fastfail = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_GET_MAXRETRIES:
+            sf->get_maxretries = value ? *((int8 *)value) : SF_DEFAULT_GET_MAX_RETRIES;
+            if ((sf->get_maxretries > SF_MAX_GET_MAX_RETRIES) ||
+                (sf->get_maxretries < 0))
+            {
+                sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
+            }
+            break;
+        case SF_CON_GET_THRESHOLD:
+            sf->get_threshold = value ? *((int64 *)value) : SF_DEFAULT_GET_THRESHOLD;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1291,6 +1352,30 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_VARIANT_SIZE:
             *value = &sf->max_variant_size;
+            break;
+        case SF_CON_PUT_TEMPDIR:
+            *value = sf->put_temp_dir;
+            break;
+        case SF_CON_PUT_COMPRESSLV:
+            *value = &sf->put_compress_level;
+            break;
+        case SF_CON_PUT_USE_URANDOM_DEV:
+            *value = &sf->put_use_urand_dev;
+            break;
+        case SF_CON_PUT_FASTFAIL:
+            *value = &sf->put_fastfail;
+            break;
+        case SF_CON_PUT_MAXRETRIES:
+            *value = &sf->put_maxretries;
+            break;
+        case SF_CON_GET_FASTFAIL:
+            *value = &sf->get_fastfail;
+            break;
+        case SF_CON_GET_MAXRETRIES:
+            *value = &sf->get_maxretries;
+            break;
+        case SF_CON_GET_THRESHOLD:
+            *value = &sf->get_threshold;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -2039,6 +2124,29 @@ SF_STATUS STDCALL snowflake_query(
     return SF_STATUS_SUCCESS;
 }
 
+SF_STATUS STDCALL _snowflake_query_put_get_legacy(
+    SF_STMT *sfstmt, const char *command, size_t command_size) {
+    if (!sfstmt) {
+        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+    clear_snowflake_error(&sfstmt->error);
+    SF_STATUS ret = snowflake_prepare(sfstmt, command, command_size);
+    if (ret != SF_STATUS_SUCCESS) {
+        return ret;
+    }
+    if (!_is_put_get_command(sfstmt->sql_text))
+    {
+        // this should never happen as this function should only be
+        // called internally for put/get command.
+        SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_GENERAL,
+                            "Invalid query type, can be used for put get only",
+                            SF_SQLSTATE_GENERAL_ERROR);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    return _snowflake_execute_ex(sfstmt, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE);
+}
+
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
@@ -2246,24 +2354,31 @@ cleanup:
 
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_TRUE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_FALSE, result_capture, SF_BOOLEAN_TRUE);
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_TRUE, NULL, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_TRUE, result_capture, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
+                                        sf_bool is_native_put_get,
                                         SF_QUERY_RESULT_CAPTURE* result_capture,
                                         sf_bool is_describe_only) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+
+    if (is_put_get_command && is_native_put_get && !is_describe_only)
+    {
+        return _snowflake_execute_put_get_native(sfstmt, result_capture);
+    }
+
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     SF_JSON_ERROR json_error;

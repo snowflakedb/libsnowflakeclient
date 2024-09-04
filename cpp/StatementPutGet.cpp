@@ -49,7 +49,7 @@ StatementPutGet::StatementPutGet(SF_STMT *stmt) :
 bool StatementPutGet::parsePutGetCommand(std::string *sql,
                                          PutGetParseResponse *putGetParseResponse)
 {
-  if (snowflake_query(m_stmt, sql->c_str(), 0) != SF_STATUS_SUCCESS)
+  if (_snowflake_query_put_get_legacy(m_stmt, sql->c_str(), 0) != SF_STATUS_SUCCESS)
   {
     return false;
   }
