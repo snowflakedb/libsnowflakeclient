@@ -57,8 +57,11 @@ void test_json_data_in_MFA_Auth(void **unused)
     data = snowflake_cJSON_GetObjectItem(body, "data");
 
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "EXT_AUTHN_DUO_METHOD")), "passcode");
-    assert_true((snowflake_cJSON_GetObjectItem(data, "passcodeInPassword")), sf->passcode_in_password);
     assert_int_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "passcode")), NULL);
+
+    sf_bool passcodeInPassword;
+    json_copy_bool(&passcodeInPassword, data, "passcodeInPassword");
+    assert_int_equal(passcodeInPassword, SF_BOOLEAN_TRUE);
 
     SF_FREE(sf);
 }
