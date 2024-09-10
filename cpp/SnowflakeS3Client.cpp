@@ -131,7 +131,9 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   // ClientConfiguration needs to be initialized after Aws::InitAPI() is called
   // so we can't keep it in member variable. Add a new member variable m_stageEndpoint
   // to keep the overriden endpoint.
-  Aws::Client::ClientConfiguration clientConfiguration;
+  // SNOW-1637718: disable IMDS. We don't really need it as we use region returned
+  // from server.
+  Aws::Client::ClientConfiguration clientConfiguration("", true);
   clientConfiguration.region = stageInfo->region;
   clientConfiguration.caFile = caFile;
   clientConfiguration.requestTimeoutMs = 40000;
