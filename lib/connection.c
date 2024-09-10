@@ -1334,5 +1334,6 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 
 sf_bool is_token_required(SF_CONNECT* sf)
 {
-    return AUTH_OAUTH == getAuthenticatorType(sf->authenticator) || AUTH_EXTERNALBROWSER == getAuthenticatorType(sf->authenticator) || AUTH_USR_PWD_MFA == getAuthenticatorType(sf->authenticator);
+    AuthenticatorType auth = getAuthenticatorType(sf->authenticator);
+    return AUTH_OAUTH == auth || AUTH_EXTERNALBROWSER == auth || AUTH_USR_PWD_MFA == auth;
 }

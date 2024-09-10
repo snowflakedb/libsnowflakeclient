@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+// Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
 //
 
 #include "utils/test_setup.h"
@@ -38,8 +38,6 @@ void test_connect_with_oauth(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
-
-
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
