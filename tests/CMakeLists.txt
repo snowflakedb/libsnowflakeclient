@@ -42,11 +42,13 @@ SET(TESTS_C
         test_get_describe_only_query_result
         test_stmt_functions
         test_unit_oauth
-        test_oauth
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
 #        test_stats
+# This test needs the Oauth token, so it should be run manually
+#        test_oauth
+
         )
 
 SET(TESTS_CXX
