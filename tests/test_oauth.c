@@ -5,7 +5,7 @@
 #include "utils/test_setup.h"
 
 /**
- * Test connection with minimum parameter set
+ * Test connection with OAuth authentication.
  */
 void test_connect_with_oauth(void **unused) {
     SF_CONNECT *sf = snowflake_init();
