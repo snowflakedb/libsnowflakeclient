@@ -618,6 +618,11 @@ int8 get_login_retry_count(SF_CONNECT *sf);
 */
 int64 get_retry_timeout(SF_CONNECT *sf);
 
+/*
+* Check whether the authentication needs the token field or not
+*/
+sf_bool is_token_required(SF_CONNECT* sf);
+
 #ifdef __cplusplus
 }
 #endif

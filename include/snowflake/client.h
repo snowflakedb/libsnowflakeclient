@@ -41,6 +41,12 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
 
+ /**
+ * Authenticator, external browser
+ * TODO
+ */
+#define SF_AUTHENTICATOR_OAUTH "oauth"
+
 /**
  * UUID4 length
  */
@@ -266,7 +272,8 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
-    SF_QUERY_RESULT_TYPE
+    SF_QUERY_RESULT_TYPE,
+    SF_CON_TOKEN
 } SF_ATTRIBUTE;
 
 /**

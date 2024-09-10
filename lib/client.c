@@ -408,7 +408,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     // For now check password if it's not jwt, will add more condition when
     // support other authentications
-    if ((AUTH_JWT != auth_type) && (is_string_empty(sf->password))) {
+    if ((AUTH_JWT != auth_type) && (AUTH_OAUTH != auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -426,6 +426,17 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
             ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->token))) {
+        // Invalid token
+        log_error(ERR_MSG_TOKEN_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_TOKEN_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -802,7 +813,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         // connection object doesn't exists
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
-    if (sf->token || sf->master_token) {
+    if (!is_token_required(sf) && (sf->token || sf->master_token)) {
         // safe guard not to override the existing connection
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -1071,6 +1082,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
           break;
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
+            break;
+        case SF_CON_TOKEN:
+            alloc_buffer_and_copy(&sf->token, value);
             break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
