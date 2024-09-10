@@ -42,8 +42,7 @@ extern "C" {
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
 
  /**
- * Authenticator, external browser
- * TODO
+ * Authenticator, oauth
  */
 #define SF_AUTHENTICATOR_OAUTH "oauth"
 
