@@ -47,7 +47,7 @@ SET(TESTS_C
 #        test_lob
 #        test_stats
 # This test needs the Oauth token, so it should be run manually
-        test_oauth
+#        test_oauth
         )
 
 SET(TESTS_CXX
