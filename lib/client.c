@@ -430,7 +430,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->token))) {
+    if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->oauth_token))) {
         // Invalid token
         log_error(ERR_MSG_TOKEN_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -524,6 +524,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("priv_key_file: %s", sf->priv_key_file);
         log_debug("jwt_timeout: %d", sf->jwt_timeout);
         log_debug("jwt_cnxn_wait_time: %d", sf->jwt_cnxn_wait_time);
+    }
+    if (AUTH_OAUTH == auth_type) {
+        log_debug("oauth_token: %s", sf->oauth_token ? "****" : sf->oauth_token);
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
@@ -734,6 +737,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
         sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+        sf->oauth_token = NULL;
     }
 
     return sf;
@@ -801,6 +805,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->priv_key_file_pwd);
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
+    SF_FREE(sf->oauth_token);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -813,7 +818,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         // connection object doesn't exists
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
-    if (!is_token_required(sf) && (sf->token || sf->master_token)) {
+    if (sf->token || sf->master_token) {
         // safe guard not to override the existing connection
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -1083,8 +1088,8 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
-        case SF_CON_TOKEN:
-            alloc_buffer_and_copy(&sf->token, value);
+        case SF_CON_OAUTH_TOKEN:
+            alloc_buffer_and_copy(&sf->oauth_token, value);
             break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;

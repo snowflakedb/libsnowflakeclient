@@ -39,7 +39,7 @@ void test_json_data_in_Oauth(void** unused) {
     sf->application_name = SF_API_NAME;
     sf->application_version = SF_API_VERSION;
     sf->authenticator = "oauth";
-    sf->token = "mock_token";
+    sf->oauth_token = "mock_token";
 
     cJSON* body = create_auth_json_body(
         sf,

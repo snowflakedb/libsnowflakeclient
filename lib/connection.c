@@ -174,8 +174,8 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
     }
 
-    if (is_token_required(sf) && (sf->token && *(sf->token))) {
-            snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->token);
+    if (sf->oauth_token && *(sf->oauth_token)) {
+            snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
@@ -1329,10 +1329,4 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
-}
-
-sf_bool is_token_required(SF_CONNECT* sf)
-{
-    AuthenticatorType auth = getAuthenticatorType(sf->authenticator);
-    return AUTH_OAUTH == auth || AUTH_EXTERNALBROWSER == auth || AUTH_USR_PWD_MFA == auth;
 }
