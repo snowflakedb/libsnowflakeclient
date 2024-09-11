@@ -11,6 +11,7 @@ void test_connect_with_oauth(void **unused) {
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    //snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
 
     char *host, *port, *protocol;
@@ -26,7 +27,7 @@ void test_connect_with_oauth(void **unused) {
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
-    char* token = "<Pass your token here>";
+    char* token = "ver:1-hint:92019684051950-ETMsDgAAAZHjCazwABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEDLFbJVGI/VDGAIG0Jm0AQsAAABQPbcQJdbDk+Q0Zpk/0x9WWvPtfvqRPrRXnRqpRTvo4doyr2GRi3szvTSB0ARuep3UxDnkvtFyYVPL8KrDxocJG7PqGqdOzghtGIh3XEs2sR0AFPax6y9x7O+Kn8I2WE4PjRx+Ynjm";
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "oauth");
     snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, token);
 

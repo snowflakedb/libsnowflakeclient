@@ -1227,6 +1227,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_AUTHENTICATOR:
             *value = sf->authenticator;
             break;
+        case SF_CON_OAUTH_TOKEN:
+            *value = sf->oauth_token;
+            break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;
             break;

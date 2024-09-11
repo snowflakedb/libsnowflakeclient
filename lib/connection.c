@@ -174,9 +174,6 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
     }
 
-    if (sf->oauth_token && *(sf->oauth_token)) {
-            snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
-    }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
                                   session_parameters);
