@@ -137,7 +137,7 @@ extern "C" {
         }
 
         snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", "OAUTH");
+        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
         snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
     }
