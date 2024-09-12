@@ -48,9 +48,7 @@ SET(TESTS_C
 #        test_lob
 #        test_stats
 # This test needs the Oauth token, so it should be run manually
-#        test_oauth
-# MFA connection is only able to run testing manually.
-        test_mfa_connect
+#       test_manual_connect
         )
 
 SET(TESTS_CXX
