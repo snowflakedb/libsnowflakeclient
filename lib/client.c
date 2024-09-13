@@ -2376,6 +2376,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
     if (is_put_get_command && is_native_put_get && !is_describe_only)
     {
+        _snowflake_stmt_desc_reset(sfstmt);
         return _snowflake_execute_put_get_native(sfstmt, result_capture);
     }
 

@@ -190,6 +190,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/logger/SFLogger.hpp
         cpp/logger/SecretDetector.cpp
         cpp/logger/SecretDetector.hpp
+        cpp/lib/ResultSetPutGet.cpp
+        cpp/lib/ResultSetPutGet.hpp
         include/snowflake/IFileTransferAgent.hpp
         include/snowflake/ISFLogger.hpp
         include/snowflake/IStatementPutGet.hpp
@@ -272,6 +274,7 @@ if (UNIX)
     find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_REGEX_LIB libboost_regex.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_SYSTEM_LIB libboost_system.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(BOOST_LOCALE_LIB libboost_locale.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(ARROW_JEMALLOCPIC_LIB libjemalloc_pic.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
     if ($ENV{ARROW_FROM_SOURCE})
     else()
@@ -341,6 +344,7 @@ if (WIN32)
         find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_REGEX_LIB libboost_regex.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_SYSTEM_LIB libboost_system.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+        find_library(BOOST_LOCALE_LIB libboost_locale.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
 	else()
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)

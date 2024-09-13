@@ -6,6 +6,7 @@
 #include "ResultSet.hpp"
 #include "ResultSetArrow.hpp"
 #include "ResultSetJson.hpp"
+#include "ResultSetPutGet.hpp"
 
 #ifdef __cplusplus
 extern "C" {
