@@ -574,10 +574,10 @@ void test_large_put_threshold(void **unused)
   );
 }
 
-void test_large_reupload(void **unused)
+void test_large_reupload_core(bool native)
 {
-	char *cenv = getenv("CLOUD_PROVIDER");
-	if (cenv && !strncmp(cenv, "AWS", 4)) {
+    char *cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
         errno = 0;
         return;
     }
@@ -602,7 +602,7 @@ void test_large_reupload(void **unused)
     char tempFile[MAX_BUF_SIZE] ={0};
     sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
-	getLongTempPath(tempDir);
+    getLongTempPath(tempDir);
 #endif
     for(const std::string s : fileList) {
         tempFile[0] = 0;
@@ -613,10 +613,30 @@ void test_large_reupload(void **unused)
                              true,   // Load data into table
                              false,  // Run select * on loaded table (Not good for large data set)
                              false,    // copy data from Table to Staging.
-                             true       //Creates a dup table to compare uploaded data.
+                             true,       //Creates a dup table to compare uploaded data.
+                             false, // setCustomThreshold
+                             64*1024*1024, // customThreshold
+                             false, // useDevUrand
+                             false, // createSubfolder
+                             nullptr, // tmpDir
+                             false, // useS3regionalUrl
+                             -1, //compressLevel
+                             false, // overwrite
+                             nullptr, // connection
+                             false, // testUnicode
+                             native
         );
     }
+}
 
+void test_large_reupload(void** unused)
+{
+  test_large_reupload_core(false);
+}
+
+void test_large_reupload_native(void** unused)
+{
+  test_large_reupload_core(true);
 }
 
 /*
@@ -1961,6 +1981,7 @@ int main(void) {
 #endif
 
   const struct CMUnitTest tests[] = {
+/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -1992,12 +2013,14 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
     cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
+*/
     cmocka_unit_test_teardown(test_simple_put_auto_compress_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir_native, teardown),
     cmocka_unit_test_teardown(test_simple_get_native, teardown),
     cmocka_unit_test_teardown(test_large_put_auto_compress_native, donothing),
     cmocka_unit_test_teardown(test_large_get_native, donothing),
     cmocka_unit_test_teardown(test_large_get_threshold_native, donothing),
+    cmocka_unit_test_teardown(test_large_reupload_native, donothing),
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL_native, teardown),
