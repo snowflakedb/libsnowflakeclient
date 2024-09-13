@@ -87,6 +87,28 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
+  class AuthenticatorOKTA : public IAuthenticator
+  {
+  public:
+      AuthenticatorOKTA(SF_CONNECT* conn);
+
+      ~AuthenticatorOKTA();
+
+      void authenticate();
+
+      void updateDataMap(cJSON* dataMap);
+
+  private:
+      SF_CONNECT *m_connection;
+      std::string m_samlResponse;
+
+      /**
+       * Extract post back url from samel response. Input is in HTML format.
+       */
+      std::string extractPostBackUrlFromSamlResponse(std::string html);
+
+  };
+
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP
