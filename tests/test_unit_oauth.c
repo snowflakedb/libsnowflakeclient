@@ -58,7 +58,7 @@ int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_oauth_with_no_token),
-      cmocka_unit_test(test_json_data_in_Oauth)
+      cmocka_unit_test(test_json_data_in_oauth)
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
