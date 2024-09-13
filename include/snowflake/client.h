@@ -469,7 +469,7 @@ typedef void* result_set_ptr;
  */
 typedef enum QueryResultFormat_e
 {
-  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_FORMAT_UNKNOWN
+  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_PUTGET_FORMAT, SF_FORMAT_UNKNOWN
 } QueryResultFormat;
 
 /**

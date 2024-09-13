@@ -10,6 +10,7 @@
 #include "snowflake/SnowflakeTransferException.hpp"
 #include "snowflake/IStatementPutGet.hpp"
 #include "StatementPutGet.hpp"
+#include "lib/ResultSetPutGet.hpp"
 #include "util/Base64.hpp"
 #include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
@@ -1016,5 +1017,22 @@ extern "C" {
                           errmsg.c_str(), SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_FILE_TRANSFER;
     }
+
+    ResultSetPutGet * resultset = new Snowflake::Client::ResultSetPutGet(result);
+    if (!resultset)
+    {
+      std::string errmsg("Failed to allocate put get result set.");
+      SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_MEMORY,
+        errmsg.c_str(), SF_SQLSTATE_MEMORY_ALLOCATION_ERROR);
+      return SF_STATUS_ERROR_OUT_OF_MEMORY;
+    }
+
+    sfstmt->qrf = SF_PUTGET_FORMAT;
+    sfstmt->total_row_index = 0;
+    sfstmt->result_set = resultset;
+    sfstmt->chunk_rowcount = sfstmt->total_rowcount = result->getResultSize();
+    sfstmt->total_fieldcount = resultset->setup_column_desc(&sfstmt->desc);
+
+    return SF_STATUS_SUCCESS;
   }
 }

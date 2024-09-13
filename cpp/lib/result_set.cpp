@@ -6,6 +6,7 @@
 #include "ResultSet.hpp"
 #include "ResultSetArrow.hpp"
 #include "ResultSetJson.hpp"
+#include "ResultSetPutGet.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,9 @@ extern "C" {
 #endif
             case SF_JSON_FORMAT:
                 delete static_cast<Snowflake::Client::ResultSetJson*>(rs);
+                break;
+            case SF_PUTGET_FORMAT:
+                delete static_cast<Snowflake::Client::ResultSetPutGet*>(rs);
                 break;
             default:
                 break;

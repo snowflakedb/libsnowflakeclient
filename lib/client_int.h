@@ -173,6 +173,9 @@ sf_bool STDCALL _is_put_get_command(char* sql_text);
  */
 PARAM_TYPE STDCALL _snowflake_get_param_style(const SF_BIND_INPUT *input);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /**
  * Legacy approach of Executing a query, not to execute put/get natively.
  * Should only be called internally for put/get queries.
@@ -194,5 +197,8 @@ _snowflake_query_put_get_legacy(SF_STMT* sfstmt, const char* command, size_t com
 SF_STATUS STDCALL _snowflake_execute_put_get_native(
                       SF_STMT *sfstmt,
                       struct SF_QUERY_RESULT_CAPTURE* result_capture);
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //SNOWFLAKE_CLIENT_INT_H
