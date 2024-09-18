@@ -77,9 +77,11 @@ ResultSetPutGet::ResultSetPutGet(ITransferResult *result) :
     ResultSet(SF_PUTGET_FORMAT),
     m_cmdType(result->getCommandType())
 {
+  m_values.reserve(result->getResultSize());
   while (result->next())
   {
     std::vector<std::string> row;
+    row.reserve(result->getColumnSize());
     for (unsigned int i = 0; i < result->getColumnSize(); i++)
     {
       row.emplace_back();
