@@ -1353,12 +1353,12 @@ int8 get_login_retry_count(SF_CONNECT *sf)
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
 }
 
-uint64_t get_current_time_millis()
+uint64 get_current_time_millis()
 {
 #if defined(__linux__) || defined(__APPLE__)
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return ((uint64_t)tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+    return ((uint64)tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 #else // Windows
     FILETIME ft;
     ULARGE_INTEGER ui;
