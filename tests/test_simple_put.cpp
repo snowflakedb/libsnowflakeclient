@@ -854,7 +854,7 @@ void test_large_get_threshold(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_TRUE);
+  initialize_test(SF_BOOLEAN_FALSE);
 
   if(!setup_random_database()) {
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
