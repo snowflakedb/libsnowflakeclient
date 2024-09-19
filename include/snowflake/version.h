@@ -5,6 +5,7 @@
 #ifndef SNOWFLAKE_CLIENT_VERSION_H
 #define SNOWFLAKE_CLIENT_VERSION_H
 
+// TODO: temporarily change to run test
 #define SF_API_VERSION "3.0.1"
 
 #endif /* SNOWFLAKE_CLIENT_VERSION_H */
