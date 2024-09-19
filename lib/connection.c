@@ -13,9 +13,16 @@
 #include "authenticator.h"
 #include "curl_desc_pool.h"
 
+#ifdef _WIN32
+#include <time.h>
+#else
+#include <sys/time.h>
+#endif
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
 #define REQUEST_GUID_KEY_SIZE 13
+#define EPOCH_OFFSET 116444736000000000LL
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
@@ -1083,7 +1090,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
     retry_ctx->sleep_time = get_next_sleep_with_jitter(retry_ctx->djb, retry_ctx->sleep_time, retry_ctx->retry_count);
 
     // limit the sleep time within retry timeout
-    uint32 time_elapsed = time(NULL) - retry_ctx->start_time;
+    uint32 time_elapsed = time(NULL) - (retry_ctx->start_time / 1000);
     if (time_elapsed >= retry_ctx->retry_timeout)
     {
       // retry timeout is checked before calling retry_ctx_next_sleep
@@ -1154,6 +1161,11 @@ sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
       // clear retry reason for the next retry attempt
       retry_ctx->retry_reason = 0;
     }
+
+    // add client start time in milliseconds
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_CLIENT_START_TIME);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%llu", retry_ctx->start_time);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_DELIM);
 
     // add request guid after retry context
     request_guid_ptr = retry_context_ptr;
@@ -1325,4 +1337,20 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
+}
+
+uint64_t get_current_time_millis()
+{
+#if defined(__linux__) || defined(__APPLE__)
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return ((uint64_t)tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+#else // Windows
+    FILETIME ft;
+    ULARGE_INTEGER ui;
+    GetSystemTimeAsFileTime(&ft);
+    ui.LowPart = ft.dwLowDateTime;
+    ui.HighPart = ft.dwHighDateTime;
+    return (ui.QuadPart - EPOCH_OFFSET) / 10000;
+#endif
 }
