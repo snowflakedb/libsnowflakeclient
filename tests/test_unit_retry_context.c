@@ -13,6 +13,7 @@
 #define URL_NON_QUERY_WITH_GUID "http://snowflake.com/other-path?request_guid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 #define URL_NO_GUID "http://snowflake.com/other-path"
 #define GUID_LENGTH strlen("request_guid=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+#define CLIENT_START_TIME_LENGTH strlen("clientStartTime=xxxxxxxxxxxxx&")
 
 #define URL_LOGIN "http://snowflake.com/session/v1/login-request"
 #define URL_TOKEN "http://snowflake.com/session/token-request"
@@ -52,6 +53,7 @@ void test_update_other_url_with_guid(void **unused) {
   assert_int_equal(strlen(urlbuf), strlen(URL_NON_QUERY_WITH_GUID));
   assert_null(strstr(urlbuf, URL_PARAM_RETRY_COUNT));
   assert_null(strstr(urlbuf, URL_PARAM_RETRY_REASON));
+  assert_null(strstr(urlbuf, URL_PARAM_CLIENT_START_TIME));
   char* guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
@@ -67,9 +69,11 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
     429,    // retry reason
     0,      // network_timeout
     1,      // time to sleep
-    NULL    // Decorrelate jitter
+    NULL,   // Decorrelate jitter
+    get_current_time_millis() // start time
   };
 
+  sf_fprintf(stderr, "== Debug: current time in millis: %llu\n", retry_ctx.start_time);
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_FALSE);
   assert_int_equal(ret, SF_BOOLEAN_TRUE);
 
@@ -78,6 +82,12 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
+
+  // should have client start time added
+  char* starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  assert_non_null(starttime_ptr);
+  assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
+  *starttime_ptr = '\0';
 
   // should not have retry reason added
   char* retryreason_ptr = strstr(urlbuf, URL_PARAM_RETRY_REASON);
@@ -95,6 +105,7 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
   // recover the updated URL for testing next retry
   *guid_ptr = 'r';
   *retrycount_ptr = 'r';
+  *starttime_ptr = 'c';
   retry_ctx.retry_count = 2;
   retry_ctx.retry_reason = 503;
 
@@ -106,6 +117,12 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
+
+  // should have client start time added
+  starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  assert_non_null(starttime_ptr);
+  assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
+  *starttime_ptr = '\0';
 
   // should not have retry reason added
   retryreason_ptr = strstr(urlbuf, URL_PARAM_RETRY_REASON);
@@ -129,9 +146,10 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
     429,    // retry reason
     0,      // network_timeout
     1,      // time to sleep
-    NULL    // Decorrelate jitter
+    NULL,    // Decorrelate jitter
+    get_current_time_millis() // start time
   };
-
+  sf_fprintf(stderr, "== Debug: current time in millis: %llu\n", retry_ctx.start_time);
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
   assert_int_equal(ret, SF_BOOLEAN_TRUE);
 
@@ -141,6 +159,12 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
   
+  // should have client start time added
+  char* starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  assert_non_null(starttime_ptr);
+  assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
+  *starttime_ptr = '\0';
+
   // should have retry count/reason added
   char* retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
   assert_non_null(retrycount_ptr);
@@ -153,6 +177,7 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   // recover the updated URL for testing next retry
   *guid_ptr = 'r';
   *retrycount_ptr = 'r';
+  *starttime_ptr = 'c';
   retry_ctx.retry_count = 2;
   retry_ctx.retry_reason = 503;
 
@@ -164,6 +189,12 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
+
+  // should have client start time added
+  starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  assert_non_null(starttime_ptr);
+  assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
+  *starttime_ptr = '\0';
 
   // should have retry count/reason updated
   retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
@@ -186,9 +217,10 @@ void test_new_retry_strategy(void **unused) {
     SF_RETRY_TIMEOUT,
     djb.base,      // time to sleep
     &djb,    // Decorrelate jitter
-    time(NULL)
+    get_current_time_millis() // start time
   };
 
+  sf_fprintf(stderr, "== Debug: current time in millis: %llu\n", curl_retry_ctx.start_time);
   uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
   uint32 backoff = SF_BACKOFF_BASE;
   uint32 next_sleep_in_secs = 0;
@@ -202,7 +234,7 @@ void test_new_retry_strategy(void **unused) {
     assert_int_equal(is_retryable_http_code(error_codes[retry_count]), SF_BOOLEAN_TRUE);
     next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
     // change the start time to mock the time elapsed
-    curl_retry_ctx.start_time -= next_sleep_in_secs;
+    curl_retry_ctx.start_time -= next_sleep_in_secs * 1000;
     total_backoff += next_sleep_in_secs;
 
     if (total_backoff + next_sleep_in_secs >= SF_LOGIN_TIMEOUT)
