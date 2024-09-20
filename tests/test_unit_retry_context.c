@@ -70,7 +70,7 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
     0,      // network_timeout
     1,      // time to sleep
     NULL,   // Decorrelate jitter
-    get_current_time_millis() // start time
+    sf_get_current_time_millis() // start time
   };
 
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_FALSE);
@@ -146,7 +146,7 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
     0,      // network_timeout
     1,      // time to sleep
     NULL,    // Decorrelate jitter
-    get_current_time_millis() // start time
+    sf_get_current_time_millis() // start time
   };
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
   assert_int_equal(ret, SF_BOOLEAN_TRUE);
@@ -215,7 +215,7 @@ void test_new_retry_strategy(void **unused) {
     SF_RETRY_TIMEOUT,
     djb.base,      // time to sleep
     &djb,    // Decorrelate jitter
-    get_current_time_millis() // start time
+    sf_get_current_time_millis() // start time
   };
 
   uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};

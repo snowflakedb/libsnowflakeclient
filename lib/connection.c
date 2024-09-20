@@ -13,16 +13,9 @@
 #include "authenticator.h"
 #include "curl_desc_pool.h"
 
-#ifdef _WIN32
-#include <time.h>
-#else
-#include <sys/time.h>
-#endif
-
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
 #define REQUEST_GUID_KEY_SIZE 13
-#define EPOCH_OFFSET 116444736000000000LL
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
@@ -1351,20 +1344,4 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
-}
-
-uint64 get_current_time_millis()
-{
-#if defined(__linux__) || defined(__APPLE__)
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return ((uint64)tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-#else // Windows
-    FILETIME ft;
-    ULARGE_INTEGER ui;
-    GetSystemTimeAsFileTime(&ft);
-    ui.LowPart = ft.dwLowDateTime;
-    ui.HighPart = ft.dwHighDateTime;
-    return (ui.QuadPart - EPOCH_OFFSET) / 10000;
-#endif
 }
