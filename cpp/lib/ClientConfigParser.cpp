@@ -121,7 +121,7 @@ void ClientConfigParser::loadClientConfig(
       // 4. Try user home dir
       if (const char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf)))
       {
-        std::string homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+        std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
         if (boost::filesystem::exists(homeDirFilePath))
         {
           derivedConfigPath = homeDirFilePath;
@@ -258,7 +258,7 @@ void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
           "sf",
           "ClientConfigParser",
           "checkUnknownEntries",
-          warnMsg);
+          warnMsg.c_str());
       }
     }
   }

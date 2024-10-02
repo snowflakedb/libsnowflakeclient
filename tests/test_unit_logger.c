@@ -65,6 +65,7 @@ void test_client_config_log(void **unused) {
     // Warning log will trigger the log file creation
     log_warn("dummy warning log");
     assert_int_equal(access(LOG_PATH, 0), 0);
+    log_close();
 
     // Cleanup
     remove(configFilePath);
@@ -94,6 +95,7 @@ void test_log_creation(void **unused) {
     // warning log will trigger the log file creation
     log_warn("dummy warning log");
     assert_int_equal(access(logname, F_OK), 0);
+    log_close();
 
     remove(logname);
 }
