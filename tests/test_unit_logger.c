@@ -4,7 +4,14 @@
 
 
 #include "utils/test_setup.h"
-#ifndef _WIN32
+#include <client_config_parser.h>
+#include "memory.h"
+
+#ifdef _WIN32 
+inline int access(const char *pathname, int mode) {
+    return _access(pathname, mode);
+}
+#else
 #include <unistd.h>
 #endif
 
@@ -22,6 +29,46 @@ void test_log_str_to_level(void **unused) {
     /* negative */
     assert_int_equal(log_from_str_to_level("hahahaha"), SF_LOG_FATAL);
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
+}
+
+/**
+ * Tests log settings from client config file
+ */
+void test_client_config_log(void **unused) {
+    char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+    char configFilePath[] = "sf_client_config.json";
+    FILE *file;
+    file = fopen(configFilePath,"w");
+    fprintf(file, clientConfigJSON);
+    fclose(file);
+
+    // Parse client config for log details
+    client_config clientConfig = { .logLevel = "", .logPath = "" };
+    load_client_config(configFilePath, &clientConfig);
+
+    // Set log name and level
+    char logname[] = "%s/dummy.log";
+    size_t log_path_size = 1 + strlen(logname);
+    log_path_size += strlen(clientConfig.logPath);
+    char* LOG_PATH = (char*)SF_CALLOC(1, log_path_size);
+    sf_sprintf(LOG_PATH, log_path_size, logname, clientConfig.logPath);
+    log_set_level(log_from_str_to_level(clientConfig.logLevel));
+    log_set_path(LOG_PATH);
+
+    // Ensure the log file doesn't exist at the beginning
+    remove(LOG_PATH);
+
+    // Info log won't trigger the log file creation since log level is set to warn in config
+    log_info("dummy info log");
+    assert_int_not_equal(access(LOG_PATH, 0), 0);
+
+    // Warning log will trigger the log file creation
+    log_warn("dummy warning log");
+    assert_int_equal(access(LOG_PATH, 0), 0);
+
+    // Cleanup
+    remove(configFilePath);
+    remove(LOG_PATH);
 }
 
 #ifndef _WIN32
@@ -140,6 +187,7 @@ void test_mask_secret_log(void **unused) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_log_str_to_level),
+        cmocka_unit_test(test_client_config_log),
 #ifndef _WIN32
         cmocka_unit_test(test_log_creation),
         cmocka_unit_test(test_mask_secret_log),
