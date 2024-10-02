@@ -16,6 +16,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#ifndef _WIN32 
+#include <dlfcn.h>
+#endif
+
 using namespace Snowflake::Client;
 
 namespace
@@ -115,9 +119,9 @@ void ClientConfigParser::loadClientConfig(
       }
 #else
       // 4. Try user home dir
-      if (std::string homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf)))
+      if (const char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf)))
       {
-        std::string homeDirFilePath = homeDir + SF_PATH_SEPARATOR + SF_CLIENT_CONFIG_FILE_NAME;
+        std::string homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
         if (boost::filesystem::exists(homeDirFilePath))
         {
           derivedConfigPath = homeDirFilePath;
@@ -163,7 +167,7 @@ void ClientConfigParser::parseConfigFile(
         "Could not open a file. The file may not exist: %s",
         in_filePath.c_str());
       std::string errMsg = "Error finding client configuration file: " + in_filePath;
-      throw std::exception(errMsg.c_str());
+      throw ClientConfigException(errMsg.c_str());
     }
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
@@ -180,7 +184,7 @@ void ClientConfigParser::parseConfigFile(
         "parseConfigFile",
         "Error in parsing JSON: %s, err: %s", in_filePath.c_str(), error_ptr);
       std::string errMsg = "Error parsing client configuration file: " + in_filePath;
-      throw std::exception(errMsg.c_str());
+      throw ClientConfigException(errMsg.c_str());
     }
   }
   catch (std::exception& ex)
@@ -219,7 +223,7 @@ void ClientConfigParser::checkIfValidPermissions(const std::string& in_filePath)
       "Error due to other users having permission to modify the config file: %s",
       in_filePath.c_str());
     std::string errMsg = "Error due to other users having permission to modify the config file: " + in_filePath;
-    throw std::exception(errMsg.c_str());
+    throw ClientConfigException(errMsg.c_str());
   }
 }
 
@@ -236,7 +240,7 @@ void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
       "checkUnknownEntries",
       "Error in parsing JSON: %s, err: %s", in_jsonString.c_str(), error_ptr);
     std::string errMsg = "Error parsing json: " + in_jsonString;
-    throw std::exception(errMsg.c_str());
+    throw ClientConfigException(errMsg.c_str());
   }
 
   if (snowflake_cJSON_IsObject(jsonConfig))
@@ -269,6 +273,7 @@ std::string ClientConfigParser::getBinaryPath()
   HMODULE hm = NULL;
   wchar_t appName[256];
   GetModuleFileNameW(hm, appName, 256);
+  binaryFullPath = appName;
 #else
   Dl_info info;
   int result = dladdr((void*)getBinaryPath, &info);
@@ -277,8 +282,6 @@ std::string ClientConfigParser::getBinaryPath()
     binaryFullPath = info.dli_fname;
   }
 #endif
-
-  binaryFullPath = appName;
   size_t pos = binaryFullPath.find_last_of(PATH_SEP);
   if (pos == std::wstring::npos)
   {
