@@ -19,6 +19,7 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
+#include "client_config_parser.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -36,6 +37,8 @@ sf_bool DEBUG;
 sf_bool SF_OCSP_CHECK;
 char *SF_HEADER_USER_AGENT = NULL;
 
+static char *CLIENT_CONFIG_FILE = NULL;
+static char* LOG_LEVEL;
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
@@ -306,18 +309,34 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
+    char client_config_file[MAX_PATH] = {0};
+    snowflake_global_get_attribute(
+      SF_GLOBAL_CLIENT_CONFIG_FILE, client_config_file, sizeof(client_config_file));
+    client_config clientConfig = { .logLevel = "", .logPath = "" };
+    load_client_config(client_config_file, &clientConfig);
+
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
 
-    /* The environment variables takes precedence over the specified parameters */
-    sf_log_path = sf_getenv_s("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
-    if (sf_log_path == NULL && log_path) {
+    /* The client config takes precedence over environmental variables */
+    if (strlen(clientConfig.logPath) != 0) {
+      sf_log_path = clientConfig.logPath;
+    } else {
+      /* The environment variables takes precedence over the specified parameters */
+      sf_log_path = sf_getenv_s("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
+      if (sf_log_path == NULL && log_path) {
         sf_log_path = log_path;
+      }
     }
 
-    sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
-    if (sf_log_level_str != NULL) {
+    if (strlen(clientConfig.logLevel) != 0) {
+      sf_log_level = log_from_str_to_level(clientConfig.logLevel);
+    } else {
+    /* The client config takes precedence over environment variables */
+      sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
+      if (sf_log_level_str != NULL) {
         sf_log_level = log_from_str_to_level(sf_log_level_str);
+      }
     }
 
     // Set logging level
@@ -349,6 +368,9 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
                 "Log path is NULL. Was there an error during path construction?\n");
         goto cleanup;
     }
+
+    snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, sf_log_path);
+    snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));
 
     ret = SF_BOOLEAN_TRUE;
 
@@ -536,7 +558,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     return SF_STATUS_SUCCESS;
 }
 
-
 SF_STATUS STDCALL snowflake_global_init(
     const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks) {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -552,11 +573,13 @@ SF_STATUS STDCALL snowflake_global_init(
     _snowflake_memory_hooks_setup(hooks);
     sf_memory_init();
     sf_error_init();
+
     if (!log_init(log_path, log_level)) {
         // no way to log error because log_init failed.
         sf_fprintf(stderr, "Error during log initialization");
         goto cleanup;
     }
+
     CURLcode curl_ret = curl_global_init(CURL_GLOBAL_DEFAULT);
     if (curl_ret != CURLE_OK) {
         log_fatal("curl_global_init() failed: %s",
@@ -620,6 +643,15 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
         case SF_GLOBAL_OCSP_CHECK:
             SF_OCSP_CHECK = *(sf_bool *) value;
             break;
+        case SF_GLOBAL_CLIENT_CONFIG_FILE:
+            alloc_buffer_and_copy(&CLIENT_CONFIG_FILE, value);
+            break;
+        case SF_GLOBAL_LOG_LEVEL:
+            alloc_buffer_and_copy(&LOG_LEVEL, value);
+            break;
+        case SF_GLOBAL_LOG_PATH:
+            alloc_buffer_and_copy(&LOG_PATH, value);
+            break;
         default:
             break;
     }
@@ -648,6 +680,30 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_OCSP_CHECK:
             *((sf_bool *) value) = SF_OCSP_CHECK;
+            break;
+        case SF_GLOBAL_CLIENT_CONFIG_FILE:
+            if (CLIENT_CONFIG_FILE) {
+              if (strlen(CLIENT_CONFIG_FILE) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, CLIENT_CONFIG_FILE, size);
+            }
+            break;
+        case SF_GLOBAL_LOG_LEVEL:
+            if (LOG_LEVEL) {
+              if (strlen(LOG_LEVEL) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, LOG_LEVEL, size);
+            }
+            break;
+        case SF_GLOBAL_LOG_PATH:
+            if (LOG_PATH) {
+              if (strlen(LOG_PATH) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, LOG_PATH, size);
+            }
             break;
         default:
             break;

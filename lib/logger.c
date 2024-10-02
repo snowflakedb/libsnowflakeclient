@@ -216,6 +216,10 @@ SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
     return SF_LOG_FATAL;
 }
 
+const char* log_from_level_to_str(SF_LOG_LEVEL level) {
+    return level_names[level];
+}
+
 void log_set_path(const char *path) {
     L.path = path;
 }

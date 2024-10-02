@@ -218,6 +218,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
+        include/snowflake/ClientConfigParser.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -240,6 +241,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp
+        cpp/lib/ClientConfigParser.cpp
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
@@ -250,7 +252,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/result_set_json.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
-        lib/authenticator.h)
+        lib/authenticator.h
+        lib/client_config_parser.h)
 
 if (UNIX)
     if (LINUX)
