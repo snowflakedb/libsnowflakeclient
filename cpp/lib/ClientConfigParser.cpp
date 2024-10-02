@@ -267,26 +267,27 @@ void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
 ////////////////////////////////////////////////////////////////////////////////
 std::string ClientConfigParser::getBinaryPath()
 {
-  std::wstring binaryFullPath;
-
+  std::string binaryFullPath;
 #if defined(WIN32) || defined(_WIN64)
+  std::wstring path;
   HMODULE hm = NULL;
   wchar_t appName[256];
   GetModuleFileNameW(hm, appName, 256);
-  binaryFullPath = appName;
+  path = appName;
+  binaryFullPath = std::string(path.begin(), path.end());
 #else
   Dl_info info;
-  int result = dladdr((void*)getBinaryPath, &info);
+  int result = dladdr((void*)load_client_config, &info);
   if (result)
   {
-    binaryFullPath = info.dli_fname;
+    binaryFullPath = std::string(info.dli_fname);
   }
 #endif
   size_t pos = binaryFullPath.find_last_of(PATH_SEP);
-  if (pos == std::wstring::npos)
+  if (pos == std::string::npos)
   {
     return "";
   }
-  std::wstring binaryPath = binaryFullPath.substr(0, pos + 1);
-  return std::string(binaryPath.begin(), binaryPath.end());
+  std::string binaryPath = binaryFullPath.substr(0, pos + 1);
+  return binaryPath;
 }
