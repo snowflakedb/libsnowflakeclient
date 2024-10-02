@@ -20,6 +20,17 @@ namespace Client
     std::string logPath = "";
   };
 
+  struct ClientConfigException : public std::exception
+  {
+    ClientConfigException(const std::string& message) : message_(message) {}
+    const char* what() const noexcept
+    {
+      return message_.c_str();
+    }
+
+    std::string message_;
+  };
+
   class ClientConfigParser
   {
     // Public ==================================================================
