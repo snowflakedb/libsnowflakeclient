@@ -484,9 +484,21 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
         snowflake_cJSON_Delete(*json);
         *json = NULL;
-        *json = snowflake_cJSON_Parse(buffer.buffer);
+        if (is_saml_response(buffer.buffer)) 
+        {
+            *json = snowflake_cJSON_CreateObject();
+            snowflake_cJSON_AddRawToObject(*json, "data", buffer.buffer);
+            snowflake_cJSON_AddNullToObject(*json, "code");
+        }
+        else 
+        {
+            *json = snowflake_cJSON_Parse(buffer.buffer);
+        }
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
+            if (is_one_time_token_request(*json)) {
+                snowflake_cJSON_AddNullToObject(*json, "code");
+            }
         } else {
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                                 "Unable to parse JSON text response.",

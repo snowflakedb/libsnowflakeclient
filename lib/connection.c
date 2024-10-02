@@ -1340,3 +1340,14 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
 }
+
+sf_bool is_one_time_token_request(cJSON* resp)
+{
+    return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+}
+
+sf_bool is_saml_response(char* response)
+{
+    char* doctype = "<!DOCTYPE html>";
+    return strncmp(response, doctype, strlen(doctype)) == 0;
+}

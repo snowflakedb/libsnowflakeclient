@@ -18,7 +18,8 @@ extern "C" {
 /**
  * API Name
  */
-#define SF_API_NAME "C API"
+#define SF_API_NAME "ODBC"
+//#define SF_API_NAME "JAVASCIRPT"
 
 /**
  * SQLState code length
@@ -40,6 +41,12 @@ extern "C" {
  * TODO
  */
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
+
+ /**
+* Authenticator, Okta
+* This definition will not be required if we implement all authentication.
+*/
+#define SF_AUTHENTICATOR_OKTA "okta"
 
 /**
  * UUID4 length
@@ -262,11 +269,12 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
+    SF_CON_DISABLE_SAML_URL_CHECK,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
-    SF_QUERY_RESULT_TYPE
+    SF_QUERY_RESULT_TYPE,
 } SF_ATTRIBUTE;
 
 /**
@@ -347,6 +355,7 @@ typedef struct SF_CONNECT {
     // Proxy
     char * proxy;
     char * no_proxy;
+    sf_bool proxy_with_env;
 
     // Query Context Cache
     // the flag of whether to disable qcc, false by default
@@ -393,6 +402,8 @@ typedef struct SF_CONNECT {
     uint64 max_varchar_size;
     uint64 max_binary_size;
     uint64 max_variant_size;
+
+    sf_bool disable_saml_url_check;
 } SF_CONNECT;
 
 /**

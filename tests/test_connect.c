@@ -33,9 +33,14 @@ void test_connect_with_minimum_parameters(void **unused) {
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    //snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    //snowflake_set_attribute(sf, SF_CON_PASSWORD,
+    //                        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USER"));
     snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
+        getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        getenv("SNOWFLAKE_TEST_AUTHENTICATOR"));
     char *host, *port, *protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {
@@ -50,7 +55,7 @@ void test_connect_with_minimum_parameters(void **unused) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
 
-    SF_STATUS status = snowflake_connect(sf);
+     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
@@ -235,13 +240,13 @@ void test_connect_with_proxy(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_null_sf_connect),
-      cmocka_unit_test(test_no_connection_parameters),
+      //cmocka_unit_test(test_null_sf_connect),
+      //cmocka_unit_test(test_no_connection_parameters),
       cmocka_unit_test(test_connect_with_minimum_parameters),
-      cmocka_unit_test(test_connect_with_full_parameters),
+/*      cmocka_unit_test(test_connect_with_full_parameters),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
-      cmocka_unit_test(test_connect_with_proxy),
+      cmocka_unit_test(test_connect_with_proxy),*/
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

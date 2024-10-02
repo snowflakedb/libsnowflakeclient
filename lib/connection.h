@@ -618,6 +618,11 @@ int8 get_login_retry_count(SF_CONNECT *sf);
 */
 int64 get_retry_timeout(SF_CONNECT *sf);
 
+sf_bool is_one_time_token_request(cJSON* resp);
+
+sf_bool is_saml_response(char* response);
+
+
 #ifdef __cplusplus
 }
 #endif

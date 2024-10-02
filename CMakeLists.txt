@@ -160,6 +160,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/StorageClientFactory.hpp
         cpp/StorageClientFactory.cpp
         cpp/RemoteStorageRequestOutcome.hpp
+        cpp/entities.cpp
+        cpp/entities.hpp
         cpp/util/Base64.hpp
         cpp/util/Base64.cpp
         cpp/util/ByteArrayStreamBuf.cpp

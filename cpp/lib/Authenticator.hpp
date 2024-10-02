@@ -16,6 +16,8 @@
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
 #include "cJSON.h"
+#include "snowflake/SFURL.hpp"
+
 
 namespace Snowflake
 {
@@ -99,14 +101,16 @@ namespace Client
       void updateDataMap(cJSON* dataMap);
 
   private:
-      SF_CONNECT *m_connection;
+      SF_CONNECT* m_connection;
       std::string m_samlResponse;
+      Snowflake::Client::Util::Proxy m_proxySettings;
 
       /**
        * Extract post back url from samel response. Input is in HTML format.
-       */
+      */
       std::string extractPostBackUrlFromSamlResponse(std::string html);
-
+      SFURL getServerURLSync();
+      cJSON* getIdpInfo();
   };
 
 } // namespace Client

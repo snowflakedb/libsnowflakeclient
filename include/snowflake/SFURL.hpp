@@ -422,6 +422,8 @@ public:
     return m_proxy;
   }
 
+  static bool urlHasSamePrefix(std::string url1, std::string url2);
+
 private:
 
   /**
