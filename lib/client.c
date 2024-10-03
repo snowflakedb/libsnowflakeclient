@@ -359,10 +359,12 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
+        snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, sf_log_path);
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
+        snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, "logs/");
     }
     if (LOG_PATH != NULL) {
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -373,7 +375,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         goto cleanup;
     }
 
-    snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, sf_log_path);
     snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));
 
     ret = SF_BOOLEAN_TRUE;
