@@ -5,6 +5,7 @@
 #ifndef SNOWFLAKE_CLIENT_VERSION_H
 #define SNOWFLAKE_CLIENT_VERSION_H
 
-#define SF_API_VERSION "1.0.14"
+// TODO: temporary change for testing, will remove
+#define SF_API_VERSION "3.0.1"
 
 #endif /* SNOWFLAKE_CLIENT_VERSION_H */

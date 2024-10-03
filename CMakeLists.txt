@@ -230,8 +230,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientQueryContextCache.cpp
         cpp/lib/ClientQueryContextCache.hpp
         cpp/lib/result_set.cpp
-        cpp/lib/result_set_arrow.cpp
-        cpp/lib/result_set_json.cpp
         cpp/lib/ResultSet.cpp
         cpp/lib/ResultSet.hpp
         cpp/lib/ResultSetArrow.cpp
@@ -246,8 +244,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/CurlDesc.cpp
         cpp/util/CurlDescPool.cpp
         lib/result_set.h
-        lib/result_set_arrow.h
-        lib/result_set_json.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h)

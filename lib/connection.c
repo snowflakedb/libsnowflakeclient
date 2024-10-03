@@ -201,7 +201,12 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     return body;
 }
 
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only) {
+cJSON *STDCALL create_query_json_body(const char *sql_text,
+                                      int64 sequence_id,
+                                      const char *request_id,
+                                      sf_bool is_describe_only,
+                                      int64 multi_stmt_count)
+{
     cJSON *body;
     double submission_time;
     // Create body
@@ -221,11 +226,27 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
 
+    cJSON* parameters = NULL;
+    if (multi_stmt_count >= 0)
+    {
+        parameters = snowflake_cJSON_CreateObject();
+        snowflake_cJSON_AddNumberToObject(parameters, "MULTI_STATEMENT_COUNT", (double)multi_stmt_count);
+    }
+
 #ifdef SF_WIN32
-    cJSON * parameters = snowflake_cJSON_CreateObject();
+    if (!parameters)
+    {
+        parameters = snowflake_cJSON_CreateObject();
+    }
     snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
-    snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
+
+    // temporary code to fake as ODBC to have multiple statements enabled
+    snowflake_cJSON_AddStringToObject(parameters, "ODBC_QUERY_RESULT_FORMAT", "JSON");
 #endif
+    if (parameters)
+    {
+        snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
+    }
     return body;
 }
 
