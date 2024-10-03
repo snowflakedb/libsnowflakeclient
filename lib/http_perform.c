@@ -188,7 +188,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             network_timeout,
             djb.base,      // time to sleep
             &djb,    // Decorrelate jitter
-            time(NULL)
+            sf_get_current_time_millis() // start time
     };
     time_t elapsedRetryTime = time(NULL);
     RAW_CHAR_BUFFER buffer = {NULL, 0};
