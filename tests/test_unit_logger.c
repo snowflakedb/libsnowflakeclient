@@ -39,7 +39,7 @@ void test_client_config_log(void **unused) {
     char configFilePath[] = "sf_client_config.json";
     FILE *file;
     file = fopen(configFilePath,"w");
-    fprintf(file, clientConfigJSON);
+    fprintf(file, "%s", clientConfigJSON);
     fclose(file);
 
     // Parse client config for log details
