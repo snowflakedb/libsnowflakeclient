@@ -18,7 +18,7 @@ extern "C" {
 /**
  * API Name
  */
-#define SF_API_NAME "C API"
+#define SF_API_NAME "ODBC"
 
 /**
  * SQLState code length
@@ -159,7 +159,8 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_NULL_POINTER = 240022,
     SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
     SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT = 240024,
-    SF_STATUS_ERROR_OTHER = 240025
+    SF_STATUS_ERROR_OTHER = 240025,
+    SF_STATUS_ERROR_FILE_TRANSFER = 240026
 } SF_STATUS;
 
 /**
@@ -262,6 +263,14 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
+    SF_CON_PUT_TEMPDIR,
+    SF_CON_PUT_COMPRESSLV,
+    SF_CON_PUT_USE_URANDOM_DEV,
+    SF_CON_PUT_FASTFAIL,
+    SF_CON_PUT_MAXRETRIES,
+    SF_CON_GET_FASTFAIL,
+    SF_CON_GET_MAXRETRIES,
+    SF_CON_GET_THRESHOLD,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -393,6 +402,17 @@ typedef struct SF_CONNECT {
     uint64 max_varchar_size;
     uint64 max_binary_size;
     uint64 max_variant_size;
+
+    // put get configurations
+    sf_bool use_s3_regional_url;
+    sf_bool put_use_urand_dev;
+    int8 put_compress_level;
+    char* put_temp_dir;
+    sf_bool put_fastfail;
+    int8 put_maxretries;
+    sf_bool get_fastfail;
+    int8 get_maxretries;
+    int64 get_threshold;
 } SF_CONNECT;
 
 /**
@@ -442,6 +462,16 @@ typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
  */
 typedef struct SF_PUT_GET_RESPONSE SF_PUT_GET_RESPONSE;
 
+typedef void* result_set_ptr;
+
+/**
+ * An enumeration over all supported query result formats.
+ */
+typedef enum QueryResultFormat_e
+{
+  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_PUTGET_FORMAT, SF_FORMAT_UNKNOWN
+} QueryResultFormat;
+
 /**
  * Statement context
  */
@@ -451,9 +481,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    void *qrf;
+    QueryResultFormat qrf;
     char *sql_text;
-    void *result_set;
+    result_set_ptr result_set;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
