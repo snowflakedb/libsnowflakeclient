@@ -1118,7 +1118,7 @@ uint32 STDCALL retry_ctx_next_sleep(RETRY_CONTEXT *retry_ctx) {
     retry_ctx->sleep_time = get_next_sleep_with_jitter(retry_ctx->djb, retry_ctx->sleep_time, retry_ctx->retry_count);
 
     // limit the sleep time within retry timeout
-    uint32 time_elapsed = time(NULL) - retry_ctx->start_time;
+    uint32 time_elapsed = time(NULL) - (retry_ctx->start_time / 1000);
     if (time_elapsed >= retry_ctx->retry_timeout)
     {
       // retry timeout is checked before calling retry_ctx_next_sleep
@@ -1189,6 +1189,11 @@ sf_bool STDCALL retry_ctx_update_url(RETRY_CONTEXT *retry_ctx,
       // clear retry reason for the next retry attempt
       retry_ctx->retry_reason = 0;
     }
+
+    // add client start time in milliseconds
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_CLIENT_START_TIME);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%llu", retry_ctx->start_time);
+    SPRINT_TO_BUFFER(retry_context_ptr, "%s", URL_PARAM_DELIM);
 
     // add request guid after retry context
     request_guid_ptr = retry_context_ptr;

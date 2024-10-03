@@ -36,6 +36,7 @@
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
 #define URL_PARAM_RETRY_REASON "retryReason="
+#define URL_PARAM_CLIENT_START_TIME "clientStartTime="
 
 #define CLIENT_APP_ID_KEY "CLIENT_APP_ID"
 #define CLIENT_APP_VERSION_KEY "CLIENT_APP_VERSION"
