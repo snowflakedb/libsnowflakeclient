@@ -6,17 +6,16 @@ RUN yum -y update
 RUN yum install -y yum-utils
 
 # dependencies & tools
-RUN yum install -y wget gettext zip cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 automake autoconf libtool perl-IPC-Cmd perl-Digest-SHA
+RUN yum install -y wget gettext zip bzip2 cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 re2-devel automake autoconf libtool perl-IPC-Cmd perl-Digest-SHA
 RUN ln -s /usr/bin/python3.9 /usr/bin/python
 RUN python -m pip install --upgrade pip
 RUN pip install awscli
 
 # valgrind
-RUN wget https://sourceware.org/pub/valgrind/valgrind-3.23.0.tar.bz2
-RUN tar xvf valgrind-3.23.0.tar.bz2 && cd valgrind-3.23.0 && ./configure && make && make install
+RUN cd /tmp && wget https://sourceware.org/pub/valgrind/valgrind-3.23.0.tar.bz2 && tar xvf valgrind-3.23.0.tar.bz2 && cd valgrind-3.23.0 && ./configure && make && make install
 
 #cppunit
-RUN git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
+RUN cd /tmp && git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
     cd cppunit &&\
     git checkout tags/cppunit-1.15.1 -b v1.15.1 &&\
     ./autogen.sh &&\
@@ -25,7 +24,7 @@ RUN git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
     cp /usr/local/lib/libcppunit* /usr/lib64
 
 # Java
-RUN apt-get install -y openjdk-8-jdk
+RUN yum install -y java-1.8.0-openjdk
 
 # gosu
 RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-arm64"
@@ -34,9 +33,7 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # workspace
-
 RUN mkdir -p /home/user
 RUN chmod 777 /home/user
 WORKDIR /home/user
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
