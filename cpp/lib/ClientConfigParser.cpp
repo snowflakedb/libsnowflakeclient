@@ -41,12 +41,14 @@ void load_client_config(
   if (!clientConfig.logLevel.empty())
   {
     out_clientConfig->logLevel = (char*)SF_CALLOC(1, sizeof(clientConfig.logLevel));
-    strcpy(out_clientConfig->logLevel, clientConfig.logLevel.data());
+    sf_memcpy(out_clientConfig->logLevel, sizeof(out_clientConfig->logLevel),
+      clientConfig.logLevel.data(), clientConfig.logLevel.size());
   }
   if (!clientConfig.logPath.empty())
   {
     out_clientConfig->logPath = (char*)SF_CALLOC(1, sizeof(clientConfig.logPath));
-    strcpy(out_clientConfig->logPath, clientConfig.logPath.data());
+    sf_memcpy(out_clientConfig->logPath, MAX_PATH,
+      clientConfig.logPath.data(), clientConfig.logPath.size());
   }
 }
 
