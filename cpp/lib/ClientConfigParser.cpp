@@ -14,7 +14,6 @@
 
 #undef snprintf
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 
 #ifndef _WIN32 
 #include <dlfcn.h>
@@ -251,8 +250,15 @@ void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
     snowflake_cJSON_ArrayForEach(entry, jsonConfig)
     {
       std::string key = entry->string;
-      boost::algorithm::to_lower(key);
-      if (KnownCommonEntries.find(key) == KnownCommonEntries.end())
+      bool found = false;
+      for (std::string knownEntry : KnownCommonEntries)
+      {
+        if (sf_strncasecmp(key.c_str(), knownEntry.c_str(), knownEntry.length()) == 0)
+        {
+          found = true;
+        }
+      }
+      if (!found)
       {
         std::string warnMsg =
           "Unknown configuration entry: " + key + " with value:" + entry->valuestring;
