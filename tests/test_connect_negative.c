@@ -170,7 +170,7 @@ void test_chunk_downloading_timeout(void** unused) {
       break;
     }
   }
-  if (status = SF_STATUS_SUCCESS)
+  if (status != SF_STATUS_SUCCESS)
   {
     fprintf(stderr, "test_chunk_downloading_timeout: query timeout after retry, skip.\n");
     return;
