@@ -110,7 +110,6 @@ namespace Client
       */
       std::string extractPostBackUrlFromSamlResponse(std::string html);
       SFURL getServerURLSync();
-      cJSON* getIdpInfo();
   };
 
 } // namespace Client

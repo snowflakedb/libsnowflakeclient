@@ -622,6 +622,7 @@ sf_bool is_one_time_token_request(cJSON* resp);
 
 sf_bool is_saml_response(char* response);
 
+sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json);
 
 #ifdef __cplusplus
 }

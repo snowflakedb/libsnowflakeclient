@@ -140,6 +140,14 @@ void test_error_parse(void ** unused)
   REQUIRE_THROWS(SFURL::parse("http://github.com:80ad"));
 }
 
+void test_url_has_same_prefix(void** unused) 
+{
+    char* url1 = "https://okta.snowflake.com";
+    char* url2 = "http://snowflake.com/request_path";
+
+    assert_true(SFURL::urlHasSamePrefix(url1, url2));
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -152,6 +160,7 @@ int main(void) {
     cmocka_unit_test(test_parse_authority),
     cmocka_unit_test(test_construct),
     cmocka_unit_test(test_error_parse),
+    cmocka_unit_test(test_url_has_same_prefix),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;

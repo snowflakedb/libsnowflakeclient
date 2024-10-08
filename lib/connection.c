@@ -1351,3 +1351,64 @@ sf_bool is_saml_response(char* response)
     char* doctype = "<!DOCTYPE html>";
     return strncmp(response, doctype, strlen(doctype)) == 0;
 }
+
+sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
+{
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    cJSON* dataMap = snowflake_cJSON_CreateObject();
+    // connection URL
+    const char* connectURL = "/session/authenticator-request";
+    SF_ERROR_STRUCT* err = &sf->error;
+
+    // login info as a json post body
+    snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_ID", "ODBC");
+    snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_VERSION", "3.4.1");
+    snowflake_cJSON_AddStringToObject(dataMap, "ACCOUNT_NAME", sf->account);
+    snowflake_cJSON_AddStringToObject(dataMap, "AUTHENTICATOR", sf->authenticator);
+    snowflake_cJSON_AddStringToObject(dataMap, "LOGIN_NAME", sf->user);
+    snowflake_cJSON_AddStringToObject(dataMap, "PORT", sf->port);
+    snowflake_cJSON_AddStringToObject(dataMap, "PROTOCOL", sf->protocol);
+
+    cJSON* authnData = snowflake_cJSON_CreateObject();
+    cJSON* resp = NULL;
+    snowflake_cJSON_AddItemReferenceToObject(authnData, "data", dataMap);
+
+    // add headers for account and authentication
+    SF_HEADER* httpExtraHeaders = sf_header_create();
+    httpExtraHeaders->use_application_json_accept_type = TRUE;
+    if (!create_header(sf, httpExtraHeaders, &sf->error)) {
+        log_trace("sf", "AuthenticatorOKTA",
+            "getIdpInfo",
+            "Failed to create the header for the request to get the token URL and the SSO URL");
+        SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+        ret = SF_BOOLEAN_FALSE;
+        goto cleanup;
+    }
+
+    unsigned renew_timeout = 0;
+    unsigned retried_count = 0;
+    char* s_body = snowflake_cJSON_Print(authnData);
+
+    if (!request(sf, &resp, connectURL, NULL,
+        0, s_body, httpExtraHeaders,
+        POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
+        renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), NULL,
+        retried_count, NULL, SF_BOOLEAN_TRUE))
+    {
+        log_info("sf", "Connection", "getIdpInfo",
+            "Fail to get authenticator info, response body=%s\n",
+            snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data")));
+        SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "SFConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
+        ret = SF_BOOLEAN_FALSE;
+        goto cleanup;
+    }
+    *json = snowflake_cJSON_GetObjectItem(resp, "data");
+    ret = SF_BOOLEAN_TRUE;
+
+cleanup:
+    sf_header_destroy(httpExtraHeaders);
+    snowflake_cJSON_Delete(authnData);
+
+    return ret;
+}
+

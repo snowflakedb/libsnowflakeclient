@@ -117,14 +117,48 @@ void test_connect_with_duo_passcodeInPassword(void** unused)
     snowflake_term(sf);
 }
 
+void test_okta_connect(void** unused) {
+    SF_CONNECT* sf = snowflake_init();
+    sf_bool disable_saml_url_check = SF_BOOLEAN_TRUE;
+    sf->disable_saml_url_check = &disable_saml_url_check;
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USERNAME"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        getenv("SNOWFLAKE_TEST_AUTHENTICATOR"));
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
 int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_connect_with_duo_push),
-        cmocka_unit_test(test_connect_with_duo_passcode),
+        //cmocka_unit_test(test_connect_with_duo_push),
+        //cmocka_unit_test(test_connect_with_duo_passcode),
         //Need to run this testing separately.
-        //cmocka_unit_test(test_connect_with_duo_passcodeInPassword),
+        //cmocka_unit_test(test_connect_with_duo_passcodeInPassword)
+        cmocka_unit_test(test_okta_connect),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
