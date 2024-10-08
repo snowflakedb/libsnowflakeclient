@@ -7,11 +7,7 @@
 #include <client_config_parser.h>
 #include "memory.h"
 
-#ifdef _WIN32 
-inline int access(const char *pathname, int mode) {
-    return _access(pathname, mode);
-}
-#else
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
@@ -31,6 +27,7 @@ void test_log_str_to_level(void **unused) {
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
 }
 
+#ifndef _WIN32
 /**
  * Tests log settings from client config file
  */
@@ -60,11 +57,11 @@ void test_client_config_log(void **unused) {
 
     // Info log won't trigger the log file creation since log level is set to warn in config
     log_info("dummy info log");
-    assert_int_not_equal(access(LOG_PATH, 0), 0);
+    assert_int_not_equal(access(LOG_PATH, F_OK), 0);
 
     // Warning log will trigger the log file creation
     log_warn("dummy warning log");
-    assert_int_equal(access(LOG_PATH, 0), 0);
+    assert_int_equal(access(LOG_PATH, F_OK), 0);
     log_close();
 
     // Cleanup
@@ -72,7 +69,6 @@ void test_client_config_log(void **unused) {
     remove(LOG_PATH);
 }
 
-#ifndef _WIN32
 /**
  * Tests timing of log file creation
  */
