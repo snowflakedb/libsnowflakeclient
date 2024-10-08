@@ -18,7 +18,6 @@
 #include "cJSON.h"
 #include "snowflake/SFURL.hpp"
 
-
 namespace Snowflake
 {
 namespace Client

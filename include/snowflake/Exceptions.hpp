@@ -41,9 +41,11 @@ namespace Snowflake
                 GeneralException(SF_ERROR_STRUCT* error) : SnowflakeException(error) {};
             };
 
-            struct OktaException : public std::exception
+            struct AuthException : public std::exception
             {
-                OktaException(SF_ERROR_STRUCT* error) : message_(error->msg) {}
+                AuthException(SF_ERROR_STRUCT* error) : message_(error->msg) {}
+                AuthException(const std::string& message) : message_(message) {}
+
                 const char* what() const noexcept
                 {
                     return message_.c_str();

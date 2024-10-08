@@ -18,8 +18,7 @@ extern "C" {
 /**
  * API Name
  */
-#define SF_API_NAME "ODBC"
-//#define SF_API_NAME "JAVASCIRPT"
+#define SF_API_NAME "C API"
 
 /**
  * SQLState code length
@@ -41,12 +40,6 @@ extern "C" {
  * TODO
  */
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
-
- /**
-* Authenticator, Okta
-* This definition will not be required if we implement all authentication.
-*/
-#define SF_AUTHENTICATOR_OKTA "okta"
 
 /**
  * UUID4 length

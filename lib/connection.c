@@ -1357,6 +1357,7 @@ sf_bool is_saml_response(char* response)
     return strncmp(response, doctype, strlen(doctype)) == 0;
 }
 
+ 
 sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;

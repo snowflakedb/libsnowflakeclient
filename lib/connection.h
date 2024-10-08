@@ -623,10 +623,19 @@ int64 get_retry_timeout(SF_CONNECT *sf);
 */
 uint64 sf_get_current_time_millis();
 
+/*
+* a function to check that this request is whether the one time token request.
+*/
 sf_bool is_one_time_token_request(cJSON* resp);
 
+/*
+* a function to check that this request is whether the response includes the SAML response.
+*/
 sf_bool is_saml_response(char* response);
 
+/*
+* Get IdpInfo for OKTA and SAML 2.0 application
+*/
 sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json);  
   
 #ifdef __cplusplus

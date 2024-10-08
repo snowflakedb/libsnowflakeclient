@@ -35,16 +35,10 @@
 #define strcasecmp _stricmp
 #endif
 
-#define JWT_THROW(msg)                              \
+#define AUTH_THROW(msg)                              \
 {                                                   \
-  throw Snowflake::Client::Jwt::JwtException(msg);  \
+  throw Snowflake::Client::Exception::AuthException(msg);  \
 }
-
-#define OKTA_THROW(err)                             \
-{                                                   \
-  throw Snowflake::Client::Exception::OktaException(err);                         \
-}
-
 
 // wrapper functions for C
 extern "C" {
@@ -62,7 +56,6 @@ extern "C" {
     }
  
     return AUTH_OKTA;
-    //return AUTH_UNSUPPORTED;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
@@ -128,9 +121,11 @@ extern "C" {
     }
     catch (...)
     {
-      SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-                          "authentication failed",
-                          SF_SQLSTATE_GENERAL_ERROR);
+        if (!&conn->error) {
+            SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
+                "authentication failed",
+                SF_SQLSTATE_GENERAL_ERROR);
+        }
       return SF_STATUS_ERROR_GENERAL;
     }
 
@@ -230,7 +225,7 @@ namespace Client
     if (sf_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
     {
       CXX_LOG_ERROR("Failed to open private key file. Errno: %d", errno);
-      JWT_THROW("Failed to open private key file");
+      AUTH_THROW("Failed to open private key file");
     }
 
     m_privKey = PEM_read_PrivateKey(file, nullptr, nullptr, (void *)passcode.c_str());
@@ -238,7 +233,7 @@ namespace Client
 
     if (m_privKey == nullptr) {
       CXX_LOG_ERROR("Loading private key from %s failed", privateKeyFile.c_str());
-      JWT_THROW("Marshaling private key failed");
+      AUTH_THROW("Marshaling private key failed");
     }
   }
 
@@ -318,7 +313,7 @@ namespace Client
     if (size < 0)
     {
       CXX_LOG_ERROR("Fail to extract public key");
-      JWT_THROW("Public Key extract failed");
+      AUTH_THROW("Public Key extract failed");
     }
     std::vector<char> pubKeyBytes(out, out + size);
     OPENSSL_free(out);
@@ -337,19 +332,19 @@ namespace Client
     if (mdctx == nullptr)
     {
       CXX_LOG_ERROR("EVP context create failed.");
-      JWT_THROW("EVP context create failed");
+      AUTH_THROW("EVP context create failed");
     }
 
     if (1 != EVP_DigestInit_ex(mdctx.get(), EVP_sha256(), nullptr))
     {
       CXX_LOG_ERROR("Digest Init failed.");
-      JWT_THROW("Digest Init failed");
+      AUTH_THROW("Digest Init failed");
     }
 
     if (1 != EVP_DigestUpdate(mdctx.get(), message.data(), message.size()))
     {
       CXX_LOG_ERROR("Digest update failed.");
-      JWT_THROW("Digest update failed");
+      AUTH_THROW("Digest update failed");
     }
 
     std::vector<char> coded(EVP_MD_size(EVP_sha256()));
@@ -358,7 +353,7 @@ namespace Client
     if (1 != EVP_DigestFinal_ex(mdctx.get(), (unsigned char *)coded.data(), &code_size))
     {
       CXX_LOG_ERROR("Digest final failed.");
-      JWT_THROW("Digest final failed");
+      AUTH_THROW("Digest final failed");
     }
 
     coded.resize(code_size);
@@ -383,8 +378,9 @@ namespace Client
       cJSON* respData = NULL;
       if (!getIdpInfo(m_connection, &respData))
       {
-          OKTA_THROW(&m_connection->error);
+          AUTH_THROW(&m_connection->error);
       }
+
       SF_ERROR_STRUCT *err = &m_connection->error;
       char* tokenURLStr = snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(respData, "tokenUrl"));
       char* ssoURLStr = snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(respData, "ssoUrl"));
@@ -397,7 +393,7 @@ namespace Client
               "authenticator=%s, token url=%s, sso url=%s",
               m_connection->authenticator, tokenURLStr, ssoURLStr);
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err->msg);
       }
 
       void* curl_desc;
@@ -426,7 +422,7 @@ namespace Client
       header->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, header, &m_connection->error)) {
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "Failed to created the header for the okta authentication", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err);
       }
       cJSON* resp = NULL;
 
@@ -439,7 +435,7 @@ namespace Client
               "Fail to get SAML response, response body=%s",
               snowflake_cJSON_Print(resp));
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "OktaConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err);
       }
 
       char* one_time_token = snowflake_cJSON_HasObjectItem(resp, "sessionToken") ?
@@ -452,7 +448,7 @@ namespace Client
               "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               retryTimeout, elapsedSeconds);
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err);
       }
 
       // 4. get SAML response
@@ -468,7 +464,7 @@ namespace Client
                   "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
                   retryTimeout, elapsedSeconds);
               SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-              OKTA_THROW(err);
+              AUTH_THROW(err);
           }
 
           CXX_LOG_TRACE("sf", "Connection", "Connect",
@@ -476,6 +472,7 @@ namespace Client
               "with updated retryTimeout = %d",
               retriedCount, retryTimeout - elapsedSeconds);
       }
+
       elapsedSeconds = time(NULL) - start;
       if (elapsedSeconds >= retryTimeout)
       {
@@ -483,10 +480,10 @@ namespace Client
               "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               retryTimeout, elapsedSeconds);
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err);
       }
-      m_samlResponse = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data"));
 
+      m_samlResponse = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data"));
       // 5. Validate post_back_url matches Snowflake URL
       std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
       std::string server_url = getServerURLSync().toString();
@@ -501,8 +498,9 @@ namespace Client
               server_url.c_str(),
               post_back_url.c_str());
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-          OKTA_THROW(err);
+          AUTH_THROW(err);
       }
+
       sf_header_destroy(header);
       free_curl_desc(curl_desc);
       snowflake_cJSON_Delete(body);
@@ -545,11 +543,7 @@ namespace Client
       SFURL url = SFURL().scheme(m_connection->protocol)
           .host(m_connection->host)
           .port(m_connection->port);
-      if (!m_connection->proxy_with_env)
-      {
-          // Set the proxy through curl option which won't affect other connections.
-          url.setProxy(m_proxySettings);
-      }
+
       return url;
   }
 } // namespace Client

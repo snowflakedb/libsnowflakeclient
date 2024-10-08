@@ -422,6 +422,13 @@ public:
     return m_proxy;
   }
 
+  /**
+   * Verify that if two urls has same prefix (protocl + host + port)
+   * @param url1
+   * @param url2
+   * 
+   * @return true if same prefix otherwise false
+   */
   static bool urlHasSamePrefix(std::string url1, std::string url2);
 
 private:
