@@ -1381,7 +1381,7 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
 
     // add headers for account and authentication
     SF_HEADER* httpExtraHeaders = sf_header_create();
-    httpExtraHeaders->use_application_json_accept_type = TRUE;
+    httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
     if (!create_header(sf, httpExtraHeaders, &sf->error)) {
         log_trace("sf", "AuthenticatorOKTA",
             "getIdpInfo",
@@ -1391,8 +1391,8 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
         goto cleanup;
     }
 
-    unsigned renew_timeout = 0;
-    unsigned retried_count = 0;
+    int64 renew_timeout = 0;
+    int8 retried_count = 0;
     char* s_body = snowflake_cJSON_Print(authnData);
 
     if (!request(sf, &resp, connectURL, NULL,
