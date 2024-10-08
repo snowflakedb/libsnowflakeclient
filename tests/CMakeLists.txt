@@ -46,8 +46,8 @@ SET(TESTS_C
 # will enable lob test when the change on server side will be published
 #        test_lob
 #        test_stats
-# MFA connection is only able to run testing manually.
-        test_manual_connect
+# MFA and Okta connections are only able to run testing manually.
+#        test_manual_connect
         )
 
 SET(TESTS_CXX
