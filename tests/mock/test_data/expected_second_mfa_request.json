@@ -1,0 +1,20 @@
+{
+	"data":	{
+		"CLIENT_APP_ID":	"C API",
+		"CLIENT_APP_VERSION":	"0.0.0",
+		"ACCOUNT_NAME":	"account",
+		"LOGIN_NAME":	"user",
+		"PASSWORD":	"passwd",
+		"EXT_AUTHN_DUO_METHOD":	"passcode",
+		"PASSCODE":	"passcode",
+		"TOKEN": 	"MFA_TOKEN",
+		"CLIENT_ENVIRONMENT":	{
+			"OS":	"Linux",
+			"OS_VERSION":	"0"
+		},
+		"SESSION_PARAMETERS":	{
+			"AUTOCOMMIT":	"TRUE",
+			"CLIENT_REQUEST_MFA_TOKEN":	"TRUE"
+		}
+	}
+}
