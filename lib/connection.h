@@ -264,7 +264,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
  * @return Success/failure status of get call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, cJSON **json,
-                              SF_ERROR_STRUCT *error);
+                              SF_ERROR_STRUCT *error, int64 renew_timeout, int8 retry_max_count, int64 retry_timeout, int64* elapsed_time, int8* retried_count);
 
 /**
  * Used to determine the sleep time during the next backoff caused by request failure.
