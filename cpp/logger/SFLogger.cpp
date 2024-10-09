@@ -58,9 +58,5 @@ std::string Snowflake::Client::SFLogger::getMaskedMsgVA(const char* fmt, va_list
     }
   }
 
-#ifdef LIBSFCLI_FOR_XP
-  return std::string(buf.data());
-#else
   return SecretDetector::maskSecrets(std::string(buf.data()));
-#endif
 }
