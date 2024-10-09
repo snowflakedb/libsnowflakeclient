@@ -32,11 +32,7 @@ function download_build_component()
         else
             rm -rf $DEPENDENCY_DIR/$component_name
 
-            if [[ ! -z "$XP_BUILD" ]] ; then
-              src_path="$DEP_URL_PREFIX/snowflakeclient_for_xp/$component_name"
-            else
-              src_path="$DEP_URL_PREFIX/$component_name"
-            fi
+            src_path="$DEP_URL_PREFIX/$component_name"
 
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
@@ -68,9 +64,7 @@ function build_component()
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
-        if [[ -z $XP_BUILD ]] ; then  #upload to jenkins if not XP build
-          upload_to_sfc_jenkins $component_name $component_version $build_type
-        fi
+        upload_to_sfc_jenkins $component_name $component_version $build_type
         if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
         fi
