@@ -31,6 +31,7 @@ set(SOURCE_FILES
         include/snowflake/logger.h
         include/snowflake/version.h
         include/snowflake/platform.h
+        include/snowflake/mfa_token_cache.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -63,7 +64,8 @@ set(SOURCE_FILES
         lib/chunk_downloader.h
         lib/chunk_downloader.c
         lib/mock_http_perform.h
-        lib/http_perform.c)
+        lib/http_perform.c
+)
 
 set (SOURCE_FILES_PUT_GET
         cpp/EncryptionProvider.cpp
@@ -150,6 +152,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
         include/snowflake/BindUploader.hpp
+        cpp/jwt/jwtWrapper.cpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -173,6 +176,18 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
+        cpp/lib/CacheFile.cpp
+        cpp/lib/CacheFile.hpp
+        cpp/lib/CredentialCache.cpp
+        cpp/lib/CredentialCache.hpp
+        cpp/platform/SecureStorage.cpp
+        cpp/platform/SecureStorage.hpp
+        cpp/platform/SecureStorageApple.cpp
+        cpp/platform/SecureStorageImpl.hpp
+        cpp/platform/SecureStorageUnSup.cpp
+        cpp/platform/SecureStorageWin.cpp
+        cpp/platform/FileLock.cpp
+        cpp/platform/FileLock.hpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
@@ -180,7 +195,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
-        lib/authenticator.h)
+        lib/authenticator.h
+)
 
 if (UNIX)
     if (LINUX)
@@ -339,6 +355,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -354,6 +371,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -368,6 +386,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)

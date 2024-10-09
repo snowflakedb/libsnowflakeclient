@@ -6,10 +6,14 @@
 #ifndef PROJECT_SECURESTORAGE_H
 #define PROJECT_SECURESTORAGE_H
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <string>
+#include <boost/optional.hpp>
 
-namespace sf
-{
+
+namespace Snowflake {
+
+namespace Client {
   /**
    * Class SecureStorage
    */
@@ -29,10 +33,10 @@ namespace sf
      * @param cred - temporary credential to store
      * @return True / False
      */
-    bool storeToken(const char *host,
-                    const char *username,
-                    const char *credType,
-                    const char *cred);
+    bool storeToken(const std::string& host,
+                    const std::string& username,
+                    const std::string& credType,
+                    const std::string& cred);
 
     /**
      * retrieveToken
@@ -49,11 +53,9 @@ namespace sf
      * @param tokenLen - on return, length of the credential retrieved
      * @return True / False
      */
-    bool retrieveToken(const char *host,
-                       const char *username,
-                       const char *credType,
-                       char *token,
-                       size_t *tokenLen);
+    boost::optional<std::string> retrieveToken(const std::string& host,
+                                             const std::string& username,
+                                             const std::string& credType);
 
     /**
      * updateToken
@@ -68,13 +70,13 @@ namespace sf
      * @param token - credential to be stored in the keychain.
      * @return True / False
      */
-    bool updateToken(const char *host,
-                     const char *username,
-                     const char *credType,
-                     const char *token);
+    bool updateToken(const std::string& host,
+                     const std::string& username,
+                     const std::string& credType,
+                     const std::string& token);
 
     /**
-     * removeToken
+     * remove
      *
      * API to remove a token from the keychain.
      *
@@ -85,10 +87,12 @@ namespace sf
      * @param credType - type of credential to be removed
      * @return True / False
      */
-    bool removeToken(const char *host,
-                     const char *username,
-                     const char *credType);
+    bool removeToken(const std::string& host,
+                     const std::string& username,
+                     const std::string& credType);
   };
+}
+
 }
 
 #endif //PROJECT_SECURESTORAGE_H

@@ -3,43 +3,45 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#include <string.h>
-#include "Snowflake.h"
-#include "Logger.hpp"
+#ifdef __APPLE__
+
+#include "SecureStorageImpl.hpp"
+
+#include "../logger/SFLogger.hpp"
+
 #include "CoreFoundation/CoreFoundation.h"
 #include "Security/Security.h"
 
-#include "SecureStorageApple.hpp"
+#include <string>
+#include <sstream>
 
 #define MAX_TOKEN_LEN 1024
 #define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"
 #define COLON_CHAR_LENGTH 1
 #define NULL_CHAR_LENGTH 1
 
-using namespace Simba;
 
-namespace sf
+namespace Snowflake
 {
 
-  void SecureStorageImpl::convertTarget(const char *host,
-                                        const char *username,
-                                        const char *credType,
-                                        char *targetname,
-                                        size_t max_len)
+namespace Client
+{
+
+  using Snowflake::Client::SFLogger;
+
+  std::string SecureStorageImpl::convertTarget(const std::string& host,
+                                               const std::string& username,
+                                               const std::string& credType)
   {
-    simba_strcat(targetname, max_len, host);
-    simba_strcat(targetname, max_len, ":");
-    simba_strcat(targetname, max_len, username);
-    simba_strcat(targetname, max_len, ":");
-    simba_strcat(targetname, max_len, DRIVER_NAME);
-    simba_strcat(targetname, max_len, ":");
-    simba_strcat(targetname, max_len, credType);
+    std::stringstream ss;
+    ss << host << ":" << username << ":" << DRIVER_NAME << ":" << credType;
+    return ss.str();
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::storeToken(const char *host,
-                                                      const char *username,
-                                                      const char *credType,
-                                                      const char *token)
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string& host,
+                                                      const std::string& username,
+                                                      const std::string& credType,
+                                                      const std::string& cred)
   {
     /*
      * More on OS X Types can be read here:
@@ -54,11 +56,7 @@ namespace sf
      * strlen(host)+strlen(username)+strlen(drivername)+strlen(credType)+ (3 * strlen(':'))
      * Add 1 to accommodate the NULL character.
      */
-    size_t target_max_len = strlen(host)+strlen(username)+strlen(DRIVER_NAME)+
-            strlen(credType) + (3*COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    char *targetname = new char[target_max_len];
-    convertTarget(host, username, credType, targetname, target_max_len);
-
+    std::string target = convertTarget(host, username, credType);
 
     keys[0] = kSecClass;
     keys[1] = kSecAttrServer;
@@ -66,9 +64,9 @@ namespace sf
     keys[3] = kSecValueData;
 
     values[0] = kSecClassInternetPassword;
-    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, targetname, kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username, kCFStringEncodingUTF8);
-    values[3] = CFStringCreateWithCString(kCFAllocatorDefault, token, kCFStringEncodingUTF8);
+    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
+    values[3] = CFStringCreateWithCString(kCFAllocatorDefault, cred.c_str(), kCFStringEncodingUTF8);
 
     CFDictionaryRef query;
     query = CFDictionaryCreate(kCFAllocatorDefault, (const void**) keys, (const void**) values, 4, NULL, NULL);
@@ -77,104 +75,78 @@ namespace sf
 
     if (result == errSecDuplicateItem)
     {
-      SF_DEBUG_LOG("sf", "SecureStorageApple", "storeToken",
-                   "Token already exists, updatingi%s", "");
-      return updateToken(host, username, credType, token);
+      CXX_LOG_DEBUG("Token already exists, updating");
+      return updateToken(host, username, credType, cred);
     }
-    else if (result == errSecSuccess)
+
+    if (result != errSecSuccess)
     {
-      SF_DEBUG_LOG("sf", "SecureStorageApple", "storeToken",
-                   "Successfully stored secure token%s", "");
-      return SUCCESS;
+      CXX_LOG_ERROR("Failed to store secure token");
+      return SecureStorageStatus::Error;
     }
-    else
-    {
-      SF_ERROR_LOG("sf", "SecureStorageApple", "storeToken",
-                   "Failed to store secure token%s", "");
-      return ERROR;
-    }
+
+    CXX_LOG_DEBUG("Successfully stored secure token");
+    return SecureStorageStatus::Success;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::retrieveToken(const char *host,
-                                                         const char *username,
-                                                         const char *credType,
-                                                         char *token,
-                                                         size_t *tokenLen)
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
+                                                         const std::string& username,
+                                                         const std::string& credType,
+                                                         std::string& cred)
   {
-    OSStatus result = errSecSuccess;
     SecKeychainItemRef pitem = NULL;
     UInt32 plength = 0;
     char *pdata = NULL;
-    size_t target_max_len = strlen(host)+strlen(username)+strlen(DRIVER_NAME)+
-        strlen(credType) + (3*COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    char *targetname = new char[target_max_len];
-    convertTarget(host, username, credType, targetname, target_max_len);
+    std::string target = convertTarget(host, username, credType);
 
-    if (tokenLen == NULL)
+    CFTypeRef keys[5];
+    keys[0] = kSecClass;
+    keys[1] = kSecAttrServer;
+    keys[2] = kSecAttrAccount;
+    keys[3] = kSecReturnData;
+    keys[4] = kSecReturnAttributes;
+
+    CFTypeRef values[5];
+    values[0] = kSecClassInternetPassword;
+    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
+    values[3] = kCFBooleanTrue;
+    values[4] = kCFBooleanTrue;
+
+    CFDictionaryRef query = CFDictionaryCreate(kCFAllocatorDefault, (const void**) keys, (const void**) values, 5, NULL, NULL);
+    CFDictionaryRef result;
+    OSStatus status = SecItemCopyMatching(query, reinterpret_cast<CFTypeRef *>(&result));
+
+    if (status == errSecItemNotFound)
     {
-      // tokenLen is expected to be Non NULL
-      SF_ERROR_LOG("sf", "SecureStorageApple", "retrieveToken",
-                   "Token len has to be allocated%s", "");
-      return ERROR;
+      cred = "";
+      CXX_LOG_ERROR("Failed to retrieve secure token - %s", "Token Not Found");
+      return SecureStorageStatus::NotFound;
     }
 
-    /*
-     * https://developer.apple.com/documentation/security/1397763-seckeychainfindinternetpassword?language=objc
-     */
-    result = SecKeychainFindInternetPassword(NULL, (uint32)strlen(targetname),
-                                             targetname, 0, NULL,
-                                             (uint32) strlen(username),
-                                             username, 0, NULL, 0,
-                                             kSecProtocolTypeAny,
-                                             kSecAuthenticationTypeAny,
-                                             &plength, (void **)&pdata,
-                                             &pitem);
+    if (status != errSecSuccess)
+    {
+      cred = "";
+      CXX_LOG_ERROR("Failed to retrieve secure token");
+      return SecureStorageStatus::Error;
+    }
 
-    if (result == errSecItemNotFound)
-    {
-      *tokenLen = 0;
-      token = NULL;
-      SF_ERROR_LOG("sf", "SecureStorageApple", "storeToken",
-                   "Failed to retrieve secure token - %s", "Token Not Found");
-      return NOT_FOUND;
-    }
-    else if (result == errSecSuccess)
-    {
-      *tokenLen = plength;
-      if (plength > MAX_TOKEN_LEN)
-      {
-        SF_ERROR_LOG("sf", "SecureStorageApple", "retrieveToken",
-                     "Failed to retrieve secure token - %s", "Stored token length greater than max allowed length");
-        return ERROR;
-      }
+    CXX_LOG_DEBUG("Successfully retrieved token");
 
-      SF_DEBUG_LOG("sf", "SecureStorageApple", "retrieveToken",
-                   "Successfully retrieved token%s", "");
-      strlcpy(token, pdata, plength+1);
-      return SUCCESS;
-    }
-    else
-    {
-      *tokenLen = 0;
-      token = NULL;
-      SF_ERROR_LOG("sf", "SecureStorageApple", "retrieveToken",
-                   "Failed to retrieve secure token%s", "");
-      return ERROR;
-    }
+    auto val = reinterpret_cast<CFDataRef>(CFDictionaryGetValue(result, kSecValueData));
+    cred = std::string(reinterpret_cast<const char*>(CFDataGetBytePtr(val)), CFDataGetLength(val));
+    return SecureStorageStatus::Success;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::updateToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType,
-                                                       const char *token)
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
+                                                       const std::string& username,
+                                                       const std::string& credType,
+                                                       const std::string& token)
   {
     OSStatus result = errSecSuccess;
     CFTypeRef keys[4];
     CFTypeRef values[4];
-    size_t target_max_len = strlen(host)+strlen(username)+strlen(DRIVER_NAME)+
-                            strlen(credType) + (3*COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    char *targetname = new char[target_max_len];
-    convertTarget(host, username, credType, targetname, target_max_len);
+    std::string target = convertTarget(host, username, credType);
 
     keys[0] = kSecClass;
     keys[1] = kSecAttrServer;
@@ -182,8 +154,8 @@ namespace sf
     keys[3] = kSecMatchLimit;
 
     values[0] = kSecClassInternetPassword;
-    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, targetname, kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username, kCFStringEncodingUTF8);
+    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
     values[3] = kSecMatchLimitOne;
 
     CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
@@ -192,25 +164,21 @@ namespace sf
 
     if (result != errSecSuccess && result != errSecItemNotFound)
     {
-      SF_ERROR_LOG("sf", "SecureStorageApple", "retrieveToken",
-                   "Failed to update secure token%s", "");
-      return ERROR;
+      CXX_LOG_ERROR("Failed to update secure token");
+      return SecureStorageStatus::Error;
     }
 
     return storeToken(host, username, credType, token);
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::removeToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType)
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
+                                                       const std::string& username,
+                                                       const std::string& credType)
   {
     OSStatus result = errSecSuccess;
     CFTypeRef keys[4];
     CFTypeRef values[4];
-    size_t target_max_len = strlen(host)+strlen(username)+strlen(DRIVER_NAME)+
-                            strlen(credType) + (3*COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    char *targetname = new char[target_max_len];
-    convertTarget(host, username, credType, targetname, target_max_len);
+    std::string target = convertTarget(host, username, credType);
 
     keys[0] = kSecClass;
     keys[1] = kSecAttrServer;
@@ -218,8 +186,8 @@ namespace sf
     keys[3] = kSecMatchLimit;
 
     values[0] = kSecClassInternetPassword;
-    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, targetname, kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username, kCFStringEncodingUTF8);
+    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
     values[3] = kSecMatchLimitOne;
 
     CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
@@ -227,13 +195,15 @@ namespace sf
     result = SecItemDelete(extract_query);
     if (result != errSecSuccess && result != errSecItemNotFound)
     {
-      SF_ERROR_LOG("sf", "SecureStorageApple", "removeToken",
-                   "Failed to remove secure token%s", "");
-      return ERROR;
+      CXX_LOG_ERROR("Failed to remove secure token");
+      return SecureStorageStatus::Error;
     }
 
-    SF_DEBUG_LOG("sf", "SecureStorageApple", "removeToken",
-                 "Successfully removed secure token%s", "");
-    return SUCCESS;
+    CXX_LOG_DEBUG("Successfully removed secure token");
+    return SecureStorageStatus::Success;
   }
 }
+
+}
+
+#endif

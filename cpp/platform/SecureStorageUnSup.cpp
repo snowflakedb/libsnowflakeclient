@@ -3,40 +3,48 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#include "SecureStorageUnSup.hpp"
+#if !(defined(__APPLE__) || defined(_WIN32))
 
-namespace sf
-{
+#include "SecureStorageImpl.hpp"
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::storeToken(const char *host,
-                                                      const char *username,
-                                                      const char *credType,
-                                                      const char *token)
+#include <string>
+
+namespace Snowflake {
+
+namespace Client {
+
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string &host,
+                                                    const std::string &username,
+                                                    const std::string &credType,
+                                                    const std::string &token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::retrieveToken(const char *host,
-                                                         const char *username,
-                                                         const char *credType,
-                                                         char *token,
-                                                         size_t *token_len)
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string &host,
+                                                       const std::string &username,
+                                                       const std::string &credType,
+                                                       std::string &token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::updateToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType,
-                                                       const char *token)
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string &host,
+                                                     const std::string &username,
+                                                     const std::string &credType,
+                                                     const std::string &token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::removeToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType)
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string &host,
+                                                     const std::string &username,
+                                                     const std::string &credType)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 }
+
+}
+
+#endif

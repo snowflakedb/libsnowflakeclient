@@ -3,32 +3,31 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#ifndef PROJECT_SECURESTORAGE_APPLE_H
-#define PROJECT_SECURESTORAGE_APPLE_H
+#ifndef PROJECT_SECURESTORAGE_IMPL_H
+#define PROJECT_SECURESTORAGE_IMPL_H
 
-#include <stdlib.h>
+#include <string>
 
-typedef enum
+enum class SecureStorageStatus
 {
-  NOT_FOUND,
-  ERROR,
-  SUCCESS,
-  UNSUPPORTED
-}SECURE_STORAGE_STATUS;
+  NotFound,
+  Error,
+  Success,
+  Unsupported
+};
 
-namespace sf
-{
+namespace Snowflake {
+
+namespace Client {
   /**
    * Class SecureStorage
    */
   class SecureStorageImpl
   {
 
-    static void convertTarget(const char *host,
-                              const char *username,
-                              const char *credType,
-                              char *targetname,
-                              size_t max_len);
+    static std::string convertTarget(const std::string& host,
+                                     const std::string& username,
+                                     const std::string& credType);
 
   public:
 
@@ -44,10 +43,10 @@ namespace sf
      *
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS storeToken(const char *host,
-                                     const char *username,
-                                     const char *credType,
-                                     const char *cred);
+    SecureStorageStatus storeToken(const std::string& host,
+                                   const std::string& username,
+                                   const std::string& credType,
+                                   const std::string& cred);
 
     /**
      * retrieveToken
@@ -64,11 +63,10 @@ namespace sf
      * @param credLen - on return, length of the credential retrieved
      * @return NOT_FOUND, ERROR, SUCCESS
      */
-    SECURE_STORAGE_STATUS retrieveToken(const char *host,
-                                        const char *username,
-                                        const char *credType,
-                                        char *cred,
-                                        size_t *credLen);
+    SecureStorageStatus retrieveToken(const std::string& host,
+                                      const std::string& username,
+                                      const std::string& credType,
+                                      std::string& cred);
 
     /**
      * updateToken
@@ -83,13 +81,13 @@ namespace sf
      * @param cred - credential to be stored in the keychain.
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS updateToken(const char *host,
-                                      const char *username,
-                                      const char *credType,
-                                      const char *cred);
+    SecureStorageStatus updateToken(const std::string& host,
+                                    const std::string& username,
+                                    const std::string& credType,
+                                    const std::string& cred);
 
     /**
-     * removeToken
+     * remove
      *
      * API to remove a credential from the keychain.
      *
@@ -98,13 +96,16 @@ namespace sf
      * @param username - snowflake username assoicated with
      * the credential
      * @param credType - type of credential to be removed.
-     * 
+     *
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS removeToken(const char *host,
-                                      const char *username,
-                                      const char *credType);
+    SecureStorageStatus removeToken(const std::string& host,
+                                    const std::string& username,
+                                    const std::string& credType);
   };
+
 }
 
-#endif //PROJECT_SECURESTORAGE_APPLE_H
+}
+
+#endif //PROJECT_SECURESTORAGE_IMPL_H
