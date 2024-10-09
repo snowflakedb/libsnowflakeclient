@@ -157,11 +157,11 @@ void ClientConfigParser::parseConfigFile(
   const std::string& in_filePath,
   ClientConfig& out_clientConfig)
 {
-  std::ifstream configFile;
   cJSON* jsonConfig;
+  FILE* configFile;
   try 
   {
-    configFile.open(in_filePath);
+    configFile = fopen(in_filePath.c_str(), "r");
     if (!configFile)
     {
       CXX_LOG_INFO("sf", "ClientConfigParser", "parseConfigFile",
@@ -173,9 +173,15 @@ void ClientConfigParser::parseConfigFile(
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
 #endif
-    std::stringstream configJSON;
-    configJSON << configFile.rdbuf();
-    jsonConfig = snowflake_cJSON_Parse(configJSON.str().c_str());
+    fseek(configFile, 0, SEEK_END);
+    long length = ftell(configFile);
+    fseek(configFile, 0, SEEK_SET);
+    char* buffer = (char*)malloc(length);
+    if (buffer)
+    {
+      fread(buffer, 1, length, configFile);
+    }
+    jsonConfig = snowflake_cJSON_Parse(buffer);
     const char* error_ptr = snowflake_cJSON_GetErrorPtr();
     if (error_ptr)
     {
@@ -190,7 +196,7 @@ void ClientConfigParser::parseConfigFile(
   }
   catch (std::exception& ex)
   {
-    configFile.close();
+    fclose(configFile);
     throw;
   }
 
@@ -206,7 +212,7 @@ void ClientConfigParser::parseConfigFile(
   {
     out_clientConfig.logPath = snowflake_cJSON_GetStringValue(logPath);
   }
-  configFile.close();
+  fclose(configFile);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
