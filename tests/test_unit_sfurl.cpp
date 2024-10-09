@@ -143,7 +143,7 @@ void test_error_parse(void ** unused)
 void test_url_has_same_prefix(void** unused) 
 {
     char* url1 = "https://okta.snowflake.com";
-    char* url2 = "http://snowflake.com/request_path";
+    char* url2 = "https://okta.snowflake.com/request_path";
 
     assert_true(SFURL::urlHasSamePrefix(url1, url2));
 }

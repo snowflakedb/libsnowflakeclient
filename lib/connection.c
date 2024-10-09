@@ -1367,6 +1367,7 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
     SF_ERROR_STRUCT* err = &sf->error;
 
     // login info as a json post body
+    //Currently, the server is not enabled Okta authentication with C API. For testing purpose, I used the ODBC info.
     snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_ID", "ODBC");
     snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_VERSION", "3.4.1");
     snowflake_cJSON_AddStringToObject(dataMap, "ACCOUNT_NAME", sf->account);
@@ -1392,14 +1393,15 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
     }
 
     int64 renew_timeout = 0;
-    int8 retried_count = 0;
+    int8* retried_count = &sf->retry_count;
     char* s_body = snowflake_cJSON_Print(authnData);
+    time_t start = time(NULL);
 
     if (!request(sf, &resp, connectURL, NULL,
         0, s_body, httpExtraHeaders,
         POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
         renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), NULL,
-        retried_count, NULL, SF_BOOLEAN_TRUE))
+        &retried_count, NULL, SF_BOOLEAN_TRUE))
     {
         log_info("sf", "Connection", "getIdpInfo",
             "Fail to get authenticator info, response body=%s\n",
@@ -1408,6 +1410,8 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
         ret = SF_BOOLEAN_FALSE;
         goto cleanup;
     }
+    //deduct elasped time from the retry timeout
+    sf->retry_timeout -= time(NULL) - start;
     *json = snowflake_cJSON_GetObjectItem(resp, "data");
     ret = SF_BOOLEAN_TRUE;
 
