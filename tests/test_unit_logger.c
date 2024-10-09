@@ -185,8 +185,8 @@ void test_mask_secret_log(void **unused) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_log_str_to_level),
-        cmocka_unit_test(test_client_config_log),
 #ifndef _WIN32
+        cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_log_creation),
         cmocka_unit_test(test_mask_secret_log),
 #endif
