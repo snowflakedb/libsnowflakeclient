@@ -406,7 +406,6 @@ namespace Client
       // When renewTimeout < 0, throws Exception
       // for each retry attempt so we can renew the one time token
       int64 retry_timeout = get_login_timeout(m_connection);
-      time_t start = time(NULL);
       int64 elapsed_time = 0;
       int8* retried_count = &m_connection->retry_count;
 
@@ -441,7 +440,6 @@ namespace Client
       char* one_time_token = snowflake_cJSON_HasObjectItem(resp, "sessionToken") ?
           snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp, "sessionToken")) :
           snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp, "cookieToken"));
-      elapsed_time = time(NULL) - start;
       if (elapsed_time >= retry_timeout)
       {
           CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
@@ -457,7 +455,6 @@ namespace Client
       resp = NULL;
       if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, &m_connection->error))
       {
-          elapsed_time = time(NULL) - start;
           if (elapsed_time >= retry_timeout)
           {
               CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
@@ -473,7 +470,6 @@ namespace Client
               retried_count, retry_timeout - elapsed_time);
       }
 
-      elapsed_time = time(NULL) - start;
       if (elapsed_time >= retry_timeout)
       {
           CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
@@ -507,7 +503,7 @@ namespace Client
       sf_header_destroy(header);
       free_curl_desc(curl_desc);
       snowflake_cJSON_Delete(body);
-      if (err) {
+      if (err->error_code != SF_STATUS_SUCCESS) {
           AUTH_THROW(err);
       }
  }

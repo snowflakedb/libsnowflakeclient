@@ -47,7 +47,7 @@ SET(TESTS_C
 #        test_lob
 #        test_stats
 # MFA and Okta connections are only able to run testing manually.
-#       test_manual_connect
+       test_manual_connect
         )
 
 SET(TESTS_CXX

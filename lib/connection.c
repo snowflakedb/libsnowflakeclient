@@ -1394,14 +1394,15 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
 
     int64 renew_timeout = 0;
     int8* retried_count = &sf->retry_count;
+    int64 elasped_time = 0;
     char* s_body = snowflake_cJSON_Print(authnData);
     time_t start = time(NULL);
 
     if (!request(sf, &resp, connectURL, NULL,
         0, s_body, httpExtraHeaders,
         POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
-        renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), NULL,
-        &retried_count, NULL, SF_BOOLEAN_TRUE))
+        renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), &elasped_time,
+        retried_count, NULL, SF_BOOLEAN_TRUE))
     {
         log_info("sf", "Connection", "getIdpInfo",
             "Fail to get authenticator info, response body=%s\n",
@@ -1411,7 +1412,7 @@ sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
         goto cleanup;
     }
     //deduct elasped time from the retry timeout
-    sf->retry_timeout -= time(NULL) - start;
+    sf->retry_timeout -= elasped_time;
     *json = snowflake_cJSON_GetObjectItem(resp, "data");
     ret = SF_BOOLEAN_TRUE;
 
