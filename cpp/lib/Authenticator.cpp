@@ -121,7 +121,7 @@ extern "C" {
     }
     catch (...)
     {
-        if (!&conn->error) {
+        if (getAuthenticatorType(conn->authenticator) == AUTH_JWT) {
             SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
                 "authentication failed",
                 SF_SQLSTATE_GENERAL_ERROR);
