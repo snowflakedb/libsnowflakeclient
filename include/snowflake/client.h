@@ -393,6 +393,9 @@ typedef struct SF_CONNECT {
     uint64 max_varchar_size;
     uint64 max_binary_size;
     uint64 max_variant_size;
+
+    // stage binding
+    sf_bool binding_stage_created;
 } SF_CONNECT;
 
 /**

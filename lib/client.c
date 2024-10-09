@@ -723,6 +723,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
         sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+
+        sf->binding_stage_created = SF_BOOLEAN_FALSE;
     }
 
     return sf;
