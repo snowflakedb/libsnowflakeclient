@@ -4,6 +4,8 @@
 
 #include "utils/test_setup.h"
 
+sf_bool FAIL_OPEN_DEFAULT = SF_BOOLEAN_FALSE;
+
 void setCacheFile(char *cache_file)
 {
 #ifdef __linux__
@@ -48,6 +50,12 @@ void test_fail_open_revoked(void **unused) {
 
     SF_CONNECT *sf = setup_snowflake_connection();
 
+    sf_bool value = SF_BOOLEAN_TRUE;
+    if (value != FAIL_OPEN_DEFAULT)
+    {
+        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    }
+
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT *sferr = snowflake_error(sf);
@@ -69,7 +77,10 @@ void test_fail_close_timeout(void** unused) {
 
     SF_CONNECT* sf = setup_snowflake_connection();
     sf_bool value = SF_BOOLEAN_FALSE;
-    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    if (value != FAIL_OPEN_DEFAULT)
+    {
+        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    }
 
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
@@ -91,6 +102,11 @@ void test_fail_open_timeout(void** unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT* sf = setup_snowflake_connection();
+    sf_bool value = SF_BOOLEAN_TRUE;
+    if (value != FAIL_OPEN_DEFAULT)
+    {
+        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    }
 
     SF_STATUS ret = snowflake_connect(sf);
     if (ret != SF_STATUS_SUCCESS) {
