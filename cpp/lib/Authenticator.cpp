@@ -418,6 +418,8 @@ namespace Client
       // When renewTimeout < 0, throws Exception
       // for each retry attempt so we can renew the one time token
       int64 retry_timeout = get_login_timeout(m_connection);
+      int64 retry_max_count = get_login_retry_count(m_connection);
+
       int64 elapsed_time = 0;
       int8* retried_count = &m_connection->retry_count;
 
@@ -441,7 +443,7 @@ namespace Client
       while (true)
       {
           if (!curl_post_call(m_connection, curl, token_url_str, header, s_body, &resp,
-              &m_connection->error, 0, get_login_retry_count(m_connection), retry_timeout,
+              &m_connection->error, 0, retry_max_count, retry_timeout,
               &elapsed_time, retried_count, 0, false))
           {
               CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
@@ -467,9 +469,9 @@ namespace Client
           SFURL sso_url = SFURL::parse(sso_url_str);
           sso_url.addQueryParam("onetimetoken", one_time_token);
           resp = NULL;
-          if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, &m_connection->error, -1, get_login_retry_count(m_connection), retry_timeout, &elapsed_time, retried_count))
+          if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, &m_connection->error, -1, retry_max_count, retry_timeout, &elapsed_time, retried_count))
           {
-              if (elapsed_time >= retry_timeout)
+              if (elapsed_time >= retry_timeout || &retried_count < retry_max_count)
               {
                   CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
                       "Fail to get SAML response, timeout reached: %d, elapsed time: %d",

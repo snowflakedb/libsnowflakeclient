@@ -233,6 +233,9 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  *                        reached and the caller can renew the credentials and
  *                        then go back to the retry by calling curl_post_call() again.
  *                        0 means no renew timeout needed.
+ *                        For Okta Authentication, whenever the authentication failed, the connector
+ *                        should update the onetime token. In this case, the renew timeout < 0, which means
+ *                        the request should be renewed for each request.
  * @param retry_max_count The max number of retry attempts. 0 means no limit.
  * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
  * @param elapsed_time    The in/out paramter to record the elapsed time before
@@ -261,6 +264,22 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
  * @param header Header passed to cURL for use in the request
  * @param json Reference to a cJSON pointer that is used to store the JSON response upon a successful request
  * @param error Reference to the Snowflake Error object to set an error if one occurs
+ * @param renew_timeout   For key pair authentication. Credentials could expire
+ *                        during the connection retry. Set renew timeout in such
+ *                        case so http_perform will return when renew_timeout is
+ *                        reached and the caller can renew the credentials and
+ *                        then go back to the retry by calling curl_post_call() again.
+ *                        0 means no renew timeout needed.
+ *                        For Okta Authentication, whenever the authentication failed, the connector
+ *                        should update the onetime token. In this case, the renew timeout < 0, which means
+ *                        the request should be renewed for each request.
+ * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
+ * @param elapsed_time    The in/out paramter to record the elapsed time before
+ *                        curl_post_call() returned due to renew timeout last time
+ * @param retried_count   The in/out paramter to record the number of retry attempts
+ *                        has been done before http_perform() returned due to renew
+ *                        timeout last time.
  * @return Success/failure status of get call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, cJSON **json,
