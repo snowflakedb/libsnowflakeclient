@@ -90,7 +90,7 @@ void ClientConfigParser::loadClientConfig(
     // 3. Try DLL binary dir
     std::string binaryDir = getBinaryPath();
     std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
-    if (boost::filesystem::exists(binaryDirFilePath))
+    if (checkFileExists(binaryDirFilePath))
     {
       derivedConfigPath = binaryDirFilePath;
       CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -112,7 +112,7 @@ void ClientConfigParser::loadClientConfig(
         }
       }
       std::string homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-      if (boost::filesystem::exists(homeDirFilePath))
+      if (checkFileExists(homeDirFilePath))
       {
         derivedConfigPath = homeDirFilePath;
         CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -123,7 +123,7 @@ void ClientConfigParser::loadClientConfig(
       if (const char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf)))
       {
         std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-        if (boost::filesystem::exists(homeDirFilePath))
+        if (checkFileExists(homeDirFilePath))
         {
           derivedConfigPath = homeDirFilePath;
           CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -161,7 +161,7 @@ void ClientConfigParser::parseConfigFile(
   FILE* configFile;
   try 
   {
-    configFile = fopen(in_filePath.c_str(), "r");
+    configFile = sf_fopen(&configFile, in_filePath.c_str(), "r");
     if (!configFile)
     {
       CXX_LOG_INFO("sf", "ClientConfigParser", "parseConfigFile",
@@ -175,12 +175,12 @@ void ClientConfigParser::parseConfigFile(
 #endif
     fseek(configFile, 0, SEEK_END);
     long length = ftell(configFile);
-    fseek(configFile, 0, SEEK_SET);
+    rewind(configFile);
     char* buffer = (char*)malloc(length);
     if (buffer)
     {
       size_t result = fread(buffer, 1, length, configFile);
-      if (result > 0)
+      if (result != length)
       {
         CXX_LOG_ERROR(
           "sf",
