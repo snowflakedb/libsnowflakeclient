@@ -62,7 +62,7 @@ public:
      * @param metadata             An array of metadata objects for each column.
      * @param tzString             The time zone.
      */
-    ResultSetArrow(arrow::BufferBuilder * initialChunk, SF_COLUMN_DESC * metadata, std::string tzString);
+    ResultSetArrow(arrow::BufferBuilder * initialChunk, SF_COLUMN_DESC * metadata, const std::string& tzString);
 
 
     /**
@@ -76,7 +76,7 @@ public:
      * @param metadata             An array of metadata objects for each column.
      * @param tzString             The time zone.
      */
-    ResultSetArrow(cJSON* jsonRowset64, SF_COLUMN_DESC* metadata, std::string tzString);
+    ResultSetArrow(cJSON* jsonRowset64, SF_COLUMN_DESC* metadata, const std::string& tzString);
 
     /**
      * Destructor.
@@ -88,11 +88,11 @@ public:
     /**
      * Appends the given chunk to the internal result set.
      *
-     * @param chunk                The chunk to append.
+     * @param chunkPtr                The chunk to append.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL appendChunk(arrow::BufferBuilder * chunk);
+    SF_STATUS STDCALL appendChunk(void* chunkPtr);
 
     /**
      * Advances the internal iterator to the next row.

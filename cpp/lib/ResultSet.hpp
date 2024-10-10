@@ -40,7 +40,17 @@ public:
      * @param metadata                  The metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString, QueryResultFormat format);
+    ResultSet(SF_COLUMN_DESC * metadata, const std::string& tzString, QueryResultFormat format);
+
+    static ResultSet* CreateResultFromJson(cJSON* json_rowset,
+                                           SF_COLUMN_DESC* metadata,
+                                           QueryResultFormat query_result_format,
+                                           const std::string& tz_string);
+
+    static ResultSet* CreateResultFromChunk(void* initial_chunk,
+                                            SF_COLUMN_DESC* metadata,
+                                            QueryResultFormat query_result_format,
+                                            const std::string& tz_string);
 
     /**
      * Destructor.
@@ -48,6 +58,20 @@ public:
     virtual ~ResultSet(){}
 
     // API methods =================================================================================
+
+    /**
+     * Frees the previously held chunk in m_chunk and sets the current chunk to the given chunk.
+     * Each result type should override this function to handle chunks,
+     * while some result might not apply (won't be called), return error by default.
+     *
+     * @param chunkPtr                The chunk to append.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    virtual SF_STATUS STDCALL appendChunk(void* chunkPtr)
+    {
+      return SF_STATUS_ERROR_GENERAL;
+    }
 
     /**
      * Advances to the next row.
