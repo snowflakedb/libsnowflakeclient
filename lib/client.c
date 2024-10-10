@@ -182,6 +182,9 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if (strcmp(name->valuestring, "VARIANT_MAX_SIZE_IN_RESULT") == 0) {
                 sf->max_variant_size = snowflake_cJSON_GetUint64Value(value);
             }
+            else if (strcmp(name->valuestring, "ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1") == 0) {
+                sf->use_s3_regional_url = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            }
         }
     }
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -532,6 +535,15 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("retry_count: %d", sf->retry_count);
     log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
     log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
+    log_debug("use_s3_regional_url: %s", sf->use_s3_regional_url ? "true" : "false");
+    log_debug("put_use_urand_dev: %s", sf->put_use_urand_dev ? "true" : "false");
+    log_debug("put_compress_level: %d", sf->put_compress_level);
+    log_debug("put_temp_dir: %s", sf->put_temp_dir ? sf->put_temp_dir : "");
+    log_debug("put_fastfail: %s", sf->put_fastfail ? "true" : "false");
+    log_debug("put_maxretries: %d", sf->put_maxretries);
+    log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
+    log_debug("get_maxretries: %d", sf->get_maxretries);
+    log_debug("get_threshold: %d", sf->get_threshold);
 
     return SF_STATUS_SUCCESS;
 }
@@ -723,6 +735,16 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
         sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+
+        sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
+        sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
+        sf->put_compress_level = SF_DEFAULT_PUT_COMPRESS_LEVEL;
+        sf->put_temp_dir = NULL;
+        sf->put_fastfail = SF_BOOLEAN_FALSE;
+        sf->put_maxretries = SF_DEFAULT_PUT_MAX_RETRIES;
+        sf->get_fastfail = SF_BOOLEAN_FALSE;
+        sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
+        sf->get_threshold = SF_DEFAULT_GET_THRESHOLD;
     }
 
     return sf;
@@ -1140,6 +1162,45 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_PUT_TEMPDIR:
+            alloc_buffer_and_copy(&sf->put_temp_dir, value);
+            break;
+        case SF_CON_PUT_COMPRESSLV:
+            sf->put_compress_level = value ? *((int8 *)value) : SF_DEFAULT_PUT_COMPRESS_LEVEL;
+            if ((sf->put_compress_level > SF_MAX_PUT_COMPRESS_LEVEL) ||
+                (sf->put_compress_level < 0))
+            {
+                sf->put_compress_level = SF_DEFAULT_PUT_COMPRESS_LEVEL;
+            }
+            break;
+        case SF_CON_PUT_USE_URANDOM_DEV:
+            sf->put_use_urand_dev = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_PUT_FASTFAIL:
+            sf->put_fastfail = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_PUT_MAXRETRIES:
+            sf->put_maxretries = value ? *((int8 *)value) : SF_DEFAULT_PUT_MAX_RETRIES;
+            if ((sf->put_maxretries > SF_MAX_PUT_MAX_RETRIES) ||
+                (sf->put_maxretries < 0))
+            {
+                sf->put_maxretries = SF_DEFAULT_PUT_MAX_RETRIES;
+            }
+            break;
+        case SF_CON_GET_FASTFAIL:
+            sf->get_fastfail = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_GET_MAXRETRIES:
+            sf->get_maxretries = value ? *((int8 *)value) : SF_DEFAULT_GET_MAX_RETRIES;
+            if ((sf->get_maxretries > SF_MAX_GET_MAX_RETRIES) ||
+                (sf->get_maxretries < 0))
+            {
+                sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
+            }
+            break;
+        case SF_CON_GET_THRESHOLD:
+            sf->get_threshold = value ? *((int64 *)value) : SF_DEFAULT_GET_THRESHOLD;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1282,6 +1343,30 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_VARIANT_SIZE:
             *value = &sf->max_variant_size;
+            break;
+        case SF_CON_PUT_TEMPDIR:
+            *value = sf->put_temp_dir;
+            break;
+        case SF_CON_PUT_COMPRESSLV:
+            *value = &sf->put_compress_level;
+            break;
+        case SF_CON_PUT_USE_URANDOM_DEV:
+            *value = &sf->put_use_urand_dev;
+            break;
+        case SF_CON_PUT_FASTFAIL:
+            *value = &sf->put_fastfail;
+            break;
+        case SF_CON_PUT_MAXRETRIES:
+            *value = &sf->put_maxretries;
+            break;
+        case SF_CON_GET_FASTFAIL:
+            *value = &sf->get_fastfail;
+            break;
+        case SF_CON_GET_MAXRETRIES:
+            *value = &sf->get_maxretries;
+            break;
+        case SF_CON_GET_THRESHOLD:
+            *value = &sf->get_threshold;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -1443,14 +1528,11 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     sfstmt->sql_text = NULL;
 
     if (sfstmt->result_set) {
-        rs_destroy(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
+        rs_destroy(sfstmt->result_set);
     }
     sfstmt->result_set = NULL;
 
-    if (sfstmt->qrf) {
-        SF_FREE(sfstmt->qrf);
-    }
-    sfstmt->qrf = NULL;
+    sfstmt->qrf = SF_FORMAT_UNKNOWN;
 
     if (_snowflake_get_current_param_style(sfstmt) == NAMED)
     {
@@ -1527,6 +1609,7 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
 
     snowflake_cJSON_Delete((cJSON *) put_get_response->src_list);
     snowflake_cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
+    snowflake_cJSON_Delete((cJSON*)put_get_response->presigned_urls);
 
     SF_FREE(put_get_response);
 }
@@ -1716,6 +1799,29 @@ SF_STATUS STDCALL snowflake_query(
     return SF_STATUS_SUCCESS;
 }
 
+SF_STATUS STDCALL _snowflake_query_put_get_legacy(
+    SF_STMT *sfstmt, const char *command, size_t command_size) {
+    if (!sfstmt) {
+        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+    clear_snowflake_error(&sfstmt->error);
+    SF_STATUS ret = snowflake_prepare(sfstmt, command, command_size);
+    if (ret != SF_STATUS_SUCCESS) {
+        return ret;
+    }
+    if (!_is_put_get_command(sfstmt->sql_text))
+    {
+        // this should never happen as this function should only be
+        // called internally for put/get command.
+        SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_GENERAL,
+                            "Invalid query type, can be used for put get only",
+                            SF_SQLSTATE_GENERAL_ERROR);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    return _snowflake_execute_ex(sfstmt, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE);
+}
+
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
@@ -1771,12 +1877,11 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
                         sfstmt->result_set = rs_create_with_chunk(
                             sfstmt->chunk_downloader->queue[index].chunk,
                             sfstmt->desc,
-                            (QueryResultFormat_t *) sfstmt->qrf,
+                            sfstmt->qrf,
                             sfstmt->connection->timezone);
                     } else {
                         rs_append_chunk(
                             sfstmt->result_set,
-                            (QueryResultFormat_t *) sfstmt->qrf,
                             sfstmt->chunk_downloader->queue[index].chunk);
                     }
 
@@ -1924,24 +2029,32 @@ cleanup:
 
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_TRUE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_FALSE, result_capture, SF_BOOLEAN_TRUE);
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), NULL, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_TRUE, NULL, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_TRUE, result_capture, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
+                                        sf_bool is_native_put_get,
                                         SF_QUERY_RESULT_CAPTURE* result_capture,
                                         sf_bool is_describe_only) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+
+    if (is_put_get_command && is_native_put_get && !is_describe_only)
+    {
+        _snowflake_stmt_desc_reset(sfstmt);
+        return _snowflake_execute_put_get_native(sfstmt, result_capture);
+    }
+
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     SF_JSON_ERROR json_error;
@@ -2092,6 +2205,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_detach_array_from_object(
                     (cJSON **) (&sfstmt->put_get_response->src_list),
                     data, "src_locations");
+                json_detach_array_from_object(
+                    (cJSON **) (&sfstmt->put_get_response->presigned_urls),
+                    data, "presignedUrls");
                 json_copy_string_no_alloc(sfstmt->put_get_response->command,
                                           data, "command", SF_COMMAND_LEN);
                 json_copy_int(&sfstmt->put_get_response->parallel, data,
@@ -2158,6 +2274,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "storageAccount");
                 json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
                                  stage_info, "endPoint");
+                json_copy_string(&sfstmt->put_get_response->stage_info->presignedURL,
+                                 stage_info, "presignedUrl");
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");
@@ -2170,6 +2288,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_copy_string(
                         &sfstmt->put_get_response->stage_info->stage_cred->azure_sas_token,
                         stage_cred, "AZURE_SAS_TOKEN");
+                json_copy_string(
+                        &sfstmt->put_get_response->stage_info->stage_cred->gcs_access_token,
+                        stage_cred, "GCS_ACCESS_TOKEN");
                 json_copy_string(
                     &sfstmt->put_get_response->localLocation, data,
                     "localLocation");
@@ -2207,7 +2328,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 // Determine query result format and detach rowset object from data.
                 cJSON * qrf = snowflake_cJSON_GetObjectItem(data, "queryResultFormat");
                 char * qrf_str = snowflake_cJSON_GetStringValue(qrf);
-                sfstmt->qrf = SF_CALLOC(1, sizeof(QueryResultFormat_t));
                 cJSON * rowset = NULL;
 
                 if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
@@ -2219,7 +2339,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
                     return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
 #endif
-                    *((QueryResultFormat_t *) sfstmt->qrf) = ARROW_FORMAT;
+                    sfstmt->qrf = SF_ARROW_FORMAT;
                     rowset = snowflake_cJSON_DetachItemFromObject(data, "rowsetBase64");
                     if (!rowset)
                     {
@@ -2233,7 +2353,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     }
                 }
                 else if (strcmp(qrf_str, "json") == 0) {
-                    *((QueryResultFormat_t *) sfstmt->qrf) = JSON_FORMAT;
+                    sfstmt->qrf = SF_JSON_FORMAT;
                     if (json_detach_array_from_object((cJSON **)(&rowset), data, "rowset"))
                     {
                         log_error("No valid rowset found in response");
@@ -2262,7 +2382,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     json_copy_string(&qrmk, data, "qrmk");
                     chunk_headers = snowflake_cJSON_GetObjectItem(data, "chunkHeaders");
                     NON_JSON_RESP* (*callback_create_resp)(void) = NULL;
-                    if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf)) {
+                    if (SF_ARROW_FORMAT == sfstmt->qrf) {
                         callback_create_resp = callback_create_arrow_resp;
                     }
 
@@ -2290,13 +2410,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->result_set = rs_create_with_json_result(
                         rowset,
                         sfstmt->desc,
-                        (QueryResultFormat_t *)sfstmt->qrf,
+                        sfstmt->qrf,
                         sfstmt->connection->timezone);
 
                     // Update chunk row count. Controls the chunk downloader.
                     sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                        sfstmt->result_set,
-                        (QueryResultFormat_t *) sfstmt->qrf);
+                        sfstmt->result_set);
 
                     // Update total row count. Used in snowflake_num_rows().
                     if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
@@ -2309,13 +2428,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                     sfstmt->result_set = rs_create_with_json_result(
                         rowset,
                         sfstmt->desc,
-                        (QueryResultFormat_t *) sfstmt->qrf,
+                        sfstmt->qrf,
                         sfstmt->connection->timezone);
 
                     // Update chunk row count. Controls the chunk downloader.
                     sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-                        sfstmt->result_set,
-                        (QueryResultFormat_t *) sfstmt->qrf);
+                        sfstmt->result_set);
 
                     // Update total row count. Used in snowflake_num_rows().
                     if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
@@ -2525,7 +2643,7 @@ SF_STATUS STDCALL _snowflake_column_null_checks(SF_STMT *sfstmt, void *value_ptr
 }
 
 SF_STATUS STDCALL _snowflake_next(SF_STMT *sfstmt) {
-    return rs_next(sfstmt->result_set, (QueryResultFormat_t *) sfstmt->qrf);
+    return rs_next(sfstmt->result_set);
 }
 
 SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr) {
@@ -2536,9 +2654,9 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
     }
 
     if ((status = rs_get_cell_as_bool(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2551,9 +2669,9 @@ SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *val
     }
 
     if ((status = rs_get_cell_as_uint8(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2566,9 +2684,9 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
     }
 
     if ((status = rs_get_cell_as_uint32(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2581,9 +2699,9 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *v
     }
 
     if ((status = rs_get_cell_as_uint64(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2596,9 +2714,9 @@ SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value
     }
 
     if ((status = rs_get_cell_as_int8(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2611,9 +2729,9 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
     }
 
     if ((status = rs_get_cell_as_int32(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2626,9 +2744,9 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *val
     }
 
     if ((status = rs_get_cell_as_int64(
-            sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+            sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2641,9 +2759,9 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
     }
 
     if ((status = rs_get_cell_as_float32(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2656,9 +2774,9 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 
     }
 
     if ((status = rs_get_cell_as_float64(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2671,9 +2789,9 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
     }
 
     if ((status = rs_get_cell_as_timestamp(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2686,9 +2804,9 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
     }
 
     if ((status = rs_get_cell_as_const_string(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2909,16 +3027,15 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
     const char* str_val = NULL;
     if ((status = rs_get_cell_as_const_string(
             sfstmt->result_set,
-            sfstmt->qrf,
             idx,
             &str_val)) != SF_STATUS_SUCCESS)
     {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
         return status;
     }
 
-    if (ARROW_FORMAT == *((QueryResultFormat_t *)sfstmt->qrf))
+    if (SF_ARROW_FORMAT == sfstmt->qrf)
     {
         // For Arrow the const string is formatted already
         return snowflake_raw_value_to_str_rep(sfstmt, str_val,
@@ -2949,9 +3066,9 @@ SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *valu
     }
 
     if ((status = rs_get_cell_strlen(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
@@ -2964,9 +3081,9 @@ SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *va
     }
 
     if ((status = rs_is_cell_null(
-        sfstmt->result_set, sfstmt->qrf, idx, value_ptr)) != SF_STATUS_SUCCESS) {
+        sfstmt->result_set, idx, value_ptr)) != SF_STATUS_SUCCESS) {
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, status,
-            rs_get_error_message(sfstmt->result_set, sfstmt->qrf), "", sfstmt->sfqid);
+            rs_get_error_message(sfstmt->result_set), "", sfstmt->sfqid);
     }
     return status;
 }
