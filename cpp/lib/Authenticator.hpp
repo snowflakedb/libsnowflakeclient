@@ -102,7 +102,6 @@ namespace Client
   private:
       SF_CONNECT* m_connection;
       std::string m_samlResponse;
-      Snowflake::Client::Util::Proxy m_proxySettings;
 
       /**
        * Extract post back url from samel response. Input is in HTML format.

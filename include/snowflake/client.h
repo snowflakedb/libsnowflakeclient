@@ -348,7 +348,6 @@ typedef struct SF_CONNECT {
     // Proxy
     char * proxy;
     char * no_proxy;
-    sf_bool proxy_with_env;
 
     // Query Context Cache
     // the flag of whether to disable qcc, false by default
