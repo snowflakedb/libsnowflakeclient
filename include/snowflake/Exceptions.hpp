@@ -8,31 +8,52 @@
 #include <exception>
 #include "client.h"
 
-class SnowflakeException: public std::exception {
-public:
-    SnowflakeException(SF_ERROR_STRUCT *error);
+namespace Snowflake
+{
+    namespace Client
+    {
+        namespace Exception
+        {
+            class SnowflakeException : public std::exception {
+            public:
+                SnowflakeException(SF_ERROR_STRUCT* error);
 
-    const char * what() const throw();
+                const char* what() const throw();
 
-    SF_STATUS code();
+                SF_STATUS code();
 
-    const char *sqlstate();
+                const char* sqlstate();
 
-    const char *msg();
+                const char* msg();
 
-    const char *sfqid();
+                const char* sfqid();
 
-    const char *file();
+                const char* file();
 
-    int line();
+                int line();
 
-protected:
-    SF_ERROR_STRUCT *error;
-};
+            protected:
+                SF_ERROR_STRUCT* error;
+            };
 
-class GeneralException: public SnowflakeException {
-public:
-    GeneralException(SF_ERROR_STRUCT *error) : SnowflakeException(error) {};
-};
+            class GeneralException : public SnowflakeException {
+            public:
+                GeneralException(SF_ERROR_STRUCT* error) : SnowflakeException(error) {};
+            };
 
+            struct AuthException : public std::exception
+            {
+                AuthException(SF_ERROR_STRUCT* error) : message_(error->msg) {}
+                AuthException(const std::string& message) : message_(message) {}
+
+                const char* what() const noexcept
+                {
+                    return message_.c_str();
+                }
+
+                std::string message_;
+            };
+        }
+    }
+}
 #endif //SNOWFLAKECLIENT_EXCEPTIONS_HPP

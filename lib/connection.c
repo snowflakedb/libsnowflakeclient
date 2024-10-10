@@ -470,7 +470,12 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               char *url,
                               SF_HEADER *header,
                               cJSON **json,
-                              SF_ERROR_STRUCT *error) {
+                              SF_ERROR_STRUCT *error,
+                              int64 renew_timeout,
+                              int8 retry_max_count,
+                              int64 retry_timeout,
+                              int64* elapsed_time,
+                              int8* retried_count){
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
@@ -486,7 +491,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode,
                           sf->retry_on_curle_couldnt_connect_count,
-                          0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -518,7 +523,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                if (!curl_get_call(sf, curl, url, new_header, json, error)) {
+                if (!curl_get_call(sf, curl, url, new_header, json, error, retry_max_count, renew_timeout, retry_timeout, elapsed_time, retried_count)) {
                     // Error is set in curl call
                     break;
                 }
@@ -953,7 +958,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                                  elapsed_time, retried_count, is_renew,
                                  renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
-            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
+            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error, 
+                renew_timeout, retry_max_count, retry_timeout, elapsed_time, retried_count);
         } else {
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
                                 "An unknown request type was passed to the request function",
@@ -1344,4 +1350,81 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
+}
+
+sf_bool is_one_time_token_request(cJSON* resp)
+{
+    return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+}
+
+sf_bool is_saml_response(char* response)
+{
+    char* doctype = "<!DOCTYPE html>";
+    return strncmp(response, doctype, strlen(doctype)) == 0;
+}
+
+ 
+sf_bool getIdpInfo(SF_CONNECT* sf, cJSON** json)
+{
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    cJSON* dataMap = snowflake_cJSON_CreateObject();
+    // connection URL
+    const char* connectURL = "/session/authenticator-request";
+    SF_ERROR_STRUCT* err = &sf->error;
+
+    // login info as a json post body
+    //Currently, the server is not enabled Okta authentication with C API. For testing purpose, I used the ODBC info.
+    snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_ID", "ODBC");
+    snowflake_cJSON_AddStringToObject(dataMap, "CLIENT_APP_VERSION", "3.4.1");
+    snowflake_cJSON_AddStringToObject(dataMap, "ACCOUNT_NAME", sf->account);
+    snowflake_cJSON_AddStringToObject(dataMap, "AUTHENTICATOR", sf->authenticator);
+    snowflake_cJSON_AddStringToObject(dataMap, "LOGIN_NAME", sf->user);
+    snowflake_cJSON_AddStringToObject(dataMap, "PORT", sf->port);
+    snowflake_cJSON_AddStringToObject(dataMap, "PROTOCOL", sf->protocol);
+
+    cJSON* authnData = snowflake_cJSON_CreateObject();
+    cJSON* resp = NULL;
+    snowflake_cJSON_AddItemReferenceToObject(authnData, "data", dataMap);
+
+    // add headers for account and authentication
+    SF_HEADER* httpExtraHeaders = sf_header_create();
+    httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+    if (!create_header(sf, httpExtraHeaders, &sf->error)) {
+        log_trace("sf", "AuthenticatorOKTA",
+            "getIdpInfo",
+            "Failed to create the header for the request to get the token URL and the SSO URL");
+        SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+        ret = SF_BOOLEAN_FALSE;
+        goto cleanup;
+    }
+
+    int64 renew_timeout = 0;
+    int8* retried_count = &sf->retry_count;
+    int64 elasped_time = 0;
+    char* s_body = snowflake_cJSON_Print(authnData);
+    time_t start = time(NULL);
+
+    if (!request(sf, &resp, connectURL, NULL,
+        0, s_body, httpExtraHeaders,
+        POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
+        renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), &elasped_time,
+        retried_count, NULL, SF_BOOLEAN_TRUE))
+    {
+        log_info("sf", "Connection", "getIdpInfo",
+            "Fail to get authenticator info, response body=%s\n",
+            snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data")));
+        SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "SFConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
+        ret = SF_BOOLEAN_FALSE;
+        goto cleanup;
+    }
+    //deduct elasped time from the retry timeout
+    sf->retry_timeout -= elasped_time;
+    *json = snowflake_cJSON_GetObjectItem(resp, "data");
+    ret = SF_BOOLEAN_TRUE;
+
+cleanup:
+    sf_header_destroy(httpExtraHeaders);
+    snowflake_cJSON_Delete(authnData);
+
+    return ret;
 }
