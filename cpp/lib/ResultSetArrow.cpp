@@ -48,6 +48,7 @@ ResultSetArrow::ResultSetArrow(
 ) :
     ResultSet(metadata, tzString, SF_ARROW_FORMAT)
 {
+    NON_JSON_RESP resp;
     arrow::BufferBuilder* bufferBuilder = NULL;
     if (jsonRowset64)
     {
@@ -60,8 +61,9 @@ ResultSetArrow::ResultSetArrow(
             (void)bufferBuilder->Append((void*)decodedRowsetStr.c_str(), decodedRowsetStr.length());
         }
     }
+    resp.buffer = bufferBuilder;
 
-    this->appendChunk(bufferBuilder);
+    this->appendChunk(&resp);
 
     // Reset row indices so that they can be re-used by public API.
     m_currChunkIdx = 0;
