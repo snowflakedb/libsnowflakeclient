@@ -127,11 +127,6 @@ extern "C" {
     }
     catch (...)
     {
-        if (getAuthenticatorType(conn->authenticator) == AUTH_JWT) {
-            SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-                "authentication failed",
-                SF_SQLSTATE_GENERAL_ERROR);
-        }
       return SF_STATUS_ERROR_GENERAL;
     }
 
@@ -471,7 +466,7 @@ namespace Client
           resp = NULL;
           if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, &m_connection->error, -1, retry_max_count, retry_timeout, &elapsed_time, retried_count))
           {
-              if (elapsed_time >= retry_timeout || &retried_count < retry_max_count)
+              if (elapsed_time >= retry_timeout || *retried_count >= retry_max_count)
               {
                   CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
                       "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
