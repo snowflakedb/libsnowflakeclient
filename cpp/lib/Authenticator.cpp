@@ -455,7 +455,7 @@ namespace Client
           {
               CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
                   "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-                  retried_count, elapsed_time);
+                  *retried_count, elapsed_time);
               SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
               goto cleanup;
           }
@@ -474,11 +474,12 @@ namespace Client
                   SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
                   goto cleanup;
               }
-
+              //Need to increase retried_count on the authentication level
+              (*retried_count)++;
               CXX_LOG_TRACE("sf", "Connection", "Connect",
                   "Retry on getting SAML response with one time token renewed for %d times "
                   "with updated retryTimeout = %d",
-                  retried_count, retry_timeout - elapsed_time);
+                  *retried_count, retry_timeout - elapsed_time);
               continue;
           }
 
