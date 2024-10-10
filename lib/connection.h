@@ -422,6 +422,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  *                         at the end of the text buffer.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @param insecure_mode Insecure mode disable OCSP check when set to true
+ * @param fail_open OCSP FAIL_OPEN mode when set to true
  * @param retry_on_curle_couldnt_connect_count number of times retrying server connection on CURLE_COULDNT_CONNECT error
  * @param renew_timeout   For key pair authentication. Credentials could expire
  *                        during the connection retry. Set renew timeout in such
@@ -445,7 +446,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, NON_JSON_RESP* non_json_resp, int64 network_timeout, sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error, sf_bool insecure_mode,
+                             SF_ERROR_STRUCT *error, sf_bool insecure_mode, sf_bool fail_open,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
