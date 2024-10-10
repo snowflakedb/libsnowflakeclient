@@ -154,8 +154,8 @@ int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        //cmocka_unit_test(test_connect_with_duo_push),
-        //cmocka_unit_test(test_connect_with_duo_passcode),
+        cmocka_unit_test(test_connect_with_duo_push),
+        cmocka_unit_test(test_connect_with_duo_passcode),
         //Need to run this testing separately.
         //cmocka_unit_test(test_connect_with_duo_passcodeInPassword),
         cmocka_unit_test(test_okta_connect),
