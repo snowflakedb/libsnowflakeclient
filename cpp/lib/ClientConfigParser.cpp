@@ -179,7 +179,15 @@ void ClientConfigParser::parseConfigFile(
     char* buffer = (char*)malloc(length);
     if (buffer)
     {
-      fread(buffer, 1, length, configFile);
+      size_t result = fread(buffer, 1, length, configFile);
+      if (result > 0)
+      {
+        CXX_LOG_ERROR(
+          "sf",
+          "ClientConfigParser",
+          "parseConfigFile",
+          "Error in reading file: %s", in_filePath.c_str());
+      }
     }
     jsonConfig = snowflake_cJSON_Parse(buffer);
     const char* error_ptr = snowflake_cJSON_GetErrorPtr();
