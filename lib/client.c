@@ -1527,7 +1527,7 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
 
     snowflake_cJSON_Delete((cJSON *) put_get_response->src_list);
     snowflake_cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
-    snowflake_cJSON_Delete((cJSON*)put_get_response->presigned_urls);
+    snowflake_cJSON_Delete((cJSON *) put_get_response->presigned_urls);
 
     SF_FREE(put_get_response);
 }

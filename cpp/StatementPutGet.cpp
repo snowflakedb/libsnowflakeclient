@@ -219,7 +219,7 @@ bool StatementPutGet::http_put(std::string const& url,
   curl_slist_free_all(reqHeaders.header);
   if (respHeaders)
   {
-    responseHeaders = respHeaders;
+    responseHeaders = std::string(respHeaders);
     SF_FREE(respHeaders);
   }
 
