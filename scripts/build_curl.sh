@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 CURL_SRC_VERSION=8.7.1
-CURL_BUILD_VERSION=6
+CURL_BUILD_VERSION=7
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -70,7 +70,7 @@ cd $LIBCURL_SOURCE_DIR
 echo "Building Curl with OpenSSL"
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
-    export CFLAGS=-pthread # required to build with gcc52 or OpenSSL check will fail
+    export CFLAGS="-pthread -fPIC" # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
     PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}

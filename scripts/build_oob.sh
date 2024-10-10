@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 OOB_SRC_VERSION=1.0.4
-OOB_BUILD_VERSION=12
+OOB_BUILD_VERSION=13
 OOB_VERSION=$OOB_SRC_VERSION.$OOB_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
