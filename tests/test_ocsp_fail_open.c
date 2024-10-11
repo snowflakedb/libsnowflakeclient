@@ -4,7 +4,7 @@
 
 #include "utils/test_setup.h"
 
-sf_bool FAIL_OPEN_DEFAULT = SF_BOOLEAN_FALSE;
+#define FAIL_OPEN_DEFAULT SF_BOOLEAN_FALSE
 
 void setCacheFile(char *cache_file)
 {
