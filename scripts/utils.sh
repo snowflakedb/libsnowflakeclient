@@ -114,11 +114,7 @@ function upload_to_sfc_dev1_data()
     local build_type=$3
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
-    if [[ ! -z "$XP_BUILD" ]] ; then
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/snowflakeclient_for_xp/$component_name/
-    else
-      aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/$component_name/
-    fi
+    aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/$component_name/
 }
 
 function upload_to_sfc_jenkins()
@@ -130,11 +126,7 @@ function upload_to_sfc_jenkins()
     local git_branch_base_name=$(echo $GIT_BRANCH | awk -F/ '{print $2}')
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
-    if [[ ! -z "$XP_BUILD" ]] ; then
-      local target_path=$REP_URL_PREFIX/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
-    else
-      local target_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
-    fi
+    local target_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT/
     echo "=== uploading artifacts/$zip_file_name to $target_path"
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $target_path
     local cmake_file_name=$(get_cmake_file_name $component_name $component_version $build_type)
@@ -159,11 +151,7 @@ function download_from_sfc_jenkins()
     mkdir -p $UTILS_DIR/../artifacts
     echo "$component_name $component_version $build_type"
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
-    if [[ ! -z "$XP_BUILD" ]] ; then
-      local source_path=$REP_URL_PREFIX/snowflakeclient_for_xp/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
-    else
-      local source_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
-    fi
+    local source_path=$REP_URL_PREFIX/$component_name/$PLATFORM/$git_branch_base_name/$GIT_COMMIT
     echo "=== downloading $zip_file_name from $source_path/"
     aws s3 cp --only-show-errors $source_path/$zip_file_name $UTILS_DIR/../artifacts/
     local cmake_file_name=$(get_cmake_file_name $component_name $component_version $build_type)
