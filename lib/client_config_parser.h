@@ -2,8 +2,8 @@
  * Copyright (c) 2024 Snowflake Computing
  */
 
-#ifndef SNOWFLAKE_CLIENTCONFIG_H
-#define SNOWFLAKE_CLIENTCONFIG_H
+#ifndef SNOWFLAKE_CONFIGPARSER_H
+#define SNOWFLAKE_CONFIGPARSER_H
 
 #include "snowflake/client.h"
 #include "cJSON.h"
@@ -41,4 +41,4 @@ extern "C" {
 } // extern "C"
 #endif
 
-#endif //SNOWFLAKE_CLIENTCONFIG_H
+#endif //SNOWFLAKE_CONFIGPARSER_H
