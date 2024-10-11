@@ -526,7 +526,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("jwt_cnxn_wait_time: %d", sf->jwt_cnxn_wait_time);
     }
     if (AUTH_OAUTH == auth_type) {
-        log_debug("oauth_token: %s", sf->oauth_token ? "****" : "");
+        log_debug("oauth_token: %s", sf->oauth_token ? "provided" : "not provided");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
