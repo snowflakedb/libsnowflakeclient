@@ -1,6 +1,6 @@
-//
-// Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
-//
+/*
+* Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
+*/
 
 #include "utils/test_setup.h"
 

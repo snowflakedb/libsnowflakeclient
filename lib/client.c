@@ -432,11 +432,11 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->oauth_token))) {
         // Invalid token
-        log_error(ERR_MSG_TOKEN_PARAMETER_IS_MISSING);
+        log_error(ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
-            ERR_MSG_TOKEN_PARAMETER_IS_MISSING,
+            ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -526,7 +526,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("jwt_cnxn_wait_time: %d", sf->jwt_cnxn_wait_time);
     }
     if (AUTH_OAUTH == auth_type) {
-        log_debug("oauth_token: %s", sf->oauth_token ? "****" : sf->oauth_token);
+        log_debug("oauth_token: %s", sf->oauth_token ? "****" : "");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
