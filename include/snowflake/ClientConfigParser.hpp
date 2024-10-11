@@ -2,8 +2,8 @@
  * Copyright (c) 2024 Snowflake Computing
  */
 
-#ifndef PROJECT_CLIENTCONFIG_HPP
-#define PROJECT_CLIENTCONFIG_HPP
+#ifndef SNOWFLAKE_CONFIGPARSER_HPP
+#define SNOWFLAKE_CONFIGPARSER_HPP
 
 #include <string>
 
@@ -101,4 +101,4 @@ namespace Client
 } // namespace Client
 } // namespace Snowflake
 
-#endif //PROJECT_CLIENTCONFIG_HPP
+#endif //SNOWFLAKE_CONFIGPARSER_HPP
