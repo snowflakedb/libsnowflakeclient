@@ -38,7 +38,7 @@ void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 #define ERR_MSG_GONE_SESSION "The session no longer exists on the server. Please reconnect"
 #define ERR_MSG_AUTHENTICATOR_UNSUPPORTED "unsupported authenticator"
 #define ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING "priv_key_file parameter is missing"
-#define ERR_MSG_TOKEN_PARAMETER_IS_MISSING "token parameter is missing"
+#define ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING "OAuth token parameter is missing"
 
 #ifdef __cplusplus
 }
