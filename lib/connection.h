@@ -137,7 +137,7 @@ typedef struct RETRY_CONTEXT {
     // Decorrelate Jitter is used to determine sleep time
     DECORRELATE_JITTER_BACKOFF *djb;
     // start time to track on retry timeout
-    time_t start_time;
+    uint64 start_time;
 } RETRY_CONTEXT;
 
 typedef struct SF_HEADER {
@@ -617,6 +617,11 @@ int8 get_login_retry_count(SF_CONNECT *sf);
 * Get retry timeout from connection
 */
 int64 get_retry_timeout(SF_CONNECT *sf);
+
+/*
+* Get current time since epoch in milliseconds
+*/
+uint64 sf_get_current_time_millis();
 
 #ifdef __cplusplus
 }

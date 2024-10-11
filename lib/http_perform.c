@@ -186,7 +186,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             network_timeout,
             djb.base,      // time to sleep
             &djb,    // Decorrelate jitter
-            time(NULL)
+            sf_get_current_time_millis() // start time
     };
     time_t elapsedRetryTime = time(NULL);
     RAW_JSON_BUFFER buffer = {NULL, 0};
@@ -321,7 +321,6 @@ sf_bool STDCALL http_perform(CURL *curl,
         }
 
 #ifndef _WIN32
-#ifndef LIBSFCLI_FOR_XP
         // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
         sf_bool ocsp_check;
         if (insecure_mode) {
@@ -335,7 +334,6 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_easy_strerror(res));
             break;
         }
-#endif
 #endif
 
         // Set chunk downloader specific stuff here
