@@ -82,6 +82,7 @@ download_build_component aws "$SCRIPTS_DIR/build_awssdk.sh" "$target"
 download_build_component azure "$SCRIPTS_DIR/build_azuresdk.sh" "$target"
 download_build_component cmocka "$SCRIPTS_DIR/build_cmocka.sh" "$target"
 download_build_component arrow "$SCRIPTS_DIR/build_arrow.sh" "$target"
+download_build_component picojson "$SCRIPTS_DIR/build_picojson.sh" "$target"
 
 # very tight diskspace limit on github runners, clear deps folder with all .o files
 if [[ -n "$GITHUB_ACTIONS" ]]; then
