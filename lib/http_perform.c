@@ -454,8 +454,9 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         // When renew timeout is reached, stop retry and return to the caller
         // to renew request
-        if (((retry) && (renew_timeout > 0) &&
-            ((time(NULL) - elapsedRetryTime) >= renew_timeout)) || renew_timeout < 0) {
+        sf_bool renew_timeout_reached = retry && (renew_timeout > 0) && ((time(NULL) - elapsedRetryTime) >= renew_timeout);
+        sf_bool renew_timeout_disabled = retry && renew_timeout < 0;
+        if (renew_timeout_reached || renew_timeout_disabled) {
             retry  = SF_BOOLEAN_FALSE;
             if (elapsed_time) {
                 *elapsed_time += (time(NULL) - elapsedRetryTime);

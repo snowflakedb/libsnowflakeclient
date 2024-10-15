@@ -12,7 +12,7 @@
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
-#include "../cpp/entities.hpp"
+#include "../include/snowflake/entities.hpp"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
