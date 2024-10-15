@@ -128,7 +128,9 @@ set(SOURCE_FILES
         lib/chunk_downloader.h
         lib/chunk_downloader.c
         lib/mock_http_perform.h
-        lib/http_perform.c)
+        lib/http_perform.c
+        cpp/lib/CredentialCache.cpp
+        cpp/lib/CredentialCache.hpp)
 
 set (SOURCE_FILES_PUT_GET
         cpp/EncryptionProvider.cpp
@@ -190,6 +192,12 @@ set (SOURCE_FILES_PUT_GET
         cpp/logger/SFLogger.hpp
         cpp/logger/SecretDetector.cpp
         cpp/logger/SecretDetector.hpp
+        cpp/platform/SecureStorage.cpp
+        cpp/platform/SecureStorage.hpp
+        cpp/platform/SecureStorageApple.cpp
+        cpp/platform/SecureStorageImpl.hpp
+        cpp/platform/SecureStorageUnSup.cpp
+        cpp/platform/SecureStorageWin.cpp
         include/snowflake/IFileTransferAgent.hpp
         include/snowflake/ISFLogger.hpp
         include/snowflake/IStatementPutGet.hpp
@@ -245,7 +253,12 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/result_set_json.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
-        lib/authenticator.h)
+        lib/authenticator.h
+        include/snowflake/mfa_token_cache.h
+        cpp/lib/CacheFile.cpp
+        cpp/lib/CacheFile.hpp
+        cpp/platform/FileLock.cpp
+        cpp/platform/FileLock.hpp)
 
 if (UNIX)
     if (LINUX)
@@ -255,7 +268,7 @@ if (UNIX)
     endif()
     # Common to both Linux and Apple
     find_library(OOB_LIB libtelemetry.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED NO_DEFAULT_PATH)
-    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
+#    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
@@ -320,7 +333,7 @@ if (WIN32)
     set(VSDIR "vs15" CACHE STRING "Used to specify visual studio version of libsnowflakeclient dependecies")
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
     find_library(OOB_LIB libtelemetry_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED NO_DEFAULT_PATH)
-    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
+#    find_library(CURL_LIB libcurl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(SSL_LIB libssl_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(CRYPTO_LIB libcrypto_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -406,6 +419,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -421,6 +435,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -435,6 +450,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)

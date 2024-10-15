@@ -12,7 +12,8 @@
 			"OS_VERSION":	"0"
 		},
 		"SESSION_PARAMETERS":	{
-			"AUTOCOMMIT":	"TRUE"
+			"AUTOCOMMIT":	"TRUE",
+			"CLIENT_REQUEST_MFA_TOKEN":	true
 		}
 	}
 }
