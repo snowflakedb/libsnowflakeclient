@@ -30,7 +30,10 @@ if [[ "$target" != "Release" ]]; then
 fi
 
 cd $BOOST_SOURCE_DIR
-echo "using gcc : : $CXX ; " >> tools/build/src/user-config.jam
+cat <<EOF > tools/build/src/user-config.jam
+using gcc : : $CXX ;
+EOF
+
 #When pass CXX to specify the compiler, by default build.sh will set toolset to cxx and skip std=c++11 flag, so we need to set toolset as well
 sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
 
