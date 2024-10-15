@@ -63,21 +63,30 @@ void setup_mfa_term_mock_2() {
   will_return(__wrap_http_perform, "{}");
 }
 
+#define ACCOUNT "account"
+#define HOST "host"
+#define USER "user"
+
 SF_CONNECT* sf_connect_init() {
   SF_CONNECT* sf = snowflake_init();
-  snowflake_set_attribute(sf, SF_CON_ACCOUNT,"account");
-  snowflake_set_attribute(sf, SF_CON_USER, "user");
-  snowflake_set_attribute(sf, SF_CON_HOST, "host");
+  snowflake_set_attribute(sf, SF_CON_ACCOUNT,ACCOUNT);
+  snowflake_set_attribute(sf, SF_CON_HOST, HOST);
+  snowflake_set_attribute(sf, SF_CON_USER, USER);
   snowflake_set_attribute(sf, SF_CON_PORT, "443");
   snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
   return sf;
 }
 
 void test_mfa_token_caching(void **unused) {
+  cred_cache_ptr cred_cache = cred_cache_init();
+  cred_cache_remove_credential(cred_cache, ACCOUNT, HOST, USER, MFA_TOKEN);
+
   {
     SF_CONNECT *sf = sf_connect_init();
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "passwd");
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
+    sf_bool client_request_mfa_token = 1;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
     setup_mfa_connect_mock_1();
     SF_STATUS status = snowflake_connect(sf);
 
@@ -94,6 +103,8 @@ void test_mfa_token_caching(void **unused) {
     SF_CONNECT *sf = sf_connect_init();
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "passwd");
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
+    sf_bool client_request_mfa_token = 1;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
     setup_mfa_connect_mock_2();
     SF_STATUS status = snowflake_connect(sf);
 
@@ -104,26 +115,6 @@ void test_mfa_token_caching(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
     setup_mfa_term_mock_2();
     snowflake_term(sf);
-  }
-}
-
-void compare(const char* a, const char* b) {
-  int pos = 1;
-  int line = 1;
-  for (int i = 0; 1; i++) {
-    if (a[i] != b[i]) {
-      log_error("Line: %d, pos: %d :: %d != %d", line, pos, a[i], b[i]);
-      break;
-    }
-    pos++;
-    if (a[i] == '\0') {
-      break;
-    }
-
-    if (a[i] == '\n') {
-      pos = 1;
-      line++;
-    }
   }
 }
 

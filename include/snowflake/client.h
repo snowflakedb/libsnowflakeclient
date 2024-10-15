@@ -14,6 +14,7 @@ extern "C" {
 #include "platform.h"
 #include "version.h"
 #include "logger.h"
+#include "mfa_token_cache.h"
 
 /**
  * API Name
@@ -258,6 +259,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_DISABLE_QUERY_CONTEXT_CACHE,
     SF_CON_INCLUDE_RETRY_REASON,
     SF_CON_RETRY_TIMEOUT,
+    SF_CON_CLIENT_REQUEST_MFA_TOKEN,
     SF_CON_MAX_RETRY,
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
@@ -319,6 +321,7 @@ typedef struct SF_CONNECT {
     sf_bool passcode_in_password;
     sf_bool insecure_mode;
     sf_bool autocommit;
+    sf_bool client_request_mfa_token;
     char *timezone;
     char *service_name;
     char *query_result_format;
@@ -355,6 +358,9 @@ typedef struct SF_CONNECT {
     uint64 qcc_capacity;
     // the pointer of qcc instance
     void * qcc;
+
+    // MFA Token Cache
+    cred_cache_ptr token_cache;
 
     // whether to include retry reason in retry for query request
     sf_bool include_retry_reason;

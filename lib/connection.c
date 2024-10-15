@@ -125,7 +125,6 @@ static uint32 uimax(uint32 a, uint32 b) {
     return (a > b) ? a : b;
 }
 
-
 cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                                      const char *application,
                                      const char *int_app_name,
@@ -157,6 +156,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
                                       : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
+
     snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
 
     //Create Request Data JSON blob
@@ -186,10 +186,28 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         {
             snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
         }
+
+        if (sf->client_request_mfa_token) {
+            snowflake_cJSON_AddBoolToObject(
+                session_parameters,
+                "CLIENT_REQUEST_MFA_TOKEN",
+                1
+            );
+
+            if (sf->token_cache == NULL) {
+                sf->token_cache = cred_cache_init();
+            }
+
+            char* token = cred_cache_get_credential(sf->token_cache, sf->account, sf->host, sf->user, MFA_TOKEN);
+            if (token != NULL)
+            {
+                snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
+              cred_cache_free_credential(token);
+            }
+        }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
-    snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
-                                  session_parameters);
+    snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
 
     //Create body
     body = snowflake_cJSON_CreateObject();
