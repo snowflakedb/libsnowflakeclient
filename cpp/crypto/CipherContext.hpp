@@ -64,20 +64,6 @@ public:
 
   void set_padding() const;
 
-  void initialize_gcm(CryptoOperation op, size_t offset) const;
-
-  size_t gcm_encrypt(unsigned char *ciphertext, unsigned char const *plaintext, size_t plaintext_len) const;
-
-  size_t gcm_decrypt(unsigned char *plaintext, unsigned char const *ciphertext, size_t ciphertext_len) const;
-
-  size_t finalize_encryption(unsigned char *ciphertext, int len, unsigned char *tag) const;
-
-  size_t finalize_decryption(unsigned char *plaintext, int len, void *tag) const;
-
-  size_t next_gcm(void *out, const void *in, size_t len) const;
-
-  size_t finalize_gcm(void *out, unsigned char *tag) const;
-
   /**
    * Whether or not this is a valid context that can be used for encryption
    * or decryption. Returns 'false' for default constructed context object or
@@ -106,7 +92,7 @@ public:
    *    cipher block size).
    */
   void initialize(CryptoOperation op,
-                  size_t offset = 0);
+                  size_t offset = 0) const;
 
   /**
    * Encrypt/decrypt another block of data. May be called multiple times
@@ -126,7 +112,9 @@ public:
    */
   size_t next(void *out,
               const void *in,
-              size_t len);
+              size_t len) const;
+
+  size_t finalize(void *out, unsigned char *tag) const;
 
   /**
    * Finalize current operation. After finalize() has been called, another
@@ -140,7 +128,7 @@ public:
    * @return
    *    Number of bytes written to output block.
    */
-  size_t finalize(void *out);
+  size_t finalize(void *out) const;
 
 private:
 
