@@ -11,6 +11,7 @@
 #include <openssl/evp.h>
 #include <assert.h>
 #include <iostream>
+#include <openssl/err.h>
 
 using namespace std;
 using namespace Snowflake::Client::Crypto;
@@ -139,6 +140,185 @@ CipherContext &
 CipherContext::operator=(CipherContext &&other) noexcept
 = default;
 
+void CipherContext::initialize_encryption() const {
+  switch (m_pimpl->mode) {
+    case CryptoMode::GCM:
+      // initialize encryption operation
+      if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr, nullptr, nullptr)) {
+        throw;
+      }
+
+      // default iv len for AES is 96 bits but driver's IV generator
+      // uses 128 bits defined as SF_CRYPTO_IV_NBITS
+      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_IVLEN, SF_CRYPTO_IV_NBITS / 8, nullptr)) {
+        throw;
+      }
+
+      // initialize key and iv
+      if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, nullptr, nullptr,
+        reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
+        reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
+        throw;
+      }
+
+    break;
+    default:
+      if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
+         reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
+         reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
+        throw;
+      }
+    break;
+  }
+}
+
+void CipherContext::initialize_decryption() const {
+  switch (m_pimpl->mode) {
+    case CryptoMode::GCM:
+      if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr, nullptr, nullptr)) {
+        throw;
+      }
+
+      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_IVLEN, SF_CRYPTO_IV_NBITS / 8, nullptr)) {
+        throw;
+      }
+
+      if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, nullptr, nullptr,
+        reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
+        reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
+        throw;
+      }
+    break;
+    default:
+      if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
+         reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
+         reinterpret_cast<const unsigned char *>(m_pimpl->iv.data)))
+    break;
+  }
+}
+
+
+
+void CipherContext::set_padding() const {
+  switch (m_pimpl->padding) {
+    case CryptoPadding::NONE:
+      break;
+    case CryptoPadding::PKCS5:
+      if (1 != EVP_CIPHER_CTX_set_padding(m_pimpl->ctx, true)) {
+        throw;
+      }
+    break;
+  }
+}
+
+void CipherContext::initialize_gcm(const CryptoOperation op, const size_t offset) const {
+  switch (op) {
+    case CryptoOperation::ENCRYPT:
+      initialize_encryption();
+    break;
+    case CryptoOperation::DECRYPT:
+      initialize_decryption();
+    break;
+    default:
+      throw;
+  }
+  set_padding();
+  m_pimpl->op = op;
+  m_pimpl->inOff = m_pimpl->outOff = offset;
+}
+
+size_t CipherContext::gcm_encrypt(unsigned char *ciphertext, unsigned char const *const plaintext,  size_t const plaintext_len) const {
+  int len;
+  /*
+ * Provide the message to be encrypted, and obtain the encrypted output.
+ * EVP_EncryptUpdate can be called multiple times if necessary
+ */
+  if (1 != EVP_EncryptUpdate(m_pimpl->ctx, ciphertext, &len, plaintext, static_cast<int>(plaintext_len))) {
+    throw;
+  }
+  return len;
+}
+
+size_t CipherContext::gcm_decrypt(unsigned char *plaintext, unsigned char const *const ciphertext, size_t const ciphertext_len) const {
+  int len;
+  if (1 != EVP_DecryptUpdate(m_pimpl->ctx, plaintext, &len, ciphertext, static_cast<int>(ciphertext_len))) {
+    throw;
+  }
+
+  return len;
+}
+
+size_t CipherContext::finalize_encryption(unsigned char *ciphertext, int len, unsigned char *tag) const {
+  int ciphertext_len = len;
+  /*
+  * Finalise the encryption. Normally ciphertext bytes may be written at
+  * this stage, but this does not occur in GCM mode
+  */
+  if (1 != EVP_EncryptFinal_ex(m_pimpl->ctx, ciphertext + ciphertext_len, &len)) {
+    throw;
+  }
+  ciphertext_len += len;
+
+  if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_GET_TAG, 16, tag)) {
+    throw;
+  }
+
+  return ciphertext_len;
+}
+
+size_t CipherContext::finalize_decryption(unsigned char *plaintext, int len, void* tag) const {
+  int plaintext_len = len;
+  int nbBytesOut;
+  if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_TAG, 16, tag)) {
+    throw;
+  }
+
+  const int ret = EVP_DecryptFinal_ex(m_pimpl->ctx, plaintext, &nbBytesOut);
+  if (ret > 0) {
+    plaintext_len += nbBytesOut;
+    return plaintext_len;
+  }
+  return 0;
+}
+
+size_t CipherContext::next_gcm(void *const out,
+                               void const *const in,
+                               const size_t len) const {
+  size_t res = 0;
+  switch (m_pimpl->op) {
+    case CryptoOperation::ENCRYPT:
+      res = gcm_encrypt(static_cast<unsigned char *>(out),
+                        static_cast<unsigned char const *>(in), len);
+    break;
+    case CryptoOperation::DECRYPT:
+      res = gcm_decrypt(static_cast<unsigned char *>(out),
+                        static_cast<unsigned char const *>(in), len);
+    break;
+    default:
+      throw;
+  }
+  m_pimpl->inOff += len;
+  m_pimpl->outOff += res;
+
+  return res;
+}
+
+size_t CipherContext::finalize_gcm(void *const out, unsigned char *tag) const {
+  size_t success;
+  switch (m_pimpl->op) {
+    case CryptoOperation::ENCRYPT:
+      success = finalize_encryption(static_cast<unsigned char *>(out), static_cast<int>(m_pimpl->inOff), tag);
+    break;
+    case CryptoOperation::DECRYPT:
+      success = finalize_decryption(static_cast<unsigned char *>(out), static_cast<int>(m_pimpl->inOff), tag);
+    break;
+    default:
+      throw;
+  }
+
+  return success;
+}
+
 void CipherContext::initialize(const CryptoOperation op,
                                const size_t offset)
 {
@@ -146,7 +326,6 @@ void CipherContext::initialize(const CryptoOperation op,
   //TODO
   //SF_ASSERT0(m_pimpl, "context_not_valid_1");
 
-  // Add offset to IV if in counter mode. Otherwise, just use as-is.
   auto &impl = *m_pimpl;
 
   // Perform initialization.

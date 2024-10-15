@@ -58,6 +58,26 @@ public:
    */
   CipherContext &operator=(CipherContext &&other) noexcept;
 
+  void initialize_encryption() const;
+
+  void initialize_decryption() const;
+
+  void set_padding() const;
+
+  void initialize_gcm(CryptoOperation op, size_t offset) const;
+
+  size_t gcm_encrypt(unsigned char *ciphertext, unsigned char const *plaintext, size_t plaintext_len) const;
+
+  size_t gcm_decrypt(unsigned char *plaintext, unsigned char const *ciphertext, size_t ciphertext_len) const;
+
+  size_t finalize_encryption(unsigned char *ciphertext, int len, unsigned char *tag) const;
+
+  size_t finalize_decryption(unsigned char *plaintext, int len, void *tag) const;
+
+  size_t next_gcm(void *out, const void *in, size_t len) const;
+
+  size_t finalize_gcm(void *out, unsigned char *tag) const;
+
   /**
    * Whether or not this is a valid context that can be used for encryption
    * or decryption. Returns 'false' for default constructed context object or
