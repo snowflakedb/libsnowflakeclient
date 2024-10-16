@@ -7,7 +7,8 @@
 /**
  * Test connection with OAuth authentication.
  */
-void test_oauth_connect(void **unused) {
+void test_oauth_connect(void **unused) 
+{
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -152,7 +153,8 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 }
 
 
-int main(void) {
+int main(void) 
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_oauth_connect),
