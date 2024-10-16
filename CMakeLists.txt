@@ -98,6 +98,7 @@ set(SOURCE_FILES
         include/snowflake/logger.h
         include/snowflake/version.h
         include/snowflake/platform.h
+        include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -247,8 +248,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/result_set_json.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
-        lib/authenticator.h
-        lib/client_config_parser.h)
+        lib/authenticator.h)
 
 if (UNIX)
     if (LINUX)
