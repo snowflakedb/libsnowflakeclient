@@ -8,6 +8,7 @@ See-also:
   - CURLOPT_TIMEOUT (3)
 Protocol:
   - All
+Added-in: 7.10
 ---
 
 # NAME
@@ -26,7 +27,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_NOSIGNAL, long onoff);
 
 If *onoff* is 1, libcurl uses no functions that install signal handlers or
 any functions that cause signals to be sent to the process. This option is
-here to allow multi-threaded unix applications to still set/use all timeout
+here to allow multi-threaded Unix applications to still set/use all timeout
 options etc, without risking getting signals.
 
 If this option is set and libcurl has been built with the standard name
@@ -40,13 +41,13 @@ ignore SIGPIPE signals, which otherwise are sent by the system when trying to
 send data to a socket which is closed in the other end. libcurl makes an
 effort to never cause such SIGPIPE signals to trigger, but some operating
 systems have no way to avoid them and even on those that have there are some
-corner cases when they may still happen, contrary to our desire. In addition,
-using *CURLAUTH_NTLM_WB* authentication could cause a SIGCHLD signal to be
-raised.
+corner cases when they may still happen, contrary to our desire.
 
 # DEFAULT
 
 0
+
+# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -67,9 +68,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-Added in 7.10
+# %AVAILABILITY%
 
 # RETURN VALUE
 

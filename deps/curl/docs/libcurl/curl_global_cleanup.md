@@ -10,6 +10,7 @@ See-also:
   - libcurl-thread (3)
 Protocol:
   - All
+Added-in: 7.8
 ---
 
 # NAME
@@ -54,6 +55,13 @@ still running then your program may crash or other corruption may occur. We
 recommend you do not run libcurl from any module that may be unloaded
 dynamically. This behavior may be addressed in the future.
 
+libcurl may not be able to fully clean up after multi-threaded OpenSSL
+depending on how OpenSSL was built and loaded as a library. It is possible in
+some rare circumstances a memory leak could occur unless you implement your own
+OpenSSL thread cleanup. Refer to libcurl-thread(3).
+
+# %PROTOCOLS%
+
 # EXAMPLE
 
 ~~~c
@@ -67,9 +75,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-Added in 7.8
+# %AVAILABILITY%
 
 # RETURN VALUE
 

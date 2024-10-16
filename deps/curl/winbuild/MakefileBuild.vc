@@ -48,14 +48,14 @@ CC = cl.exe
 !IF "$(VC)"=="6"
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl
+CFLAGS      = /I. /I../lib /I../include /nologo /W4 /GX /YX /FD /c /DBUILDING_LIBCURL
 !ELSE
 CC_NODEBUG  = $(CC) /O2 /DNDEBUG
 CC_DEBUG    = $(CC) /Od /D_DEBUG /RTC1 /Z7 /LDd
-CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c /DBUILDING_LIBCURL /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl
+CFLAGS      = /I. /I ../lib /I../include /nologo /W4 /EHsc /FD /c /DBUILDING_LIBCURL
 !ENDIF
 
-LFLAGS     = /nologo /machine:$(MACHINE) /CETCOMPAT
+LFLAGS     = /nologo /machine:$(MACHINE)
 LNKDLL     = link.exe /DLL
 # Use lib.exe instead of link.exe as link.exe /lib has the following bad habits:
 # - optimizing options like /opt:ref raises warnings (at least in Visual Studio 2015)
@@ -69,11 +69,7 @@ LFLAGS_PDB = /incremental:no /opt:ref,icf /DEBUG
 
 CFLAGS_LIBCURL_STATIC  = /DCURL_STATICLIB
 
-!IF "$(MACHINE)"=="x64"
-WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib ole32.lib
-!ELSE
-WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib msvcrt.lib ole32.lib
-!ENDIF
+WIN_LIBS    = ws2_32.lib wldap32.lib advapi32.lib crypt32.lib
 
 BASE_NAME              = libcurl
 BASE_NAME_DEBUG        = $(BASE_NAME)_debug
@@ -94,7 +90,7 @@ PDB_NAME_DLL_DEBUG     = $(BASE_NAME_DEBUG).pdb
 
 # CURL Command section
 PROGRAM_NAME  = curl.exe
-CURL_CFLAGS   = /I../lib /I../include /nologo /W4 /EHsc /DWIN32 /FD /c
+CURL_CFLAGS   = /I../lib /I../include /nologo /W4 /EHsc /FD /c
 CURL_LFLAGS   = /out:$(DIRDIST)\bin\$(PROGRAM_NAME) /subsystem:console $(LFLAGS)
 CURL_RESFLAGS = /i../include
 
@@ -145,6 +141,9 @@ SSL_CFLAGS   = $(SSL_CFLAGS) /DCURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG
 !ENDIF
 !ENDIF
 
+!IF "$(ENABLE_WEBSOCKETS)"=="true"
+CFLAGS  = $(CFLAGS) /DUSE_WEBSOCKETS=1
+!ENDIF
 
 !IFDEF NGHTTP2_PATH
 NGHTTP2_INC_DIR  = $(NGHTTP2_PATH)\include
@@ -281,10 +280,6 @@ ZLIB        = static
 ZLIB_CFLAGS = /DHAVE_LIBZ $(ADDITIONAL_ZLIB_CFLAGS) /I"$(ZLIB_INC_DIR)"
 !ENDIF
 
-OOB_LIBS	= libtelemetry_a.lib
-OOBLIB		= static
-OOB_CFLAGS	=
-OOB_LFLAGS	=
 
 !IFDEF SSH2_PATH
 SSH2_INC_DIR= $(SSH2_PATH)\include
@@ -433,13 +428,13 @@ CFGSET = true
 # CURL_XX macros are for the curl.exe command
 
 !IF "$(DEBUG)"=="yes"
-RC_FLAGS = /dDEBUGBUILD=1 /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
+RC_FLAGS = /d_DEBUG /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
 CURL_CC       = $(CC_DEBUG) $(RTLIB_DEBUG)
-CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /dDEBUGBUILD=1 /Fo $@ $(CURL_SRC_DIR)\curl.rc
+CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /d_DEBUG /Fo $@ $(CURL_SRC_DIR)\curl.rc
 !ELSE
-RC_FLAGS = /dDEBUGBUILD=0 /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
+RC_FLAGS = /Fo $@ $(LIBCURL_SRC_DIR)\libcurl.rc
 CURL_CC       = $(CC_NODEBUG) $(RTLIB)
-CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /dDEBUGBUILD=0 /Fo $@ $(CURL_SRC_DIR)\curl.rc
+CURL_RC_FLAGS = $(CURL_RC_FLAGS) /i../include /Fo $@ $(CURL_SRC_DIR)\curl.rc
 !ENDIF
 
 !IF "$(AS_DLL)" == "true"
@@ -468,14 +463,11 @@ PDB      = $(PDB_NAME_STATIC_DEBUG)
 TARGET   = $(LIB_NAME_STATIC)
 PDB      = $(PDB_NAME_STATIC)
 !ENDIF
-LNK      = $(LNKLIB) $(WIN_LIBS) /out:$(LIB_DIROBJ)\$(TARGET)
+LNK      = $(LNKLIB) /out:$(LIB_DIROBJ)\$(TARGET)
 CURL_CC  = $(CURL_CC) $(CFLAGS_LIBCURL_STATIC)
 
 # AS_DLL
 !ENDIF
-
-CFLAGS = $(CFLAGS) $(OOB_CFLAGS)
-LFLAGS = $(LFLAGS) $(OOB_LFLAGS) $(OOB_LIBS)
 
 !IF "$(USE_SSL)"=="true"
 CFLAGS = $(CFLAGS) $(SSL_CFLAGS)
@@ -701,7 +693,7 @@ $(CURL_DIROBJ)\dynbuf.obj: ../lib/dynbuf.c
 $(CURL_DIROBJ)\base64.obj: ../lib/base64.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/base64.c
 $(CURL_DIROBJ)\curl.res: $(CURL_SRC_DIR)\curl.rc
-	rc $(CURL_RC_FLAGS)
+	$(RC) $(CURL_RC_FLAGS)
 
 !ENDIF  # End of case where a config was provided.
 

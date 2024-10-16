@@ -1,3 +1,9 @@
+<!--
+Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+
+SPDX-License-Identifier: curl
+-->
+
 # curl internals
 
 The canonical libcurl internals documentation is now in the [everything
@@ -29,7 +35,7 @@ versions of libs and build tools.
  - MIT Kerberos 1.2.4
  - Heimdal      ?
  - nghttp2      1.15.0
- - WinSock      2.2 (on Windows 95+ and Windows CE .NET 4.1+)
+ - Winsock      2.2 (on Windows 95+ and Windows CE .NET 4.1+)
 
 ## Build tools
 
@@ -41,7 +47,7 @@ versions of libs and build tools.
  - GNU Autoconf 2.59
  - GNU Automake 1.7
  - GNU M4       1.4
- - perl         5.6
+ - perl         5.8
  - roffit       0.5
  - cmake        3.7
 
