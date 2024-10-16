@@ -166,7 +166,7 @@ static curlioerr ioctl_callback(CURL *handle, int cmd, void *clientp)
 
 
 
-int test(char *URL)
+CURLcode test(char *URL)
 {
   CURL *curl;
   CURLcode res = CURLE_OK;
@@ -174,7 +174,7 @@ int test(char *URL)
   size_t i;
   static const char fill[] = "test data";
 
-  config.trace_ascii = 1; /* enable ascii tracing */
+  config.trace_ascii = 1; /* enable ASCII tracing */
 
   global_init(CURL_GLOBAL_ALL);
   easy_init(curl);
@@ -217,5 +217,5 @@ test_cleanup:
 
   curl_easy_cleanup(curl);
   curl_global_cleanup();
-  return (int)res;
+  return res;
 }
