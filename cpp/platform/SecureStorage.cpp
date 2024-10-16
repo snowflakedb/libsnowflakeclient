@@ -4,13 +4,7 @@
  */
 
 #include "../logger/SFLogger.hpp"
-#ifdef __APPLE__
 #include "SecureStorageImpl.hpp"
-#elif _WIN32
-#include "SecureStorageWin.hpp"
-#else
-#include "SecureStorageUnSup.hpp"
-#endif
 
 #include "SecureStorage.hpp"
 
