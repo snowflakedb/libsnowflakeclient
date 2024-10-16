@@ -127,7 +127,7 @@ std::string ClientConfigParser::resolveClientConfigPath(
 #else
       // 4. Try user home dir
       char* homeDir;
-      if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0)
+      if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0))
       {
         std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
         if (is_regular_file(homeDirFilePath))
