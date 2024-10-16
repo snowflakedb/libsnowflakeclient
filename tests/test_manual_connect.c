@@ -16,15 +16,18 @@ void test_oauth_connect(void **unused)
 
     char *host, *port, *protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host) {
+    if (host) 
+    {
         snowflake_set_attribute(sf, SF_CON_HOST, host);
     }
     port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port) {
+    if (port) 
+    {
         snowflake_set_attribute(sf, SF_CON_PORT, port);
     }
     protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol) {
+    if (protocol) 
+    {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
     char* token = "<Pass your token here>";
@@ -151,7 +154,6 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
-
 
 int main(void) 
 {

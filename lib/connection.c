@@ -187,7 +187,6 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
             snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
         }
     }
-
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
                                   session_parameters);

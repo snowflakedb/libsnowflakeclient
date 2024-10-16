@@ -10,7 +10,8 @@
 /*
  * Test auth connection when the token was not provided.
  */
-void test_oauth_with_no_token(void** unused) {
+void test_oauth_with_no_token(void** unused) 
+{
    SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,"test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -29,7 +30,8 @@ void test_oauth_with_no_token(void** unused) {
 /*
  * Test the request body with the oauth connection.
  */
-void test_json_data_in_oauth(void** unused) {
+void test_json_data_in_oauth(void** unused) 
+{
     SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
@@ -54,7 +56,8 @@ void test_json_data_in_oauth(void** unused) {
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "token")), "mock_token");
 }
 
-int main(void) {
+int main(void) 
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_oauth_with_no_token),
