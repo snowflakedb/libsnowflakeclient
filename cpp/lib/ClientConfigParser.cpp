@@ -4,22 +4,21 @@
 
 #include "snowflake/ClientConfigParser.hpp"
 #include "snowflake/Exceptions.hpp"
+#include "snowflake/client_config_parser.h"
 #include "../logger/SFLogger.hpp"
-#include "client_config_parser.h"
 #include "memory.h"
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <set>
-
-#undef snprintf
-#include <boost/filesystem.hpp>
 
 #ifndef _WIN32 
 #include <dlfcn.h>
 #endif
 
 using namespace Snowflake::Client;
+using namespace std::filesystem;
 
 namespace
 {
@@ -30,24 +29,16 @@ namespace
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void load_client_config(
+sf_bool load_client_config(
   const char* in_configFilePath,
   client_config* out_clientConfig)
 {
-  ClientConfigParser configParser;
-  ClientConfig clientConfig;
-  configParser.loadClientConfig(in_configFilePath, clientConfig);
-  if (!clientConfig.logLevel.empty())
-  {
-    out_clientConfig->logLevel = (char*)SF_CALLOC(1, sizeof(clientConfig.logLevel));
-    sf_memcpy(out_clientConfig->logLevel, sizeof(out_clientConfig->logLevel),
-      clientConfig.logLevel.data(), clientConfig.logLevel.size());
-  }
-  if (!clientConfig.logPath.empty())
-  {
-    out_clientConfig->logPath = (char*)SF_CALLOC(1, sizeof(clientConfig.logPath));
-    sf_memcpy(out_clientConfig->logPath, MAX_PATH,
-      clientConfig.logPath.data(), clientConfig.logPath.size());
+  try {
+    ClientConfigParser configParser;
+    configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
+  } catch (std::exception e) {
+    sf_fprintf(stderr, e.what());
+    return false;
   }
 }
 
@@ -67,7 +58,19 @@ ClientConfigParser::~ClientConfigParser()
 ////////////////////////////////////////////////////////////////////////////////
 void ClientConfigParser::loadClientConfig(
   const std::string& in_configFilePath,
-  ClientConfig& out_clientConfig)
+  client_config& out_clientConfig)
+{
+  std::string derivedConfigPath = resolveClientConfigPath(in_configFilePath);
+
+  if (!derivedConfigPath.empty())
+  {
+    parseConfigFile(derivedConfigPath, out_clientConfig);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::string ClientConfigParser::resolveClientConfigPath(
+  const std::string& in_configFilePath)
 {
   char envbuf[MAX_PATH + 1];
   std::string derivedConfigPath = "";
@@ -90,7 +93,7 @@ void ClientConfigParser::loadClientConfig(
     // 3. Try DLL binary dir
     std::string binaryDir = getBinaryPath();
     std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
-    if (checkFileExists(binaryDirFilePath))
+    if (is_regular_file(binaryDirFilePath))
     {
       derivedConfigPath = binaryDirFilePath;
       CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -100,19 +103,22 @@ void ClientConfigParser::loadClientConfig(
     {
 #if defined(WIN32) || defined(_WIN64)
       // 4. Try user home dir
-      std::string homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf));
-      if (homeDir.empty())
+      std::string homeDirFilePath;
+      char* homeDir;
+      if ((homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf))) && strlen(homeDir) != 0)
       {
+        homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+      } else {
         // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
-        std::string homeDriveEnv = sf_getenv_s("HOMEDRIVE", envbuf, sizeof(envbuf));
-        std::string homePathEnv = sf_getenv_s("HOMEPATH", envbuf, sizeof(envbuf));
-        if (!homeDriveEnv.empty() && !homePathEnv.empty())
+        char* homeDriveEnv;
+        char* homePathEnv;
+        if ((homeDriveEnv = sf_getenv_s("HOMEDRIVE", envbuf, sizeof(envbuf))) && (strlen(homeDriveEnv) != 0) &&
+          (homePathEnv = sf_getenv_s("HOMEPATH", envbuf, sizeof(envbuf))) && (strlen(homePathEnv) != 0))
         {
-          homeDir = homeDriveEnv + homePathEnv;
+          homeDirFilePath = std::string(homeDriveEnv) + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
         }
       }
-      std::string homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-      if (checkFileExists(homeDirFilePath))
+      if (is_regular_file(homeDirFilePath))
       {
         derivedConfigPath = homeDirFilePath;
         CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -120,10 +126,11 @@ void ClientConfigParser::loadClientConfig(
       }
 #else
       // 4. Try user home dir
-      if (const char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf)))
+      char* homeDir;
+      if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0)
       {
         std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-        if (checkFileExists(homeDirFilePath))
+        if (is_regular_file(homeDirFilePath))
         {
           derivedConfigPath = homeDirFilePath;
           CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -133,29 +140,14 @@ void ClientConfigParser::loadClientConfig(
 #endif
     }
   }
-  if (!derivedConfigPath.empty())
-  {
-    parseConfigFile(derivedConfigPath, out_clientConfig);
-  }
+  return derivedConfigPath;
 }
 
 // Private =====================================================================
 ////////////////////////////////////////////////////////////////////////////////
-bool ClientConfigParser::checkFileExists(const std::string& in_filePath)
-{
-  FILE* file = sf_fopen(&file, in_filePath.c_str(), "r");
-  if (file != nullptr)
-  {
-    fclose(file);
-    return true;
-  }
-  return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void ClientConfigParser::parseConfigFile(
   const std::string& in_filePath,
-  ClientConfig& out_clientConfig)
+  client_config& out_clientConfig)
 {
   cJSON* jsonConfig;
   FILE* configFile;
@@ -173,14 +165,12 @@ void ClientConfigParser::parseConfigFile(
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
 #endif
-    fseek(configFile, 0, SEEK_END);
-    long length = ftell(configFile);
-    rewind(configFile);
-    char* buffer = (char*)malloc(length);
+    const int fileSize = file_size(in_filePath);
+    char* buffer = (char*)malloc(fileSize);
     if (buffer)
     {
-      size_t result = fread(buffer, 1, length, configFile);
-      if (result != length)
+      size_t result = fread(buffer, 1, fileSize, configFile);
+      if (result != fileSize)
       {
         CXX_LOG_ERROR(
           "sf",
@@ -204,7 +194,10 @@ void ClientConfigParser::parseConfigFile(
   }
   catch (std::exception& ex)
   {
-    fclose(configFile);
+    if (configFile)
+    {
+      fclose(configFile);
+    }
     throw;
   }
 
@@ -220,16 +213,19 @@ void ClientConfigParser::parseConfigFile(
   {
     out_clientConfig.logPath = snowflake_cJSON_GetStringValue(logPath);
   }
-  fclose(configFile);
+  if (configFile)
+  {
+    fclose(configFile);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void ClientConfigParser::checkIfValidPermissions(const std::string& in_filePath)
 {
-  boost::filesystem::file_status fileStatus = boost::filesystem::status(in_filePath);
-  boost::filesystem::perms permissions = fileStatus.permissions();
-  if (permissions & boost::filesystem::group_write ||
-      permissions & boost::filesystem::others_write)
+  file_status fileStatus = status(in_filePath);
+  perms permissions = fileStatus.permissions();
+  if ((perms::group_write == (permissions & perms::group_write)) ||
+      (perms::others_write == (permissions & perms::others_write)))
   {
     CXX_LOG_ERROR(
       "sf",

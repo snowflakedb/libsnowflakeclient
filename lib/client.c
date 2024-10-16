@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
+#include <snowflake/client_config_parser.h>
 #include "constants.h"
 #include "client_int.h"
 #include "connection.h"
@@ -19,7 +20,6 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
-#include "client_config_parser.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -38,7 +38,6 @@ sf_bool SF_OCSP_CHECK;
 char *SF_HEADER_USER_AGENT = NULL;
 
 static char *CLIENT_CONFIG_FILE = NULL;
-static char* LOG_LEVEL;
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
@@ -359,12 +358,10 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
-        snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, sf_log_path);
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
-        snowflake_global_set_attribute(SF_GLOBAL_LOG_PATH, "logs/");
     }
     if (LOG_PATH != NULL) {
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -675,12 +672,6 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             alloc_buffer_and_copy(&CLIENT_CONFIG_FILE, value);
             break;
-        case SF_GLOBAL_LOG_LEVEL:
-            alloc_buffer_and_copy(&LOG_LEVEL, value);
-            break;
-        case SF_GLOBAL_LOG_PATH:
-            alloc_buffer_and_copy(&LOG_PATH, value);
-            break;
         default:
             break;
     }
@@ -719,13 +710,13 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             }
             break;
         case SF_GLOBAL_LOG_LEVEL:
-            if (LOG_LEVEL) {
-              if (strlen(LOG_LEVEL) > size - 1) {
+            {
+              if (strlen(log_from_level_to_str(log_get_level())) > size - 1) {
                 return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
               }
-              sf_strncpy(value, size, LOG_LEVEL, size);
+              sf_strncpy(value, size, log_from_level_to_str(log_get_level()), size);
+              break;
             }
-            break;
         case SF_GLOBAL_LOG_PATH:
             if (LOG_PATH) {
               if (strlen(LOG_PATH) > size - 1) {

@@ -6,20 +6,12 @@
 #define SNOWFLAKE_CONFIGPARSER_HPP
 
 #include <string>
+#include "client_config_parser.h"
 
 namespace Snowflake
 {
 namespace Client
 {
-  struct ClientConfig
-  {
-    // The log level
-    std::string logLevel = "";
-
-    // The log path
-    std::string logPath = "";
-  };
-
   struct ClientConfigException : public std::exception
   {
     ClientConfigException(const std::string& message) : message_(message) {}
@@ -57,16 +49,18 @@ namespace Client
        */
       void loadClientConfig(
         const std::string& in_configFilePath,
-        ClientConfig& out_clientConfig);
+        client_config& out_clientConfig);
 
     // Private =================================================================
     private:
       /**
-       * @brief Check if the file exists.
+       * @brief Resolve the client config path.
        *
-       * @param in_filePath             The file path to check.
+       * @param in_configFilePath        The config file path passed in by the user.
+       * 
+       * @param The client config path
        */
-      bool checkFileExists(const std::string& in_filePath);
+      std::string resolveClientConfigPath(const std::string& in_configFilePath);
 
       /**
        * @brief Parse JSON string.
@@ -76,7 +70,7 @@ namespace Client
        */
       void parseConfigFile(
         const std::string& in_filePath,
-        ClientConfig& out_clientConfig);
+        client_config& out_clientConfig);
 
       /**
        * @ brief Check if other have permission to modify file
