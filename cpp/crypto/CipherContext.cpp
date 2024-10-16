@@ -127,8 +127,8 @@ CipherContext::CipherContext(const CryptoAlgo algo,
                              const shared_ptr<const CryptoKey> &key,
                              const CryptoIV &iv,
                              const bool externalDecryptErrors)
-  : m_pimpl(new Impl(algo, mode, padding, key, iv,
-                     externalDecryptErrors))
+  : m_pimpl{std::make_unique<Impl>(algo, mode, padding, key, iv,
+                     externalDecryptErrors)}
 {
 }
 
@@ -142,7 +142,7 @@ CipherContext::operator=(CipherContext &&other) noexcept
 = default;
 
 void CipherContext::initialize_encryption() const {
-  CXX_LOG_DEBUG("Initialize encryption");
+  CXX_LOG_DEBUG("Initialize encryption, mode = %d", m_pimpl->mode);
   switch (m_pimpl->mode) {
     case CryptoMode::GCM:
       // initialize encryption operation
@@ -179,20 +179,23 @@ void CipherContext::initialize_encryption() const {
 }
 
 void CipherContext::initialize_decryption() const {
-  CXX_LOG_DEBUG("Initializing decryption");
+  CXX_LOG_DEBUG("Initializing decryption, mode = %d", m_pimpl->mode);
   switch (m_pimpl->mode) {
     case CryptoMode::GCM:
       if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr, nullptr, nullptr)) {
+        CXX_LOG_ERROR("Failed to initialize decryption operation for provided cipher");
         throw;
       }
 
       if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_IVLEN, SF_CRYPTO_IV_NBITS / 8, nullptr)) {
+        CXX_LOG_ERROR("Failed to set IV len equal to %d bits", SF_CRYPTO_IV_NBITS);
         throw;
       }
 
       if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, nullptr, nullptr,
         reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
         reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
+        CXX_LOG_ERROR("Failed to initialize decryption key and iv")
         throw;
       }
     break;
@@ -219,6 +222,38 @@ void CipherContext::set_padding() const {
       }
     break;
   }
+}
+
+void CipherContext::set_aad(const unsigned char *aad, int aad_len) const {
+  if (m_pimpl->mode != CryptoMode::GCM) {
+    CXX_LOG_ERROR("AAD is not supported outside GCM mode");
+    throw;
+  }
+  int len;
+  switch (m_pimpl->op) {
+    case CryptoOperation::ENCRYPT: {
+      if(1 != EVP_EncryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
+        CXX_LOG_ERROR("Failed to set the additional authenticated data for encryption")
+        throw;
+      }
+    }
+    break;
+    case CryptoOperation::DECRYPT:
+      if(1 != EVP_DecryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
+        CXX_LOG_ERROR("Failed to set the additional authenticated data for decryption")
+        throw;
+      }
+    break;
+    default:
+      CXX_LOG_ERROR("Failed to set the additional authenticated data")
+      throw;
+    break;
+  }
+}
+
+void CipherContext::initialize(const CryptoOperation op, const unsigned char *aad, const int aad_len) const {
+  initialize(op);
+  set_aad(aad, aad_len);
 }
 
 void CipherContext::initialize(const CryptoOperation op,
@@ -324,7 +359,7 @@ size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
         throw;
       }
 
-      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_GET_TAG, 16, tag)) {
+      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_GET_TAG, SF_GCM_TAG_LEN, tag)) {
         CXX_LOG_ERROR("CipherContext::finalize() failed getting the GCM tag");
         throw;
       }
@@ -333,7 +368,7 @@ size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
     case CryptoOperation::DECRYPT:
     {
       // Decrypt final batch of input data.
-      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_TAG, 16, tag)) {
+      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_TAG, SF_GCM_TAG_LEN, tag)) {
         CXX_LOG_ERROR("CipherContext::finalize() failed setting the GCM tag");
         throw;
       }
