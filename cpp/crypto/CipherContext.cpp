@@ -8,9 +8,7 @@
 
 #include <openssl/aes.h>
 #include <openssl/evp.h>
-#include <assert.h>
 #include <iostream>
-#include <openssl/err.h>
 
 #include "../logger/SFLogger.hpp"
 
