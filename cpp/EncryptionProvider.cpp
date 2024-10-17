@@ -7,6 +7,7 @@
 #include "EncryptionProvider.hpp"
 #include "crypto/Cryptor.hpp"
 #include "util/Base64.hpp"
+#include <picojson.h>
 
 void Snowflake::Client::EncryptionProvider::encryptFileKey(
   FileMetadata *fileMetadata, EncryptionMaterial *encryptionMaterial, Crypto::CryptoRandomDevice randomDevice)
