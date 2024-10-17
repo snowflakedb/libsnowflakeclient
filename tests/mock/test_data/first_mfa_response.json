@@ -1,0 +1,16 @@
+{
+	"data" : {
+		"token" : "TOKEN",
+		"masterToken" : "MASTER_TOKEN",
+		"mfaToken": "MFA_TOKEN",
+		"sessionInfo": {
+			"databaseName": "testdb",
+			"schemaName": "testschema",
+			"roleName": "testRole",
+			"warehouseName": "wh"
+		}
+	},
+	"message" : null,
+	"code" : null,
+	"success" : true
+}
