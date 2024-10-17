@@ -263,6 +263,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
     SF_CON_DISABLE_SAML_URL_CHECK,
+    SF_CON_OCSP_FAIL_OPE
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -319,6 +320,7 @@ typedef struct SF_CONNECT {
     char *passcode;
     sf_bool passcode_in_password;
     sf_bool insecure_mode;
+    sf_bool ocsp_fail_open;
     sf_bool autocommit;
     char *timezone;
     char *service_name;
