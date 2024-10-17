@@ -40,6 +40,7 @@ sf_bool load_client_config(
     sf_fprintf(stderr, e.what());
     return false;
   }
+  return true;
 }
 
 // Public ======================================================================
