@@ -14,11 +14,14 @@
 
 #ifndef _WIN32 
 #include <dlfcn.h>
-#include <experimental/filesystem>
-using namespace std::experimental::filesystem;
-#else
+#endif
+
+#ifdef _WIN32
 #include <filesystem>
 using namespace std::filesystem;
+#elif defined(__linux__)
+#include <experimental/filesystem>
+using namespace std::experimental::filesystem;
 #endif
 
 using namespace Snowflake::Client;
