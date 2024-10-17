@@ -12,16 +12,10 @@
 #include <sstream>
 #include <set>
 
+#include <boost/filesystem.hpp>
+
 #ifndef _WIN32 
 #include <dlfcn.h>
-#endif
-
-#ifdef _WIN32
-#include <filesystem>
-using namespace std::filesystem;
-#elif defined(__linux__)
-#include <experimental/filesystem>
-using namespace std::experimental::filesystem;
 #endif
 
 using namespace Snowflake::Client;
@@ -101,7 +95,7 @@ std::string ClientConfigParser::resolveClientConfigPath(
     // 3. Try DLL binary dir
     std::string binaryDir = getBinaryPath();
     std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
-    if (is_regular_file(binaryDirFilePath))
+    if (checkFileExists(binaryDirFilePath.c_str()))
     {
       derivedConfigPath = binaryDirFilePath;
       CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -126,7 +120,7 @@ std::string ClientConfigParser::resolveClientConfigPath(
           homeDirFilePath = std::string(homeDriveEnv) + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
         }
       }
-      if (is_regular_file(homeDirFilePath))
+      if (checkFileExists(homeDirFilePath))
       {
         derivedConfigPath = homeDirFilePath;
         CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -138,7 +132,7 @@ std::string ClientConfigParser::resolveClientConfigPath(
       if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0))
       {
         std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-        if (is_regular_file(homeDirFilePath))
+        if (checkFileExists(homeDirFilePath))
         {
           derivedConfigPath = homeDirFilePath;
           CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
@@ -152,6 +146,18 @@ std::string ClientConfigParser::resolveClientConfigPath(
 }
 
 // Private =====================================================================
+////////////////////////////////////////////////////////////////////////////////
+bool ClientConfigParser::checkFileExists(const std::string& in_filePath)
+{
+  FILE* file = sf_fopen(&file, in_filePath.c_str(), "r");
+  if (file != nullptr)
+  {
+    fclose(file);
+    return true;
+  }
+  return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void ClientConfigParser::parseConfigFile(
   const std::string& in_filePath,
@@ -173,7 +179,9 @@ void ClientConfigParser::parseConfigFile(
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
 #endif
-    const int fileSize = file_size(in_filePath);
+    fseek(configFile, 0, SEEK_END);
+    long fileSize = ftell(configFile);
+    fseek(configFile, 0, SEEK_SET);
     char* buffer = (char*)malloc(fileSize);
     if (buffer)
     {
@@ -230,10 +238,10 @@ void ClientConfigParser::parseConfigFile(
 ////////////////////////////////////////////////////////////////////////////////
 void ClientConfigParser::checkIfValidPermissions(const std::string& in_filePath)
 {
-  file_status fileStatus = status(in_filePath);
-  perms permissions = fileStatus.permissions();
-  if ((perms::group_write == (permissions & perms::group_write)) ||
-      (perms::others_write == (permissions & perms::others_write)))
+  boost::filesystem::file_status fileStatus = boost::filesystem::status(in_filePath);
+  boost::filesystem::perms permissions = fileStatus.permissions();
+  if (permissions & boost::filesystem::group_write ||
+      permissions & boost::filesystem::others_write)
   {
     CXX_LOG_ERROR(
       "sf",

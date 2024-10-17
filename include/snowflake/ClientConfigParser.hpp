@@ -54,6 +54,13 @@ namespace Client
     // Private =================================================================
     private:
       /**
+       * @brief Check if the file exists.
+       *
+       * @param in_filePath             The file path to check.
+       */
+      bool checkFileExists(const std::string& in_filePath);
+
+      /**
        * @brief Resolve the client config path.
        *
        * @param in_configFilePath        The config file path passed in by the user.
