@@ -168,7 +168,7 @@ void CipherContext::initialize_encryption() {
       if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
          reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
          reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
-        CXX_LOG_ERROR("Failed to initialize encryption encryption operation with key and iv")
+        CXX_LOG_ERROR("Failed to initialize encryption operation with key and iv")
         throw;
       }
     	break;
@@ -199,7 +199,10 @@ void CipherContext::initialize_decryption() {
     default:
       if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
          reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
-         reinterpret_cast<const unsigned char *>(m_pimpl->iv.data)))
+         reinterpret_cast<const unsigned char *>(m_pimpl->iv.data))) {
+        CXX_LOG_ERROR("Failed to initialize decryption operation with key and iv")
+        throw;
+      }
     	break;
   }
 }
@@ -226,16 +229,15 @@ void CipherContext::set_aad(const unsigned char *aad, int aad_len) {
     CXX_LOG_ERROR("AAD is not supported outside GCM mode");
     throw;
   }
-  int len;
   switch (m_pimpl->op) {
     case CryptoOperation::ENCRYPT:
-      if(1 != EVP_EncryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
+      if(1 != EVP_EncryptUpdate(m_pimpl->ctx, nullptr, nullptr, aad, aad_len)) {
         CXX_LOG_ERROR("Failed to set the additional authenticated data for encryption")
         throw;
       }
       break;
     case CryptoOperation::DECRYPT:
-      if(1 != EVP_DecryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
+      if(1 != EVP_DecryptUpdate(m_pimpl->ctx, nullptr, nullptr, aad, aad_len)) {
         CXX_LOG_ERROR("Failed to set the additional authenticated data for decryption")
         throw;
       }
