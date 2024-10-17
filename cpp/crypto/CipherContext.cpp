@@ -80,7 +80,7 @@ struct CipherContext::Impl
   /// Original initialization vector.
   const CryptoIV iv;
 
-  /// Whether or not to treat decryption errors as external errors.
+  /// Whether to treat decryption errors as external errors.
   const bool externalDecryptErrors;
 };
 
@@ -139,7 +139,7 @@ CipherContext &
 CipherContext::operator=(CipherContext &&other) noexcept
 = default;
 
-void CipherContext::initialize_encryption() const {
+void CipherContext::initialize_encryption() {
   CXX_LOG_DEBUG("Initialize encryption, mode = %d", m_pimpl->mode);
   switch (m_pimpl->mode) {
     case CryptoMode::GCM:
@@ -163,8 +163,7 @@ void CipherContext::initialize_encryption() const {
         CXX_LOG_ERROR("Failed to initialize encryption key and iv")
         throw;
       }
-
-    break;
+    	break;
     default:
       if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
          reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
@@ -172,11 +171,11 @@ void CipherContext::initialize_encryption() const {
         CXX_LOG_ERROR("Failed to initialize encryption encryption operation with key and iv")
         throw;
       }
-    break;
+    	break;
   }
 }
 
-void CipherContext::initialize_decryption() const {
+void CipherContext::initialize_decryption() {
   CXX_LOG_DEBUG("Initializing decryption, mode = %d", m_pimpl->mode);
   switch (m_pimpl->mode) {
     case CryptoMode::GCM:
@@ -196,18 +195,18 @@ void CipherContext::initialize_decryption() const {
         CXX_LOG_ERROR("Failed to initialize decryption key and iv")
         throw;
       }
-    break;
+    	break;
     default:
       if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr,
          reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
          reinterpret_cast<const unsigned char *>(m_pimpl->iv.data)))
-    break;
+    	break;
   }
 }
 
 
 
-void CipherContext::set_padding() const {
+void CipherContext::set_padding() {
   // EVP_CIPHER_CTX_set_padding() must be called after initialize
   // https://www.openssl.org/docs/manmaster/man3/EVP_CIPHER_CTX_set_padding.html
   switch (m_pimpl->padding) {
@@ -222,40 +221,38 @@ void CipherContext::set_padding() const {
   }
 }
 
-void CipherContext::set_aad(const unsigned char *aad, int aad_len) const {
+void CipherContext::set_aad(const unsigned char *aad, int aad_len) {
   if (m_pimpl->mode != CryptoMode::GCM) {
     CXX_LOG_ERROR("AAD is not supported outside GCM mode");
     throw;
   }
   int len;
   switch (m_pimpl->op) {
-    case CryptoOperation::ENCRYPT: {
+    case CryptoOperation::ENCRYPT:
       if(1 != EVP_EncryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
         CXX_LOG_ERROR("Failed to set the additional authenticated data for encryption")
         throw;
       }
-    }
-    break;
+      break;
     case CryptoOperation::DECRYPT:
       if(1 != EVP_DecryptUpdate(m_pimpl->ctx, nullptr, &len, aad, aad_len)) {
         CXX_LOG_ERROR("Failed to set the additional authenticated data for decryption")
         throw;
       }
-    break;
+    	break;
     default:
       CXX_LOG_ERROR("Failed to set the additional authenticated data")
       throw;
-    break;
   }
 }
 
-void CipherContext::initialize(const CryptoOperation op, const unsigned char *aad, const int aad_len) const {
+void CipherContext::initialize(const CryptoOperation op, const unsigned char *aad, const int aad_len) {
   initialize(op);
   set_aad(aad, aad_len);
 }
 
 void CipherContext::initialize(const CryptoOperation op,
-                               const size_t offset) const {
+                               const size_t offset) {
   // Not valid on default constructed context objects.
   //TODO
   //SF_ASSERT0(m_pimpl, "context_not_valid_1");
@@ -280,7 +277,7 @@ void CipherContext::initialize(const CryptoOperation op,
 
 size_t CipherContext::next(void *const out,
                            const void *const in,
-                           const size_t len) const {
+                           const size_t len) {
   // Not valid on default constructed context objects.
   //SF_ASSERT0(m_pimpl, "context_not_valid_2");
 
@@ -335,7 +332,7 @@ size_t CipherContext::next(void *const out,
   return nbBytesOut;
 }
 
-size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
+size_t CipherContext::finalize(void *const out, unsigned char *tag) {
   if (m_pimpl->mode != CryptoMode::GCM) {
     CXX_LOG_ERROR("CipherContext::finalize() with tag must be executed in GCM mode");
     throw;
@@ -361,10 +358,8 @@ size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
         CXX_LOG_ERROR("CipherContext::finalize() failed getting the GCM tag");
         throw;
       }
-    break;
-
+    	break;
     case CryptoOperation::DECRYPT:
-    {
       // Decrypt final batch of input data.
       if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_TAG, SF_GCM_TAG_LEN, tag)) {
         CXX_LOG_ERROR("CipherContext::finalize() failed setting the GCM tag");
@@ -380,7 +375,6 @@ size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
         throw;
       }
       break;
-    }
     default:
       CXX_LOG_ERROR("CipherContext::finalize() failed, unsupported operation, %d", static_cast<int>(m_pimpl->op));
     throw;
@@ -395,7 +389,7 @@ size_t CipherContext::finalize(void *const out, unsigned char *tag) const {
   return nbBytesOut;
 }
 
-size_t CipherContext::finalize(void *const out) const {
+size_t CipherContext::finalize(void *const out) {
   if (m_pimpl->mode == CryptoMode::GCM) {
     CXX_LOG_ERROR("CipherContext::finalize(void *cons out) was called with GCM mode while finalize with tag parameter should be called in this mode");
     throw;

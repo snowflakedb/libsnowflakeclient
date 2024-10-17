@@ -7,7 +7,6 @@
 
 #include "CryptoTypes.hpp"
 #include "CipherContext.hpp"
-#include <cstring>
 #include <memory>
 
 namespace Snowflake
@@ -58,14 +57,14 @@ public:
    */
   CipherContext &operator=(CipherContext &&other) noexcept;
 
-  void initialize_encryption() const;
+  void initialize_encryption();
 
-  void initialize_decryption() const;
+  void initialize_decryption();
 
   /**
    * Set padding in the cipher context
    */
-  void set_padding() const;
+  void set_padding();
 
   /**
    * Set the additional authenticated data for the current operation.
@@ -76,7 +75,7 @@ public:
    * @param aad Additional authenticated data
    * @param aad_len Size of the AAD
    */
-  void set_aad(const unsigned char *aad, int aad_len) const;
+  void set_aad(const unsigned char *aad, int aad_len);
 
   /**
    * Initialize a new encryption or decryption operation and call @link set_aad
@@ -85,7 +84,7 @@ public:
    * @param aad Additional authenticated data
    * @param aad_len Size of the AAD
    */
-  void initialize(CryptoOperation op, const unsigned char *aad, int aad_len) const;
+  void initialize(CryptoOperation op, const unsigned char *aad, int aad_len);
 
   /**
    * Whether this is a valid context that can be used for encryption
@@ -115,7 +114,7 @@ public:
    *    cipher block size).
    */
   void initialize(CryptoOperation op,
-                  size_t offset = 0) const;
+                  size_t offset = 0);
 
   /**
    * Encrypt/decrypt another block of data. May be called multiple times
@@ -135,7 +134,7 @@ public:
    */
   size_t next(void *out,
               const void *in,
-              size_t len) const;
+              size_t len);
 
   /**
    * Finalize current operation. After finalize() has been called, another
@@ -151,7 +150,7 @@ public:
    *  to confirm the encrypted data wasn't altered.
    * @return Number of bytes written during the operation.
    */
-  size_t finalize(void *out, unsigned char *tag) const;
+  size_t finalize(void *out, unsigned char *tag);
 
   /**
    * Finalize current operation. After finalize() has been called, another
@@ -165,7 +164,7 @@ public:
    * @return
    *    Number of bytes written to output block.
    */
-  size_t finalize(void *out) const;
+  size_t finalize(void *out);
 
 private:
 

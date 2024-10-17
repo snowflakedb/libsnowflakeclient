@@ -56,7 +56,7 @@ void test_aes_cbc_mode_encryption(void **unused) {
     // pragma: allowlist nextline secret
     const CryptoIV iv = create_iv("abcdef1234567890");
 
-    const CipherContext cipher_context = Cryptor::getInstance().createCipherContext(
+    CipherContext cipher_context = Cryptor::getInstance().createCipherContext(
         CryptoAlgo::AES,
         CryptoMode::CBC, CryptoPadding::PKCS5, key, iv, false);
     cipher_context.initialize(CryptoOperation::ENCRYPT);
@@ -83,7 +83,7 @@ void test_aes_gcm_mode_encryption(void **unused) {
     const CryptoIV iv = create_iv("abcdef1234567890");
     const std::string expected_ciphertext_base64 = "pgs/wjNH2TYekmN7mbhFjeHH0A==";
 
-    const CipherContext cipher_context = Cryptor::getInstance().createCipherContext(
+    CipherContext cipher_context = Cryptor::getInstance().createCipherContext(
         CryptoAlgo::AES,
         CryptoMode::GCM, CryptoPadding::PKCS5, key, iv, false);
     cipher_context.initialize(CryptoOperation::ENCRYPT);
