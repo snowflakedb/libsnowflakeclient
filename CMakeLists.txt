@@ -515,11 +515,11 @@ endif()
 
 if (LINUX)
     # Linux
-    target_link_libraries(snowflakeclient rt dl z)
+    target_link_libraries(snowflakeclient rt dl z stdc++fs)
 endif ()
 if (APPLE)
     # OSX. no librt is required.
-    target_link_libraries(snowflakeclient dl z)
+    target_link_libraries(snowflakeclient dl z stdc++fs)
 endif ()
 if (WIN32)
     # Windows
