@@ -164,6 +164,7 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/Proxy.cpp
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
+        cpp/util/entities.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
@@ -199,6 +200,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/IJwt.hpp
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
+        include/snowflake/entities.hpp
         )
 
 set(SOURCE_FILES_CPP_WRAPPER
