@@ -201,9 +201,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf, const char *application, co
  * @param sequence_id Sequence ID from the Snowflake Connection object.
  * @param request_id  requestId to be passed as a part of body instead of header.
  * @param is_describe_only is the query describe only.
+ * @param multi_stmt_count The value of MULTI_STATEMENT_COUNT set with the query. No setting if < 0.
  * @return Query cJSON Body.
  */
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only);
+cJSON *STDCALL create_query_json_body(const char *sql_text,
+                                      int64 sequence_id,
+                                      const char *request_id,
+                                      sf_bool is_describe_only,
+                                      int64 multi_stmt_count);
 
 /**
  * Creates a cJSON blob that is used to renew a session with Snowflake. cJSON blob must be freed by the caller using

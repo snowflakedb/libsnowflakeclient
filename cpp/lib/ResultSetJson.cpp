@@ -18,9 +18,9 @@ namespace Client
 
 
 ResultSetJson::ResultSetJson() :
-    ResultSet()
+    ResultSet(SF_JSON_FORMAT)
 {
-    m_queryResultFormat = QueryResultFormat::JSON;
+    ; // Do nothing
 }
 
 ResultSetJson::ResultSetJson(
@@ -28,9 +28,8 @@ ResultSetJson::ResultSetJson(
     SF_COLUMN_DESC * metadata,
     std::string tzString
 ) :
-    ResultSet(metadata, tzString)
+    ResultSet(metadata, tzString, SF_JSON_FORMAT)
 {
-    m_queryResultFormat = QueryResultFormat::JSON;
     m_chunk = nullptr;
     appendChunk(rowset);
 }
