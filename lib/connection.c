@@ -378,7 +378,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
                           retry_timeout, SF_BOOLEAN_FALSE, error,
-                          sf->insecure_mode,
+                          sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
                           retried_count, is_renew, renew_injection,
@@ -505,7 +505,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
-                          sf->insecure_mode,
+                          sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
                           0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
