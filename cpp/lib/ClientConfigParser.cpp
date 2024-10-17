@@ -8,17 +8,21 @@
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
 
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <set>
 
 #ifndef _WIN32 
 #include <dlfcn.h>
+#include <experimental/filesystem>
+using namespace std::experimental::filesystem;
+#else
+#include <filesystem>
+using namespace std::filesystem;
 #endif
 
 using namespace Snowflake::Client;
-using namespace std::filesystem;
+
 
 namespace
 {
