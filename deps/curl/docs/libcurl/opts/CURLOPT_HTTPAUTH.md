@@ -10,6 +10,7 @@ See-also:
   - CURLOPT_PASSWORD (3)
   - CURLOPT_PROXYAUTH (3)
   - CURLOPT_USERNAME (3)
+Added-in: 7.10.6
 ---
 
 # NAME
@@ -84,6 +85,8 @@ option to work, or build libcurl on Windows with SSPI support.
 
 ## CURLAUTH_NTLM_WB
 
+Support for this is removed since libcurl 8.8.0.
+
 NTLM delegating to winbind helper. Authentication is performed by a separate
 binary application that is executed when needed. The name of the application
 is specified at compile time but is typically **/usr/bin/ntlm_auth**.
@@ -123,6 +126,8 @@ see CURLOPT_AWS_SIGV4(3).
 
 CURLAUTH_BASIC
 
+# %PROTOCOLS%
+
 # EXAMPLE
 
 ~~~c
@@ -140,9 +145,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-Option Added in 7.10.6.
+# HISTORY
 
 CURLAUTH_DIGEST_IE was added in 7.19.3
 
@@ -153,6 +156,8 @@ CURLAUTH_NTLM_WB was added in 7.22.0
 CURLAUTH_BEARER was added in 7.61.0
 
 CURLAUTH_AWS_SIGV4 was added in 7.74.0
+
+# %AVAILABILITY%
 
 # RETURN VALUE
 
