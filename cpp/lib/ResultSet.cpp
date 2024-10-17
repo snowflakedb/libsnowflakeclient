@@ -17,7 +17,7 @@ namespace Snowflake
 namespace Client
 {
 
-ResultSet::ResultSet() :
+ResultSet::ResultSet(QueryResultFormat format) :
     m_binaryOutputFormat("HEX"),
     m_dateOutputFormat("YYYY-MM-DD"),
     m_timeOutputFormat("HH24:MI:SS"),
@@ -28,14 +28,16 @@ ResultSet::ResultSet() :
     m_currChunkIdx(0),
     m_currChunkRowIdx(0),
     m_currColumnIdx(0),
-    m_currRowIdx(0)
+    m_currRowIdx(0),
+    m_queryResultFormat(format)
 {
     ;
 }
 
 ResultSet::ResultSet(
     SF_COLUMN_DESC * metadata,
-    std::string tzString
+    std::string tzString,
+    QueryResultFormat format
 ) :
     m_currChunkIdx(0),
     m_currChunkRowIdx(0),
@@ -44,6 +46,7 @@ ResultSet::ResultSet(
     m_totalChunkCount(0),
     m_totalColumnCount(0),
     m_metadata(metadata),
+    m_queryResultFormat(format),
     m_isFirstChunk(true),
     m_tzString(tzString),
     m_error(SF_STATUS_SUCCESS)
