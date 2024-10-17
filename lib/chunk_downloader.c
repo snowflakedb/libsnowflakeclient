@@ -207,6 +207,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                NON_JSON_RESP* non_json_resp,
                                SF_ERROR_STRUCT *error,
                                sf_bool insecure_mode,
+                               sf_bool fail_open,
                                const char *proxy,
                                const char *no_proxy,
                                int64 network_timeout,
@@ -218,7 +219,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
     if (!curl ||
         !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, chunk,
                       non_json_resp, network_timeout,
-                      SF_BOOLEAN_TRUE, error, insecure_mode, 0,
+                      SF_BOOLEAN_TRUE, error, insecure_mode, fail_open, 0,
                       0, retry_max_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                       proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
         // Error set in perform function
@@ -240,6 +241,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    uint64 fetch_slots,
                                                    SF_ERROR_STRUCT *sf_error,
                                                    sf_bool insecure_mode,
+                                                   sf_bool fail_open,
                                                    NON_JSON_RESP* (*callback_create_resp)(void),
                                                    const char *proxy,
                                                    const char *no_proxy,
@@ -277,6 +279,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->has_error = SF_BOOLEAN_FALSE;
     chunk_downloader->sf_error = sf_error;
     chunk_downloader->insecure_mode = insecure_mode;
+    chunk_downloader->fail_open = fail_open,
     chunk_downloader->callback_create_resp = callback_create_resp;
     chunk_downloader->proxy = NULL;
     chunk_downloader->no_proxy = NULL;
@@ -484,7 +487,7 @@ static void * chunk_downloader_thread(void *downloader) {
             non_json_resp = chunk_downloader->callback_create_resp();
         }
         if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
-          chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode,
+          chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode, chunk_downloader->fail_open,
           chunk_downloader->proxy, chunk_downloader->no_proxy,
           chunk_downloader->network_timeout, chunk_downloader->retry_max_count)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);

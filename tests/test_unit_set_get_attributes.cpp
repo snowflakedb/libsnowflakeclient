@@ -52,6 +52,7 @@ typedef struct sf_bool_attributes {
 std::vector<sf_bool_attributes> boolAttributes = {
     { SF_CON_PASSCODE_IN_PASSWORD, true },
     { SF_CON_INSECURE_MODE, false },
+    { SF_CON_OCSP_FAIL_OPEN, true },
     { SF_CON_AUTOCOMMIT, true },
 };
 
