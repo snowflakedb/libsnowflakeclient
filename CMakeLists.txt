@@ -397,6 +397,7 @@ endif ()
 if (LINUX)
     include_directories(
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
@@ -413,6 +414,7 @@ endif()
 if (APPLE)
     include_directories(
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/zlib/include
@@ -428,6 +430,7 @@ endif()
 if (WIN32)
     include_directories(
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/oob/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/curl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/include
