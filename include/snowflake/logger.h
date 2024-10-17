@@ -94,6 +94,8 @@ void log_masked_va_list(FILE* fp, const char *fmt, va_list args);
 
 SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str);
 
+const char* log_from_level_to_str(SF_LOG_LEVEL level);
+
 void log_set_path(const char* path);
 
 void log_close();

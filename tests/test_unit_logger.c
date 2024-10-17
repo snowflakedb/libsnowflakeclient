@@ -4,9 +4,17 @@
 
 
 #include "utils/test_setup.h"
-#ifndef _WIN32
+#include <snowflake/client_config_parser.h>
+#include "memory.h"
+
+#ifdef _WIN32
+inline int access(const char* pathname, int mode) {
+  return _access(pathname, mode);
+}
+#else
 #include <unistd.h>
 #endif
+
 
 /**
  * Tests converting a string representation of log level to the log level enum
@@ -24,7 +32,114 @@ void test_log_str_to_level(void **unused) {
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
 }
 
-#ifndef _WIN32
+/**
+ * Tests log settings with invalid client config filepath
+ */
+void test_invalid_client_config_path(void** unused) {
+  char configFilePath[] = "fakePath.json";
+
+  // Parse client config for log details
+  client_config clientConfig = { .logLevel = "", .logPath = "" };
+  sf_bool result = load_client_config(configFilePath, &clientConfig);
+  assert_false(result);
+}
+
+/**
+ * Tests log settings from client config file with invalid json
+ */
+void test_client_config_log_invalid_json(void** unused) {
+  char clientConfigJSON[] = "{{{\"invalid json\"}";
+  char configFilePath[] = "sf_client_config.json";
+  FILE* file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "%s", clientConfigJSON);
+  fclose(file);
+
+  // Parse client config for log details
+  client_config clientConfig = { .logLevel = "", .logPath = "" };
+  sf_bool result = load_client_config(configFilePath, &clientConfig);
+  assert_false(result);
+
+  // Cleanup
+  remove(configFilePath);
+}
+
+/**
+ * Tests log settings from client config file
+ */
+void test_client_config_log(void **unused) {
+    char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+    char configFilePath[] = "sf_client_config.json";
+    FILE *file;
+    file = fopen(configFilePath,"w");
+    fprintf(file, "%s", clientConfigJSON);
+    fclose(file);
+
+    // Parse client config for log details
+    client_config clientConfig = { .logLevel = "", .logPath = "" };
+    load_client_config(configFilePath, &clientConfig);
+
+    // Set log name and level
+    char logname[] = "%s/dummy.log";
+    size_t log_path_size = 1 + strlen(logname);
+    log_path_size += strlen(clientConfig.logPath);
+    char* LOG_PATH = (char*)SF_CALLOC(1, log_path_size);
+    sf_sprintf(LOG_PATH, log_path_size, logname, clientConfig.logPath);
+    log_set_level(log_from_str_to_level(clientConfig.logLevel));
+    log_set_path(LOG_PATH);
+
+    // Ensure the log file doesn't exist at the beginning
+    remove(LOG_PATH);
+
+    // Info log won't trigger the log file creation since log level is set to warn in config
+    log_info("dummy info log");
+    assert_int_not_equal(access(LOG_PATH, 0), 0);
+
+    // Warning log will trigger the log file creation
+    log_warn("dummy warning log");
+    assert_int_equal(access(LOG_PATH, 0), 0);
+    log_close();
+
+    // Cleanup
+    remove(configFilePath);
+    remove(LOG_PATH);
+}
+
+/**
+ * Tests log settings from client config file via global init
+ */
+void test_client_config_log_init(void** unused) {
+  char LOG_PATH[MAX_PATH] = { 0 };
+  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+  char configFilePath[] = "sf_client_config.json";
+  FILE* file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "%s", clientConfigJSON);
+  fclose(file);
+
+  snowflake_global_set_attribute(SF_GLOBAL_CLIENT_CONFIG_FILE, configFilePath);
+  snowflake_global_init("./logs", SF_LOG_TRACE, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+  assert_int_not_equal(access(LOG_PATH, 0), 0);
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(LOG_PATH, 0), 0);
+  log_close();
+
+  // Cleanup
+  remove(configFilePath);
+  remove(LOG_PATH);
+}
+
+
 /**
  * Tests timing of log file creation
  */
@@ -33,7 +148,7 @@ void test_log_creation(void **unused) {
 
     // ensure the log file doesn't exist at the beginning
     remove(logname);
-    assert_int_not_equal(access(logname, F_OK), 0);
+    assert_int_not_equal(access(logname, 0), 0);
 
     log_set_lock(NULL);
     log_set_level(SF_LOG_WARN);
@@ -42,15 +157,17 @@ void test_log_creation(void **unused) {
 
     // info log won't trigger the log file creation since log level is set to warning
     log_info("dummy info log");
-    assert_int_not_equal(access(logname, F_OK), 0);
+    assert_int_not_equal(access(logname, 0), 0);
 
     // warning log will trigger the log file creation
     log_warn("dummy warning log");
-    assert_int_equal(access(logname, F_OK), 0);
+    assert_int_equal(access(logname, 0), 0);
+    log_close();
 
     remove(logname);
 }
 
+#ifndef _WIN32
 /**
  * Tests masking secret information in log
  */
@@ -140,6 +257,10 @@ void test_mask_secret_log(void **unused) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_log_str_to_level),
+        cmocka_unit_test(test_invalid_client_config_path),
+        cmocka_unit_test(test_client_config_log_invalid_json),
+        cmocka_unit_test(test_client_config_log),
+        cmocka_unit_test(test_client_config_log_init),
 #ifndef _WIN32
         cmocka_unit_test(test_log_creation),
         cmocka_unit_test(test_mask_secret_log),
