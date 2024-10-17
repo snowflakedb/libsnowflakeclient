@@ -10,8 +10,8 @@
 :: - vs14 / vs15
 
 @echo off
-set OPENSSL_SRC_VERSION=3.0.13
-set OPENSSL_BUILD_VERSION=5
+set OPENSSL_SRC_VERSION=3.0.15
+set OPENSSL_BUILD_VERSION=1
 set OPENSSL_VERSION=%OPENSSL_SRC_VERSION%.%OPENSSL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -22,7 +22,7 @@ goto :EOF
 
 :build
 setlocal
-set OPENSSL_DIR=openssl-%OPENSSL_SRC_VERSION%
+set OPENSSL_DIR=openssl
 
 if defined GITHUB_ACTIONS (
     set PERL_EXE=C:\Strawberry\perl\bin\perl
