@@ -18,26 +18,81 @@ Build and Tests
 Build
 ----------------------------------------------------------------------
 
-Ensure you have cmake 2.8 or later version.
+Prerequisite
+^^^^^^^^^^^^^
+
+- Ensure you have cmake 2.8 or later version.
+- For Windows, require: one of Visual Studio C++ [VS15, VS16, VS17], Perl, Windows SDK 10.0
+- For Linux, require: gcc, g++
 
 Linux and OSX
 ^^^^^^^^^^^^^
 
 .. code-block:: bash
 
+    ./scripts/build_dependencies.sh
     ./scripts/build_libsnowflakeclient.sh
 
 Windows
-^^^^^^^^^^
+^^^^^^^
 
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
+
+.. code-block:: bash
+    set platform=x64
+    set build_type=Debug
+    set vs_version=VS17
+    ci\\build_win.bat
+
+Manual Build
+----------------------------------------------------------------------
+
+The list of dependencies
+----------------------------------------------------------------------
+- uuid (needed on Linux only)
+- oob
+- zlib
+- openssl
+- curl
+- awssdk
+- azuresdk
+- arrow
+- cmocka
+
+Example
+----------------------------------------------------------------------
+
+Windows
+^^^^^^^
 
 .. code-block:: bash
 
-    set platform=x64
-    set build_type=Debug
-    set vs_version=VS14
-    ci\build.bat
+    .\scripts\build_oob.bat x64 Debug VS17 OFF
+
+Linux/Mac
+^^^^^^^^^
+
+.. code-block:: bash
+
+    ./scripts/build_oob.sh -t Debug
+
+Proxy
+^^^^^^^^^^
+
+Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
+
+- http_proxy
+- https_proxy
+- no_proxy
+
+.. code-block:: bash
+
+    export http_proxy="[protocol://][user:password@]machine[:port]"
+    export https_proxy="[protocol://][user:password@]machine[:port]"
+
+More info can be found on the `libcurl tutorial`__ page.
+
+.. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
 
 Prepare for Test
 ----------------------------------------------------------------------
@@ -58,23 +113,6 @@ Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
         }
     }
 
-Proxy
-^^^^^^^^^^
-
-Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
-
-- http_proxy
-- https_proxy
-- no_proxy
-
-.. code-block:: bash
-
-    export http_proxy="[protocol://][user:password@]machine[:port]"
-    export https_proxy="[protocol://][user:password@]machine[:port]"
-
-More info can be found on the `libcurl tutorial`__ page.
-
-.. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
 
 Run Tests
 ----------------------------------------------------------------------
@@ -86,19 +124,19 @@ Linux and OSX
 
 .. code-block:: bash
 
-    ./scripts/run_tests.sh
+    .ci/scripts/test_linux.sh
 
 Windows
 ^^^^^^^^^^
 
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
 
     set platform=x64
     set build_type=Debug
-    set vs_version=VS14
-    ci\test.bat
+    set vs_version=VS15
+    ci\test_win.bat
 
 	
 Code Coverage (Linux)
