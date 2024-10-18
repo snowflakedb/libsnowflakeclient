@@ -267,6 +267,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
+    SF_CON_OCSP_FAIL_OPEN,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -289,8 +290,11 @@ typedef enum SF_GLOBAL_ATTRIBUTE {
  * Attributes for Snowflake statement context.
  */
 typedef enum SF_STMT_ATTRIBUTE {
-    SF_STMT_USER_REALLOC_FUNC
+    SF_STMT_USER_REALLOC_FUNC,
+    SF_STMT_MULTI_STMT_COUNT
 } SF_STMT_ATTRIBUTE;
+#define SF_MULTI_STMT_COUNT_UNSET (-1)
+#define SF_MULTI_STMT_COUNT_UNLIMITED 0
 
 /**
  * Snowflake Error
@@ -323,6 +327,7 @@ typedef struct SF_CONNECT {
     char *passcode;
     sf_bool passcode_in_password;
     sf_bool insecure_mode;
+    sf_bool ocsp_fail_open;
     sf_bool autocommit;
     char *timezone;
     char *service_name;
@@ -447,6 +452,16 @@ typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
  */
 typedef struct SF_PUT_GET_RESPONSE SF_PUT_GET_RESPONSE;
 
+typedef void* result_set_ptr;
+
+/**
+ * An enumeration over all supported query result formats.
+ */
+typedef enum QueryResultFormat_e
+{
+  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_FORMAT_UNKNOWN
+} QueryResultFormat;
+
 /**
  * Statement context
  */
@@ -456,9 +471,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    void *qrf;
+    QueryResultFormat qrf;
     char *sql_text;
-    void *result_set;
+    result_set_ptr result_set;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
@@ -470,6 +485,9 @@ typedef struct SF_STMT {
     SF_STATS *stats;
     void *stmt_attrs;
     sf_bool is_dml;
+    sf_bool is_multi_stmt;
+    void* multi_stmt_result_ids;
+    int64 multi_stmt_count;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -786,6 +804,15 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
  */
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture);
+
+/**
+ * Determines whether more results are available and, if so,
+ * initializes processing for the next one.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ *
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer

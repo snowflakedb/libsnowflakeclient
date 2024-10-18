@@ -151,6 +151,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
+                             sf_bool fail_open,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -377,7 +378,6 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-#ifndef _WIN32
         // If insecure mode is set to true, skip OCSP check not matter the value of SF_OCSP_CHECK (global OCSP variable)
         sf_bool ocsp_check;
         if (insecure_mode) {
@@ -391,7 +391,13 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_easy_strerror(res));
             break;
         }
-#endif
+
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, fail_open);
+        if (res != CURLE_OK) {
+            log_error("Unable to set OCSP FAIL_OPEN [%s]",
+                      curl_easy_strerror(res));
+            break;
+        }
 
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
@@ -578,7 +584,8 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
                                     int64 network_timeout,
                                     sf_bool chunk_downloader,
                                     SF_ERROR_STRUCT *error,
-                                    sf_bool insecure_mode) {
+                                    sf_bool insecure_mode,
+                                    sf_bool fail_open) {
     char *resp;
     const char *request_type_str = request_type == POST_REQUEST_TYPE ? "POST" : "GET";
 

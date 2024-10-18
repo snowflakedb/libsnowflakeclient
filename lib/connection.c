@@ -201,7 +201,12 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     return body;
 }
 
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only) {
+cJSON *STDCALL create_query_json_body(const char *sql_text,
+                                      int64 sequence_id,
+                                      const char *request_id,
+                                      sf_bool is_describe_only,
+                                      int64 multi_stmt_count)
+{
     cJSON *body;
     double submission_time;
     // Create body
@@ -221,12 +226,26 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
 
+    cJSON* parameters = NULL;
+    if (multi_stmt_count >= 0)
+    {
+        parameters = snowflake_cJSON_CreateObject();
+        snowflake_cJSON_AddNumberToObject(parameters, "MULTI_STATEMENT_COUNT", (double)multi_stmt_count);
+    }
+
 #ifdef SF_WIN32
-    cJSON * parameters = snowflake_cJSON_CreateObject();
+    if (!parameters)
+    {
+        parameters = snowflake_cJSON_CreateObject();
+    }
     snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
+    // temporary code to fake as ODBC to have multiple statements enabled
     snowflake_cJSON_AddStringToObject(parameters, "ODBC_QUERY_RESULT_FORMAT", "JSON");
-    snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
 #endif
+    if (parameters)
+    {
+        snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
+    }
     return body;
 }
 
@@ -358,7 +377,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
                           retry_timeout, SF_BOOLEAN_FALSE, error,
-                          sf->insecure_mode,
+                          sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
                           renew_timeout, retry_max_count, elapsed_time,
                           retried_count, is_renew, renew_injection,
@@ -485,7 +504,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
-                          sf->insecure_mode,
+                          sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
                           0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
