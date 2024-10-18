@@ -7,11 +7,7 @@
 #include <snowflake/client_config_parser.h>
 #include "memory.h"
 
-#ifdef _WIN32
-inline int access(const char* pathname, int mode) {
-  return _access(pathname, mode);
-}
-#else
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
@@ -64,6 +60,7 @@ void test_client_config_log_invalid_json(void** unused) {
   remove(configFilePath);
 }
 
+#ifndef _WIN32
 /**
  * Tests log settings from client config file
  */
@@ -93,11 +90,11 @@ void test_client_config_log(void **unused) {
 
     // Info log won't trigger the log file creation since log level is set to warn in config
     log_info("dummy info log");
-    assert_int_not_equal(access(LOG_PATH, 0), 0);
+    assert_int_not_equal(access(LOG_PATH, F_OK), 0);
 
     // Warning log will trigger the log file creation
     log_warn("dummy warning log");
-    assert_int_equal(access(LOG_PATH, 0), 0);
+    assert_int_equal(access(LOG_PATH, F_OK), 0);
     log_close();
 
     // Cleanup
@@ -127,11 +124,11 @@ void test_client_config_log_init(void** unused) {
 
   // Info log won't trigger the log file creation since log level is set to warn in config
   log_info("dummy info log");
-  assert_int_not_equal(access(LOG_PATH, 0), 0);
+  assert_int_not_equal(access(LOG_PATH, F_OK), 0);
 
   // Warning log will trigger the log file creation
   log_warn("dummy warning log");
-  assert_int_equal(access(LOG_PATH, 0), 0);
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
   log_close();
 
   // Cleanup
@@ -147,7 +144,7 @@ void test_log_creation(void **unused) {
 
     // ensure the log file doesn't exist at the beginning
     remove(logname);
-    assert_int_not_equal(access(logname, 0), 0);
+    assert_int_not_equal(access(logname, F_OK), 0);
 
     log_set_lock(NULL);
     log_set_level(SF_LOG_WARN);
@@ -156,17 +153,16 @@ void test_log_creation(void **unused) {
 
     // info log won't trigger the log file creation since log level is set to warning
     log_info("dummy info log");
-    assert_int_not_equal(access(logname, 0), 0);
+    assert_int_not_equal(access(logname, F_OK), 0);
 
     // warning log will trigger the log file creation
     log_warn("dummy warning log");
-    assert_int_equal(access(logname, 0), 0);
+    assert_int_equal(access(logname, F_OK), 0);
     log_close();
 
     remove(logname);
 }
 
-#ifndef _WIN32
 /**
  * Tests masking secret information in log
  */
@@ -258,10 +254,10 @@ int main(void) {
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
         cmocka_unit_test(test_client_config_log_invalid_json),
+#ifndef _WIN32
         cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_init),
         cmocka_unit_test(test_log_creation),
-#ifndef _WIN32
         cmocka_unit_test(test_mask_secret_log),
 #endif
     };
