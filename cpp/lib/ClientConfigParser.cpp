@@ -12,6 +12,7 @@
 #include <sstream>
 #include <set>
 
+#undef snprintf
 #include <boost/filesystem.hpp>
 
 #ifndef _WIN32 
