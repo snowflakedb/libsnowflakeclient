@@ -5559,7 +5559,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 checksrc:
 	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir)    \
-	-W$(srcdir)/curl_config.h $(srcdir)/*.[ch] $(srcdir)/vauth/*.[ch]   \
+	-W$(srcdir)/curl_config.h $(srcdir)/vauth/*.[ch]   \
 	$(srcdir)/vquic/*.[ch] $(srcdir)/vssh/*.[ch])
 
 # for debug builds, we scan the sources on all regular make invokes

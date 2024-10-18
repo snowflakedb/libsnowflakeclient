@@ -4531,6 +4531,9 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
                                   struct ssl_peer *peer)
 {
   struct connectdata *conn = cf->conn;
+  struct ssl_connect_data *connssl = cf->ctx;
+  struct ossl_ctx *backend =
+    (struct ossl_ctx *)connssl->backend;
   struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
   struct ssl_primary_config *conn_config = Curl_ssl_cf_get_primary_config(cf);
   CURLcode result = CURLE_OK;
@@ -4570,9 +4573,6 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
   }
 
   /* !!! Starting Snowflake OCSP !!! */
-  struct ssl_connect_data *connssl = cf->ctx;
-  struct ossl_ctx *backend =
-    (struct ossl_ctx *)connssl->backend;
   if (conn_config->sf_ocsp_check)
   {
     STACK_OF(X509) *ch = NULL;
