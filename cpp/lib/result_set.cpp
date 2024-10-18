@@ -18,17 +18,8 @@ extern "C" {
         const char * tz_string
     )
     {
-        switch (query_result_format)
-        {
-#ifndef SF_WIN32
-            case SF_ARROW_FORMAT:
-                return new Snowflake::Client::ResultSetArrow(json_rowset, metadata, std::string(tz_string));
-#endif
-            case SF_JSON_FORMAT:
-                return new Snowflake::Client::ResultSetJson(json_rowset, metadata, std::string(tz_string));
-            default:
-                return nullptr;
-        }
+        return Snowflake::Client::ResultSet::CreateResultFromJson(
+            json_rowset, metadata, query_result_format, std::string(tz_string));
     }
 
     result_set_ptr rs_create_with_chunk(
@@ -38,17 +29,8 @@ extern "C" {
         const char * tz_string
     )
     {
-        switch (query_result_format)
-        {
-#ifndef SF_WIN32
-            case SF_ARROW_FORMAT:
-                return new Snowflake::Client::ResultSetArrow((arrow::BufferBuilder*)(((NON_JSON_RESP*)initial_chunk)->buffer), metadata, std::string(tz_string));
-#endif
-            case SF_JSON_FORMAT:
-                return new Snowflake::Client::ResultSetJson((cJSON*)initial_chunk, metadata, std::string(tz_string));
-            default:
-                return nullptr;
-        }
+        return Snowflake::Client::ResultSet::CreateResultFromChunk(
+            initial_chunk, metadata, query_result_format, std::string(tz_string));
     }
 
     void rs_destroy(result_set_ptr rs)
@@ -57,20 +39,7 @@ extern "C" {
         {
             return;
         }
-        QueryResultFormat query_result_format =
-            static_cast<Snowflake::Client::ResultSet*>(rs)->getResultFormat();
-        switch (query_result_format){
-#ifndef SF_WIN32
-            case SF_ARROW_FORMAT:
-                delete static_cast<Snowflake::Client::ResultSetArrow*>(rs);
-                break;
-#endif
-            case SF_JSON_FORMAT:
-                delete static_cast<Snowflake::Client::ResultSetJson*>(rs);
-                break;
-            default:
-                break;
-        }
+        delete static_cast<Snowflake::Client::ResultSet*>(rs);
     }
 
 #define ERROR_IF_NULL(ptr)                                    \
@@ -82,21 +51,7 @@ extern "C" {
     rs_append_chunk(result_set_ptr rs, void * chunk)
     {
         ERROR_IF_NULL(rs);
-        QueryResultFormat query_result_format =
-            static_cast<Snowflake::Client::ResultSet*>(rs)->getResultFormat();
-        switch (query_result_format)
-        {
-#ifndef SF_WIN32
-            case SF_ARROW_FORMAT:
-                return static_cast<Snowflake::Client::ResultSetArrow*>(rs)->appendChunk(
-                    (arrow::BufferBuilder*)(((NON_JSON_RESP*)chunk)->buffer));
-#endif
-            case SF_JSON_FORMAT:
-                return static_cast<Snowflake::Client::ResultSetJson*>(rs)->appendChunk(
-                    (cJSON*)chunk);
-            default:
-                return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
-        }
+        return static_cast<Snowflake::Client::ResultSet*>(rs)->appendChunk(chunk);
     }
 
     SF_STATUS STDCALL rs_next(result_set_ptr rs)

@@ -26,7 +26,7 @@ ResultSetJson::ResultSetJson() :
 ResultSetJson::ResultSetJson(
     cJSON * rowset,
     SF_COLUMN_DESC * metadata,
-    std::string tzString
+    const std::string& tzString
 ) :
     ResultSet(metadata, tzString, SF_JSON_FORMAT)
 {
@@ -42,8 +42,9 @@ ResultSetJson::~ResultSetJson()
 
 // Public methods ==================================================================================
 
-SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
+SF_STATUS STDCALL ResultSetJson::appendChunk(void* chunkPtr)
 {
+    cJSON * chunk = (cJSON *)chunkPtr;
     if (chunk == nullptr)
     {
         CXX_LOG_ERROR("appendChunk -- Received a null chunk to append.");

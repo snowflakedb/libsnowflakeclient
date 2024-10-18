@@ -29,7 +29,7 @@ ResultSetArrow::ResultSetArrow() :
 ResultSetArrow::ResultSetArrow(
     arrow::BufferBuilder* initialChunk,
     SF_COLUMN_DESC * metadata,
-    std::string tzString
+    const std::string& tzString
 ) :
     ResultSet(metadata, tzString, SF_ARROW_FORMAT)
 {
@@ -44,10 +44,11 @@ ResultSetArrow::ResultSetArrow(
 ResultSetArrow::ResultSetArrow(
     cJSON * jsonRowset64,
     SF_COLUMN_DESC * metadata,
-    std::string tzString
+    const std::string& tzString
 ) :
     ResultSet(metadata, tzString, SF_ARROW_FORMAT)
 {
+    NON_JSON_RESP resp;
     arrow::BufferBuilder* bufferBuilder = NULL;
     if (jsonRowset64)
     {
@@ -60,8 +61,9 @@ ResultSetArrow::ResultSetArrow(
             (void)bufferBuilder->Append((void*)decodedRowsetStr.c_str(), decodedRowsetStr.length());
         }
     }
+    resp.buffer = bufferBuilder;
 
-    this->appendChunk(bufferBuilder);
+    this->appendChunk(&resp);
 
     // Reset row indices so that they can be re-used by public API.
     m_currChunkIdx = 0;
@@ -76,8 +78,9 @@ ResultSetArrow::~ResultSetArrow()
 
 // Public methods ==================================================================================
 
-SF_STATUS STDCALL ResultSetArrow::appendChunk(arrow::BufferBuilder * chunk)
+SF_STATUS STDCALL ResultSetArrow::appendChunk(void* chunkPtr)
 {
+    arrow::BufferBuilder * chunk = (arrow::BufferBuilder*)(((NON_JSON_RESP*)chunkPtr)->buffer);
     if (chunk == nullptr)
     {
         if (m_isFirstChunk)
