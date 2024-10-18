@@ -139,7 +139,6 @@ void test_client_config_log_init(void** unused) {
   remove(LOG_PATH);
 }
 
-
 /**
  * Tests timing of log file creation
  */
@@ -261,8 +260,8 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_invalid_json),
         cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_init),
-#ifndef _WIN32
         cmocka_unit_test(test_log_creation),
+#ifndef _WIN32
         cmocka_unit_test(test_mask_secret_log),
 #endif
     };
