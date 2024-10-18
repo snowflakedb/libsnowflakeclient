@@ -90,7 +90,7 @@ public:
      * @param metadata             An array of metadata objects for each column.
      * @param tzString             The time zone.
      */
-    ResultSetArrow(cJSON* jsonRowset64, SF_COLUMN_DESC* metadata, std::string tzString);
+    ResultSetArrow(cJSON* jsonRowset64, SF_COLUMN_DESC* metadata, std::string& tzString);
 
     /**
      * Destructor.
