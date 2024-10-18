@@ -158,7 +158,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
 	$(top_srcdir)/m4/xc-am-iface.m4 \
 	$(top_srcdir)/m4/xc-cc-check.m4 \
 	$(top_srcdir)/m4/xc-lt-iface.m4 \
-	$(top_srcdir)/m4/xc-translit.m4 \
 	$(top_srcdir)/m4/xc-val-flgs.m4 \
 	$(top_srcdir)/m4/zz40-xc-ovr.m4 \
 	$(top_srcdir)/m4/zz50-xc-ovr.m4 \
@@ -247,11 +246,11 @@ CFLAG_CURL_SYMBOL_HIDING = @CFLAG_CURL_SYMBOL_HIDING@
 CONFIGURE_OPTIONS = @CONFIGURE_OPTIONS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPFLAG_CURL_STATICLIB = @CPPFLAG_CURL_STATICLIB@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
 CURLVERSION = @CURLVERSION@
 CURL_CA_BUNDLE = @CURL_CA_BUNDLE@
+CURL_CA_EMBED = @CURL_CA_EMBED@
 CURL_CFLAG_EXTRAS = @CURL_CFLAG_EXTRAS@
 CURL_DISABLE_DICT = @CURL_DISABLE_DICT@
 CURL_DISABLE_FILE = @CURL_DISABLE_FILE@
@@ -272,7 +271,6 @@ CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
 CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
-CURL_PLIST_VERSION = @CURL_PLIST_VERSION@
 CURL_WITH_MULTI_SSL = @CURL_WITH_MULTI_SSL@
 CYGPATH_W = @CYGPATH_W@
 DEFAULT_SSL_BACKEND = @DEFAULT_SSL_BACKEND@
@@ -298,7 +296,6 @@ HAVE_BROTLI = @HAVE_BROTLI@
 HAVE_GNUTLS_SRP = @HAVE_GNUTLS_SRP@
 HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
-HAVE_OPENSSL_QUIC = @HAVE_OPENSSL_QUIC@
 HAVE_OPENSSL_SRP = @HAVE_OPENSSL_SRP@
 HAVE_PROTO_BSDSOCKET_H = @HAVE_PROTO_BSDSOCKET_H@
 HAVE_ZSTD = @HAVE_ZSTD@
@@ -314,8 +311,12 @@ IPV6_ENABLED = @IPV6_ENABLED@
 LCOV = @LCOV@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBCURL_LIBS = @LIBCURL_LIBS@
-LIBCURL_NO_SHARED = @LIBCURL_NO_SHARED@
+LIBCURL_PC_CFLAGS = @LIBCURL_PC_CFLAGS@
+LIBCURL_PC_CFLAGS_PRIVATE = @LIBCURL_PC_CFLAGS_PRIVATE@
+LIBCURL_PC_LIBS = @LIBCURL_PC_LIBS@
+LIBCURL_PC_LIBS_PRIVATE = @LIBCURL_PC_LIBS_PRIVATE@
+LIBCURL_PC_REQUIRES = @LIBCURL_PC_REQUIRES@
+LIBCURL_PC_REQUIRES_PRIVATE = @LIBCURL_PC_REQUIRES_PRIVATE@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -346,10 +347,8 @@ PKGADD_NAME = @PKGADD_NAME@
 PKGADD_PKG = @PKGADD_PKG@
 PKGADD_VENDOR = @PKGADD_VENDOR@
 PKGCONFIG = @PKGCONFIG@
-RANDOM_FILE = @RANDOM_FILE@
 RANLIB = @RANLIB@
 RC = @RC@
-REQUIRE_LIB_DEPS = @REQUIRE_LIB_DEPS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -360,6 +359,7 @@ STRIP = @STRIP@
 SUPPORT_FEATURES = @SUPPORT_FEATURES@
 SUPPORT_PROTOCOLS = @SUPPORT_PROTOCOLS@
 TEST_NGHTTPX = @TEST_NGHTTPX@
+USE_APPLE_IDN = @USE_APPLE_IDN@
 USE_ARES = @USE_ARES@
 USE_BEARSSL = @USE_BEARSSL@
 USE_GNUTLS = @USE_GNUTLS@
@@ -368,6 +368,7 @@ USE_LIBPSL = @USE_LIBPSL@
 USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
+USE_LIBUV = @USE_LIBUV@
 USE_MBEDTLS = @USE_MBEDTLS@
 USE_MSH3 = @USE_MSH3@
 USE_NGHTTP2 = @USE_NGHTTP2@
@@ -394,6 +395,7 @@ USE_WOLFSSH = @USE_WOLFSSH@
 USE_WOLFSSL = @USE_WOLFSSL@
 VERSION = @VERSION@
 VERSIONNUM = @VERSIONNUM@
+VSFTPD = @VSFTPD@
 ZLIB_LIBS = @ZLIB_LIBS@
 ZSH_FUNCTIONS_DIR = @ZSH_FUNCTIONS_DIR@
 abs_builddir = @abs_builddir@
@@ -453,7 +455,6 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 MANPAGE = curl.1
 ASCIIPAGE = curl.txt
-man_MANS = $(MANPAGE)
 SUPPORT = \
   _AUTHORS.md \
   _BUGS.md \
@@ -520,7 +521,9 @@ DPAGES = \
   doh-cert-status.md \
   doh-insecure.md \
   doh-url.md \
+  dump-ca-embed.md \
   dump-header.md \
+  ech.md \
   egd-file.md \
   engine.md \
   etag-compare.md \
@@ -563,14 +566,15 @@ DPAGES = \
   http3.md \
   http3-only.md \
   ignore-content-length.md \
-  include.md \
   insecure.md \
   interface.md \
+  ip-tos.md \
   ipfs-gateway.md \
   ipv4.md \
   ipv6.md \
   json.md \
   junk-session-cookies.md \
+  keepalive-cnt.md \
   keepalive-time.md \
   key-type.md \
   key.md \
@@ -591,6 +595,7 @@ DPAGES = \
   max-redirs.md \
   max-time.md \
   metalink.md \
+  mptcp.md \
   negotiate.md \
   netrc-file.md \
   netrc-optional.md \
@@ -678,7 +683,9 @@ DPAGES = \
   sasl-ir.md \
   service-name.md \
   show-error.md \
+  show-headers.md \
   silent.md \
+  skip-existing.md \
   socks4.md \
   socks4a.md \
   socks5-basic.md \
@@ -732,6 +739,7 @@ DPAGES = \
   variable.md \
   verbose.md \
   version.md \
+  vlan-priority.md \
   write-out.md \
   xattr.md
 
@@ -740,8 +748,13 @@ GEN = $(GN_$(V))
 GN_0 = @echo "  GENERATE" $@;
 GN_1 = 
 GN_ = $(GN_0)
-MANAGEN = $(abs_top_srcdir)/scripts/managen
+MANAGEN = $(top_srcdir)/scripts/managen
+MAXLINE = $(top_srcdir)/scripts/maxline
+
+# Maximum number of columns accepted in the ASCII version of the manpage
+INCDIR = $(top_srcdir)/include
 @BUILD_DOCS_TRUE@CLEANFILES = $(MANPAGE) $(ASCIIPAGE)
+@BUILD_DOCS_TRUE@man_MANS = $(MANPAGE)
 all: all-am
 
 .SUFFIXES:
@@ -990,13 +1003,13 @@ uninstall-man: uninstall-man1
 @BUILD_DOCS_TRUE@all: $(MANPAGE) $(ASCIIPAGE)
 
 $(MANPAGE): $(DPAGES) $(SUPPORT) mainpage.idx Makefile.inc $(MANAGEN)
-	$(GEN)(rm -f $(MANPAGE) && (cd $(srcdir) && @PERL@ $(MANAGEN) mainpage $(DPAGES)) > manpage.tmp.$$$$ && mv manpage.tmp.$$$$ $(MANPAGE))
+	$(GEN)(rm -f $(MANPAGE) && @PERL@ $(MANAGEN) -d $(srcdir) -I $(INCDIR) mainpage $(DPAGES) > manpage.tmp.$$$$ && mv manpage.tmp.$$$$ $(MANPAGE))
 
 $(ASCIIPAGE): $(DPAGES) $(SUPPORT) mainpage.idx Makefile.inc $(MANAGEN)
-	$(GEN)(rm -f $(ASCIIPAGE) && (cd $(srcdir) && @PERL@ $(MANAGEN) ascii $(DPAGES)) > asciipage.tmp.$$$$ && mv asciipage.tmp.$$$$ $(ASCIIPAGE))
+	$(GEN)(rm -f $(ASCIIPAGE) && @PERL@ $(MANAGEN) -d $(srcdir) -I $(INCDIR) ascii $(DPAGES) > asciipage.tmp.$$$$ && mv asciipage.tmp.$$$$ $(ASCIIPAGE))
 
 listhelp:
-	$(MANAGEN) listhelp $(DPAGES) > $(top_builddir)/src/tool_listhelp.c
+	$(MANAGEN) -d $(srcdir) listhelp $(DPAGES) > $(top_builddir)/src/tool_listhelp.c
 
 listcats:
 	@$(MANAGEN) listcats $(DPAGES)

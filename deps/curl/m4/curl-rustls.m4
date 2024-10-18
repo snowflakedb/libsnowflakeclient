@@ -24,7 +24,7 @@
 
 AC_DEFUN([CURL_WITH_RUSTLS], [
 dnl ----------------------------------------------------
-dnl check for rustls
+dnl check for Rustls
 dnl ----------------------------------------------------
 
 if test "x$OPT_RUSTLS" != xno; then
@@ -90,18 +90,15 @@ if test "x$OPT_RUSTLS" != xno; then
 
         AC_CHECK_LIB(rustls, rustls_connection_read,
           [
-          AC_DEFINE(USE_RUSTLS, 1, [if rustls is enabled])
+          AC_DEFINE(USE_RUSTLS, 1, [if Rustls is enabled])
           AC_SUBST(USE_RUSTLS, [1])
           RUSTLS_ENABLED=1
           USE_RUSTLS="yes"
           ssl_msg="rustls"
           test rustls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
           ],
-          AC_MSG_ERROR([--with-rustls was specified but could not find rustls.]),
+          AC_MSG_ERROR([--with-rustls was specified but could not find Rustls.]),
           -lpthread -ldl -lm)
-
-        USE_RUSTLS="yes"
-        ssl_msg="rustls"
 
         LIB_RUSTLS="$PREFIX_RUSTLS/lib$libsuff"
         if test "$PREFIX_RUSTLS" != "/usr" ; then
@@ -140,15 +137,19 @@ if test "x$OPT_RUSTLS" != xno; then
       dnl additional libs may be necessary.  Hope that we
       dnl don't need any.
       LIBS="$SSL_LIBS $LIBS"
-      USE_RUSTLS="yes"
       ssl_msg="rustls"
+      AC_DEFINE(USE_RUSTLS, 1, [if Rustls is enabled])
+      AC_SUBST(USE_RUSTLS, [1])
+      USE_RUSTLS="yes"
+      RUSTLS_ENABLED=1
+      test rustls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
     else
-      AC_MSG_ERROR([pkg-config: Could not find rustls])
+      AC_MSG_ERROR([pkg-config: Could not find Rustls])
     fi
 
   else
     dnl we did not use pkg-config, so we need to add the
-    dnl rustls lib to LIBS
+    dnl Rustls lib to LIBS
     LIBS="-lrustls -lpthread -ldl -lm $LIBS"
   fi
 
@@ -157,7 +158,7 @@ if test "x$OPT_RUSTLS" != xno; then
   LDFLAGS="$CLAN_LDFLAGS $SSL_LDFLAGS"
 
   if test "x$USE_RUSTLS" = "xyes"; then
-    AC_MSG_NOTICE([detected rustls])
+    AC_MSG_NOTICE([detected Rustls])
     check_for_ca_bundle=1
 
     if test -n "$LIB_RUSTLS"; then
@@ -171,8 +172,18 @@ if test "x$OPT_RUSTLS" != xno; then
         AC_MSG_NOTICE([Added $LIB_RUSTLS to CURL_LIBRARY_PATH])
       fi
     fi
+    LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE rustls"
   fi
 
   test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
+
+  if test X"$OPT_RUSTLS" != Xno &&
+    test "$RUSTLS_ENABLED" != "1"; then
+    AC_MSG_NOTICE([OPT_RUSTLS: $OPT_RUSTLS])
+    AC_MSG_NOTICE([RUSTLS_ENABLED: $RUSTLS_ENABLED])
+    AC_MSG_ERROR([--with-rustls was given but Rustls could not be detected])
+  fi
 fi
 ])
+
+RUSTLS_ENABLED

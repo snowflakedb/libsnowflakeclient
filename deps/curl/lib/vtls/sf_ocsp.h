@@ -14,7 +14,7 @@
 #define SF_PUBLIC(type) type
 #endif
 
-SF_PUBLIC(CURLcode) initCertOCSP();
+SF_PUBLIC(CURLcode) initCertOCSP(void);
 SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
                                   struct Curl_easy *data,
                                   STACK_OF(X509) *ch,
