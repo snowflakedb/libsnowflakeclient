@@ -201,9 +201,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf, const char *application, co
  * @param sequence_id Sequence ID from the Snowflake Connection object.
  * @param request_id  requestId to be passed as a part of body instead of header.
  * @param is_describe_only is the query describe only.
+ * @param multi_stmt_count The value of MULTI_STATEMENT_COUNT set with the query. No setting if < 0.
  * @return Query cJSON Body.
  */
-cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only);
+cJSON *STDCALL create_query_json_body(const char *sql_text,
+                                      int64 sequence_id,
+                                      const char *request_id,
+                                      sf_bool is_describe_only,
+                                      int64 multi_stmt_count);
 
 /**
  * Creates a cJSON blob that is used to renew a session with Snowflake. cJSON blob must be freed by the caller using
@@ -422,6 +427,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  *                         at the end of the text buffer.
  * @param error Reference to the Snowflake Error object to set an error if one occurs.
  * @param insecure_mode Insecure mode disable OCSP check when set to true
+ * @param fail_open OCSP FAIL_OPEN mode when set to true
  * @param retry_on_curle_couldnt_connect_count number of times retrying server connection on CURLE_COULDNT_CONNECT error
  * @param renew_timeout   For key pair authentication. Credentials could expire
  *                        during the connection retry. Set renew timeout in such
@@ -445,7 +451,7 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, cJSON **json, NON_JSON_RESP* non_json_resp, int64 network_timeout, sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error, sf_bool insecure_mode,
+                             SF_ERROR_STRUCT *error, sf_bool insecure_mode, sf_bool fail_open,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
