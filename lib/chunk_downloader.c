@@ -219,7 +219,7 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
     if (!curl ||
         !http_perform(curl, GET_REQUEST_TYPE, url, headers, NULL, NULL, chunk,
                       non_json_resp, NULL, network_timeout,
-                      SF_BOOLEAN_TRUE, error, insecure_mode, 0,
+                      SF_BOOLEAN_TRUE, error, insecure_mode, fail_open, 0,
                       0, retry_max_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                       proxy, no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
         // Error set in perform function
