@@ -545,6 +545,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("protocol: %s", sf->protocol);
     log_debug("autocommit: %s", sf->autocommit ? "true": "false");
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
+    log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
@@ -725,6 +726,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
+        sf->ocsp_fail_open = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->include_retry_reason = SF_BOOLEAN_TRUE;
@@ -1123,6 +1125,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
+        case SF_CON_OCSP_FAIL_OPEN:
+          sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
@@ -1259,6 +1264,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;
             break;
+        case SF_CON_OCSP_FAIL_OPEN:
+          *value = &sf->ocsp_fail_open;
+          break;
         case SF_CON_LOGIN_TIMEOUT:
             *value = &sf->login_timeout;
             break;
@@ -2322,6 +2330,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                             4, // fetch slot
                             &sfstmt->error,
                             sfstmt->connection->insecure_mode,
+                            sfstmt->connection->ocsp_fail_open,
                             callback_create_resp,
                             sfstmt->connection->proxy,
                             sfstmt->connection->no_proxy,
