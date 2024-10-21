@@ -23,24 +23,6 @@ else
     export CTEST="$(which ctest)"
 fi
 
-# for XP_BUILD try gcc82 first
-if [[ -n "$XP_BUILD" ]] ; then
-    if which gcc-82 >& /dev/null; then
-        GCC="$(which gcc-82)"
-        GXX="$(which g++-82)"
-    elif which gcc82 >& /dev/null; then
-        GCC="$(which gcc82)"
-        GXX="$(which g++82)"
-    elif which gcc-8 >& /dev/null; then
-        GCC="$(which gcc-8)"
-        GXX="$(which g++-8)"
-    elif which gcc8 >& /dev/null; then
-        GCC="$(which gcc8)"
-        GXX="$(which g++8)"
-    fi
-fi
-
-# Otherwise try gcc52 first and default to gcc.
 if [[ -z "$GCC" || -z "$GXX" ]]; then
     if which gcc-52 >& /dev/null; then
         GCC="$(which gcc-52)"
