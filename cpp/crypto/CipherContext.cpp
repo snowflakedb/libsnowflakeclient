@@ -410,7 +410,6 @@ size_t CipherContext::finalize(void *const out) {
       success = EVP_EncryptFinal_ex(impl.ctx,
                                     static_cast<unsigned char *>(out),
                                     &nbBytesOut);
-      std::cout << "cbc nbytesOut: " << nbBytesOut << std::endl;
       break;
 
     case CryptoOperation::DECRYPT:
