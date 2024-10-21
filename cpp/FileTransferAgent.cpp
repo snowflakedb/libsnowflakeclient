@@ -12,7 +12,6 @@
 #include "StatementPutGet.hpp"
 #include "lib/ResultSetPutGet.hpp"
 #include "util/Base64.hpp"
-#include "SnowflakeS3Client.hpp"
 #include "StorageClientFactory.hpp"
 #include "crypto/CipherStreamBuf.hpp"
 #include "crypto/Cryptor.hpp"

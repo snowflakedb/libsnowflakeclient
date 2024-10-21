@@ -9,8 +9,10 @@
 #include <memory>
 #include <string>
 
+#include "cJSON.h"
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
+#include "result_set.h"
 
 #define VERIFY_COLUMN_INDEX(index, total)                             \
   if (index < 1 || index > total)                                     \
