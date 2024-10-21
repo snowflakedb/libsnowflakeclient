@@ -57,13 +57,13 @@ struct dohrequest {
   /* output */
   const char *packet;
   size_t size;
-  int rc;
+  DOHcode rc;
 };
 
 
 static const struct dohrequest req[] = {
-  {"test.host.name", DNS_TYPE_A, DNS_Q1, sizeof(DNS_Q1)-1, 0 },
-  {"test.host.name", DNS_TYPE_AAAA, DNS_Q2, sizeof(DNS_Q2)-1, 0 },
+  {"test.host.name", DNS_TYPE_A, DNS_Q1, sizeof(DNS_Q1)-1, DOH_OK },
+  {"test.host.name", DNS_TYPE_AAAA, DNS_Q2, sizeof(DNS_Q2)-1, DOH_OK },
   {"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
    ".host.name",
    DNS_TYPE_AAAA, NULL, 0, DOH_DNS_BAD_LABEL }
@@ -76,7 +76,7 @@ struct dohresp {
   DNStype type;
 
   /* output */
-  int rc;
+  DOHcode rc;
   const char *out;
 };
 
@@ -161,8 +161,8 @@ UNITTEST_START
   unsigned char *p;
 
   for(i = 0; i < sizeof(req) / sizeof(req[0]); i++) {
-    int rc = doh_encode(req[i].name, req[i].type,
-                        buffer, sizeof(buffer), &size);
+    DOHcode rc = doh_req_encode(req[i].name, req[i].type,
+                                buffer, sizeof(buffer), &size);
     if(rc != req[i].rc) {
       fprintf(stderr, "req %zu: Expected return code %d got %d\n", i,
               req[i].rc, rc);
@@ -185,13 +185,13 @@ UNITTEST_START
 
   for(i = 0; i < sizeof(resp) / sizeof(resp[0]); i++) {
     struct dohentry d;
-    int rc;
+    DOHcode rc;
     char *ptr;
     size_t len;
     int u;
     de_init(&d);
-    rc = doh_decode((const unsigned char *)resp[i].packet, resp[i].size,
-                    resp[i].type, &d);
+    rc = doh_resp_decode((const unsigned char *)resp[i].packet, resp[i].size,
+                         resp[i].type, &d);
     if(rc != resp[i].rc) {
       fprintf(stderr, "resp %zu: Expected return code %d got %d\n", i,
               resp[i].rc, rc);
@@ -243,9 +243,9 @@ UNITTEST_START
   /* pass all sizes into the decoder until full */
   for(i = 0; i < sizeof(full49)-1; i++) {
     struct dohentry d;
-    int rc;
+    DOHcode rc;
     memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)full49, i, DNS_TYPE_A, &d);
+    rc = doh_resp_decode((const unsigned char *)full49, i, DNS_TYPE_A, &d);
     if(!rc) {
       /* none of them should work */
       fprintf(stderr, "%zu: %d\n", i, rc);
@@ -256,10 +256,10 @@ UNITTEST_START
   /* and try all pieces from the other end of the packet */
   for(i = 1; i < sizeof(full49); i++) {
     struct dohentry d;
-    int rc;
+    DOHcode rc;
     memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)&full49[i], sizeof(full49)-i-1,
-                    DNS_TYPE_A, &d);
+    rc = doh_resp_decode((const unsigned char *)&full49[i], sizeof(full49)-i-1,
+                         DNS_TYPE_A, &d);
     if(!rc) {
       /* none of them should work */
       fprintf(stderr, "2 %zu: %d\n", i, rc);
@@ -268,12 +268,12 @@ UNITTEST_START
   }
 
   {
-    int rc;
+    DOHcode rc;
     struct dohentry d;
     struct dohaddr *a;
     memset(&d, 0, sizeof(d));
-    rc = doh_decode((const unsigned char *)full49, sizeof(full49)-1,
-                    DNS_TYPE_A, &d);
+    rc = doh_resp_decode((const unsigned char *)full49, sizeof(full49)-1,
+                         DNS_TYPE_A, &d);
     fail_if(d.numaddr != 1, "missing address");
     a = &d.addr[0];
     p = &a->ip.v4[0];

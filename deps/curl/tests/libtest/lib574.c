@@ -31,14 +31,14 @@ static int new_fnmatch(void *ptr,
                        const char *pattern, const char *string)
 {
   (void)ptr;
-  (void)pattern;
-  (void)string;
+  fprintf(stderr, "lib574: match string '%s' against pattern '%s'\n",
+          string, pattern);
   return CURL_FNMATCHFUNC_MATCH;
 }
 
-int test(char *URL)
+CURLcode test(char *URL)
 {
-  int res;
+  CURLcode res;
   CURL *curl;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {

@@ -27,7 +27,13 @@
  */
 #include <stdio.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#define sleep(s) Sleep((DWORD)(s))
+#else
 #include <unistd.h>
+#endif
+
 #include <curl/curl.h>
 
 static int ping(CURL *curl, const char *send_payload)
@@ -68,16 +74,13 @@ static int recv_pong(CURL *curl, const char *expected_payload)
   return (int)result;
 }
 
-static int recv_any(CURL *curl)
+static CURLcode recv_any(CURL *curl)
 {
   size_t rlen;
   const struct curl_ws_frame *meta;
   char buffer[256];
-  CURLcode result = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
-  if(result)
-    return result;
 
-  return 0;
+  return curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
 }
 
 /* close the connection */
