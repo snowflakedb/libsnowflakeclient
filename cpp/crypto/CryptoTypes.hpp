@@ -27,6 +27,8 @@ SF_CRYPTO_CONCAT(SF_CRYPTO_CONCAT(SF_CRYPTO_CONCAT(EVP, algo), \
                             nbits), \
            mode)
 
+#define SF_GCM_TAG_LEN 16
+
 /**
 * Encryption algorithm.
 */
