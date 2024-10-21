@@ -56,6 +56,9 @@ typedef enum SF_REQUEST_TYPE {
 
             /** we are doing a http delete */
             DELETE_REQUEST_TYPE,
+
+            /** we are doing a http head */
+            HEAD_REQUEST_TYPE,
 } SF_REQUEST_TYPE;
 
 /**
@@ -81,12 +84,12 @@ typedef enum SF_JSON_ERROR {
 /**
  * Dynamically growing char buffer to hold retrieved in cURL call.
  */
-typedef struct RAW_JSON_BUFFER {
+typedef struct RAW_CHAR_BUFFER {
     // Char buffer
     char *buffer;
     // Number of characters in char buffer
     size_t size;
-} RAW_JSON_BUFFER;
+} RAW_CHAR_BUFFER;
 
 /**
  * URL Parameter struct used to construct an encoded URL.
@@ -166,6 +169,15 @@ typedef struct non_json_response {
     size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata);
     void * buffer;
 } NON_JSON_RESP;
+
+/**
+* payload struct for put request
+*/
+typedef struct put_payload {
+    size_t (*read_callback)(void* ptr, size_t size, size_t nmemb, void* userdata);
+    void * buffer;
+    size_t length;
+} PUT_PAYLOAD;
 
 /**
  * Macro to get a custom error message to pass to the Snowflake Error object.
@@ -398,16 +410,16 @@ SF_JSON_ERROR STDCALL json_detach_object_from_array(cJSON **dest, cJSON *data, i
 ARRAY_LIST *json_get_object_keys(const cJSON *item);
 
 /**
- * A write callback function to use to write the response text received from the cURL response. The raw JSON buffer
+ * A write callback function to use to write the response text received from the cURL response. The raw CHAR buffer
  * will grow in size until
  *
  * @param data The data to copy in the buffer.
  * @param size The size (in bytes) of each data member.
  * @param nmemb The number of data members.
- * @param raw_json The Raw JSON Buffer object that grows in size to copy multiple writes for a single cURL call.
+ * @param raw_buf The Raw CHAR Buffer object that grows in size to copy multiple writes for a single cURL call.
  * @return The number of bytes copied into the buffer.
  */
-size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json);
+size_t char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf);
 
 /**
  * Performs an HTTP request with retry.
@@ -416,10 +428,13 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @param request_type The type of HTTP request.
  * @param url The fully qualified URL to use for the HTTP request.
  * @param header The header to use for the HTTP request.
- * @param body The body to send over the HTTP request. If running GET request, set this to NULL.
+ * @param body The body to send over the HTTP request. If running GET/PUT request, set this to NULL.
+ * @param put_payload The payload to send over the PUT HTTP request. If not running PUT request, set this to NULL.
  * @param json A reference to a cJSON pointer where we should store a successful request.
  * @param non_json_resp A reference to a non-json response to retrieve response in non-json format.
  *                      Used only when json is set to NULL.
+ * @param resp_headers A reference to retrieve response headers. Needs to be freed with SF_FREE.
+ *                     Set to NULL if it's not needed.
  * @param network_timeout The network request timeout to use for each request try.
  * @param chunk_downloader A boolean value determining whether or not we are running this request from the chunk
  *                         downloader. Each chunk that we download from AWS is invalid JSON so we need to add an
@@ -450,8 +465,9 @@ size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_
  * @return Success/failure status of http request call. 1 = Success; 0 = Failure/renew timeout
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
-                             char *body, cJSON **json, NON_JSON_RESP* non_json_resp, int64 network_timeout, sf_bool chunk_downloader,
-                             SF_ERROR_STRUCT *error, sf_bool insecure_mode, sf_bool fail_open,
+                             char *body, PUT_PAYLOAD* put_payload, cJSON **json, NON_JSON_RESP* non_json_resp,
+                             char** resp_headers, int64 network_timeout, sf_bool chunk_downloader,
+                             SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,

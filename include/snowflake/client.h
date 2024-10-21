@@ -18,6 +18,11 @@ extern "C" {
 /**
  * API Name
  */
+/* TODO: Temporarily change to ODBC for now to pass the test before
+ *       features (PUT for GCP, multiple statements etc.) unblocked
+ *       on server side.
+ *       Need to revert to C_API when merging to master.
+ */
 #define SF_API_NAME "ODBC"
 
 /**

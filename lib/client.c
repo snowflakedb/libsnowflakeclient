@@ -2489,6 +2489,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                         &sfstmt->put_get_response->stage_info->stage_cred->azure_sas_token,
                         stage_cred, "AZURE_SAS_TOKEN");
                 json_copy_string(
+                        &sfstmt->put_get_response->stage_info->stage_cred->gcs_access_token,
+                        stage_cred, "GCS_ACCESS_TOKEN");
+                json_copy_string(
                     &sfstmt->put_get_response->localLocation, data,
                     "localLocation");
 
