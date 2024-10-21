@@ -1850,7 +1850,6 @@ sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response) {
 
     snowflake_cJSON_Delete((cJSON *) put_get_response->src_list);
     snowflake_cJSON_Delete((cJSON *) put_get_response->enc_mat_get);
-    snowflake_cJSON_Delete((cJSON *) put_get_response->presigned_urls);
 
     SF_FREE(put_get_response);
 }
@@ -2411,9 +2410,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_detach_array_from_object(
                     (cJSON **) (&sfstmt->put_get_response->src_list),
                     data, "src_locations");
-                json_detach_array_from_object(
-                    (cJSON **) (&sfstmt->put_get_response->presigned_urls),
-                    data, "presignedUrls");
                 json_copy_string_no_alloc(sfstmt->put_get_response->command,
                                           data, "command", SF_COMMAND_LEN);
                 json_copy_int(&sfstmt->put_get_response->parallel, data,
@@ -2480,8 +2476,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "storageAccount");
                 json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
                                  stage_info, "endPoint");
-                json_copy_string(&sfstmt->put_get_response->stage_info->presignedURL,
-                                 stage_info, "presignedUrl");
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");

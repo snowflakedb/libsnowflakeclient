@@ -97,7 +97,6 @@ typedef struct SF_STAGE_INFO {
   char *storageAccount; // For Azure only
   char *endPoint; //For FIPS and Azure support
   SF_STAGE_CRED * stage_cred;
-  char* presignedURL; // for GCP support
 } SF_STAGE_INFO;
 
 /**
@@ -119,7 +118,6 @@ struct SF_PUT_GET_RESPONSE {
   void * enc_mat_get;
   SF_STAGE_INFO *stage_info;
   char *localLocation;
-  void *presigned_urls; //for GCP support
 };
 
 typedef struct NAMED_PARAMS

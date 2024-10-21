@@ -71,17 +71,6 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     putGetParseResponse->srcLocations.emplace_back(val->valuestring);
   }
 
-  cJSON* presignedUrls = (cJSON*)response->presigned_urls;
-  int url_size = snowflake_cJSON_GetArraySize(presignedUrls);
-  for (int i = 0; i < url_size; i++)
-  {
-    cJSON* val = snowflake_cJSON_GetArrayItem(presignedUrls, i);
-    if (val && val->valuestring)
-    {
-      putGetParseResponse->presignedUrls.emplace_back(val->valuestring);
-    }
-  }
-
   if (sf_strncasecmp(response->command, "UPLOAD", 6) == 0)
   {
     putGetParseResponse->command = CommandType::UPLOAD;
@@ -143,10 +132,6 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   else if (sf_strncasecmp(response->stage_info->location_type, "gcs", 3) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::GCS;
-    if (response->stage_info->presignedURL)
-    {
-      putGetParseResponse->stageInfo.presignedUrl = response->stage_info->presignedURL;
-    }
     putGetParseResponse->stageInfo.credentials = {
             {"GCS_ACCESS_TOKEN",     response->stage_info->stage_cred->gcs_access_token}
     };
