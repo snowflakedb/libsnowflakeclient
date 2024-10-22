@@ -537,3 +537,5 @@ add_subdirectory(examples)
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}, CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
