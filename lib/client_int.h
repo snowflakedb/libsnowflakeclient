@@ -86,6 +86,7 @@ typedef struct SF_STAGE_CRED {
   char *aws_secret_key;
   char *aws_token;
   char *azure_sas_token;
+  char* gcs_access_token;
 } SF_STAGE_CRED;
 
 typedef struct SF_STAGE_INFO {

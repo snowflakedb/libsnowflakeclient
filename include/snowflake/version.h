@@ -5,7 +5,11 @@
 #ifndef SNOWFLAKE_CLIENT_VERSION_H
 #define SNOWFLAKE_CLIENT_VERSION_H
 
-// TODO: temporary change for testing, will remove
+/* TODO: Temporarily change to ODBC version for now to pass the test before
+ *       features (PUT for GCP, multiple statements etc.) unblocked
+ *       on server side.
+ *       Need to revert to libsfclient version when merging to master.
+ */
 #define SF_API_VERSION "3.0.1"
 
 #endif /* SNOWFLAKE_CLIENT_VERSION_H */
