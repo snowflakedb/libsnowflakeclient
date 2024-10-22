@@ -17,7 +17,6 @@ TLS-backend:
   - Schannel
   - Secure Transport
   - wolfSSL
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -39,20 +38,15 @@ the format of your client certificate used when connecting to an HTTPS proxy.
 
 Supported formats are "PEM" and "DER", except with Secure Transport or
 Schannel. OpenSSL (versions 0.9.3 and later), Secure Transport (on iOS 5 or
-later, or macOS 10.7 or later) and Schannel support "P12" for PKCS#12-encoded
+later, or OS X 10.7 or later) and Schannel support "P12" for PKCS#12-encoded
 files.
 
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 "PEM"
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -74,7 +68,11 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.52.0
+
+If built TLS enabled.
 
 # RETURN VALUE
 

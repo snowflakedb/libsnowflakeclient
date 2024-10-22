@@ -30,6 +30,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/* somewhat unix-specific */
+#include <sys/time.h>
+#include <unistd.h>
+
 /* curl stuff */
 #include <curl/curl.h>
 
@@ -80,8 +84,7 @@ int main(void)
       break;
   }
   /* See how the transfers went */
-  /* !checksrc! disable EQUALSNULL 1 */
-  while((msg = curl_multi_info_read(multi_handle, &msgs_left)) != NULL) {
+  while((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
     if(msg->msg == CURLMSG_DONE) {
       int idx;
 

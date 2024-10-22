@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_POSTFIELDSIZE (3)
 Protocol:
   - HTTP
-Added-in: 7.11.1
 ---
 
 # NAME
@@ -38,8 +37,6 @@ CURLOPT_READFUNCTION(3) (if used) to signal the end of data.
 
 -1
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -64,7 +61,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Along with HTTP
 
 # RETURN VALUE
 

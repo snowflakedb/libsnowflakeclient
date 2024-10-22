@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_MAXREDIRS (3)
 Protocol:
   - All
-Added-in: 7.7
 ---
 
 # NAME
@@ -49,8 +48,6 @@ CURLMOPT_MAXCONNECTS(3) option.
 
 5
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

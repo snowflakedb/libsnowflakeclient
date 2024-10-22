@@ -7,7 +7,7 @@ Tags:
 Protocols:
 Added: 7.36.0
 Magic: divider
-Help: Make next URL use separate options
+Help: Make next URL use its separate set of options
 Category: curl
 Multi: append
 See-also:

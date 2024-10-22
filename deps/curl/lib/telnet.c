@@ -173,7 +173,7 @@ struct TELNET {
  */
 
 const struct Curl_handler Curl_handler_telnet = {
-  "telnet",                             /* scheme */
+  "TELNET",                             /* scheme */
   ZERO_NULL,                            /* setup_connection */
   telnet_do,                            /* do_it */
   telnet_done,                          /* done */
@@ -187,7 +187,6 @@ const struct Curl_handler Curl_handler_telnet = {
   ZERO_NULL,                            /* perform_getsock */
   ZERO_NULL,                            /* disconnect */
   ZERO_NULL,                            /* write_resp */
-  ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_TELNET,                          /* defport */
@@ -798,12 +797,12 @@ static CURLcode check_telnet_options(struct Curl_easy *data)
   struct TELNET *tn = data->req.p.telnet;
   CURLcode result = CURLE_OK;
 
-  /* Add the username as an environment variable if it
+  /* Add the user name as an environment variable if it
      was given on the command line */
   if(data->state.aptr.user) {
     char buffer[256];
     if(str_is_nonascii(data->conn->user)) {
-      DEBUGF(infof(data, "set a non ASCII username in telnet"));
+      DEBUGF(infof(data, "set a non ASCII user name in telnet"));
       return CURLE_BAD_FUNCTION_ARGUMENT;
     }
     msnprintf(buffer, sizeof(buffer), "USER,%s", data->conn->user);
@@ -1191,12 +1190,12 @@ process_iac:
         if(c != CURL_SE) {
           if(c != CURL_IAC) {
             /*
-             * This is an error. We only expect to get "IAC IAC" or "IAC SE".
-             * Several things may have happened. An IAC was not doubled, the
+             * This is an error.  We only expect to get "IAC IAC" or "IAC SE".
+             * Several things may have happened.  An IAC was not doubled, the
              * IAC SE was left off, or another option got inserted into the
-             * suboption are all possibilities. If we assume that the IAC was
+             * suboption are all possibilities.  If we assume that the IAC was
              * not doubled, and really the IAC SE was left off, we could get
-             * into an infinite loop here. So, instead, we terminate the
+             * into an infinite loop here.  So, instead, we terminate the
              * suboption, and process the partial suboption if we can.
              */
             CURL_SB_ACCUM(tn, CURL_IAC);
@@ -1276,7 +1275,7 @@ static CURLcode send_telnet_data(struct Curl_easy *data,
       default:                    /* write! */
         bytes_written = 0;
         result = Curl_xfer_send(data, outbuf + total_written,
-                                outlen - total_written, FALSE, &bytes_written);
+                                outlen - total_written, &bytes_written);
         total_written += bytes_written;
         break;
     }
@@ -1342,7 +1341,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
 
 #ifdef USE_WINSOCK
   /* We want to wait for both stdin and the socket. Since
-  ** the select() function in Winsock only works on sockets
+  ** the select() function in winsock only works on sockets
   ** we have to use the WaitForMultipleObjects() call.
   */
 
@@ -1353,7 +1352,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
     return CURLE_FAILED_INIT;
   }
 
-  /* Tell Winsock what events we want to listen to */
+  /* Tell winsock what events we want to listen to */
   if(WSAEventSelect(sockfd, event_handle, FD_READ|FD_CLOSE) == SOCKET_ERROR) {
     WSACloseEvent(event_handle);
     return CURLE_OK;
@@ -1370,7 +1369,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
      else use the old WaitForMultipleObjects() way */
   if(GetFileType(stdin_handle) == FILE_TYPE_PIPE ||
      data->set.is_fread_set) {
-    /* Do not wait for stdin_handle, just wait for event_handle */
+    /* Don't wait for stdin_handle, just wait for event_handle */
     obj_count = 1;
     /* Check stdin_handle per 100 milliseconds */
     wait_timeout = 100;
@@ -1470,7 +1469,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
       if(events.lNetworkEvents & FD_READ) {
         /* read data from network */
         result = Curl_xfer_recv(data, buffer, sizeof(buffer), &nread);
-        /* read would have blocked. Loop again */
+        /* read would've blocked. Loop again */
         if(result == CURLE_AGAIN)
           break;
         /* returned not-zero, this an error */
@@ -1492,7 +1491,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
         }
 
         /* Negotiate if the peer has started negotiating,
-           otherwise do not. We do not want to speak telnet with
+           otherwise don't. We don't want to speak telnet with
            non-telnet servers, like POP or SMTP. */
         if(tn->please_negotiate && !tn->already_negotiated) {
           negotiate(data);
@@ -1535,16 +1534,11 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
     pfd[1].events = POLLIN;
     poll_cnt = 2;
     interval_ms = 1 * 1000;
-    if(pfd[1].fd < 0) {
-      failf(data, "cannot read input");
-      result = CURLE_RECV_ERROR;
-      keepon = FALSE;
-    }
   }
 
   while(keepon) {
     DEBUGF(infof(data, "telnet_do, poll %d fds", poll_cnt));
-    switch(Curl_poll(pfd, (unsigned int)poll_cnt, interval_ms)) {
+    switch(Curl_poll(pfd, poll_cnt, interval_ms)) {
     case -1:                    /* error, stop reading */
       keepon = FALSE;
       continue;
@@ -1556,7 +1550,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
       if(pfd[0].revents & POLLIN) {
         /* read data from network */
         result = Curl_xfer_recv(data, buffer, sizeof(buffer), &nread);
-        /* read would have blocked. Loop again */
+        /* read would've blocked. Loop again */
         if(result == CURLE_AGAIN)
           break;
         /* returned not-zero, this an error */
@@ -1588,7 +1582,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
         }
 
         /* Negotiate if the peer has started negotiating,
-           otherwise do not. We do not want to speak telnet with
+           otherwise don't. We don't want to speak telnet with
            non-telnet servers, like POP or SMTP. */
         if(tn->please_negotiate && !tn->already_negotiated) {
           negotiate(data);
@@ -1645,7 +1639,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
   }
 #endif
   /* mark this as "no further transfer wanted" */
-  Curl_xfer_setup_nop(data);
+  Curl_xfer_setup(data, -1, -1, FALSE, -1);
 
   return result;
 }

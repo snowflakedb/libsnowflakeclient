@@ -1,6 +1,6 @@
 /* File: report_openssl_version.c
  *
- * This file dynamically loads the OpenSSL shared image to report the
+ * This file dynamically loads the openssl shared image to report the
  * version string.
  *
  * It will optionally place that version string in a DCL symbol.
@@ -36,64 +36,65 @@
 #include <errno.h>
 
 unsigned long LIB$SET_SYMBOL(
-  const struct dsc$descriptor_s * symbol,
-  const struct dsc$descriptor_s * value,
-  const unsigned long *table_type);
+    const struct dsc$descriptor_s * symbol,
+    const struct dsc$descriptor_s * value,
+    const unsigned long * table_type);
 
-int main(int argc, char **argv)
-{
-  void *libptr;
-  const char * (*ssl_version)(int t);
-  const char *version;
+int main(int argc, char ** argv) {
 
-  if(argc < 1) {
-    puts("report_openssl_version filename");
-    exit(1);
-  }
 
-  libptr = dlopen(argv[1], 0);
+void * libptr;
+const char * (*ssl_version)(int t);
+const char * version;
 
-  ssl_version = (const char * (*)(int))dlsym(libptr, "SSLeay_version");
-  if(!ssl_version) {
-    ssl_version = (const char * (*)(int))dlsym(libptr, "ssleay_version");
-    if(!ssl_version) {
-      ssl_version = (const char * (*)(int))dlsym(libptr, "SSLEAY_VERSION");
-    }
-  }
+   if(argc < 1) {
+       puts("report_openssl_version filename");
+       exit(1);
+   }
 
-  dlclose(libptr);
+   libptr = dlopen(argv[1], 0);
 
-  if(!ssl_version) {
-    puts("Unable to lookup version of OpenSSL");
-    exit(1);
-  }
+   ssl_version = (const char * (*)(int))dlsym(libptr, "SSLeay_version");
+   if(ssl_version == NULL) {
+      ssl_version = (const char * (*)(int))dlsym(libptr, "ssleay_version");
+      if(ssl_version == NULL) {
+         ssl_version = (const char * (*)(int))dlsym(libptr, "SSLEAY_VERSION");
+      }
+   }
 
-  version = ssl_version(SSLEAY_VERSION);
+   dlclose(libptr);
 
-  puts(version);
+   if(ssl_version == NULL) {
+      puts("Unable to lookup version of OpenSSL");
+      exit(1);
+   }
 
-  /* Was a symbol argument given? */
-  if(argc > 1) {
-    int status;
-    struct dsc$descriptor_s symbol_dsc;
-    struct dsc$descriptor_s value_dsc;
-    const unsigned long table_type = LIB$K_CLI_LOCAL_SYM;
+   version = ssl_version(SSLEAY_VERSION);
 
-    symbol_dsc.dsc$a_pointer = argv[2];
-    symbol_dsc.dsc$w_length = strlen(argv[2]);
-    symbol_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_dsc.dsc$b_class = DSC$K_CLASS_S;
+   puts(version);
 
-    value_dsc.dsc$a_pointer = (char *)version; /* Cast ok */
-    value_dsc.dsc$w_length = strlen(version);
-    value_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    value_dsc.dsc$b_class = DSC$K_CLASS_S;
+   /* Was a symbol argument given? */
+   if(argc > 1) {
+      int status;
+      struct dsc$descriptor_s symbol_dsc;
+      struct dsc$descriptor_s value_dsc;
+      const unsigned long table_type = LIB$K_CLI_LOCAL_SYM;
 
-    status = LIB$SET_SYMBOL(&symbol_dsc, &value_dsc, &table_type);
-    if(!$VMS_STATUS_SUCCESS(status)) {
-      exit(status);
-    }
-  }
+      symbol_dsc.dsc$a_pointer = argv[2];
+      symbol_dsc.dsc$w_length = strlen(argv[2]);
+      symbol_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+      symbol_dsc.dsc$b_class = DSC$K_CLASS_S;
 
-  exit(0);
+      value_dsc.dsc$a_pointer = (char *)version; /* Cast ok */
+      value_dsc.dsc$w_length = strlen(version);
+      value_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+      value_dsc.dsc$b_class = DSC$K_CLASS_S;
+
+      status = LIB$SET_SYMBOL(&symbol_dsc, &value_dsc, &table_type);
+      if(!$VMS_STATUS_SUCCESS(status)) {
+         exit(status);
+      }
+   }
+
+   exit(0);
 }

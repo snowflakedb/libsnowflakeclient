@@ -117,7 +117,7 @@ static Curl_recv oldap_recv;
  */
 
 const struct Curl_handler Curl_handler_ldap = {
-  "ldap",                               /* scheme */
+  "LDAP",                               /* scheme */
   oldap_setup_connection,               /* setup_connection */
   oldap_do,                             /* do_it */
   oldap_done,                           /* done */
@@ -131,7 +131,6 @@ const struct Curl_handler Curl_handler_ldap = {
   ZERO_NULL,                            /* perform_getsock */
   oldap_disconnect,                     /* disconnect */
   ZERO_NULL,                            /* write_resp */
-  ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_LDAP,                            /* defport */
@@ -146,7 +145,7 @@ const struct Curl_handler Curl_handler_ldap = {
  */
 
 const struct Curl_handler Curl_handler_ldaps = {
-  "ldaps",                              /* scheme */
+  "LDAPS",                              /* scheme */
   oldap_setup_connection,               /* setup_connection */
   oldap_do,                             /* do_it */
   oldap_done,                           /* done */
@@ -160,7 +159,6 @@ const struct Curl_handler Curl_handler_ldaps = {
   ZERO_NULL,                            /* perform_getsock */
   oldap_disconnect,                     /* disconnect */
   ZERO_NULL,                            /* write_resp */
-  ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_LDAPS,                           /* defport */
@@ -550,12 +548,9 @@ static CURLcode oldap_connect(struct Curl_easy *data, bool *done)
       return result;
   }
 
-  hosturl = aprintf("%s://%s%s%s:%d",
-                    conn->handler->scheme,
-                    conn->bits.ipv6_ip? "[": "",
-                    conn->host.name,
-                    conn->bits.ipv6_ip? "]": "",
-                    conn->remote_port);
+  hosturl = aprintf("ldap%s://%s:%d",
+                    conn->handler->flags & PROTOPT_SSL? "s": "",
+                    conn->host.name, conn->remote_port);
   if(!hosturl)
     return CURLE_OUT_OF_MEMORY;
 
@@ -921,7 +916,7 @@ static CURLcode oldap_do(struct Curl_easy *data, bool *done)
       else {
         lr->msgid = msgid;
         data->req.p.ldap = lr;
-        Curl_xfer_setup1(data, CURL_XFER_RECV, -1, FALSE);
+        Curl_xfer_setup(data, FIRSTSOCKET, -1, FALSE, -1);
         *done = TRUE;
       }
     }
@@ -1152,7 +1147,7 @@ ldapsb_tls_remove(Sockbuf_IO_Desc *sbiod)
   return 0;
 }
 
-/* We do not need to do anything because libcurl does it already */
+/* We don't need to do anything because libcurl does it already */
 static int
 ldapsb_tls_close(Sockbuf_IO_Desc *sbiod)
 {
@@ -1201,7 +1196,7 @@ ldapsb_tls_write(Sockbuf_IO_Desc *sbiod, void *buf, ber_len_t len)
     if(conn) {
       struct ldapconninfo *li = conn->proto.ldapc;
       CURLcode err = CURLE_SEND_ERROR;
-      ret = (li->send)(data, FIRSTSOCKET, buf, len, FALSE, &err);
+      ret = (li->send)(data, FIRSTSOCKET, buf, len, &err);
       if(ret < 0 && err == CURLE_AGAIN) {
         SET_SOCKERRNO(EWOULDBLOCK);
       }

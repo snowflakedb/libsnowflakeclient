@@ -33,13 +33,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include <curl/curl.h>
-
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 
 int main(void)
 {
@@ -117,7 +113,3 @@ int main(void)
   }
   return 0;
 }
-
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif

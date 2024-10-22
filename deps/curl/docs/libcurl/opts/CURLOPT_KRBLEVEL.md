@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_USE_SSL (3)
 Protocol:
   - FTP
-Added-in: 7.16.4
 ---
 
 # NAME
@@ -35,14 +34,9 @@ string to NULL to disable kerberos support for FTP.
 The application does not have to keep the string around after setting this
 option.
 
-The application does not have to keep the string around after setting this
-option.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -60,11 +54,9 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 This option was known as CURLOPT_KRB4LEVEL up to 7.16.3
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

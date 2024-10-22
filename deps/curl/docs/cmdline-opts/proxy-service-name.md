@@ -10,11 +10,10 @@ Multi: single
 See-also:
   - service-name
   - proxy
-  - proxy-negotiate
 Example:
   - --proxy-service-name "shrubbery" -x proxy $URL
 ---
 
 # `--proxy-service-name`
 
-Set the service name for SPNEGO when doing proxy authentication.
+Set the service name for proxy negotiation.

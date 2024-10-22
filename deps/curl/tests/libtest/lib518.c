@@ -445,7 +445,7 @@ static int rlimit(int keep_open)
   return 0;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -454,9 +454,9 @@ CURLcode test(char *URL)
     /* used by the test script to ask if we can run this test or not */
     if(rlimit(FALSE)) {
       fprintf(stdout, "rlimit problem: %s\n", msgbuff);
-      return (CURLcode)1;
+      return 1;
     }
-    return CURLE_OK; /* sure, run this! */
+    return 0; /* sure, run this! */
   }
 
   if(rlimit(TRUE)) {
@@ -492,12 +492,12 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }
 
 #else /* defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT) */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   (void)URL;
   printf("system lacks necessary system function(s)");

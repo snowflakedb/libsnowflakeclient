@@ -8,7 +8,6 @@ See-also:
   - getenv (3C)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -27,11 +26,9 @@ char *curl_getenv(const char *name);
 
 curl_getenv() is a portable wrapper for the getenv() function, meant to
 emulate its behavior and provide an identical interface for all operating
-systems libcurl builds on (including Windows).
+systems libcurl builds on (including win32).
 
 You must curl_free(3) the returned string when you are done with it.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -46,7 +43,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 
@@ -55,6 +54,6 @@ specified name.
 
 # NOTE
 
-Under Unix operating systems, there is no point in returning an allocated
+Under unix operating systems, there is no point in returning an allocated
 memory, although other systems does not work properly if this is not done. The
-Unix implementation thus suffers slightly from the drawbacks of other systems.
+unix implementation thus suffers slightly from the drawbacks of other systems.

@@ -13,7 +13,6 @@ Protocol:
   - TLS
 TLS-backend:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -72,11 +71,10 @@ TLS v1.2 or later (Added in 7.34.0)
 
 TLS v1.3 or later (Added in 7.52.0)
 
-##
-
 The maximum TLS version can be set by using *one* of the
 CURL_SSLVERSION_MAX_ macros below. It is also possible to OR *one* of the
 CURL_SSLVERSION_ macros with *one* of the CURL_SSLVERSION_MAX_ macros.
+The MAX macros are not supported for WolfSSL.
 
 ## CURL_SSLVERSION_MAX_DEFAULT
 
@@ -105,8 +103,6 @@ The flag defines maximum supported TLS version as TLS v1.2.
 The flag defines maximum supported TLS version as TLS v1.3.
 (Added in 7.54.0)
 
-##
-
 In versions of curl prior to 7.54 the CURL_SSLVERSION_TLS options were
 documented to allow *only* the specified TLS version, but behavior was
 inconsistent depending on the TLS library.
@@ -114,8 +110,6 @@ inconsistent depending on the TLS library.
 # DEFAULT
 
 CURL_SSLVERSION_DEFAULT
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -135,22 +129,14 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
+
+SSLv2 and SSLv3 are refused completely since curl 7.77.0
 
 SSLv2 is disabled by default since 7.18.1. Other SSL versions availability may
 vary depending on which backend libcurl has been built to use.
 
 SSLv3 is disabled by default since 7.39.0.
-
-SSLv2 and SSLv3 are refused completely since curl 7.77.0
-
-Since 8.10.0 wolfSSL is fully supported. Before 8.10.0 the MAX macros were not
-supported with wolfSSL and the other macros did not set a minimum, but
-restricted the TLS version to only the specified one.
-
-Rustls support added in 8.10.0.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

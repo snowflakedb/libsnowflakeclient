@@ -1,9 +1,3 @@
-<!--
-Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-
-SPDX-License-Identifier: curl
--->
-
 # curldown
 
 A markdown-like syntax for libcurl man pages.
@@ -80,7 +74,6 @@ Each curldown starts with a header with meta-data:
       - CURLOPT_HTTPAUTH (3)
     TLS-backend:
       - [name]
-    Added-in: [version or "n/a"]
     ---
 
 All curldown files *must* have all the headers present and at least one
@@ -98,7 +91,7 @@ option. The available TLS backends are:
 - `BearSSL`
 - `GnuTLS`
 - `mbedTLS`
-- `OpenSSL` (also covers BoringSSL, LibreSSL, quictls, AWS-LC and AmiSSL)
+- `OpenSSL` (also covers BoringSSL, libressl, quictls, AWS-LC and AmiSSL)
 - `rustls`
 - `Schannel`
 - `Secure Transport`
@@ -148,15 +141,7 @@ readable.
 To make sure curldown documents render correctly as markdown, all literal
 occurrences of `<` or `>` need to be escaped by a leading backslash.
 
-## Generating contents
-
-`# %PROTOCOLS%` - inserts a **PROTOCOLS** section based on the metadata
-provided in the header.
-
-`# %AVAILABILITY%` - inserts an **AVAILABILITY** section based on the metadata
-provided in the header.
-
-## Symbols
+## symbols
 
 All mentioned curl symbols that have their own man pages, like
 `curl_easy_perform(3)` are automatically rendered using italics in the output

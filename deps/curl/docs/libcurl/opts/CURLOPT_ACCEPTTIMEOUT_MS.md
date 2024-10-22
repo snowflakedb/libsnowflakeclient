@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_STDERR (3)
 Protocol:
   - FTP
-Added-in: 7.24.0
 ---
 
 # NAME
@@ -34,8 +33,6 @@ server to connect back to libcurl when an active FTP connection is used.
 
 60000 milliseconds
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -53,7 +50,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.24.0
 
 # RETURN VALUE
 

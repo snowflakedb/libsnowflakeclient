@@ -8,7 +8,6 @@ See-also:
   - curl_version_info (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -30,8 +29,6 @@ its important components (like OpenSSL version).
 
 We recommend using curl_version_info(3) instead!
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -41,7 +38,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

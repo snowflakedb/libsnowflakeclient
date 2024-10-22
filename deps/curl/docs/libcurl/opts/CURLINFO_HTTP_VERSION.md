@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - HTTP
-Added-in: 7.50.0
 ---
 
 # NAME
@@ -32,8 +31,6 @@ connection done using this handle. The returned value is
 CURL_HTTP_VERSION_1_0, CURL_HTTP_VERSION_1_1, CURL_HTTP_VERSION_2_0,
 CURL_HTTP_VERSION_3 or 0 if the version cannot be determined.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -53,7 +50,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.50.0
 
 # RETURN VALUE
 

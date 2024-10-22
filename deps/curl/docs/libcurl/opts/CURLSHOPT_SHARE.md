@@ -11,7 +11,6 @@ See-also:
   - curl_share_setopt (3)
 Protocol:
   - All
-Added-in: 7.10.3
 ---
 
 # NAME
@@ -41,8 +40,6 @@ Cookie data is shared across the easy handles using this shared object. Note
 that this does not activate an easy handle's cookie handling. You can do that
 separately by using CURLOPT_COOKIEFILE(3) for example.
 
-It is not supported to share cookies between multiple concurrent threads.
-
 ## CURL_LOCK_DATA_DNS
 
 Cached DNS hosts are shared across the easy handles using this shared
@@ -57,8 +54,6 @@ the same server. Note SSL session IDs are reused within the same easy handle
 by default. Note this symbol was added in 7.10.3 but was not implemented until
 7.23.0.
 
-It is not supported to share SSL sessions between multiple concurrent threads.
-
 ## CURL_LOCK_DATA_CONNECT
 
 Put the connection cache in the share object and make all easy handles using
@@ -66,9 +61,9 @@ this share object share the connection cache.
 
 It is not supported to share connections between multiple concurrent threads.
 
-Connections that are used for HTTP/2 or HTTP/3 multiplexing only get
-additional transfers added to them if the existing connection is held by the
-same multi or easy handle. libcurl does not support doing multiplexed streams
+Connections that are used for HTTP/1.1 Pipelining or HTTP/2 multiplexing only
+get additional transfers added to them if the existing connection is held by
+the same multi or easy handle. libcurl does not support doing HTTP/2 streams
 in different threads using a shared connection.
 
 Support for **CURL_LOCK_DATA_CONNECT** was added in 7.57.0, but the symbol
@@ -96,8 +91,6 @@ It is not supported to share the HSTS between multiple concurrent threads.
 
 Added in 7.88.0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -111,7 +104,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10
 
 # RETURN VALUE
 

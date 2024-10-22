@@ -26,7 +26,7 @@
 
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl = NULL;
   CURLcode res = CURLE_FAILED_INIT;
@@ -71,5 +71,5 @@ test_cleanup:
   curl_slist_free_all(phl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

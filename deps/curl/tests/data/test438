@@ -29,8 +29,8 @@ Alt-Svc: h1="%HOST6IP:%HTTP6PORT", ma=315360000; persist=0
 <client>
 <features>
 alt-svc
-Debug
-IPv6
+debug
+ipv6
 </features>
 <server>
 http

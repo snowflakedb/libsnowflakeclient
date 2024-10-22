@@ -12,7 +12,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -34,13 +33,8 @@ string holding the URL scheme used for the most recent connection done with
 this CURL **handle**.
 
 The **scheme** pointer is NULL or points to private memory. You MUST NOT
-free - it gets freed when you call curl_easy_cleanup(3) on the corresponding
-CURL handle.
-
-The returned scheme might be upper or lowercase. Do comparisons case
-insensitively.
-
-# %PROTOCOLS%
+free - it gets freed when you call curl_easy_cleanup(3) on the
+corresponding CURL handle.
 
 # EXAMPLE
 
@@ -63,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.52.0
 
 # RETURN VALUE
 

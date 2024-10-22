@@ -33,14 +33,14 @@
 static char const testData[] = ".abc\0xyz";
 static off_t const testDataSize = sizeof(testData) - 1;
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *easy;
   CURLM *multi_handle;
   int still_running; /* keep number of running handles */
   CURLMsg *msg; /* for picking up messages with the transfer status */
   int msgs_left; /* how many messages are left */
-  CURLcode res = CURLE_OK;
+  int res = CURLE_OK;
 
   start_test_timing();
 

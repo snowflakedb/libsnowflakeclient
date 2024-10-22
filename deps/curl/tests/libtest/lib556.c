@@ -37,7 +37,7 @@
   #define STDERR_FILENO 2
 #endif
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -65,36 +65,29 @@ CURLcode test(char *URL)
     const char *request =
       "GET /556 HTTP/1.1\r\n"
       "Host: ninja\r\n\r\n";
-    const char *sbuf = request;
-    size_t sblen = strlen(request);
-    size_t nwritten = 0, nread = 0;
+    size_t iolen = 0;
 
-    do {
-      char buf[1024];
+    res = curl_easy_send(curl, request, strlen(request), &iolen);
 
-      if(sblen) {
-        res = curl_easy_send(curl, sbuf, sblen, &nwritten);
-        if(res && res != CURLE_AGAIN)
-          break;
-        if(nwritten > 0) {
-          sbuf += nwritten;
-          sblen -= nwritten;
+    if(!res) {
+      /* we assume that sending always work */
+
+      do {
+        char buf[1024];
+        /* busy-read like crazy */
+        res = curl_easy_recv(curl, buf, sizeof(buf), &iolen);
+
+        if(iolen) {
+          /* send received stuff to stdout */
+          if(!write(STDOUT_FILENO, buf, iolen))
+            break;
         }
-      }
 
-      /* busy-read like crazy */
-      res = curl_easy_recv(curl, buf, sizeof(buf), &nread);
+      } while((res == CURLE_OK && iolen) || (res == CURLE_AGAIN));
+    }
 
-      if(nread) {
-        /* send received stuff to stdout */
-        if(!write(STDOUT_FILENO, buf, nread))
-          break;
-      }
-
-    } while((res == CURLE_OK && nread) || (res == CURLE_AGAIN));
-
-    if(res && res != CURLE_AGAIN)
-      res = TEST_ERR_FAILURE;
+    if(iolen)
+      res = (CURLcode)TEST_ERR_FAILURE;
   }
 
 test_cleanup:
@@ -102,5 +95,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

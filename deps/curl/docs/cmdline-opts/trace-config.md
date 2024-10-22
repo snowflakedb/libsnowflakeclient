@@ -4,7 +4,7 @@ SPDX-License-Identifier: curl
 Long: trace-config
 Arg: <string>
 Help: Details to log in trace/verbose output
-Category: verbose global
+Category: verbose
 Added: 8.3.0
 Multi: append
 Scope: global

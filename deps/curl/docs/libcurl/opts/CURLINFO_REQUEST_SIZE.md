@@ -11,7 +11,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.4.1
 ---
 
 # NAME
@@ -31,8 +30,6 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_REQUEST_SIZE, long *sizep);
 Pass a pointer to a long to receive the total size of the issued
 requests. This is so far only for HTTP requests. Note that this may be more
 than one request if CURLOPT_FOLLOWLOCATION(3) is enabled.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -55,7 +52,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.4.1
 
 # RETURN VALUE
 

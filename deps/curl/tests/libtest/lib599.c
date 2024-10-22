@@ -41,7 +41,7 @@ static int progress_callback(void *clientp, double dltotal,
   return 0;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl;
   CURLcode res = CURLE_OK;

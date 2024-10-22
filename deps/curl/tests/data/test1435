@@ -3,7 +3,7 @@
 <keywords>
 HTTP
 HTTP GET
-UnixSockets
+unix sockets
 </keywords>
 </info>
 
@@ -19,7 +19,7 @@ Based on test300
 
 <client>
 <features>
-UnixSockets
+unix-sockets
 </features>
 <server>
 http-unix

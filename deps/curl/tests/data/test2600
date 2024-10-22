@@ -15,9 +15,8 @@ none
 </server>
 <features>
 unittest
-Debug
+debug
 http
-!win32
 </features>
 <name>
 connection filter connect/destroy unit tests

@@ -33,7 +33,7 @@
 
 static char buffer[MAX_INPUT_LENGTH + 2];
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   const struct curl_easyoption *o;
   CURL *easy;
@@ -44,7 +44,7 @@ CURLcode test(char *URL)
   easy = curl_easy_init();
   if(!easy) {
     curl_global_cleanup();
-    return (CURLcode)1;
+    return 1;
   }
 
   /* make it a null-terminated C string with just As */
@@ -86,7 +86,7 @@ CURLcode test(char *URL)
       default:
         /* all other return codes are unexpected */
         fprintf(stderr, "curl_easy_setopt(%s...) returned %d\n",
-                o->name, result);
+                o->name, (int)result);
         error++;
         break;
       }
@@ -94,5 +94,5 @@ CURLcode test(char *URL)
   }
   curl_easy_cleanup(easy);
   curl_global_cleanup();
-  return error == 0 ? CURLE_OK : TEST_ERR_FAILURE;
+  return error;
 }

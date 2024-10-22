@@ -36,7 +36,7 @@
 static int counter[MAX_EASY_HANDLES];
 static CURL *easy[MAX_EASY_HANDLES];
 static curl_socket_t sockets[MAX_EASY_HANDLES];
-static CURLcode res = CURLE_OK;
+static int res = 0;
 
 static size_t callback(char *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -89,7 +89,7 @@ enum HandleState {
   NoMoreHandles
 };
 
-CURLcode test(char *url)
+int test(char *url)
 {
   CURLM *multi = NULL;
   int running;

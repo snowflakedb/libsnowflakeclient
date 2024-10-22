@@ -11,7 +11,6 @@ See-also:
 Protocol:
   - SMTP
   - IMAP
-Added-in: 7.31.0
 ---
 
 # NAME
@@ -47,8 +46,6 @@ SASL-IR CAPABILITY.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -65,7 +62,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.31.0
 
 # RETURN VALUE
 

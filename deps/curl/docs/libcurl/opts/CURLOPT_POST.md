@@ -9,8 +9,7 @@ Protocol:
 See-also:
   - CURLOPT_HTTPPOST (3)
   - CURLOPT_POSTFIELDS (3)
-  - CURLOPT_UPLOAD (3)
-Added-in: 7.1
+  - CURLOPT_PUT (3)
 ---
 
 # NAME
@@ -72,8 +71,6 @@ you should set a new request type explicitly as described above.
 
 0, disabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -94,7 +91,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Along with HTTP
 
 # RETURN VALUE
 

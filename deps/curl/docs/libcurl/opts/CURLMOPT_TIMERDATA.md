@@ -9,7 +9,6 @@ See-also:
   - CURLMOPT_TIMERFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.16.0
 ---
 
 # NAME
@@ -35,8 +34,6 @@ callback's **clientp** argument.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.16.0
 
 # RETURN VALUE
 

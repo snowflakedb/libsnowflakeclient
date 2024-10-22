@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_TRANSFERTEXT (3)
 Protocol:
     - All
-Added-in: 7.18.0
 ---
 
 # NAME
@@ -39,8 +38,6 @@ doing FTP via a proxy. Beware that not all proxies support this feature.
 
 0, disabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.18.0
 
 # RETURN VALUE
 

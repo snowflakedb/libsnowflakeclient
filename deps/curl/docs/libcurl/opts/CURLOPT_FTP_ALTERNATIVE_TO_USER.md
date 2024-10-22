@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_FTP_SKIP_PASV_IP (3)
   - CURLOPT_SERVER_RESPONSE_TIMEOUT (3)
   - CURLOPT_USERNAME (3)
-Added-in: 7.15.5
 ---
 
 # NAME
@@ -42,8 +41,6 @@ option.
 
 NULL
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -61,7 +58,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.15.5
 
 # RETURN VALUE
 

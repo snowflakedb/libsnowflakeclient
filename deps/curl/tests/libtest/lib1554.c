@@ -24,18 +24,6 @@
 #include "test.h"
 #include "memdebug.h"
 
-static const char *ldata_names[] = {
-  "NONE",
-  "SHARE",
-  "COOKIE",
-  "DNS",
-  "SESSION",
-  "CONNECT",
-  "PSL",
-  "HSTS",
-  "NULL",
-};
-
 static void my_lock(CURL *handle, curl_lock_data data,
                     curl_lock_access laccess, void *useptr)
 {
@@ -43,7 +31,7 @@ static void my_lock(CURL *handle, curl_lock_data data,
   (void)data;
   (void)laccess;
   (void)useptr;
-  printf("-> Mutex lock %s\n", ldata_names[data]);
+  printf("-> Mutex lock\n");
 }
 
 static void my_unlock(CURL *handle, curl_lock_data data, void *useptr)
@@ -51,11 +39,11 @@ static void my_unlock(CURL *handle, curl_lock_data data, void *useptr)
   (void)handle;
   (void)data;
   (void)useptr;
-  printf("<- Mutex unlock %s\n", ldata_names[data]);
+  printf("<- Mutex unlock\n");
 }
 
 /* test function */
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res = CURLE_OK;
   CURLSH *share = NULL;
@@ -103,5 +91,5 @@ test_cleanup:
   curl_share_cleanup(share);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

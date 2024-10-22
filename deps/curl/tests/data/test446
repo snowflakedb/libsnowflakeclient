@@ -41,7 +41,7 @@ http-proxy
 HSTS
 proxy
 https
-Debug
+debug
 </features>
 <setenv>
 CURL_HSTS_HTTP=yes

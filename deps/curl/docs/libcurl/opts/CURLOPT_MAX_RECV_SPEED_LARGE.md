@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_TIMEOUT (3)
 Protocol:
   - All
-Added-in: 7.15.5
 ---
 
 # NAME
@@ -44,8 +43,6 @@ This option does not affect transfer speeds done with FILE:// URLs.
 
 0, disabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.15.5
 
 # RETURN VALUE
 

@@ -129,7 +129,7 @@ static void *fire(void *ptr)
 }
 
 /* test function */
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res = CURLE_OK;
   CURLSHcode scode = CURLSHE_OK;
@@ -197,7 +197,7 @@ CURLcode test(char *URL)
   }
 
 
-  /* fetch another one */
+  /* fetch a another one */
   printf("*** run %d\n", i);
   curl = curl_easy_init();
   if(!curl) {

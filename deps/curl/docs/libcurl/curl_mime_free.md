@@ -11,7 +11,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.56.0
 ---
 
 # NAME
@@ -43,8 +42,6 @@ curl_mime_init(3) and may be NULL.
 Passing in a NULL pointer in *mime* makes this function return immediately
 with no action.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 
 # RETURN VALUE
 

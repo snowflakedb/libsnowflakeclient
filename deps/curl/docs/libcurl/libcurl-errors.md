@@ -14,7 +14,6 @@ See-also:
   - curl_url_strerror (3)
 Protocol:
   - All
-Added-in: n/a
 ---
 
 # NAME
@@ -487,10 +486,6 @@ An internal call to poll() or select() returned error that is not recoverable.
 ## CURLE_TOO_LARGE (100)
 
 A value or data field grew larger than allowed.
-
-## CURLE_ECH_REQUIRED (101)"
-
-ECH was attempted but failed.
 
 # CURLMcode
 

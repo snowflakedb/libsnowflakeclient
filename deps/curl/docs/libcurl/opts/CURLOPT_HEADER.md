@@ -13,7 +13,6 @@ Protocol:
 See-also:
   - CURLOPT_HEADERFUNCTION (3)
   - CURLOPT_HTTPHEADER (3)
-Added-in: 7.1
 ---
 
 # NAME
@@ -54,8 +53,6 @@ custom HTTP headers!
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -72,7 +69,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Provided in all libcurl versions.
 
 # RETURN VALUE
 

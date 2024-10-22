@@ -11,7 +11,6 @@ Protocol:
   - FTP
   - HTTP
   - MQTT
-Added-in: 7.11.0
 ---
 
 # NAME
@@ -32,8 +31,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAXFILESIZE_LARGE,
 Pass a curl_off_t as parameter. This specifies the maximum accepted *size*
 (in bytes) of a file to download. If the file requested is found larger than
 this value, the transfer is aborted and *CURLE_FILESIZE_EXCEEDED* is
-returned. Passing a zero *size* disables this, and passing a negative *size*
-yields a *CURLE_BAD_FUNCTION_ARGUMENT*.
+returned.
 
 The file size is not always known prior to the download start, and for such
 transfers this option has no effect - even if the file transfer eventually
@@ -44,9 +42,7 @@ threshold.
 
 # DEFAULT
 
-0, meaning disabled.
-
-# %PROTOCOLS%
+None
 
 # EXAMPLE
 
@@ -65,9 +61,10 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.11.0
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
-CURLE_BAD_FUNCTION_ARGUMENT if the size passed is invalid.
+Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.

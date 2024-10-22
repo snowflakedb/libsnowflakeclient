@@ -11,7 +11,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - HTTP
-Added-in: 7.19.4
 ---
 
 # NAME
@@ -36,8 +35,6 @@ because it did not fulfill the condition. The long this argument points to
 gets a zero stored if the condition instead was met. This can also return 1 if
 the server responded with a 304 HTTP status code, for example after sending a
 custom "If-Match-*" header.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -72,7 +69,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.19.4
 
 # RETURN VALUE
 

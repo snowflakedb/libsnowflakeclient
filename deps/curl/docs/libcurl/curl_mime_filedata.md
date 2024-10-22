@@ -13,7 +13,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.56.0
 ---
 
 # NAME
@@ -56,8 +55,6 @@ part is transferred using chunks by HTTP but is rejected by IMAP.
 Setting a part's contents multiple times is valid: only the value set by the
 last call is retained.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -83,7 +80,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 
 # RETURN VALUE
 

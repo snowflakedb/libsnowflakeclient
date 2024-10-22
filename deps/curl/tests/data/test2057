@@ -51,12 +51,12 @@ Nice auth sir!
 http
 </server>
 <name>
-HTTP Negotiate authentication (stub NTLM)
+HTTP Negotiate authentication (stub ntlm)
 </name>
 <features>
 GSS-API
 ld_preload
-!Debug
+!debug
 </features>
 <setenv>
 LD_PRELOAD=%PWD/libtest/.libs/libstubgss.so
