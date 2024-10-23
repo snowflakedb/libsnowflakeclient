@@ -14,6 +14,14 @@
 #include "snowflake/client.h"
 #include "result_set.h"
 
+#define VERIFY_COLUMN_INDEX(index, total)                             \
+  if (index < 1 || index > total)                                     \
+  {                                                                   \
+    setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,                           \
+      "Column index must be between 1 and snowflake_num_fields()");   \
+    return SF_STATUS_ERROR_OUT_OF_BOUNDS;                             \
+  }
+
 namespace Snowflake
 {
 namespace Client

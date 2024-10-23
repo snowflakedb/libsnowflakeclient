@@ -190,6 +190,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/logger/SFLogger.hpp
         cpp/logger/SecretDetector.cpp
         cpp/logger/SecretDetector.hpp
+        cpp/lib/ResultSetPutGet.cpp
+        cpp/lib/ResultSetPutGet.hpp
         include/snowflake/IFileTransferAgent.hpp
         include/snowflake/ISFLogger.hpp
         include/snowflake/IStatementPutGet.hpp
