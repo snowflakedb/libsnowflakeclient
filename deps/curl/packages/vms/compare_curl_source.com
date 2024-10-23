@@ -17,9 +17,9 @@ $!
 $! First the files in the original source directory which is assumed to be
 $! under source code control are compared with the copy directory.
 $!
-$! Only files present in the copy directory are listed.
+$! Then the files are are only in the copy directory are listed.
 $!
-$! Diagnostics are displayed about the files:
+$! The result will five diagnostics about of files:
 $!    1. Files that are not generation 1.
 $!    2. Files missing in the copy directory.
 $!    3. Files in the copy directory not in the source directory.

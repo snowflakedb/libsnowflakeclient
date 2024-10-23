@@ -6,13 +6,11 @@ Section: 3
 Source: libcurl
 Protocol:
   - TCP
-  - QUIC
 See-also:
   - CURLINFO_LOCAL_IP (3)
   - CURLINFO_PRIMARY_PORT (3)
   - curl_easy_getinfo (3)
   - curl_easy_setopt (3)
-Added-in: 7.21.0
 ---
 
 # NAME
@@ -31,11 +29,6 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_LOCAL_PORT, long *portp);
 
 Pass a pointer to a long to receive the local port number of the most recent
 connection done with this **curl** handle.
-
-If the connection was done using QUIC, the port number is a UDP port number,
-otherwise it is a TCP port number.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -64,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.21.0
 
 # RETURN VALUE
 

@@ -11,7 +11,6 @@ See-also:
   - curl_share_setopt (3)
 Protocol:
   - All
-Added-in: 7.10.3
 ---
 
 # NAME
@@ -49,8 +48,6 @@ sure that the callback uses a different lock for each kind of data.
 *clientp* is the private pointer you set with CURLSHOPT_USERDATA(3).
 This pointer is not used by libcurl itself.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10
 
 # RETURN VALUE
 

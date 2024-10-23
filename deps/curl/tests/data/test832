@@ -28,7 +28,7 @@ imap
 </server>
 <features>
 !SSPI
-Debug
+debug
 crypto
 </features>
 <name>

@@ -49,12 +49,12 @@ static int debug_callback(CURL *curl, curl_infotype info, char *msg,
   return 0;
 }
 
-static CURLcode do_one_request(CURLM *m, char *URL, char *resolve)
+static int do_one_request(CURLM *m, char *URL, char *resolve)
 {
   CURL *curls;
   struct curl_slist *resolve_list = NULL;
   int still_running;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   CURLMsg *msg;
   int msgs_left;
 
@@ -110,10 +110,10 @@ test_cleanup:
   return res;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLM *multi = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   char *address = libtest_arg2;
   char *port = libtest_arg3;
   char *path = URL;
@@ -136,9 +136,8 @@ CURLcode test(char *URL)
 
     /* second request must succeed like the first one */
     res = do_one_request(multi, target_url, dns_entry);
-    if(res != CURLE_OK) {
+    if(res)
       goto test_cleanup;
-    }
 
     if(i < count)
       sleep(DNS_TIMEOUT + 1);
@@ -149,5 +148,5 @@ test_cleanup:
   curl_multi_cleanup(multi);
   curl_global_cleanup();
 
-  return res;
+  return (int) res;
 }

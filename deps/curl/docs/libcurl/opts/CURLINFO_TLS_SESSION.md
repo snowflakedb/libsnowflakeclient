@@ -13,7 +13,6 @@ Protocol:
 TLS-backend:
   - OpenSSL
   - GnuTLS
-Added-in: 7.34.0
 ---
 
 # NAME
@@ -48,8 +47,6 @@ function *SSL_get_SSL_CTX(3)*. Therefore unless you need compatibility
 with older versions of libcurl use CURLINFO_TLS_SSL_PTR(3). Refer to
 that document for more information.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -69,11 +66,10 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.48.0
-
-# %AVAILABILITY%
+Added in 7.34.0. Deprecated since 7.48.0 and supported by OpenSSL and GnuTLS
+only up until this version was released.
 
 # RETURN VALUE
 

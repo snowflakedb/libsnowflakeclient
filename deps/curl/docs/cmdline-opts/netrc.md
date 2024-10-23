@@ -4,7 +4,7 @@ SPDX-License-Identifier: curl
 Long: netrc
 Short: n
 Help: Must read .netrc for username and password
-Category: auth
+Category: curl
 Added: 4.6
 Mutexed: netrc-file netrc-optional
 Multi: boolean

@@ -33,11 +33,11 @@
  * Get a single URL without select().
  */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *c = NULL;
   CURLM *m = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   int running;
 
   start_test_timing();

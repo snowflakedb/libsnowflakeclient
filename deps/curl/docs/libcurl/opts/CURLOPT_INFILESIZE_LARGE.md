@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_UPLOAD (3)
 Protocol:
   - All
-Added-in: 7.11.0
 ---
 
 # NAME
@@ -48,8 +47,6 @@ and sending a different amount may lead to errors.
 
 Unset
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -73,11 +70,9 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 SMTP support added in 7.23.0
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

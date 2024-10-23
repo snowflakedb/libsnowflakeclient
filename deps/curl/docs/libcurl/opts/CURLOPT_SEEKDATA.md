@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_STDERR (3)
 Protocol:
   - All
-Added-in: 7.18.0
 ---
 
 # NAME
@@ -34,8 +33,6 @@ CURLOPT_SEEKFUNCTION(3) option, this is the pointer you get as input.
 # DEFAULT
 
 If you do not set this, NULL is passed to the callback.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -64,6 +61,8 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.18.0
 
 # RETURN VALUE

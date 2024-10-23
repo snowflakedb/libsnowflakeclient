@@ -9,10 +9,8 @@ See-also:
   - CURLOPT_MAX_RECV_SPEED_LARGE (3)
   - CURLOPT_TCP_KEEPIDLE (3)
   - CURLOPT_TCP_KEEPINTVL (3)
-  - CURLOPT_TCP_KEEPCNT (3)
 Protocol:
-  - TCP
-Added-in: 7.25.0
+  - All
 ---
 
 # NAME
@@ -31,15 +29,13 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TCP_KEEPALIVE, long probe);
 
 Pass a long. If set to 1, TCP keepalive probes are used. The delay and
 frequency of these probes can be controlled by the
-CURLOPT_TCP_KEEPIDLE(3), CURLOPT_TCP_KEEPINTVL(3), and CURLOPT_TCP_KEEPCNT(3)
-options, provided the operating system supports them. Set to 0 (default behavior)
-to disable keepalive probes.
+CURLOPT_TCP_KEEPIDLE(3) and CURLOPT_TCP_KEEPINTVL(3) options,
+provided the operating system supports them. Set to 0 (default behavior) to
+disable keepalive probes
 
 # DEFAULT
 
 0
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -59,15 +55,14 @@ int main(void)
     /* interval time between keep-alive probes: 60 seconds */
     curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, 60L);
 
-    /* maximum number of keep-alive probes: 3 */
-    curl_easy_setopt(curl, CURLOPT_TCP_KEEPCNT, 3L);
-
     curl_easy_perform(curl);
   }
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.25.0
 
 # RETURN VALUE
 

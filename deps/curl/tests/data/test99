@@ -35,7 +35,7 @@ Funny-head: yesyes
 # Client-side
 <client>
 <features>
-Largefile
+large_file
 </features>
 <server>
 http

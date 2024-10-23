@@ -37,7 +37,7 @@ source file. The source file should be named `unitNNNN.c` where `NNNN` is a
 previously unused number.
 
 Add your test to `tests/unit/Makefile.inc` (if it is a unit test). Add your
-test data file name to `tests/data/Makefile.am`
+test data file name to `tests/data/Makefile.inc`
 
 You also need a separate file called `tests/data/testNNNN` (using the same
 number) that describes your test case. See the test1300 file for inspiration

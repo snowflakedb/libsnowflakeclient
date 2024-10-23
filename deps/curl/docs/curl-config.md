@@ -6,7 +6,6 @@ Section: 1
 Source: curl-config
 See-also:
   - curl (1)
-Added-in: 7.7.2
 ---
 
 # NAME

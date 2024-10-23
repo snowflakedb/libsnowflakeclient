@@ -4,7 +4,7 @@ SPDX-License-Identifier: curl
 Long: stderr
 Arg: <file>
 Help: Where to redirect stderr
-Category: verbose global
+Category: verbose
 Added: 6.2
 Multi: single
 Scope: global

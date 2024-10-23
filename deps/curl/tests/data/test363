@@ -43,7 +43,7 @@ contents
 # Client-side
 <client>
 <features>
-Debug
+debug
 proxy
 </features>
 <server>

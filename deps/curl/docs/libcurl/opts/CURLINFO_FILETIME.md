@@ -12,7 +12,6 @@ Protocol:
   - HTTP
   - FTP
   - SFTP
-Added-in: 7.5
 ---
 
 # NAME
@@ -35,13 +34,12 @@ in number of seconds since January 1 1970 in the GMT/UTC time zone. If you get
 hide it or the server does not support the command that tells document time
 etc) and the time of the document is unknown.
 
-You must ask libcurl to collect this information before the transfer is made,
-by using the CURLOPT_FILETIME(3) option or you unconditionally get a -1 back.
+You must tell libcurl to collect this information before the transfer is made,
+by using the CURLOPT_FILETIME(3) option to curl_easy_setopt(3) or
+you this unconditionally gets a -1 back.
 
-Consider CURLINFO_FILETIME_T(3) instead to be able to extract dates beyond the
-year 2038 on systems using 32-bit longs (Windows).
-
-# %PROTOCOLS%
+Consider using CURLINFO_FILETIME_T(3) to be able to extract dates beyond
+the year 2038 on systems using 32 bit longs (Windows).
 
 # EXAMPLE
 
@@ -69,7 +67,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.5
 
 # RETURN VALUE
 

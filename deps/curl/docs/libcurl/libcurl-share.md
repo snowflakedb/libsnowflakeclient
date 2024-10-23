@@ -13,7 +13,6 @@ See-also:
   - libcurl-multi (3)
 Protocol:
   - All
-Added-in: n/a
 ---
 
 # NAME

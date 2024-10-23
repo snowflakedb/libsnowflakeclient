@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/* somewhat unix-specific */
+#include <sys/time.h>
+#include <unistd.h>
+
 /* curl stuff */
 #include <curl/curl.h>
 

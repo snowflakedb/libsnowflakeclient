@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.6.1
 ---
 
 # NAME
@@ -33,8 +32,6 @@ Pass a pointer to a double to receive the specified size of the upload. Since
 
 CURLINFO_CONTENT_LENGTH_UPLOAD_T(3) is a newer replacement that returns a
 more sensible variable type.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -61,11 +58,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.55.0.
-
-# %AVAILABILITY%
+Added in 7.6.1. Deprecated since 7.55.0.
 
 # RETURN VALUE
 

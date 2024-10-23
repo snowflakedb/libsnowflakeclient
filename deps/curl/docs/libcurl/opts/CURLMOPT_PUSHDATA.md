@@ -11,7 +11,6 @@ See-also:
   - RFC 7540
 Protocol:
   - HTTP
-Added-in: 7.44.0
 ---
 
 # NAME
@@ -35,8 +34,6 @@ libcurl itself, only passed on to the callback function.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -79,7 +76,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.44.0
 
 # RETURN VALUE
 

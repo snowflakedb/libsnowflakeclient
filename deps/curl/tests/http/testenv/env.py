@@ -27,7 +27,6 @@
 import logging
 import os
 import re
-import shutil
 import socket
 import subprocess
 import sys
@@ -79,14 +78,11 @@ class EnvConfig:
             'libs': [],
             'lib_versions': [],
         }
-        self.curl_is_debug = False
         self.curl_protos = []
         p = subprocess.run(args=[self.curl, '-V'],
                            capture_output=True, text=True)
         if p.returncode != 0:
             assert False, f'{self.curl} -V failed with exit code: {p.returncode}'
-        if p.stderr.startswith('WARNING:'):
-            self.curl_is_debug = True
         for l in p.stdout.splitlines(keepends=False):
             if l.startswith('curl '):
                 m = re.match(r'^curl (?P<version>\S+) (?P<os>\S+) (?P<libs>.*)$', l)
@@ -110,8 +106,6 @@ class EnvConfig:
                 ]
 
         self.ports = alloc_ports(port_specs={
-            'ftp': socket.SOCK_STREAM,
-            'ftps': socket.SOCK_STREAM,
             'http': socket.SOCK_STREAM,
             'https': socket.SOCK_STREAM,
             'proxy': socket.SOCK_STREAM,
@@ -135,14 +129,11 @@ class EnvConfig:
         self.htdocs_dir = os.path.join(self.gen_dir, 'htdocs')
         self.tld = 'http.curl.se'
         self.domain1 = f"one.{self.tld}"
-        self.domain1brotli = f"brotli.one.{self.tld}"
         self.domain2 = f"two.{self.tld}"
-        self.ftp_domain = f"ftp.{self.tld}"
         self.proxy_domain = f"proxy.{self.tld}"
         self.cert_specs = [
-            CertificateSpec(domains=[self.domain1, self.domain1brotli, 'localhost', '127.0.0.1'], key_type='rsa2048'),
+            CertificateSpec(domains=[self.domain1, 'localhost'], key_type='rsa2048'),
             CertificateSpec(domains=[self.domain2], key_type='rsa2048'),
-            CertificateSpec(domains=[self.ftp_domain], key_type='rsa2048'),
             CertificateSpec(domains=[self.proxy_domain, '127.0.0.1'], key_type='rsa2048'),
             CertificateSpec(name="clientsX", sub_specs=[
                CertificateSpec(name="user1", client=True),
@@ -176,35 +167,9 @@ class EnvConfig:
                 if p.returncode != 0:
                     # not a working caddy
                     self.caddy = None
-                m = re.match(r'v?(\d+\.\d+\.\d+).*', p.stdout)
-                if m:
-                    self._caddy_version = m.group(1)
-                else:
-                    raise f'Unable to determine cadd version from: {p.stdout}'
+                self._caddy_version = re.sub(r' .*', '', p.stdout.strip())
             except:
                 self.caddy = None
-
-        self.vsftpd = self.config['vsftpd']['vsftpd']
-        self._vsftpd_version = None
-        if self.vsftpd is not None:
-            try:
-                p = subprocess.run(args=[self.vsftpd, '-v'],
-                                   capture_output=True, text=True)
-                if p.returncode != 0:
-                    # not a working vsftpd
-                    self.vsftpd = None
-                m = re.match(r'vsftpd: version (\d+\.\d+\.\d+)', p.stderr)
-                if m:
-                    self._vsftpd_version = m.group(1)
-                elif len(p.stderr) == 0:
-                    # vsftp does not use stdout or stderr for printing its version... -.-
-                    self._vsftpd_version = 'unknown'
-                else:
-                    raise Exception(f'Unable to determine VsFTPD version from: {p.stderr}')
-            except Exception as e:
-                self.vsftpd = None
-
-        self._tcpdump = shutil.which('tcpdump')
 
     @property
     def httpd_version(self):
@@ -228,12 +193,6 @@ class EnvConfig:
         if self.httpd_version is None:
             return False
         hv = self.versiontuple(self.httpd_version)
-        return hv >= self.versiontuple(minv)
-
-    def caddy_is_at_least(self, minv):
-        if self.caddy_version is None:
-            return False
-        hv = self.versiontuple(self.caddy_version)
         return hv >= self.versiontuple(minv)
 
     def is_complete(self) -> bool:
@@ -262,14 +221,6 @@ class EnvConfig:
     @property
     def caddy_version(self):
         return self._caddy_version
-
-    @property
-    def vsftpd_version(self):
-        return self._vsftpd_version
-
-    @property
-    def tcpdmp(self) -> Optional[str]:
-        return self._tcpdump
 
 
 class Env:
@@ -309,12 +260,6 @@ class Env:
         return libname.lower() in Env.CONFIG.curl_props['libs']
 
     @staticmethod
-    def curl_uses_ossl_quic() -> bool:
-        if Env.have_h3_curl():
-            return not Env.curl_uses_lib('ngtcp2') and Env.curl_uses_lib('nghttp3')
-        return False
-
-    @staticmethod
     def curl_has_feature(feature: str) -> bool:
         return feature.lower() in Env.CONFIG.curl_props['features']
 
@@ -351,10 +296,6 @@ class Env:
         return Env.CONFIG.curl_props['version']
 
     @staticmethod
-    def curl_is_debug() -> bool:
-        return Env.CONFIG.curl_is_debug
-
-    @staticmethod
     def have_h3() -> bool:
         return Env.have_h3_curl() and Env.have_h3_server()
 
@@ -371,28 +312,12 @@ class Env:
         return Env.CONFIG.caddy_version
 
     @staticmethod
-    def caddy_is_at_least(minv) -> bool:
-        return Env.CONFIG.caddy_is_at_least(minv)
-
-    @staticmethod
     def httpd_is_at_least(minv) -> bool:
         return Env.CONFIG.httpd_is_at_least(minv)
 
     @staticmethod
     def has_caddy() -> bool:
         return Env.CONFIG.caddy is not None
-
-    @staticmethod
-    def has_vsftpd() -> bool:
-        return Env.CONFIG.vsftpd is not None
-
-    @staticmethod
-    def vsftpd_version() -> str:
-        return Env.CONFIG.vsftpd_version
-
-    @staticmethod
-    def tcpdump() -> Optional[str]:
-        return Env.CONFIG.tcpdmp
 
     def __init__(self, pytestconfig=None):
         self._verbose = pytestconfig.option.verbose \
@@ -452,16 +377,8 @@ class Env:
         return self.CONFIG.domain1
 
     @property
-    def domain1brotli(self) -> str:
-        return self.CONFIG.domain1brotli
-
-    @property
     def domain2(self) -> str:
         return self.CONFIG.domain2
-
-    @property
-    def ftp_domain(self) -> str:
-        return self.CONFIG.ftp_domain
 
     @property
     def proxy_domain(self) -> str:
@@ -488,14 +405,6 @@ class Env:
         return self.CONFIG.ports['proxys']
 
     @property
-    def ftp_port(self) -> int:
-        return self.CONFIG.ports['ftp']
-
-    @property
-    def ftps_port(self) -> int:
-        return self.CONFIG.ports['ftps']
-
-    @property
     def h2proxys_port(self) -> int:
         return self.CONFIG.ports['h2proxys']
 
@@ -514,10 +423,6 @@ class Env:
     @property
     def caddy_http_port(self) -> int:
         return self.CONFIG.ports['caddy']
-
-    @property
-    def vsftpd(self) -> str:
-        return self.CONFIG.vsftpd
 
     @property
     def ws_port(self) -> int:
@@ -552,32 +457,26 @@ class Env:
     def ci_run(self) -> bool:
         return "CURL_CI" in os.environ
 
-    def port_for(self, alpn_proto: Optional[str] = None):
+    def authority_for(self, domain: str, alpn_proto: Optional[str] = None):
         if alpn_proto is None or \
                 alpn_proto in ['h2', 'http/1.1', 'http/1.0', 'http/0.9']:
-            return self.https_port
+            return f'{domain}:{self.https_port}'
         if alpn_proto in ['h3']:
-            return self.h3_port
-        return self.http_port
+            return f'{domain}:{self.h3_port}'
+        return f'{domain}:{self.http_port}'
 
-    def authority_for(self, domain: str, alpn_proto: Optional[str] = None):
-        return f'{domain}:{self.port_for(alpn_proto=alpn_proto)}'
-
-    def make_data_file(self, indir: str, fname: str, fsize: int,
-                       line_length: int = 1024) -> str:
-        if line_length < 11:
-            raise 'line_length less than 11 not supported'
+    def make_data_file(self, indir: str, fname: str, fsize: int) -> str:
         fpath = os.path.join(indir, fname)
         s10 = "0123456789"
-        s = round((line_length / 10) + 1) * s10
-        s = s[0:line_length-11]
+        s = (101 * s10) + s10[0:3]
         with open(fpath, 'w') as fd:
-            for i in range(int(fsize / line_length)):
+            for i in range(int(fsize / 1024)):
                 fd.write(f"{i:09d}-{s}\n")
-            remain = int(fsize % line_length)
+            remain = int(fsize % 1024)
             if remain != 0:
-                i = int(fsize / line_length) + 1
-                fd.write(f"{i:09d}-{s}"[0:remain-1] + "\n")
+                i = int(fsize / 1024) + 1
+                s = f"{i:09d}-{s}\n"
+                fd.write(s[0:remain])
         return fpath
 
     def make_clients(self):

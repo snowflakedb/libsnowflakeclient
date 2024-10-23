@@ -12,7 +12,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.56.0
 ---
 
 # NAME
@@ -54,8 +53,6 @@ extension, or application/octet-stream by default.
 
 - text/plain in other cases.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -84,7 +81,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 
 # RETURN VALUE
 

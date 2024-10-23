@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_FTP_USE_EPSV (3)
 Protocol:
   - FTP
-Added-in: 7.20.0
 ---
 
 # NAME
@@ -35,8 +34,6 @@ no effect when using the active FTP transfers mode.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -58,7 +55,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.20.0
 
 # RETURN VALUE
 

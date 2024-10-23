@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.55.0
 ---
 
 # NAME
@@ -30,8 +29,6 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_SPEED_UPLOAD_T,
 
 Pass a pointer to a *curl_off_t* to receive the average upload speed that
 curl measured for the complete upload. Measured in bytes/second.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -57,7 +54,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.55.0
 
 # RETURN VALUE
 

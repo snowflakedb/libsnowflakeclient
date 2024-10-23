@@ -145,15 +145,6 @@ static int rlimit(int keep_open)
   rlim2str(strbuff, sizeof(strbuff), rl.rlim_max);
   fprintf(stderr, "initial hard limit: %s\n", strbuff);
 
-  /* If the OS allows a HUGE number of open files, we do not run.
-   * Modern debian sid reports a limit of 134217724 and this tests
-   * takes minutes. */
-#define LIMIT_CAP     (256*1024)
-  if(rl.rlim_cur > LIMIT_CAP) {
-    fprintf(stderr, "soft limit above %ld, not running\n", (long)LIMIT_CAP);
-    return -2;
-  }
-
   /*
    * if soft limit and hard limit are different we ask the
    * system to raise soft limit all the way up to the hard
@@ -458,7 +449,7 @@ static int rlimit(int keep_open)
   return 0;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -467,9 +458,9 @@ CURLcode test(char *URL)
     /* used by the test script to ask if we can run this test or not */
     if(rlimit(FALSE)) {
       fprintf(stdout, "rlimit problem: %s\n", msgbuff);
-      return (CURLcode)1;
+      return 1;
     }
-    return CURLE_OK; /* sure, run this! */
+    return 0; /* sure, run this! */
   }
 
   if(rlimit(TRUE)) {
@@ -505,16 +496,16 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }
 
 #else /* defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT) */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   (void)URL;
   printf("system lacks necessary system function(s)");
-  return (CURLcode)1; /* skip test */
+  return 1; /* skip test */
 }
 
 #endif /* defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT) */

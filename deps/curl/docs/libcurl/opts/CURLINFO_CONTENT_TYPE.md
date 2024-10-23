@@ -11,7 +11,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - HTTP
-Added-in: 7.9.4
 ---
 
 # NAME
@@ -40,8 +39,6 @@ corresponding CURL handle.
 The modern way to get this header from a response is to instead use the
 curl_easy_header(3) function.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.9.4
 
 # RETURN VALUE
 

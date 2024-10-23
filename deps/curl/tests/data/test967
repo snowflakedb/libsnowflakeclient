@@ -25,7 +25,7 @@ CAPA SMTPUTF8
 smtp
 </server>
 <features>
-IDN
+idn
 !win32
 </features>
 <setenv>

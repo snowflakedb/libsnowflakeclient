@@ -27,10 +27,10 @@
 
 #include <curl/multi.h>
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLM *handle;
-  CURLcode res = CURLE_OK;
+  int res = CURLE_OK;
   static const char * const bl_servers[] =
      {"Microsoft-IIS/6.0", "nginx/0.8.54", NULL};
   static const char * const bl_sites[] =
@@ -44,5 +44,5 @@ CURLcode test(char *URL)
   curl_multi_setopt(handle, CURLMOPT_PIPELINING_SITE_BL, bl_sites);
   curl_multi_cleanup(handle);
   curl_global_cleanup();
-  return CURLE_OK;
+  return 0;
 }

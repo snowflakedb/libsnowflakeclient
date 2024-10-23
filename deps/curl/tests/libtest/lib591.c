@@ -35,11 +35,11 @@
 
 #define TEST_HANG_TIMEOUT 60 * 1000
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *easy = NULL;
   CURLM *multi = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   int running;
   int msgs_left;
   CURLMsg *msg;

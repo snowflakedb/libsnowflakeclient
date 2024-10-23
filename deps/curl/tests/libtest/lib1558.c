@@ -27,7 +27,7 @@
 #include "warnless.h"
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res = CURLE_OK;
   CURL *curl = NULL;
@@ -58,7 +58,7 @@ CURLcode test(char *URL)
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return CURLE_OK;
+  return 0;
 
 test_cleanup:
 

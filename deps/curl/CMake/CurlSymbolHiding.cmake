@@ -23,58 +23,62 @@
 ###########################################################################
 include(CheckCSourceCompiles)
 
-option(CURL_HIDDEN_SYMBOLS "Hide libcurl internal symbols (=hide all symbols that are not officially external)" ON)
+option(CURL_HIDDEN_SYMBOLS "Set to ON to hide libcurl internal symbols (=hide all symbols that aren't officially external)." ON)
 mark_as_advanced(CURL_HIDDEN_SYMBOLS)
 
-if(WIN32 AND (ENABLE_DEBUG OR ENABLE_CURLDEBUG))
-  # We need to export internal debug functions,
-  # e.g. curl_easy_perform_ev() or curl_dbg_*(),
-  # so disable symbol hiding for debug builds and for memory tracking.
+if(WIN32 AND ENABLE_CURLDEBUG)
+  # We need to export internal debug functions (e.g. curl_dbg_*), so disable
+  # symbol hiding for debug builds.
   set(CURL_HIDDEN_SYMBOLS OFF)
 endif()
 
 if(CURL_HIDDEN_SYMBOLS)
-  set(_supports_symbol_hiding FALSE)
+  set(SUPPORTS_SYMBOL_HIDING FALSE)
 
   if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
-    set(_supports_symbol_hiding TRUE)
-    set(_symbol_extern "__attribute__ ((__visibility__ (\"default\")))")
-    set(_cflag_symbols_hide "-fvisibility=hidden")
+    set(SUPPORTS_SYMBOL_HIDING TRUE)
+    set(_SYMBOL_EXTERN "__attribute__ ((__visibility__ (\"default\")))")
+    set(_CFLAG_SYMBOLS_HIDE "-fvisibility=hidden")
   elseif(CMAKE_COMPILER_IS_GNUCC)
     if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.4)
-      # Note: This is considered buggy prior to 4.0 but the autotools do not care, so let us ignore that fact
-      set(_supports_symbol_hiding TRUE)
-      set(_symbol_extern "__attribute__ ((__visibility__ (\"default\")))")
-      set(_cflag_symbols_hide "-fvisibility=hidden")
+      # note: this is considered buggy prior to 4.0 but the autotools don't care, so let's ignore that fact
+      set(SUPPORTS_SYMBOL_HIDING TRUE)
+      set(_SYMBOL_EXTERN "__attribute__ ((__visibility__ (\"default\")))")
+      set(_CFLAG_SYMBOLS_HIDE "-fvisibility=hidden")
     endif()
   elseif(CMAKE_C_COMPILER_ID MATCHES "SunPro" AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 8.0)
-    set(_supports_symbol_hiding TRUE)
-    set(_symbol_extern "__global")
-    set(_cflag_symbols_hide "-xldscope=hidden")
+    set(SUPPORTS_SYMBOL_HIDING TRUE)
+    set(_SYMBOL_EXTERN "__global")
+    set(_CFLAG_SYMBOLS_HIDE "-xldscope=hidden")
   elseif(CMAKE_C_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 9.0)
-    # Note: This should probably just check for version 9.1.045 but I am not 100% sure
-    #       so let us do it the same way autotools do.
-    set(_supports_symbol_hiding TRUE)
-    set(_symbol_extern "__attribute__ ((__visibility__ (\"default\")))")
-    set(_cflag_symbols_hide "-fvisibility=hidden")
+    # note: this should probably just check for version 9.1.045 but I'm not 100% sure
+    #       so let's do it the same way autotools do.
+    set(SUPPORTS_SYMBOL_HIDING TRUE)
+    set(_SYMBOL_EXTERN "__attribute__ ((__visibility__ (\"default\")))")
+    set(_CFLAG_SYMBOLS_HIDE "-fvisibility=hidden")
     check_c_source_compiles("#include <stdio.h>
-      int main(void) { printf(\"icc fvisibility bug test\"); return 0; }" _no_bug)
+        int main (void) { printf(\"icc fvisibility bug test\"); return 0; }" _no_bug)
     if(NOT _no_bug)
-      set(_supports_symbol_hiding FALSE)
-      set(_symbol_extern "")
-      set(_cflag_symbols_hide "")
+      set(SUPPORTS_SYMBOL_HIDING FALSE)
+      set(_SYMBOL_EXTERN "")
+      set(_CFLAG_SYMBOLS_HIDE "")
     endif()
   elseif(MSVC)
-    set(_supports_symbol_hiding TRUE)
+    set(SUPPORTS_SYMBOL_HIDING TRUE)
   endif()
 
-  set(CURL_HIDES_PRIVATE_SYMBOLS ${_supports_symbol_hiding})
-else()
-  if(MSVC)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  set(HIDES_CURL_PRIVATE_SYMBOLS ${SUPPORTS_SYMBOL_HIDING})
+elseif(MSVC)
+  if(NOT CMAKE_VERSION VERSION_LESS 3.7)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE) #present since 3.4.3 but broken
+    set(HIDES_CURL_PRIVATE_SYMBOLS FALSE)
+  else()
+    message(WARNING "Hiding private symbols regardless CURL_HIDDEN_SYMBOLS being disabled.")
+    set(HIDES_CURL_PRIVATE_SYMBOLS TRUE)
   endif()
-  set(CURL_HIDES_PRIVATE_SYMBOLS FALSE)
+else()
+  set(HIDES_CURL_PRIVATE_SYMBOLS FALSE)
 endif()
 
-set(CURL_CFLAG_SYMBOLS_HIDE ${_cflag_symbols_hide})
-set(CURL_EXTERN_SYMBOL ${_symbol_extern})
+set(CURL_CFLAG_SYMBOLS_HIDE ${_CFLAG_SYMBOLS_HIDE})
+set(CURL_EXTERN_SYMBOL ${_SYMBOL_EXTERN})

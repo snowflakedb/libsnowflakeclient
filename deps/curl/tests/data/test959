@@ -20,7 +20,7 @@ REPLY MAIL 501 not fine enough
 smtp
 </server>
 <features>
-!IDN
+!idn
 !win32
 </features>
 <setenv>

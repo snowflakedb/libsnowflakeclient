@@ -20,7 +20,7 @@ non-existing host
 <client>
 <features>
 http
-IPv6
+ipv6
 </features>
 <server>
 none

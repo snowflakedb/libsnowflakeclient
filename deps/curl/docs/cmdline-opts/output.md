@@ -5,9 +5,9 @@ Long: output
 Arg: <file>
 Short: o
 Help: Write to file instead of stdout
-Category: important output
+Category: important curl
 Added: 4.0
-Multi: per-URL
+Multi: append
 See-also:
   - remote-name
   - remote-name-all

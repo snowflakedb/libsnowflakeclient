@@ -9,7 +9,6 @@ See-also:
   - unix (7)
 Protocol:
   - All
-Added-in: 7.53.0
 ---
 
 # NAME
@@ -43,9 +42,7 @@ share the same storage and therefore only one of them can be set per handle.
 
 # DEFAULT
 
-NULL
-
-# %PROTOCOLS%
+Default is NULL.
 
 # EXAMPLE
 
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.53.0.
 
 # RETURN VALUE
 

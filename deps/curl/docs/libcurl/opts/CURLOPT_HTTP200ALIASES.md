@@ -9,7 +9,6 @@ Protocol:
 See-also:
   - CURLOPT_HTTP09_ALLOWED (3)
   - CURLOPT_HTTP_VERSION (3)
-Added-in: 7.10.3
 ---
 
 # NAME
@@ -41,17 +40,9 @@ curl_slist_free_all(3) to clean up an entire list.
 The alias itself is not parsed for any version strings. The protocol is
 assumed to match HTTP 1.0 when an alias match.
 
-Using this option multiple times makes the last set list override the previous
-ones. Set it to NULL to disable its use again.
-
-libcurl does not copy the list, it needs to be kept around until after the
-transfer has completed.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -73,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10.3
 
 # RETURN VALUE
 

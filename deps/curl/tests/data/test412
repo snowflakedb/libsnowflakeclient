@@ -28,7 +28,7 @@ Funny-head: yesyes
 <client>
 <features>
 alt-svc
-Debug
+debug
 </features>
 <server>
 http

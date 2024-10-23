@@ -15,7 +15,6 @@ TLS-backend:
   - GnuTLS
   - mbedTLS
   - OpenSSL
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -55,14 +54,9 @@ the CRL does not trigger this specific error.
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -81,7 +75,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.52.0
 
 # RETURN VALUE
 

@@ -13,7 +13,6 @@ Protocol:
   - FTP
   - SMTP
   - LDAP
-Added-in: 7.10.8
 ---
 
 # NAME
@@ -38,8 +37,6 @@ no server response code has been received.
 Note that a proxy's CONNECT response should be read with
 CURLINFO_HTTP_CONNECTCODE(3) and not this.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -59,12 +56,10 @@ int main(void)
 }
 ~~~
 
-# NOTES
+# AVAILABILITY
 
-The former name, CURLINFO_HTTP_CODE, was added in 7.4.1. Support for SMTP
-responses added in 7.25.0, for OpenLDAP in 7.81.0.
-
-# %AVAILABILITY%
+Added in 7.10.8. CURLINFO_HTTP_CODE was added in 7.4.1.
+Support for SMTP responses added in 7.25.0, for OpenLDAP in 7.81.0.
 
 # RETURN VALUE
 

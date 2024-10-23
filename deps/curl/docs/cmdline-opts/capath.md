@@ -10,7 +10,6 @@ Added: 7.9.8
 Multi: single
 See-also:
   - cacert
-  - dump-ca-embed
   - insecure
 Example:
   - --capath /local/directory $URL

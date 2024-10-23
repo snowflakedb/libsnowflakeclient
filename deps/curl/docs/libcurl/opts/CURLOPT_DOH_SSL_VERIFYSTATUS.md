@@ -13,7 +13,6 @@ Protocol:
 TLS-backend:
   - OpenSSL
   - GnuTLS
-Added-in: 7.76.0
 ---
 
 # NAME
@@ -47,8 +46,6 @@ the verification fails.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -69,7 +66,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.76.0.
 
 # RETURN VALUE
 

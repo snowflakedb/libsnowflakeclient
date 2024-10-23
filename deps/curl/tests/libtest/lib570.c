@@ -30,9 +30,9 @@ static char *suburl(const char *base, int i)
   return curl_maprintf("%s%.4d", base, i);
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res;
+  int res;
   CURL *curl;
   int request = 1;
   char *stream_uri = NULL;
@@ -104,11 +104,11 @@ CURLcode test(char *URL)
 
   res = curl_easy_perform(curl);
   if(res == CURLE_RTSP_SESSION_ERROR) {
-    res = CURLE_OK;
+    res = 0;
   }
   else {
     fprintf(stderr, "Failed to detect a Session ID mismatch");
-    res = (CURLcode)1;
+    res = 1;
   }
 
 test_cleanup:

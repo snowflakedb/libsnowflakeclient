@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_OPENSOCKETFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.21.7
 ---
 
 # NAME
@@ -33,9 +32,7 @@ CURLOPT_CLOSESOCKETFUNCTION(3).
 
 # DEFAULT
 
-NULL
-
-# %PROTOCOLS%
+The default value of this parameter is NULL.
 
 # EXAMPLE
 
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.21.7
 
 # RETURN VALUE
 

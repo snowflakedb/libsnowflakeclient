@@ -15,7 +15,6 @@ TLS-backend:
   - OpenSSL
   - Schannel
   - Secure Transport
-Added-in: 7.71.0
 ---
 
 # NAME
@@ -50,8 +49,6 @@ expects a filename as input.
 
 NULL
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -79,7 +76,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.71.0.
 
 # RETURN VALUE
 

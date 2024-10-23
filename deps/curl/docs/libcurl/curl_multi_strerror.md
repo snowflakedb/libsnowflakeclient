@@ -11,7 +11,6 @@ See-also:
   - libcurl-errors (3)
 Protocol:
   - All
-Added-in: 7.12.0
 ---
 
 # NAME
@@ -31,8 +30,6 @@ const char *curl_multi_strerror(CURLMcode errornum);
 This function returns a string describing the *CURLMcode* error code
 passed in the argument *errornum*.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -47,7 +44,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+This function was added in libcurl 7.12.0
 
 # RETURN VALUE
 

@@ -50,7 +50,6 @@ my @ignore_line;
 my %warnings_extended = (
     'COPYRIGHTYEAR'    => 'copyright year incorrect',
     'STRERROR',        => 'strerror() detected',
-    'STRNCPY',         => 'strncpy() detected',
     'STDERR',          => 'stderr detected',
     );
 
@@ -116,20 +115,9 @@ sub readskiplist {
 # and since that's already handled via !checksrc! commands there is probably
 # little use to add it.
 sub readlocalfile {
-    my ($file) = @_;
     my $i = 0;
-    my $rcfile;
 
-    if(($dir eq ".") && $file =~ /\//) {
-        my $ldir;
-        if($file =~ /(.*)\//) {
-            $ldir = $1;
-            open($rcfile, "<", "$dir/$ldir/.checksrc") or return;
-        }
-    }
-    else {
-        open($rcfile, "<", "$dir/.checksrc") or return;
-    }
+    open(my $rcfile, "<", "$dir/.checksrc") or return;
 
     while(<$rcfile>) {
         $windows_os ? $_ =~ s/\r?\n$// : chomp;
@@ -276,7 +264,7 @@ if(!$file) {
 }
 
 readskiplist();
-readlocalfile($file);
+readlocalfile();
 
 do {
     if("$wlist" !~ / $file /) {
@@ -732,8 +720,7 @@ sub scanfile {
                     strtok|
                     v?sprintf|
                     (str|_mbs|_tcs|_wcs)n?cat|
-                    LoadLibrary(Ex)?(A|W)?|
-                    _?w?access)
+                    LoadLibrary(Ex)?(A|W)?)
                    \s*\(
                  /x) {
             checkwarn("BANNEDFUNC",
@@ -747,18 +734,6 @@ sub scanfile {
                 if($1 !~ /^ *\#/) {
                     # skip preprocessor lines
                     checkwarn("STRERROR",
-                              $line, length($1), $file, $ol,
-                              "use of $2 is banned");
-                }
-            }
-        }
-        if($warnings{"STRNCPY"}) {
-            # scan for use of banned strncpy. This is not a BANNEDFUNC to
-            # allow for individual enable/disable of this warning.
-            if($l =~ /^(.*\W)(strncpy)\s*\(/x) {
-                if($1 !~ /^ *\#/) {
-                    # skip preprocessor lines
-                    checkwarn("STRNCPY",
                               $line, length($1), $file, $ol,
                               "use of $2 is banned");
                 }
@@ -948,7 +923,7 @@ sub scanfile {
         checkwarn("COPYRIGHT", 1, 0, $file, "", "Missing copyright statement", 1);
     }
 
-    # COPYRIGHTYEAR is an extended warning so we must first see if it has been
+    # COPYRIGHTYEAR is a extended warning so we must first see if it has been
     # enabled in .checksrc
     if(defined($warnings{"COPYRIGHTYEAR"})) {
         # The check for updated copyrightyear is overly complicated in order to

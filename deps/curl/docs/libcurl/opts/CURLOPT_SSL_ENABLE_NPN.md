@@ -11,7 +11,6 @@ Protocol:
   - TLS
 TLS-backend:
   - All
-Added-in: 7.36.0
 ---
 
 # NAME
@@ -28,7 +27,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_ENABLE_NPN, long npn);
 
 # DESCRIPTION
 
-Deprecated since 7.86.0. Setting this option has no function.
+Deprecated in 7.86.0. Setting this option has no function.
 
 Pass a long as parameter, 0 or 1 where 1 is for enable and 0 for disable. This
 option enables/disables NPN in the SSL handshake (if the SSL backend libcurl
@@ -37,8 +36,6 @@ is built to use supports it), which can be used to negotiate http2.
 # DEFAULT
 
 1, enabled
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -56,11 +53,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.86.0.
-
-# %AVAILABILITY%
+Added in 7.36.0. Deprecated in 7.86.0.
 
 # RETURN VALUE
 

@@ -10,7 +10,6 @@ See-also:
 Protocol:
   - SFTP
   - SCP
-Added-in: 7.19.6
 ---
 
 # NAME
@@ -33,8 +32,6 @@ callback set with CURLOPT_SSH_KEYFUNCTION(3).
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -68,7 +65,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.19.6
 
 # RETURN VALUE
 

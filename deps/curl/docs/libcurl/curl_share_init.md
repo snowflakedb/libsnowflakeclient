@@ -9,12 +9,11 @@ See-also:
   - curl_share_setopt (3)
 Protocol:
   - All
-Added-in: 7.10
 ---
 
 # NAME
 
-curl_share_init - create a share object
+curl_share_init - Create a shared object
 
 # SYNOPSIS
 
@@ -36,8 +35,6 @@ This *share handle* is what you pass to curl using the
 CURLOPT_SHARE(3) option with curl_easy_setopt(3), to make that
 specific curl handle use the data in this share.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -51,7 +48,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10
 
 # RETURN VALUE
 

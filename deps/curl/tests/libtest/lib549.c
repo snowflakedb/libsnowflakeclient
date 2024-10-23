@@ -30,7 +30,7 @@
 
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -52,7 +52,7 @@ CURLcode test(char *URL)
   test_setopt(curl, CURLOPT_PROXY_TRANSFER_MODE, 1L);
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
   if(libtest_arg3) {
-    /* enable ASCII/text mode */
+    /* enable ascii/text mode */
     test_setopt(curl, CURLOPT_TRANSFERTEXT, 1L);
   }
 
@@ -63,5 +63,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

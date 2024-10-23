@@ -12,7 +12,6 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
-Added-in: 7.12.3
 ---
 
 # NAME
@@ -37,8 +36,6 @@ available at runtime. **NOTE:** you must call curl_slist_free_all(3)
 on the list pointer once you are done with it, as libcurl does not free this
 data for you.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -59,7 +56,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.12.3. Available in OpenSSL builds with "engine" support.
 
 # RETURN VALUE
 

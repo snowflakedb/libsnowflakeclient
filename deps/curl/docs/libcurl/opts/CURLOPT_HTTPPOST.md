@@ -13,7 +13,6 @@ See-also:
   - curl_formadd (3)
   - curl_formfree (3)
   - curl_mime_init (3)
-Added-in: 7.1
 ---
 
 # NAME
@@ -49,8 +48,6 @@ CURLOPT_NOBODY(3) to 0.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -92,11 +89,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated in 7.56.0.
-
-# %AVAILABILITY%
+As long as HTTP is enabled. Deprecated in 7.56.0.
 
 # RETURN VALUE
 

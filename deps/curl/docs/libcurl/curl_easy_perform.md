@@ -12,12 +12,11 @@ See-also:
   - libcurl-errors (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
 
-curl_easy_perform - perform a blocking network transfer
+curl_easy_perform - perform a blocking file transfer
 
 # SYNOPSIS
 
@@ -59,8 +58,6 @@ CURLOPT_POSTFIELDS(3).
 While the **easy_handle** is added to a multi handle, it cannot be used by
 curl_easy_perform(3).
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -76,7 +73,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

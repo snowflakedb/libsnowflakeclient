@@ -27,7 +27,7 @@
 
 /* Test CURLINFO_RESPONSE_CODE */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl;
   long httpcode;
@@ -78,5 +78,5 @@ CURLcode test(char *URL)
 test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
-  return res;
+  return (int)res;
 }
