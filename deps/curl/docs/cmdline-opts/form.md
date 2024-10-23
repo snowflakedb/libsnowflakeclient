@@ -7,7 +7,7 @@ Arg: <name=content>
 Help: Specify multipart MIME data
 Protocols: HTTP SMTP IMAP
 Mutexed: data head upload-file
-Category: http upload post imap smtp
+Category: http upload
 Added: 5.0
 Multi: append
 See-also:
@@ -72,13 +72,11 @@ filename=, like this:
 
 If filename/path contains ',' or ';', it must be quoted by double-quotes like:
 
-    curl -F "file=@\"local,file\";filename=\"name;in;post\"" \
-        https://example.com
+    curl -F "file=@\"local,file\";filename=\"name;in;post\"" example.com
 
 or
 
-    curl -F 'file=@"local,file";filename="name;in;post"' \
-        https://example.com
+    curl -F 'file=@"local,file";filename="name;in;post"' example.com
 
 Note that if a filename/path is quoted by double-quotes, any double-quote
 or backslash within the filename must be escaped by backslash.
@@ -86,8 +84,7 @@ or backslash within the filename must be escaped by backslash.
 Quoting must also be applied to non-file data if it contains semicolons,
 leading/trailing spaces or leading double quotes:
 
-    curl -F 'colors="red; green; blue";type=text/x-myapp' \
-       https://example.com
+    curl -F 'colors="red; green; blue";type=text/x-myapp' example.com
 
 You can add custom headers to the field by setting headers=, like
 

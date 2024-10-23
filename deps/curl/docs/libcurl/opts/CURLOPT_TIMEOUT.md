@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_TIMEOUT_MS (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -55,14 +54,12 @@ With CURLOPT_CONNECTTIMEOUT(3) set to 4 and CURLOPT_TIMEOUT(3) set
 to 2, the operation can never last longer than 2 seconds.
 
 This option may cause libcurl to use the SIGALRM signal to timeout system
-calls on builds not using asynch DNS. In Unix-like systems, this might cause
+calls on builds not using asynch DNS. In unix-like systems, this might cause
 signals to be used unless CURLOPT_NOSIGNAL(3) is set.
 
 # DEFAULT
 
-0 (zero) which means it never times out during transfer.
-
-# %PROTOCOLS%
+Default timeout is 0 (zero) which means it never times out during transfer.
 
 # EXAMPLE
 
@@ -81,7 +78,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

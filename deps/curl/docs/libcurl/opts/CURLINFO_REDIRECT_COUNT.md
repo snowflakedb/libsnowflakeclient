@@ -11,7 +11,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.9.7
 ---
 
 # NAME
@@ -31,8 +30,6 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_REDIRECT_COUNT,
 
 Pass a pointer to a long to receive the total number of redirections that were
 actually followed.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -54,7 +51,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.9.7
 
 # RETURN VALUE
 

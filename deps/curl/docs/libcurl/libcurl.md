@@ -11,7 +11,6 @@ See-also:
   - libcurl-thread (3)
 Protocol:
   - All
-Added-in: n/a
 ---
 
 # NAME
@@ -95,7 +94,7 @@ See libcurl-ws(3)
 
 # LINKING WITH LIBCURL
 
-On Unix-like machines, there is a tool named curl-config that gets installed
+On unix-like machines, there is a tool named curl-config that gets installed
 with the rest of the curl stuff when 'make install' is performed.
 
 curl-config is added to make it easier for applications to link with libcurl

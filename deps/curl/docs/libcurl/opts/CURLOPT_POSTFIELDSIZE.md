@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_POSTFIELDSIZE_LARGE (3)
 Protocol:
   - HTTP
-Added-in: 7.2
 ---
 
 # NAME
@@ -38,8 +37,6 @@ If you post more than 2GB, use CURLOPT_POSTFIELDSIZE_LARGE(3).
 
 -1
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Along with HTTP
 
 # RETURN VALUE
 

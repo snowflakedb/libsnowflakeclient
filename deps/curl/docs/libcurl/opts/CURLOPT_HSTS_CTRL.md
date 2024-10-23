@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_CONNECT_TO (3)
   - CURLOPT_HSTS (3)
   - CURLOPT_RESOLVE (3)
-Added-in: 7.74.0
 ---
 
 # NAME
@@ -53,9 +52,7 @@ to the file when closing the handle.
 
 # DEFAULT
 
-0
-
-# %PROTOCOLS%
+0. HSTS is disabled by default.
 
 # EXAMPLE
 
@@ -70,7 +67,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.74.0
 
 # RETURN VALUE
 

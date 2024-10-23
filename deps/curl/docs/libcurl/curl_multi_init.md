@@ -12,7 +12,6 @@ See-also:
   - curl_multi_get_handles (3)
 Protocol:
   - All
-Added-in: 7.9.6
 ---
 
 # NAME
@@ -34,8 +33,6 @@ all the other multi-functions, sometimes referred to as a multi handle in some
 places in the documentation. This init call MUST have a corresponding call to
 curl_multi_cleanup(3) when the operation is complete.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -52,7 +49,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.9.6
 
 # RETURN VALUE
 

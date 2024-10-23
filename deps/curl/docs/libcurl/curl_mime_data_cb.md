@@ -13,7 +13,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.56.0
 ---
 
 # NAME
@@ -98,8 +97,6 @@ the pointed item to be shared between the original and the copied handle. In
 particular, special attention should be given to the *freefunc* procedure
 code since it then gets called twice with the same argument.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 Sending a huge data string causes the same amount of memory to be allocated:
@@ -166,7 +163,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 
 # RETURN VALUE
 

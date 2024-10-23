@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_TIMEOUT (3)
 Protocol:
   - All
-Added-in: 7.80.0
 ---
 
 # NAME
@@ -44,9 +43,7 @@ If set to 0, this behavior is disabled: all connections are eligible for reuse.
 
 # DEFAULT
 
-0 seconds (i.e., disabled)
-
-# %PROTOCOLS%
+Default *maxlifetime* is 0 seconds (i.e., disabled).
 
 # EXAMPLE
 
@@ -65,7 +62,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.80.0
 
 # RETURN VALUE
 

@@ -12,7 +12,6 @@ See-also:
   - CURLOPT_REFERER (3)
 Protocol:
   - HTTP
-Added-in: 7.1
 ---
 
 # NAME
@@ -44,8 +43,6 @@ referer header after the transfer.
 
 0, disabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -69,7 +66,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Along with HTTP
 
 # RETURN VALUE
 

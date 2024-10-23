@@ -48,7 +48,7 @@ body
 # test there. This feature doesn't work on msys or Cygwin, so use a precheck
 # to skip those.
 <features>
-IPv6
+ipv6
 !win32
 </features>
 <server>

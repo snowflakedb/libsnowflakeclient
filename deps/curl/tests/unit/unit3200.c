@@ -88,7 +88,7 @@ UNITTEST_START
   for(i = 0; i < NUMTESTS; i++) {
     FILE *fp;
     struct dynbuf buf;
-    size_t len = 4096;
+    int len = 4096;
     char *line;
     Curl_dyn_init(&buf, len);
 
@@ -169,7 +169,7 @@ UNITTEST_START
     fclose(fp);
     fprintf(stderr, "OK\n");
   }
-  return (CURLcode)rc;
+  return rc;
 UNITTEST_STOP
 
 #ifdef __GNUC__

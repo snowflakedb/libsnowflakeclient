@@ -10,7 +10,6 @@ See-also:
   - CURLMOPT_PIPELINING (3)
 Protocol:
   - HTTP
-Added-in: 7.30.0
 ---
 
 # NAME
@@ -38,9 +37,7 @@ than CURLMOPT_MAX_PIPELINE_LENGTH(3).
 
 # DEFAULT
 
-0, which means that penalization is inactive.
-
-# %PROTOCOLS%
+The default value is 0, which means that the penalization is inactive.
 
 # EXAMPLE
 
@@ -53,7 +50,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.30.0
 
 # RETURN VALUE
 

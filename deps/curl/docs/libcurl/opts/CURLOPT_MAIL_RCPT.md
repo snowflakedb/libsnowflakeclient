@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_MAIL_FROM (3)
 Protocol:
   - SMTP
-Added-in: 7.20.0
 ---
 
 # NAME
@@ -32,9 +31,6 @@ SMTP mail request. The linked list should be a fully valid list of
 **struct curl_slist** structs properly filled in. Use curl_slist_append(3) to
 create the list and curl_slist_free_all(3) to clean up an entire list.
 
-libcurl does not copy the list, it needs to be kept around until after the
-transfer has completed.
-
 When performing a mail transfer, each recipient should be specified within a
 pair of angled brackets (\<\>), however, should you not use an angled bracket
 as the first character libcurl assumes you provided a single email address and
@@ -48,14 +44,9 @@ When performing a mailing list expand (**EXPN** command), each recipient
 should be specified using the mailing list name, such as `Friends` or
 `London-Office`.
 
-Using this option multiple times makes the last set list override the previous
-ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -77,7 +68,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.20.0. The **VRFY** and **EXPN** logic was added in 7.34.0
 
 # RETURN VALUE
 

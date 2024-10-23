@@ -9,7 +9,6 @@ See-also:
   - CURLMOPT_PIPELINING_SERVER_BL (3)
 Protocol:
   - HTTP
-Added-in: 7.30.0
 ---
 
 # NAME
@@ -37,9 +36,7 @@ Pass a NULL pointer to clear the block list.
 
 # DEFAULT
 
-NULL, which means that there is no block list.
-
-# %PROTOCOLS%
+The default value is NULL, which means that there is no block list.
 
 # EXAMPLE
 
@@ -58,7 +55,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.30.0
 
 # RETURN VALUE
 

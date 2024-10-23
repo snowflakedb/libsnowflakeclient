@@ -28,7 +28,7 @@ Content-Disposition: inline; filename='name%TESTNUMBER
 # this relies on the debug feature to allow us to set directory to store the
 # -J output in
 <features>
-Debug
+debug
 </features>
 <server>
 http

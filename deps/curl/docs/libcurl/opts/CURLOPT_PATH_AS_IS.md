@@ -11,7 +11,6 @@ See-also:
   - curl_url_set (3)
 Protocol:
   - All
-Added-in: 7.42.0
 ---
 
 # NAME
@@ -48,8 +47,6 @@ The corresponding flag for the curl_url_set(3) function is called
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -67,7 +64,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.42.0
 
 # RETURN VALUE
 

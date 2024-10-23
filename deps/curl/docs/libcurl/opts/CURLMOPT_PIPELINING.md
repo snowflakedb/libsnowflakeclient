@@ -13,12 +13,11 @@ See-also:
   - CURLMOPT_PIPELINING_SITE_BL (3)
 Protocol:
   - HTTP
-Added-in: 7.16.0
 ---
 
 # NAME
 
-CURLMOPT_PIPELINING - enable HTTP multiplexing
+CURLMOPT_PIPELINING - enable HTTP pipelining and multiplexing
 
 # SYNOPSIS
 
@@ -30,8 +29,8 @@ CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_PIPELINING, long bitmask);
 
 # DESCRIPTION
 
-Pass in the correct value in the **bitmask** parameter to instruct libcurl to
-enable multiplexing for this multi handle.
+Pass in the correct value in the **bitmask** parameter to instruct libcurl
+to enable multiplexing for this multi handle.
 
 With multiplexing enabled, libcurl attempts to do multiple transfers over the
 same connection when doing parallel transfers to the same hosts.
@@ -51,9 +50,9 @@ existing connection if possible. This requires HTTP/2 or HTTP/3.
 
 # DEFAULT
 
-**CURLPIPE_MULTIPLEX**
+Since 7.62.0, **CURLPIPE_MULTIPLEX** is enabled by default.
 
-# %PROTOCOLS%
+Before that, default was **CURLPIPE_NOTHING**.
 
 # EXAMPLE
 
@@ -66,16 +65,10 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
-The multiplex support bit was added in 7.43.0. HTTP/1 Pipelining support was
-disabled in 7.62.0.
-
-Since 7.62.0, **CURLPIPE_MULTIPLEX** is enabled by default.
-
-Before that, default was **CURLPIPE_NOTHING**.
-
-# %AVAILABILITY%
+Added in 7.16.0. Multiplex support bit added in 7.43.0. HTTP/1 Pipelining
+support was disabled in 7.62.0.
 
 # RETURN VALUE
 

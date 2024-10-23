@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_RTSP_STREAM_URI (3)
 Protocol:
   - RTSP
-Added-in: 7.20.0
 ---
 
 # NAME
@@ -35,8 +34,6 @@ unimplemented.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -53,7 +50,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.20.0
 
 # RETURN VALUE
 

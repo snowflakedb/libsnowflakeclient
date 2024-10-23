@@ -7,7 +7,7 @@ Arg: <file>
 Help: Transfer local FILE to destination
 Category: important upload
 Added: 4.0
-Multi: per-URL
+Multi: append
 See-also:
   - get
   - head
@@ -17,7 +17,6 @@ Example:
   - -T file $URL
   - -T "img[1-1000].png" ftp://ftp.example.com/
   - --upload-file "{file1,file2}" $URL
-  - -T file -T file2 $URL $URL
 ---
 
 # `--upload-file`

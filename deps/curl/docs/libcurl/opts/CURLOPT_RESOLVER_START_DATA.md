@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_RESOLVER_START_FUNCTION (3)
 Protocol:
   - All
-Added-in: 7.59.0
 ---
 
 # NAME
@@ -34,8 +33,6 @@ CURLOPT_RESOLVER_START_FUNCTION(3).
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.59.0
 
 # RETURN VALUE
 

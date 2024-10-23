@@ -8,7 +8,6 @@ See-also:
   - curl_version (3)
 Protocol:
   - All
-Added-in: 7.10.0
 ---
 
 # NAME
@@ -105,9 +104,6 @@ typedef struct {
   /* when 'age' is CURLVERSION_ELEVENTH or higher (>= 7.87.0), the members
      below exist */
   const char *const *feature_names; /* Feature names. */
-  /* when 'age' is CURLVERSION_TWELFTH or higher (>= 8.8.0), the members
-     below exist */
-  const char *const *rtmp_version; /* human readable string */
 } curl_version_info_data;
 ~~~
 
@@ -116,13 +112,13 @@ new the libcurl you are using is. You are however guaranteed to get a struct
 that you have a matching struct for in the header, as you tell libcurl your
 "age" with the input argument.
 
-*version* is just an ASCII string for the libcurl version.
+*version* is just an ascii string for the libcurl version.
 
 *version_num* is a 24 bit number created like this: \<8 bits major number\> |
 \<8 bits minor number\> | \<8 bits patch number\>. Version 7.9.8 is therefore
 returned as 0x070908.
 
-*host* is an ASCII string showing what host information that this libcurl
+*host* is an ascii string showing what host information that this libcurl
 was built for. As discovered by a configure script or set by the build
 environment.
 
@@ -176,12 +172,6 @@ supports HTTP Brotli content encoding using libbrotlidec (Added in 7.57.0)
 *features* mask bit: CURL_VERSION_DEBUG
 
 libcurl was built with debug capabilities (added in 7.10.6)
-
-## ECH
-
-*features* mask bit: non-existent
-
-libcurl was built with ECH support (experimental, added in 8.8.0)
 
 ## gsasl
 
@@ -277,7 +267,7 @@ supports HTTP NTLM (added in 7.10.6)
 *features* mask bit: CURL_VERSION_NTLM_WB
 
 libcurl was built with support for NTLM delegation to a winbind helper.
-(Added in 7.22.0) This feature was removed from curl in 8.8.0.
+(Added in 7.22.0)
 
 ## PSL
 
@@ -370,8 +360,6 @@ supports HTTP GSS-Negotiate (added in 7.10.6, deprecated in 7.38.0)
 
 supports Kerberos V4 (when using FTP). Legacy bit. Deprecated since 7.33.0.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -385,8 +373,11 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10
 
 # RETURN VALUE
 
 A pointer to a curl_version_info_data struct.
+curl_version(3)

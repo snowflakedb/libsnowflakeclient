@@ -14,7 +14,6 @@ Protocol:
   - POP3
   - IMAP
   - SMTP
-Added-in: 7.7.2
 ---
 
 # NAME
@@ -101,8 +100,6 @@ although strictly they are just continuations of the previous lines.
 
 Nothing.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -127,7 +124,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

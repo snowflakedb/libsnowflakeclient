@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_MAIL_RCPT (3)
 Protocol:
   - SMTP
-Added-in: 8.2.0
 ---
 
 # NAME
@@ -45,8 +44,6 @@ RCPT TO command.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -71,12 +68,11 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
-This option was called CURLOPT_MAIL_RCPT_ALLLOWFAILS (with three instead of
-two letter L) before 8.2.0
+This option was called CURLOPT_MAIL_RCPT_ALLLOWFAILS before 8.2.0
 
-# %AVAILABILITY%
+Added in 7.69.0.
 
 # RETURN VALUE
 

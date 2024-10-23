@@ -9,12 +9,11 @@ See-also:
   - curl_unescape (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
 
-curl_escape - URL encode a string
+curl_escape - URL encodes the given string
 
 # SYNOPSIS
 
@@ -38,8 +37,6 @@ on **string** to find out the size.
 
 You must curl_free(3) the returned string when you are done with it.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -53,12 +50,10 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 Since 7.15.4, curl_easy_escape(3) should be used. This function might be
 removed in a future release.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

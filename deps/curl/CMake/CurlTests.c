@@ -152,7 +152,7 @@ int main(void) { return 0; }
 #define _FILE_OFFSET_BITS 64
 #include <sys/types.h>
  /* Check that off_t can represent 2**63 - 1 correctly.
-    We cannot simply define LARGE_OFF_T to be 9223372036854775807,
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
 #define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
@@ -228,7 +228,7 @@ int main(void)
 #endif
 int main(void)
 {
-  unsigned long flags = 0;
+  int flags = 0;
   if(0 != ioctlsocket(0, FIONBIO, &flags))
     return 1;
   ;
@@ -337,7 +337,7 @@ int main(void)
 #include <string.h>
 #include <errno.h>
 
-/* Float, because a pointer cannot be implicitly cast to float */
+/* float, because a pointer can't be implicitly cast to float */
 void check(float f) {}
 
 int main(void)
@@ -380,7 +380,7 @@ int main(void)
 #ifdef HAVE_BUILTIN_AVAILABLE
 int main(void)
 {
-  if(__builtin_available(macOS 10.12, iOS 5.0, *)) {}
+  if(__builtin_available(macOS 10.12, *)) {}
   return 0;
 }
 #endif

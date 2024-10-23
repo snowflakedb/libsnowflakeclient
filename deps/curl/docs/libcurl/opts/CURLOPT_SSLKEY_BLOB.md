@@ -11,8 +11,6 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
-  - wolfSSL
-Added-in: 7.71.0
 ---
 
 # NAME
@@ -44,8 +42,6 @@ filename as input.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -81,7 +77,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.71.0. This option is supported by the OpenSSL backends.
 
 # RETURN VALUE
 

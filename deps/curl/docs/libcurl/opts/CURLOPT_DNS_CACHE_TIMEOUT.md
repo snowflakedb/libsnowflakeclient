@@ -12,7 +12,6 @@ See-also:
   - CURLOPT_RESOLVE (3)
 Protocol:
   - All
-Added-in: 7.9.3
 ---
 
 # NAME
@@ -55,8 +54,6 @@ Since version 8.1.0, libcurl prunes entries from the DNS cache if it exceeds
 
 60
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -81,7 +78,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

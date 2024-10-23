@@ -9,7 +9,6 @@ See-also:
   - CURLMOPT_MAX_HOST_CONNECTIONS (3)
 Protocol:
   - All
-Added-in: 7.30.0
 ---
 
 # NAME
@@ -46,10 +45,8 @@ timeout is however treated as a per-connect timeout.
 
 # DEFAULT
 
-0, which means that there is no limit. It is then simply controlled by the
-number of easy handles added.
-
-# %PROTOCOLS%
+The default value is 0, which means that there is no limit. It is then simply
+controlled by the number of easy handles added.
 
 # EXAMPLE
 
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.30.0
 
 # RETURN VALUE
 

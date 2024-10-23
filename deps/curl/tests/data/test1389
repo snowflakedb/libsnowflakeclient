@@ -41,9 +41,6 @@ perl %SRCDIR/libtest/notexists.pl %LOGDIR/file%TESTNUMBER %LOGDIR/name%TESTNUMBE
 
 # Verify data after the test has been "shot"
 <verify>
-<strip>
-QUIT
-</strip>
 <protocol>
 USER anonymous
 PASS ftp@example.com

@@ -32,7 +32,6 @@ from datetime import timedelta, datetime
 from json import JSONEncoder
 import time
 from typing import List, Union, Optional
-import copy
 
 from .curl import CurlClient, ExecResult
 from .env import Env
@@ -51,7 +50,6 @@ class Httpd:
         'alias', 'env', 'filter', 'headers', 'mime', 'setenvif',
         'socache_shmcb',
         'rewrite', 'http2', 'ssl', 'proxy', 'proxy_http', 'proxy_connect',
-        'brotli',
         'mpm_event',
     ]
     COMMON_MODULES_DIRS = [
@@ -79,7 +77,6 @@ class Httpd:
         self._auth_digest = True
         self._proxy_auth_basic = proxy_auth
         self._extra_configs = {}
-        self._loaded_extra_configs = None
         assert env.apxs
         p = subprocess.run(args=[env.apxs, '-q', 'libexecdir'],
                            capture_output=True, text=True)
@@ -153,12 +150,10 @@ class Httpd:
         if r.exit_code != 0:
             log.error(f'failed to start httpd: {r}')
             return False
-        self._loaded_extra_configs = copy.deepcopy(self._extra_configs)
         return self.wait_live(timeout=timedelta(seconds=5))
 
     def stop(self):
         r = self._apachectl('stop')
-        self._loaded_extra_configs = None
         if r.exit_code == 0:
             return self.wait_dead(timeout=timedelta(seconds=5))
         log.fatal(f'stopping httpd failed: {r}')
@@ -171,16 +166,9 @@ class Httpd:
     def reload(self):
         self._write_config()
         r = self._apachectl("graceful")
-        self._loaded_extra_configs = None
         if r.exit_code != 0:
             log.error(f'failed to reload httpd: {r}')
-        self._loaded_extra_configs = copy.deepcopy(self._extra_configs)
         return self.wait_live(timeout=timedelta(seconds=5))
-
-    def reload_if_config_changed(self):
-        if self._loaded_extra_configs == self._extra_configs:
-            return True
-        return self.reload()
 
     def wait_dead(self, timeout: timedelta):
         curl = CurlClient(env=self.env, run_dir=self._tmp_dir)
@@ -215,7 +203,6 @@ class Httpd:
 
     def _write_config(self):
         domain1 = self.env.domain1
-        domain1brotli = self.env.domain1brotli
         creds1 = self.env.get_credentials(domain1)
         domain2 = self.env.domain2
         creds2 = self.env.get_credentials(domain2)
@@ -257,9 +244,9 @@ class Httpd:
                 f'ErrorLog {self._error_log}',
                 f'LogLevel {self._get_log_level()}',
                 f'StartServers 4',
-                f'ReadBufferSize 16000',
                 f'H2MinWorkers 16',
                 f'H2MaxWorkers 256',
+                f'H2Direct on',
                 f'Listen {self.env.http_port}',
                 f'Listen {self.env.https_port}',
                 f'Listen {self.env.proxy_port}',
@@ -275,7 +262,6 @@ class Httpd:
                 f'    ServerAlias localhost',
                 f'    DocumentRoot "{self._docs_dir}"',
                 f'    Protocols h2c http/1.1',
-                f'    H2Direct on',
             ])
             conf.extend(self._curltest_conf(domain1))
             conf.extend([
@@ -295,36 +281,6 @@ class Httpd:
             conf.extend(self._curltest_conf(domain1))
             if domain1 in self._extra_configs:
                 conf.extend(self._extra_configs[domain1])
-            conf.extend([
-                f'</VirtualHost>',
-                f'',
-            ])
-            # Alternate to domain1 with BROTLI compression
-            conf.extend([  # https host for domain1, h1 + h2
-                f'<VirtualHost *:{self.env.https_port}>',
-                f'    ServerName {domain1brotli}',
-                f'    Protocols h2 http/1.1',
-                f'    SSLEngine on',
-                f'    SSLCertificateFile {creds1.cert_file}',
-                f'    SSLCertificateKeyFile {creds1.pkey_file}',
-                f'    DocumentRoot "{self._docs_dir}"',
-                f'    SetOutputFilter BROTLI_COMPRESS',
-            ])
-            conf.extend(self._curltest_conf(domain1))
-            if domain1 in self._extra_configs:
-                conf.extend(self._extra_configs[domain1])
-            conf.extend([
-                f'</VirtualHost>',
-                f'',
-            ])
-            conf.extend([  # plain http host for domain2
-                f'<VirtualHost *:{self.env.http_port}>',
-                f'    ServerName {domain2}',
-                f'    ServerAlias localhost',
-                f'    DocumentRoot "{self._docs_dir}"',
-                f'    Protocols h2c http/1.1',
-            ])
-            conf.extend(self._curltest_conf(domain2))
             conf.extend([
                 f'</VirtualHost>',
                 f'',
@@ -416,15 +372,10 @@ class Httpd:
         lines = []
         if Httpd.MOD_CURLTEST is not None:
             lines.extend([
-                f'    Redirect 302 /data.json.302 /data.json',
                 f'    Redirect 301 /curltest/echo301 /curltest/echo',
                 f'    Redirect 302 /curltest/echo302 /curltest/echo',
                 f'    Redirect 303 /curltest/echo303 /curltest/echo',
                 f'    Redirect 307 /curltest/echo307 /curltest/echo',
-                f'    <Location /curltest/sslinfo>',
-                f'      SSLOptions StdEnvVars',
-                f'      SetHandler curltest-sslinfo',
-                f'    </Location>',
                 f'    <Location /curltest/echo>',
                 f'      SetHandler curltest-echo',
                 f'    </Location>',

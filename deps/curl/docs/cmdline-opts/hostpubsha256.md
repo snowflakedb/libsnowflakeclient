@@ -6,7 +6,7 @@ Arg: <sha256>
 Help: Acceptable SHA256 hash of host public key
 Protocols: SFTP SCP
 Added: 7.80.0
-Category: sftp scp ssh
+Category: sftp scp
 Multi: single
 See-also:
   - hostpubmd5

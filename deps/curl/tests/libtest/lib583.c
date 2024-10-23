@@ -32,7 +32,7 @@
 
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   int stillRunning;
   CURLM *multiHandle = NULL;
@@ -87,5 +87,5 @@ test_cleanup:
   curl_multi_cleanup(multiHandle);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

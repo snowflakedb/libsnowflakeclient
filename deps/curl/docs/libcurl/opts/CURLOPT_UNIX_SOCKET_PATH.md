@@ -10,7 +10,6 @@ See-also:
   - unix (7)
 Protocol:
   - All
-Added-in: 7.40.0
 ---
 
 # NAME
@@ -38,22 +37,17 @@ does not resolve the DNS hostname in the URL.
 The maximum path length on Cygwin, Linux and Solaris is 107. On other platforms
 it might be even less.
 
-Proxy and TCP options such as CURLOPT_TCP_NODELAY(3) are not supported. Proxy
-options such as CURLOPT_PROXY(3) have no effect either as these are
-TCP-oriented, and asking a proxy server to connect to a certain Unix domain
-socket is not possible.
+Proxy and TCP options such as CURLOPT_TCP_NODELAY(3) are not
+supported. Proxy options such as CURLOPT_PROXY(3) have no effect either
+as these are TCP-oriented, and asking a proxy server to connect to a certain
+Unix domain socket is not possible.
 
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
-NULL - no Unix domain sockets are used.
-
-# %PROTOCOLS%
+Default is NULL, meaning that no Unix domain sockets are used.
 
 # EXAMPLE
 
@@ -81,7 +75,9 @@ you can use the proc filesystem to bypass the limitation:
   /* Be sure to keep dirfd valid until you discard the handle */
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.40.0.
 
 # RETURN VALUE
 

@@ -9,7 +9,6 @@ Protocol:
 See-also:
   - CURLOPT_DIRLISTONLY (3)
   - CURLOPT_FTP_SKIP_PASV_IP (3)
-Added-in: 7.15.1
 ---
 
 # NAME
@@ -57,8 +56,6 @@ compliant than 'nocwd' but without the full penalty of 'multicwd'.
 
 CURLFTPMETHOD_MULTICWD
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -78,7 +75,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.15.1
 
 # RETURN VALUE
 

@@ -25,6 +25,7 @@
 #include "curl_setup.h"
 #include "dynbuf.h"
 #include "curl_printf.h"
+#include <curl/mprintf.h>
 
 #include "curl_memory.h"
 /* The last #include file should be: */
@@ -76,7 +77,7 @@ static const char upper_digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 #define OUTCHAR(x)                                      \
   do {                                                  \
-    if(!stream((unsigned char)x, userp))                \
+    if(!stream(x, userp))                               \
       done++;                                           \
     else                                                \
       return done; /* return on failure */              \
@@ -242,7 +243,7 @@ static int parsefmt(const char *format,
       struct va_input *iptr;
       bool loopit = TRUE;
       fmt++;
-      outlen = (size_t)(fmt - start - 1);
+      outlen = fmt - start - 1;
       if(*fmt == '%') {
         /* this means a %% that should be output only as %. Create an output
            segment. */
@@ -260,8 +261,7 @@ static int parsefmt(const char *format,
         continue; /* while */
       }
 
-      flags = 0;
-      width = precision = 0;
+      flags = width = precision = 0;
 
       if(use_dollar != DOLLAR_NOPE) {
         param = dollarstring(fmt, &fmt);
@@ -291,7 +291,7 @@ static int parsefmt(const char *format,
           break;
         case '-':
           flags |= FLAGS_LEFT;
-          flags &= ~(unsigned int)FLAGS_PAD_NIL;
+          flags &= ~FLAGS_PAD_NIL;
           break;
         case '#':
           flags |= FLAGS_ALT;
@@ -549,7 +549,7 @@ static int parsefmt(const char *format,
       optr = &out[ocount++];
       if(ocount > MAX_SEGMENTS)
         return PFMT_MANYSEGS;
-      optr->input = (unsigned int)param;
+      optr->input = param;
       optr->flags = flags;
       optr->width = width;
       optr->precision = precision;
@@ -562,7 +562,7 @@ static int parsefmt(const char *format,
   }
 
   /* is there a trailing piece */
-  outlen = (size_t)(fmt - start);
+  outlen = fmt - start;
   if(outlen) {
     optr = &out[ocount++];
     if(ocount > MAX_SEGMENTS)
@@ -688,7 +688,7 @@ static int formatf(
     mp_intmax_t signed_num; /* Used to convert negative in positive.  */
     char *w;
     size_t outlen = optr->outlen;
-    unsigned int flags = optr->flags;
+    int flags = optr->flags;
 
     if(outlen) {
       char *str = optr->start;
@@ -710,7 +710,7 @@ static int formatf(
         else
           width = -width;
         flags |= FLAGS_LEFT;
-        flags &= ~(unsigned int)FLAGS_PAD_NIL;
+        flags &= ~FLAGS_PAD_NIL;
       }
     }
     else
@@ -862,12 +862,12 @@ number:
 
       str = (char *)iptr->val.str;
       if(!str) {
-        /* Write null string if there is space.  */
+        /* Write null string if there's space.  */
         if(prec == -1 || prec >= (int) sizeof(nilstr) - 1) {
           str = nilstr;
           len = sizeof(nilstr) - 1;
           /* Disable quotes around (nil) */
-          flags &= ~(unsigned int)FLAGS_ALT;
+          flags &= (~FLAGS_ALT);
         }
         else {
           str = "";
@@ -886,13 +886,13 @@ number:
       if(flags & FLAGS_ALT)
         OUTCHAR('"');
 
-      if(!(flags & FLAGS_LEFT))
+      if(!(flags&FLAGS_LEFT))
         while(width-- > 0)
           OUTCHAR(' ');
 
       for(; len && *str; len--)
         OUTCHAR(*str++);
-      if(flags & FLAGS_LEFT)
+      if(flags&FLAGS_LEFT)
         while(width-- > 0)
           OUTCHAR(' ');
 
@@ -952,13 +952,12 @@ number:
       *fptr = 0;
 
       if(width >= 0) {
-        size_t dlen;
         if(width >= (int)sizeof(work))
           width = sizeof(work)-1;
         /* RECURSIVE USAGE */
-        dlen = (size_t)curl_msnprintf(fptr, left, "%d", width);
-        fptr += dlen;
-        left -= dlen;
+        len = curl_msnprintf(fptr, left, "%d", width);
+        fptr += len;
+        left -= len;
       }
       if(prec >= 0) {
         /* for each digit in the integer part, we can have one less
@@ -966,7 +965,7 @@ number:
         size_t maxprec = sizeof(work) - 2;
         double val = iptr->val.dnum;
         if(width > 0 && prec <= width)
-          maxprec -= (size_t)width;
+          maxprec -= width;
         while(val >= 10.0) {
           val /= 10;
           maxprec--;
@@ -1039,8 +1038,8 @@ static int addbyter(unsigned char outc, void *f)
 {
   struct nsprintf *infop = f;
   if(infop->length < infop->max) {
-    /* only do this if we have not reached max length yet */
-    *infop->buffer++ = (char)outc; /* store */
+    /* only do this if we haven't reached max length yet */
+    *infop->buffer++ = outc; /* store */
     infop->length++; /* we are now one byte larger */
     return 0;     /* fputc() returns like this on success */
   }
@@ -1061,10 +1060,10 @@ int curl_mvsnprintf(char *buffer, size_t maxlength, const char *format,
   if(info.max) {
     /* we terminate this with a zero byte */
     if(info.max == info.length) {
-      /* we are at maximum, scrap the last letter */
+      /* we're at maximum, scrap the last letter */
       info.buffer[-1] = 0;
       DEBUGASSERT(retcode);
-      retcode--; /* do not count the nul byte */
+      retcode--; /* don't count the nul byte */
     }
     else
       info.buffer[0] = 0;
@@ -1140,7 +1139,7 @@ char *curl_maprintf(const char *format, ...)
 static int storebuffer(unsigned char outc, void *f)
 {
   char **buffer = f;
-  **buffer = (char)outc;
+  **buffer = outc;
   (*buffer)++;
   return 0;
 }
@@ -1161,7 +1160,9 @@ static int fputc_wrapper(unsigned char outc, void *f)
   int out = outc;
   FILE *s = f;
   int rc = fputc(out, s);
-  return rc == EOF;
+  if(rc == out)
+    return 0;
+  return 1;
 }
 
 int curl_mprintf(const char *format, ...)

@@ -24,17 +24,16 @@
 set(MANPAGE "${CURL_BINARY_DIR}/docs/cmdline-opts/curl.1")
 set(ASCIIPAGE "${CURL_BINARY_DIR}/docs/cmdline-opts/curl.txt")
 
-# Get 'DPAGES' variable
+# Load DPAGES and OTHERPAGES from shared file
 transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 include("${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 
 add_custom_command(OUTPUT "${MANPAGE}"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND "${PERL_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/scripts/managen" mainpage ${DPAGES} > "${MANPAGE}"
-  COMMAND "${PERL_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/scripts/managen" ascii ${DPAGES} > "${ASCIIPAGE}"
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && "${PERL_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/scripts/managen mainpage ${DPAGES} > "${MANPAGE}"
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && "${PERL_EXECUTABLE}" ${PROJECT_SOURCE_DIR}/scripts/managen ascii ${DPAGES} > "${ASCIIPAGE}"
   VERBATIM
 )
-add_custom_target("generate-curl.1" ALL DEPENDS "${MANPAGE}")
+add_custom_target(generate-curl.1 ALL DEPENDS "${MANPAGE}")
 if(NOT CURL_DISABLE_INSTALL)
-  install(FILES "${MANPAGE}" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
+  install(FILES "${MANPAGE}" DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 endif()

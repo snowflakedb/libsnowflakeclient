@@ -9,12 +9,11 @@ See-also:
   - curl_share_setopt (3)
 Protocol:
   - All
-Added-in: 7.10
 ---
 
 # NAME
 
-curl_share_cleanup - close a shared object
+curl_share_cleanup - Clean up a shared object
 
 # SYNOPSIS
 
@@ -32,11 +31,6 @@ when this function has been called.
 Passing in a NULL pointer in *share_handle* makes this function return
 immediately with no action.
 
-Any use of the **share_handle** after this function has been called and have
-returned, is illegal.
-
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -50,7 +44,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10
 
 # RETURN VALUE
 

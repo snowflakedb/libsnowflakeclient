@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_HTTPHEADER (3)
 Protocol:
   - HTTP
-Added-in: 7.51.0
 ---
 
 # NAME
@@ -42,8 +41,6 @@ Most applications do not need this option.
 
 0, stop sending on error
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Along with HTTP. Added in 7.51.0.
 
 # RETURN VALUE
 

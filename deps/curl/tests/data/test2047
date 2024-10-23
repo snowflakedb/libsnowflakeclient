@@ -39,7 +39,7 @@ OK
 http
 </server>
 <features>
-IDN
+idn
 proxy
 </features>
 <setenv>

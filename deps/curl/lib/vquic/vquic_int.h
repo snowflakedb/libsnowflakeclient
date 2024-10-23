@@ -27,7 +27,7 @@
 #include "curl_setup.h"
 #include "bufq.h"
 
-#ifdef USE_HTTP3
+#ifdef ENABLE_QUIC
 
 #define MAX_PKT_BURST 10
 #define MAX_UDP_PAYLOAD_SIZE  1452
@@ -88,6 +88,6 @@ CURLcode vquic_recv_packets(struct Curl_cfilter *cf,
                             size_t max_pkts,
                             vquic_recv_pkt_cb *recv_cb, void *userp);
 
-#endif /* !USE_HTTP3 */
+#endif /* !ENABLE_QUIC */
 
 #endif /* HEADER_CURL_VQUIC_QUIC_INT_H */

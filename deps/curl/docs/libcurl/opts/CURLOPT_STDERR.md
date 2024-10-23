@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_VERBOSE (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -39,8 +38,6 @@ application. A work-around is to instead use CURLOPT_DEBUGFUNCTION(3).
 
 stderr
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -57,7 +54,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

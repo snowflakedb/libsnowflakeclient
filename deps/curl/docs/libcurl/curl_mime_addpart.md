@@ -19,7 +19,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.56.0
 ---
 
 # NAME
@@ -42,8 +41,6 @@ subsequently be populated using functions from the mime API.
 
 *mime* is the handle of the mime structure in which the new part must be
 appended.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -68,7 +65,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+As long as at least one of HTTP, SMTP or IMAP is enabled. Added in 7.56.0.
 
 # RETURN VALUE
 

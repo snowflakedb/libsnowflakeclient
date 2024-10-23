@@ -27,7 +27,7 @@ Content-Type: text/plain
 # Client-side
 <client>
 <features>
-IPv6
+ipv6
 </features>
 <server>
 http-ipv6

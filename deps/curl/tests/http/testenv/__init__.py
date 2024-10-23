@@ -36,4 +36,3 @@ from .curl import CurlClient, ExecResult, RunProfile
 from .client import LocalClient
 from .nghttpx import Nghttpx
 from .nghttpx import Nghttpx, NghttpxQuic, NghttpxFwd
-from .vsftpd import VsFTPD

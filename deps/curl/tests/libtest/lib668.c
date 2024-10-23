@@ -48,12 +48,13 @@ static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
   return len;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *easy = NULL;
   curl_mime *mime = NULL;
   curl_mimepart *part;
-  CURLcode res = TEST_ERR_FAILURE;
+  CURLcode result;
+  int res = TEST_ERR_FAILURE;
   struct WriteThis pooh1, pooh2;
 
   /*
@@ -103,9 +104,10 @@ CURLcode test(char *URL)
   test_setopt(easy, CURLOPT_MIMEPOST, mime);
 
   /* Send data. */
-  res = curl_easy_perform(easy);
-  if(res != CURLE_OK) {
+  result = curl_easy_perform(easy);
+  if(result) {
     fprintf(stderr, "curl_easy_perform() failed\n");
+    res = (int) result;
   }
 
 test_cleanup:

@@ -1,9 +1,3 @@
-<!--
-Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-
-SPDX-License-Identifier: curl
--->
-
 # Anatomy of a curl security advisory
 
 As described in the [Security Process](https://curl.se/dev/secprocess.html)
