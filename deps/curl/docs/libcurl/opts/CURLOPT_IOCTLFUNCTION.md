@@ -9,7 +9,6 @@ Protocol:
 See-also:
   - CURLOPT_IOCTLDATA (3)
   - CURLOPT_SEEKFUNCTION (3)
-Added-in: 7.12.3
 ---
 
 # NAME
@@ -62,9 +61,7 @@ parameter is ignored when seeking.
 
 # DEFAULT
 
-NULL
-
-# %PROTOCOLS%
+By default, this parameter is set to NULL. Not used.
 
 # EXAMPLE
 
@@ -95,11 +92,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.18.0.
-
-# %AVAILABILITY%
+Added in 7.12.3. Deprecated since 7.18.0.
 
 # RETURN VALUE
 

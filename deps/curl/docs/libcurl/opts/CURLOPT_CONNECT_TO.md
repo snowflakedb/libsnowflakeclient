@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_URL (3)
 Protocol:
   - All
-Added-in: 7.49.0
 ---
 
 # NAME
@@ -76,14 +75,9 @@ When this option is passed to curl_easy_setopt(3), libcurl does not copy the
 list so you **must** keep it around until you no longer use this *handle* for
 a transfer before you call curl_slist_free_all(3) on the list.
 
-Using this option multiple times makes the last set list override the previous
-ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -109,7 +103,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.49.0
 
 # RETURN VALUE
 

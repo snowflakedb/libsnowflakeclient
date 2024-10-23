@@ -11,7 +11,6 @@ See-also:
   - curl_global_trace (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -43,8 +42,6 @@ CURLOPT_DEBUGFUNCTION(3).
 
 0, meaning disabled.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

@@ -27,9 +27,9 @@
 #
 
 
-SCRIPTDIR=$(dirname "${0}")
+SCRIPTDIR=`dirname "${0}"`
 . "${SCRIPTDIR}/initscript.sh"
-cd "${TOPDIR}/tests" || exit 1
+cd "${TOPDIR}/tests"
 
 
 #       Build programs in a directory.
@@ -40,26 +40,23 @@ build_all_programs()
         #       Compile all programs.
         #       The list is found in variable "noinst_PROGRAMS"
 
-        # shellcheck disable=SC2034
-        INCLUDES="'$(pwd)' '${TOPDIR}/lib' '${TOPDIR}/src'"
+        INCLUDES="'`pwd`' '${TOPDIR}/lib' '${TOPDIR}/src'"
         MODS="${1}"
         SRVPGMS="${2}"
 
-        # shellcheck disable=SC2154
         for PGM in ${noinst_PROGRAMS}
-        do      DB2PGM=$(db2_name "${PGM}")
+        do      DB2PGM=`db2_name "${PGM}"`
                 PGMIFSNAME="${LIBIFSNAME}/${DB2PGM}.PGM"
 
                 #       Extract preprocessor symbol definitions from
                 #               compilation options for the program.
 
-                PGMCFLAGS="$(eval echo "\${${PGM}_CFLAGS}")"
+                PGMCFLAGS="`eval echo \"\\${${PGM}_CFLAGS}\"`"
                 PGMDFNS=
 
                 for FLAG in ${PGMCFLAGS}
                 do      case "${FLAG}" in
-                        -D?*)   # shellcheck disable=SC2001
-                                DEFINE="$(echo "${FLAG}" | sed 's/^..//')"
+                        -D?*)   DEFINE="`echo \"${FLAG}\" | sed 's/^..//'`"
                                 PGMDFNS="${PGMDFNS} '${DEFINE}'"
                                 ;;
                         esac
@@ -67,7 +64,7 @@ build_all_programs()
 
                 #        Compile all C sources for the program into modules.
 
-                PGMSOURCES="$(eval echo "\${${PGM}_SOURCES}")"
+                PGMSOURCES="`eval echo \"\\${${PGM}_SOURCES}\"`"
                 LINK=
                 MODULES=
 
@@ -80,7 +77,7 @@ build_all_programs()
                                 case "${SOURCE}" in
                                 lib*.c) MODULE="${DB2PGM}"
                                         ;;
-                                *)      MODULE=$(db2_name "${SOURCE}")
+                                *)      MODULE=`db2_name "${SOURCE}"`
                                         ;;
                                 esac
 
@@ -88,7 +85,7 @@ build_all_programs()
                                 #               prefix module name with 'X'.
 
                                 case "${SOURCE}" in
-                                ../*)   MODULE=$(db2_name "X${MODULE}")
+                                ../*)   MODULE=`db2_name "X${MODULE}"`
                                             ;;
                                 esac
 
@@ -102,17 +99,17 @@ build_all_programs()
 
                 #       Link program if needed.
 
-                if [ -n "${LINK}" ]
-                then    PGMLDADD="$(eval echo "\${${PGM}_LDADD}")"
-                        for M in ${PGMLDADD}
-                        do      case "${M}" in
+                if [ "${LINK}" ]
+                then    PGMLDADD="`eval echo \"\\${${PGM}_LDADD}\"`"
+                        for ARG in ${PGMLDADD}
+                        do      case "${ARG}" in
                                 -*)     ;;              # Ignore non-module.
-                                *)      MODULES="${MODULES} $(db2_name "${M}")"
+                                *)      MODULES="${MODULES} "`db2_name "${ARG}"`
                                         ;;
                                 esac
                         done
-                        MODULES="$(echo "${MODULES}" |
-                            sed "s/[^ ][^ ]*/${TARGETLIB}\/&/g")"
+                        MODULES="`echo \"${MODULES}\" |
+                            sed \"s/[^ ][^ ]*/${TARGETLIB}\/&/g\"`"
                         CMD="CRTPGM PGM(${TARGETLIB}/${DB2PGM})"
                         CMD="${CMD} ENTMOD(${TARGETLIB}/CURLMAIN)"
                         CMD="${CMD} MODULE(${MODULES} ${MODS})"
@@ -127,7 +124,7 @@ build_all_programs()
 #       Build programs in the server directory.
 
 (
-        cd server || exit 1
+        cd server
         get_make_vars Makefile.inc
         build_all_programs "${TARGETLIB}/OS400SYS"
 )
@@ -136,9 +133,13 @@ build_all_programs()
 #       Build all programs in the libtest subdirectory.
 
 (
-        cd libtest || exit 1
+        cd libtest
         get_make_vars Makefile.inc
 
-        # shellcheck disable=SC2153
+        #       Special case: redefine chkhostname compilation parameters.
+
+        chkhostname_SOURCES=chkhostname.c
+        chkhostname_LDADD=curl_gethostname.o
+
         build_all_programs "" "${TARGETLIB}/${SRVPGM}"
 )

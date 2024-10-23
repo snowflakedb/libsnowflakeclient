@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_SOCKOPTFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.17.1
 ---
 
 # NAME
@@ -71,12 +70,10 @@ CURLOPT_SOCKOPTFUNCTION(3) to signal that it already is connected.
 
 # DEFAULT
 
-The equivalent of this:
+The default behavior is the equivalent of this:
 ~~~c
    return socket(addr->family, addr->socktype, addr->protocol);
 ~~~
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -124,7 +121,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.17.1.
 
 # RETURN VALUE
 

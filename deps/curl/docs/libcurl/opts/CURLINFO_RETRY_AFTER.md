@@ -10,7 +10,6 @@ See-also:
   - curl_easy_header (3)
 Protocol:
   - All
-Added-in: 7.66.0
 ---
 
 # NAME
@@ -38,9 +37,7 @@ or zero if there was no header or the header could not be parsed.
 
 # DEFAULT
 
-Zero if there was no header.
-
-# %PROTOCOLS%
+Returns zero delay if there was no header.
 
 # EXAMPLE
 
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.66.0
 
 # RETURN VALUE
 

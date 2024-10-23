@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_XFERINFOFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.32.0
 ---
 
 # NAME
@@ -34,9 +33,7 @@ This is an alias for CURLOPT_PROGRESSDATA(3).
 
 # DEFAULT
 
-NULL
-
-# %PROTOCOLS%
+The default value of this parameter is NULL.
 
 # EXAMPLE
 
@@ -72,7 +69,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.32.0
 
 # RETURN VALUE
 

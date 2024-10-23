@@ -9,7 +9,6 @@ Protocol:
 See-also:
   - CURLOPT_HTTPAUTH (3)
   - CURLOPT_PROXYAUTH (3)
-Added-in: 7.22.0
 ---
 
 # NAME
@@ -38,8 +37,6 @@ available at compile-time.
 
 CURLGSSAPI_DELEGATION_NONE
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -57,7 +54,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.22.0
 
 # RETURN VALUE
 

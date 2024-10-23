@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_STREAM_DEPENDS_E (3)
 Protocol:
   - HTTP
-Added-in: 7.46.0
 ---
 
 # NAME
@@ -48,9 +47,8 @@ streams).
 
 # DEFAULT
 
-16
-
-# %PROTOCOLS%
+If nothing is set, the HTTP/2 protocol itself uses its own default which is
+16.
 
 # EXAMPLE
 
@@ -72,7 +70,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.46.0
 
 # RETURN VALUE
 

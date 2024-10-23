@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_MAIL_RCPT (3)
 Protocol:
   - SMTP
-Added-in: 7.20.0
 ---
 
 # NAME
@@ -38,14 +37,9 @@ server which might cause the email to be rejected.
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 blank
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -63,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.20.0
 
 # RETURN VALUE
 

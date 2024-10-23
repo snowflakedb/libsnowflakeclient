@@ -5,7 +5,7 @@ Long: egd-file
 Arg: <file>
 Help: EGD socket path for random data
 Protocols: TLS
-Category: deprecated
+Category: tls
 Added: 7.7
 Multi: single
 See-also:

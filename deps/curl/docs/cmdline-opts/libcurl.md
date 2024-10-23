@@ -5,7 +5,7 @@ Long: libcurl
 Arg: <file>
 Help: Generate libcurl code for this command line
 Added: 7.16.1
-Category: curl global
+Category: curl
 Multi: single
 Scope: global
 See-also:

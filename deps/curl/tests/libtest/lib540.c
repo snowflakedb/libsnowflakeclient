@@ -48,10 +48,10 @@
 
 static CURL *eh[NUM_HANDLES];
 
-static CURLcode init(int num, CURLM *cm, const char *url, const char *userpwd,
-                     struct curl_slist *headers)
+static int init(int num, CURLM *cm, const char *url, const char *userpwd,
+                struct curl_slist *headers)
 {
-  CURLcode res = CURLE_OK;
+  int res = 0;
 
   res_easy_init(eh[num]);
   if(res)
@@ -89,7 +89,7 @@ static CURLcode init(int num, CURLM *cm, const char *url, const char *userpwd,
   if(res)
     goto init_failed;
 
-  return CURLE_OK; /* success */
+  return 0; /* success */
 
 init_failed:
 
@@ -99,15 +99,15 @@ init_failed:
   return res; /* failure */
 }
 
-static CURLcode loop(int num, CURLM *cm, const char *url, const char *userpwd,
-                     struct curl_slist *headers)
+static int loop(int num, CURLM *cm, const char *url, const char *userpwd,
+                struct curl_slist *headers)
 {
   CURLMsg *msg;
   long L;
   int Q, U = -1;
   fd_set R, W, E;
   struct timeval T;
-  CURLcode res = CURLE_OK;
+  int res = 0;
 
   res = init(num, cm, url, userpwd, headers);
   if(res)
@@ -189,15 +189,15 @@ static CURLcode loop(int num, CURLM *cm, const char *url, const char *userpwd,
       return res;
   }
 
-  return CURLE_OK;
+  return 0; /* success */
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLM *cm = NULL;
   struct curl_slist *headers = NULL;
   char buffer[246]; /* naively fixed-size */
-  CURLcode res = CURLE_OK;
+  int res = 0;
   int i;
 
   for(i = 0; i < NUM_HANDLES; i++)
@@ -206,7 +206,7 @@ CURLcode test(char *URL)
   start_test_timing();
 
   if(test_argc < 4)
-    return (CURLcode)99;
+    return 99;
 
   msnprintf(buffer, sizeof(buffer), "Host: %s", HOST);
 

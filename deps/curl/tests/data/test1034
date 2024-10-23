@@ -23,7 +23,7 @@ config file
 none
 </server>
 <features>
-IDN
+idn
 http
 proxy
 </features>

@@ -17,7 +17,7 @@ none
 </server>
 <features>
 TrackMemory
-IPv6
+ipv6
 </features>
 # tool is what to use instead of 'curl'
 <tool>

@@ -12,7 +12,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.55.0
 ---
 
 # NAME
@@ -34,8 +33,6 @@ Pass a pointer to a *curl_off_t* to receive the total amount of bytes that
 were downloaded. The amount is only for the latest transfer and gets reset
 again for each new transfer. This counts actual payload data, what's also
 commonly called body. All meta and header data is excluded from this amount.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.55.0
 
 # RETURN VALUE
 

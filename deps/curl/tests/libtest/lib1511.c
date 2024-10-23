@@ -25,11 +25,11 @@
 
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   long unmet;
   CURL *curl = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
 
   global_init(CURL_GLOBAL_ALL);
 

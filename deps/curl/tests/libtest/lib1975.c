@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -35,7 +35,7 @@ static size_t read_callback(char *buffer, size_t size, size_t nitems,
   return 0;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl;
   CURLcode res = TEST_ERR_MAJOR_BAD;

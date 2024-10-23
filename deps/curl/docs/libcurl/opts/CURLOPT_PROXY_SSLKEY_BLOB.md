@@ -12,7 +12,6 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
-Added-in: 7.71.0
 ---
 
 # NAME
@@ -42,8 +41,6 @@ setting this.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -79,7 +76,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.71.0. This option is supported by the OpenSSL backends.
 
 # RETURN VALUE
 

@@ -99,6 +99,9 @@
 #include <netdb.h>
 #endif
 
+#define ENABLE_CURLX_PRINTF
+/* make the curlx header define all printf() functions to use the curlx_*
+   versions instead */
 #include "curlx.h" /* from the private lib dir */
 #include "getpart.h"
 #include "inet_pton.h"
@@ -135,7 +138,7 @@ const char *serverlogfile = DEFAULT_LOGFILE;
 
 static bool verbose = FALSE;
 static bool bind_only = FALSE;
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
 static bool use_ipv6 = FALSE;
 #endif
 static const char *ipv_inuse = "IPv4";
@@ -149,7 +152,7 @@ enum sockmode {
   ACTIVE_DISCONNECT  /* as a client, disconnected from server */
 };
 
-#if defined(_WIN32) && !defined(CURL_WINDOWS_APP)
+#ifdef _WIN32
 /*
  * read-wrapper to support reading from stdin on Windows.
  */
@@ -176,7 +179,7 @@ static ssize_t read_wincon(int fd, void *buf, size_t count)
     return rcount;
   }
 
-  errno = (int)GetLastError();
+  errno = GetLastError();
   return -1;
 }
 #undef  read
@@ -211,7 +214,7 @@ static ssize_t write_wincon(int fd, const void *buf, size_t count)
     return wcount;
   }
 
-  errno = (int)GetLastError();
+  errno = GetLastError();
   return -1;
 }
 #undef  write
@@ -417,13 +420,13 @@ static bool read_data_block(unsigned char *buffer, ssize_t maxlen,
 }
 
 
-#if defined(USE_WINSOCK) && !defined(CURL_WINDOWS_APP)
+#ifdef USE_WINSOCK
 /*
- * Winsock select() does not support standard file descriptors,
+ * WinSock select() does not support standard file descriptors,
  * it can only check SOCKETs. The following function is an attempt
  * to re-create a select() function with support for other handle types.
  *
- * select() function with support for Winsock2 sockets and all
+ * select() function with support for WINSOCK2 sockets and all
  * other handle types supported by WaitForMultipleObjectsEx() as
  * well as disk files, anonymous and names pipes, and character input.
  *
@@ -480,7 +483,7 @@ static unsigned int WINAPI select_ws_wait_thread(void *lpParameter)
         size.LowPart = GetFileSize(handle, &length);
         if((size.LowPart != INVALID_FILE_SIZE) ||
             (GetLastError() == NO_ERROR)) {
-          size.HighPart = (LONG)length;
+          size.HighPart = length;
           /* get the current position within the file */
           pos.QuadPart = 0;
           pos.LowPart = SetFilePointer(handle, 0, &pos.HighPart, FILE_CURRENT);
@@ -680,7 +683,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   /* loop over the handles in the input descriptor sets */
   nfd = 0; /* number of handled file descriptors */
   nth = 0; /* number of internal waiting threads */
-  nws = 0; /* number of handled Winsock sockets */
+  nws = 0; /* number of handled WINSOCK sockets */
   for(fd = 0; fd < nfds; fd++) {
     wsasock = curlx_sitosk(fd);
     wsaevents.lNetworkEvents = 0;
@@ -826,7 +829,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
         FD_CLR(wsasock, exceptfds);
       }
       else {
-        /* try to handle the event with the Winsock2 functions */
+        /* try to handle the event with the WINSOCK2 functions */
         wsaevents.lNetworkEvents = 0;
         error = WSAEnumNetworkEvents(wsasock, handle, &wsaevents);
         if(error != SOCKET_ERROR) {
@@ -918,9 +921,10 @@ static bool disc_handshake(void)
       }
       else if(!memcmp("DATA", buffer, 4)) {
         /* We must read more data to stay in sync */
-        logmsg("Throwing away data bytes");
         if(!read_data_block(buffer, sizeof(buffer), &buffer_len))
           return FALSE;
+
+        logmsg("Throwing again %zd data bytes", buffer_len);
 
       }
       else if(!memcmp("QUIT", buffer, 4)) {
@@ -1155,7 +1159,7 @@ static bool juggle(curl_socket_t *sockfdp,
       curl_socket_t newfd = accept(sockfd, NULL, NULL);
       if(CURL_SOCKET_BAD == newfd) {
         error = SOCKERRNO;
-        logmsg("accept(%" FMT_SOCKET_T ", NULL, NULL) "
+        logmsg("accept(%" CURL_FORMAT_SOCKET_T ", NULL, NULL) "
                "failed with error: (%d) %s", sockfd, error, sstrerror(error));
       }
       else {
@@ -1251,7 +1255,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
   /* When the specified listener port is zero, it is actually a
      request to let the system choose a non-zero available port. */
 
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
   if(!use_ipv6) {
 #endif
     memset(&listener.sa4, 0, sizeof(listener.sa4));
@@ -1259,7 +1263,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
     listener.sa4.sin_addr.s_addr = INADDR_ANY;
     listener.sa4.sin_port = htons(*listenport);
     rc = bind(sock, &listener.sa, sizeof(listener.sa4));
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
   }
   else {
     memset(&listener.sa6, 0, sizeof(listener.sa6));
@@ -1268,7 +1272,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
     listener.sa6.sin6_port = htons(*listenport);
     rc = bind(sock, &listener.sa, sizeof(listener.sa6));
   }
-#endif /* USE_IPV6 */
+#endif /* ENABLE_IPV6 */
   if(rc) {
     error = SOCKERRNO;
     logmsg("Error binding socket on port %hu: (%d) %s",
@@ -1282,11 +1286,11 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
        port we actually got and update the listener port value with it. */
     curl_socklen_t la_size;
     srvr_sockaddr_union_t localaddr;
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
     if(!use_ipv6)
 #endif
       la_size = sizeof(localaddr.sa4);
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
     else
       la_size = sizeof(localaddr.sa6);
 #endif
@@ -1302,7 +1306,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
     case AF_INET:
       *listenport = ntohs(localaddr.sa4.sin_port);
       break;
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
     case AF_INET6:
       *listenport = ntohs(localaddr.sa6.sin6_port);
       break;
@@ -1331,7 +1335,7 @@ static curl_socket_t sockdaemon(curl_socket_t sock,
   rc = listen(sock, 5);
   if(0 != rc) {
     error = SOCKERRNO;
-    logmsg("listen(%" FMT_SOCKET_T ", 5) failed with error: (%d) %s",
+    logmsg("listen(%" CURL_FORMAT_SOCKET_T ", 5) failed with error: (%d) %s",
            sock, error, sstrerror(error));
     sclose(sock);
     return CURL_SOCKET_BAD;
@@ -1360,7 +1364,7 @@ int main(int argc, char *argv[])
   while(argc>arg) {
     if(!strcmp("--version", argv[arg])) {
       printf("sockfilt IPv4%s\n",
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
              "/IPv6"
 #else
              ""
@@ -1388,7 +1392,7 @@ int main(int argc, char *argv[])
         serverlogfile = argv[arg++];
     }
     else if(!strcmp("--ipv6", argv[arg])) {
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
       ipv_inuse = "IPv6";
       use_ipv6 = TRUE;
 #endif
@@ -1396,7 +1400,7 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--ipv4", argv[arg])) {
       /* for completeness, we support this option as well */
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
       ipv_inuse = "IPv4";
       use_ipv6 = FALSE;
 #endif
@@ -1468,11 +1472,11 @@ int main(int argc, char *argv[])
 
   install_signal_handlers(false);
 
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
   if(!use_ipv6)
 #endif
     sock = socket(AF_INET, SOCK_STREAM, 0);
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
   else
     sock = socket(AF_INET6, SOCK_STREAM, 0);
 #endif
@@ -1487,7 +1491,7 @@ int main(int argc, char *argv[])
   if(connectport) {
     /* Active mode, we should connect to the given port number */
     mode = ACTIVE;
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
     if(!use_ipv6) {
 #endif
       memset(&me.sa4, 0, sizeof(me.sa4));
@@ -1499,7 +1503,7 @@ int main(int argc, char *argv[])
       Curl_inet_pton(AF_INET, addr, &me.sa4.sin_addr);
 
       rc = connect(sock, &me.sa, sizeof(me.sa4));
-#ifdef USE_IPV6
+#ifdef ENABLE_IPV6
     }
     else {
       memset(&me.sa6, 0, sizeof(me.sa6));
@@ -1511,7 +1515,7 @@ int main(int argc, char *argv[])
 
       rc = connect(sock, &me.sa, sizeof(me.sa6));
     }
-#endif /* USE_IPV6 */
+#endif /* ENABLE_IPV6 */
     if(rc) {
       error = SOCKERRNO;
       logmsg("Error connecting to port %hu: (%d) %s",

@@ -27,7 +27,7 @@ Funny-head: yesyes
 # Client-side
 <client>
 <features>
-Debug
+debug
 h2c
 SSL
 </features>

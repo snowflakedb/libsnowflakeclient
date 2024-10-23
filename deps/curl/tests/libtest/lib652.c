@@ -27,7 +27,7 @@
 
 static char buffer[17000]; /* more than 16K */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl = NULL;
   CURLcode res = CURLE_OK;
@@ -50,7 +50,7 @@ CURLcode test(char *URL)
   curl = curl_easy_init();
   if(!curl) {
     fprintf(stderr, "curl_easy_init() failed\n");
-    res = TEST_ERR_MAJOR_BAD;
+    res = (CURLcode) TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
   }
 
@@ -58,13 +58,13 @@ CURLcode test(char *URL)
   mime = curl_mime_init(curl);
   if(!mime) {
     fprintf(stderr, "curl_mime_init() failed\n");
-    res = TEST_ERR_MAJOR_BAD;
+    res = (CURLcode) TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
   }
   part = curl_mime_addpart(mime);
   if(!part) {
     fprintf(stderr, "curl_mime_addpart() failed\n");
-    res = TEST_ERR_MAJOR_BAD;
+    res = (CURLcode) TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
   }
   res = curl_mime_filename(part, "myfile.jpg");

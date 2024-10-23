@@ -31,9 +31,9 @@
 
 #define NUM_URLS 4
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res = CURLE_OK;
+  int res = 0;
   CURL *curl = NULL;
   int i;
   char target_url[256];

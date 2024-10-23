@@ -59,7 +59,7 @@ static void setupcallbacks(CURL *curl)
 #endif
 
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -101,7 +101,6 @@ CURLcode test(char *URL)
         curl_off_t time_namelookup;
         curl_off_t time_connect;
         curl_off_t time_pretransfer;
-        curl_off_t time_posttransfer;
         curl_off_t time_starttransfer;
         curl_off_t time_total;
         fprintf(moo, "IP %s\n", ipstr);
@@ -109,8 +108,6 @@ CURLcode test(char *URL)
         curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME_T, &time_connect);
         curl_easy_getinfo(curl, CURLINFO_PRETRANSFER_TIME_T,
                           &time_pretransfer);
-        curl_easy_getinfo(curl, CURLINFO_POSTTRANSFER_TIME_T,
-                          &time_posttransfer);
         curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME_T,
                           &time_starttransfer);
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME_T, &time_total);
@@ -131,14 +128,6 @@ CURLcode test(char *URL)
                   (time_pretransfer / 1000000),
                   (long)(time_pretransfer % 1000000));
         }
-        if(time_pretransfer > time_posttransfer) {
-          fprintf(moo, "pretransfer vs posttransfer: %" CURL_FORMAT_CURL_OFF_T
-                  ".%06ld %" CURL_FORMAT_CURL_OFF_T ".%06ld\n",
-                  (time_pretransfer / 1000000),
-                  (long)(time_pretransfer % 1000000),
-                  (time_posttransfer / 1000000),
-                  (long)(time_posttransfer % 1000000));
-        }
         if(time_pretransfer > time_starttransfer) {
           fprintf(moo, "pretransfer vs starttransfer: %" CURL_FORMAT_CURL_OFF_T
                   ".%06ld %" CURL_FORMAT_CURL_OFF_T ".%06ld\n",
@@ -154,13 +143,6 @@ CURLcode test(char *URL)
                   (long)(time_starttransfer % 1000000),
                   (time_total / 1000000), (long)(time_total % 1000000));
         }
-        if(time_posttransfer > time_total) {
-          fprintf(moo, "posttransfer vs total: %" CURL_FORMAT_CURL_OFF_T
-                  ".%06ld %" CURL_FORMAT_CURL_OFF_T ".%06ld\n",
-                  (time_posttransfer / 1000000),
-                  (long)(time_posttransfer % 1000000),
-                  (time_total / 1000000), (long)(time_total % 1000000));
-        }
 
         fclose(moo);
       }
@@ -172,5 +154,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return (int)res;
 }

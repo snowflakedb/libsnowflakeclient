@@ -96,7 +96,7 @@ static CURLSTScode hstswrite(CURL *easy, struct curl_hstsentry *e,
  * Read/write HSTS cache entries via callback.
  */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLcode res = CURLE_OK;
   CURL *hnd;
@@ -114,7 +114,7 @@ CURLcode test(char *URL)
   res = curl_easy_perform(hnd);
   curl_easy_cleanup(hnd);
   hnd = NULL;
-  printf("First request returned %d\n", res);
+  printf("First request returned %d\n", (int)res);
   res = CURLE_OK;
 
   easy_init(hnd);
@@ -127,10 +127,10 @@ CURLcode test(char *URL)
   res = curl_easy_perform(hnd);
   curl_easy_cleanup(hnd);
   hnd = NULL;
-  printf("Second request returned %d\n", res);
+  printf("Second request returned %d\n", (int)res);
 
 test_cleanup:
   curl_easy_cleanup(hnd);
   curl_global_cleanup();
-  return res;
+  return (int)res;
 }

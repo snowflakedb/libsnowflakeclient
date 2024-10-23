@@ -22,9 +22,10 @@
  *
  ***************************************************************************/
 /* <DESC>
- * WebSockets pingpong
+ * Websockets pingpong
  * </DESC>
  */
+
 /* curl stuff */
 #include "curl_setup.h"
 #include <curl/curl.h>
@@ -33,14 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#else
+/* somewhat unix-specific */
 #include <sys/time.h>
-#endif
+#include <unistd.h>
 
 #ifdef USE_WEBSOCKETS
 
@@ -106,11 +102,7 @@ static CURLcode pingpong(CURL *curl, const char *payload)
     fprintf(stderr, "Receive pong\n");
     res = recv_pong(curl, payload);
     if(res == CURLE_AGAIN) {
-#ifdef _WIN32
-      Sleep(100);
-#else
       usleep(100*1000);
-#endif
       continue;
     }
     websocket_close(curl);
@@ -160,7 +152,7 @@ int main(int argc, char *argv[])
 #else /* USE_WEBSOCKETS */
   (void)argc;
   (void)argv;
-  fprintf(stderr, "WebSockets not enabled in libcurl\n");
+  fprintf(stderr, "websockets not enabled in libcurl\n");
   return 1;
 #endif /* !USE_WEBSOCKETS */
 }

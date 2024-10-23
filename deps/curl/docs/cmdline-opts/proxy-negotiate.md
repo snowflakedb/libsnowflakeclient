@@ -9,7 +9,6 @@ Multi: mutex
 See-also:
   - proxy-anyauth
   - proxy-basic
-  - proxy-service-name
 Example:
   - --proxy-negotiate --proxy-user user:passwd -x proxy $URL
 ---

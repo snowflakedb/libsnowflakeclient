@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_PROXYTYPE (3)
 Protocol:
   - All
-Added-in: 7.19.4
 ---
 
 # NAME
@@ -40,8 +39,6 @@ option.
 
 See above
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -59,11 +56,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.49.0
-
-# %AVAILABILITY%
+Added in 7.19.4, deprecated in 7.49.0
 
 # RETURN VALUE
 

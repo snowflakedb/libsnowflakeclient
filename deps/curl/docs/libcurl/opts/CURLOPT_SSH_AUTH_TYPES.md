@@ -11,7 +11,6 @@ See-also:
 Protocol:
   - SFTP
   - SCP
-Added-in: 7.16.1
 ---
 
 # NAME
@@ -41,8 +40,6 @@ authentication.
 
 CURLSSH_AUTH_ANY (all available)
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+CURLSSH_AUTH_HOST was added in 7.16.1, CURLSSH_AUTH_AGENT was added in 7.28.0
 
 # RETURN VALUE
 

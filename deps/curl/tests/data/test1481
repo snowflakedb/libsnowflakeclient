@@ -26,7 +26,7 @@ http
 </server>
 <features>
 proxy
-SSL
+ssl
 </features>
 <name>
 --libcurl with TLS version options

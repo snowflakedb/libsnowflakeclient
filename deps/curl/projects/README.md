@@ -8,17 +8,10 @@ Building via IDE Project Files
 ==============================
 
 This document describes how to compile, build and install curl and libcurl
-from sources using legacy versions of Visual Studio 2010 - 2013.
+from sources using an IDE based development tool such as Visual Studio.
 
-You will need to generate the project files before using them. Please run
-"generate -help" for usage details.
-
-To generate project files for recent versions of Visual Studio instead, use
-cmake. Refer to INSTALL-CMAKE in the docs directory.
-
-## Directory Structure
-
-The following directory structure is used for the legacy project files:
+Project files are available for several different Visual C++ versions. The
+following directory structure has been used to cater for this:
 
     somedirectory\
      |_curl
@@ -85,52 +78,55 @@ has a default version of Visual C++. We offer these versions:
  - VC10      (Visual Studio 2010 Version 10.0)
  - VC11      (Visual Studio 2012 Version 11.0)
  - VC12      (Visual Studio 2013 Version 12.0)
+ - VC14      (Visual Studio 2015 Version 14.0)
+ - VC14.10   (Visual Studio 2017 Version 15.0)
+ - VC14.30   (Visual Studio 2022 Version 17.0)
 
 Separate solutions are provided for both libcurl and the curl command line
 tool as well as a solution that includes both projects. libcurl.sln, curl.sln
 and curl-all.sln, respectively. We recommend using curl-all.sln to build both
 projects.
 
-For example, if you are using Visual Studio 2010 then you should be able to
-use `VC10\curl-all.sln` to build curl and libcurl.
+For example, if you are using Visual Studio 2022 then you should be able to
+use `VC14.30\curl-all.sln` to build curl and libcurl.
 
 ## Running DLL based configurations
 
 If you are a developer and plan to run the curl tool from Visual Studio with
-any third-party libraries (such as OpenSSL, wolfSSL or libssh2) then you will
+any third-party libraries (such as OpenSSL, wolfSSL or LibSSH2) then you will
 need to add the search path of these DLLs to the configuration's PATH
 environment. To do that:
 
  1. Open the 'curl-all.sln' or 'curl.sln' solutions
  2. Right-click on the 'curl' project and select Properties
  3. Navigate to 'Configuration Properties > Debugging > Environment'
- 4. Add `PATH='Path to DLL';C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem`
+ 4. Add `PATH='Path to DLL';C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem`
 
 ... where 'Path to DLL` is the configuration specific path. For example the
 following configurations in Visual Studio 2010 might be:
 
 DLL Debug - DLL OpenSSL (Win32):
 
-    PATH=..\..\..\..\..\openssl\build\Win32\VC10\DLL Debug;C:\Windows\System32;
+    PATH=..\..\..\..\..\openssl\build\Win32\VC10\DLL Debug;C:\Windows\system32;
     C:\Windows;C:\Windows\System32\Wbem
 
 DLL Debug - DLL OpenSSL (x64):
 
-    PATH=..\..\..\..\..\openssl\build\Win64\VC10\DLL Debug;C:\Windows\System32;
+    PATH=..\..\..\..\..\openssl\build\Win64\VC10\DLL Debug;C:\Windows\system32;
     C:\Windows;C:\Windows\System32\Wbem
 
 DLL Debug - DLL wolfSSL (Win32):
 
-    PATH=..\..\..\..\..\wolfssl\build\Win32\VC10\DLL Debug;C:\Windows\System32;
+    PATH=..\..\..\..\..\wolfssl\build\Win32\VC10\DLL Debug;C:\Windows\system32;
     C:\Windows;C:\Windows\System32\Wbem
 
 DLL Debug - DLL wolfSSL (x64):
 
-    PATH=..\..\..\..\..\wolfssl\build\Win64\VC10\DLL Debug;C:\Windows\System32;
+    PATH=..\..\..\..\..\wolfssl\build\Win64\VC10\DLL Debug;C:\Windows\system32;
     C:\Windows;C:\Windows\System32\Wbem
 
 If you are using a configuration that uses multiple third-party library DLLs
-(such as DLL Debug - DLL OpenSSL - DLL libssh2) then 'Path to DLL' will need
+(such as DLL Debug - DLL OpenSSL - DLL LibSSH2) then 'Path to DLL' will need
 to contain the path to both of these.
 
 ## Notes
@@ -142,6 +138,10 @@ The following keywords have been used in the directory hierarchy:
  - `<architecture>`  - The platform architecture (For example: Win32, Win64)
  - `<configuration>` - The target configuration (For example: DLL Debug, LIB
    Release - LIB OpenSSL)
+
+If you are using the source code from the git repository, rather than a
+release archive or nightly build, you will need to generate the project
+files. Please run "generate -help" for usage details.
 
 Should you wish to help out with some of the items on the TODO list, or find
 bugs in the project files that need correcting, and would like to submit

@@ -13,7 +13,6 @@ Protocol:
 TLS-backend:
   - OpenSSL
   - wolfSSL
-Added-in: 7.73.0
 ---
 
 # NAME
@@ -25,26 +24,18 @@ CURLOPT_SSL_EC_CURVES - key exchange curves
 ~~~c
 #include <curl/curl.h>
 
-CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_EC_CURVES, char *list);
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_EC_CURVES, char *alg_list);
 ~~~
 
 # DESCRIPTION
 
-Pass a string as parameter with a colon delimited list of Elliptic curve (EC)
-algorithms. This option defines the client's key exchange algorithms in the
-SSL handshake (if the SSL backend libcurl is built to use supports it).
-
-The application does not have to keep the string around after setting this
-option.
-
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to restore back to internal default.
+Pass a string as parameter with a colon delimited list of (EC) algorithms. This
+option defines the client's key exchange algorithms in the SSL handshake (if
+the SSL backend libcurl is built to use supports it).
 
 # DEFAULT
 
 "", embedded in SSL backend
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -62,7 +53,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.73.0. Supported by the OpenSSL backend.
 
 # RETURN VALUE
 

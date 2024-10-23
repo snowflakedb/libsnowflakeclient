@@ -28,10 +28,10 @@
 #include "memdebug.h"
 
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curls = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   curl_mimepart *field = NULL;
   curl_mime *mime = NULL;
 
@@ -61,5 +61,5 @@ test_cleanup:
   curl_mime_free(mime);
   curl_easy_cleanup(curls);
   curl_global_cleanup();
-  return res; /* return the final return code */
+  return (int) res; /* return the final return code */
 }

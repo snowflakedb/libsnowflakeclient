@@ -14,12 +14,11 @@ See-also:
   - libcurl-errors (3)
 Protocol:
   - All
-Added-in: 7.9.6
 ---
 
 # NAME
 
-curl_multi_perform - run all transfers until it would block
+curl_multi_perform - reads/writes available data from easy handles
 
 # SYNOPSIS
 
@@ -61,8 +60,6 @@ they cannot be continued. curl_multi_perform(3) should not be called
 again on the same multi handle after an error has been returned, unless first
 removing all the handles and adding new ones.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -91,7 +88,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.9.6
 
 # RETURN VALUE
 

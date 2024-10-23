@@ -17,7 +17,6 @@ TLS-backend:
   - GnuTLS
   - mbedTLS
   - wolfSSL
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -50,14 +49,9 @@ On mismatch, *CURLE_SSL_PINNEDPUBKEYNOTMATCH* is returned.
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -115,7 +109,7 @@ footer:
 -----END PUBLIC KEY-----
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 PEM/DER support:
 
@@ -126,8 +120,6 @@ sha256 support:
  7.52.0: GnuTLS, OpenSSL, mbedTLS, wolfSSL
 
 Other SSL backends not supported.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

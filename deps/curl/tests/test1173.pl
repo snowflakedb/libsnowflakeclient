@@ -23,7 +23,7 @@
 #
 ###########################################################################
 #
-# Scan manpage(s) and detect some simple and yet common formatting mistakes.
+# Scan man page(s) and detect some simple and yet common formatting mistakes.
 #
 # Output all deviances to stderr.
 
@@ -75,8 +75,6 @@ my %deprecated = (
     CURLINFO_DATA_OUT => 1,
     CURLINFO_SSL_DATA_IN => 1,
     CURLINFO_SSL_DATA_OUT => 1,
-    CURLOPT_EGDSOCKET => 1,
-    CURLOPT_RANDOM_FILE => 1,
     );
 sub allsymbols {
     open(my $f, "<", "$symbolsinversions") ||
@@ -136,10 +134,9 @@ sub scanmanpage {
 
     open(my $m, "<", "$file") ||
         die "test1173.pl could not open $file";
-    if($file =~ /[\/\\](CURL|curl_)([^\/\\]*).3/) {
-        # This is a manpage for libcurl. It requires an example unless it's
-        # considered deprecated.
-        $reqex = 1 unless defined $deprecated{'CURL'.$2};
+    if($file =~ /[\/\\](CURL|curl_)[^\/\\]*.3/) {
+        # This is a man page for libcurl. It requires an example!
+        $reqex = 1;
         if($1 eq "CURL") {
             $optpage = 1;
         }
@@ -148,12 +145,12 @@ sub scanmanpage {
     while(<$m>) {
         chomp;
         if($_ =~ /^.so /) {
-            # this manpage is just a referral
+            # this man page is just a referral
             close($m);
             return;
         }
         if(($_ =~ /^\.SH SYNOPSIS/i) && ($reqex)) {
-            # this is for libcurl manpage SYNOPSIS checks
+            # this is for libcurl man page SYNOPSIS checks
             $insynop = 1;
             $inex = 0;
         }
@@ -254,7 +251,7 @@ sub scanmanpage {
 
         if($optpage && $SH && ($SH !~ /^(SYNOPSIS|EXAMPLE|NAME|SEE ALSO)/i) &&
            ($_ =~ /(.*)(CURL(OPT_|MOPT_|INFO_|SHOPT_)[A-Z0-9_]*)/)) {
-            # an option with its own manpage, check that it is tagged
+            # an option with its own man page, check that it is tagged
             # for linking
             my ($pref, $symbol) = ($1, $2);
             if($deprecated{$symbol}) {
@@ -303,7 +300,7 @@ sub scanmanpage {
         }
 
         if($shcount < 3) {
-            print STDERR "$file:$line too few manpage sections!\n";
+            print STDERR "$file:$line too few man page sections!\n";
             $errors++;
             return;
         }

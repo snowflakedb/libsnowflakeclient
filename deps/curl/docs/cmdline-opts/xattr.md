@@ -3,7 +3,7 @@ c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: xattr
 Help: Store metadata in extended file attributes
-Category: output
+Category: misc
 Added: 7.21.3
 Multi: boolean
 See-also:

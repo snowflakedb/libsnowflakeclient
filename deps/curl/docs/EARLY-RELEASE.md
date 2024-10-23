@@ -1,9 +1,3 @@
-<!--
-Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
-
-SPDX-License-Identifier: curl
--->
-
 # How to determine if an early patch release is warranted
 
 In the curl project we do releases every 8 weeks. Unless we break the cycle

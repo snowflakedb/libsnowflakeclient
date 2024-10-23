@@ -10,7 +10,6 @@ See-also:
   - curl_multi_socket_action (3)
 Protocol:
   - All
-Added-in: 7.15.4
 ---
 
 # NAME
@@ -36,8 +35,6 @@ callback's **clientp** argument.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -74,7 +71,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.15.4
 
 # RETURN VALUE
 

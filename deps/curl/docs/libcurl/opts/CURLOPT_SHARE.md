@@ -9,7 +9,6 @@ See-also:
   - CURLSHOPT_SHARE (3)
 Protocol:
   - All
-Added-in: 7.10
 ---
 
 # NAME
@@ -48,8 +47,6 @@ Set this option to NULL again to stop using that share object.
 
 NULL
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -80,7 +77,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

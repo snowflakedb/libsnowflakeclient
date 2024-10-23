@@ -13,12 +13,11 @@ See-also:
   - curl_url_strerror (3)
 Protocol:
   - All
-Added-in: 7.62.0
 ---
 
 # NAME
 
-curl_url - create a URL handle
+curl_url - returns a new URL handle
 
 # SYNOPSIS
 
@@ -37,8 +36,6 @@ This is a handle to a URL object that holds or can hold URL components for a
 single URL. When the object is first created, there is of course no components
 stored. They are then set in the object with the curl_url_set(3)
 function.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.62.0
 
 # RETURN VALUE
 

@@ -35,6 +35,3 @@ nghttpx = @HTTPD_NGHTTPX@
 
 [caddy]
 caddy = @CADDY@
-
-[vsftpd]
-vsftpd = @VSFTPD@

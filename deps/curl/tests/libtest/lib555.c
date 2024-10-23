@@ -76,9 +76,9 @@ static curlioerr ioctlcallback(CURL *handle,
 }
 
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res = CURLE_OK;
+  int res = 0;
   CURL *curl = NULL;
   int counter = 0;
   CURLM *m = NULL;

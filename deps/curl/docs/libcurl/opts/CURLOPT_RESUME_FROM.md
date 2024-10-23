@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_RESUME_FROM_LARGE (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -44,8 +43,6 @@ CURLOPT_RESUME_FROM_LARGE(3) instead.
 
 0, not used
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -72,7 +69,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

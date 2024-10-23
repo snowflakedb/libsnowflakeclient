@@ -10,7 +10,6 @@ See-also:
   - curl_mime_init (3)
 Protocol:
   - HTTP
-Added-in: 7.1
 ---
 
 # NAME
@@ -43,8 +42,6 @@ curl_formadd(3) and may be NULL.
 Passing in a NULL pointer in *form* makes this function return immediately
 with no action.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -72,11 +69,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
 Deprecated in 7.56.0.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

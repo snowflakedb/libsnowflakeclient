@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.10.3
 ---
 
 # NAME
@@ -31,8 +30,6 @@ Pass a pointer to a char pointer to receive the pointer to the private data
 associated with the curl handle (set with the CURLOPT_PRIVATE(3)).
 Please note that for internal reasons, the value is returned as a char
 pointer, although effectively being a 'void *'.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.10.3
 
 # RETURN VALUE
 

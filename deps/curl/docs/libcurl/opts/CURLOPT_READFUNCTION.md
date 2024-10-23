@@ -13,7 +13,6 @@ See-also:
   - CURLOPT_WRITEFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -73,9 +72,7 @@ and it allows for better error checking.
 
 # DEFAULT
 
-fread(3)
-
-# %PROTOCOLS%
+The default internal read callback is fread().
 
 # EXAMPLE
 
@@ -114,12 +111,10 @@ int main(int argc, char **argv)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 CURL_READFUNC_PAUSE return code was added in 7.18.0 and CURL_READFUNC_ABORT
 was added in 7.12.1.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

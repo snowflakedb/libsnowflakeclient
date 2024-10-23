@@ -40,11 +40,11 @@
  * with function curl_multi_info_read().
  */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *easy = NULL;
   CURLM *multi = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
   int running;
   int msgs_left;
   CURLMsg *msg;

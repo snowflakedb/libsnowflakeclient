@@ -11,7 +11,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.61.0
 ---
 
 # NAME
@@ -35,8 +34,6 @@ the start until the connection to the remote host (or proxy) was completed.
 When a redirect is followed, the time from each request is added together.
 
 See also the TIMES overview in the curl_easy_getinfo(3) man page.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.61.0
 
 # RETURN VALUE
 
