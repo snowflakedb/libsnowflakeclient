@@ -37,8 +37,10 @@ MULTIBYTE = ../../lib/curl_multibyte.c ../../lib/curl_multibyte.h
 TIMEDIFF = ../../lib/timediff.c ../../lib/timediff.h
 SUPPORTFILES = $(TIMEDIFF) first.c test.h
 
+THREADS = ../../lib/curl_threads.c ../../lib/curl_threads.h
+
 # These are all libcurl test programs
-noinst_PROGRAMS = chkhostname libauthretry libntlmconnect libprereq      \
+noinst_PROGRAMS = libauthretry libntlmconnect libprereq                  \
  lib500 lib501 lib502 lib503 lib504 lib505 lib506 lib507 lib508 lib509   \
  lib510 lib511 lib512 lib513 lib514 lib515 lib516 lib517 lib518 lib519   \
  lib520 lib521 lib523 lib524 lib525 lib526 lib527 lib529 lib530 lib532   \
@@ -54,6 +56,7 @@ noinst_PROGRAMS = chkhostname libauthretry libntlmconnect libprereq      \
  lib670 lib671 lib672 lib673 lib674 lib676 lib677 lib678 \
  lib1156 \
  lib1301 \
+ lib1485 \
  lib1500 lib1501 lib1502 lib1503 lib1504 lib1505 lib1506 lib1507 lib1508 \
  lib1509 lib1510 lib1511 lib1512 lib1513 lib1514 lib1515         lib1517 \
  lib1518         lib1520 lib1521 lib1522 lib1523 \
@@ -66,27 +69,24 @@ noinst_PROGRAMS = chkhostname libauthretry libntlmconnect libprereq      \
  \
  lib1662 \
  \
- lib1900 \
+ lib1900 lib1901 \
  lib1903 lib1905 lib1906 lib1907 lib1908 lib1910 lib1911 lib1912 lib1913 \
          lib1915 lib1916 lib1917 lib1918 lib1919 \
  lib1933 lib1934 lib1935 lib1936 lib1937 lib1938 lib1939 lib1940 \
  lib1945 lib1946 lib1947 lib1948 lib1955 lib1956 lib1957 lib1958 lib1959 \
  lib1960 lib1964 \
  lib1970 lib1971 lib1972 lib1973 lib1974 lib1975 \
- lib2301 lib2302 lib2304 lib2305 lib2306 \
- lib2402 lib2404 \
+ lib2301 lib2302 lib2304 lib2305 lib2306         lib2308 \
+ lib2402 lib2404 lib2405 \
  lib2502 \
  lib3010 lib3025 lib3026 lib3027 \
- lib3100 lib3101 lib3102 lib3103
-
-chkhostname_SOURCES = chkhostname.c ../../lib/curl_gethostname.c
-chkhostname_LDADD = @CURL_NETWORK_LIBS@
-chkhostname_DEPENDENCIES =
+ lib3100 lib3101 lib3102 lib3103 lib3207
 
 libntlmconnect_SOURCES = libntlmconnect.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 libntlmconnect_LDADD = $(TESTUTIL_LIBS)
 
 libauthretry_SOURCES = libauthretry.c $(SUPPORTFILES)
+libauthretry_LDADD = $(TESTUTIL_LIBS)
 
 libprereq_SOURCES = libprereq.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 libprereq_LDADD = $(TESTUTIL_LIBS)
@@ -346,6 +346,9 @@ lib678_LDADD = $(TESTUTIL_LIBS)
 lib1301_SOURCES = lib1301.c $(SUPPORTFILES) $(TESTUTIL)
 lib1301_LDADD = $(TESTUTIL_LIBS)
 
+lib1485_SOURCES = lib1485.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
+lib1485_LDADD = $(TESTUTIL_LIBS)
+
 lib1500_SOURCES = lib1500.c $(SUPPORTFILES) $(TESTUTIL)
 lib1500_LDADD = $(TESTUTIL_LIBS)
 
@@ -483,7 +486,7 @@ lib1551_SOURCES = lib1551.c $(SUPPORTFILES)
 lib1552_SOURCES = lib1552.c $(SUPPORTFILES) $(TESTUTIL)
 lib1552_LDADD = $(TESTUTIL_LIBS)
 
-lib1553_SOURCES = lib1553.c $(SUPPORTFILES) $(TESTUTIL)
+lib1553_SOURCES = lib1553.c $(SUPPORTFILES) $(TSTTRACE) $(TESTUTIL)
 lib1553_LDADD = $(TESTUTIL_LIBS)
 
 lib1554_SOURCES = lib1554.c $(SUPPORTFILES)
@@ -544,6 +547,8 @@ lib1662_SOURCES = lib1662.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib1662_LDADD = $(TESTUTIL_LIBS)
 
 lib1900_SOURCES = lib1900.c $(SUPPORTFILES)
+
+lib1901_SOURCES = lib1901.c $(SUPPORTFILES)
 
 lib1903_SOURCES = lib1903.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib1903_LDADD = $(TESTUTIL_LIBS)
@@ -675,11 +680,17 @@ lib2305_LDADD = $(TESTUTIL_LIBS)
 lib2306_SOURCES = lib2306.c $(SUPPORTFILES)
 lib2306_LDADD = $(TESTUTIL_LIBS)
 
+lib2308_SOURCES = lib2308.c $(SUPPORTFILES)
+lib2308_LDADD = $(TESTUTIL_LIBS)
+
 lib2402_SOURCES = lib2402.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib2402_LDADD = $(TESTUTIL_LIBS)
 
 lib2404_SOURCES = lib2404.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib2404_LDADD = $(TESTUTIL_LIBS)
+
+lib2405_SOURCES = lib2405.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
+lib2405_LDADD = $(TESTUTIL_LIBS)
 
 lib2502_SOURCES = lib2502.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib2502_LDADD = $(TESTUTIL_LIBS)
@@ -707,3 +718,6 @@ lib3102_LDADD = $(TESTUTIL_LIBS)
 
 lib3103_SOURCES = lib3103.c $(SUPPORTFILES)
 lib3103_LDADD = $(TESTUTIL_LIBS)
+
+lib3207_SOURCES = lib3207.c $(SUPPORTFILES) $(TESTUTIL) $(THREADS) $(WARNLESS) $(MULTIBYTE)
+lib3207_LDADD = $(TESTUTIL_LIBS)
