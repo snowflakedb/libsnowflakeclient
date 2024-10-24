@@ -46,6 +46,11 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_EXTERNAL_BROWSER "externalbrowser"
 
+ /**
+ * Authenticator, oauth
+ */
+#define SF_AUTHENTICATOR_OAUTH "oauth"
+
 /**
  * UUID4 length
  */
@@ -281,7 +286,8 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
-    SF_QUERY_RESULT_TYPE
+    SF_QUERY_RESULT_TYPE,
+    SF_CON_OAUTH_TOKEN
 } SF_ATTRIBUTE;
 
 /**
@@ -412,6 +418,9 @@ typedef struct SF_CONNECT {
     uint64 max_varchar_size;
     uint64 max_binary_size;
     uint64 max_variant_size;
+
+    //token for OAuth authentication
+    char *oauth_token;
 
     // put get configurations
     sf_bool use_s3_regional_url;

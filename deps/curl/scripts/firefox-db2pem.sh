@@ -26,8 +26,14 @@
 # It extracts all ca certs it finds in the local Firefox database and converts
 # them all into PEM format.
 #
-db=$(ls -1d $HOME/.mozilla/firefox/*default*)
-out=$1
+# It uses the "certutil" command line tool from the NSS project to perform the
+# conversion. On Debian it comes in the "libnss3-tools" package.
+#
+
+set -eu
+
+db=$(ls -1d "$HOME"/.mozilla/firefox/*default*)
+out="${1:-}"
 
 if test -z "$out"; then
   out="ca-bundle.crt" # use a sensible default
@@ -35,7 +41,7 @@ fi
 
 currentdate=$(date)
 
-cat >$out <<EOF
+cat > "$out" <<EOF
 ##
 ## Bundle of CA Root Certificates
 ##
@@ -52,4 +58,4 @@ sort | \
 while read -r nickname; \
  do echo "$nickname" | sed -e "s/Builtin Object Token://g"; \
 eval certutil -d "$db" -L -n "$nickname" -a ; \
-done >> $out
+done >> "$out"

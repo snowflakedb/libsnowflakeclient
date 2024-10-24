@@ -10,11 +10,12 @@ See-also:
   - curl_multi_poll (3)
 Protocol:
   - All
+Added-in: 7.28.0
 ---
 
 # NAME
 
-curl_multi_wait - polls on all easy handles in a multi handle
+curl_multi_wait - poll on all easy handles in a multi handle
 
 # SYNOPSIS
 
@@ -34,7 +35,7 @@ curl_multi_wait(3) polls all file descriptors used by the curl easy
 handles contained in the given multi handle set. It blocks until activity is
 detected on at least one of the handles or *timeout_ms* has passed.
 Alternatively, if the multi handle has a pending internal timeout that has a
-shorter expiry time than *timeout_ms*, that shorter time is be used
+shorter expiry time than *timeout_ms*, that shorter time is being used
 instead to make sure timeout accuracy is reasonably kept.
 
 The calling application may pass additional *curl_waitfd* structures which
@@ -79,6 +80,8 @@ priority read events such as out of band data.
 Bit flag to *curl_waitfd.events* indicating the socket should poll on
 write events such as the socket being clear to write without blocking.
 
+# %PROTOCOLS%
+
 # EXAMPLE
 
 ~~~c
@@ -113,9 +116,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-This function was added in libcurl 7.28.0.
+# %AVAILABILITY%
 
 # RETURN VALUE
 

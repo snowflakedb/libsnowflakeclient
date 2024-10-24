@@ -5,7 +5,7 @@ Long: ssl-reqd
 Help: Require SSL/TLS
 Protocols: FTP IMAP POP3 SMTP LDAP
 Added: 7.20.0
-Category: tls
+Category: tls imap pop3 smtp ldap
 Multi: boolean
 See-also:
   - ssl
@@ -16,7 +16,8 @@ Example:
 
 # `--ssl-reqd`
 
-Require SSL/TLS for the connection. Terminates the connection if the transfer
+Require SSL/TLS for the connection - often referred to as STARTTLS or STLS
+because of the involved commands. Terminates the connection if the transfer
 cannot be upgraded to use SSL/TLS.
 
 This option is handled in LDAP (added in 7.81.0). It is fully supported by the
