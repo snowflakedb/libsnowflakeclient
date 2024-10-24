@@ -432,6 +432,9 @@ typedef struct SF_CONNECT {
     sf_bool get_fastfail;
     int8 get_maxretries;
     int64 get_threshold;
+
+    // stage binding
+    sf_bool binding_stage_created;
 } SF_CONNECT;
 
 /**

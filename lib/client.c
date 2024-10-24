@@ -764,6 +764,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->get_fastfail = SF_BOOLEAN_FALSE;
         sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
         sf->get_threshold = SF_DEFAULT_GET_THRESHOLD;
+
+        sf->binding_stage_created = SF_BOOLEAN_FALSE;
     }
 
     return sf;

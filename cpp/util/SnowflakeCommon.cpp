@@ -11,6 +11,7 @@
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
 #include <stdexcept>
+#include "SnowflakeCommon.hpp"
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
@@ -142,5 +143,30 @@ uint64 sf_get_current_time_millis()
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+}
+
+void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
+  std::string const& oldValue,
+  std::string const& newValue)
+{
+  size_t oldValueLen = oldValue.length();
+  size_t newValueLen = newValue.length();
+  if (0 == oldValueLen)
+  {
+    return;
+  }
+
+  size_t index = 0;
+  while (true) {
+    /* Locate the substring to replace. */
+    index = stringToReplace.find(oldValue, index);
+    if (index == std::string::npos) break;
+
+    /* Make the replacement. */
+    stringToReplace.replace(index, oldValueLen, newValue);
+
+    /* Advance index forward so the next iteration doesn't pick it up as well. */
+    index += newValueLen;
+  }
 }
 

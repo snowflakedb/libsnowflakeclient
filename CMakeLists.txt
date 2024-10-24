@@ -215,6 +215,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
+        include/snowflake/BindUploader.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -235,6 +236,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp
+        cpp/lib/BindUploader.cpp
+        cpp/lib/ClientBindUploader.hpp
+        cpp/lib/ClientBindUploader.cpp
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
