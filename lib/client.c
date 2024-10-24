@@ -694,6 +694,11 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->ocsp_fail_open = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
+#if defined(__APPLE__) || defined(_WIN32)
+        sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
+#else
+        sf->client_request_mfa_token = SF_BOOLEAN_FALSE;
+#endif
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->include_retry_reason = SF_BOOLEAN_TRUE;
         sf->timezone = NULL;
@@ -774,7 +779,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
-
+  cred_cache_term(sf->token_cache);
     qcc_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
@@ -951,6 +956,11 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             data = snowflake_cJSON_GetObjectItem(resp, "data");
             if (!set_tokens(sf, data, "token", "masterToken", &sf->error)) {
                 goto cleanup;
+            }
+
+            char* mfa_token = NULL;
+            if (json_copy_string(&mfa_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+              cred_cache_save_credential(sf->token_cache, sf->account, sf->host, sf->user, MFA_TOKEN, mfa_token);
             }
 
             _mutex_lock(&sf->mutex_parameters);
@@ -1164,6 +1174,8 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_CLIENT_REQUEST_MFA_TOKEN:
+            sf->client_request_mfa_token = value ? *((sf_bool *) value): SF_BOOLEAN_TRUE;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
