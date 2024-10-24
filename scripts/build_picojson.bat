@@ -20,7 +20,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set DEPS_DIR=%scriptdir%..\deps
-set PICOJSON_SOURCE_DIR=%DEPS_DIR%\picojson-%picojson_version%
+set PICOJSON_SOURCE_DIR=%DEPS_DIR%\picojson
 set PICOJSON_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\picojson
 
 cd "%PICOJSON_SOURCE_DIR%"
