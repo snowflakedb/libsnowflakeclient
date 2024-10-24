@@ -24,7 +24,7 @@ hello
 # Client-side
 <client>
 <features>
-IPv6
+ipv6
 </features>
 <server>
 http-ipv6

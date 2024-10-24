@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_TIMEVALUE (3)
 Protocol:
   - HTTP
-Added-in: 7.59.0
 ---
 
 # NAME
@@ -32,15 +31,13 @@ Pass a curl_off_t *val* as parameter. This should be the time counted as
 seconds since 1 Jan 1970, and the time is used in a condition as specified
 with CURLOPT_TIMECONDITION(3).
 
-The difference between this option and CURLOPT_TIMEVALUE(3) is the type of the
-argument. On systems where 'long' is only 32 bits wide, this option has to be
-used to set dates beyond the year 2038.
+The difference between this option and CURLOPT_TIMEVALUE(3) is the type
+of the argument. On systems where 'long' is only 32 bit wide, this option has
+to be used to set dates beyond the year 2038.
 
 # DEFAULT
 
 0
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.59.0.
 
 # RETURN VALUE
 

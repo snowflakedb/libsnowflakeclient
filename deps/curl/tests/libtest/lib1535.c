@@ -27,7 +27,7 @@
 
 /* Test CURLINFO_PROTOCOL */
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curl, *dupe = NULL;
   long protocol;
@@ -134,5 +134,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_easy_cleanup(dupe);
   curl_global_cleanup();
-  return res;
+  return (int)res;
 }

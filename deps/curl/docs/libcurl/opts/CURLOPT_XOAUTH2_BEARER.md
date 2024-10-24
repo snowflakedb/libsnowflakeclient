@@ -13,7 +13,6 @@ Protocol:
   - LDAP
   - POP3
   - SMTP
-Added-in: 7.33.0
 ---
 
 # NAME
@@ -40,14 +39,9 @@ Token should be supplied via the CURLOPT_USERNAME(3) option.
 The application does not have to keep the string around after setting this
 option.
 
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -65,11 +59,9 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
-Support for OpenLDAP added in 7.82.0.
-
-# %AVAILABILITY%
+Added in 7.33.0. Support for OpenLDAP added in 7.82.0.
 
 # RETURN VALUE
 

@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_HTTP_TRANSFER_DECODING (3)
 Protocol:
   - HTTP
-Added-in: 7.21.6
 ---
 
 # NAME
@@ -44,8 +43,6 @@ by both HTTP clients and HTTP servers.
 
 0
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -60,7 +57,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.21.6
 
 # RETURN VALUE
 

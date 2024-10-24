@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_USERPWD (3)
 Protocol:
   - IMAP
-Added-in: 7.66.0
 ---
 
 # NAME
@@ -31,26 +30,18 @@ Pass a char pointer as parameter, which should be pointing to the
 null-terminated authorization identity (*authzid*) for the transfer. Only
 applicable to the PLAIN SASL authentication mechanism where it is optional.
 
-When not specified only the authentication identity (*authcid*) as specified
-by the username is sent to the server, along with the password. The server
-derives a *authzid* from the *authcid* when not provided, which it then uses
-internally.
+When not specified only the authentication identity (*authcid*) as
+specified by the username is sent to the server, along with the password. The
+server derives a *authzid* from the *authcid* when not provided, which
+it then uses internally.
 
-When the *authzid* is specified, the use of which is server dependent, it can
-be used to access another user's inbox, that the user has been granted access
-to, or a shared mailbox for example.
-
-The application does not have to keep the string around after setting this
-option.
-
-Using this option multiple times makes the last set string override the
-previous ones. Set it to NULL to disable its use again.
+When the *authzid* is specified, the use of which is server dependent, it
+can be used to access another user's inbox, that the user has been granted
+access to, or a shared mailbox for example.
 
 # DEFAULT
 
 blank
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -70,7 +61,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.66.0. Support for OpenLDAP added in 7.82.0.
 
 # RETURN VALUE
 

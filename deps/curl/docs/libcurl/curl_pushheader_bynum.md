@@ -9,7 +9,6 @@ See-also:
   - curl_pushheader_byname (3)
 Protocol:
   - HTTP
-Added-in: 7.44.0
 ---
 
 # NAME
@@ -34,8 +33,6 @@ It returns the value for the header field at the given index **num**, for
 the incoming server push request or NULL. The data pointed to is freed by
 libcurl when this callback returns. The returned pointer points to a
 "name:value" string that gets freed when this callback returns.
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -65,7 +62,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.44.0
 
 # RETURN VALUE
 

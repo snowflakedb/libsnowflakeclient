@@ -10,7 +10,6 @@ See-also:
   - curl_multi_perform (3)
 Protocol:
   - All
-Added-in: 7.9.6
 ---
 
 # NAME
@@ -67,8 +66,6 @@ that just completed.
 
 At this point, there are no other **msg** types defined.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -96,7 +93,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.9.6
 
 # RETURN VALUE
 

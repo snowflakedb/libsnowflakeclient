@@ -1,7 +1,7 @@
 ---
 c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
-Title: CURLOPT_SSH_HOSTKEYDATA
+Title: CURLOPT_SSH_KEYDATA
 Section: 3
 Source: libcurl
 See-also:
@@ -9,7 +9,6 @@ See-also:
 Protocol:
   - SFTP
   - SCP
-Added-in: 7.84.0
 ---
 
 # NAME
@@ -32,8 +31,6 @@ the callback set with CURLOPT_SSH_HOSTKEYFUNCTION(3).
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -66,11 +63,9 @@ int main(void)
 }
 ~~~
 
-# NOTES
+# AVAILABILITY
 
-Works only with the libssh2 backend.
-
-# %AVAILABILITY%
+Added in 7.84.0, works only with libssh2 backend.
 
 # RETURN VALUE
 

@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_TIMEOUT (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -38,8 +37,6 @@ slow and abort.
 
 0, disabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -62,7 +59,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

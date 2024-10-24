@@ -18,7 +18,6 @@ TLS-backend:
   - mbedTLS
   - Secure Transport
   - Schannel
-Added-in: 7.39.0
 ---
 
 # NAME
@@ -57,8 +56,6 @@ option.
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -119,7 +116,7 @@ footer:
 -----END PUBLIC KEY-----
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 ## PEM/DER support
 
@@ -144,8 +141,6 @@ footer:
 7.58.1: Schannel
 
 Other SSL backends not supported.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

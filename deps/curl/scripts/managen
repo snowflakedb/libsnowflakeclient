@@ -50,18 +50,25 @@ my %catlong;
 use POSIX qw(strftime);
 my @ts;
 if (defined($ENV{SOURCE_DATE_EPOCH})) {
-    @ts = gmtime($ENV{SOURCE_DATE_EPOCH});
+    @ts = localtime($ENV{SOURCE_DATE_EPOCH});
 } else {
     @ts = localtime;
 }
-my $date = strftime "%Y-%m-%d", @ts;
+my $date = strftime "%B %d %Y", @ts;
 my $year = strftime "%Y", @ts;
 my $version = "unknown";
 my $globals;
-my $error = 0;
-my $indent = 4;
 
-# get the long name version, return the manpage string
+open(INC, "<../../include/curl/curlver.h");
+while(<INC>) {
+    if($_ =~ /^#define LIBCURL_VERSION \"([0-9.]*)/) {
+        $version = $1;
+        last;
+    }
+}
+close(INC);
+
+# get the long name version, return the man page string
 sub manpageify {
     my ($k)=@_;
     my $l;
@@ -87,19 +94,13 @@ sub manpageify {
 }
 
 
-my $colwidth=79; # max number of columns
-
-sub prefixline {
-    my ($num) = @_;
-    print "\t" x ($num/8);
-    print ' ' x ($num%8);
-}
+my $colwidth=78; # max number of columns
 
 sub justline {
     my ($lvl, @line) = @_;
     my $w = -1;
     my $spaces = -1;
-    my $width = $colwidth - ($lvl * $indent);
+    my $width = $colwidth - ($lvl * 4);
     for(@line) {
         $w += length($_);
         $w++;
@@ -111,7 +112,7 @@ sub justline {
         $ratio = $inject / $spaces;
     }
     my $spare = 0;
-    prefixline($lvl * $indent);
+    print ' ' x ($lvl * 4);
     my $prev;
     for(@line) {
         while($spare >= 0.90) {
@@ -127,8 +128,7 @@ sub justline {
 
 sub lastline {
     my ($lvl, @line) = @_;
-    $line[0] =~ s/^( +)//;
-    prefixline($lvl * $indent + length($1));
+    print ' ' x ($lvl * 4);
     my $prev = 0;
     for(@line) {
         printf "%s%s", $prev?" ":"", $_;
@@ -143,7 +143,7 @@ sub outputpara {
 
     my $w = 0;
     my @words = split(/  */, $f);
-    my $width = $colwidth - ($lvl * $indent);
+    my $width = $colwidth - ($lvl * 4);
 
     my @line;
     for my $e (@words) {
@@ -194,12 +194,6 @@ sub printdesc {
                 # quoted, do not right-justify
                 chomp $l;
                 lastline($baselvl + $lvl + 1, $l);
-                my $w = ($baselvl + $lvl + 1) * $indent + length($l);
-                if ($w > $colwidth) {
-                    print STDERR "ERROR: $w columns is too long\n";
-                    print STDERR "$l\n";
-                    $error++;
-                }
             }
             else {
                 $para .= $l;
@@ -252,8 +246,8 @@ sub too_old {
     elsif($version =~ /^(\d+)\.(\d+)/) {
         $a = $1 * 1000 + $2 * 10;
     }
-    if($a < 7600) {
-        # we consider everything before 7.60.0 to be too old to mention
+    if($a < 7500) {
+        # we consider everything before 7.50.0 to be too old to mention
         # specific changes for
         return 1;
     }
@@ -283,13 +277,11 @@ sub render {
     my $top = ($line == 1);
     my $quote;
     my $level;
-    my $finalblank;
     $start = 0;
 
     while(<$fh>) {
         my $d = $_;
         $line++;
-        $finalblank = ($d eq "\n");
         if($d =~ /^\.(SH|BR|IP|B)/) {
             print STDERR "$f:$line:1:ERROR: nroff instruction in input: \".$1\"\n";
             return 4;
@@ -324,9 +316,9 @@ sub render {
             $word =~ s/[\"\'](.*)[\"\']\z/$1/;
 
             # remove backticks from headers
-            $word =~ s/\`//g;
+            $words =~ s/\`//g;
 
-            # if there is a space, it needs quotes for manpage
+            # if there is a space, it needs quotes for man page
             if(($word =~ / /) && $manpage) {
                 $word = "\"$word\"";
             }
@@ -355,7 +347,7 @@ sub render {
             }
             if($tablemode) {
                 # end of table
-                push @desc, ".RE\n.IP\n" if($manpage);
+                push @desc, ".RE\n.IP\n";
                 $tablemode = 0;
             }
             $header = 1;
@@ -374,9 +366,7 @@ sub render {
         elsif($d =~ /^    (.*)/) {
             my $word = $1;
             if(!$quote && $manpage) {
-                push @desc, "\n" if($blankline);
                 push @desc, ".nf\n";
-                $blankline = 0;
             }
             $quote = 1;
             $d = "$word\n";
@@ -394,19 +384,10 @@ sub render {
         # convert backticks to double quotes
         $d =~ s/\`/\"/g;
 
-        if($d =~ /\(added in(.*)/i) {
-            if(length($1) < 2) {
-                print STDERR "$f:$line:1:ERROR: broken up added-in line:\n";
-                print STDERR "$f:$line:1:ERROR: $d";
-                return 3;
-            }
-        }
-      again:
         if($d =~ /\(Added in ([0-9.]+)\)/i) {
             my $ver = $1;
             if(too_old($ver)) {
                 $d =~ s/ *\(Added in $ver\)//gi;
-                goto again;
             }
         }
 
@@ -459,14 +440,6 @@ sub render {
         $header = 0;
 
     }
-    if($finalblank) {
-        print STDERR "$f:$line:1:ERROR: trailing blank line\n";
-        exit 3;
-    }
-    if($quote) {
-        # don't leave the quote "hanging"
-        push @desc, ".fi\n" if($manpage);
-    }
     if($tablemode) {
         # end of table
         push @desc, ".RE\n.IP\n" if($manpage);
@@ -474,25 +447,11 @@ sub render {
     return @desc;
 }
 
-sub maybespace {
-    my ($string) = @_;
-
-    if(($string =~ /(.* )(.*)/) &&
-       (length($2) <= 20)) {
-        return $1;
-    }
-    if(($string =~ /(.*:)(.*)/) &&
-       (length($2) <= 20)) {
-        return $1;
-    }
-    return $string;
-}
-
 sub single {
-    my ($dir, $manpage, $f, $standalone)=@_;
+    my ($manpage, $f, $standalone)=@_;
     my $fh;
-    open($fh, "<:crlf", "$dir/$f") ||
-        die "could not find $dir/$f";
+    open($fh, "<:crlf", "$f") ||
+        return 1;
     my $short;
     my $long;
     my $tags;
@@ -690,10 +649,6 @@ sub single {
     my $pre = $manpage ? "\n": "[1]";
 
     if($scope) {
-        if($category !~ /global/) {
-            print STDERR "$f:$line:1:ERROR: global scope option does not have global category\n";
-            return 2;
-        }
         if($scope eq "global") {
             push @desc, "\n" if(!$manpage);
             push @desc, "${pre}This option is global and does not need to be specified for each use of --next.\n";
@@ -703,6 +658,9 @@ sub single {
             return 2;
         }
     }
+
+    printdesc($manpage, 2, (@leading, @desc));
+    undef @desc;
 
     my @extra;
     if($multi eq "single") {
@@ -732,18 +690,12 @@ sub single {
     elsif($multi eq "custom") {
         ; # left for the text to describe
     }
-    elsif($multi eq "per-URL") {
-        push @extra,
-            "${pre}--$long is associated with a single URL. Use it once per URL ".
-            "when you use several URLs in a command line.\n";
-    }
     else {
         print STDERR "$f:$line:1:ERROR: unrecognized Multi: '$multi'\n";
         return 2;
     }
 
-    printdesc($manpage, 2, (@leading, @desc, @extra));
-    undef @desc;
+    printdesc($manpage, 2, @extra);
 
     my @foot;
 
@@ -767,31 +719,25 @@ sub single {
         $mstr .= sprintf "%s$l", $mstr?"$sep ":"";
         $i++;
     }
+    push @foot, seealso($standalone, $mstr);
 
     if($requires) {
         my $l = $manpage ? manpageify($long) : "--$long";
-        push @foot, "$l requires that libcurl".
-            " is built to support $requires.\n";
+        push @foot, "$l requires that the underlying libcurl".
+            " was built to support $requires. ";
     }
     if($mutexed) {
         my @m=split(/ /, $mutexed);
         my $mstr;
-        my $num = scalar(@m);
-        my $count;
         for my $k (@m) {
             if(!$helplong{$k}) {
                 print STDERR "WARN: $f mutexes a non-existing option: $k\n";
             }
             my $l = $manpage ? manpageify($k) : "--$k";
-            my $sep = ", ";
-            if($count == ($num -1)) {
-                $sep = " and ";
-            }
-            $mstr .= sprintf "%s$l", $mstr?$sep:"";
-            $count++;
+            $mstr .= sprintf "%s$l", $mstr?" and ":"";
         }
         push @foot, overrides($standalone,
-                              "This option is mutually exclusive with $mstr.\n");
+                              "This option is mutually exclusive to $mstr. ");
     }
     if($examples[0]) {
         my $s ="";
@@ -803,44 +749,16 @@ sub single {
                 $e =~ s!\$URL!https://example.com!g;
                 # convert single backslahes to doubles
                 $e =~ s/\\/\\\\/g;
-                print "curl $e\n";
+                print " curl $e\n";
             }
             print ".fi\n";
         }
         else {
             my @ex;
             push @ex, "[0q]Example$s:\n";
-            #
-            # long ASCII examples are wrapped. Preferably at the last space
-            # before the margin. Or at a colon. Otherwise it just cuts at the
-            # exact boundary.
-            #
             foreach my $e (@examples) {
                 $e =~ s!\$URL!https://example.com!g;
-                my $maxwidth = 60; # plus the "    curl " 18 col prefix
-                if(length($e) > $maxwidth) {
-                    # a long example, shorten it
-                    my $p = substr($e, 0, $maxwidth);
-                    $p = maybespace($p);
-                    push @ex, "[0q] curl ".$p."\\";
-                    $e = substr($e, length($p));
-                    do {
-                        my $r = substr($e, 0, $maxwidth);
-                        if(length($e) > $maxwidth) {
-                            $r = maybespace($r);
-                        }
-                        my $slash ="";
-                        $e = substr($e, length($r));
-                        if(length($e) > 0) {
-                            $slash = "\\";
-                        }
-
-                        push @ex, "[0q]      $r$slash" if($r);
-                    } while(length($e));
-                }
-                else {
-                    push @ex, "[0q] curl $e\n";
-                }
+                push @ex, "[0q] curl $e\n";
             }
             printdesc($manpage, 2, @ex);
         }
@@ -848,25 +766,23 @@ sub single {
     if($added) {
         push @foot, added($standalone, $added);
     }
-    push @foot, seealso($standalone, $mstr);
-
-    print "\n";
-    my $f = join("", @foot);
-    if($manpage) {
-        $f =~ s/ +\z//; # remove trailing space
-        print "$f\n";
-    }
-    else {
-        printdesc($manpage, 2, "[1]$f");
+    if($foot[0]) {
+        print "\n";
+        my $f = join("", @foot);
+        if($manpage) {
+            $f =~ s/ +\z//; # remove trailing space
+            print "$f\n";
+        }
+        else {
+            printdesc($manpage, 2, "[1]$f");
+        }
     }
     return 0;
 }
 
 sub getshortlong {
-    my ($dir, $f)=@_;
-    $f =~ s/^.*\///;
-    open(F, "<:crlf", "$dir/$f") ||
-        die "could not find $dir/$f";
+    my ($f)=@_;
+    open(F, "<:crlf", "$f");
     my $short;
     my $long;
     my $help;
@@ -874,9 +790,7 @@ sub getshortlong {
     my $protocols;
     my $category;
     my $start = 0;
-    my $line = 0;
     while(<F>) {
-        $line++;
         if(!$start) {
             if(/^---/) {
                 $start = 1;
@@ -891,11 +805,6 @@ sub getshortlong {
         }
         elsif(/^Help: (.*)/i) {
             $help=$1;
-            my $len = length($help);
-            if($len >= 49) {
-                printf STDERR "$f:$line:1:WARN: oversized help text: %d characters\n",
-                    $len;
-            }
         }
         elsif(/^Arg: (.*)/i) {
             $arg=$1;
@@ -924,41 +833,22 @@ sub getshortlong {
 }
 
 sub indexoptions {
-    my ($dir, @files) = @_;
+    my (@files) = @_;
     foreach my $f (@files) {
-        getshortlong($dir, $f);
+        getshortlong($f);
     }
 }
 
 sub header {
-    my ($dir, $manpage, $f)=@_;
+    my ($manpage, $f)=@_;
     my $fh;
-    open($fh, "<:crlf", "$dir/$f") ||
-        die "could not find $dir/$f";
+    open($fh, "<:crlf", "$f");
     my @d = render($manpage, $fh, $f, 1);
     close($fh);
     printdesc($manpage, 0, @d);
 }
 
-
-sub sourcecategories {
-    my ($dir) = @_;
-    my %cats;
-    open(H, "<$dir/../../src/tool_help.h") ||
-        die "can't find the header file";
-    while(<H>) {
-        if(/^\#define CURLHELP_([A-Z0-9]*)/) {
-            $cats{lc($1)}++;
-        }
-    }
-    close(H);
-    return %cats;
-}
-
 sub listhelp {
-    my ($dir) = @_;
-    my %cats = sourcecategories($dir);
-
     print <<HEAD
 /***************************************************************************
  *                                  _   _ ____  _
@@ -1011,12 +901,6 @@ HEAD
             $opt = "    --$long";
         }
         for my $i (0 .. $#categories) {
-            if(!$cats{ $categories[$i] }) {
-                printf STDERR "$f.md:ERROR: Unknown category '%s'\n",
-                    $categories[$i];
-                exit 3;
-            }
-
             $bitmask .= 'CURLHELP_' . uc $categories[$i];
             # If not last element, append |
             if($i < $#categories) {
@@ -1042,7 +926,7 @@ HEAD
         print $line;
     }
     print <<FOOT
-  { NULL, NULL, 0 }
+  { NULL, NULL, CURLHELP_HIDDEN }
 };
 FOOT
         ;
@@ -1061,20 +945,20 @@ sub listcats {
         push @categories, $key;
     }
     @categories = sort @categories;
+    unshift @categories, 'hidden';
     for my $i (0..$#categories) {
-        printf("#define CURLHELP_%-10s (%s)\n",
-               uc($categories[$i]), "1u << ${i}u");
+        print '#define ' . 'CURLHELP_' . uc($categories[$i]) . ' ' . "1u << " . $i . "u\n";
     }
 }
 
 sub listglobals {
-    my ($dir, @files) = @_;
+    my (@files) = @_;
     my @globalopts;
 
     # Find all global options and output them
     foreach my $f (sort @files) {
-        open(F, "<:crlf", "$dir/$f") ||
-            die "could not read $dir/$f";
+        open(F, "<:crlf", "$f") ||
+            next;
         my $long;
         my $start = 0;
         while(<F>) {
@@ -1106,7 +990,7 @@ sub listglobals {
 
 sub noext {
     my $in = $_[0];
-    $in =~ s/\.md//;
+    $in =~ s/\.d//;
     return $in;
 }
 
@@ -1115,12 +999,12 @@ sub sortnames {
 }
 
 sub mainpage {
-    my ($dir, $manpage, @files) = @_;
+    my ($manpage, @files) = @_;
     # $manpage is 1 for nroff, 0 for ASCII
     my $ret;
     my $fh;
-    open($fh, "<:crlf", "$dir/mainpage.idx") ||
-        die "no $dir/mainpage.idx file";
+    open($fh, "<:crlf", "mainpage.idx") ||
+        return 1;
 
     print <<HEADER
 .\\" **************************************************************************
@@ -1147,7 +1031,7 @@ sub mainpage {
 .\\" *
 .\\" **************************************************************************
 .\\"
-.\\" DO NOT EDIT. Generated by the curl project managen manpage generator.
+.\\" DO NOT EDIT. Generated by the curl project managen man page generator.
 .\\"
 .TH curl 1 "$date" "curl $version" "curl Manual"
 HEADER
@@ -1163,12 +1047,12 @@ HEADER
         if(/^%options/) {
             # output docs for all options
             foreach my $f (sort sortnames @files) {
-                $ret += single($dir, $manpage, $f, 0);
+                $ret += single($manpage, $f, 0);
             }
         }
         else {
             # render the file
-            header($dir, $manpage, $f);
+            header($manpage, $f);
         }
     }
     close($fh);
@@ -1196,19 +1080,19 @@ sub showprotocols {
 }
 
 sub getargs {
-    my ($dir, $f, @s) = @_;
+    my ($f, @s) = @_;
     if($f eq "mainpage") {
-        listglobals($dir, @s);
-        mainpage($dir, 1, @s);
+        listglobals(@s);
+        mainpage(1, @s);
         return;
     }
     elsif($f eq "ascii") {
-        listglobals($dir, @s);
-        mainpage($dir, 0, @s);
+        listglobals(@s);
+        mainpage(0, @s);
         return;
     }
     elsif($f eq "listhelp") {
-        listhelp($dir);
+        listhelp();
         return;
     }
     elsif($f eq "single") {
@@ -1224,56 +1108,15 @@ sub getargs {
         return;
     }
 
-    print "Usage: managen ".
-        "[-d dir] <mainpage/ascii/listhelp/single FILE/protos/listcats> [files]\n";
+    print "Usage: managen <mainpage/ascii/listhelp/single FILE/protos/listcats> [files]\n";
 }
 
 #------------------------------------------------------------------------
 
-my $dir = ".";
-my $include = "../../include";
 my $cmd = shift @ARGV;
-
- check:
-if($cmd eq "-d") {
-    # specifies source directory
-    $dir = shift @ARGV;
-    $cmd = shift @ARGV;
-    goto check;
-}
-elsif($cmd eq "-I") {
-    # include path root
-    $include = shift @ARGV;
-    $cmd = shift @ARGV;
-    goto check;
-}
-elsif($cmd eq "-c") {
-    # Column width
-    $colwidth = 0 + shift @ARGV;
-    $cmd = shift @ARGV;
-    goto check;
-}
-
 my @files = @ARGV; # the rest are the files
 
-# can be overriden for releases
-if($ENV{'CURL_MAKETGZ_VERSION'}) {
-    $version = $ENV{'CURL_MAKETGZ_VERSION'};
-}
-else {
-    open(INC, "<$include/curl/curlver.h");
-    while(<INC>) {
-        if($_ =~ /^#define LIBCURL_VERSION \"([0-9.]*)/) {
-            $version = $1;
-            last;
-        }
-    }
-    close(INC);
-}
-
 # learn all existing options
-indexoptions($dir, @files);
+indexoptions(@files);
 
-getargs($dir, $cmd, @files);
-
-exit $error;
+getargs($cmd, @files);

@@ -47,9 +47,9 @@ static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
   return CURL_READFUNC_ABORT;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-   CURLcode res = CURLE_OK;
+   int res = 0;
    CURL *curl = NULL;
    CURLM *mcurl = NULL;
    int still_running = 1;

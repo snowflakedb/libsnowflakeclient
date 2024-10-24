@@ -13,7 +13,6 @@ Protocol:
   - SFTP
   - FILE
   - SMB
-Added-in: 7.5
 ---
 
 # NAME
@@ -39,8 +38,6 @@ transfer to extract the received time (if any).
 # DEFAULT
 
 0
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -68,7 +65,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always, for SFTP since 7.49.0
 
 # RETURN VALUE
 

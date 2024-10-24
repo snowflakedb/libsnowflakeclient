@@ -8,7 +8,6 @@ See-also:
   - libcurl-thread (3)
 Protocol:
   - All
-Added-in: n/a
 ---
 <!-- markdown-link-check-disable -->
 # NAME
@@ -122,7 +121,7 @@ user running the libcurl application, SCP: or SFTP: URLs could access password
 or private-key protected resources,
 e.g. **sftp://user@some-internal-server/etc/passwd**
 
-The CURLOPT_REDIR_PROTOCOLS_STR(3) and CURLOPT_NETRC(3) options can be
+The CURLOPT_REDIR_PROTOCOLS(3) and CURLOPT_NETRC(3) options can be
 used to mitigate against this kind of attack.
 
 A redirect can also specify a location available only on the machine running
@@ -133,7 +132,7 @@ E.g. **http://127.0.0.1/** or **http://intranet/delete-stuff.cgi?delete=all** or
 Applications can mitigate against this by disabling
 CURLOPT_FOLLOWLOCATION(3) and handling redirects itself, sanitizing URLs
 as necessary. Alternately, an app could leave CURLOPT_FOLLOWLOCATION(3)
-enabled but set CURLOPT_REDIR_PROTOCOLS_STR(3) and install a
+enabled but set CURLOPT_REDIR_PROTOCOLS(3) and install a
 CURLOPT_OPENSOCKETFUNCTION(3) or CURLOPT_PREREQFUNCTION(3) callback
 function in which addresses are sanitized before use.
 
@@ -165,7 +164,7 @@ non-redirected URLs, if the user is allowed to specify an arbitrary URL that
 could point to a private resource. For example, a web app providing a
 translation service might happily translate **file://localhost/etc/passwd**
 and display the result. Applications can mitigate against this with the
-CURLOPT_PROTOCOLS_STR(3) option as well as by similar mitigation techniques
+CURLOPT_PROTOCOLS(3) option as well as by similar mitigation techniques
 for redirections.
 
 A malicious FTP server could in response to the PASV command return an IP
@@ -309,9 +308,9 @@ Remedies:
 
 curl command lines can use *--proto* to limit what URL schemes it accepts
 
-## Use CURLOPT_PROTOCOLS_STR
+## Use CURLOPT_PROTOCOLS
 
-libcurl programs can use CURLOPT_PROTOCOLS_STR(3) to limit what URL schemes it accepts
+libcurl programs can use CURLOPT_PROTOCOLS(3) to limit what URL schemes it accepts
 
 ## consider not allowing the user to set the full URL
 
@@ -381,11 +380,10 @@ CURLOPT_TIMEOUT(3) and/or CURLOPT_LOW_SPEED_LIMIT(3) options can
 be used to mitigate against this.
 
 A malicious server could cause libcurl to download an infinite amount of data,
-potentially causing system resources to be exhausted resulting in a system or
-application crash. Setting the CURLOPT_MAXFILESIZE_LARGE(3) option is not
-sufficient to guard against this. Instead, applications should monitor the
-amount of data received within the write or progress callback and abort once
-the limit is reached.
+potentially causing all of memory or disk to be filled. Setting the
+CURLOPT_MAXFILESIZE_LARGE(3) option is not sufficient to guard against
+this. Instead, applications should monitor the amount of data received within
+the write or progress callback and abort once the limit is reached.
 
 A malicious HTTP server could cause an infinite redirection loop, causing a
 denial-of-service. This can be mitigated by using the
@@ -461,8 +459,6 @@ libcurl itself uses *fork()* and *execl()* if told to use the
 **CURLAUTH_NTLM_WB** authentication method which then invokes the helper
 command in a child process with file descriptors duplicated. Make sure that
 only the trusted and reliable helper program is invoked!
-
-This feature was removed from curl in 8.8.0.
 
 # Secrets in memory
 

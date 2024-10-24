@@ -24,9 +24,9 @@
 #include "test.h"
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res;
+  int res;
   CURL *curl;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
@@ -54,7 +54,7 @@ CURLcode test(char *URL)
   test_setopt(curl, CURLOPT_RTSP_REQUEST, CURL_RTSPREQ_DESCRIBE);
 
   res = curl_easy_perform(curl);
-  if(res != CURLE_OK) {
+  if(res != (int)CURLE_OK) {
     fprintf(stderr, "Failed to send DESCRIBE: %d\n", res);
     res = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;

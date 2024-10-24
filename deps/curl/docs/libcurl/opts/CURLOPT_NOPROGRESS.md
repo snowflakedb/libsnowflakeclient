@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_XFERINFOFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -37,8 +36,6 @@ getting called.
 
 1, meaning it normally runs without a progress meter.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -57,7 +54,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

@@ -29,7 +29,7 @@ Content-Type: fake/data
 http
 </server>
 <features>
-Debug
+debug
 xattr
 </features>
 # simulate the xattr operations

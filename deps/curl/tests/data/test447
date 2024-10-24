@@ -30,7 +30,7 @@ Funny-head: yesyes
 # Client-side
 <client>
 <features>
-Debug
+debug
 </features>
 <server>
 http

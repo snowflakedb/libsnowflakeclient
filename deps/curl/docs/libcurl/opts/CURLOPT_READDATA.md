@@ -11,7 +11,6 @@ See-also:
   - CURLOPT_WRITEFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.9.7
 ---
 
 # NAME
@@ -41,9 +40,7 @@ might experience crashes.
 
 # DEFAULT
 
-stdin
-
-# %PROTOCOLS%
+By default, this is a FILE * to stdin.
 
 # EXAMPLE
 
@@ -68,12 +65,10 @@ int main(void)
 }
 ~~~
 
-# HISTORY
+# AVAILABILITY
 
 This option was once known by the older name CURLOPT_INFILE, the name
 CURLOPT_READDATA(3) was introduced in 7.9.7.
-
-# %AVAILABILITY%
 
 # RETURN VALUE
 

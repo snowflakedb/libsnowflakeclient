@@ -28,11 +28,11 @@
     if(!(expr)) {                                          \
       fprintf(stderr, "%s:%d Assertion '%s' failed: %s\n", \
               __FILE__, __LINE__, #expr, msg);             \
-      return (CURLcode)1;                                  \
+      return 1;                                            \
     }                                                      \
   } while(0)
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   int rc;
   (void)URL;
@@ -58,5 +58,5 @@ CURLcode test(char *URL)
   rc = curl_strnequal("ii", "II", 3);
   fail_unless(rc != 0, "return code should be non-zero");
 
-  return CURLE_OK;
+  return 0;
 }

@@ -39,11 +39,11 @@
  * fast/different compared to the real/distant servers we saw the bug happen
  * with.
  */
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *http_handle = NULL;
   CURLM *multi_handle = NULL;
-  CURLcode res = CURLE_OK;
+  int res = 0;
 
   int still_running; /* keep number of running handles */
 

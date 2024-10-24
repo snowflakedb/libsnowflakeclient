@@ -24,7 +24,6 @@
 #include "test.h"
 
 #include "testutil.h"
-#include "testtrace.h"
 #include "warnless.h"
 #include "memdebug.h"
 
@@ -43,13 +42,13 @@ static int xferinfo(void *p,
   return 1; /* fail as fast as we can */
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURL *curls = NULL;
   CURLM *multi = NULL;
   int still_running;
-  CURLcode i = CURLE_OK;
-  CURLcode res = CURLE_OK;
+  int i = 0;
+  int res = 0;
   curl_mimepart *field = NULL;
   curl_mime *mime = NULL;
   int counter = 1;
@@ -75,12 +74,6 @@ CURLcode test(char *URL)
   easy_setopt(curls, CURLOPT_XFERINFOFUNCTION, xferinfo);
   easy_setopt(curls, CURLOPT_NOPROGRESS, 1L);
 
-  libtest_debug_config.nohex = 1;
-  libtest_debug_config.tracetime = 1;
-  test_setopt(curls, CURLOPT_DEBUGDATA, &libtest_debug_config);
-  easy_setopt(curls, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
-  easy_setopt(curls, CURLOPT_VERBOSE, 1L);
-
   multi_add_handle(multi, curls);
 
   multi_perform(multi, &still_running);
@@ -88,11 +81,10 @@ CURLcode test(char *URL)
   abort_on_test_timeout();
 
   while(still_running && counter--) {
-    CURLMcode mres;
     int num;
-    mres = curl_multi_wait(multi, NULL, 0, TEST_HANG_TIMEOUT, &num);
-    if(mres != CURLM_OK) {
-      printf("curl_multi_wait() returned %d\n", mres);
+    res = curl_multi_wait(multi, NULL, 0, TEST_HANG_TIMEOUT, &num);
+    if(res != CURLM_OK) {
+      printf("curl_multi_wait() returned %d\n", res);
       res = TEST_ERR_MAJOR_BAD;
       goto test_cleanup;
     }

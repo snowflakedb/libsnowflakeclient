@@ -33,9 +33,9 @@ static char *suburl(const char *base, int i)
 /*
  * Test Session ID capture
  */
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res;
+  int res;
   CURL *curl;
   char *stream_uri = NULL;
   char *rtsp_session_id;

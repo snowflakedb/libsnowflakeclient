@@ -16,10 +16,4 @@ Example:
 
 # `--proxy-tlspassword`
 
-Set password to use with the TLS authentication method specified with
---proxy-tlsauthtype when using HTTPS proxy. Requires that --proxy-tlsuser is
-set.
-
-This option does not work with TLS 1.3.
-
-Equivalent to --tlspassword but used in HTTPS proxy context.
+Same as --tlspassword but used in HTTPS proxy context.

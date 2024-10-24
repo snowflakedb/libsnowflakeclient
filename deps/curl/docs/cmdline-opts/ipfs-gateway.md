@@ -6,7 +6,7 @@ Arg: <URL>
 Help: Gateway for IPFS
 Protocols: IPFS
 Added: 8.4.0
-Category: curl
+Category: ipfs
 Multi: single
 See-also:
   - help
@@ -24,8 +24,7 @@ if a `~/.ipfs/gateway` file holding the gateway URL exists.
 If you run a local IPFS node, this gateway is by default available under
 `http://localhost:8080`. A full example URL would look like:
 
-    curl --ipfs-gateway http://localhost:8080 \
-       ipfs://bafybeigagd5nmnn2iys2f3
+    curl --ipfs-gateway http://localhost:8080 ipfs://bafybeigagd5nmnn2iys2f3doro7ydrevyr2mzarwidgadawmamiteydbzi
 
 There are many public IPFS gateways. See for example:
 https://ipfs.github.io/public-gateway-checker/

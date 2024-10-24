@@ -8,7 +8,6 @@ See-also:
   - curl_slist_append (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -31,11 +30,6 @@ linked list.
 Passing in a NULL pointer in *list* makes this function return immediately
 with no action.
 
-Any use of the **list** after this function has been called and have returned,
-is illegal.
-
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -57,7 +51,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

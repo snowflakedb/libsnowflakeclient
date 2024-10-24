@@ -22,14 +22,7 @@
 #
 ###########################################################################
 
-if BUILD_DOCS
-# if we disable man page building, ignore these
-RUNTESTS_DOCS = runtests.1
-TESTCURL_DOCS = testcurl.1
-MANFILES = $(RUNTESTS_DOCS) $(TESTCURL_DOCS)
-endif
-
-CURLPAGES = runtests.md testcurl.md
+MANDISTPAGES = runtests.1.dist testcurl.1.dist
 
 # scripts used in test cases
 TESTSCRIPTS = \
@@ -47,53 +40,17 @@ TESTSCRIPTS = \
  test1275.pl  \
  test1276.pl  \
  test1477.pl  \
- test1486.pl  \
- test1488.pl  \
  test1544.pl  \
- test1707.pl  \
  test971.pl
 
-EXTRA_DIST =        \
- CMakeLists.txt     \
- FILEFORMAT.md      \
- README.md          \
- appveyor.pm        \
- azure.pm           \
- devtest.pl         \
- dictserver.py      \
- directories.pm     \
- ech_combos.py      \
- ech_tests.sh       \
- ftpserver.pl       \
- getpart.pm         \
- globalconfig.pm    \
- http-server.pl     \
- http2-server.pl    \
- http3-server.pl    \
- memanalyze.pl      \
- negtelnetserver.py \
- nghttpx.conf       \
- pathhelp.pm        \
- processhelp.pm     \
- requirements.txt   \
- rtspserver.pl      \
- runner.pm          \
- runtests.pl        \
- secureserver.pl    \
- serverhelp.pm      \
- servers.pm         \
- smbserver.py       \
- sshhelp.pm         \
- sshserver.pl       \
- stunnel.pem        \
- testcurl.pl        \
- testutil.pm        \
- tftpserver.pl      \
- util.py            \
- valgrind.pm        \
- valgrind.supp      \
- $(TESTSCRIPTS)     \
- $(CURLPAGES)
+EXTRA_DIST = appveyor.pm azure.pm CMakeLists.txt devtest.pl             \
+ dictserver.py directories.pm FILEFORMAT.md processhelp.pm ftpserver.pl \
+ getpart.pm globalconfig.pm http-server.pl http2-server.pl              \
+ http3-server.pl memanalyze.pl negtelnetserver.py pathhelp.pm README.md \
+ rtspserver.pl runner.pm runtests.1 runtests.pl secureserver.pl         \
+ serverhelp.pm servers.pm smbserver.py sshhelp.pm sshserver.pl          \
+ stunnel.pem testcurl.1 testcurl.pl testutil.pm tftpserver.pl util.py   \
+ valgrind.pm valgrind.supp $(TESTSCRIPTS)
 
 DISTCLEANFILES = configurehelp.pm
 
@@ -133,15 +90,8 @@ TEST_E = -a -e
 TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-TEST_CI = $(TEST_NF) -r -rm -j2
+TEST_CI = $(TEST_NF) -rm
 endif
-
-CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
-
-SUFFIXES = .1 .md
-
-.md.1:
-	$(CD2)$(CD2NROFF)
 
 # make sure that PERL is pointing to an executable
 perlcheck:
@@ -177,7 +127,7 @@ checksrc:
 	(cd server && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
-all-local: $(MANFILES)
-
-distclean:
-	rm -f $(MANFILES)
+if CURLDEBUG
+# for debug builds, we scan the sources on all regular make invokes
+all-local: checksrc
+endif

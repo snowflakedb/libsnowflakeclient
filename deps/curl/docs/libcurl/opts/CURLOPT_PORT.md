@@ -10,7 +10,6 @@ See-also:
   - CURLOPT_URL (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -43,10 +42,8 @@ and therefore using a port number lower than zero or over 65535 causes a
 
 # DEFAULT
 
-0 which makes it not used. This also makes port number zero impossible to set
-with this API.
-
-# %PROTOCOLS%
+By default this is 0 which makes it not used. This also makes port number zero
+impossible to set with this API.
 
 # EXAMPLE
 
@@ -64,7 +61,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

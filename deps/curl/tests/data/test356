@@ -29,7 +29,7 @@ Alt-Svc: h1="nowhere.foo:70000"
 # Client-side
 <client>
 <features>
-Debug
+debug
 alt-svc
 </features>
 <server>

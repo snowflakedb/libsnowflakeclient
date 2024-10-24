@@ -12,7 +12,6 @@ See-also:
   - curl_global_trace (3)
 Protocol:
   - All
-Added-in: 7.9.6
 ---
 
 # NAME
@@ -92,19 +91,15 @@ The data is SSL/TLS (binary) data sent to the peer.
 
 The data is SSL/TLS (binary) data received from the peer.
 
-##
+WARNING: This callback may be called with the curl *handle* set to an
+internal handle. (Added in 8.4.0)
 
-WARNING: This callback may be called with the curl *handle* set to an internal
-handle. (Added in 8.4.0)
-
-If you need to distinguish your curl *handle* from internal handles then set
-CURLOPT_PRIVATE(3) on your handle.
+If you need to distinguish your curl *handle* from internal handles then
+set CURLOPT_PRIVATE(3) on your handle.
 
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -210,7 +205,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 

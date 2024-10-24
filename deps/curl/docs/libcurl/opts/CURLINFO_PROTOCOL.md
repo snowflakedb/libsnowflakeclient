@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - All
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -44,8 +43,6 @@ CURLPROTO_SCP, CURLPROTO_SFTP, CURLPROTO_SMB, CURLPROTO_SMBS, CURLPROTO_SMTP,
 CURLPROTO_SMTPS, CURLPROTO_TELNET, CURLPROTO_TFTP, CURLPROTO_MQTT
 ~~~
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -65,11 +62,9 @@ int main(void)
 }
 ~~~
 
-# DEPRECATED
+# AVAILABILITY
 
-Deprecated since 7.85.0.
-
-# %AVAILABILITY%
+Added in 7.52.0. Deprecated since 7.85.0.
 
 # RETURN VALUE
 

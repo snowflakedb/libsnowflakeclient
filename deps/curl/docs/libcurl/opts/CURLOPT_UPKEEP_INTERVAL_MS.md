@@ -8,7 +8,6 @@ See-also:
   - CURLOPT_TCP_KEEPALIVE (3)
 Protocol:
   - All
-Added-in: 7.62.0
 ---
 
 # NAME
@@ -42,8 +41,6 @@ is called, an HTTP/2 PING frame is sent on the connection.
 
 CURL_UPKEEP_INTERVAL_DEFAULT (currently defined as 60000L, which is 60 seconds)
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -74,7 +71,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.62.0
 
 # RETURN VALUE
 

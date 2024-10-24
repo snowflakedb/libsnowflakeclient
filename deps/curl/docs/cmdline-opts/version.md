@@ -46,9 +46,6 @@ curl was built with support for character set conversions (like EBCDIC)
 This curl uses a libcurl built with Debug. This enables more error-tracking
 and memory debugging etc. For curl-developers only!
 
-## `ECH`
-ECH support is present.
-
 ## `gsasl`
 The built-in SASL authentication includes extensions to support SCRAM because
 libcurl was built with libgsasl.
@@ -92,7 +89,6 @@ NTLM authentication is supported.
 
 ## `NTLM_WB`
 NTLM delegation to winbind helper is supported.
-This feature was removed from curl in 8.8.0.
 
 ## `PSL`
 PSL is short for Public Suffix List and means that this curl has been built

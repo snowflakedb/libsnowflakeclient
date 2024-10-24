@@ -38,15 +38,6 @@ typedef unsigned long   u_int32_t;
 #define isatty(fd)      0
 
 
-/* Workaround bug in IBM QADRT runtime library:
- * function puts() does not output the implicit trailing newline.
- */
-
-#include <stdio.h>      /* Be sure it is loaded. */
-#undef puts
-#define puts(s) (fputs((s), stdout) == EOF? EOF: putchar('\n'))
-
-
 /* System API wrapper prototypes & definitions to support ASCII parameters. */
 
 #include <sys/socket.h>
@@ -54,8 +45,6 @@ typedef unsigned long   u_int32_t;
 #include <gskssl.h>
 #include <qsoasync.h>
 #include <gssapi.h>
-
-#ifdef BUILDING_LIBCURL
 
 extern int Curl_getaddrinfo_a(const char *nodename,
                               const char *servname,
@@ -151,7 +140,5 @@ extern int Curl_os400_getsockname(int sd, struct sockaddr *addr, int *addrlen);
 #define inflate                 Curl_os400_inflate
 #define inflateEnd              Curl_os400_inflateEnd
 #endif
-
-#endif /* BUILDING_LIBCURL */
 
 #endif /* HEADER_CURL_SETUP_OS400_H */

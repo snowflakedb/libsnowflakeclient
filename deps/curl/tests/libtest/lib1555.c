@@ -53,9 +53,9 @@ static int progressCallback(void *arg,
   return 1;
 }
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res = CURLE_OK;
+  int res = 0;
 
   global_init(CURL_GLOBAL_ALL);
 

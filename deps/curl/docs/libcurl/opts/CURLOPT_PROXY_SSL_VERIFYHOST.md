@@ -13,7 +13,6 @@ Protocol:
   - TLS
 TLS-backend:
   - All
-Added-in: 7.52.0
 ---
 
 # NAME
@@ -65,8 +64,6 @@ of the proxy certificate.
 
 2
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -84,7 +81,11 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.52.0.
+
+If built TLS enabled.
 
 # RETURN VALUE
 

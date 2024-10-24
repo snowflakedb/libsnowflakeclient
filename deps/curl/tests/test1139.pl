@@ -24,12 +24,12 @@
 ###########################################################################
 #
 # Scan symbols-in-version (which is verified to be correct by test 1119), then
-# verify that each option mention in there that should have its own manpage
+# verify that each option mention in there that should have its own man page
 # actually does.
 #
 # In addition, make sure that every current option to curl_easy_setopt,
 # curl_easy_getinfo and curl_multi_setopt are also mentioned in their
-# corresponding main (index) manpage.
+# corresponding main (index) man page.
 #
 # src/tool_getparam.c lists all options curl can parse
 # docs/curl.1 documents all command line options
@@ -64,14 +64,14 @@ my %alias = (
     'CURLINFO_TEXT' => 'none'
     );
 
-sub scanmdpage {
+sub scanmanpage {
     my ($file, @words) = @_;
 
     open(my $mh, "<", "$file") ||
         die "could not open $file";
     my @m;
     while(<$mh>) {
-        if($_ =~ /^## (.*)/) {
+        if($_ =~ /^\.IP (.*)/) {
             my $w = $1;
             # "unquote" minuses
             $w =~ s/\\-/-/g;
@@ -80,15 +80,6 @@ sub scanmdpage {
     }
     close($mh);
 
-    my @ms = sort @m;
-    for my $i (0 .. $#m) {
-        if($ms[$i] ne $m[$i]) {
-            print STDERR "$file:1:ERROR: $m[$i] is not alphabetical (expected $ms[$i])\n";
-            $errors++;
-            # no point in reporting many
-            last;
-        }
-    }
     foreach my $m (@words) {
         my @g = grep(/$m/, @m);
         if(!$g[0]) {
@@ -138,8 +129,8 @@ while(<$r>) {
             elsif($type eq "MOPT") {
                 push @curlmopt, $opt,
             }
-            if(! -f "$root/docs/libcurl/opts/$opt.md") {
-                print STDERR "Missing $opt.md\n";
+            if(! -f "$buildroot/docs/libcurl/opts/$opt.3") {
+                print STDERR "Missing $opt.3\n";
                 $errors++;
             }
         }
@@ -147,9 +138,9 @@ while(<$r>) {
 }
 close($r);
 
-scanmdpage("$root/docs/libcurl/curl_easy_setopt.md", @curlopt);
-scanmdpage("$root/docs/libcurl/curl_easy_getinfo.md", @curlinfo);
-scanmdpage("$root/docs/libcurl/curl_multi_setopt.md", @curlmopt);
+scanmanpage("$buildroot/docs/libcurl/curl_easy_setopt.3", @curlopt);
+scanmanpage("$buildroot/docs/libcurl/curl_easy_getinfo.3", @curlinfo);
+scanmanpage("$buildroot/docs/libcurl/curl_multi_setopt.3", @curlmopt);
 
 # using this hash array, we can skip specific options
 my %opts = (
@@ -177,7 +168,6 @@ my %opts = (
     '--krb4' => 6,
     '--ftp-ssl' => 6,
     '--ftp-ssl-reqd' => 6,
-    '--include' => 6,
 
     # for tests and debug only, can remain hidden
     '--test-event' => 6,
@@ -228,8 +218,8 @@ while(<$r>) {
 close($r);
 
 #########################################################################
-# parse the curl.1 manpage, extract all documented command line options
-# The manpage may or may not be rebuilt, so check both possible locations
+# parse the curl.1 man page, extract all documented command line options
+# The man page may or may not be rebuilt, so check both possible locations
 open($r, "<", "$buildroot/docs/cmdline-opts/curl.1") || open($r, "<", "$root/docs/cmdline-opts/curl.1") ||
     die "failed getting curl.1";
 my @manpage; # store all parsed parameters

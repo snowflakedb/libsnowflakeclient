@@ -11,7 +11,6 @@ Protocol:
   - HTTP
   - IMAP
   - SMTP
-Added-in: 7.81.0
 ---
 
 # NAME
@@ -57,8 +56,6 @@ containing multipart form is sent, this is normally transmitted as
 
 0, meaning disabled.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -91,7 +88,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Option added in 7.81.0.
 
 # RETURN VALUE
 

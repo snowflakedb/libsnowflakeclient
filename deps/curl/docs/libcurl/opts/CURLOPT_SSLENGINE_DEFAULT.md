@@ -11,7 +11,6 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
-Added-in: 7.9.3
 ---
 
 # NAME
@@ -37,8 +36,6 @@ This option has no effect unless set after CURLOPT_SSLENGINE(3).
 
 None
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -56,7 +53,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Only if the SSL backend is OpenSSL built with engine support.
 
 # RETURN VALUE
 

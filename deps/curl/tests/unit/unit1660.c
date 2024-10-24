@@ -41,7 +41,7 @@ unit_stop(void)
 #if defined(CURL_DISABLE_HTTP) || defined(CURL_DISABLE_HSTS)
 UNITTEST_START
 {
-  return CURLE_OK; /* nothing to do when HTTP or HSTS are disabled */
+  return 0; /* nothing to do when HTTP or HSTS are disabled */
 }
 UNITTEST_STOP
 #else
@@ -118,7 +118,6 @@ static void showsts(struct stsentry *e, const char *chost)
 }
 
 UNITTEST_START
-{
   CURLcode result;
   struct stsentry *e;
   struct hsts *h = Curl_hsts_init();
@@ -160,7 +159,7 @@ UNITTEST_START
     showsts(e, chost);
   }
 
-  printf("Number of entries: %zu\n", Curl_llist_count(&h->list));
+  printf("Number of entries: %zu\n", h->list.size);
 
   /* verify that it is exists for 7 seconds */
   chost = "expire.example";
@@ -175,6 +174,6 @@ UNITTEST_START
   Curl_hsts_cleanup(&h);
   curl_easy_cleanup(easy);
   curl_global_cleanup();
-}
+
 UNITTEST_STOP
 #endif

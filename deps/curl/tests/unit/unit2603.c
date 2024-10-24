@@ -37,7 +37,6 @@ static void unit_stop(void)
 {
 }
 
-#ifndef CURL_DISABLE_HTTP
 struct tcase {
   const char **input;
   const char *default_scheme;
@@ -177,11 +176,9 @@ static const char *T6_INPUT[] = {
 static struct tcase TEST6a = {
   T6_INPUT, NULL, "PUT", NULL, NULL, "/path", 1, 3
 };
-#endif
 
 UNITTEST_START
 
-#ifndef CURL_DISABLE_HTTP
   parse_success(&TEST1a);
   parse_success(&TEST1b);
   parse_success(&TEST2);
@@ -189,6 +186,5 @@ UNITTEST_START
   parse_success(&TEST4a);
   parse_success(&TEST5a);
   parse_success(&TEST6a);
-#endif
 
 UNITTEST_STOP

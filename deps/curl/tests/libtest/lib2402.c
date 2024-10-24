@@ -31,9 +31,9 @@
 
 #define NUM_HANDLES 4
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
-  CURLcode res = CURLE_OK;
+  int res = 0;
   CURL *curl[NUM_HANDLES] = {0};
   int running;
   CURLM *m = NULL;

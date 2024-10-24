@@ -10,7 +10,6 @@ See-also:
   - curl_easy_setopt (3)
 Protocol:
   - RTSP
-Added-in: 7.20.0
 ---
 
 # NAME
@@ -36,8 +35,6 @@ Listening for server initiated requests is not implemented!
 Applications wishing to resume an RTSP session on another connection should
 retrieve this info before closing the active connection.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -57,7 +54,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.20.0
 
 # RETURN VALUE
 

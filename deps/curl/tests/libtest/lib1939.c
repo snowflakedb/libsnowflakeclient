@@ -26,7 +26,7 @@
 
 #include "memdebug.h"
 
-CURLcode test(char *URL)
+int test(char *URL)
 {
   CURLM *multi;
   CURL *easy;

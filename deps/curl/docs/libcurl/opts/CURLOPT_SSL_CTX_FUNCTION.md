@@ -5,12 +5,9 @@ Title: CURLOPT_SSL_CTX_FUNCTION
 Section: 3
 Source: libcurl
 See-also:
-  - CURLOPT_CA_CACHE_TIMEOUT (3)
-  - CURLOPT_CAINFO (3)
-  - CURLOPT_CAINFO_BLOB (3)
   - CURLOPT_SSL_CTX_DATA (3)
-  - CURLOPT_SSL_VERIFYHOST (3)
   - CURLOPT_SSL_VERIFYPEER (3)
+  - CURLOPT_CAINFO (3)
 Protocol:
   - TLS
 TLS-backend:
@@ -18,7 +15,6 @@ TLS-backend:
   - wolfSSL
   - mbedTLS
   - BearSSL
-Added-in: 7.10.6
 ---
 
 # NAME
@@ -82,15 +78,9 @@ callback function has returned. Your application must not assume that it can
 keep using the SSL context or data derived from it once this function is
 completed.
 
-For libcurl builds using TLS backends that support CA caching and
-CURLOPT_CA_CACHE_TIMEOUT(3) is not set to zero, multiple calls to this
-callback may be done with the same CA store in memory.
-
 # DEFAULT
 
 NULL
-
-# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -167,7 +157,10 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+OpenSSL (added in 7.11.0), wolfSSL (added in 7.42.0), mbedTLS (added in
+7.54.0) or BearSSL (added in 7.83.0)
 
 # RETURN VALUE
 

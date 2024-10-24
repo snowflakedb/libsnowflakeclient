@@ -15,7 +15,6 @@ TLS-backend:
   - GnuTLS
   - mbedTLS
   - wolfSSL
-Added-in: 7.84.0
 ---
 
 # NAME
@@ -44,8 +43,6 @@ This is a path identifying a directory.
 
 The **path** pointer is set to NULL if there is no default path.
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -63,7 +60,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.84.0
 
 # RETURN VALUE
 

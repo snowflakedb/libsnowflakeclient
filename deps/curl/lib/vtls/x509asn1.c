@@ -25,15 +25,13 @@
 #include "curl_setup.h"
 
 #if defined(USE_GNUTLS) || defined(USE_WOLFSSL) ||      \
-  defined(USE_SCHANNEL) || defined(USE_SECTRANSP) ||    \
-  defined(USE_MBEDTLS)
+  defined(USE_SCHANNEL) || defined(USE_SECTRANSP)
 
 #if defined(USE_WOLFSSL) || defined(USE_SCHANNEL)
 #define WANT_PARSEX509 /* uses Curl_parseX509() */
 #endif
 
-#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_SECTRANSP) || \
-  defined(USE_MBEDTLS)
+#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_SECTRANSP)
 #define WANT_EXTRACT_CERTINFO /* uses Curl_extract_certinfo() */
 #define WANT_PARSEX509 /* ... uses Curl_parseX509() */
 #endif
@@ -99,6 +97,10 @@
 #define CURL_ASN1_CHARACTER_STRING      29
 #define CURL_ASN1_BMP_STRING            30
 
+/* Max sixes */
+
+#define MAX_X509_STR  10000
+#define MAX_X509_CERT 100000
 
 #ifdef WANT_EXTRACT_CERTINFO
 /* ASN.1 OID table entry. */
@@ -108,16 +110,15 @@ struct Curl_OID {
 };
 
 /* ASN.1 OIDs. */
+static const char       cnOID[] = "2.5.4.3";    /* Common name. */
+static const char       sanOID[] = "2.5.29.17"; /* Subject alternative name. */
+
 static const struct Curl_OID OIDtable[] = {
   { "1.2.840.10040.4.1",        "dsa" },
   { "1.2.840.10040.4.3",        "dsa-with-sha1" },
   { "1.2.840.10045.2.1",        "ecPublicKey" },
   { "1.2.840.10045.3.0.1",      "c2pnb163v1" },
   { "1.2.840.10045.4.1",        "ecdsa-with-SHA1" },
-  { "1.2.840.10045.4.3.1",      "ecdsa-with-SHA224" },
-  { "1.2.840.10045.4.3.2",      "ecdsa-with-SHA256" },
-  { "1.2.840.10045.4.3.3",      "ecdsa-with-SHA384" },
-  { "1.2.840.10045.4.3.4",      "ecdsa-with-SHA512" },
   { "1.2.840.10046.2.1",        "dhpublicnumber" },
   { "1.2.840.113549.1.1.1",     "rsaEncryption" },
   { "1.2.840.113549.1.1.2",     "md2WithRSAEncryption" },
@@ -131,7 +132,7 @@ static const struct Curl_OID OIDtable[] = {
   { "1.2.840.113549.2.2",       "md2" },
   { "1.2.840.113549.2.5",       "md5" },
   { "1.3.14.3.2.26",            "sha1" },
-  { "2.5.4.3",                  "CN" },
+  { cnOID,                      "CN" },
   { "2.5.4.4",                  "SN" },
   { "2.5.4.5",                  "serialNumber" },
   { "2.5.4.6",                  "C" },
@@ -152,14 +153,13 @@ static const struct Curl_OID OIDtable[] = {
   { "2.5.4.65",                 "pseudonym" },
   { "1.2.840.113549.1.9.1",     "emailAddress" },
   { "2.5.4.72",                 "role" },
-  { "2.5.29.17",                "subjectAltName" },
+  { sanOID,                     "subjectAltName" },
   { "2.5.29.18",                "issuerAltName" },
   { "2.5.29.19",                "basicConstraints" },
   { "2.16.840.1.101.3.4.2.4",   "sha224" },
   { "2.16.840.1.101.3.4.2.1",   "sha256" },
   { "2.16.840.1.101.3.4.2.2",   "sha384" },
   { "2.16.840.1.101.3.4.2.3",   "sha512" },
-  { "1.2.840.113549.1.9.2",     "unstructuredName" },
   { (const char *) NULL,        (const char *) NULL }
 };
 
@@ -371,7 +371,7 @@ utf8asn1str(struct dynbuf *to, int type, const char *from, const char *end)
   else {
     while(!result && (from < end)) {
       char buf[4]; /* decode buffer */
-      size_t charsize = 1;
+      int charsize = 1;
       unsigned int wc = 0;
 
       switch(size) {
@@ -389,6 +389,7 @@ utf8asn1str(struct dynbuf *to, int type, const char *from, const char *end)
         if(wc >= 0x00000800) {
           if(wc >= 0x00010000) {
             if(wc >= 0x00200000) {
+              free(buf);
               /* Invalid char. size for target encoding. */
               return CURLE_WEIRD_SERVER_REPLY;
             }
@@ -459,15 +460,13 @@ static CURLcode OID2str(struct dynbuf *store,
   if(beg < end) {
     if(symbolic) {
       struct dynbuf buf;
-      Curl_dyn_init(&buf, CURL_X509_STR_MAX);
+      Curl_dyn_init(&buf, MAX_X509_STR);
       result = encodeOID(&buf, beg, end);
 
       if(!result) {
         const struct Curl_OID *op = searchOID(Curl_dyn_ptr(&buf));
         if(op)
           result = Curl_dyn_add(store, op->textoid);
-        else
-          result = Curl_dyn_add(store, Curl_dyn_ptr(&buf));
         Curl_dyn_free(&buf);
       }
     }
@@ -490,7 +489,7 @@ static CURLcode GTime2str(struct dynbuf *store,
   /* Convert an ASN.1 Generalized time to a printable string.
      Return the dynamically allocated string, or NULL if an error occurs. */
 
-  for(fracp = beg; fracp < end && ISDIGIT(*fracp); fracp++)
+  for(fracp = beg; fracp < end && *fracp >= '0' && *fracp <= '9'; fracp++)
     ;
 
   /* Get seconds digits. */
@@ -509,44 +508,32 @@ static CURLcode GTime2str(struct dynbuf *store,
     return CURLE_BAD_FUNCTION_ARGUMENT;
   }
 
-  /* timezone follows optional fractional seconds. */
+  /* Scan for timezone, measure fractional seconds. */
   tzp = fracp;
-  fracl = 0; /* no fractional seconds detected so far */
+  fracl = 0;
   if(fracp < end && (*fracp == '.' || *fracp == ',')) {
-    /* Have fractional seconds, e.g. "[.,]\d+". How many? */
-    fracp++; /* should be a digit char or BAD ARGUMENT */
-    tzp = fracp;
-    while(tzp < end && ISDIGIT(*tzp))
+    fracp++;
+    do
       tzp++;
-    if(tzp == fracp) /* never looped, no digit after [.,] */
-      return CURLE_BAD_FUNCTION_ARGUMENT;
-    fracl = tzp - fracp; /* number of fractional sec digits */
-    DEBUGASSERT(fracl > 0);
-    /* Strip trailing zeroes in fractional seconds.
-     * May reduce fracl to 0 if only '0's are present. */
-    while(fracl && fracp[fracl - 1] == '0')
-      fracl--;
+    while(tzp < end && *tzp >= '0' && *tzp <= '9');
+    /* Strip leading zeroes in fractional seconds. */
+    for(fracl = tzp - fracp - 1; fracl && fracp[fracl - 1] == '0'; fracl--)
+      ;
   }
 
   /* Process timezone. */
-  if(tzp >= end) {
-    tzp = "";
-    tzl = 0;
-  }
+  if(tzp >= end)
+    ;           /* Nothing to do. */
   else if(*tzp == 'Z') {
-    sep = " ";
-    tzp = "GMT";
-    tzl = 3;
-  }
-  else if((*tzp == '+') || (*tzp == '-')) {
-    sep = " UTC";
-    tzl = end - tzp;
+    tzp = " GMT";
+    end = tzp + 4;
   }
   else {
     sep = " ";
-    tzl = end - tzp;
+    tzp++;
   }
 
+  tzl = end - tzp;
   return Curl_dyn_addf(store,
                        "%.4s-%.2s-%.2s %.2s:%.2s:%c%c%s%.*s%s%.*s",
                        beg, beg + 4, beg + 6,
@@ -554,15 +541,6 @@ static CURLcode GTime2str(struct dynbuf *store,
                        fracl? ".": "", (int)fracl, fracp,
                        sep, (int)tzl, tzp);
 }
-
-#ifdef UNITTESTS
-/* used by unit1656.c */
-CURLcode Curl_x509_GTime2str(struct dynbuf *store,
-                             const char *beg, const char *end)
-{
-  return GTime2str(store, beg, end);
-}
-#endif
 
 /*
  * Convert an ASN.1 UTC time to a printable string.
@@ -617,7 +595,7 @@ static CURLcode ASN1tostr(struct dynbuf *store,
 {
   CURLcode result = CURLE_BAD_FUNCTION_ARGUMENT;
   if(elem->constructed)
-    return result; /* No conversion of structured elements. */
+    return CURLE_OK; /* No conversion of structured elements. */
 
   if(!type)
     type = elem->tag;   /* Type not forced: use element tag as type. */
@@ -681,7 +659,7 @@ static CURLcode encodeDN(struct dynbuf *store, struct Curl_asn1Element *dn)
   CURLcode result = CURLE_OK;
   bool added = FALSE;
   struct dynbuf temp;
-  Curl_dyn_init(&temp, CURL_X509_STR_MAX);
+  Curl_dyn_init(&temp, MAX_X509_STR);
 
   for(p1 = dn->beg; p1 < dn->end;) {
     p1 = getASN1Element(&rdn, p1, dn->end);
@@ -710,11 +688,6 @@ static CURLcode encodeDN(struct dynbuf *store, struct Curl_asn1Element *dn)
         goto error;
 
       str = Curl_dyn_ptr(&temp);
-
-      if(!str) {
-        result = CURLE_BAD_FUNCTION_ARGUMENT;
-        goto error;
-      }
 
       /* Encode delimiter.
          If attribute has a short uppercase name, delimiter is ", ". */
@@ -945,7 +918,7 @@ static CURLcode do_pubkey_field(struct Curl_easy *data, int certnum,
   CURLcode result;
   struct dynbuf out;
 
-  Curl_dyn_init(&out, CURL_X509_STR_MAX);
+  Curl_dyn_init(&out, MAX_X509_STR);
 
   /* Generate a certificate information record for the public key. */
 
@@ -983,8 +956,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
       if(ssl_push_certinfo(data, certnum, "ECC Public Key", q))
         return 1;
     }
-    return do_pubkey_field(data, certnum, "ecPublicKey", pubkey) == CURLE_OK
-      ? 0 : 1;
+    return do_pubkey_field(data, certnum, "ecPublicKey", pubkey);
   }
 
   /* Get the public key (single element). */
@@ -1089,7 +1061,7 @@ CURLcode Curl_extract_certinfo(struct Curl_easy *data,
     if(certnum)
       return CURLE_OK;
 
-  Curl_dyn_init(&out, CURL_X509_STR_MAX);
+  Curl_dyn_init(&out, MAX_X509_STR);
   /* Prepare the certificate information for curl_easy_getinfo(). */
 
   /* Extract the certificate ASN.1 elements. */
@@ -1248,8 +1220,6 @@ CURLcode Curl_extract_certinfo(struct Curl_easy *data,
       result = ssl_push_certinfo_dyn(data, certnum, "Cert", &out);
 
 done:
-  if(result)
-    failf(data, "Failed extracting certificate chain");
   Curl_dyn_free(&out);
   return result;
 }

@@ -11,7 +11,6 @@ Protocol:
   - TLS
 TLS-backend:
   - All
-Added-in: 7.36.0
 ---
 
 # NAME
@@ -36,8 +35,6 @@ is built to use supports it), which can be used to negotiate http2.
 
 1, enabled
 
-# %PROTOCOLS%
-
 # EXAMPLE
 
 ~~~c
@@ -54,7 +51,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Added in 7.36.0
 
 # RETURN VALUE
 

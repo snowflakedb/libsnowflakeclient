@@ -9,7 +9,6 @@ See-also:
   - CURLOPT_XFERINFOFUNCTION (3)
 Protocol:
   - All
-Added-in: 7.1
 ---
 
 # NAME
@@ -31,9 +30,7 @@ argument in the progress callback set with CURLOPT_PROGRESSFUNCTION(3).
 
 # DEFAULT
 
-NULL
-
-# %PROTOCOLS%
+The default value of this parameter is NULL.
 
 # EXAMPLE
 
@@ -72,7 +69,9 @@ int main(void)
 }
 ~~~
 
-# %AVAILABILITY%
+# AVAILABILITY
+
+Always
 
 # RETURN VALUE
 
