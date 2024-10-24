@@ -561,12 +561,13 @@ AC_DEFUN([CURL_CHECK_LIB_ARES], [
     if test "$want_ares" = "yes"; then
       dnl finally c-ares will be used
       AC_DEFINE(USE_ARES, 1, [Define to enable c-ares support])
+      AC_DEFINE(CARES_NO_DEPRECATED, 1, [Ignore c-ares deprecation warnings])
       AC_SUBST([USE_ARES], [1])
+      LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE libcares"
       curl_res_msg="c-ares"
     fi
   fi
 ])
-
 
 dnl CURL_CHECK_OPTION_NTLM_WB
 dnl -------------------------------------------------
@@ -631,6 +632,41 @@ AC_DEFUN([CURL_CHECK_NTLM_WB], [
   fi
 ])
 
+dnl CURL_CHECK_OPTION_HTTPSRR
+dnl -----------------------------------------------------
+dnl Verify whether configure has been invoked with option
+dnl --enable-httpsrr or --disable-httpsrr, and set
+dnl shell variable want_httpsrr as appropriate.
+
+AC_DEFUN([CURL_CHECK_OPTION_HTTPSRR], [
+  AC_MSG_CHECKING([whether to enable HTTPSRR support])
+  OPT_HTTPSRR="default"
+  AC_ARG_ENABLE(httpsrr,
+AS_HELP_STRING([--enable-httpsrr],[Enable HTTPSRR support])
+AS_HELP_STRING([--disable-httpsrr],[Disable HTTPSRR support]),
+  OPT_HTTPSRR=$enableval)
+  case "$OPT_HTTPSRR" in
+    no)
+      dnl --disable-httpsrr option used
+      want_httpsrr="no"
+      curl_httpsrr_msg="no      (--enable-httpsrr)"
+      AC_MSG_RESULT([no])
+      ;;
+    default)
+      dnl configure option not specified
+      want_httpsrr="no"
+      curl_httpsrr_msg="no      (--enable-httpsrr)"
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      dnl --enable-httpsrr option used
+      want_httpsrr="yes"
+      curl_httpsrr_msg="enabled (--disable-httpsrr)"
+      AC_MSG_RESULT([yes])
+      ;;
+  esac
+])
+
 dnl CURL_CHECK_OPTION_ECH
 dnl -----------------------------------------------------
 dnl Verify whether configure has been invoked with option
@@ -661,8 +697,8 @@ AS_HELP_STRING([--disable-ech],[Disable ECH support]),
       dnl --enable-ech option used
       want_ech="yes"
       curl_ech_msg="enabled (--disable-ech)"
-      experimental="ech"
       AC_MSG_RESULT([yes])
       ;;
   esac
+])
 ])

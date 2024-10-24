@@ -30,7 +30,7 @@
 static const char cmd[] = "A1 IDLE\r\n";
 static char buf[1024];
 
-int test(char *URL)
+CURLcode test(char *URL)
 {
   CURLM *mcurl;
   CURL *curl = NULL;
@@ -39,7 +39,7 @@ int test(char *URL)
   time_t start = time(NULL);
   int state = 0;
   ssize_t pos = 0;
-  int res = 0;
+  CURLcode res = CURLE_OK;
 
   global_init(CURL_GLOBAL_DEFAULT);
   multi_init(mcurl);
@@ -75,7 +75,7 @@ int test(char *URL)
       curl_easy_getinfo(curl, CURLINFO_ACTIVESOCKET, &sock);
       waitfd.fd = sock;
     }
-    curl_multi_wait(mcurl, &waitfd, sock == CURL_SOCKET_BAD ? 0 : 1, 500,
+    curl_multi_wait(mcurl, &waitfd, sock == CURL_SOCKET_BAD ? 0 : 1, 50,
                     &mrun);
     if((sock != CURL_SOCKET_BAD) && (waitfd.revents & waitfd.events)) {
       size_t len = 0;
@@ -83,7 +83,10 @@ int test(char *URL)
       if(!state) {
         CURLcode ec;
         ec = curl_easy_send(curl, cmd + pos, sizeof(cmd) - 1 - pos, &len);
-        if(ec != CURLE_OK) {
+        if(ec == CURLE_AGAIN) {
+          continue;
+        }
+        else if(ec) {
           fprintf(stderr, "curl_easy_send() failed, with code %d (%s)\n",
                   (int)ec, curl_easy_strerror(ec));
           res = ec;
@@ -101,7 +104,10 @@ int test(char *URL)
       else if(pos < (ssize_t)sizeof(buf)) {
         CURLcode ec;
         ec = curl_easy_recv(curl, buf + pos, sizeof(buf) - pos, &len);
-        if(ec != CURLE_OK) {
+        if(ec == CURLE_AGAIN) {
+          continue;
+        }
+        else if(ec) {
           fprintf(stderr, "curl_easy_recv() failed, with code %d (%s)\n",
                   (int)ec, curl_easy_strerror(ec));
           res = ec;
