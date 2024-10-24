@@ -45,14 +45,15 @@ AM_CPPFLAGS = -I$(top_srcdir)/include        \
 
 bin_PROGRAMS = curl
 
-if BUILD_DOCS
-SUBDIRS = ../docs
-endif
-
 if USE_CPPFLAG_CURL_STATICLIB
 AM_CPPFLAGS += -DCURL_STATICLIB
 endif
 AM_CPPFLAGS += -DBUILDING_CURL
+
+AM_LDFLAGS =
+if USE_UNICODE
+AM_LDFLAGS += -municode
+endif
 
 include Makefile.inc
 
@@ -71,11 +72,7 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
 # Prevent LIBS from being used for all link targets
 LIBS = $(BLANK_AT_MAKETIME)
 
-if USE_EXPLICIT_LIB_DEPS
-curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
-else
-curl_LDADD = $(top_builddir)/lib/libcurl.la @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
-endif
+curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_PC_LIBS_PRIVATE@
 
 # if unit tests are enabled, build a static library to link them with
 if BUILD_UNITTESTS
@@ -88,15 +85,12 @@ libcurltool_la_SOURCES = $(CURL_FILES)
 endif
 
 CLEANFILES = tool_hugehelp.c
-# Use the C locale to ensure that only ASCII characters appear in the
-# embedded text.
-NROFF=env LC_ALL=C @NROFF@ @MANOPT@ 2>/dev/null # figured out by the configure script
 
-EXTRA_DIST = mkhelp.pl \
+EXTRA_DIST = mk-file-embed.pl mkhelp.pl \
  Makefile.mk curl.rc Makefile.inc CMakeLists.txt .checksrc
 
 # Use absolute directory to disable VPATH
-ASCIIPAGE=$(abs_top_builddir)/docs/cmdline-opts/curl.txt
+ASCIIPAGE=$(top_builddir)/docs/cmdline-opts/curl.txt
 MKHELP=$(top_srcdir)/src/mkhelp.pl
 HUGE=tool_hugehelp.c
 
@@ -112,6 +106,7 @@ CS_ = $(CS_0)
 
 if USE_MANUAL
 # Here are the stuff to create a built-in manual
+AM_CPPFLAGS += -DUSE_MANUAL
 
 $(ASCIIPAGE):
 	cd $(top_builddir)/docs && $(MAKE)
@@ -139,13 +134,27 @@ $(HUGE):
 	echo '#include "tool_hugehelp.h"' >> $(HUGE)
 endif
 
-# ignore tool_hugehelp.c since it is generated source code and it plays
-# by slightly different rules!
+CA_EMBED_CSOURCE = tool_ca_embed.c
+CURL_CFILES += $(CA_EMBED_CSOURCE)
+CLEANFILES += $(CA_EMBED_CSOURCE)
+if CURL_CA_EMBED_SET
+AM_CPPFLAGS += -DCURL_CA_EMBED
+MK_FILE_EMBED = $(top_srcdir)/src/mk-file-embed.pl
+$(CA_EMBED_CSOURCE): $(MK_FILE_EMBED) $(CURL_CA_EMBED)
+	$(PERL) $(MK_FILE_EMBED) --var curl_ca_embed < $(CURL_CA_EMBED) > $(CA_EMBED_CSOURCE)
+else
+$(CA_EMBED_CSOURCE):
+	echo 'extern const void *curl_ca_embed; const void *curl_ca_embed;' > $(CA_EMBED_CSOURCE)
+endif
+
+# ignore generated C files since they play by slightly different rules!
 checksrc:
 	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) \
-	-W$(srcdir)/tool_hugehelp.c $(srcdir)/*.[ch])
+	  -W$(srcdir)/$(HUGE) \
+	  -W$(srcdir)/$(CA_EMBED_CSOURCE) \
+	  $(srcdir)/*.[ch])
 
-if CURLDEBUG
+if DEBUGBUILD
 # for debug builds, we scan the sources on all regular make invokes
 all-local: checksrc
 endif
@@ -165,3 +174,6 @@ if HAVE_WINDRES
 .rc.o:
 	$(RC) -I$(top_srcdir)/include -DCURL_EMBED_MANIFEST $(RCFLAGS) -i $< -o $@
 endif
+
+dist-hook:
+	rm -f $(distdir)/$(CA_EMBED_CSOURCE)
