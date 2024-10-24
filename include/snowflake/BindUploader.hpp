@@ -1,182 +1,217 @@
 /*
-* File:   BindUploader.hpp
-* Author: harryx
-*
-* Copyright (c) 2020 Snowflake Computing
-*
-* Created on March 5, 2020, 3:14 PM
-*/
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
 
 #pragma once
-#ifndef BINDUPLOADER_HPP
-#define BINDUPLOADER_HPP
+#ifndef SNOWFLAKECLIENT_BINDUPLOADER_HPP
+#define SNOWFLAKECLIENT_BINDUPLOADER_HPP
 
-#include "picojson.h"
-#include "Statement.hpp"
-#include "Logger.hpp"
+#include <chrono>
+#include <snowflake/Exceptions.hpp>
+#include "client.h"
 
-namespace sf
+namespace Snowflake
 {
-  using namespace picojson;
+namespace Client
+{
+
+class BindUploader
+{
+public:
+  /**
+  * constructor
+  *
+  * @param stageDir The unique stage path for bindings uploading, could be a GUID.
+  * @param numParams Number of parameters.
+  * @param numParamSets Number of parameter sets.
+  * @param maxFileSize The max size of single file for bindings uploading.
+  *                    Separate into multiple files when exceed.
+  * @param compressLevel The compress level, between -1(default) to 9.
+  */
+  explicit BindUploader(const std::string& stageDir,
+                        unsigned int numParams,
+                        unsigned int numParamSets,
+                        unsigned int maxFileSize,
+                        int compressLevel);
+
+  void addStringValue(const std::string& value, SF_DB_TYPE type);
+
+  void addNullValue();
+
+  inline std::string getStagePath()
+  {
+    return m_stagePath;
+  }
+
+  inline bool hasBindingUploaded()
+  {
+    return m_hasBindingUploaded;
+  }
+
+protected:
+  /**
+  * @return The statement for creating temporary stage for bind uploading.
+  */
+  std::string getCreateStageStmt();
 
   /**
-  * Class BindUploader
+  * Check whether the session's temporary stage has been created, and create it
+  * if not.
+  *
+  * @throws Exception if creating the stage fails
   */
-  class BindUploader
+  virtual void createStageIfNeeded() = 0;
+
+  /**
+  * Execute uploading for single data file.
+  *
+  * @param sql PUT command for single data file uploading
+  * @param uploadStream stream for data file to be uploaded
+  * @param dataSize Size of the data to be uploaded.
+  *
+  * @throws Exception if uploading fails
+  */
+  virtual void executeUploading(const std::string &sql,
+                                std::basic_iostream<char>& uploadStream,
+                                size_t dataSize) = 0;
+
+  /* date/time format conversions to be overridden by drivers (such as ODBC)
+   * that need native date/time type support.
+   * Will be called to converting binding format between regular binding and
+   * bulk binding.
+   * No conversion by default, in such case application/driver should bind
+   * data/time data as string.
+   */
+
+  /**
+  * Convert time data format from nanoseconds to HH:MM:SS.F9
+  * @param timeInNano The time data string in nanoseconds.
+  */
+  virtual std::string convertTimeFormat(const std::string& timeInNano)
   {
-  public:
-    explicit BindUploader(Connection &connection,
-                          const simba_wstring& stageDir,
-                          unsigned int numParams,
-                          unsigned int numParamSets,
-                          int compressLevel,
-                          bool injectError);
+    return timeInNano;
+  }
 
-    void addStringValue(const std::string& value, simba_int16 type);
+  /**
+  * Convert date data format from days to YYYY-MM-DD
+  * @param milliseconds since Epoch
+  */
+  virtual std::string convertDateFormat(const std::string& millisecondSinceEpoch)
+  {
+    return millisecondSinceEpoch;
+  }
 
-    void addNullValue();
+  /**
+  * Convert timestamp data format from nanoseconds to YYYY_MM_DD HH:MM:SS.F9
+  * @param timestampInNano The timestamp data string in nanoseconds.
+  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
+  */
+  virtual std::string convertTimestampFormat(const std::string& timestampInNano,
+                                     SF_DB_TYPE type)
+  {
+    return timestampInNano;
+  }
 
-    inline std::string getStagePath()
-    {
-      return m_stagePath.GetAsUTF8();
-    }
+  /**
+  * Revert time data format from HH:MM:SS.F9 to nanoseconds
+  * @param formatedTime The time data string in HH:MM:SS.F9.
+  */
+  virtual std::string revertTimeFormat(const std::string& formatedTime)
+  {
+    return formatedTime;
+  }
 
-    /**
-    * Convert binding data in csv format for stage binding into json format
-    * for regular binding. This is for fallback to regular binding when stage
-    * binding fails.
-    * @param paramBindOrder The bind order for parameters with parameter names.
-    * @param parameterBinds The output of parameter bindings in json
-    */
-    void convertBindingFromCsvToJson(std::vector<std::string>& paramBindOrder,
-      jsonObject_t& parameterBinds);
+  /**
+  * Convert date data format from YYYY-MM-DD to milliseconds since Epoch
+  * @param formatedDate the date string in YYYY-MM-DD
+  */
+  virtual std::string revertDateFormat(const std::string& formatedDate)
+  {
+    return formatedDate;
+  }
 
-    inline bool hasBindingUploaded()
-    {
-      return m_hasBindingUploaded;
-    }
+  /**
+  * Convert timestamp data format from YYYY_MM_DD HH:MM:SS.F9 to nanoseconds
+  * @param Formatedtimestamp The timestamp data string in YYYY_MM_DD HH:MM:SS.F9.
+  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
+  */
+  virtual std::string revertTimestampFormat(const std::string& Formatedtimestamp,
+                                    SF_DB_TYPE type)
+  {
+    return Formatedtimestamp;
+  }
 
-  private:
-    /**
-    * Upload serialized binds in CSV stream to stage
-    *
-    * @throws BindException if uploading the binds fails
-    */
-    void putBinds();
+private:
+  /**
+  * Upload serialized binds in CSV stream to stage
+  *
+  * @throws BindException if uploading the binds fails
+  */
+  void putBinds();
 
-    /**
-    * Compress data from csv stream to compress stream with gzip
-    * @return The data size of compress stream if compress succeeded.
-    * @throw when compress failed.
-    */
-    size_t compressWithGzip();
+  /**
+  * Compress data from csv stream to compress stream with gzip
+  * @return The data size of compress stream if compress succeeded.
+  * @throw when compress failed.
+  */
+  size_t compressWithGzip();
 
-    /**
-    * Check whether the session's temporary stage has been created, and create it
-    * if not.
-    *
-    * @throws Exception if creating the stage fails
-    */
-    void createStageIfNeeded();
+  /**
+  * Build PUT statement string. Handle filesystem differences and escaping backslashes.
+  * @param srcFilePath The faked source file path to upload.
+  */
+  std::string getPutStmt(const std::string& srcFilePath);
 
-    /**
-    * Build PUT statement string. Handle filesystem differences and escaping backslashes.
-    * @param srcFilePath The faked source file path to upload.
-    */
-    std::string getPutStmt(const std::string& srcFilePath);
+  /**
+  * csv parsing function called by convertBindingFromCsvToJson(), get value of
+  * next field.
+  * @param fieldValue The output of the field value.
+  * @param isNull The output of the flag whether the filed is null.
+  * @param isEndofRow The output of the flag wether the end of row is reached.
+  * @return true if a field value is retrieved successfully, false if end of data
+  *         is reached and no field value available.
+  */
+  bool csvGetNextField(std::string& fieldValue, bool& isNull, bool& isEndofRow);
 
-    /**
-    * Convert time data format from nanoseconds to HH:MM:SS.F9
-    * @param timeInNano The time data string in nanoseconds.
-    */
-    std::string convertTimeFormat(const std::string& timeInNano);
+  std::stringstream m_csvStream;
 
-    /**
-    * Convert date data format from days to YYYY-MM-DD
-    * @param milliseconds since Epoch
-    */
-    std::string convertDateFormat(const std::string& millisecondSinceEpoch);
+  std::stringstream m_compressStream;
 
-    /**
-    * Convert timestamp data format from nanoseconds to YYYY_MM_DD HH:MM:SS.F9
-    * @param timestampInNano The timestamp data string in nanoseconds.
-    * @param type Either SQL_SF_TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-    */
-    std::string convertTimestampFormat(const std::string& timestampInNano,
-                                       simba_int16 type);
+  std::string m_stagePath;
 
-    /**
-    * Revert time data format from HH:MM:SS.F9 to nanoseconds
-    * @param formatedTime The time data string in HH:MM:SS.F9.
-    */
-    std::string revertTimeFormat(const std::string& formatedTime);
+  unsigned int m_fileNo;
 
-    /**
-    * Convert date data format from YYYY-MM-DD to milliseconds since Epoch
-    * @param formatedDate the date string in YYYY-MM-DD
-    */
-    std::string revertDateFormat(const std::string& formatedDate);
+  unsigned int m_retryCount;
 
-    /**
-    * Convert timestamp data format from YYYY_MM_DD HH:MM:SS.F9 to nanoseconds
-    * @param Formatedtimestamp The timestamp data string in YYYY_MM_DD HH:MM:SS.F9.
-    * @param type Either SQL_SF_TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-    */
-    std::string revertTimestampFormat(const std::string& Formatedtimestamp,
-                                      simba_int16 type);
+  unsigned int m_maxFileSize;
 
-    /**
-    * csv parsing function called by convertBindingFromCsvToJson(), get value of
-    * next field.
-    * @param fieldValue The output of the field value.
-    * @param isNull The output of the flag whether the filed is null.
-    * @param isEndofRow The output of the flag wether the end of row is reached.
-    * @return true if a field value is retrieved successfully, false if end of data
-    *         is reached and no field value available.
-    */
-    bool csvGetNextField(std::string& fieldValue, bool& isNull, bool& isEndofRow);
+  unsigned int m_numParams;
 
-    Connection &m_connection;
+  unsigned int m_numParamSets;
 
-    std::stringstream m_csvStream;
+  unsigned int m_curParamIndex;
 
-    std::stringstream m_compressStream;
+  unsigned int m_curParamSetIndex;
 
-    simba_wstring m_stagePath;
+  size_t m_dataSize;
 
-    unsigned int m_fileNo;
+  std::chrono::steady_clock::time_point m_startTime;
 
-    unsigned int m_retryCount;
+  std::chrono::steady_clock::time_point m_serializeStartTime;
 
-    unsigned int m_maxFileSize;
+  long long m_compressTime;
 
-    unsigned int m_numParams;
+  long long m_serializeTime;
 
-    unsigned int m_numParamSets;
+  long long m_putTime;
 
-    unsigned int m_curParamIndex;
+  bool m_hasBindingUploaded;
 
-    unsigned int m_curParamSetIndex;
+  int m_compressLevel;
 
-    size_t m_dataSize;
+};
 
-    std::chrono::steady_clock::time_point m_startTime;
+} // namespace Client
+} // namespace Snowflake
 
-    std::chrono::steady_clock::time_point m_serializeStartTime;
-
-    long long m_compressTime;
-
-    long long m_serializeTime;
-
-    long long m_putTime;
-
-    bool m_hasBindingUploaded;
-
-    int m_compressLevel;
-
-    bool m_injectError;
-  };
-
-} // namespace sf
-
-#endif  // BINDUPLOADER_HPP
+#endif  // SNOWFLAKECLIENT_BINDUPLOADER_HPP

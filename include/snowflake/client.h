@@ -282,6 +282,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_GET_FASTFAIL,
     SF_CON_GET_MAXRETRIES,
     SF_CON_GET_THRESHOLD,
+    SF_CON_STAGE_BIND_THRESHOLD,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -306,7 +307,8 @@ typedef enum SF_GLOBAL_ATTRIBUTE {
  */
 typedef enum SF_STMT_ATTRIBUTE {
     SF_STMT_USER_REALLOC_FUNC,
-    SF_STMT_MULTI_STMT_COUNT
+    SF_STMT_MULTI_STMT_COUNT,
+    SF_STMT_PARAMSET_SIZE
 } SF_STMT_ATTRIBUTE;
 #define SF_MULTI_STMT_COUNT_UNSET (-1)
 #define SF_MULTI_STMT_COUNT_UNLIMITED 0
@@ -432,6 +434,14 @@ typedef struct SF_CONNECT {
     sf_bool get_fastfail;
     int8 get_maxretries;
     int64 get_threshold;
+
+    // stage binding
+    sf_bool binding_stage_created;
+    uint64 stage_binding_threshold;
+    // the flag indecates the threshold from session parameter is overridden
+    // by the setting from connection attribute
+    sf_bool binding_threshold_overridden;
+    sf_bool stage_binding_disabled;
 } SF_CONNECT;
 
 /**
@@ -517,6 +527,7 @@ typedef struct SF_STMT {
     sf_bool is_multi_stmt;
     void* multi_stmt_result_ids;
     int64 multi_stmt_count;
+    int64 paramset_size;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -529,14 +540,32 @@ typedef struct SF_STMT {
 
 /**
  * Bind input parameter context
+ * Array binding (usually for insert/update multiple rows with one query) supported.
+ * To do that, value should be set to the array having multiple values,
+ * statement attribute SF_STMT_PARAMSET_SIZE set to the number of elements of the array
+ * in each binding.
+ * for SF_C_TYPE_STRING len should be set to the buffer length of each string value,
+ * NOT the entire length of the array. It would be used to find the start of each value.
+ * len_ind should be set to an array of length,indicating the actual length of each value.
+ * each length could be set to
+ * SF_BIND_LEN_NULL to indicate NULL data
+ * SF_BIND_LEN_NTS to indicate NULL terminated string (for SF_C_TYPE_STRING only).
+ * >= 0 for actual data length (for SF_C_TYPE_STRING only).
+ * len_ind could be omitted (set to NULL) as well if no NULL data,
+ * and for for SF_C_TYPE_STRING, all string values are null terminated.
  */
+
+#define SF_BIND_LEN_NULL -1
+#define SF_BIND_LEN_NTS -3
+
 typedef struct {
     size_t idx; /* One based index of the columns, 0 if Named */
     char * name; /* Named Parameter name, NULL if positional */
     SF_C_TYPE c_type; /* input data type in C */
-    void *value; /* input value */
-    size_t len; /* input value length. valid only for SF_C_TYPE_STRING */
+    void *value; /* input value, could be array of multiple values */
+    size_t len; /* The length of each input value. valid only for SF_C_TYPE_STRING */
     SF_DB_TYPE type; /* (optional) target Snowflake data type */
+    int* len_ind; /* (optional) The array of length indicator to support array binding*/
 } SF_BIND_INPUT;
 
 /**
@@ -875,6 +904,8 @@ uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt);
  *
  * For Positional parameters:
  * SF_BIND_INPUT name = NULL;
+ * 
+ * 
  *
  * @param input preallocated SF_BIND_INPUT instance
  * @return void
