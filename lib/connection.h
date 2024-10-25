@@ -624,6 +624,8 @@ int64 get_retry_timeout(SF_CONNECT *sf);
 */
 uint64 sf_get_current_time_millis();
 
+sf_bool end_with(char* a, char* b);
+
 #ifdef __cplusplus
 }
 #endif

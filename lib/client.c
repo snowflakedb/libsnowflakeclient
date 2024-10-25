@@ -28,6 +28,7 @@
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
+
 // Define internal constants
 sf_bool DISABLE_VERIFY_PEER;
 char *CA_BUNDLE_FILE;
@@ -475,15 +476,32 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     char* top_domain = strrchr(sf->host, '.');
+    char host_without_top_domain[4096];
     if (top_domain)
     {
         top_domain++;
+        size_t length = strlen(sf->host) - strlen(top_domain);
+        sf_strncpy(host_without_top_domain, sizeof(host_without_top_domain), sf->host,length);
     }
     else
     {
         // It's basically impossible not finding top domain in host.
         // Log the entire host just in case.
         top_domain = sf->host;
+        host_without_top_domain[0] = NULL;
+    }
+
+    //check privatelink
+    if (end_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
+    {
+        char urlbuf[4096];
+        sf_sprintf(urlbuf, sizeof(urlbuf), "http://ocsp.%s/%s",
+           sf->host, "ocsp_response_cache.json");
+        log_trace(
+            "sf", "Connection", "connect",
+            "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
+            urlbuf);
+        sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", urlbuf);
     }
 
     log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");

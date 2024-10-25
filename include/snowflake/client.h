@@ -93,6 +93,8 @@ extern "C" {
  */
 #define SF_JWT_CNXN_WAIT_TIME 10
 
+#define PRIVATELINK_HOSTNAME_SUFFIX ".privatelink.snowflakecomputing."
+
 /**
  * Snowflake Data types
  *

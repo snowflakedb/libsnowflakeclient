@@ -1345,3 +1345,16 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
 }
+
+sf_bool end_with(char* a, char* b)
+{
+    if (strlen(b) > strlen(a))
+    {
+        return SF_BOOLEAN_FALSE;
+    }
+
+    char as[4096];
+    sf_strncpy(as, sizeof(as), a + (strlen(a) - strlen(b)), strlen(b));
+
+    return sf_strncasecmp(as, b, strlen(b)) == 0 ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+}
