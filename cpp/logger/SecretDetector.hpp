@@ -5,7 +5,7 @@
 #ifndef SNOWFLAKECLIENT_SECRETDETECTOR_HPP
 #define SNOWFLAKECLIENT_SECRETDETECTOR_HPP
 
-#include "boost/regex.hpp"
+#include <regex>
 
 namespace Snowflake
 {
@@ -20,13 +20,13 @@ class SecretDetector
     static std::string maskSecrets(std::string); 
 
   private:
-    static boost::regex AWS_KEY_PATTERN;
-    static boost::regex AWS_TOKEN_PATTERN;
-    static boost::regex SAS_TOKEN_PATTERN;
-    static boost::regex PRIVATE_KEY_PATTERN;
-    static boost::regex PRIVATE_KEY_DATA_PATTERN;
-    static boost::regex CONNECTION_TOKEN_PATTERN;
-    static boost::regex PASSWORD_PATTERN;
+    static std::regex AWS_KEY_PATTERN;
+    static std::regex AWS_TOKEN_PATTERN;
+    static std::regex SAS_TOKEN_PATTERN;
+    static std::regex PRIVATE_KEY_PATTERN;
+    static std::regex PRIVATE_KEY_DATA_PATTERN;
+    static std::regex CONNECTION_TOKEN_PATTERN;
+    static std::regex PASSWORD_PATTERN;
 
     static std::string maskAwsKeys(std::string text);
     static std::string maskAwsTokens(std::string text);

@@ -2,9 +2,9 @@
 * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
 */
 #define CURL_STATICLIB
-#include <string.h>
+#include <string>
 #include <curl/curl.h>
-#include "boost/regex.hpp"
+#include <regex>
 #include "boost/filesystem.hpp"
 #include "snowflake/basic_types.h"
 #include "snowflake/platform.h"
@@ -26,7 +26,7 @@ extern "C" {
 
 sf_bool validate_application(const char* application)
 {
-  boost::regex APPLICATION_REGEX = boost::regex("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$", boost::regex::icase);
+  std::regex APPLICATION_REGEX = std::regex("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$", std::regex::icase);
 
   // It's OK to leave application unset.
   if (!application || (strlen(application) == 0))
