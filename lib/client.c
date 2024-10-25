@@ -28,7 +28,6 @@
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
-
 // Define internal constants
 sf_bool DISABLE_VERIFY_PEER;
 char *CA_BUNDLE_FILE;
@@ -476,7 +475,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     char* top_domain = strrchr(sf->host, '.');
-    char host_without_top_domain[4096];
+    char host_without_top_domain[1024];
     if (top_domain)
     {
         top_domain++;
@@ -488,7 +487,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         // It's basically impossible not finding top domain in host.
         // Log the entire host just in case.
         top_domain = sf->host;
-        host_without_top_domain[0] = NULL;
+        host_without_top_domain[0] = '\0';
     }
 
     //check privatelink
