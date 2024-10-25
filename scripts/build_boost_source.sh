@@ -11,7 +11,9 @@ function usage() {
 }
 set -o pipefail
 
-BOOST_VERSION=1.81.0
+BOOST_SRC_VERSION=1.81.0
+BOOST_BUILD_VERSION=1
+BOOST_VERSION=${BOOST_SRC_VERSION}.${BOOST_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
@@ -19,7 +21,7 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $BOOST_VERSION && exit 0
 
-BOOST_SOURCE_DIR=$DEPS_DIR/boost-${BOOST_VERSION}
+BOOST_SOURCE_DIR=$DEPS_DIR/boost-${BOOST_SRC_VERSION}
 BOOST_BUILD_DIR=$DEPENDENCY_DIR/boost
 rm -rf $BOOST_BUILD_DIR
 mkdir $BOOST_BUILD_DIR

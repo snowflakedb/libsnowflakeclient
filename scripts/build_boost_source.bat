@@ -3,7 +3,9 @@
 :: GitHub repo: https://github.com/boostorg/boost.git
 ::
 @echo off
-set boost_version=1.81.0
+set boost_src_version=1.81.0
+set boost_build_version=1
+set boost_version=%boost_src_version%.%boost_build_version%
 call %*
 goto :EOF
 
@@ -37,7 +39,7 @@ if /I "%platform%"=="x86" (
 
 ::@echo off
 set DEPS_DIR=%scriptdir%..\deps
-set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_version%
+set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_src_version%
 set BOOST_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\boost
 
 cd "%BOOST_SOURCE_DIR%"
