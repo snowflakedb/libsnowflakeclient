@@ -493,14 +493,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     //check privatelink
     if (end_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
     {
-        char urlbuf[4096];
-        sf_sprintf(urlbuf, sizeof(urlbuf), "http://ocsp.%s/%s",
+        char url_buf[4096];
+        sf_sprintf(url_buf, sizeof(url_buf), "http://ocsp.%s/%s",
            sf->host, "ocsp_response_cache.json");
         log_trace(
             "sf", "Connection", "connect",
             "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
-            urlbuf);
-        sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", urlbuf);
+            url_buf);
+        sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", url_buf);
     }
 
     log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
