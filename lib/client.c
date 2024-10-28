@@ -408,7 +408,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     // For now check password if it's not jwt, will add more condition when
     // support other authentications
-    if ((AUTH_JWT != auth_type) && (is_string_empty(sf->password))) {
+    if ((AUTH_JWT != auth_type) && (AUTH_OAUTH != auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -426,6 +426,17 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
             ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->oauth_token))) {
+        // Invalid token
+        log_error(ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -513,6 +524,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("priv_key_file: %s", sf->priv_key_file);
         log_debug("jwt_timeout: %d", sf->jwt_timeout);
         log_debug("jwt_cnxn_wait_time: %d", sf->jwt_cnxn_wait_time);
+    }
+    if (AUTH_OAUTH == auth_type) {
+        log_debug("oauth_token: %s", sf->oauth_token ? "provided" : "not provided");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
@@ -725,6 +739,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_varchar_size = SF_DEFAULT_MAX_OBJECT_SIZE;
         sf->max_binary_size = SF_DEFAULT_MAX_OBJECT_SIZE / 2;
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+        sf->oauth_token = NULL;
     }
 
     return sf;
@@ -792,6 +807,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->priv_key_file_pwd);
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
+    SF_FREE(sf->oauth_token);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -1074,6 +1090,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
+        case SF_CON_OAUTH_TOKEN:
+            alloc_buffer_and_copy(&sf->oauth_token, value);
+            break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
@@ -1215,6 +1234,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
           break;
         case SF_CON_AUTHENTICATOR:
             *value = sf->authenticator;
+            break;
+        case SF_CON_OAUTH_TOKEN:
+            *value = sf->oauth_token;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;

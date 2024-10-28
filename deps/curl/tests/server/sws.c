@@ -47,9 +47,6 @@
 #include <netinet/tcp.h> /* for TCP_NODELAY */
 #endif
 
-#define ENABLE_CURLX_PRINTF
-/* make the curlx header define all printf() functions to use the curlx_*
-   versions instead */
 #include "curlx.h" /* from the private lib dir */
 #include "getpart.h"
 #include "inet_pton.h"
@@ -70,7 +67,7 @@
 
 static enum {
   socket_domain_inet = AF_INET
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   , socket_domain_inet6 = AF_INET6
 #endif
 #ifdef USE_UNIX_SOCKETS
@@ -109,7 +106,7 @@ struct httprequest {
   bool auth;      /* Authorization header present in the incoming request */
   size_t cl;      /* Content-Length of the incoming request */
   bool digest;    /* Authorization digest header found */
-  bool ntlm;      /* Authorization ntlm header found */
+  bool ntlm;      /* Authorization NTLM header found */
   int delay;      /* if non-zero, delay this number of msec after connect */
   int writedelay; /* if non-zero, delay this number of milliseconds between
                      writes in the response */
@@ -229,7 +226,7 @@ static bool socket_domain_is_ip(void)
 {
   switch(socket_domain) {
   case AF_INET:
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   case AF_INET6:
 #endif
     return true;
@@ -1290,7 +1287,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
   const char *op_br = "";
   const char *cl_br = "";
 
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   if(socket_domain == AF_INET6) {
     op_br = "[";
     cl_br = "]";
@@ -1322,6 +1319,17 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
   }
 #endif
 
+  /* We want to do the connect() in a non-blocking mode, since
+   * Windows has an internal retry logic that may lead to long
+   * timeouts if the peer is not listening. */
+  if(0 != curlx_nonblock(serverfd, TRUE)) {
+    error = SOCKERRNO;
+    logmsg("curlx_nonblock(TRUE) failed with error: (%d) %s",
+           error, sstrerror(error));
+    sclose(serverfd);
+    return CURL_SOCKET_BAD;
+  }
+
   switch(socket_domain) {
   case AF_INET:
     memset(&serveraddr.sa4, 0, sizeof(serveraddr.sa4));
@@ -1335,7 +1343,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
 
     rc = connect(serverfd, &serveraddr.sa, sizeof(serveraddr.sa4));
     break;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   case AF_INET6:
     memset(&serveraddr.sa6, 0, sizeof(serveraddr.sa6));
     serveraddr.sa6.sin6_family = AF_INET6;
@@ -1348,7 +1356,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
 
     rc = connect(serverfd, &serveraddr.sa, sizeof(serveraddr.sa6));
     break;
-#endif /* ENABLE_IPV6 */
+#endif /* USE_IPV6 */
 #ifdef USE_UNIX_SOCKETS
   case AF_UNIX:
     logmsg("Proxying through Unix socket is not (yet?) supported.");
@@ -1363,14 +1371,50 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
 
   if(rc) {
     error = SOCKERRNO;
+    if((error == EINPROGRESS) || (error == EWOULDBLOCK)) {
+      fd_set output;
+      struct timeval timeout = {1, 0}; /* 1000 ms */
+
+      FD_ZERO(&output);
+      FD_SET(serverfd, &output);
+      while(1) {
+        rc = select((int)serverfd + 1, NULL, &output, NULL, &timeout);
+        if(rc < 0 && SOCKERRNO != EINTR)
+          goto error;
+        else if(rc > 0) {
+          curl_socklen_t errSize = sizeof(error);
+          if(0 != getsockopt(serverfd, SOL_SOCKET, SO_ERROR,
+                             (void *)&error, &errSize))
+            error = SOCKERRNO;
+          if((0 == error) || (EISCONN == error))
+            goto success;
+          else if((error != EINPROGRESS) && (error != EWOULDBLOCK))
+            goto error;
+        }
+        else if(!rc) {
+          logmsg("Timeout connecting to server port %hu", port);
+          sclose(serverfd);
+          return CURL_SOCKET_BAD;
+        }
+      }
+    }
+error:
     logmsg("Error connecting to server port %hu: (%d) %s",
            port, error, sstrerror(error));
     sclose(serverfd);
     return CURL_SOCKET_BAD;
   }
-
+success:
   logmsg("connected fine to %s%s%s:%hu, now tunnel",
          op_br, ipaddr, cl_br, port);
+
+  if(0 != curlx_nonblock(serverfd, FALSE)) {
+    error = SOCKERRNO;
+    logmsg("curlx_nonblock(FALSE) failed with error: (%d) %s",
+           error, sstrerror(error));
+    sclose(serverfd);
+    return CURL_SOCKET_BAD;
+  }
 
   return serverfd;
 }
@@ -1976,7 +2020,7 @@ int main(int argc, char *argv[])
   while(argc>arg) {
     if(!strcmp("--version", argv[arg])) {
       puts("sws IPv4"
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
              "/IPv6"
 #endif
 #ifdef USE_UNIX_SOCKETS
@@ -2023,7 +2067,7 @@ int main(int argc, char *argv[])
       arg++;
     }
     else if(!strcmp("--ipv6", argv[arg])) {
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
       socket_type = "IPv6";
       socket_domain = AF_INET6;
       location_str = port_str;
@@ -2164,7 +2208,7 @@ int main(int argc, char *argv[])
     me.sa4.sin_port = htons(port);
     rc = bind(sock, &me.sa, sizeof(me.sa4));
     break;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   case AF_INET6:
     memset(&me.sa6, 0, sizeof(me.sa6));
     me.sa6.sin6_family = AF_INET6;
@@ -2172,7 +2216,7 @@ int main(int argc, char *argv[])
     me.sa6.sin6_port = htons(port);
     rc = bind(sock, &me.sa, sizeof(me.sa6));
     break;
-#endif /* ENABLE_IPV6 */
+#endif /* USE_IPV6 */
 #ifdef USE_UNIX_SOCKETS
   case AF_UNIX:
     rc = bind_unix_socket(sock, unix_socket, &me.sau);
@@ -2196,11 +2240,11 @@ int main(int argc, char *argv[])
        port we actually got and update the listener port value with it. */
     curl_socklen_t la_size;
     srvr_sockaddr_union_t localaddr;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     if(socket_domain != AF_INET6)
 #endif
       la_size = sizeof(localaddr.sa4);
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     else
       la_size = sizeof(localaddr.sa6);
 #endif
@@ -2216,7 +2260,7 @@ int main(int argc, char *argv[])
     case AF_INET:
       port = ntohs(localaddr.sa4.sin_port);
       break;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     case AF_INET6:
       port = ntohs(localaddr.sa6.sin6_port);
       break;
@@ -2243,7 +2287,7 @@ int main(int argc, char *argv[])
          protocol_type, socket_type, location_str);
 
   /* start accepting connections */
-  rc = listen(sock, 5);
+  rc = listen(sock, 50);
   if(0 != rc) {
     error = SOCKERRNO;
     logmsg("listen() failed with error: (%d) %s", error, sstrerror(error));
@@ -2334,8 +2378,8 @@ int main(int argc, char *argv[])
       curl_socket_t msgsock;
       do {
         msgsock = accept_connection(sock);
-        logmsg("accept_connection %" CURL_FORMAT_SOCKET_T
-               " returned %" CURL_FORMAT_SOCKET_T, sock, msgsock);
+        logmsg("accept_connection %" FMT_SOCKET_T
+               " returned %" FMT_SOCKET_T, sock, msgsock);
         if(CURL_SOCKET_BAD == msgsock)
           goto sws_cleanup;
         if(req->delay)

@@ -4,7 +4,7 @@ SPDX-License-Identifier: curl
 Long: ntlm-wb
 Help: HTTP NTLM authentication with winbind
 Protocols: HTTP
-Category: auth http
+Category: deprecated
 Added: 7.22.0
 Multi: mutex
 See-also:
@@ -16,5 +16,7 @@ Example:
 
 # `--ntlm-wb`
 
-Enables NTLM much in the style --ntlm does, but hand over the authentication
-to the separate binary `ntlmauth` application that is executed when needed.
+Deprecated option (added in 8.8.0).
+
+Enabled NTLM much in the style --ntlm does, but handed over the authentication
+to a separate executable that was executed when needed.
