@@ -1353,8 +1353,7 @@ sf_bool end_with(char* a, char* b)
         return SF_BOOLEAN_FALSE;
     }
 
-    char as[1024];
-    sf_strncpy(as, sizeof(as), a + (strlen(a) - strlen(b)), strlen(b));
+    char* as = a + (strlen(a) - strlen(b));
 
     return sf_strncasecmp(as, b, strlen(b)) == 0 ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }

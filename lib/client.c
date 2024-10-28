@@ -479,7 +479,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (top_domain)
     {
         top_domain++;
-        size_t length = strlen(sf->host) - strlen(top_domain);
+        size_t length = top_domain - sf->host;
         sf_strncpy(host_without_top_domain, sizeof(host_without_top_domain), sf->host,length);
     }
     else
