@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
- */
+* Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
+*/
 
 #include "utils/test_setup.h"
 
@@ -13,8 +13,7 @@ void test_oauth_connect(void **unused)
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
+
     char *host, *port, *protocol, *role;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) 
@@ -27,7 +26,7 @@ void test_oauth_connect(void **unused)
         snowflake_set_attribute(sf, SF_CON_PORT, port);
     }
     protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol)
+    if (protocol) 
     {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
@@ -41,7 +40,40 @@ void test_oauth_connect(void **unused)
     snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, token);
 
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) 
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
+void test_mfa_connect_with_duo_push(void** unused)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host)
+    {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port)
+    {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol)
+    {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS)
     {
         dump_error(&(sf->error));
     }
@@ -49,59 +81,15 @@ void test_oauth_connect(void **unused)
     snowflake_term(sf);
 }
 
-void test_mfa_connect_with_duo_push(void **unused)
+void test_mfa_connect_with_duo_passcode(void** unused)
 {
-  SF_CONNECT *sf = snowflake_init();
-  snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-                            getenv("SNOWFLAKE_TEST_ACCOUNT"));
-  snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-  snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
-  char *host, *port, *protocol;
-  host = getenv("SNOWFLAKE_TEST_HOST");
-  if (host) 
-  {
-    snowflake_set_attribute(sf, SF_CON_HOST, host);
-  }
-  port = getenv("SNOWFLAKE_TEST_PORT");
-  if (port) 
-  {
-    snowflake_set_attribute(sf, SF_CON_PORT, port);
-  }
-  protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-  if (protocol)
-  {
-    snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
-  }
-  role = getenv("SNOWFLAKE_TEST_ROLE");
-  if (role)
-  {
-    snowflake_set_attribute(sf, SF_CON_ROLE, role);
-  }
-  char* token = "<Pass your token here>";
-  snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "oauth");
-  snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, token);
-
-  SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) 
-  {
-    dump_error(&(sf->error));
-  }
-  assert_int_equal(status, SF_STATUS_SUCCESS);
-  snowflake_term(sf);
-}
-
-
-void test_mfa_connect_with_duo_passcode(void **unused)
-{
-    SF_CONNECT *sf = snowflake_init();
+    SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-                            getenv("SNOWFLAKE_TEST_ACCOUNT"));
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
     snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
-    char *host, *port, *protocol, *passcode;
-
+        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char* host, * port, * protocol, * passcode;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host)
     {
@@ -135,7 +123,7 @@ void test_mfa_connect_with_duo_passcode(void **unused)
     snowflake_term(sf);
 }
 
-void test_mfa_connect_with_duo_passcode(void** unused)
+void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 {
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
@@ -147,7 +135,6 @@ void test_mfa_connect_with_duo_passcode(void** unused)
     snowflake_set_attribute(sf, SF_CON_PASSCODE_IN_PASSWORD, &passcode_in_password);
 
     char* host, * port, * protocol;
-
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host)
     {
@@ -173,7 +160,7 @@ void test_mfa_connect_with_duo_passcode(void** unused)
     snowflake_term(sf);
 }
 
-void test_mfa_connect_with_duo_passcodeInPassword(void** unused) {
+void test_okta_connect(void** unused) {
     SF_CONNECT* sf = snowflake_init();
     sf_bool disable_saml_url_check = SF_BOOLEAN_TRUE;
     sf->disable_saml_url_check = &disable_saml_url_check;
@@ -195,14 +182,10 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused) {
     }
     protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
     if (protocol) {
-
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
-
     SF_STATUS status = snowflake_connect(sf);
-
     if (status != SF_STATUS_SUCCESS) {
-
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -235,6 +218,10 @@ int main(void)
             else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
                 tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
                 tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
+            }
+            else  if (strcmp(manual_test, "test_okta_connect") == 0) {
+                tests[0].name = "test_okta_connect";
+                tests[0].test_func = test_okta_connect;
             }
             else {
                 printf("No matching test found for: %s\n", manual_test);
