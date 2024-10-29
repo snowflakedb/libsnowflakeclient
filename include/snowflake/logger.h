@@ -47,7 +47,8 @@ typedef enum SF_LOG_LEVEL {
     SF_LOG_INFO,
     SF_LOG_WARN,
     SF_LOG_ERROR,
-    SF_LOG_FATAL
+    SF_LOG_FATAL,
+    SF_LOG_DEFAULT
 } SF_LOG_LEVEL;
 
 #define CXX_LOG_NS "C++"
