@@ -17,7 +17,7 @@ namespace sf
                                  const std::string& token)
   {
     SecureStorageImpl secStorage;
-    if (secStorage.storeToken(host, username, credType, token) != SUCCESS)
+    if (secStorage.storeToken(host, username, credType, token) != SecureStorageStatus::Success)
     {
       log_error("Failed to store secure token%s", "");
       return false;
@@ -33,7 +33,7 @@ namespace sf
   {
     SecureStorageImpl secStorage;
     std::string result;
-    if (secStorage.retrieveToken(host, username, credType, result) != SUCCESS)
+    if (secStorage.retrieveToken(host, username, credType, result) != SecureStorageStatus::Success)
     {
       log_error("Failed to retrieve secure token%s", "");
       return {};
@@ -49,7 +49,7 @@ namespace sf
                                   const std::string& token)
   {
     SecureStorageImpl secStorage;
-    if ( secStorage.updateToken(host, username, credType, token) != SUCCESS)
+    if ( secStorage.updateToken(host, username, credType, token) != SecureStorageStatus::Success)
     {
       log_error("Failed to update secure token%s", "");
       return false;
@@ -64,7 +64,7 @@ namespace sf
                                   const std::string& credType)
   {
     SecureStorageImpl secStorage;
-    if ( secStorage.removeToken(host, username, credType) != SUCCESS)
+    if ( secStorage.removeToken(host, username, credType) != SecureStorageStatus::Success)
     {
       log_error("Failed to remove secure token%s", "");
       return false;

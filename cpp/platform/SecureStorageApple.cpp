@@ -34,7 +34,7 @@ namespace sf
     return ss.str();
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::storeToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string& host,
                                                       const std::string& username,
                                                       const std::string& credType,
                                                       const std::string& cred)
@@ -78,14 +78,14 @@ namespace sf
     if (result != errSecSuccess)
     {
       CXX_LOG_ERROR("Failed to store secure token");
-      return ERROR;
+      return SecureStorageStatus::Error;
     }
 
     CXX_LOG_DEBUG("Successfully stored secure token");
-    return SUCCESS;
+    return SecureStorageStatus::Success;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::retrieveToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
                                                          const std::string& username,
                                                          const std::string& credType,
                                                          std::string& cred)
@@ -117,24 +117,24 @@ namespace sf
     {
       cred = "";
       CXX_LOG_ERROR("Failed to retrieve secure token - %s", "Token Not Found");
-      return NOT_FOUND;
+      return SecureStorageStatus::NotFound;
     }
 
     if (status != errSecSuccess)
     {
       cred = "";
       CXX_LOG_ERROR("Failed to retrieve secure token");
-      return ERROR;
+      return SecureStorageStatus::Error;
     }
 
     CXX_LOG_DEBUG("Successfully retrieved token");
 
     auto val = reinterpret_cast<CFDataRef>(CFDictionaryGetValue(result, kSecValueData));
     cred = std::string(reinterpret_cast<const char*>(CFDataGetBytePtr(val)), CFDataGetLength(val));
-    return SUCCESS;
+    return SecureStorageStatus::Success;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::updateToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
                                                        const std::string& username,
                                                        const std::string& credType,
                                                        const std::string& token)
@@ -161,13 +161,13 @@ namespace sf
     if (result != errSecSuccess && result != errSecItemNotFound)
     {
       CXX_LOG_ERROR("Failed to update secure token");
-      return ERROR;
+      return SecureStorageStatus::Error;
     }
 
     return storeToken(host, username, credType, token);
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::removeToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
                                                        const std::string& username,
                                                        const std::string& credType)
   {
@@ -192,11 +192,11 @@ namespace sf
     if (result != errSecSuccess && result != errSecItemNotFound)
     {
       CXX_LOG_ERROR("Failed to remove secure token");
-      return ERROR;
+      return SecureStorageStatus::Error;
     }
 
     CXX_LOG_DEBUG("Successfully removed secure token");
-    return SUCCESS;
+    return SecureStorageStatus::Success;
   }
 }
 

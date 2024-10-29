@@ -3,14 +3,15 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#ifdef _WIN_32
+#ifdef _WIN32
 
-#include "SFLogger.hpp"
+#include "../logger//SFLogger.hpp"
 #include "windows.h"
 #include "wincred.h"
 
-#include "SecureStorageWin.hpp"
+#include "SecureStorageImpl.hpp"
 #include <vector>
+#include <sstream>
 
 #define MAX_TOKEN_LEN 1024
 #define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"
@@ -19,41 +20,24 @@
 
 namespace sf
 {
+  using Snowflake::Client::SFLogger;
 
-  void SecureStorageImpl::convertTarget(const char *host,
-                                        const char *username,
-                                        const char *credType,
-                                        wchar_t *target_wcs,
-                                        unsigned int max_len)
+  std::string SecureStorageImpl::convertTarget(const std::string& host,
+                                               const std::string& username,
+                                               const std::string& credType)
   {
-    std::vector<char> buf(max_len);
-    char* targetname(&buf[0]);
-    size_t converted_len = 0;
-
-    targetname[0] = '\0';
-    strncat_s(targetname, max_len, host, strlen(host));
-    strncat_s(targetname, max_len, ":", COLON_CHAR_LENGTH);
-    strncat_s(targetname, max_len, username, strlen(username));
-    strncat_s(targetname, max_len, ":", COLON_CHAR_LENGTH);
-    strncat_s(targetname, max_len, DRIVER_NAME, strlen(DRIVER_NAME));
-    strncat_s(targetname, max_len, ":", COLON_CHAR_LENGTH);
-    strncat_s(targetname, max_len, credType, strlen(credType));
-
-    mbstowcs_s(&converted_len, target_wcs, max_len, targetname, max_len);
+    std::stringstream ss;
+    ss << host << ":" << username << ":" << DRIVER_NAME << ":" << credType;
+    return ss.str();
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::storeToken(const char *host,
-                                                      const char *username,
-                                                      const char *credType,
-                                                      const char *token)
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string &host,
+                                                      const std::string& username,
+                                                      const std::string& credType,
+                                                      const std::string& token)
   {
-    unsigned int max_len = strlen(host) + strlen(username) + strlen(DRIVER_NAME) +
-            strlen(credType) + (3 * COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    std::vector<wchar_t> buf(max_len);
-    wchar_t* target_wcs(buf.data());
+    std::string target = convertTarget(host, username, credType);
     CREDENTIALW creds = { 0 };
-
-    convertTarget(host, username, credType, target_wcs, max_len);
 
     creds.TargetName = target_wcs;
     creds.CredentialBlobSize = strlen(token);
@@ -63,87 +47,67 @@ namespace sf
 
     if (!CredWriteW(&creds, 0))
     {
-      SF_INFO_LOG("sf", "SecureStorageWin", "storeToken",
-                  "Failed to store token.", "");
-      return FAILURE;
+      CXX_LOG_ERROR("Failed to store token.");
+      return SecureStorageStatus::Error;
     }
     else
     {
-      SF_DEBUG_LOG("sf","SecureStorageWin","storeToken",
-                   "Successfulyy stored id token","");
-      return SUCCESS;
+      CXX_LOG_DEBUG("Successfulyy stored id token");
+      return SecureStorageStatus::Success;
     }
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::retrieveToken(const char *host,
-                                                         const char *username,
-                                                         const char *credType,
-                                                         char *token,
-                                                         size_t *token_len)
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
+                                                       const std::string& username,
+                                                       const std::string& credType,
+                                                       std::string& token)
   {
-    unsigned int max_len = strlen(host) + strlen(username) + strlen(DRIVER_NAME) +
-                           strlen(credType) + (3 * COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    std::vector<wchar_t> buf(max_len);
-    wchar_t* target_wcs(buf.data());
-    PCREDENTIALW retcreds = { 0 };
-    DWORD blobSize = 0;
-
-    SF_DEBUG_LOG("sf", "SecureStorageWin", "retrieveToken",
-                 "Inside retrieveToken implementation", "");
-
-    convertTarget(host, username, credType, target_wcs, max_len);
+    std::string target = convertTarget(host, username, credType, target_wcs, max_len);
 
     if (!CredReadW(target_wcs, CRED_TYPE_GENERIC, 0, &retcreds))
     {
-      SF_INFO_LOG("sf", "SecureStorageWin", "retrieveToken",
-                  "Failed to read target or could not find it", "");
-      return FAILURE;
+      CXX_LOG_ERROR("Failed to read target or could not find it");
+      return SecureStorageStatus::Error;
     }
     else
     {
-      SF_DEBUG_LOG("sf", "SecureStorageWin", "retrieveToken",
-                   "Read the token now copying it", "");
+      CXX_LOG_DEBUG("Read the token now copying it");
 
       blobSize = retcreds->CredentialBlobSize;
       if (!blobSize)
       {
-         return FAILURE;
+         return SecureStorageStatus::Error;
       }
       strncpy_s(token, MAX_TOKEN_LEN, (char *)retcreds->CredentialBlob, size_t(blobSize)+1);
-      SF_DEBUG_LOG("sf", "SecureStorageWin", "retrieveToken",
-                   "Read the token, copied it will return now.", "");
+      CXX_LOG_DEBUG("Read the token, copied it will return now.");
     }
 
     *token_len = size_t(blobSize);
     CredFree(retcreds);
-    return SUCCESS;
+    return SecureStorageStatus::Success;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::updateToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType,
-                                                       const char *token)
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
+                                                       const std::string& username,
+                                                       const std::string& credType,
+                                                       const std::string& token)
   {
     return storeToken(host, username, credType, token);
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::removeToken(const char *host,
-                                                       const char *username,
-                                                       const char *credType)
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
+                                                       const std::string& username,
+                                                       const std::string& credType)
   {
-    unsigned int max_len = strlen(host) + strlen(username) + strlen(DRIVER_NAME) +
-                           strlen(credType) + (3 * COLON_CHAR_LENGTH) + NULL_CHAR_LENGTH;
-    std::vector<wchar_t> buf(max_len);
-    wchar_t* target_wcs(buf.data());
-    convertTarget(host, username, credType, target_wcs, max_len);
+    std::string target = convertTarget(host, username, credType);
 
     if (!CredDeleteW(target_wcs, CRED_TYPE_GENERIC, 0))
     {
-      return FAILURE;
+      return SecureStorageStatus::Error;
     }
     else
     {
-      return SUCCESS;
+      return SecureStorageStatus::Success;
     }
   }
 }

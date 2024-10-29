@@ -12,35 +12,35 @@
 namespace sf
 {
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::storeToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string& host,
                                                       const std::string& username,
                                                       const std::string& credType,
                                                       const std::string& token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::retrieveToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
                                                          const std::string& username,
                                                          const std::string& credType,
                                                          std::string& token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::updateToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
                                                        const std::string& username,
                                                        const std::string& credType,
                                                        const std::string& token)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 
-  SECURE_STORAGE_STATUS SecureStorageImpl::removeToken(const std::string& host,
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
                                                        const std::string& username,
                                                        const std::string& credType)
   {
-    return UNSUPPORTED;
+    return SecureStorageStatus::Unsupported;
   }
 }
 

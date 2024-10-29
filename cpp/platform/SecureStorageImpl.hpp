@@ -8,13 +8,13 @@
 
 #include <string>
 
-typedef enum
+enum class SecureStorageStatus
 {
-  NOT_FOUND,
-  ERROR,
-  SUCCESS,
-  UNSUPPORTED
-}SECURE_STORAGE_STATUS;
+  NotFound,
+  Error,
+  Success,
+  Unsupported
+};
 
 namespace sf
 {
@@ -42,7 +42,7 @@ namespace sf
      *
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS storeToken(const std::string& host,
+    SecureStorageStatus storeToken(const std::string& host,
                                      const std::string& username,
                                      const std::string& credType,
                                      const std::string& cred);
@@ -62,7 +62,7 @@ namespace sf
      * @param credLen - on return, length of the credential retrieved
      * @return NOT_FOUND, ERROR, SUCCESS
      */
-    SECURE_STORAGE_STATUS retrieveToken(const std::string& host,
+    SecureStorageStatus retrieveToken(const std::string& host,
                                         const std::string& username,
                                         const std::string& credType,
                                         std::string& cred);
@@ -80,7 +80,7 @@ namespace sf
      * @param cred - credential to be stored in the keychain.
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS updateToken(const std::string& host,
+    SecureStorageStatus updateToken(const std::string& host,
                                       const std::string& username,
                                       const std::string& credType,
                                       const std::string& cred);
@@ -98,7 +98,7 @@ namespace sf
      * 
      * @return ERROR / SUCCESS
      */
-    SECURE_STORAGE_STATUS removeToken(const std::string& host,
+    SecureStorageStatus removeToken(const std::string& host,
                                       const std::string& username,
                                       const std::string& credType);
   };
