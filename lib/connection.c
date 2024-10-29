@@ -202,7 +202,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
             if (token != NULL)
             {
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-              cred_cache_free_credential(token);
+                cred_cache_free_credential(token);
             }
         }
     }

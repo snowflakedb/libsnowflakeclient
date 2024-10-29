@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <string>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 
 #include "picojson.h"
 
@@ -24,7 +24,7 @@ namespace sf {
   }
 
   std::string readFile(const std::string &path, picojson::value &result) {
-    if (!std::filesystem::exists(path)) {
+    if (!boost::filesystem::exists(path)) {
       result = picojson::value(picojson::object());
       return {};
     }

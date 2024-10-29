@@ -114,13 +114,18 @@ namespace sf {
       return storage.storeToken(key.host, key.user, credTypeToString(key.type), credential);
     }
 
+    bool remove(const CredentialKey& key) override
+    {
+      return storage.removeToken(key.host, key.user, credTypeToString(key.type));
+    }
+
     ~SecureStorageCredentialCache() override = default;
   private:
     SecureStorage storage;
   };
 
   CredentialCache *CredentialCache::make() {
-#if defined(__WIN32) || defined(_APPLE_)
+#if defined(__WIN32) || defined(__APPLE__)
     return new SecureStorageCredentialCache();
 #else
     return new FileCredentialCache(std::string("file.txt"));

@@ -4,8 +4,9 @@
 
 #include "FileLock.hpp"
 
-#include <filesystem>
 #include <thread>
+#include <boost/filesystem.hpp>
+#include <boost/system/error_code.hpp>
 
 #include "../logger/SFLogger.hpp"
 
@@ -32,8 +33,8 @@ namespace sf {
 
     if (!locked) {
       CXX_LOG_INFO("Failed to acquire file lock(path=%s), resetting the lock", path.c_str());
-      std::error_code ec;
-      bool removed = std::filesystem::remove(path, ec);
+      boost::system::error_code ec;
+      bool removed = boost::filesystem::remove(path, ec);
 
       if (!removed || ec) {
         CXX_LOG_ERROR("Failed to reset file lock(path=%s), removing lock failed with: %d", path.c_str(), ec.value())
@@ -45,8 +46,8 @@ namespace sf {
 
   FileLock::~FileLock() {
     if (locked) {
-      std::error_code ec;
-      bool removed = std::filesystem::remove(path, ec);
+      boost::system::error_code ec;
+      bool removed = boost::filesystem::remove(path, ec);
       if (!removed || ec) {
         CXX_LOG_ERROR("Failed to release file lock(path=%s)", path.c_str());
       }
@@ -54,8 +55,8 @@ namespace sf {
   }
 
   bool FileLock::try_lock() {
-    std::error_code ec;
-    bool created = std::filesystem::create_directory(path, ec);
+    boost::system::error_code ec;
+    bool created = boost::filesystem::create_directory(path, ec);
 
     if (ec) {
       CXX_LOG_ERROR("Failed to acquire file lock(path=%s) with error code: %d", path.c_str(), ec.value());

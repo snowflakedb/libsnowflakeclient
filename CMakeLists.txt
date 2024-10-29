@@ -268,7 +268,7 @@ if (UNIX)
     endif()
     # Common to both Linux and Apple
     find_library(OOB_LIB libtelemetry.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib/ REQUIRED NO_DEFAULT_PATH)
-#    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(CURL_LIB libcurl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(SSL_LIB libssl.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)

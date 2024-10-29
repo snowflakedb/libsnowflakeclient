@@ -90,46 +90,47 @@ namespace sf
                                                          const std::string& credType,
                                                          std::string& cred)
   {
-    OSStatus result = errSecSuccess;
     SecKeychainItemRef pitem = NULL;
     UInt32 plength = 0;
     char *pdata = NULL;
     std::string target = convertTarget(host, username, credType);
 
-    /*
-     * https://developer.apple.com/documentation/security/1397763-seckeychainfindinternetpassword?language=objc
-     */
-    result = SecKeychainFindInternetPassword(NULL, target.size(),
-                                             target.c_str(), 0, NULL,
-                                             username.size(),
-                                             username.c_str(), 0, NULL, 0,
-                                             kSecProtocolTypeAny,
-                                             kSecAuthenticationTypeAny,
-                                             &plength, (void **)&pdata,
-                                             &pitem);
+    CFTypeRef keys[5];
+    keys[0] = kSecClass;
+    keys[1] = kSecAttrServer;
+    keys[2] = kSecAttrAccount;
+    keys[3] = kSecReturnData;
+    keys[4] = kSecReturnAttributes;
 
-    if (result == errSecItemNotFound)
+    CFTypeRef values[5];
+    values[0] = kSecClassInternetPassword;
+    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
+    values[3] = kCFBooleanTrue;
+    values[4] = kCFBooleanTrue;
+
+    CFDictionaryRef query = CFDictionaryCreate(kCFAllocatorDefault, (const void**) keys, (const void**) values, 5, NULL, NULL);
+    CFDictionaryRef result;
+    OSStatus status = SecItemCopyMatching(query, reinterpret_cast<CFTypeRef *>(&result));
+
+    if (status == errSecItemNotFound)
     {
       cred = "";
       CXX_LOG_ERROR("Failed to retrieve secure token - %s", "Token Not Found");
       return NOT_FOUND;
     }
 
-    if (result == errSecSuccess)
+    if (status != errSecSuccess)
     {
       cred = "";
       CXX_LOG_ERROR("Failed to retrieve secure token");
       return ERROR;
     }
 
-    if (plength > MAX_TOKEN_LEN)
-    {
-      CXX_LOG_ERROR("Failed to retrieve secure token - %s", "Stored token length greater than max allowed length");
-      return ERROR;
-    }
-
     CXX_LOG_DEBUG("Successfully retrieved token");
-    cred = std::string(pdata, plength);
+
+    auto val = reinterpret_cast<CFDataRef>(CFDictionaryGetValue(result, kSecValueData));
+    cred = std::string(reinterpret_cast<const char*>(CFDataGetBytePtr(val)), CFDataGetLength(val));
     return SUCCESS;
   }
 

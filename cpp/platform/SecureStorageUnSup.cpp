@@ -3,6 +3,8 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
+#if !(defined(__APPLE__) || defined(_WIN32))
+
 #include "SecureStorageImpl.hpp"
 
 #include <string>
@@ -41,3 +43,5 @@ namespace sf
     return UNSUPPORTED;
   }
 }
+
+#endif
