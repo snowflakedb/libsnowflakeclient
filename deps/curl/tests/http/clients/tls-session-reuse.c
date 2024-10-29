@@ -25,16 +25,13 @@
  * TLS session reuse
  * </DESC>
  */
+#include <curl/curl.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <inttypes.h>
 /* #include <error.h> */
 #include <errno.h>
-#include <curl/curl.h>
-#include <curl/mprintf.h>
-
 
 static void log_line_start(FILE *log, const char *idsbuf, curl_infotype type)
 {
@@ -73,8 +70,8 @@ static int debug_cb(CURL *handle, curl_infotype type,
   if(!curl_easy_getinfo(handle, CURLINFO_XFER_ID, &xfer_id) && xfer_id >= 0) {
     if(!curl_easy_getinfo(handle, CURLINFO_CONN_ID, &conn_id) &&
         conn_id >= 0) {
-      curl_msnprintf(idsbuf, sizeof(idsbuf), TRC_IDS_FORMAT_IDS_2,
-                     xfer_id, conn_id);
+      curl_msnprintf(idsbuf, sizeof(idsbuf), TRC_IDS_FORMAT_IDS_2, xfer_id,
+                     conn_id);
     }
     else {
       curl_msnprintf(idsbuf, sizeof(idsbuf), TRC_IDS_FORMAT_IDS_1, xfer_id);
@@ -142,7 +139,8 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *opaque)
 }
 
 static void add_transfer(CURLM *multi, CURLSH *share,
-                         struct curl_slist *resolve, const char *url)
+                         struct curl_slist *resolve,
+                         const char *url, int http_version)
 {
   CURL *easy;
   CURLMcode mc;
@@ -159,7 +157,7 @@ static void add_transfer(CURLM *multi, CURLSH *share,
   curl_easy_setopt(easy, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(easy, CURLOPT_AUTOREFERER, 1L);
   curl_easy_setopt(easy, CURLOPT_FAILONERROR, 1L);
-  curl_easy_setopt(easy, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  curl_easy_setopt(easy, CURLOPT_HTTP_VERSION, http_version);
   curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, write_cb);
   curl_easy_setopt(easy, CURLOPT_WRITEDATA, NULL);
   curl_easy_setopt(easy, CURLOPT_HTTPGET, 1L);
@@ -190,13 +188,19 @@ int main(int argc, char *argv[])
   int msgs_in_queue;
   int add_more, waits, ongoing = 0;
   char *host, *port;
+  int http_version = CURL_HTTP_VERSION_1_1;
 
-  if(argc != 2) {
-    fprintf(stderr, "%s URL\n", argv[0]);
+  if(argc != 3) {
+    fprintf(stderr, "%s proto URL\n", argv[0]);
     exit(2);
   }
 
-  url = argv[1];
+  if(!strcmp("h2", argv[1]))
+    http_version = CURL_HTTP_VERSION_2;
+  else if(!strcmp("h3", argv[1]))
+    http_version = CURL_HTTP_VERSION_3ONLY;
+
+  url = argv[2];
   cu = curl_url();
   if(!cu) {
     fprintf(stderr, "out of memory\n");
@@ -215,9 +219,9 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-   memset(&resolve, 0, sizeof(resolve));
-   curl_msnprintf(resolve_buf, sizeof(resolve_buf)-1,
-                  "%s:%s:127.0.0.1", host, port);
+  memset(&resolve, 0, sizeof(resolve));
+  curl_msnprintf(resolve_buf, sizeof(resolve_buf)-1, "%s:%s:127.0.0.1",
+                 host, port);
   curl_slist_append(&resolve, resolve_buf);
 
   multi = curl_multi_init();
@@ -234,7 +238,7 @@ int main(int argc, char *argv[])
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
 
 
-  add_transfer(multi, share, &resolve, url);
+  add_transfer(multi, share, &resolve, url, http_version);
   ++ongoing;
   add_more = 6;
   waits = 3;
@@ -260,14 +264,15 @@ int main(int argc, char *argv[])
     }
     else {
       while(add_more) {
-        add_transfer(multi, share, &resolve, url);
+        add_transfer(multi, share, &resolve, url, http_version);
         ++ongoing;
         --add_more;
       }
     }
 
     /* Check for finished handles and remove. */
-    while((msg = curl_multi_info_read(multi, &msgs_in_queue))) {
+    /* !checksrc! disable EQUALSNULL 1 */
+    while((msg = curl_multi_info_read(multi, &msgs_in_queue)) != NULL) {
       if(msg->msg == CURLMSG_DONE) {
         long status = 0;
         curl_off_t xfer_id;

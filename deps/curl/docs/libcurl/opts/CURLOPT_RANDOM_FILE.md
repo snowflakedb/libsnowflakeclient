@@ -10,6 +10,7 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
+Added-in: 7.7
 ---
 
 # NAME
@@ -28,39 +29,16 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_RANDOM_FILE, char *path);
 
 Deprecated option. It serves no purpose anymore.
 
-Pass a char pointer to a null-terminated filename. The file might be used to
-read from to seed the random engine for SSL and more.
-
-The application does not have to keep the string around after setting this
-option.
-
 # DEFAULT
 
 NULL, not used
 
-# EXAMPLE
+# DEPRECATED
 
-~~~c
-int main(void)
-{
-  CURL *curl = curl_easy_init();
-  if(curl) {
-    CURLcode res;
-    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-    curl_easy_setopt(curl, CURLOPT_RANDOM_FILE, "junk.txt");
-    res = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-  }
-}
-~~~
+Deprecated since 7.84.0.
 
-# AVAILABILITY
-
-Only with OpenSSL versions before 1.1.0.
-
-This option was deprecated in 7.84.0.
+# %AVAILABILITY%
 
 # RETURN VALUE
 
-Returns CURLE_OK on success or
-CURLE_OUT_OF_MEMORY if there was insufficient heap space.
+Returns CURLE_OK.

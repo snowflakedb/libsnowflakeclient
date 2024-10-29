@@ -25,8 +25,6 @@
 
 #ifndef CURL_DISABLE_LIBCURL_OPTION
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
 #include "curlx.h"
 
 #include "tool_cfgable.h"
@@ -78,7 +76,6 @@ const struct NameValueUnsigned setopt_nv_CURLAUTH[] = {
   NV(CURLAUTH_GSSNEGOTIATE),
   NV(CURLAUTH_NTLM),
   NV(CURLAUTH_DIGEST_IE),
-  NV(CURLAUTH_NTLM_WB),
   NV(CURLAUTH_ONLY),
   NV(CURLAUTH_NONE),
   NVEND,
@@ -208,7 +205,7 @@ static const struct NameValue setopt_nv_CURLNONZERODEFAULTS[] = {
 #define REM1(f,a) ADDF((&easysrc_toohard, f,a))
 #define REM3(f,a,b,c) ADDF((&easysrc_toohard, f,a,b,c))
 
-/* Escape string to C string syntax.  Return NULL if out of memory.
+/* Escape string to C string syntax. Return NULL if out of memory.
  * Is this correct for those wacky EBCDIC guys? */
 
 #define MAX_STRING_LENGTH_OUTPUT 2000

@@ -10,14 +10,16 @@ See-also:
   - curl_multi_perform (3)
   - curl_multi_timeout (3)
   - curl_multi_wait (3)
+  - curl_multi_waitfds (3)
   - select (2)
 Protocol:
   - All
+Added-in: 7.9.6
 ---
 
 # NAME
 
-curl_multi_fdset - extracts file descriptor information from a multi handle
+curl_multi_fdset - extract file descriptor information from a multi handle
 
 # SYNOPSIS
 
@@ -77,6 +79,8 @@ which can cause crashes, or worse. The effect of NOT storing it might possibly
 save you from the crash, but makes your program NOT wait for sockets it should
 wait for...
 
+# %PROTOCOLS%
+
 # EXAMPLE
 
 ~~~c
@@ -111,9 +115,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-Added in 7.9.6
+# %AVAILABILITY%
 
 # RETURN VALUE
 
