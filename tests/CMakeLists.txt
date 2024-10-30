@@ -121,6 +121,28 @@ set(AWS_ALL_LIBS
         ${AWS_C_SDKUTILS_LIB}
     )
 
+SET(TEST_DATA
+        TestOrcFile.test1.orc
+        brotli_sample.txt.br
+        decode
+        decode2
+        encode
+        encode2
+        large_file.csv.gz
+        nation.impala.parquet
+        one_byte.csv
+        public_domain_books.csv
+        small_file.csv
+        small_file.csv.bz2
+        small_file.csv.gz
+        small_file.csv.zst
+        zero_byte.csv
+)
+
+FOREACH (TD ${TEST_DATA})
+    configure_file("data/${TD}" "data/${TD}" COPYONLY)
+ENDFOREACH ()
+
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32 OR CLIENT_CODE_COVERAGE)
