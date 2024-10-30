@@ -115,7 +115,7 @@ void test_client_config_log_init(void** unused) {
   fclose(file);
 
   snowflake_global_set_attribute(SF_GLOBAL_CLIENT_CONFIG_FILE, configFilePath);
-  snowflake_global_init("./logs", SF_LOG_TRACE, NULL);
+  snowflake_global_init("./logs", SF_LOG_DEFAULT, NULL);
 
   // Get the log path determined by libsnowflakeclient
   snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
