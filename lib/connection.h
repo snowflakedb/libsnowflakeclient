@@ -623,12 +623,6 @@ int64 get_retry_timeout(SF_CONNECT *sf);
 * Get current time since epoch in milliseconds
 */
 uint64 sf_get_current_time_millis();
-
-/**
- * Validate that the value of a ends with the value of b 
- */
-sf_bool end_with(char* a, char* b);
-
 #ifdef __cplusplus
 }
 #endif

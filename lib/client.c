@@ -19,6 +19,7 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
+#include "util.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -491,11 +492,18 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     //check privatelink
-    if (end_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
+    if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
     {
         char url_buf[4096];
-        sf_sprintf(url_buf, sizeof(url_buf), "http://ocsp.%s/%s",
+        sf_snprintf(url_buf, sizeof(url_buf), sizeof(url_buf)-1, "http://ocsp.%s/%s",
            sf->host, "ocsp_response_cache.json");
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL")) 
+        {
+            log_warn(
+                "sf", "Connection", "connect",
+                "Replace SF_OCSP_RESPONSE_CACHE_SERVER_URL from %s to %s",
+                getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"),url_buf);
+        }
         log_trace(
             "sf", "Connection", "connect",
             "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
