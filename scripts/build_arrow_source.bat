@@ -67,7 +67,7 @@ cmake ..\ ^
 -DCMAKE_INSTALL_PREFIX=%ARROW_INSTALL_DIR% ^
 -DCMAKE_MSVC_RUNTIME_LIBRARY=%runtimelink% ^
 -DCMAKE_C_FLAGS="/guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl" ^
--DCMAKE_CXX_FLAGS="/guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl" ^
+-DCMAKE_CXX_FLAGS="/std:c++17 /guard:cf /Z7 /ZH:SHA_256 /Qspectre /sdl" ^
 -DARROW_USE_STATIC_CRT=ON ^
 -DARROW_BOOST_USE_SHARED=OFF ^
 -DARROW_BUILD_SHARED=OFF ^
@@ -89,8 +89,7 @@ cmake ..\ ^
 -DARROW_BUILD_TESTS=OFF ^
 -DBoost_INCLUDE_DIR=%DEPENDENCY_DIR%\boost\include ^
 -DBOOST_SYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_system.lib ^
--DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib ^
--DBOOST_REGEX_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_regex.lib
+-DBOOST_FILESYSTEM_LIBRARY=%DEPENDENCY_DIR%\boost\lib\libboost_filesystem.lib
 
 if %ERRORLEVEL% NEQ 0 goto :error
 
