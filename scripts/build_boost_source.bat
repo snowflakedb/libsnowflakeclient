@@ -3,7 +3,9 @@
 :: GitHub repo: https://github.com/boostorg/boost.git
 ::
 @echo off
-set boost_version=1.81.0
+set boost_src_version=1.81.0
+set boost_build_version=1
+set boost_version=%boost_src_version%.%boost_build_version%
 call %*
 goto :EOF
 
@@ -37,7 +39,7 @@ if /I "%platform%"=="x86" (
 
 ::@echo off
 set DEPS_DIR=%scriptdir%..\deps
-set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_version%
+set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_src_version%
 set BOOST_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\boost
 
 cd "%BOOST_SOURCE_DIR%"
@@ -61,7 +63,7 @@ if /I "%dynamic_runtime%"=="on" (
 
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
 if %ERRORLEVEL% NEQ 0 goto :error
-b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" install
+b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" install
 if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
