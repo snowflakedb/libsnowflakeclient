@@ -15,8 +15,11 @@
 #include "snowflake/IJwt.hpp"
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
-#include "cJSON.h"
+#include "picojson.h"
 #include "snowflake/SFURL.hpp"
+#include "../../lib/util.h"
+
+
 
 namespace Snowflake
 {
@@ -37,7 +40,7 @@ namespace Client
 
     virtual void authenticate()=0;
 
-    virtual void updateDataMap(cJSON * dataMap)=0;
+    virtual void updateDataMap(jsonObject_t& dataMap)=0;
 
     // Retrieve authenticator renew timeout, return 0 if not available.
     // When the authenticator renew timeout is available, the connection should
@@ -50,7 +53,7 @@ namespace Client
 
     // Renew the autentication and update datamap.
     // The default behavior is to call authenticate() and updateDataMap().
-    virtual void renewDataMap(cJSON * dataMap);
+    virtual void renewDataMap(jsonObject_t& dataMap);
 
   protected:
     int64 m_renewTimeout;
@@ -68,7 +71,9 @@ namespace Client
 
     void authenticate();
 
-    void updateDataMap(cJSON* dataMap);
+    void updateDataMap(jsonObject_t &dataMap);
+
+
 
   private:
     void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
@@ -97,7 +102,7 @@ namespace Client
 
       void authenticate();
 
-      void updateDataMap(cJSON* dataMap);
+      void updateDataMap(jsonObject_t &dataMap);
 
   private:
       SF_CONNECT* m_connection;

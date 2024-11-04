@@ -20,6 +20,8 @@
 #include <connection.h>
 #include "curl_desc_pool.h"
 #include "snowflake/Exceptions.hpp"
+#include "cJSON.h"
+#include "../cpp/jwt/Util.hpp"
 
 #include <fstream>
 
@@ -162,8 +164,12 @@ extern "C" {
 
     try
     {
-      static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        updateDataMap(body);
+        jsonObject_t picoBody;
+        cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+        cJSONtoPicoJson(data, picoBody);
+        static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
+            updateDataMap(picoBody);
+        picoJsonTocJson(picoBody, &body);
     }
     catch (...)
     {
@@ -182,8 +188,12 @@ extern "C" {
 
     try
     {
-      static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        renewDataMap(body);
+        jsonObject_t picoBody;
+        cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+        cJSONtoPicoJson(data, picoBody);
+        static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
+            renewDataMap(picoBody);
+        picoJsonTocJson(picoBody, &body);
     }
     catch (...)
     {
@@ -219,7 +229,6 @@ extern "C" {
 
     return;
   }
-
 } // extern "C"
 
 namespace Snowflake
@@ -227,7 +236,7 @@ namespace Snowflake
 namespace Client
 {
 
-  void IAuthenticator::renewDataMap(cJSON *dataMap)
+  void IAuthenticator::renewDataMap(jsonObject_t& dataMap)
   {
     authenticate();
     updateDataMap(dataMap);
@@ -317,13 +326,10 @@ namespace Client
     claimSet->addClaim("exp", (long)seconds.count() + m_timeOut);
   }
 
-  void AuthenticatorJWT::updateDataMap(cJSON* dataMap)
+  void AuthenticatorJWT::updateDataMap(jsonObject_t &dataMap)
   {
-    cJSON* data = snowflake_cJSON_GetObjectItem(dataMap, "data");
-    snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-    snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
-    snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_JWT);
-    snowflake_cJSON_AddStringToObject(data, "TOKEN", m_jwt->serialize(m_privKey).c_str());
+    dataMap["AUTHENTICATOR"] = picojson::value(SF_AUTHENTICATOR_JWT);
+    dataMap["TOKEN"] = picojson::value(m_jwt->serialize(m_privKey));
   }
 
   std::string AuthenticatorJWT::extractPublicKey(EVP_PKEY *privKey)
@@ -537,16 +543,13 @@ namespace Client
       }
  }
 
-  void AuthenticatorOKTA::updateDataMap(cJSON* dataMap)
+  void AuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
   {
-      cJSON* data = snowflake_cJSON_GetObjectItem(dataMap, "data");
-      snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-      snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
-      snowflake_cJSON_DeleteItemFromObject(data, "LOGIN_NAME");
-      snowflake_cJSON_DeleteItemFromObject(data, "PASSWORD");
-      snowflake_cJSON_DeleteItemFromObject(data, "EXT_AUTHN_DUO_METHOD");
+      dataMap.erase("LOGIN_NAME");
+      dataMap.erase("PASSWORD");
+      dataMap.erase("EXT_AUTHN_DUO_METHOD");
 
-      snowflake_cJSON_AddStringToObject(data, "RAW_SAML_RESPONSE", m_samlResponse.c_str());
+      dataMap["RAW_SAML_RESPONSE"] = picojson::value(m_samlResponse);
   }
 
   std::string AuthenticatorOKTA::extractPostBackUrlFromSamlResponse(std::string html)

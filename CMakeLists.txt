@@ -124,6 +124,7 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
+        lib/util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
@@ -237,6 +238,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp
+		cpp/lib/util.cpp	
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
@@ -408,6 +410,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -423,6 +426,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -437,6 +441,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
