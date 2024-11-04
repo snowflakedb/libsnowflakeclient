@@ -16,4 +16,4 @@ sf_bool ends_with(char* str, char* suffix);
 }
 #endif
 
-#endif //SNOWFLAKE_CONNECTION_H
+#endif //SNOWFLAKE_UTIL_H
