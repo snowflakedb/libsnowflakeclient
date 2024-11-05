@@ -11,6 +11,8 @@
 namespace sf
 {
 
+  using Snowflake::Client::SFLogger;
+
   bool SecureStorage::storeToken(const std::string& host,
                                  const std::string& username,
                                  const std::string& credType,
@@ -19,11 +21,11 @@ namespace sf
     SecureStorageImpl secStorage;
     if (secStorage.storeToken(host, username, credType, token) != SecureStorageStatus::Success)
     {
-      log_error("Failed to store secure token%s", "");
+      CXX_LOG_ERROR("Failed to store secure token");
       return false;
     }
 
-    log_debug("Successfully stored secure token%s", "");
+    CXX_LOG_DEBUG("Successfully stored secure token");
     return true;
   }
 
@@ -35,11 +37,11 @@ namespace sf
     std::string result;
     if (secStorage.retrieveToken(host, username, credType, result) != SecureStorageStatus::Success)
     {
-      log_error("Failed to retrieve secure token%s", "");
+      CXX_LOG_ERROR("Failed to retrieve secure token");
       return {};
     }
 
-    log_debug("Successfully retrieved secure tokeni%s", "");
+    CXX_LOG_DEBUG("Successfully retrieved secure token");
     return result;
   }
 
@@ -51,11 +53,11 @@ namespace sf
     SecureStorageImpl secStorage;
     if ( secStorage.updateToken(host, username, credType, token) != SecureStorageStatus::Success)
     {
-      log_error("Failed to update secure token%s", "");
+      CXX_LOG_ERROR("Failed to update secure token");
       return false;
     }
 
-    log_debug("Successfully updated secure token%s", "");
+    CXX_LOG_DEBUG("Successfully updated secure token");
     return true;
   }
 
@@ -66,10 +68,10 @@ namespace sf
     SecureStorageImpl secStorage;
     if ( secStorage.removeToken(host, username, credType) != SecureStorageStatus::Success)
     {
-      log_error("Failed to remove secure token%s", "");
+      CXX_LOG_ERROR("Failed to remove secure token");
       return false;
     }
-    log_debug("Successfully removed secure token%s", "");
+    CXX_LOG_DEBUG("Successfully removed secure token");
     return true;
   }
 

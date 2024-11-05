@@ -37,11 +37,12 @@ namespace sf
                                                       const std::string& token)
   {
     std::string target = convertTarget(host, username, credType);
-    CREDENTIALW creds = { 0 };
+    std::wstring wide_target = std::wstring(target.begin(), target.end());
 
-    creds.TargetName = target_wcs;
-    creds.CredentialBlobSize = strlen(token);
-    creds.CredentialBlob = (LPBYTE)token;
+    CREDENTIALW creds = { 0 };
+    creds.TargetName = wide_target.data();
+    creds.CredentialBlobSize = token.size();
+    creds.CredentialBlob = (LPBYTE)token.c_str();
     creds.Persist = CRED_PERSIST_LOCAL_MACHINE;
     creds.Type = CRED_TYPE_GENERIC;
 
@@ -62,27 +63,33 @@ namespace sf
                                                        const std::string& credType,
                                                        std::string& token)
   {
-    std::string target = convertTarget(host, username, credType, target_wcs, max_len);
+    std::string target = convertTarget(host, username, credType);
+    std::wstring wide_target = std::wstring(target.begin(), target.end());
+    PCREDENTIALW retcreds = nullptr;
 
-    if (!CredReadW(target_wcs, CRED_TYPE_GENERIC, 0, &retcreds))
+    if (!CredReadW(wide_target.data(), CRED_TYPE_GENERIC, 0, &retcreds))
     {
       CXX_LOG_ERROR("Failed to read target or could not find it");
       return SecureStorageStatus::Error;
     }
-    else
-    {
-      CXX_LOG_DEBUG("Read the token now copying it");
 
-      blobSize = retcreds->CredentialBlobSize;
-      if (!blobSize)
-      {
-         return SecureStorageStatus::Error;
-      }
-      strncpy_s(token, MAX_TOKEN_LEN, (char *)retcreds->CredentialBlob, size_t(blobSize)+1);
-      CXX_LOG_DEBUG("Read the token, copied it will return now.");
+    CXX_LOG_DEBUG("Read the token now copying it");
+
+    DWORD blobSize = retcreds->CredentialBlobSize;
+    if (!blobSize)
+    {
+        return SecureStorageStatus::Error;
     }
 
-    *token_len = size_t(blobSize);
+    token = "";
+    std::copy(
+        retcreds->CredentialBlob, 
+        retcreds->CredentialBlob + blobSize,
+        std::back_inserter(token)
+    );
+
+    CXX_LOG_DEBUG("Copied token");
+  
     CredFree(retcreds);
     return SecureStorageStatus::Success;
   }
@@ -100,8 +107,9 @@ namespace sf
                                                        const std::string& credType)
   {
     std::string target = convertTarget(host, username, credType);
+    std::wstring wide_target = std::wstring(target.begin(), target.end());
 
-    if (!CredDeleteW(target_wcs, CRED_TYPE_GENERIC, 0))
+    if (!CredDeleteW(wide_target.data(), CRED_TYPE_GENERIC, 0))
     {
       return SecureStorageStatus::Error;
     }

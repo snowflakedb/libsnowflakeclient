@@ -125,7 +125,7 @@ namespace sf {
   };
 
   CredentialCache *CredentialCache::make() {
-#if defined(__WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__)
     return new SecureStorageCredentialCache();
 #else
     return new FileCredentialCache(std::string("file.txt"));
@@ -144,14 +144,14 @@ cred_cache_ptr cred_cache_init() {
 
 char* cred_cache_get_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type)
 {
-  sf::CredentialKey key = { .account = account, .host = host, .user = user, .type = type };
+  sf::CredentialKey key = { account, host, user, type };
   auto tokenOpt = reinterpret_cast<sf::CredentialCache *>(tc)->get(key);
   if (!tokenOpt) {
       return nullptr;
   }
   size_t result_size = tokenOpt->size() + 1;
   char* result = new char[result_size];
-  strncpy(result, tokenOpt->c_str(), result_size + 1);
+  strncpy(result, tokenOpt->c_str(), result_size);
   return result;
 }
 
@@ -161,13 +161,13 @@ void cred_cache_free_credential(char* cred) {
 
 void cred_cache_save_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type, const char *cred)
 {
-  sf::CredentialKey key = { .account = account, .host = host, .user = user, .type = type };
+  sf::CredentialKey key = { account, host, user, type };
   reinterpret_cast<sf::CredentialCache *>(tc)->save(key, std::string(cred));
 }
 
 void cred_cache_remove_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type)
 {
-  sf::CredentialKey key = { .account = account, .host = host, .user = user, .type = type };
+  sf::CredentialKey key = { account, host, user, type };
   reinterpret_cast<sf::CredentialCache *>(tc)->remove(key);
 }
 

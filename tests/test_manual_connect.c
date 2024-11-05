@@ -162,6 +162,11 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 
 void test_mfa_connect_with_mfa_cache(void** unused)
 {
+  /*
+   * Should trigger mfa push notification at most once.
+   * Make sure ALLOW_CLIENT_MFA_CACHING is set to true
+   * For more details refer to: https://docs.snowflake.com/en/user-guide/security-mfa#using-mfa-token-caching-to-minimize-the-number-of-prompts-during-authentication-optional
+   */
   for (int i = 0; i < 2; i++) {
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_APPLICATION_NAME, "ODBC");
@@ -205,7 +210,7 @@ void test_none(void** unused) {}
 
 int main(void) 
 {
-    initialize_test(SF_BOOLEAN_FALSE);
+    initialize_test(SF_BOOLEAN_TRUE);
     struct CMUnitTest tests[1] = {
         cmocka_unit_test(test_none)
     };
