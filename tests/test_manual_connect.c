@@ -162,8 +162,6 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 
 void test_okta_connect(void** unused) {
     SF_CONNECT* sf = snowflake_init();
-    sf_bool disable_saml_url_check = SF_BOOLEAN_TRUE;
-    sf->disable_saml_url_check = &disable_saml_url_check;
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USERNAME"));
