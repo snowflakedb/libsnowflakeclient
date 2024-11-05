@@ -22,7 +22,7 @@ ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
-ARROW_CXXFLAGS="-O2 -fPIC -pthread"
+ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
@@ -60,7 +60,6 @@ arrow_configure_opts+=(
     "-DBoost_INCLUDE_DIR=$DEPENDENCY_DIR/boost/include"
     "-DBOOST_SYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_system.a"
     "-DBOOST_FILESYSTEM_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_filesystem.a"
-    "-DBOOST_REGEX_LIBRARY=$DEPENDENCY_DIR/boost/lib/libboost_regex.a"
 )
 
 rm -rf $ARROW_BUILD_DIR
