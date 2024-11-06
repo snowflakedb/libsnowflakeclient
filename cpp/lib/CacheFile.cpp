@@ -13,6 +13,10 @@
 #include "snowflake/platform.h"
 #include "../logger/SFLogger.hpp"
 
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/stat.h>
+#endif
+
 namespace Snowflake {
 
 namespace Client {
@@ -36,20 +40,21 @@ namespace Client {
   bool mkdirIfNotExists(const char *dir)
   {
     int result = sf_mkdir(dir);
-    if (result != 0)
-    {
-      if (errno != EEXIST)
-      {
-        CXX_LOG_ERROR("Failed to create %s directory. Error: %d", dir, errno);
-        return false;
-      }
-      CXX_LOG_DEBUG("Directory already exists %s directory.", dir);
-    }
-    else
+    if (result == 0)
     {
       CXX_LOG_DEBUG("Created %s directory.", dir);
+      return true;
     }
-    return true;
+
+    if (errno == EEXIST)
+    {
+      CXX_LOG_TRACE("Directory already exists %s directory.", dir);
+      return true;
+    }
+
+    CXX_LOG_ERROR("Failed to create %s directory. Error: %d", dir, errno);
+    return false;
+
   }
 
   std::optional<std::string> findCacheDirRoot() {
@@ -81,7 +86,7 @@ namespace Client {
     std::string cacheDir = cacheDirRoot;
     for (const auto &name: CACHE_DIR_NAMES)
     {
-      cacheDir += PATH_SEP + cacheDirRoot;
+      cacheDir += PATH_SEP + name;
       if (!mkdirIfNotExists(cacheDir.c_str()))
       {
         return {};
@@ -113,7 +118,6 @@ namespace Client {
     std::ifstream cacheFile(path);
     if (!cacheFile.is_open())
     {
-      result = picojson::value(picojson::object());
       return "Failed to open the file(path=" + path + ")";
     }
 
@@ -125,11 +129,35 @@ namespace Client {
     return {};
   }
 
+#if defined(__linux__) || defined(__APPLE__)
+  bool ensurePermissions(const std::string& path, mode_t mode)
+  {
+    if (chmod(path.c_str(), mode) == -1)
+    {
+      CXX_LOG_ERROR("Cannot ensure permissions. chmod(%s, %o) failed with errno=%d", path.c_str(), mode, errno);
+      return false;
+    }
+
+    return true;
+  }
+#else
+  bool ensurePermissions(const std::string& path, unsigned mode)
+  {
+    CXX_LOG_ERROR("Cannot ensure permissions on current platform");
+    return false;
+  }
+#endif
+
   std::string writeFile(const std::string &path, const picojson::value &result) {
     std::ofstream cacheFile(path, std::ios_base::trunc);
     if (!cacheFile.is_open())
     {
       return "Failed to open the file";
+    }
+
+    if (!ensurePermissions(path, 0700))
+    {
+      return "Cannot ensure correct permissions on a file";
     }
 
     cacheFile << result.serialize(true);

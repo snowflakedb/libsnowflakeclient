@@ -21,31 +21,19 @@ namespace Snowflake {
 
 namespace Client {
 
-  class NoopCredentialCache : public CredentialCache {
-    std::optional<std::string> get(const CredentialKey &key) override
-    {
-      return {};
-    }
-
-    bool save(const CredentialKey &key, const std::string &credential) override
-    {
-      return false;
-    }
-
-    bool remove(const CredentialKey &key) override
-    {
-      return false;
-    }
-  };
-
   class FileCredentialCache : public CredentialCache {
   public:
-    explicit FileCredentialCache(std::string _path)
-      : path{std::move(_path)}
-    {}
 
     std::optional<std::string> get(const CredentialKey& key) override
     {
+      auto pathOpt = getCredentialFilePath();
+      if (!pathOpt)
+      {
+        CXX_LOG_ERROR("Cannot get path to credential file.")
+        return {};
+      }
+      const std::string path = pathOpt.value();
+
       FileLock lock(path);
       if (!lock.isLocked())
       {
@@ -56,8 +44,8 @@ namespace Client {
 
       std::string error = readFile(path, contents);
       if (!error.empty()) {
-        CXX_LOG_ERROR("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str())
-        return {};
+        CXX_LOG_WARN("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str());
+        contents = picojson::value(picojson::object());
       }
 
       return cacheFileGet(contents, key);
@@ -65,6 +53,15 @@ namespace Client {
 
     bool save(const CredentialKey& key, const std::string& credential) override
     {
+      auto pathOpt = getCredentialFilePath();
+      if (!pathOpt)
+      {
+        CXX_LOG_ERROR("Cannot get path to credential file.")
+        return {};
+      }
+
+      const std::string path = pathOpt.value();
+
       FileLock lock(path);
       if (!lock.isLocked())
       {
@@ -74,8 +71,8 @@ namespace Client {
       picojson::value contents;
       std::string error = readFile(path, contents);
       if (!error.empty()) {
-        CXX_LOG_ERROR("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str())
-        return false;
+        CXX_LOG_WARN("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str())
+        contents = picojson::value(picojson::object());
       }
 
       cacheFileUpdate(contents, key, credential);
@@ -91,6 +88,14 @@ namespace Client {
 
     bool remove(const CredentialKey& key) override
     {
+      auto pathOpt = getCredentialFilePath();
+      if (!pathOpt)
+      {
+        CXX_LOG_ERROR("Cannot get path to credential file.")
+        return {};
+      }
+      const std::string path = pathOpt.value();
+
       FileLock lock(path);
       if (!lock.isLocked())
       {
@@ -101,8 +106,8 @@ namespace Client {
       std::string error = readFile(path, contents);
       if (!error.empty())
       {
-        CXX_LOG_ERROR("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str())
-        return false;
+        CXX_LOG_WARN("Failed to read file(path=%s). Error: %s", path.c_str(), error.c_str())
+        contents = picojson::value(picojson::object());
       }
 
       cacheFileRemove(contents, key);
@@ -116,9 +121,6 @@ namespace Client {
     }
 
     ~FileCredentialCache() override = default;
-
-  private:
-    std::string path;
   };
 
   class SecureStorageCredentialCache : public CredentialCache {
@@ -145,12 +147,7 @@ namespace Client {
 #if defined(_WIN32) || defined(__APPLE__)
     return new SecureStorageCredentialCache();
 #else
-    auto credentialFileOpt = getCredentialFilePath();
-    if (!credentialFileOpt)
-    {
-      return new NoopCredentialCache();
-    }
-    return new FileCredentialCache(credentialFileOpt.value());
+    return new FileCredentialCache();
 #endif
   }
 
