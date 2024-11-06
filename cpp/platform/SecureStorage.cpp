@@ -8,8 +8,9 @@
 
 #include "SecureStorage.hpp"
 
-namespace sf
-{
+namespace Snowflake {
+
+namespace Client {
 
   using Snowflake::Client::SFLogger;
 
@@ -74,5 +75,7 @@ namespace sf
     CXX_LOG_DEBUG("Successfully removed secure token");
     return true;
   }
+
+}
 
 }

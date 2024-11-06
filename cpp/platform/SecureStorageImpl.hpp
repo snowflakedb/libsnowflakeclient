@@ -16,8 +16,9 @@ enum class SecureStorageStatus
   Unsupported
 };
 
-namespace sf
-{
+namespace Snowflake {
+
+namespace Client {
   /**
    * Class SecureStorage
    */
@@ -43,9 +44,9 @@ namespace sf
      * @return ERROR / SUCCESS
      */
     SecureStorageStatus storeToken(const std::string& host,
-                                     const std::string& username,
-                                     const std::string& credType,
-                                     const std::string& cred);
+                                   const std::string& username,
+                                   const std::string& credType,
+                                   const std::string& cred);
 
     /**
      * retrieveToken
@@ -63,9 +64,9 @@ namespace sf
      * @return NOT_FOUND, ERROR, SUCCESS
      */
     SecureStorageStatus retrieveToken(const std::string& host,
-                                        const std::string& username,
-                                        const std::string& credType,
-                                        std::string& cred);
+                                      const std::string& username,
+                                      const std::string& credType,
+                                      std::string& cred);
 
     /**
      * updateToken
@@ -81,9 +82,9 @@ namespace sf
      * @return ERROR / SUCCESS
      */
     SecureStorageStatus updateToken(const std::string& host,
-                                      const std::string& username,
-                                      const std::string& credType,
-                                      const std::string& cred);
+                                    const std::string& username,
+                                    const std::string& credType,
+                                    const std::string& cred);
 
     /**
      * remove
@@ -95,13 +96,16 @@ namespace sf
      * @param username - snowflake username assoicated with
      * the credential
      * @param credType - type of credential to be removed.
-     * 
+     *
      * @return ERROR / SUCCESS
      */
     SecureStorageStatus removeToken(const std::string& host,
-                                      const std::string& username,
-                                      const std::string& credType);
+                                    const std::string& username,
+                                    const std::string& credType);
   };
+
+}
+
 }
 
 #endif //PROJECT_SECURESTORAGE_IMPL_H

@@ -11,7 +11,9 @@
 
 #include "snowflake/mfa_token_cache.h"
 
-namespace sf {
+namespace Snowflake {
+
+namespace Client {
 
   struct CredentialKey {
     std::string account;
@@ -24,11 +26,11 @@ namespace sf {
   public:
     static CredentialCache *make();
 
-    virtual std::optional<std::string> get(const CredentialKey& key) = 0;
+    virtual std::optional<std::string> get(const CredentialKey &key) = 0;
 
-    virtual bool save(const CredentialKey& key, const std::string& credential) = 0;
+    virtual bool save(const CredentialKey &key, const std::string &credential) = 0;
 
-    virtual bool remove(const CredentialKey& key) = 0;
+    virtual bool remove(const CredentialKey &key) = 0;
 
     virtual ~CredentialCache() = default;
   };
@@ -42,6 +44,8 @@ namespace sf {
     }
   }
 
-};
+}
+
+}
 
 #endif //SNOWFLAKECLIENT_CREDENTIALCACHE_HPP

@@ -21,8 +21,12 @@
 #define NULL_CHAR_LENGTH 1
 
 
-namespace sf
+namespace Snowflake
 {
+
+namespace Client
+{
+
   using Snowflake::Client::SFLogger;
 
   std::string SecureStorageImpl::convertTarget(const std::string& host,
@@ -198,6 +202,8 @@ namespace sf
     CXX_LOG_DEBUG("Successfully removed secure token");
     return SecureStorageStatus::Success;
   }
+}
+
 }
 
 #endif

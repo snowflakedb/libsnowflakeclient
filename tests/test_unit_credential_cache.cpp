@@ -6,8 +6,9 @@
 
 void test_credential_cache(void **unused)
 {
-  std::unique_ptr<sf::CredentialCache> cache{sf::CredentialCache::make()};
-  sf::CredentialKey key { "account", "host", "user", CredentialType::MFA_TOKEN };
+  sf_setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
+  Snowflake::Client::CredentialKey key { "account", "host", "user", CredentialType::MFA_TOKEN };
 
   std::string token = "example_token";
   assert_true(cache->save(key, token));

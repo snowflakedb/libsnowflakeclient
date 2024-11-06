@@ -10,7 +10,10 @@
 
 #include "../logger/SFLogger.hpp"
 
-namespace sf {
+namespace Snowflake {
+
+namespace Client {
+
   using Snowflake::Client::SFLogger;
 
   constexpr int MAX_LOCK_RETRIES = 10;
@@ -71,4 +74,6 @@ namespace sf {
     locked = true;
     return false;
   }
+}
+
 }

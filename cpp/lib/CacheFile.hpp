@@ -8,7 +8,11 @@
 
 #include "CredentialCache.hpp"
 
-namespace sf {
+namespace Snowflake {
+
+namespace Client {
+
+  std::optional<std::string> getCredentialFilePath();
 
   std::string readFile(const std::string &path, picojson::value &result);
 
@@ -19,6 +23,8 @@ namespace sf {
   void cacheFileRemove(picojson::value &cache, const CredentialKey &key);
 
   std::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key);
+
+}
 
 }
 

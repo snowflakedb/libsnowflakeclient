@@ -7,7 +7,10 @@
 
 #include <string>
 
-namespace sf {
+namespace Snowflake {
+
+namespace Client {
+
   class FileLock {
   public:
     explicit FileLock(const std::string& path);
@@ -34,5 +37,6 @@ namespace sf {
   };
 }
 
+}
 
 #endif //SNOWFLAKECLIENT_FILELOCK_HPP

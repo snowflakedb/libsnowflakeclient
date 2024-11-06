@@ -78,6 +78,7 @@ SF_CONNECT* sf_connect_init() {
 }
 
 void test_mfa_token_caching(void **unused) {
+  sf_setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
   cred_cache_ptr cred_cache = cred_cache_init();
   cred_cache_remove_credential(cred_cache, ACCOUNT, HOST, USER, MFA_TOKEN);
 

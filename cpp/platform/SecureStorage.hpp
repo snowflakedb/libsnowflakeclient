@@ -11,8 +11,9 @@
 #include <optional>
 
 
-namespace sf
-{
+namespace Snowflake {
+
+namespace Client {
   /**
    * Class SecureStorage
    */
@@ -90,6 +91,8 @@ namespace sf
                      const std::string& username,
                      const std::string& credType);
   };
+}
+
 }
 
 #endif //PROJECT_SECURESTORAGE_H

@@ -18,8 +18,12 @@
 #define COLON_CHAR_LENGTH 1
 #define NULL_CHAR_LENGTH 1
 
-namespace sf
+namespace Snowflake
 {
+
+namespace Client
+{
+
   using Snowflake::Client::SFLogger;
 
   std::string SecureStorageImpl::convertTarget(const std::string& host,
@@ -118,6 +122,8 @@ namespace sf
       return SecureStorageStatus::Success;
     }
   }
+}
+
 }
 
 #endif
