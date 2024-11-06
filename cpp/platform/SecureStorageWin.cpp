@@ -44,9 +44,9 @@ namespace Client
     std::wstring wide_target = std::wstring(target.begin(), target.end());
 
     CREDENTIALW creds = { 0 };
-    creds.TargetName = wide_target.data();
+    creds.TargetName = (LPWSTR)wide_target.data();
     creds.CredentialBlobSize = token.size();
-    creds.CredentialBlob = (LPBYTE)token.c_str();
+    creds.CredentialBlob = (LPBYTE)token.datta();
     creds.Persist = CRED_PERSIST_LOCAL_MACHINE;
     creds.Type = CRED_TYPE_GENERIC;
 
@@ -89,7 +89,7 @@ namespace Client
     std::copy(
         retcreds->CredentialBlob, 
         retcreds->CredentialBlob + blobSize,
-        std::back_inserter(token)
+        std::back_insert_iterator<std::string>(token)
     );
 
     CXX_LOG_DEBUG("Copied token");

@@ -57,7 +57,7 @@ namespace Client {
 
   }
 
-  std::optional<std::string> findCacheDirRoot() {
+  boost::optional<std::string> findCacheDirRoot() {
     for (auto const &envVar: CACHE_ROOT_ENV_VARS)
     {
       char *root = getenv(envVar.c_str());
@@ -69,7 +69,7 @@ namespace Client {
     return {};
   }
 
-  std::optional<std::string> getCredentialFilePath()
+  boost::optional<std::string> getCredentialFilePath()
   {
     const auto cacheDirRootOpt = findCacheDirRoot();
     if (!cacheDirRootOpt)
@@ -194,7 +194,7 @@ namespace Client {
     }
   }
 
-  std::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key) {
+  boost::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key) {
     ensureObject(cache);
     picojson::object &cacheObj = cache.get<picojson::object>();
 

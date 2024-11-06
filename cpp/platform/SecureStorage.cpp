@@ -30,7 +30,7 @@ namespace Client {
     return true;
   }
 
-  std::optional<std::string> SecureStorage::retrieveToken(const std::string& host,
+  boost::optional<std::string> SecureStorage::retrieveToken(const std::string& host,
                                                           const std::string& username,
                                                           const std::string& credType)
   {

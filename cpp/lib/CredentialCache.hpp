@@ -7,7 +7,7 @@
 
 #include <string>
 #include <memory>
-#include <optional>
+#include <boost/optional.hpp>
 
 #include "snowflake/mfa_token_cache.h"
 
@@ -26,7 +26,7 @@ namespace Client {
   public:
     static CredentialCache *make();
 
-    virtual std::optional<std::string> get(const CredentialKey &key) = 0;
+    virtual boost::optional<std::string> get(const CredentialKey &key) = 0;
 
     virtual bool save(const CredentialKey &key, const std::string &credential) = 0;
 

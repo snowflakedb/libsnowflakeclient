@@ -8,7 +8,7 @@
 
 #include <cstdlib>
 #include <string>
-#include <optional>
+#include <boost/optional.hpp>
 
 
 namespace Snowflake {
@@ -53,7 +53,7 @@ namespace Client {
      * @param tokenLen - on return, length of the credential retrieved
      * @return True / False
      */
-    std::optional<std::string> retrieveToken(const std::string& host,
+    boost::optional<std::string> retrieveToken(const std::string& host,
                                              const std::string& username,
                                              const std::string& credType);
 

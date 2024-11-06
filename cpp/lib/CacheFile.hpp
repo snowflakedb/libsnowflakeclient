@@ -12,7 +12,7 @@ namespace Snowflake {
 
 namespace Client {
 
-  std::optional<std::string> getCredentialFilePath();
+  boost::optional<std::string> getCredentialFilePath();
 
   std::string readFile(const std::string &path, picojson::value &result);
 
@@ -22,7 +22,7 @@ namespace Client {
 
   void cacheFileRemove(picojson::value &cache, const CredentialKey &key);
 
-  std::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key);
+  boost::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key);
 
 }
 

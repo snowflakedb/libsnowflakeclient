@@ -24,7 +24,7 @@ namespace Client {
   class FileCredentialCache : public CredentialCache {
   public:
 
-    std::optional<std::string> get(const CredentialKey& key) override
+    boost::optional<std::string> get(const CredentialKey& key) override
     {
       auto pathOpt = getCredentialFilePath();
       if (!pathOpt)
@@ -125,7 +125,7 @@ namespace Client {
 
   class SecureStorageCredentialCache : public CredentialCache {
   public:
-    std::optional<std::string> get(const CredentialKey &key) override {
+    boost::optional<std::string> get(const CredentialKey &key) override {
       return storage.retrieveToken(key.host, key.user, credTypeToString(key.type));
     }
 
