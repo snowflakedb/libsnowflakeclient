@@ -46,7 +46,7 @@ namespace Client
     CREDENTIALW creds = { 0 };
     creds.TargetName = (LPWSTR)wide_target.data();
     creds.CredentialBlobSize = token.size();
-    creds.CredentialBlob = (LPBYTE)token.datta();
+    creds.CredentialBlob = (LPBYTE)token.data();
     creds.Persist = CRED_PERSIST_LOCAL_MACHINE;
     creds.Type = CRED_TYPE_GENERIC;
 
