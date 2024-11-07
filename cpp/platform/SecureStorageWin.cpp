@@ -12,6 +12,8 @@
 #include "SecureStorageImpl.hpp"
 #include <vector>
 #include <sstream>
+#include <algorithm>
+#include <iterator>
 
 #define MAX_TOKEN_LEN 1024
 #define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"

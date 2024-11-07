@@ -168,7 +168,8 @@ namespace Client {
   {
     ensureObject(cache);
     picojson::object &obj = cache.get<picojson::object>();
-    auto [accountCacheIt, inserted] = obj.emplace(key.account, picojson::value(picojson::object()));
+    auto pair = obj.emplace(key.account, picojson::value(picojson::object()));
+    auto accountCacheIt = pair.first;
 
     ensureObject(accountCacheIt->second);
     accountCacheIt->second.get<picojson::object>().emplace(credItemStr(key), credential);
