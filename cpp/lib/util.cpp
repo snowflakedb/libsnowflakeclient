@@ -28,8 +28,6 @@ namespace Client
 			picojson::parse(v, str);
 			picojson = v.get<picojson::object>();
 		}
-
-
 	}
 }
 }
