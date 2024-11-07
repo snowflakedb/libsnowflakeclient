@@ -148,12 +148,12 @@ extern "C" {
           data = snowflake_cJSON_CreateObject();
           snowflake_cJSON_AddItemToObject(body, "data", data);
     }
-    
+
+    snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+    snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
     if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator)) 
     {
-        snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
         snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
-        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
     }
 
@@ -399,36 +399,23 @@ namespace Client
       // nop
   }
 
-  void AuthenticatorOKTA::authenticate()
+  void AuthenticatorOKTA::getIdp(jsonObject_t& respData)
   {
-      // 1. get authenticator info
       cJSON* resp_data = NULL;
       if (!getIdpInfo(m_connection, &resp_data))
       {
           AUTH_THROW(&m_connection->error);
       }
+      cJSONtoPicoJson(resp_data, respData);
+  }
 
-      SF_ERROR_STRUCT* err = &m_connection->error;
-      char* token_url_str = snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp_data, "tokenUrl"));
-      char* sso_url_str = snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp_data, "ssoUrl"));
-      std::string post_back_url;
-      std::string server_url;
-
-      // 2. verify ssoUrl and tokenUrl contains same prefix
-      if (!SFURL::urlHasSamePrefix(token_url_str, m_connection->authenticator))
-      {
-          CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-              "The specified authenticator is not supported, "
-              "authenticator=%s, token url=%s, sso url=%s",
-              m_connection->authenticator, token_url_str, sso_url_str);
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator", SF_SQLSTATE_GENERAL_ERROR);
-          AUTH_THROW(err->msg);
-      }
-
+  void AuthenticatorOKTA::getOneTimeToken(jsonObject_t& respData)
+  {
       void* curl_desc;
       CURL* curl;
-      curl_desc = get_curl_desc_from_pool(token_url_str, m_connection->proxy, m_connection->no_proxy);
+      curl_desc = get_curl_desc_from_pool(tokenURLStr.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
+      SF_ERROR_STRUCT* err = &m_connection->error;
 
       // When renewTimeout < 0, throws Exception
       // for each retry attempt so we can renew the one time token
@@ -437,13 +424,6 @@ namespace Client
 
       int64 elapsed_time = 0;
       int8* retried_count = &m_connection->retry_count;
-
-      // 3. get one time token from okta
-      cJSON* body = snowflake_cJSON_CreateObject();
-      snowflake_cJSON_AddStringToObject(body, "username", m_connection->user);
-      snowflake_cJSON_AddStringToObject(body, "password", m_connection->password);
-
-      char* s_body = snowflake_cJSON_Print(body);
 
       // headers for step 4
       // add header for accept format
@@ -454,11 +434,9 @@ namespace Client
           AUTH_THROW(err);
       }
       cJSON* resp = NULL;
-
-      while (true)
-      {
-          if (!curl_post_call(m_connection, curl, token_url_str, header, s_body, &resp,
-              &m_connection->error, 0, retry_max_count, retry_timeout,
+      std::string s_body = picojson::value(respData).serialize();
+          if (!curl_post_call(m_connection, curl, (char*)tokenURLStr.c_str(), header, (char*)s_body.c_str(), &resp,
+              err, 0, retry_max_count, retry_timeout,
               &elapsed_time, retried_count, 0, false))
           {
               CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
@@ -468,7 +446,7 @@ namespace Client
               goto cleanup;
           }
 
-          char* one_time_token = snowflake_cJSON_HasObjectItem(resp, "sessionToken") ?
+          onetimeToken = snowflake_cJSON_HasObjectItem(resp, "sessionToken") ?
               snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp, "sessionToken")) :
               snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(resp, "cookieToken"));
           if (elapsed_time >= retry_timeout)
@@ -479,76 +457,125 @@ namespace Client
               SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
               goto cleanup;
           }
+         
+      //update retry info.
+      m_connection->retry_timeout -= elapsed_time;
 
-          // 4. get SAML response
-          SFURL sso_url = SFURL::parse(sso_url_str);
-          sso_url.addQueryParam("onetimetoken", one_time_token);
-          resp = NULL;
-          if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, &m_connection->error, -1, retry_max_count, retry_timeout, &elapsed_time, retried_count))
-          {
-              if (elapsed_time >= retry_timeout || *retried_count >= retry_max_count)
-              {
-                  CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-                      "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-                      retried_count, elapsed_time);
-                  SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-                  goto cleanup;
-              }
-              //Need to increase retried_count on the authentication level
-              (*retried_count)++;
-              CXX_LOG_TRACE("sf", "Connection", "Connect",
-                  "Retry on getting SAML response with one time token renewed for %d times "
-                  "with updated retryTimeout = %d",
-                  *retried_count, retry_timeout - elapsed_time);
-              continue;
-          }
-
-          if (elapsed_time >= retry_timeout)
-          {
-              CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-                  "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-                  retry_timeout, elapsed_time);
-              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-              goto cleanup;
-          }
-          break;
-      }
-
-          m_samlResponse = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data"));
-          // 5. Validate post_back_url matches Snowflake URL
-          post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
-          server_url = getServerURLSync().toString();
-
-          if ((!m_connection->disable_saml_url_check) &&
-              (!SFURL::urlHasSamePrefix(post_back_url, server_url)))
-          {
-              CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-                  "The specified authenticator and destination URL in "
-                  "Saml Assertion did not "
-                  "match, expected=%s, post back=%s",
-                  server_url.c_str(),
-                  post_back_url.c_str());
-              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "SFSamlResponseVerificationFailed", SF_SQLSTATE_GENERAL_ERROR);
-              goto cleanup;
-          }
-          //update retry info.
-          m_connection->retry_timeout -= elapsed_time;
-
-    cleanup:
+  cleanup:
       sf_header_destroy(header);
+      snowflake_cJSON_Delete(resp);
       free_curl_desc(curl_desc);
-      snowflake_cJSON_Delete(body);
       if (err->error_code != SF_STATUS_SUCCESS) {
           AUTH_THROW(err);
       }
- }
+  }
+
+  bool AuthenticatorOKTA::getSAMLResponse()
+  {
+      bool isRetry = false;
+      int64 retry_timeout = get_login_timeout(m_connection);
+      int64 retry_max_count = get_login_retry_count(m_connection);
+      int64 elapsed_time = 0;
+      int8* retried_count = &m_connection->retry_count;
+
+      void* curl_desc;
+      CURL* curl;
+      curl_desc = get_curl_desc_from_pool(ssoURLStr.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl = get_curl_from_desc(curl_desc);
+      SF_ERROR_STRUCT* err = &m_connection->error;
+      SFURL sso_url = SFURL::parse(ssoURLStr);
+      sso_url.addQueryParam("onetimetoken", onetimeToken);
+      cJSON* resp = NULL;
+      if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, err, -1, retry_max_count, retry_timeout, &elapsed_time, retried_count))
+      {
+          if (elapsed_time >= retry_timeout || *retried_count >= retry_max_count)
+          {
+              CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
+                  "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+                  retried_count, elapsed_time);
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+              goto cleanup;
+          }
+          //Need to increase retried_count on the authentication level
+          (*retried_count)++;
+          CXX_LOG_TRACE("sf", "Connection", "Connect",
+              "Retry on getting SAML response with one time token renewed for %d times "
+              "with updated retryTimeout = %d",
+              *retried_count, retry_timeout - elapsed_time);
+          isRetry = true;
+          goto cleanup;
+      }
+      //update retry info.
+      m_samlResponse = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "data"));
+
+  cleanup:
+      m_connection->retry_timeout -= elapsed_time;
+      free_curl_desc(curl_desc);
+      snowflake_cJSON_Delete(resp);
+      if (err->error_code != SF_STATUS_SUCCESS) {
+          AUTH_THROW(err);
+      }
+      return isRetry;
+  }
+
+  void AuthenticatorOKTA::authenticate()
+  {
+      // 1. get authenticator info
+      jsonObject_t dataMap;
+      getIdp(dataMap);
+
+      SF_ERROR_STRUCT* err = &m_connection->error;
+      tokenURLStr = dataMap["tokenUrl"].get<std::string>();
+      ssoURLStr = dataMap["ssoUrl"].get<std::string>();
+
+      // 2. verify ssoUrl and tokenUrl contains same prefix
+      if (!SFURL::urlHasSamePrefix(tokenURLStr, m_connection->authenticator))
+      {
+          CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
+              "The specified authenticator is not supported, "
+              "authenticator=%s, token url=%s, sso url=%s",
+              m_connection->authenticator, tokenURLStr, ssoURLStr);
+          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator", SF_SQLSTATE_GENERAL_ERROR);
+          AUTH_THROW(err->msg);
+      }
+
+
+      // 3. get one time token from okta
+      dataMap.clear();
+      dataMap["username"] = picojson::value(m_connection->user);
+      dataMap["password"] = picojson::value(m_connection->password);
+      while (true)
+      {
+          getOneTimeToken(dataMap);
+          
+          // 4. get SAML response
+          if (!getSAMLResponse())
+          {
+              break;
+          }
+      }
+
+      // 5. Validate post_back_url matches Snowflake URL
+      std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
+      std::string server_url = getServerURLSync().toString();
+      if ((!m_connection->disable_saml_url_check) &&
+          (!SFURL::urlHasSamePrefix(post_back_url, server_url)))
+      {
+          CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
+              "The specified authenticator and destination URL in "
+              "Saml Assertion did not "
+              "match, expected=%s, post back=%s",
+              server_url.c_str(),
+              post_back_url.c_str());
+          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "SFSamlResponseVerificationFailed", SF_SQLSTATE_GENERAL_ERROR);
+      }
+  }
 
   void AuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
   {
       dataMap.erase("LOGIN_NAME");
       dataMap.erase("PASSWORD");
       dataMap.erase("EXT_AUTHN_DUO_METHOD");
-
       dataMap["RAW_SAML_RESPONSE"] = picojson::value(m_samlResponse);
   }
 

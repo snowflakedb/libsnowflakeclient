@@ -21,6 +21,15 @@ namespace Client
 			snowflake_cJSON_DeleteItemFromObject(*cjson, "data");
 			snowflake_cJSON_AddItemToObject(*cjson, "data", new_body);
 		}
+
+		void strToPicoJson(jsonObject_t& picojson, std::string str) 
+		{
+			jsonValue_t v;
+			picojson::parse(v, str);
+			picojson = v.get<picojson::object>();
+		}
+
+
 	}
 }
 }

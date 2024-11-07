@@ -13,6 +13,7 @@ extern "C" {
 
 	void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson);
 	void picoJsonTocJson(jsonObject_t &picojson, cJSON** cjson);
+	void strToPicoJson(jsonObject_t& picojson, std::string str);
 
 #ifdef __cplusplus
 }

@@ -93,6 +93,7 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
+
   class AuthenticatorOKTA : public IAuthenticator
   {
   public:
@@ -102,11 +103,23 @@ namespace Client
 
       void authenticate();
 
-      void updateDataMap(jsonObject_t &dataMap);
+      void updateDataMap(jsonObject_t& dataMap);
+
+  protected:
+      //Step1
+      virtual void getIdp(jsonObject_t& respData);
+      //Step3
+      virtual void getOneTimeToken(jsonObject_t& respData);
+      //Step4
+      virtual bool getSAMLResponse();
+
 
   private:
       SF_CONNECT* m_connection;
       std::string m_samlResponse;
+      std::string tokenURLStr;
+      std::string ssoURLStr;
+      std::string onetimeToken;
 
       /**
        * Extract post back url from samel response. Input is in HTML format.
