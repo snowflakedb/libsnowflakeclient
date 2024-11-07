@@ -149,13 +149,6 @@ void CipherContext::initialize_encryption() {
         throw;
       }
 
-      // default iv len for AES is 96 bits but driver's IV generator
-      // uses 128 bits defined as SF_CRYPTO_IV_NBITS
-      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_IVLEN, SF_CRYPTO_IV_NBITS / 8, nullptr)) {
-        CXX_LOG_ERROR("Failed to set IV len equal to %d bits", SF_CRYPTO_IV_NBITS);
-        throw;
-      }
-
       // initialize key and iv
       if (1 != EVP_EncryptInit_ex(m_pimpl->ctx, nullptr, nullptr,
         reinterpret_cast<const unsigned char *>(m_pimpl->key->data),
@@ -181,11 +174,6 @@ void CipherContext::initialize_decryption() {
     case CryptoMode::GCM:
       if (1 != EVP_DecryptInit_ex(m_pimpl->ctx, m_pimpl->cipher, nullptr, nullptr, nullptr)) {
         CXX_LOG_ERROR("Failed to initialize decryption operation for provided cipher");
-        throw;
-      }
-
-      if (1 != EVP_CIPHER_CTX_ctrl(m_pimpl->ctx, EVP_CTRL_GCM_SET_IVLEN, SF_CRYPTO_IV_NBITS / 8, nullptr)) {
-        CXX_LOG_ERROR("Failed to set IV len equal to %d bits", SF_CRYPTO_IV_NBITS);
         throw;
       }
 

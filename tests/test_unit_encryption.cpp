@@ -80,8 +80,8 @@ void test_aes_gcm_mode_encryption(void **unused) {
     // pragma: allowlist nextline secret
     const CryptoKey key = create_key("1234567890abcdef", 128);
     // pragma: allowlist nextline secret
-    const CryptoIV iv = create_iv("abcdef1234567890");
-    const std::string expected_ciphertext_base64 = "pgs/wjNH2TYekmN7mbhFjeHH0A==";
+    const CryptoIV iv = create_iv("ab1234567890");
+    const std::string expected_ciphertext_base64 = "iG+lT4o27hkzj3kblYRzQikLVQ==";
 
     CipherContext cipher_context = Cryptor::getInstance().createCipherContext(
         CryptoAlgo::AES,

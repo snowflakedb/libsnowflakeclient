@@ -100,6 +100,7 @@ struct CryptoIV final
 {
   inline CryptoIV(){}
 
+  // Up to 128 bits of IV data, 96 for GCM encryption
   char data[SF_CRYPTO_IV_NBITS / 8];
 };
 
