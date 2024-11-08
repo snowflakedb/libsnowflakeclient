@@ -18,7 +18,7 @@ Build and Tests
 Build
 ----------------------------------------------------------------------
 
-Ensure you have cmake 2.8 or later version.
+Ensure you have cmake 3.17 or later version.
 
 Linux and OSX
 ^^^^^^^^^^^^^
