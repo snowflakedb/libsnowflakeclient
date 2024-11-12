@@ -59,6 +59,29 @@ namespace Client
     int64 m_renewTimeout;
   };
 
+  class IdentityAuthenticator : public IAuthenticator
+  {
+  public:
+      IdentityAuthenticator(SF_CONNECT* conn) : m_connection(conn)
+      {};
+
+      ~IdentityAuthenticator()
+      {}
+
+
+  protected:
+     /*
+      * Get IdpInfo for OKTA and SAML 2.0 application
+      */
+      void getIDPInfo();
+      virtual void IDPPostCall(jsonObject_t& authData, jsonObject_t& resp);
+      jsonObject_t respdata;
+      SF_CONNECT* m_connection;
+      const std::string connectURL = "/session/authenticator-request";
+      std::string tokenURLStr;
+      std::string ssoURLStr;
+  };
+
   /**
    * JWT Authenticator
    */
@@ -94,7 +117,7 @@ namespace Client
   };
 
 
-  class AuthenticatorOKTA : public IAuthenticator
+  class AuthenticatorOKTA : public IdentityAuthenticator
   {
   public:
       AuthenticatorOKTA(SF_CONNECT* conn);
@@ -106,20 +129,15 @@ namespace Client
       void updateDataMap(jsonObject_t& dataMap);
 
   protected:
-      //Step1
-      virtual void getIdp(jsonObject_t& respData);
       //Step3
-      virtual void getOneTimeToken(jsonObject_t& respData);
+      virtual void getOneTimeToken(jsonObject_t& dataMap);
       //Step4
       virtual bool getSAMLResponse();
 
 
   private:
-      SF_CONNECT* m_connection;
       std::string m_samlResponse;
-      std::string tokenURLStr;
-      std::string ssoURLStr;
-      std::string onetimeToken;
+      std::string oneTimeToken;
 
       /**
        * Extract post back url from samel response. Input is in HTML format.
@@ -127,7 +145,6 @@ namespace Client
       std::string extractPostBackUrlFromSamlResponse(std::string html);
       SFURL getServerURLSync();
   };
-
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP

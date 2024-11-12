@@ -41,6 +41,45 @@ namespace Snowflake
                 GeneralException(SF_ERROR_STRUCT* error) : SnowflakeException(error) {};
             };
 
+            class RenewTimeoutException : public std::exception
+            {
+            public:
+                RenewTimeoutException(int64 elapsedSeconds,
+                    int8 retriedCount,
+                    bool isCurlTimeoutNoBackoff) :
+                    m_elapsedSeconds(elapsedSeconds),
+                    m_retriedCount(retriedCount),
+                    m_isCurlTimeoutNoBackoff(isCurlTimeoutNoBackoff)
+                {}
+
+                int64 getElapsedSeconds()
+                {
+                    return m_elapsedSeconds;
+                }
+
+                int8 getRetriedCount()
+                {
+                    return m_retriedCount;
+                }
+
+                bool isCurlTimeoutNoBackoff()
+                {
+                    return m_isCurlTimeoutNoBackoff;
+                }
+
+                virtual const char* what() const noexcept
+                {
+                    return "internal renew timeout exception";
+                }
+
+            private:
+                int64 m_elapsedSeconds;
+                int8 m_retriedCount;
+                // The flag indicate if the renew exception is thrown for renew the request
+                // within curl timeout and no backoff made
+                bool m_isCurlTimeoutNoBackoff;
+            };
+
             struct AuthException : public std::exception
             {
                 AuthException(SF_ERROR_STRUCT* error) : message_(error->msg) {}
