@@ -21,10 +21,18 @@ set vs_version=%3
 set dynamic_runtime=%4
 set build_tests=%5
 
-if not "%dynamic_runtime%"=="ON" (
-	set dynamic_runtime=OFF
+set msvc_runtime_library=MultiThreaded
+
+if "%build_type%"=="Debug" (
+    set msvc_runtime_library=%msvc_runtime_library%Debug
 )
-echo === dynamic_runtime: %dynamic_runtime%
+
+if "%dynamic_runtime%"=="ON" (
+    echo %dynamic_runtime%
+    set msvc_runtime_library=%msvc_runtime_library%DLL
+)
+
+echo === msvc_runtime_library: %msvc_runtime_library%
 
 if not "%build_tests%"=="ON" (
 	set build_tests=OFF
@@ -50,7 +58,7 @@ cd %cmake_dir%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 cmake -G "%cmake_generator%" -A %cmake_architecture% ^
-    -DDYNAMIC_RUNTIME=%dynamic_runtime% ^
+    -DCMAKE_MSVC_RUNTIME_LIBRARY=%msvc_runtime_library% ^
     -DBUILD_TESTS=%build_tests% ^
     -DCMAKE_BUILD_TYPE=%build_type% ^
     -DVSDIR:STRING=%vsdir% ..
