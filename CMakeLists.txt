@@ -124,7 +124,7 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
-        lib/util.h
+        lib/snowflake_util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
@@ -238,7 +238,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp
-		cpp/lib/util.cpp	
+		cpp/lib/SnowflakeUtil.cpp	
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp

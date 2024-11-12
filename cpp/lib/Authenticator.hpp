@@ -17,7 +17,7 @@
 #include "authenticator.h"
 #include "picojson.h"
 #include "snowflake/SFURL.hpp"
-#include "../../lib/util.h"
+#include "../../lib/snowflake_util.h"
 
 
 
@@ -59,13 +59,13 @@ namespace Client
     int64 m_renewTimeout;
   };
 
-  class IdentityAuthenticator : public IAuthenticator
+  class IDPAuthenticator : public IAuthenticator
   {
   public:
-      IdentityAuthenticator(SF_CONNECT* conn) : m_connection(conn)
+      IDPAuthenticator(SF_CONNECT* conn) : m_connection(conn)
       {};
 
-      ~IdentityAuthenticator()
+      ~IDPAuthenticator()
       {}
 
 
@@ -117,7 +117,7 @@ namespace Client
   };
 
 
-  class AuthenticatorOKTA : public IdentityAuthenticator
+  class AuthenticatorOKTA : public IDPAuthenticator
   {
   public:
       AuthenticatorOKTA(SF_CONNECT* conn);

@@ -42,15 +42,15 @@
   throw Snowflake::Client::Exception::AuthException(msg);  \
 }
 
-#define JWT_THROW(err, msg)                                                                                                                 \
-{                                                                                                                                           \
+#define JWT_THROW(err, msg)\
+{                          \
   SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "Failed to created the header for the okta authentication", SF_SQLSTATE_GENERAL_ERROR); \
-  AUTH_THROW(err);                                                                                                                          \
+  AUTH_THROW(err);          \
 }
 
-#define RETRY_THROW(elapsedSeconds, retriedCount)                                                                                                                 \
-{                                                                                                                                           \
-  throw Snowflake::Client::Exception::RenewTimeoutException(elapsedSeconds, retriedCount, false);                                                                                                 \
+#define RETRY_THROW(elapsedSeconds, retriedCount)\
+{                                                \
+  throw Snowflake::Client::Exception::RenewTimeoutException(elapsedSeconds, retriedCount, false);\
 }  
 
 // wrapper functions for C
@@ -66,14 +66,12 @@ extern "C" {
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_JWT) == 0)
     {
       return AUTH_JWT;
-    }   
+    }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH) == 0)
     {
         return AUTH_OAUTH;
     }
-
-     return AUTH_OKTA;
-
+    return AUTH_OKTA;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
@@ -267,7 +265,7 @@ namespace Client
     }
   }
 
-  void IdentityAuthenticator::getIDPInfo()
+  void IDPAuthenticator::getIDPInfo()
   {
       // login info as a json post body
       //Currently, the server is not enabled Okta authentication with C API. For testing purpose, I used the ODBC info.
@@ -287,7 +285,7 @@ namespace Client
       ssoURLStr = respData["ssoUrl"].get<std::string>();
   }
 
-  void IdentityAuthenticator::IDPPostCall(jsonObject_t& authData, jsonObject_t& respData)
+  void IDPAuthenticator::IDPPostCall(jsonObject_t& authData, jsonObject_t& respData)
   {
       // connection URL
       int64 elasped_time = 0;
@@ -298,6 +296,7 @@ namespace Client
       SF_ERROR_STRUCT* err = &m_connection->error;
       SF_HEADER* httpExtraHeaders = sf_header_create();
       std::string s_body = value(authData).serialize();
+      cJSON* resp = NULL;
 
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
@@ -309,7 +308,6 @@ namespace Client
           goto cleanup;
       }
 
-      cJSON* resp = NULL;
       if (!request(m_connection, &resp, connectURL.c_str(), NULL,
           0, (char*) s_body.c_str(), httpExtraHeaders,
           POST_REQUEST_TYPE, err, SF_BOOLEAN_FALSE,
@@ -459,7 +457,7 @@ namespace Client
   }
 
   AuthenticatorOKTA::AuthenticatorOKTA(
-      SF_CONNECT* connection) : IdentityAuthenticator(connection)
+      SF_CONNECT* connection) : IDPAuthenticator(connection)
   {
       // nop
   }
@@ -540,9 +538,9 @@ namespace Client
       curl_desc = get_curl_desc_from_pool(ssoURLStr.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
       SF_ERROR_STRUCT* err = &m_connection->error;
+      cJSON* resp = NULL;
       SFURL sso_url = SFURL::parse(ssoURLStr);
       sso_url.addQueryParam("onetimetoken", oneTimeToken);
-      cJSON* resp = NULL;
       if (!curl_get_call(m_connection, curl, (char*)sso_url.toString().c_str(), NULL, &resp, err, -1, retry_max_count, retry_timeout, &elapsed_time, &retried_count))
       {
           if (elapsed_time >= retry_timeout || retried_count >= retry_max_count)
@@ -592,7 +590,6 @@ namespace Client
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator", SF_SQLSTATE_GENERAL_ERROR);
           AUTH_THROW(err->msg);
       }
-
 
       // 3. get one time token from okta
       jsonObject_t dataMap;
