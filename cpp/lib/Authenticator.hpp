@@ -19,8 +19,6 @@
 #include "snowflake/SFURL.hpp"
 #include "../../lib/snowflake_util.h"
 
-
-
 namespace Snowflake
 {
 namespace Client
@@ -68,7 +66,6 @@ namespace Client
       ~IDPAuthenticator()
       {}
 
-
   protected:
      /*
       * Get IdpInfo for OKTA and SAML 2.0 application
@@ -95,8 +92,6 @@ namespace Client
     void authenticate();
 
     void updateDataMap(jsonObject_t &dataMap);
-
-
 
   private:
     void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);

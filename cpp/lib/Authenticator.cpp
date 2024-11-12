@@ -71,6 +71,7 @@ extern "C" {
     {
         return AUTH_OAUTH;
     }
+
     return AUTH_OKTA;
   }
 
