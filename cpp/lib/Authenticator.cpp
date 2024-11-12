@@ -526,7 +526,7 @@ namespace Client
       }
   }
 
-  bool AuthenticatorOKTA::getSAMLResponse()
+  void AuthenticatorOKTA::getSAMLResponse()
   {
       bool isRetry = false;
       int64 retry_timeout = get_login_timeout(m_connection);
