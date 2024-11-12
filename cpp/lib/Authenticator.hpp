@@ -127,7 +127,7 @@ namespace Client
       //Step3
       virtual void getOneTimeToken(jsonObject_t& dataMap);
       //Step4
-      virtual bool getSAMLResponse();
+      virtual void getSAMLResponse();
 
 
   private:
