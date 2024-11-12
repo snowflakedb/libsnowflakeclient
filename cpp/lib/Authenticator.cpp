@@ -329,6 +329,7 @@ namespace Client
       cJSONtoPicoJson(snowflake_cJSON_GetObjectItem(resp, "data"), respData);
   cleanup:
       sf_header_destroy(httpExtraHeaders);
+      snowflake_cJSON_Delete(resp);
   }
   AuthenticatorJWT::AuthenticatorJWT(SF_CONNECT *conn)
   : m_jwt{Jwt::buildIJwt()}
