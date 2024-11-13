@@ -55,8 +55,8 @@ SnowflakeGeneralException::SnowflakeGeneralException(SF_ERROR_STRUCT *error) :
   m_message(error->msg ? error->msg : ""),
   m_file(error->file ? error->file : ""),
   m_line(error->line),
-  m_queryId(error->sfqid ? error->sfqid : ""),
-  m_sqlState(error->sqlstate ? error->sqlstate : ""),
+  m_queryId(error->sfqid),
+  m_sqlState(error->sqlstate),
   m_code((int)error->error_code)
 {
   std::string errmsg = setupErrorMessage(m_message, m_file, m_line, m_queryId, m_sqlState, m_code);

@@ -768,6 +768,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->get_maxretries = SF_DEFAULT_GET_MAX_RETRIES;
         sf->get_threshold = SF_DEFAULT_GET_THRESHOLD;
 
+        _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
     }
@@ -809,6 +810,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
 
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
+    _mutex_term(&sf->mutex_stage_bind);
     SF_FREE(sf->host);
     SF_FREE(sf->port);
     SF_FREE(sf->user);

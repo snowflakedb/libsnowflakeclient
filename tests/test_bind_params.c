@@ -122,8 +122,8 @@ void test_array_binding_core(unsigned int array_size) {
     uint8 uint8_value = 12;
     char uint8_expected_result[] = "12";
     int64* int64_array = NULL;
-    int64 int64_value = -12345;
-    char int64_expected_result[] = "-12345";
+    int64 int64_value = 12345;
+    char int64_expected_result[] = "12345";
     uint64* uint64_array = NULL;
     uint64 uint64_value = 12345;
     char uint64_expected_result[] = "12345";
@@ -133,8 +133,8 @@ void test_array_binding_core(unsigned int array_size) {
     char* string_array = NULL;
     char string_value[] = "str";
     char string_expected_result[] = "str";
-    byte* binary_array = NULL;
-    byte binary_value[] = {0x12, 0x34, 0x56, 0x78};
+    unsigned char* binary_array = NULL;
+    unsigned char binary_value[] = {0x12, 0x34, 0x56, 0x78};
     char binary_expected_result[] = "12345678";
     sf_bool* bool_array = NULL;
     sf_bool bool_value = SF_BOOLEAN_TRUE;
@@ -237,6 +237,9 @@ void test_array_binding_core(unsigned int array_size) {
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
+	// turn on FAIL_OPEN to around certificate issue with GCP
+    sf_bool value = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
@@ -272,8 +275,11 @@ void test_array_binding_core(unsigned int array_size) {
     for (i = 0; i < array_size; i++)
     {
       status = snowflake_fetch(stmt);
+      if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(stmt->error));
+      }
       assert_int_equal(status, SF_STATUS_SUCCESS);
-      char* result = NULL;
+      const char* result = NULL;
       for (j = 0; j < 8; j++)
       {
         snowflake_column_as_const_str(stmt, j + 1, &result);

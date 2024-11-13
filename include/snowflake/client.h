@@ -436,6 +436,8 @@ typedef struct SF_CONNECT {
     int64 get_threshold;
 
     // stage binding
+    /* used when updating stage binding options */
+    SF_MUTEX_HANDLE mutex_stage_bind;
     sf_bool binding_stage_created;
     uint64 stage_binding_threshold;
     // the flag indecates the threshold from session parameter is overridden

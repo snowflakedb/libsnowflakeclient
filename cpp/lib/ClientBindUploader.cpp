@@ -61,10 +61,10 @@ void ClientBindUploader::createStageIfNeeded()
     return;
   }
 
-  _mutex_lock(&conn->mutex_parameters);
+  _mutex_lock(&conn->mutex_stage_bind);
   if (conn->binding_stage_created)
   {
-    _mutex_unlock(&conn->mutex_parameters);
+    _mutex_unlock(&conn->mutex_stage_bind);
     return;
   }
 
@@ -72,12 +72,12 @@ void ClientBindUploader::createStageIfNeeded()
   SF_STATUS ret = snowflake_query(m_stmt, command.c_str(), 0);
   if (ret != SF_STATUS_SUCCESS)
   {
-    _mutex_unlock(&conn->mutex_parameters);
+    _mutex_unlock(&conn->mutex_stage_bind);
     SNOWFLAKE_THROW_S(&m_stmt->error);
   }
 
   conn->binding_stage_created = SF_BOOLEAN_TRUE;
-  _mutex_unlock(&conn->mutex_parameters);
+  _mutex_unlock(&conn->mutex_stage_bind);
 }
 
 void ClientBindUploader::executeUploading(const std::string &sql,
