@@ -280,8 +280,6 @@ namespace Client
       dataMap["CLIENT_APP_ID"] = value("ODBC");
       dataMap["CLIENT_APP_VERSION"] = value("3.4.1");
 
-      int64 renew_timeout = 0;
-      int8* retried_count = &m_connection->retry_count;
 
       SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
       jsonObject_t authnData, respData;
@@ -292,8 +290,9 @@ namespace Client
       int64 renewTimeout = auth_get_renew_timeout(m_connection);
       bool injectCURLTimeout = false;
       bool isNewRetry = true;
+      int8* retriedCount = &m_connection->retry_count;
 
-      post_curl_call(connectURL, authnData, respData, 0, retryTimeout, 0, maxRetryCount, injectCURLTimeout, renewTimeout, retried_count, isNewRetry);
+      post_curl_call(connectURL, authnData, respData, 0, retryTimeout, 0, maxRetryCount, injectCURLTimeout, renewTimeout, retriedCount, isNewRetry);
       jsonObject_t& data = respData["data"].get<jsonObject_t>();
       tokenURLStr = data["tokenUrl"].get<std::string>();
       ssoURLStr = data["ssoUrl"].get<std::string>();
@@ -318,6 +317,7 @@ namespace Client
       curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
       SF_ERROR_STRUCT* err = &m_connection->error;
+
       int64 elapsedTime = 0;
 
       // add headers for account and authentication
@@ -327,10 +327,10 @@ namespace Client
 
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          log_trace("sf", "AuthenticatorOKTA",
-              "getIdpInfo",
+          log_trace("sf", "IDPAuthenticator",
+              "post_curl_call",
               "Failed to create the header for the request to get the token URL and the SSO URL");
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
           AUTH_THROW(err);
           goto cleanup;
       }
@@ -339,7 +339,7 @@ namespace Client
           &resp_data, err, renewTimeout, maxRetryCount, retryTimeout, &elapsedTime,
           retriedCount, NULL, SF_BOOLEAN_TRUE))
       {
-          log_info("sf", "Connection", "getIdpInfo",
+          log_info("sf", "IDPAuthenticator", "post_curl_call",
               "Fail to get authenticator info, response body=%s\n",
               snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "SFConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
@@ -350,8 +350,8 @@ namespace Client
 
       if (elapsedTime >= retryTimeout)
       {
-          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-              "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_WARN("sf", "IDPAuthenticator", "post_curl_call",
+              "timeout reached: %d, elapsed time: %d",
               retryTimeout, elapsedTime);
 
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
@@ -509,14 +509,16 @@ namespace Client
       int8* retriedCount, bool isNewRetry, bool parseJSON, std::string& rawData)
   {
       bool isRetry = false;
+
       std::string destination = url.toString();
       void* curl_desc;
       CURL* curl;
       curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
+
       SF_ERROR_STRUCT* err = &m_connection->error;
-      int64 elapsedTime = 0;
       char* raw_data = NULL;
+      int64 elapsedTime = 0;
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
@@ -526,7 +528,7 @@ namespace Client
           log_trace("sf", "AuthenticatorOKTA",
               "get_curl_call",
               "Failed to create the header for the request to get onetime token");
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
           goto cleanup;
       }
 
