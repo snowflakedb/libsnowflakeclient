@@ -71,10 +71,15 @@ namespace Client
       * Get IdpInfo for OKTA and SAML 2.0 application
       */
       void getIDPInfo();
-      virtual void IDPPostCall(jsonObject_t& authData, jsonObject_t& resp);
+      virtual void post_curl_call(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp, int64 curlTimeout,
+          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
+          int8 *retriedCount, bool isNewRetry);
+      virtual void get_curl_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
+          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
+          int8 *retriedCount, bool isNewRetry, bool parseJSON, std::string& raw_data) = 0;
+      SFURL getServerURLSync();
       jsonObject_t respdata;
       SF_CONNECT* m_connection;
-      const std::string connectURL = "/session/authenticator-request";
       std::string tokenURLStr;
       std::string ssoURLStr;
   };
@@ -123,11 +128,14 @@ namespace Client
 
       void updateDataMap(jsonObject_t& dataMap);
 
+
   protected:
-      //Step3
-      virtual void getOneTimeToken(jsonObject_t& dataMap);
-      //Step4
-      virtual void getSAMLResponse();
+
+      void get_curl_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
+          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
+          int8* retriedCount, bool isNewRetry, bool parseJSON, std::string& rawData);
+      void getOneTimeToken();
+      void getSAMLResponse();
 
 
   private:
@@ -138,7 +146,6 @@ namespace Client
        * Extract post back url from samel response. Input is in HTML format.
       */
       std::string extractPostBackUrlFromSamlResponse(std::string html);
-      SFURL getServerURLSync();
   };
 } // namespace Client
 } // namespace Snowflake

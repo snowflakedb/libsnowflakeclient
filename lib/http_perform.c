@@ -138,7 +138,36 @@ void my_sleep_ms(uint32 sleepMs)
 #endif
 }
 
-sf_bool STDCALL http_perform(CURL *curl,
+sf_bool STDCALL http_perform(CURL* curl,
+    SF_REQUEST_TYPE request_type,
+    char* url,
+    SF_HEADER* header,
+    char* body,
+    cJSON** json,
+    NON_JSON_RESP* non_json_resp,
+    int64 network_timeout,
+    sf_bool chunk_downloader,
+    SF_ERROR_STRUCT* error,
+    sf_bool insecure_mode,
+    sf_bool fail_open,
+    int8 retry_on_curle_couldnt_connect_count,
+    int64 renew_timeout,
+    int8 retry_max_count,
+    int64* elapsed_time,
+    int8* retried_count,
+    sf_bool* is_renew,
+    sf_bool renew_injection,
+    const char* proxy,
+    const char* no_proxy,
+    sf_bool include_retry_reason,
+    sf_bool is_new_strategy_request)
+{
+    return http_perform_internal(curl, request_type, url, header, body, json, non_json_resp, network_timeout,
+        chunk_downloader, error, insecure_mode, fail_open, retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
+        elapsed_time, retried_count, is_renew, renew_injection, proxy, no_proxy, include_retry_reason, is_new_strategy_request, TRUE, NULL);
+}
+
+sf_bool STDCALL http_perform_internal(CURL *curl,
                              SF_REQUEST_TYPE request_type,
                              char *url,
                              SF_HEADER *header,
@@ -160,7 +189,9 @@ sf_bool STDCALL http_perform(CURL *curl,
                              const char *proxy,
                              const char *no_proxy,
                              sf_bool include_retry_reason,
-                             sf_bool is_new_strategy_request) {
+                             sf_bool is_new_strategy_request,
+                             sf_bool parse_json,
+                             char** raw_data) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -477,6 +508,11 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
+    if (!parse_json) {
+        *raw_data = (char*)SF_CALLOC(1, buffer.size + 1);
+        sf_strcpy(*raw_data, buffer.size+1, buffer.buffer);
+    }
+
     if (ret && json) {
       // We were successful so parse JSON from text
       if (chunk_downloader) {
@@ -488,17 +524,8 @@ sf_bool STDCALL http_perform(CURL *curl,
             buffer.buffer[buffer.size] = '\0';
         }
         snowflake_cJSON_Delete(*json);
-        *json = NULL;
-        if (is_saml_response(buffer.buffer)) 
-        {
-            *json = snowflake_cJSON_CreateObject();
-            snowflake_cJSON_AddRawToObject(*json, "data", buffer.buffer);
-            snowflake_cJSON_AddNullToObject(*json, "code");
-        }
-        else 
-        {
-            *json = snowflake_cJSON_Parse(buffer.buffer);
-        }
+        *json = snowflake_cJSON_Parse(buffer.buffer);
+        
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
             if (is_one_time_token_request(*json)) {
