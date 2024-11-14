@@ -657,11 +657,6 @@ uint64 sf_get_current_time_millis();
 * a function to check that this request is whether the one time token request.
 */
 sf_bool is_one_time_token_request(cJSON* resp);
-
-/*
-* a function to check that this request is whether the response includes the SAML response.
-*/
-sf_bool is_saml_response(char* response);
 #ifdef __cplusplus
 }
 #endif

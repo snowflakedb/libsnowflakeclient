@@ -71,10 +71,10 @@ namespace Client
       * Get IdpInfo for OKTA and SAML 2.0 application
       */
       void getIDPInfo();
-      virtual void post_curl_call(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp, int64 curlTimeout,
+      virtual void curl_post_call(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp, int64 curlTimeout,
           int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
           int8 *retriedCount, bool isNewRetry);
-      virtual void get_curl_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
+      virtual void curl_get_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
           int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
           int8 *retriedCount, bool isNewRetry, bool parseJSON, std::string& raw_data) = 0;
       SFURL getServerURLSync();
@@ -131,7 +131,7 @@ namespace Client
 
   protected:
 
-      void get_curl_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
+      void curl_get_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
           int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
           int8* retriedCount, bool isNewRetry, bool parseJSON, std::string& rawData);
       void getOneTimeToken();

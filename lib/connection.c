@@ -1356,9 +1356,3 @@ sf_bool is_one_time_token_request(cJSON* resp)
 {
     return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
 }
-
-sf_bool is_saml_response(char* response)
-{
-    char* doctype = "<!DOCTYPE html>";
-    return strncmp(response, doctype, strlen(doctype)) == 0;
-}
