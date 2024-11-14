@@ -20,6 +20,6 @@ source $DIR/build_openssl.sh -t $target
 source $DIR/build_oob.sh -t $target
 source $DIR/build_curl.sh    -t $target
 source $DIR/build_awssdk.sh  -t $target
-source $DIR/build_arrow.sh  -t $target
-source $DIR/build_cmocka.sh  -t Debug
 source $DIR/build_azuresdk.sh -t $target
+source $DIR/build_cmocka.sh -t $target
+source $DIR/build_arrow.sh -t $target

@@ -221,7 +221,7 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
             return ret;
         case SF_C_TYPE_BOOLEAN:
             ret = (char*) SF_CALLOC(1, size + 1);
-            sf_strncpy(ret, size + 1, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR, size + 1);
+            sf_strcpy(ret, size + 1, *(sf_bool*)value != (sf_bool)0 ? SF_BOOLEAN_INTERNAL_TRUE_STR : SF_BOOLEAN_INTERNAL_FALSE_STR);
             return ret;
         case SF_C_TYPE_BINARY:
             size = (size_t)len * 2 + 1;
