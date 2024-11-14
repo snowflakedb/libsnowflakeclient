@@ -591,7 +591,7 @@ namespace Client
       {
           CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getOneTimeToken",
               "Fail to get one time token response, response body=%s",
-              picojson::value(respData).serialize());
+              picojson::value(respData).serialize().c_str());
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_BAD_REQUEST, "OktaConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
           AUTH_THROW("Failed to get the one time token from Okta authentication.")
       }
@@ -679,8 +679,8 @@ namespace Client
               "The specified authenticator and destination URL in "
               "Saml Assertion did not "
               "match, expected=%s, post back=%s",
-              server_url,
-              post_back_url);
+              server_url.c_str(),
+              post_back_url.c_str());
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "SFSamlResponseVerificationFailed", SF_SQLSTATE_GENERAL_ERROR);
       }
   }
