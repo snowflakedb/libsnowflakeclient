@@ -164,7 +164,7 @@ sf_bool STDCALL http_perform(CURL* curl,
 {
     return http_perform_internal(curl, request_type, url, header, body, json, non_json_resp, network_timeout,
         chunk_downloader, error, insecure_mode, fail_open, retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
-        elapsed_time, retried_count, is_renew, renew_injection, proxy, no_proxy, include_retry_reason, is_new_strategy_request, TRUE, NULL);
+        elapsed_time, retried_count, is_renew, renew_injection, proxy, no_proxy, include_retry_reason, is_new_strategy_request, SF_BOOLEAN_TRUE, NULL);
 }
 
 sf_bool STDCALL http_perform_internal(CURL *curl,
