@@ -629,7 +629,7 @@ namespace Client
           CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
               "The specified authenticator is not supported, "
               "authenticator=%s, token url=%s, sso url=%s",
-              m_connection->authenticator, tokenURLStr, ssoURLStr);
+              m_connection->authenticator, tokenURLStr.c_str(), ssoURLStr.c_str());
           SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_BAD_REQUEST, "SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator", SF_SQLSTATE_GENERAL_ERROR);
           AUTH_THROW(err);
       }
