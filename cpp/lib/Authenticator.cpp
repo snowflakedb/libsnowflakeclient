@@ -288,11 +288,12 @@ namespace Client
       int64 maxRetryCount = get_login_retry_count(m_connection);
       int64 retryTimeout = get_login_timeout(m_connection);
       int64 renewTimeout = auth_get_renew_timeout(m_connection);
+      int64 curlTimeout = m_connection->network_timeout;
       bool injectCURLTimeout = false;
       bool isNewRetry = true;
       int8* retriedCount = &m_connection->retry_count;
 
-      curl_post_call(connectURL, authnData, respData, 0, retryTimeout, 0, maxRetryCount, injectCURLTimeout, renewTimeout, retriedCount, isNewRetry);
+      curl_post_call(connectURL, authnData, respData, curlTimeout, retryTimeout, 0, maxRetryCount, injectCURLTimeout, renewTimeout, retriedCount, isNewRetry);
       jsonObject_t& data = respData["data"].get<jsonObject_t>();
       tokenURLStr = data["tokenUrl"].get<std::string>();
       ssoURLStr = data["ssoUrl"].get<std::string>();
@@ -610,11 +611,12 @@ namespace Client
       int64 elapsedTime = 0;
       int8* retried_count = &m_connection->retry_count;
       int64 renewTimeout = auth_get_renew_timeout(m_connection);
+      int64 curlTimeout = m_connection->network_timeout;
 
       jsonObject_t resp;
       SFURL sso_url = SFURL::parse(ssoURLStr);
       sso_url.addQueryParam("onetimetoken", oneTimeToken);
-      curl_get_call(sso_url, resp, 0, retry_timeout, 8, 0, retry_max_count, renewTimeout, retried_count, false, false, m_samlResponse);
+      curl_get_call(sso_url, resp, curlTimeout, retry_timeout, 8, retry_max_count, false, renewTimeout, retried_count, false, false, m_samlResponse);
   }
 
   void AuthenticatorOKTA::authenticate()
