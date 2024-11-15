@@ -40,18 +40,12 @@
 
 #define AUTH_THROW(msg)                                  \
 {                                                         \
-  throw Snowflake::Client::Exception::AuthException(msg);  \
-}
-
-#define JWT_THROW(err, msg)\
-{                          \
-  SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "Failed to created the header for the okta authentication", SF_SQLSTATE_GENERAL_ERROR); \
-  AUTH_THROW(err);          \
+  throw ::AuthException(msg);  \
 }
 
 #define RETRY_THROW(elapsedSeconds, retriedCount)\
 {                                                \
-  throw Snowflake::Client::Exception::RenewTimeoutException(elapsedSeconds, retriedCount, false);\
+  throw ::RenewTimeoutException(elapsedSeconds, retriedCount, false);\
 }  
 
 // wrapper functions for C
@@ -407,7 +401,7 @@ namespace Client
         claimSet->addClaim("iss", issuer);
         m_jwt->setClaimSet(std::move(claimSet));
     }
-    catch (Exception::AuthException e) {
+    catch (AuthException& e) {
         SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL, e.message_.c_str(), SF_SQLSTATE_GENERAL_ERROR);
         AUTH_THROW("JWT Authentication failed");
     }
@@ -649,7 +643,7 @@ namespace Client
               getSAMLResponse();
               break;
           }
-          catch (Exception::RenewTimeoutException& e)
+          catch (RenewTimeoutException& e)
           {
               int64 elapsedSeconds = e.getElapsedSeconds();
               int64 retryTimeout = get_retry_timeout(m_connection);

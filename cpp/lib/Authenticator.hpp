@@ -78,7 +78,6 @@ namespace Client
           int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
           int8 *retriedCount, bool isNewRetry, bool parseJSON, std::string& raw_data) = 0;
       SFURL getServerURLSync();
-      jsonObject_t respdata;
       SF_CONNECT* m_connection;
       std::string tokenURLStr;
       std::string ssoURLStr;
@@ -128,19 +127,18 @@ namespace Client
 
       void updateDataMap(jsonObject_t& dataMap);
 
-
   protected:
-
       void curl_get_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
           int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
           int8* retriedCount, bool isNewRetry, bool parseJSON, std::string& rawData);
-      void getOneTimeToken();
-      void getSAMLResponse();
-
 
   private:
       std::string m_samlResponse;
       std::string oneTimeToken;
+
+      void getOneTimeToken();
+
+      void getSAMLResponse();
 
       /**
        * Extract post back url from samel response. Input is in HTML format.

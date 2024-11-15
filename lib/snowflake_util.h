@@ -11,9 +11,20 @@ extern "C" {
 	typedef std::map<std::string, picojson::value> jsonObject_t;
 	typedef std::vector<picojson::value> jsonArray_t;
 
+	/*
+	* Convert the cJSON to picoJSON
+	*/
 	void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson);
+
+	/*
+	* Convert the picojson to cJSON
+	*/
 	void picoJsonTocJson(jsonObject_t &picojson, cJSON** cjson);
-	void strToPicoJson(jsonObject_t& picojson, std::string str);
+
+	/*
+	* Stringfy the picojson data.
+	*/
+	void strToPicoJson(jsonObject_t& picojson, std::string& str);
 
 #ifdef __cplusplus
 }
