@@ -11,7 +11,6 @@
 #include <unistd.h>
 #endif
 
-
 /**
  * Tests converting a string representation of log level to the log level enum
  */
@@ -35,7 +34,7 @@ void test_invalid_client_config_path(void** unused) {
   char configFilePath[] = "fakePath.json";
 
   // Parse client config for log details
-  client_config clientConfig = { .logLevel = "", .logPath = "" };
+  client_config clientConfig = { 0 };
   sf_bool result = load_client_config(configFilePath, &clientConfig);
   assert_false(result);
 }
@@ -52,7 +51,7 @@ void test_client_config_log_invalid_json(void** unused) {
   fclose(file);
 
   // Parse client config for log details
-  client_config clientConfig = { .logLevel = "", .logPath = "" };
+  client_config clientConfig = { 0 };
   sf_bool result = load_client_config(configFilePath, &clientConfig);
   assert_false(result);
 
@@ -73,7 +72,7 @@ void test_client_config_log(void **unused) {
     fclose(file);
 
     // Parse client config for log details
-    client_config clientConfig = { .logLevel = "", .logPath = "" };
+    client_config clientConfig = { 0 };
     load_client_config(configFilePath, &clientConfig);
 
     // Set log name and level

@@ -315,7 +315,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     char client_config_file[MAX_PATH] = {0};
     snowflake_global_get_attribute(
       SF_GLOBAL_CLIENT_CONFIG_FILE, client_config_file, sizeof(client_config_file));
-    client_config clientConfig = { .logLevel = "", .logPath = "" };
+    client_config clientConfig = { 0 };
     load_client_config(client_config_file, &clientConfig);
 
     size_t log_path_size = 1; //Start with 1 to include null terminator
@@ -327,7 +327,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (sf_log_path == NULL) {
       if (log_path && strlen(log_path) != 0) {
         sf_log_path = log_path;
-      } else if (strlen(clientConfig.logPath) != 0) {
+      } else if (clientConfig.logPath != NULL) {
         sf_log_path = clientConfig.logPath;
       }
     }
@@ -336,7 +336,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (sf_log_level_str != NULL) {
       sf_log_level = log_from_str_to_level(sf_log_level_str);
     } else if (sf_log_level == SF_LOG_DEFAULT) {
-      if (strlen(clientConfig.logLevel) != 0) {
+      if (clientConfig.logLevel != NULL) {
         sf_log_level = log_from_str_to_level(clientConfig.logLevel);
       }
       else {
@@ -379,6 +379,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     ret = SF_BOOLEAN_TRUE;
 
 cleanup:
+    free_client_config(&clientConfig);
     return ret;
 }
 

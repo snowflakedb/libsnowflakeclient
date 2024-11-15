@@ -20,7 +20,7 @@
 #endif
 
 using namespace Snowflake::Client;
-
+using namespace picojson;
 
 namespace
 {
@@ -36,30 +36,43 @@ sf_bool load_client_config(
   client_config* out_clientConfig)
 {
   try {
-    ClientConfigParser configParser;
+    EasyLoggingConfigParser configParser;
     configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
   } catch (std::exception e) {
-    sf_fprintf(stderr, e.what());
+    CXX_LOG_ERROR("Using client configuration path from a connection string: %s", e.what());
     return false;
   }
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void free_client_config(client_config* clientConfig)
+{
+  if (clientConfig->logLevel != NULL)
+  {
+    SF_FREE(clientConfig->logLevel);
+  }
+  if (clientConfig->logPath != NULL)
+  {
+    SF_FREE(clientConfig->logPath);
+  }
+}
+
 // Public ======================================================================
 ////////////////////////////////////////////////////////////////////////////////
-ClientConfigParser::ClientConfigParser()
+EasyLoggingConfigParser::EasyLoggingConfigParser()
 {
   ; // Do nothing.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ClientConfigParser::~ClientConfigParser()
+EasyLoggingConfigParser::~EasyLoggingConfigParser()
 {
   ; // Do nothing.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ClientConfigParser::loadClientConfig(
+void EasyLoggingConfigParser::loadClientConfig(
   const std::string& in_configFilePath,
   client_config& out_clientConfig)
 {
@@ -72,211 +85,161 @@ void ClientConfigParser::loadClientConfig(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::string ClientConfigParser::resolveClientConfigPath(
+std::string EasyLoggingConfigParser::resolveClientConfigPath(
   const std::string& in_configFilePath)
 {
   char envbuf[MAX_PATH + 1];
-  std::string derivedConfigPath = "";
   if (!in_configFilePath.empty())
   {
     // 1. Try config file if it was passed in
-    derivedConfigPath = in_configFilePath;
-    CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
-      "Using client configuration path from a connection string: %s", in_configFilePath.c_str());
+    CXX_LOG_INFO("Using client configuration path from a connection string: %s", in_configFilePath.c_str());
+    return in_configFilePath;
   }
   else if (const char* clientConfigEnv = sf_getenv_s(SF_CLIENT_CONFIG_ENV_NAME.c_str(), envbuf, sizeof(envbuf)))
   {
     // 2. Try environment variable SF_CLIENT_CONFIG_ENV_NAME
-    derivedConfigPath = clientConfigEnv;
-    CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
-      "Using client configuration path from an environment variable: %s", clientConfigEnv);
+    CXX_LOG_INFO("Using client configuration path from an environment variable: %s", clientConfigEnv);
+    return clientConfigEnv;
   }
   else
   {
     // 3. Try DLL binary dir
     std::string binaryDir = getBinaryPath();
     std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
-    if (checkFileExists(binaryDirFilePath.c_str()))
+    if (boost::filesystem::is_regular_file(binaryDirFilePath))
     {
-      derivedConfigPath = binaryDirFilePath;
-      CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
-        "Using client configuration path from binary directory: %s", binaryDirFilePath.c_str());
+      CXX_LOG_INFO("Using client configuration path from binary directory: %s", binaryDirFilePath.c_str());
+      return binaryDirFilePath;
     }
     else
     {
-#if defined(WIN32) || defined(_WIN64)
       // 4. Try user home dir
-      std::string homeDirFilePath;
-      char* homeDir;
-      if ((homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf))) && strlen(homeDir) != 0)
-      {
-        homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-      } else {
-        // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
-        char* homeDriveEnv;
-        char* homePathEnv;
-        if ((homeDriveEnv = sf_getenv_s("HOMEDRIVE", envbuf, sizeof(envbuf))) && (strlen(homeDriveEnv) != 0) &&
-          (homePathEnv = sf_getenv_s("HOMEPATH", envbuf, sizeof(envbuf))) && (strlen(homePathEnv) != 0))
-        {
-          homeDirFilePath = std::string(homeDriveEnv) + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-        }
-      }
-      if (checkFileExists(homeDirFilePath))
-      {
-        derivedConfigPath = homeDirFilePath;
-        CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
-          "Using client configuration path from home directory: %s", homeDirFilePath.c_str());
-      }
-#else
-      // 4. Try user home dir
-      char* homeDir;
-      if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0))
-      {
-        std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-        if (checkFileExists(homeDirFilePath))
-        {
-          derivedConfigPath = homeDirFilePath;
-          CXX_LOG_INFO("sf", "ClientConfigParser", "loadClientConfig",
-            "Using client configuration path from home directory: %s", homeDirFilePath.c_str());
-        }
-      }
-#endif
+      return resolveHomeDirConfigPath();
     }
   }
-  return derivedConfigPath;
 }
 
 // Private =====================================================================
 ////////////////////////////////////////////////////////////////////////////////
-bool ClientConfigParser::checkFileExists(const std::string& in_filePath)
+std::string EasyLoggingConfigParser::resolveHomeDirConfigPath()
 {
-  FILE* file = sf_fopen(&file, in_filePath.c_str(), "r");
-  if (file != nullptr)
+  char envbuf[MAX_PATH + 1];
+#if defined(WIN32) || defined(_WIN64)
+  std::string homeDirFilePath;
+  char* homeDir;
+  if ((homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf))) && strlen(homeDir) != 0)
   {
-    fclose(file);
-    return true;
+    homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+  } else {
+    // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
+    char* homeDriveEnv = sf_getenv_s("HOMEDRIVE", envbuf, sizeof(envbuf));
+    char* homePathEnv = sf_getenv_s("HOMEPATH", envbuf, sizeof(envbuf));
+    if (homeDriveEnv && strlen(homeDriveEnv) != 0 && homePathEnv && strlen(homePathEnv) != 0)
+    {
+      homeDirFilePath = std::string(homeDriveEnv) + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+    }
   }
-  return false;
+  if (boost::filesystem::is_regular_file(homeDirFilePath))
+  {
+    CXX_LOG_INFO("Using client configuration path from home directory: %s", homeDirFilePath.c_str());
+    return homeDirFilePath;
+  }
+#else
+  char* homeDir;
+  if ((homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf))) && (strlen(homeDir) != 0))
+  {
+    std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+    if (boost::filesystem::is_regular_file(homeDirFilePath))
+    {
+      CXX_LOG_INFO("Using client configuration path from home directory: %s", homeDirFilePath.c_str());
+      return homeDirFilePath;
+    }
+  }
+#endif
+  return "";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ClientConfigParser::parseConfigFile(
+void EasyLoggingConfigParser::parseConfigFile(
   const std::string& in_filePath,
   client_config& out_clientConfig)
 {
-  cJSON* jsonConfig;
-  FILE* configFile;
-  try 
+  value jsonConfig;
+  std::string err;
+  std::ifstream configFile;
+  try
   {
-    configFile = sf_fopen(&configFile, in_filePath.c_str(), "r");
+    configFile.open(in_filePath, std::fstream::in | std::ios::binary);
     if (!configFile)
     {
-      CXX_LOG_INFO("sf", "ClientConfigParser", "parseConfigFile",
-        "Could not open a file. The file may not exist: %s",
+      CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
         in_filePath.c_str());
       std::string errMsg = "Error finding client configuration file: " + in_filePath;
-      throw ClientConfigException(errMsg.c_str());
+      throw std::exception(errMsg.c_str());
     }
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
 #endif
-    fseek(configFile, 0, SEEK_END);
-    long fileSize = ftell(configFile);
-    fseek(configFile, 0, SEEK_SET);
-    char* buffer = (char*)malloc(fileSize);
-    if (buffer)
+    err = parse(jsonConfig, configFile);
+    if (!err.empty())
     {
-      size_t result = fread(buffer, 1, fileSize, configFile);
-      if (result != fileSize)
-      {
-        CXX_LOG_ERROR(
-          "sf",
-          "ClientConfigParser",
-          "parseConfigFile",
-          "Error in reading file: %s", in_filePath.c_str());
-      }
-    }
-    jsonConfig = snowflake_cJSON_Parse(buffer);
-    const char* error_ptr = snowflake_cJSON_GetErrorPtr();
-    if (error_ptr)
-    {
-      CXX_LOG_ERROR(
-        "sf",
-        "ClientConfigParser",
-        "parseConfigFile",
-        "Error in parsing JSON: %s, err: %s", in_filePath.c_str(), error_ptr);
+      CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
       std::string errMsg = "Error parsing client configuration file: " + in_filePath;
-      throw ClientConfigException(errMsg.c_str());
+      throw std::exception(errMsg.c_str());
     }
   }
-  catch (std::exception& ex)
+  catch (std::exception& e)
   {
-    if (configFile)
-    {
-      fclose(configFile);
-    }
+    configFile.close();
     throw;
   }
 
-  const cJSON* commonProps = snowflake_cJSON_GetObjectItem(jsonConfig, "common");
-  checkUnknownEntries(snowflake_cJSON_Print(commonProps));
-  const cJSON* logLevel = snowflake_cJSON_GetObjectItem(commonProps, "log_level");
-  if (snowflake_cJSON_IsString(logLevel))
+  value commonProps = jsonConfig.get("common");
+  checkUnknownEntries(commonProps);
+  if (commonProps.is<object>())
   {
-    out_clientConfig.logLevel = snowflake_cJSON_GetStringValue(logLevel);
+    if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
+    {
+      const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
+      size_t logLevelSize = strlen(logLevel) + 1;
+      out_clientConfig.logLevel = (char*)SF_CALLOC(1, logLevelSize);
+      sf_strcpy(out_clientConfig.logLevel, logLevelSize, logLevel);
+    }
+    if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
+    {
+      const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
+      size_t logPathSize = strlen(logPath) + 1;
+      out_clientConfig.logPath = (char*)SF_CALLOC(1, logPathSize);
+      sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
+    }
   }
-  const cJSON* logPath = snowflake_cJSON_GetObjectItem(commonProps, "log_path");
-  if (snowflake_cJSON_IsString(logPath))
-  {
-    out_clientConfig.logPath = snowflake_cJSON_GetStringValue(logPath);
-  }
-  if (configFile)
-  {
-    fclose(configFile);
-  }
+  configFile.close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ClientConfigParser::checkIfValidPermissions(const std::string& in_filePath)
+void EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_filePath)
 {
   boost::filesystem::file_status fileStatus = boost::filesystem::status(in_filePath);
   boost::filesystem::perms permissions = fileStatus.permissions();
   if (permissions & boost::filesystem::group_write ||
       permissions & boost::filesystem::others_write)
   {
-    CXX_LOG_ERROR(
-      "sf",
-      "ClientConfigParser",
-      "checkIfValidPermissions",
-      "Error due to other users having permission to modify the config file: %s",
+    CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
       in_filePath.c_str());
     std::string errMsg = "Error due to other users having permission to modify the config file: " + in_filePath;
-    throw ClientConfigException(errMsg.c_str());
+    throw std::exception(errMsg.c_str());
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
+void EasyLoggingConfigParser::checkUnknownEntries(value& in_config)
 {
-  cJSON* jsonConfig = snowflake_cJSON_Parse(in_jsonString.c_str());
-  const char* error_ptr = snowflake_cJSON_GetErrorPtr();
-  if (error_ptr)
+  if (in_config.is<object>())
   {
-    CXX_LOG_ERROR(
-      "sf",
-      "ClientConfigParser",
-      "checkUnknownEntries",
-      "Error in parsing JSON: %s, err: %s", in_jsonString.c_str(), error_ptr);
-    std::string errMsg = "Error parsing json: " + in_jsonString;
-    throw ClientConfigException(errMsg.c_str());
-  }
-
-  if (snowflake_cJSON_IsObject(jsonConfig))
-  {
-    cJSON* entry = NULL;
-    snowflake_cJSON_ArrayForEach(entry, jsonConfig)
+    const value::object& configObj = in_config.get<object>();
+    for (value::object::const_iterator i = configObj.begin(); i != configObj.end(); ++i)
     {
-      std::string key = entry->string;
+      std::string key = i->first;
       bool found = false;
       for (std::string knownEntry : KnownCommonEntries)
       {
@@ -288,19 +251,15 @@ void ClientConfigParser::checkUnknownEntries(const std::string& in_jsonString)
       if (!found)
       {
         std::string warnMsg =
-          "Unknown configuration entry: " + key + " with value:" + entry->valuestring;
-        CXX_LOG_WARN(
-          "sf",
-          "ClientConfigParser",
-          "checkUnknownEntries",
-          warnMsg.c_str());
+          "Unknown configuration entry: " + key + " with value:" + i->second.to_str().c_str();
+        CXX_LOG_WARN(warnMsg.c_str());
       }
     }
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::string ClientConfigParser::getBinaryPath()
+std::string EasyLoggingConfigParser::getBinaryPath()
 {
   std::string binaryFullPath;
 #if defined(WIN32) || defined(_WIN64)

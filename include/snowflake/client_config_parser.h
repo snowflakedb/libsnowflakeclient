@@ -38,6 +38,13 @@ extern "C" {
   sf_bool load_client_config(
     const char* in_configFilePath,
     client_config* out_clientConfig);
+
+  /**
+    * Free client config memory
+    *
+    * @param clientConfig            The client_config object to be freed.
+    */
+  void free_client_config(client_config* clientConfig);
  
 #ifdef __cplusplus
 } // extern "C"

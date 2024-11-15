@@ -2,38 +2,29 @@
  * Copyright (c) 2024 Snowflake Computing
  */
 
-#ifndef SNOWFLAKE_CONFIGPARSER_HPP
-#define SNOWFLAKE_CONFIGPARSER_HPP
+#ifndef SNOWFLAKE_EASYLOGGINGCONFIGPARSER_HPP
+#define SNOWFLAKE_EASYLOGGINGCONFIGPARSER_HPP
 
 #include <string>
 #include "client_config_parser.h"
+#include "picojson.h"
 
 namespace Snowflake
 {
 namespace Client
 {
-  struct ClientConfigException : public std::exception
-  {
-    ClientConfigException(const std::string& message) : message_(message) {}
-    const char* what() const noexcept
-    {
-      return message_.c_str();
-    }
 
-    std::string message_;
-  };
-
-  class ClientConfigParser
+  class EasyLoggingConfigParser
   {
     // Public ==================================================================
     public:
       /**
        * Constructor for client config
        */
-      ClientConfigParser();
+      EasyLoggingConfigParser();
 
       /// @brief Destructor.
-      ~ClientConfigParser();
+      ~EasyLoggingConfigParser();
 
       /**
        * Construct SFClientConfig from client config file passed by user. This method searches the
@@ -54,20 +45,20 @@ namespace Client
     // Private =================================================================
     private:
       /**
-       * @brief Check if the file exists.
-       *
-       * @param in_filePath             The file path to check.
-       */
-      bool checkFileExists(const std::string& in_filePath);
-
-      /**
        * @brief Resolve the client config path.
        *
        * @param in_configFilePath        The config file path passed in by the user.
        * 
-       * @param The client config path
+       * @return The client config path
        */
       std::string resolveClientConfigPath(const std::string& in_configFilePath);
+
+      /**
+       * @brief Resolve home directory config path.
+       *
+       * @return The home directory client config path if exist, else empty.
+       */
+      std::string resolveHomeDirConfigPath();
 
       /**
        * @brief Parse JSON string.
@@ -91,7 +82,7 @@ namespace Client
        *
        * @param in_jsonString           The json object to check in json config file.
        */
-      void checkUnknownEntries(const std::string& in_jsonString);
+      void checkUnknownEntries(picojson::value& in_config);
 
       /**
        * @ brief Get the path to the binary file
@@ -102,4 +93,4 @@ namespace Client
 } // namespace Client
 } // namespace Snowflake
 
-#endif //SNOWFLAKE_CONFIGPARSER_HPP
+#endif //SNOWFLAKE_EASYLOGGINGCONFIGPARSER_HPP

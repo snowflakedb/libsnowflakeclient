@@ -407,6 +407,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -422,6 +423,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -436,6 +438,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
