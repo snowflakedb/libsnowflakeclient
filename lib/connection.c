@@ -1356,3 +1356,14 @@ sf_bool is_one_time_token_request(cJSON* resp)
 {
     return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
 }
+
+size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+    return json_resp_cb(ptr, size, nmemb, userdata);
+}
+
+NON_JSON_RESP* create_non_json_resp() {
+    NON_JSON_RESP* resp = (NON_JSON_RESP*)SF_CALLOC(1, sizeof(NON_JSON_RESP));
+    resp->write_callback = non_json_resp_write_callback;
+    return resp;
+}

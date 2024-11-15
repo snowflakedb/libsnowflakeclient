@@ -518,8 +518,12 @@ namespace Client
       curl = get_curl_from_desc(curl_desc);
 
       SF_ERROR_STRUCT* err = &m_connection->error;
-      char* raw_data = NULL;
       int64 elapsedTime = 0;
+
+      NON_JSON_RESP* raw_resp = new NON_JSON_RESP;
+      raw_resp->write_callback = non_json_resp_write_callback;
+      RAW_JSON_BUFFER buf = { NULL,0 };
+      raw_resp->buffer = (void*)&buf;
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
@@ -533,12 +537,12 @@ namespace Client
           goto cleanup;
       }
 
-      if (!http_perform_internal(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-              get_retry_timeout(m_connection), SF_BOOLEAN_FALSE, err,
+      if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp,
+              curlTimeout, SF_BOOLEAN_FALSE, err,
               m_connection->insecure_mode, m_connection->ocsp_fail_open,
               m_connection->retry_on_curle_couldnt_connect_count,
               renewTimeout, maxRetryCount, &elapsedTime, retriedCount, NULL, SF_BOOLEAN_FALSE,
-              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE, parseJSON, &raw_data)) {
+              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
               // Error is set in the perform function
               isRetry = true;
               goto cleanup;
@@ -554,11 +558,11 @@ namespace Client
           goto cleanup;
       }
 
-      rawData = raw_data;
+      rawData = buf.buffer;
   cleanup:
       sf_header_destroy(httpExtraHeaders);
       free_curl_desc(curl_desc);
-      SF_FREE(raw_data);
+      SF_FREE(raw_resp);
       if (isRetry) {
           RETRY_THROW(elapsedTime, *retriedCount);
       }
@@ -577,7 +581,7 @@ namespace Client
       int8 retry_max_count = get_login_retry_count(m_connection);
       int8* retried_count = &m_connection->retry_count;
       int64 renewTimeout = auth_get_renew_timeout(m_connection);
-
+      int64 curlTimeout = m_connection->network_timeout;
 
       SFURL tokenURL = SFURL::parse(tokenURLStr);
 
@@ -586,7 +590,7 @@ namespace Client
       dataMap["password"] = picojson::value(m_connection->password);
 
       try {
-          curl_post_call(tokenURL, dataMap, respData, 0, retry_timeout, 8, retry_max_count, false, renewTimeout, retried_count, false);
+          curl_post_call(tokenURL, dataMap, respData, curlTimeout, retry_timeout, 8, retry_max_count, false, renewTimeout, retried_count, false);
       }
       catch (...)
       {

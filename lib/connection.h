@@ -474,16 +474,6 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              sf_bool include_retry_reason,
                              sf_bool is_login_request);
 
-sf_bool STDCALL http_perform_internal(CURL* curl, SF_REQUEST_TYPE request_type, char* url, SF_HEADER* header,
-    char* body, cJSON** json, NON_JSON_RESP* non_json_resp, int64 network_timeout, sf_bool chunk_downloader,
-    SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
-    int8 retry_on_curle_couldnt_connect_count,
-    int64 renew_timeout, int8 retry_max_count,
-    int64* elapsed_time, int8* retried_count,
-    sf_bool* is_renew, sf_bool renew_injection,
-    const char* proxy, const char* no_proxy,
-    sf_bool include_retry_reason,
-    sf_bool is_login_request, sf_bool parse_json, char** raw_data);
 /**
  * Returns true if HTTP code is retryable, false otherwise.
  *
@@ -657,6 +647,8 @@ uint64 sf_get_current_time_millis();
 * a function to check that this request is whether the one time token request.
 */
 sf_bool is_one_time_token_request(cJSON* resp);
+
+size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 #ifdef __cplusplus
 }
 #endif
