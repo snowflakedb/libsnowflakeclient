@@ -70,7 +70,7 @@ extern "C" {
     return AUTH_OKTA;
   }
 
-  SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
+  SF_STATUS STDCALL auth_initialize(SF_CONNECT *conn)
   {
     if (!conn)
     {
@@ -102,7 +102,7 @@ extern "C" {
     return SF_STATUS_SUCCESS;
   }
 
-  int64 auth_get_renew_timeout(SF_CONNECT * conn)
+  int64 auth_get_renew_timeout(SF_CONNECT *conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -120,7 +120,7 @@ extern "C" {
     }
   }
 
-  SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
+  SF_STATUS STDCALL auth_authenticate(SF_CONNECT *conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -139,7 +139,7 @@ extern "C" {
     return SF_STATUS_SUCCESS;
   }
 
-  void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
+  void auth_update_json_body(SF_CONNECT *conn, cJSON* body)
   {
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
     if (!data)
@@ -178,7 +178,7 @@ extern "C" {
     return;
   }
 
-  void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
+  void auth_renew_json_body(SF_CONNECT *conn, cJSON* body)
   {
     if (!conn || !conn->auth_object)
     {
@@ -202,7 +202,7 @@ extern "C" {
     return;
   }
 
-  void STDCALL auth_terminate(SF_CONNECT * conn)
+  void STDCALL auth_terminate(SF_CONNECT *conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -234,7 +234,7 @@ namespace Snowflake
 {
 namespace Client
 {
-    using namespace picojson;
+  using namespace picojson;
 
   void IAuthenticator::renewDataMap(jsonObject_t& dataMap)
   {
@@ -274,7 +274,6 @@ namespace Client
       dataMap["CLIENT_APP_ID"] = value("ODBC");
       dataMap["CLIENT_APP_VERSION"] = value("3.4.1");
 
-
       SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
       jsonObject_t authnData, respData;
       authnData["data"] = value(dataMap);
@@ -311,7 +310,7 @@ namespace Client
       CURL* curl;
       curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
-      SF_ERROR_STRUCT* err = &m_connection->error;
+      SF_ERROR_STRUCT *err = &m_connection->error;
 
       int64 elapsedTime = 0;
 
@@ -341,7 +340,6 @@ namespace Client
           AUTH_THROW(err);
           goto cleanup;
       }
-
 
       if (elapsedTime >= retryTimeout)
       {
@@ -426,7 +424,7 @@ namespace Client
     claimSet->addClaim("exp", (long)seconds.count() + m_timeOut);
   }
 
-  void AuthenticatorJWT::updateDataMap(jsonObject_t &dataMap)
+  void AuthenticatorJWT::updateDataMap(jsonObject_t& dataMap)
   {
     dataMap["AUTHENTICATOR"] = picojson::value(SF_AUTHENTICATOR_JWT);
     dataMap["TOKEN"] = picojson::value(m_jwt->serialize(m_privKey));
@@ -489,7 +487,7 @@ namespace Client
   }
 
   AuthenticatorOKTA::AuthenticatorOKTA(
-      SF_CONNECT* connection) : IDPAuthenticator(connection)
+      SF_CONNECT *connection) : IDPAuthenticator(connection)
   {
       // nop
   }
@@ -511,7 +509,7 @@ namespace Client
       curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
       curl = get_curl_from_desc(curl_desc);
 
-      SF_ERROR_STRUCT* err = &m_connection->error;
+      SF_ERROR_STRUCT *err = &m_connection->error;
       int64 elapsedTime = 0;
 
       NON_JSON_RESP* raw_resp = new NON_JSON_RESP;
@@ -536,8 +534,9 @@ namespace Client
               m_connection->insecure_mode, m_connection->ocsp_fail_open,
               m_connection->retry_on_curle_couldnt_connect_count,
               renewTimeout, maxRetryCount, &elapsedTime, retriedCount, NULL, SF_BOOLEAN_FALSE,
-              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) {
-              // Error is set in the perform function
+              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) 
+      {
+          //Fail to get the saml response. Retry.
               isRetry = true;
               goto cleanup;
       }
@@ -622,7 +621,7 @@ namespace Client
       // 1. get authenticator info
       getIDPInfo();
 
-      SF_ERROR_STRUCT* err = &m_connection->error;
+      SF_ERROR_STRUCT *err = &m_connection->error;
       // 2. verify ssoUrl and tokenUrl contains same prefix
       if (!SFURL::urlHasSamePrefix(tokenURLStr, m_connection->authenticator))
       {

@@ -477,11 +477,6 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
-    //if (!parse_json) {
-    //    *raw_data = (char*)SF_CALLOC(1, buffer.size + 1);
-    //    sf_strcpy(*raw_data, buffer.size+1, buffer.buffer);
-    //}
-
     if (ret && json) {
       // We were successful so parse JSON from text
       if (chunk_downloader) {
@@ -493,6 +488,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             buffer.buffer[buffer.size] = '\0';
         }
         snowflake_cJSON_Delete(*json);
+        *json = NULL;
         *json = snowflake_cJSON_Parse(buffer.buffer);
         
         if (*json) {

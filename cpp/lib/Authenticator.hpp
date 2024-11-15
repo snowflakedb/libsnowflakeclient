@@ -119,7 +119,7 @@ namespace Client
   class AuthenticatorOKTA : public IDPAuthenticator
   {
   public:
-      AuthenticatorOKTA(SF_CONNECT* conn);
+      AuthenticatorOKTA(SF_CONNECT *conn);
 
       ~AuthenticatorOKTA();
 
