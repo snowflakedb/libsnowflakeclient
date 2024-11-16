@@ -175,7 +175,7 @@ void EasyLoggingConfigParser::parseConfigFile(
       CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
         in_filePath.c_str());
       std::string errMsg = "Error finding client configuration file: " + in_filePath;
-      throw std::exception(errMsg.c_str());
+      throw ClientConfigException(errMsg.c_str());
     }
 #if !defined(WIN32) && !defined(_WIN64)
     checkIfValidPermissions(in_filePath);
@@ -185,7 +185,7 @@ void EasyLoggingConfigParser::parseConfigFile(
     {
       CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
       std::string errMsg = "Error parsing client configuration file: " + in_filePath;
-      throw std::exception(errMsg.c_str());
+      throw ClientConfigException(errMsg.c_str());
     }
   }
   catch (std::exception& e)
@@ -227,7 +227,7 @@ void EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_file
     CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
       in_filePath.c_str());
     std::string errMsg = "Error due to other users having permission to modify the config file: " + in_filePath;
-    throw std::exception(errMsg.c_str());
+    throw ClientConfigException(errMsg.c_str());
   }
 }
 
