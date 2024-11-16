@@ -10,6 +10,7 @@
 
 #include "../logger/SFLogger.hpp"
 #include "ResultSetArrow.hpp"
+#include "result_set_arrow.h"
 #include "DataConversion.hpp"
 #include "results.h"
 
@@ -21,49 +22,21 @@ namespace Client
 
 
 ResultSetArrow::ResultSetArrow() :
-    Snowflake::Client::ResultSet(SF_ARROW_FORMAT)
+    Snowflake::Client::ResultSet()
 {
-    ; // Do nothing
+    m_queryResultFormat = QueryResultFormat::ARROW;
 }
 
 ResultSetArrow::ResultSetArrow(
     arrow::BufferBuilder* initialChunk,
     SF_COLUMN_DESC * metadata,
-    const std::string& tzString
+    std::string tzString
 ) :
-    ResultSet(metadata, tzString, SF_ARROW_FORMAT)
+    ResultSet(metadata, tzString)
 {
+    m_queryResultFormat = QueryResultFormat::ARROW;
+
     this->appendChunk(initialChunk);
-
-    // Reset row indices so that they can be re-used by public API.
-    m_currChunkIdx = 0;
-    m_currChunkRowIdx = 0;
-    m_currRowIdx = 0;
-}
-
-ResultSetArrow::ResultSetArrow(
-    cJSON * jsonRowset64,
-    SF_COLUMN_DESC * metadata,
-    const std::string& tzString
-) :
-    ResultSet(metadata, tzString, SF_ARROW_FORMAT)
-{
-    NON_JSON_RESP resp;
-    arrow::BufferBuilder* bufferBuilder = NULL;
-    if (jsonRowset64)
-    {
-        const char* base64RowsetStr = snowflake_cJSON_GetStringValue(jsonRowset64);
-        if (base64RowsetStr && strlen(base64RowsetStr) > 0)
-        {
-            // Decode Base64-encoded Arrow-format rowset of the chunk and build a buffer builder from it.
-            std::string decodedRowsetStr = arrow::util::base64_decode(std::string(base64RowsetStr));
-            bufferBuilder = new arrow::BufferBuilder();
-            (void)bufferBuilder->Append((void*)decodedRowsetStr.c_str(), decodedRowsetStr.length());
-        }
-    }
-    resp.buffer = bufferBuilder;
-
-    this->appendChunk(&resp);
 
     // Reset row indices so that they can be re-used by public API.
     m_currChunkIdx = 0;
@@ -78,9 +51,8 @@ ResultSetArrow::~ResultSetArrow()
 
 // Public methods ==================================================================================
 
-SF_STATUS STDCALL ResultSetArrow::appendChunk(void* chunkPtr)
+SF_STATUS STDCALL ResultSetArrow::appendChunk(arrow::BufferBuilder * chunk)
 {
-    arrow::BufferBuilder * chunk = (arrow::BufferBuilder*)(((NON_JSON_RESP*)chunkPtr)->buffer);
     if (chunk == nullptr)
     {
         if (m_isFirstChunk)

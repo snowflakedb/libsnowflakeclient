@@ -18,18 +18,19 @@ namespace Client
 
 
 ResultSetJson::ResultSetJson() :
-    ResultSet(SF_JSON_FORMAT)
+    ResultSet()
 {
-    ; // Do nothing
+    m_queryResultFormat = QueryResultFormat::JSON;
 }
 
 ResultSetJson::ResultSetJson(
     cJSON * rowset,
     SF_COLUMN_DESC * metadata,
-    const std::string& tzString
+    std::string tzString
 ) :
-    ResultSet(metadata, tzString, SF_JSON_FORMAT)
+    ResultSet(metadata, tzString)
 {
+    m_queryResultFormat = QueryResultFormat::JSON;
     m_chunk = nullptr;
     appendChunk(rowset);
 }
@@ -42,9 +43,8 @@ ResultSetJson::~ResultSetJson()
 
 // Public methods ==================================================================================
 
-SF_STATUS STDCALL ResultSetJson::appendChunk(void* chunkPtr)
+SF_STATUS STDCALL ResultSetJson::appendChunk(cJSON * chunk)
 {
-    cJSON * chunk = (cJSON *)chunkPtr;
     if (chunk == nullptr)
     {
         CXX_LOG_ERROR("appendChunk -- Received a null chunk to append.");

@@ -25,20 +25,10 @@
 
 #define SF_DEFAULT_MAX_OBJECT_SIZE 16777216
 
-// defaults for put get configurations
-#define SF_DEFAULT_PUT_COMPRESS_LEVEL (-1)
-#define SF_MAX_PUT_COMPRESS_LEVEL 9
-#define SF_DEFAULT_PUT_MAX_RETRIES 5
-#define SF_MAX_PUT_MAX_RETRIES 100
-#define SF_DEFAULT_GET_MAX_RETRIES 5
-#define SF_MAX_GET_MAX_RETRIES 100
-#define SF_DEFAULT_GET_THRESHOLD 5
-
 #define SESSION_URL "/session/v1/login-request"
 #define QUERY_URL "/queries/v1/query-request"
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
-#define QUERY_RESULT_URL_FORMAT "/queries/%s/result"
 // not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 
@@ -95,7 +85,6 @@ typedef struct SF_STAGE_CRED {
   char *aws_secret_key;
   char *aws_token;
   char *azure_sas_token;
-  char* gcs_access_token;
 } SF_STAGE_CRED;
 
 typedef struct SF_STAGE_INFO {
@@ -150,7 +139,7 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
 /**
  * Executes a statement.
  * @param sfstmt SNOWFLAKE_STMT context.
- * @param is_put_get_command type true if this is a put/get command
+ * @param sf_use_application_json_accept type true if this is a put/get command
  * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
  * @param is_describe_only should the statement be executed in describe only mode
  * if the query response is to be captured.
@@ -158,8 +147,7 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool is_put_get_command,
-                                        sf_bool is_native_put_get,
+                                        sf_bool use_application_json_accept_type,
                                         struct SF_QUERY_RESULT_CAPTURE* result_capture,
                                         sf_bool is_describe_only);
 
@@ -172,33 +160,5 @@ sf_bool STDCALL _is_put_get_command(char* sql_text);
  * @return POSITIONAL or NAMED based on the type of params
  */
 PARAM_TYPE STDCALL _snowflake_get_param_style(const SF_BIND_INPUT *input);
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-/**
- * Legacy approach of Executing a query, not to execute put/get natively.
- * Should only be called internally for put/get queries.
- *
- * @param sf SNOWFLAKE_STMT context.
- * @param command a query or command that returns results.
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL
-_snowflake_query_put_get_legacy(SF_STMT* sfstmt, const char* command, size_t command_size);
-
-/**
- * Executes put get command natively.
- * @param sfstmt SNOWFLAKE_STMT context.
- * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
- *
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL _snowflake_execute_put_get_native(
-                      SF_STMT *sfstmt,
-                      struct SF_QUERY_RESULT_CAPTURE* result_capture);
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 #endif //SNOWFLAKE_CLIENT_INT_H

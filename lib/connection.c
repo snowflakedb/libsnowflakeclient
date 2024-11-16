@@ -201,12 +201,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     return body;
 }
 
-cJSON *STDCALL create_query_json_body(const char *sql_text,
-                                      int64 sequence_id,
-                                      const char *request_id,
-                                      sf_bool is_describe_only,
-                                      int64 multi_stmt_count)
-{
+cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only) {
     cJSON *body;
     double submission_time;
     // Create body
@@ -226,26 +221,11 @@ cJSON *STDCALL create_query_json_body(const char *sql_text,
         snowflake_cJSON_AddStringToObject(body, "requestId", request_id);
     }
 
-    cJSON* parameters = NULL;
-    if (multi_stmt_count >= 0)
-    {
-        parameters = snowflake_cJSON_CreateObject();
-        snowflake_cJSON_AddNumberToObject(parameters, "MULTI_STATEMENT_COUNT", (double)multi_stmt_count);
-    }
-
 #ifdef SF_WIN32
-    if (!parameters)
-    {
-        parameters = snowflake_cJSON_CreateObject();
-    }
+    cJSON * parameters = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(parameters, "C_API_QUERY_RESULT_FORMAT", "JSON");
-    // temporary code to fake as ODBC to have multiple statements enabled
-    snowflake_cJSON_AddStringToObject(parameters, "ODBC_QUERY_RESULT_FORMAT", "JSON");
+    snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
 #endif
-    if (parameters)
-    {
-        snowflake_cJSON_AddItemToObject(body, "parameters", parameters);
-    }
     return body;
 }
 
@@ -375,7 +355,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     }
 
     do {
-        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
+        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, json, NULL,
                           retry_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
@@ -502,7 +482,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
+        if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, json, NULL,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
@@ -905,16 +885,16 @@ ARRAY_LIST *json_get_object_keys(const cJSON *item) {
 }
 
 size_t
-char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf) {
+json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json) {
     size_t data_size = size * nmemb;
     log_debug("Curl response size: %zu", data_size);
-    raw_buf->buffer = (char *) SF_REALLOC(raw_buf->buffer,
-                                          raw_buf->size + data_size + 1);
+    raw_json->buffer = (char *) SF_REALLOC(raw_json->buffer,
+                                           raw_json->size + data_size + 1);
     // Start copying where last null terminator existed
-    sf_memcpy(&raw_buf->buffer[raw_buf->size], data_size, data, data_size);
-    raw_buf->size += data_size;
-    // Set null raw_buf
-    raw_buf->buffer[raw_buf->size] = '\0';
+    sf_memcpy(&raw_json->buffer[raw_json->size], data_size, data, data_size);
+    raw_json->size += data_size;
+    // Set null terminator
+    raw_json->buffer[raw_json->size] = '\0';
     return data_size;
 }
 

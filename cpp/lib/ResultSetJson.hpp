@@ -52,7 +52,7 @@ public:
     ResultSetJson(
         cJSON * rowset,
         SF_COLUMN_DESC * metadata,
-        const std::string& tzString);
+        std::string tzString);
 
     /**
      * Destructor.
@@ -66,7 +66,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL appendChunk(void * chunkPtr);
+    SF_STATUS STDCALL appendChunk(cJSON * chunk);
 
     /**
      * Advances the internal iterator to the next row. If there are no more rows to consume,

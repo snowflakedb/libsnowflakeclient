@@ -62,20 +62,7 @@ public:
      * @param metadata             An array of metadata objects for each column.
      * @param tzString             The time zone.
      */
-    ResultSetArrow(arrow::BufferBuilder * initialChunk, SF_COLUMN_DESC * metadata, const std::string& tzString);
-
-    /**
-     * Parameterized constructor.
-     *
-     * This constructor will initialize m_records with the (partial) results
-     * contained in the initial chunk. It will also initialize m_metadata with
-     * the metadata in "metadata".
-     *
-     * @param jsonRowset64         A pointer to the rowset64 data in json result set.
-     * @param metadata             An array of metadata objects for each column.
-     * @param tzString             The time zone.
-     */
-    ResultSetArrow(cJSON* jsonRowset64, SF_COLUMN_DESC* metadata, const std::string& tzString);
+    ResultSetArrow(arrow::BufferBuilder * initialChunk, SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -87,11 +74,11 @@ public:
     /**
      * Appends the given chunk to the internal result set.
      *
-     * @param chunkPtr                The chunk to append.
+     * @param chunk                The chunk to append.
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL appendChunk(void* chunkPtr);
+    SF_STATUS STDCALL appendChunk(arrow::BufferBuilder * chunk);
 
     /**
      * Advances the internal iterator to the next row.

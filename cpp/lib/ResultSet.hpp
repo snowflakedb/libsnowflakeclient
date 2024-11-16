@@ -12,20 +12,20 @@
 #include "cJSON.h"
 #include "snowflake/basic_types.h"
 #include "snowflake/client.h"
-#include "result_set.h"
-
-#define VERIFY_COLUMN_INDEX(index, total)                             \
-  if (index < 1 || index > total)                                     \
-  {                                                                   \
-    setError(SF_STATUS_ERROR_OUT_OF_BOUNDS,                           \
-      "Column index must be between 1 and snowflake_num_fields()");   \
-    return SF_STATUS_ERROR_OUT_OF_BOUNDS;                             \
-  }
 
 namespace Snowflake
 {
 namespace Client
 {
+
+/**
+ * Enumeration over valid query result formats.
+ */
+enum QueryResultFormat
+{
+    ARROW,
+    JSON
+};
 
 /**
  * The implementation of a base result set.
@@ -40,7 +40,7 @@ public:
     /**
      * Default constructor.
      */
-    ResultSet(QueryResultFormat format);
+    ResultSet();
 
     /**
      * Parameterized constructor.
@@ -48,17 +48,7 @@ public:
      * @param metadata                  The metadata of the result set.
      * @param tzString                  The time zone.
      */
-    ResultSet(SF_COLUMN_DESC * metadata, const std::string& tzString, QueryResultFormat format);
-
-    static ResultSet* CreateResultFromJson(cJSON* json_rowset,
-                                           SF_COLUMN_DESC* metadata,
-                                           QueryResultFormat query_result_format,
-                                           const std::string& tz_string);
-
-    static ResultSet* CreateResultFromChunk(void* initial_chunk,
-                                            SF_COLUMN_DESC* metadata,
-                                            QueryResultFormat query_result_format,
-                                            const std::string& tz_string);
+    ResultSet(SF_COLUMN_DESC * metadata, std::string tzString);
 
     /**
      * Destructor.
@@ -66,20 +56,6 @@ public:
     virtual ~ResultSet(){}
 
     // API methods =================================================================================
-
-    /**
-     * Frees the previously held chunk in m_chunk and sets the current chunk to the given chunk.
-     * Each result type should override this function to handle chunks,
-     * while some result might not apply (won't be called), return error by default.
-     *
-     * @param chunkPtr                The chunk to append.
-     *
-     * @return 0 if successful, otherwise an error is returned.
-     */
-    virtual SF_STATUS STDCALL appendChunk(void* chunkPtr)
-    {
-      return SF_STATUS_ERROR_GENERAL;
-    }
 
     /**
      * Advances to the next row.
@@ -218,13 +194,6 @@ public:
      */
     virtual SF_STATUS STDCALL isCellNull(size_t idx, sf_bool * out_data) = 0;
 
-    /**
-     * Gets the total number of rows in the current chunk being processed.
-     *
-     * @return the number of rows in the current chunk.
-     */
-    virtual size_t getRowCountInChunk() = 0;
-
     // Other member getters ========================================================================
 
     SF_STATUS getError()
@@ -244,11 +213,6 @@ public:
         {
             m_errMsg = errMsg;
         }
-    }
-
-    QueryResultFormat getResultFormat()
-    {
-        return m_queryResultFormat;
     }
 
 protected:

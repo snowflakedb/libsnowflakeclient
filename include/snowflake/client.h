@@ -15,15 +15,7 @@ extern "C" {
 #include "version.h"
 #include "logger.h"
 
-/**
- * API Name
- */
-/* TODO: Temporarily change to ODBC for now to pass the test before
- *       features (PUT for GCP, multiple statements etc.) unblocked
- *       on server side.
- *       Need to revert to C_API when merging to master.
- */
-#define SF_API_NAME "ODBC"
+#define SF_API_NAME "C API"
 
 /**
  * SQLState code length
@@ -169,8 +161,7 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_NULL_POINTER = 240022,
     SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
     SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT = 240024,
-    SF_STATUS_ERROR_OTHER = 240025,
-    SF_STATUS_ERROR_FILE_TRANSFER = 240026
+    SF_STATUS_ERROR_OTHER = 240025
 } SF_STATUS;
 
 /**
@@ -274,14 +265,6 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
     SF_CON_OCSP_FAIL_OPEN,
-    SF_CON_PUT_TEMPDIR,
-    SF_CON_PUT_COMPRESSLV,
-    SF_CON_PUT_USE_URANDOM_DEV,
-    SF_CON_PUT_FASTFAIL,
-    SF_CON_PUT_MAXRETRIES,
-    SF_CON_GET_FASTFAIL,
-    SF_CON_GET_MAXRETRIES,
-    SF_CON_GET_THRESHOLD,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -308,11 +291,8 @@ typedef enum SF_GLOBAL_ATTRIBUTE {
  * Attributes for Snowflake statement context.
  */
 typedef enum SF_STMT_ATTRIBUTE {
-    SF_STMT_USER_REALLOC_FUNC,
-    SF_STMT_MULTI_STMT_COUNT
+    SF_STMT_USER_REALLOC_FUNC
 } SF_STMT_ATTRIBUTE;
-#define SF_MULTI_STMT_COUNT_UNSET (-1)
-#define SF_MULTI_STMT_COUNT_UNLIMITED 0
 
 /**
  * Snowflake Error
@@ -424,17 +404,6 @@ typedef struct SF_CONNECT {
 
     //token for OAuth authentication
     char *oauth_token;
-
-    // put get configurations
-    sf_bool use_s3_regional_url;
-    sf_bool put_use_urand_dev;
-    int8 put_compress_level;
-    char* put_temp_dir;
-    sf_bool put_fastfail;
-    int8 put_maxretries;
-    sf_bool get_fastfail;
-    int8 get_maxretries;
-    int64 get_threshold;
 } SF_CONNECT;
 
 /**
@@ -484,16 +453,6 @@ typedef struct SF_CHUNK_DOWNLOADER SF_CHUNK_DOWNLOADER;
  */
 typedef struct SF_PUT_GET_RESPONSE SF_PUT_GET_RESPONSE;
 
-typedef void* result_set_ptr;
-
-/**
- * An enumeration over all supported query result formats.
- */
-typedef enum QueryResultFormat_e
-{
-  SF_ARROW_FORMAT, SF_JSON_FORMAT, SF_PUTGET_FORMAT, SF_FORMAT_UNKNOWN
-} QueryResultFormat;
-
 /**
  * Statement context
  */
@@ -503,9 +462,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    QueryResultFormat qrf;
+    void* qrf;
     char *sql_text;
-    result_set_ptr result_set;
+    void* result_set;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
@@ -517,9 +476,6 @@ typedef struct SF_STMT {
     SF_STATS *stats;
     void *stmt_attrs;
     sf_bool is_dml;
-    sf_bool is_multi_stmt;
-    void* multi_stmt_result_ids;
-    int64 multi_stmt_count;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -836,15 +792,6 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
  */
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture);
-
-/**
- * Determines whether more results are available and, if so,
- * initializes processing for the next one.
- * @param sfstmt SNOWFLAKE_STMT context.
- *
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer
