@@ -1,0 +1,6 @@
+
+if (WIN32)
+    set(DEPS_DIR "${CMAKE_CURRENT_LIST_DIR}/../${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}")
+else()
+    set(DEPS_DIR "${CMAKE_CURRENT_LIST_DIR}/../${PLATFORM}/${CMAKE_BUILD_TYPE}")
+endif ()

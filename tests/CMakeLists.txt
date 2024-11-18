@@ -1,6 +1,9 @@
 # Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
 
 # include public headers and test utils
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/deps-build/cmake)
+find_package(Cmocka REQUIRED)
+
 include_directories(
         "../include"
         "utils"
@@ -151,7 +154,6 @@ if (APPLE OR WIN32 OR CLIENT_CODE_COVERAGE)
 endif ()
 
 if (UNIX)
-    find_library(CMOCKA_LIB libcmocka.a PATHS ../deps-build/${PLATFORM}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS ../deps-build/${PLATFORM}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
@@ -193,7 +195,6 @@ if (APPLE)
 endif ()
 
 if (WIN32)
-    find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 
     if ($ENV{ARROW_FROM_SOURCE})
         set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
@@ -216,33 +217,32 @@ if (WIN32)
         ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
 endif ()
 
-message("libcmocka is located at " ${CMOCKA_LIB})
 if (LINUX)
     message("libuuid.a is located at " ${UUID_LIB})
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_C snowflakeclient ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+    set(TESTLIB_OPTS_CXX snowflakeclient ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
             pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load
+    set(TESTLIB_OPTS_C snowflakeclient ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load
             ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load ${CURL_LIB}
+    set(TESTLIB_OPTS_CXX snowflakeclient ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load ${CURL_LIB}
             ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
 endif()
 if (WIN32)
     if (WIN32_DEBUG)
         if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-            set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ucrtd.lib)
-            set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+            set(TESTLIB_OPTS_C snowflakeclient ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ucrtd.lib)
+            set(TESTLIB_OPTS_CXX snowflakeclient ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
                     Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
         endif()
     else()
-        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
-        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+        set(TESTLIB_OPTS_C snowflakeclient ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB})
+        set(TESTLIB_OPTS_CXX snowflakeclient ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
                 Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
     endif()
 endif()
@@ -250,17 +250,7 @@ endif()
 if (MOCK)
     FOREACH (T ${TESTS_MOCK})
         add_executable(${T} ${SOURCE_UTILS} mock/${T}.c)
-        if (WIN32)
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
-            )
-        else()
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
-            )
-        endif()
+        target_link_libraries(${T} Cmocka::Cmocka)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -275,19 +265,7 @@ if (MOCK)
 else()
     FOREACH (T ${TESTS_C})
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
-        if (WIN32)
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
-            )
-            set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
-        else()
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
-            )
-        endif()
+        target_link_libraries(${T} Cmocka::Cmocka)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -310,21 +288,7 @@ else()
     # with error LNK2001: unresolved external symbol __CrtDbgReportW
     FOREACH(T ${TESTS_CXX})
         add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
-        if (WIN32)
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
-                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
-            )
-            set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
-        else()
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
-                    ../deps-build/${PLATFORM}/openssl/include
-            )
-        endif()
+        target_link_libraries(${T} Cmocka::Cmocka)
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -346,10 +310,7 @@ else()
     if (UNIX)
         FOREACH (T ${TESTS_PERF})
             add_executable(${T} ${SOURCE_UTILS} ${T}.c)
-            target_include_directories(
-                    ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
-            )
+            target_link_libraries(${T} Cmocka::Cmocka)
             target_link_libraries(${T} ${TESTLIB_OPTS_C})
             add_test(${T} ${T})
             set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${SNOWFLAKE_TEST_CA_BUNDLE_FILE})
