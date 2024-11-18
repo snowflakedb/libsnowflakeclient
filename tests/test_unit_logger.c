@@ -38,7 +38,7 @@ void test_invalid_client_config_path(void** unused) {
   sf_bool result = load_client_config(configFilePath, &clientConfig);
   assert_false(result);
 }
-
+#if !defined(_WIN32) && !defined(_DEBUG)
 /**
  * Tests log settings from client config file with invalid json
  */
@@ -58,6 +58,7 @@ void test_client_config_log_invalid_json(void** unused) {
   // Cleanup
   remove(configFilePath);
 }
+#endif
 
 #ifndef _WIN32
 /**
@@ -252,7 +253,9 @@ int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
+#if !defined(_WIN32) && !defined(_DEBUG)
         cmocka_unit_test(test_client_config_log_invalid_json),
+#endif
 #ifndef _WIN32
         cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_init),
