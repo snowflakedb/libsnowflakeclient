@@ -462,9 +462,9 @@ typedef struct SF_STMT {
     char request_id[SF_UUID4_LEN];
     SF_ERROR_STRUCT error;
     SF_CONNECT *connection;
-    void* qrf;
+    void *qrf;
     char *sql_text;
-    void* result_set;
+    void *result_set;
     int64 chunk_rowcount;
     int64 total_rowcount;
     int64 total_fieldcount;
