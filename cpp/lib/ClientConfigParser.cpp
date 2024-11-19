@@ -35,6 +35,7 @@ sf_bool load_client_config(
   const char* in_configFilePath,
   client_config* out_clientConfig)
 {
+#if !defined(_WIN32) && !defined(_DEBUG)
   try {
     EasyLoggingConfigParser configParser;
     configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
@@ -42,6 +43,7 @@ sf_bool load_client_config(
     CXX_LOG_ERROR("Using client configuration path from a connection string: %s", e.what());
     return false;
   }
+#endif
   return true;
 }
 
@@ -181,6 +183,7 @@ void EasyLoggingConfigParser::parseConfigFile(
     checkIfValidPermissions(in_filePath);
 #endif
     err = parse(jsonConfig, configFile);
+
     if (!err.empty())
     {
       CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
