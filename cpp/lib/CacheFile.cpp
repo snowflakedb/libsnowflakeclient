@@ -1,7 +1,3 @@
-//
-// Created by Jakub Szczerbinski on 14.10.24.
-//
-
 #include <fstream>
 #include <string>
 #include <boost/filesystem.hpp>
@@ -30,7 +26,7 @@ namespace Client {
       "TMP"
   };
 
-  const std::vector<std::string> CACHE_DIR_NAMES =
+  const std::vector<std::string> CACHE_DIR_PATH =
   {
       ".cache",
       "snowflake"
@@ -48,7 +44,7 @@ namespace Client {
 
     if (errno == EEXIST)
     {
-      CXX_LOG_TRACE("Directory already exists %s directory.", dir);
+      CXX_LOG_TRACE("Directory %s already exists.", dir);
       return true;
     }
 
@@ -84,9 +80,9 @@ namespace Client {
     }
 
     std::string cacheDir = cacheDirRoot;
-    for (const auto &name: CACHE_DIR_NAMES)
+    for (const auto &segment: CACHE_DIR_PATH)
     {
-      cacheDir += PATH_SEP + name;
+      cacheDir += PATH_SEP + segment;
       if (!mkdirIfNotExists(cacheDir.c_str()))
       {
         return {};
@@ -97,6 +93,7 @@ namespace Client {
 
   std::string credItemStr(const CredentialKey &key)
   {
+// TODO Make :SNOWFLAKE-ODBC-DRIVER: part more generic (support generic driver, PHP etc.)
     return key.host + ":" + key.user + ":SNOWFLAKE-ODBC-DRIVER:" + credTypeToString(key.type);
   }
 
@@ -168,7 +165,7 @@ namespace Client {
   {
     ensureObject(cache);
     picojson::object &obj = cache.get<picojson::object>();
-    auto pair = obj.emplace(key.account, picojson::value(picojson::object()));
+    std::pair<picojson::object::iterator, bool> pair = obj.emplace(key.account, picojson::value(picojson::object()));
     auto accountCacheIt = pair.first;
 
     ensureObject(accountCacheIt->second);

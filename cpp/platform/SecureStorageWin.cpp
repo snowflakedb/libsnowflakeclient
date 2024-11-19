@@ -59,7 +59,7 @@ namespace Client
     }
     else
     {
-      CXX_LOG_DEBUG("Successfulyy stored id token");
+      CXX_LOG_DEBUG("Successfully stored id token");
       return SecureStorageStatus::Success;
     }
   }
@@ -123,6 +123,8 @@ namespace Client
     {
       return SecureStorageStatus::Success;
     }
+
+    CXX_LOG_DEBUG("Successfully removed id token");
   }
 }
 

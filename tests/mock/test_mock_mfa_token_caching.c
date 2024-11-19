@@ -130,5 +130,7 @@ void test_mfa_token_caching(void **unused) {
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
     free(first_mfa_request);
+    free(first_mfa_response);
+    free(second_mfa_request);
     return ret;
   }

@@ -34,7 +34,7 @@ namespace Client {
     /**
      * storeToken
      *
-     * API to secure store credential in Apple Keychain
+     * API to secure store credential
      *
      * @param host - snowflake host url
      * @param username - snowflake user name
@@ -51,7 +51,7 @@ namespace Client {
     /**
      * retrieveToken
      *
-     * API to retrieve credential from Apple Key Chain
+     * API to retrieve credential
      *
      * @param host - snowflake host url associated
      * with the credential
@@ -71,7 +71,7 @@ namespace Client {
     /**
      * updateToken
      *
-     * API to update an existing credential in the keychain.
+     * API to update an existing credential.
      *
      * @param host - snowflake host url associated
      * with the credential
@@ -89,7 +89,7 @@ namespace Client {
     /**
      * remove
      *
-     * API to remove a credential from the keychain.
+     * API to remove a credential.
      *
      * @param host - snowflake host url associated
      * with the credential

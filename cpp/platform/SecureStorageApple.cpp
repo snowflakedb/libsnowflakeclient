@@ -16,6 +16,7 @@
 #include <sstream>
 
 #define MAX_TOKEN_LEN 1024
+// TODO Make :SNOWFLAKE-ODBC-DRIVER: part more generic (support generic driver, PHP etc.)
 #define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"
 #define COLON_CHAR_LENGTH 1
 #define NULL_CHAR_LENGTH 1
@@ -49,13 +50,6 @@ namespace Client
      */
     CFTypeRef keys[4];
     CFTypeRef values[4];
-    /*
-     * Concatenate Host & Username in the format:
-     * `host:username:drivername:credType'
-     * the target_max_len hence becomes :
-     * strlen(host)+strlen(username)+strlen(drivername)+strlen(credType)+ (3 * strlen(':'))
-     * Add 1 to accommodate the NULL character.
-     */
     std::string target = convertTarget(host, username, credType);
 
     keys[0] = kSecClass;
@@ -94,9 +88,6 @@ namespace Client
                                                          const std::string& credType,
                                                          std::string& cred)
   {
-    SecKeychainItemRef pitem = NULL;
-    UInt32 plength = 0;
-    char *pdata = NULL;
     std::string target = convertTarget(host, username, credType);
 
     CFTypeRef keys[5];
@@ -120,7 +111,7 @@ namespace Client
     if (status == errSecItemNotFound)
     {
       cred = "";
-      CXX_LOG_ERROR("Failed to retrieve secure token - %s", "Token Not Found");
+      CXX_LOG_ERROR("Failed to retrieve secure token. Reason: token not found.");
       return SecureStorageStatus::NotFound;
     }
 
@@ -175,7 +166,6 @@ namespace Client
                                                        const std::string& username,
                                                        const std::string& credType)
   {
-    OSStatus result = errSecSuccess;
     CFTypeRef keys[4];
     CFTypeRef values[4];
     std::string target = convertTarget(host, username, credType);
@@ -192,7 +182,7 @@ namespace Client
 
     CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
                                                        (const void **)values, 4, NULL, NULL);
-    result = SecItemDelete(extract_query);
+    OSStatus result = SecItemDelete(extract_query);
     if (result != errSecSuccess && result != errSecItemNotFound)
     {
       CXX_LOG_ERROR("Failed to remove secure token");
