@@ -35,6 +35,8 @@ sf_bool load_client_config(
   const char* in_configFilePath,
   client_config* out_clientConfig)
 {
+// Disable easy logging for 32-bit windows debug build due to linking issues
+// with _osfile causing hanging/assertions until dynamic linking is available
 #if !defined(_WIN32) && !defined(_DEBUG)
   try {
     EasyLoggingConfigParser configParser;
