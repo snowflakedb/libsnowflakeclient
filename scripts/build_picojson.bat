@@ -30,7 +30,7 @@ md %PICOJSON_INSTALL_DIR%
 md %PICOJSON_INSTALL_DIR%\include
 copy %PICOJSON_SOURCE_DIR%\picojson.h %PICOJSON_INSTALL_DIR%\include
 
-cd "%curdir%"
+cd "%currdir%"
 
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file picojson %picojson_version%
@@ -42,5 +42,5 @@ goto :success
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

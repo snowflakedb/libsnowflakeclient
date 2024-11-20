@@ -62,17 +62,17 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make install_sw install_ssldirs install_fips > /dev/null
         mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
+        openssl_config_opts+=("no-asm")
         perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
         make install_sw install_ssldirs install_fips > /dev/null
-        lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
-        lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/../legacy.dylib
-        mv $OPENSSL_BUILD_DIR/lib/../libssl.a    $OPENSSL_BUILD_DIR/lib/libssl.a
-        mv $OPENSSL_BUILD_DIR/lib/../libcrypto.a $OPENSSL_BUILD_DIR/lib/libcrypto.a
-        mv $OPENSSL_BUILD_DIR/lib/../fips.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
-        mv $OPENSSL_BUILD_DIR/lib/../legacy.dylib $OPENSSL_BUILD_DIR/lib/ossl-modules/legacy.dylib
+        mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libx64
+        mkdir -p $OPENSSL_BUILD_DIR/lib
+        lipo -create $OPENSSL_BUILD_DIR/libx64/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/libssl.a
+        lipo -create $OPENSSL_BUILD_DIR/libx64/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/libcrypto.a
+        lipo -create $OPENSSL_BUILD_DIR/libx64/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/fips.dylib
+        lipo -create $OPENSSL_BUILD_DIR/libx64/ossl-modules/legacy.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/legacy.dylib -output $OPENSSL_BUILD_DIR/lib/legacy.dylib
         rm -rf $OPENSSL_BUILD_DIR/libarm64
+        rm -rf $OPENSSL_BUILD_DIR/libx64
         lipo -info $OPENSSL_BUILD_DIR/lib/libssl.a
         lipo -info $OPENSSL_BUILD_DIR/lib/libcrypto.a
         lipo -info $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib
