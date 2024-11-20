@@ -18,7 +18,7 @@ Build and Tests
 Build
 ----------------------------------------------------------------------
 
-Ensure you have cmake 2.8 or later version.
+Ensure you have cmake 3.17 or later version.
 
 Linux and OSX
 ^^^^^^^^^^^^^
@@ -138,3 +138,9 @@ and verify no error in the output:
 .. code-block:: bash
 
      ERROR SUMMARY: 0 errors from 0 contexts ...
+
+Note
+===============
+
+This driver currently does not support GCP regional endpoints. Please ensure that any workloads using through this driver do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
+

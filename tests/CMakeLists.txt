@@ -57,6 +57,7 @@ SET(TESTS_CXX
         test_unit_jwt
         test_unit_cipher_stream_buf
         test_unit_cred_renew
+        test_unit_encryption
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter
@@ -122,6 +123,28 @@ set(AWS_ALL_LIBS
         ${AWS_C_SDKUTILS_LIB}
     )
 
+SET(TEST_DATA
+        TestOrcFile.test1.orc
+        brotli_sample.txt.br
+        decode
+        decode2
+        encode
+        encode2
+        large_file.csv.gz
+        nation.impala.parquet
+        one_byte.csv
+        public_domain_books.csv
+        small_file.csv
+        small_file.csv.bz2
+        small_file.csv.gz
+        small_file.csv.zst
+        zero_byte.csv
+)
+
+FOREACH (TD ${TEST_DATA})
+    configure_file("data/${TD}" "data/${TD}" COPYONLY)
+ENDFOREACH ()
+
 message("CLOUD_PROVIDER is set to " $ENV{CLOUD_PROVIDER})
 #Due to docker issue the tests are failing on linux.
 if (APPLE OR WIN32 OR CLIENT_CODE_COVERAGE)
@@ -144,7 +167,7 @@ if (LINUX)
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
         ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
         ${ARROW_DOUBLECONVERSION_LIB}
         ${ARROW_FLATBUFFERS_LIB}
@@ -160,7 +183,7 @@ if (APPLE)
     # Group all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
         ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
         ${ARROW_FLATBUFFERS_LIB}
         ${ARROW_GFLAGS_LIB}
@@ -174,10 +197,15 @@ endif ()
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 
+    if ($ENV{ARROW_FROM_SOURCE})
+        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
+    else ()
+        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_REGEX_LIB})
+    endif ()
     # Groups all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${BOOST_ALL_LIBS}
         ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
         ${ARROW_BZ2_LIB}
         ${ARROW_DOUBLECONVERSION_LIB}

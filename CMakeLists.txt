@@ -2,7 +2,7 @@
 #
 # CMakeList for Snowflake Client
 #
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.17)
 project(snowflakeclient)
 
 if (CLIENT_CODE_COVERAGE)    # Only when code coverage is enabled
@@ -517,17 +517,6 @@ endif ()
 if (APPLE)
     # OSX. no librt is required.
     target_link_libraries(snowflakeclient dl z)
-endif ()
-if (WIN32)
-    # Windows
-    target_link_libraries(snowflakeclient)
-    if (DYNAMIC_RUNTIME)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    endif()
 endif ()
 
 add_subdirectory(examples)
