@@ -32,7 +32,7 @@ function download_build_component()
         else
             echo "=== building dep: $component_name ==="
             "$component_script" -t "$build_type"
-            cache_dependency $component_name $component_version
+            cache_dependency $component_name $component_version $build_type
         fi
     else
         echo "=== download or build $component_name ==="
