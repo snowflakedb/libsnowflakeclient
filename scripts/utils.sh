@@ -65,7 +65,7 @@ function zip_file()
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
 
-    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    if [[ -n "$GIT_BRANCH" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
         rm -f $f
         pushd $DEPENDENCY_DIR/
@@ -115,6 +115,16 @@ function upload_to_sfc_dev1_data()
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/$component_name/
+}
+
+function cache_dependency()
+{
+
+    local component_name=$1
+    local component_version=$2
+
+    local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
+    cp $UTILS_DIR/../artifacts/$zip_file_name $CACHE_DIR
 }
 
 function upload_to_sfc_jenkins()
@@ -180,3 +190,4 @@ function set_parameters()
         exit 1
     fi
 }
+

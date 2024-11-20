@@ -20,12 +20,26 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: |
+                  dep-cache/
+                key: ${{ matrix.build_type }}-dep-cache
             - uses: actions/checkout@v1
             - name: Build
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
               run: ci/build_linux.sh
+            - name: Save deps
+              id: cache-save-deps
+              uses: actions/cache/save@v4
+              with:
+                path: |
+                    dep-cache/
+                key: ${{ steps.cache-restore-deps.outputs.cache-primary-key }}
             - uses: actions/setup-python@v1
               with:
                 python-version: '3.7'
