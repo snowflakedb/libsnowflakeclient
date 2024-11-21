@@ -42,7 +42,7 @@ sf_bool load_client_config(
     EasyLoggingConfigParser configParser;
     configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
   } catch (std::exception e) {
-    CXX_LOG_ERROR("Using client configuration path from a connection string: %s", e.what());
+    CXX_LOG_ERROR("Error loading client configuration: %s", e.what());
     return false;
   }
 #endif
