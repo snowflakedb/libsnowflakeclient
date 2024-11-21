@@ -65,7 +65,7 @@ function zip_file()
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
 
-    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    if [[ -n "$GIT_BRANCH" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
         rm -f $f
         pushd $DEPENDENCY_DIR/
@@ -85,7 +85,7 @@ function zip_files()
 
     local zip_file_name=$(get_zip_file_name "$component_name" "$component_version" "$build_type")
 
-    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    if [[ -n "$GIT_BRANCH" ]]; then
         local f=$UTILS_DIR/../artifacts/$zip_file_name
         rm -f $f
         pushd $DEPENDENCY_DIR/

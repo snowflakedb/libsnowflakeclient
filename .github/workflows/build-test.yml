@@ -11,6 +11,42 @@ on:
             - '**'
 
 jobs:
+    check-warnings:
+      name: Extra-Warnings-Linux
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          build_type: [ 'Release' ]
+      steps:
+        - uses: actions/checkout@v1
+        - uses: actions/setup-python@v1
+          with:
+            python-version: '3.7'
+            architecture: 'x64'
+        - name: Build
+          shell: bash
+          env:
+            BUILD_TYPE: ${{ matrix.build_type }}
+          run: ci/build_linux.sh
+        - name: Warning report
+          shell: bash
+          run: ci/scripts/warning_report.sh
+        - name: Upload build log
+          uses: actions/upload-artifact@v4
+          with:
+            name: build log
+            path: build.log
+        - name: Upload warning report
+          uses: actions/upload-artifact@v4
+          with:
+            name: report
+            path: report.txt
+        - name: Upload warnings
+          uses: actions/upload-artifact@v4
+          with:
+            name: warnings
+            path: warnings.json
     build-test-linux:
         name: Build-Test-Linux
         runs-on: ubuntu-latest
