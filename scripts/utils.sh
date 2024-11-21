@@ -125,7 +125,8 @@ function cache_dependency()
     local build_type=$3
 
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
-    cp $UTILS_DIR/../artifacts/$zip_file_name $CACHE_DIR
+    mkdir -p $CACHE_DIR
+    cp $UTILS_DIR/../artifacts/$zip_file_name "$CACHE_DIR/"
 }
 
 function upload_to_sfc_jenkins()
