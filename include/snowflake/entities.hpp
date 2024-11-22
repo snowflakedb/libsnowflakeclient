@@ -13,7 +13,6 @@ namespace Snowflake
 {
 	namespace Client
 	{
-		size_t decode_html_entities_utf8(char* dest, const char* src);
 		/*	Takes input from <src> and decodes into <dest>, which should be a buffer
 			large enough to hold <strlen(src) + 1> characters.
 
@@ -22,6 +21,8 @@ namespace Snowflake
 
 			The function returns the length of the decoded string.
 		*/
+		size_t decode_html_entities_utf8(char* dest, const char* src);
+
 	}
 }
 

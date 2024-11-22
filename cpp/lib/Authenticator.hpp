@@ -18,71 +18,13 @@
 #include "picojson.h"
 #include "snowflake/SFURL.hpp"
 #include "../../lib/snowflake_util.h"
+#include "../include/snowflake/IAuth.hpp"
 
 namespace Snowflake
 {
 namespace Client
 {
-  /**
-   * Authenticator
-   */
-  class IAuthenticator
-  {
-  public:
-
-    IAuthenticator() : m_renewTimeout(0)
-    {}
-
-    virtual ~IAuthenticator()
-    {}
-
-    virtual void authenticate()=0;
-
-    virtual void updateDataMap(jsonObject_t& dataMap)=0;
-
-    // Retrieve authenticator renew timeout, return 0 if not available.
-    // When the authenticator renew timeout is available, the connection should
-    // renew the authentication (call renewDataMap) for each time the
-    // authenticator specific timeout exceeded within the entire login timeout.
-    int64 getAuthRenewTimeout()
-    {
-      return m_renewTimeout;
-    }
-
-    // Renew the autentication and update datamap.
-    // The default behavior is to call authenticate() and updateDataMap().
-    virtual void renewDataMap(jsonObject_t& dataMap);
-
-  protected:
-    int64 m_renewTimeout;
-  };
-
-  class IDPAuthenticator : public IAuthenticator
-  {
-  public:
-      IDPAuthenticator(SF_CONNECT* conn) : m_connection(conn)
-      {};
-
-      ~IDPAuthenticator()
-      {}
-
-  protected:
-     /*
-      * Get IdpInfo for OKTA and SAML 2.0 application
-      */
-      void getIDPInfo();
-      virtual void curl_post_call(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp, int64 curlTimeout,
-          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
-          int8 *retriedCount, bool isNewRetry);
-      virtual void curl_get_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
-          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
-          int8 *retriedCount, bool isNewRetry, bool parseJSON, std::string& raw_data) = 0;
-      SFURL getServerURLSync();
-      SF_CONNECT* m_connection;
-      std::string tokenURLStr;
-      std::string ssoURLStr;
-  };
-
+    using namespace Snowflake::Client::IAuth;
   /**
    * JWT Authenticator
    */
@@ -95,7 +37,7 @@ namespace Client
 
     void authenticate();
 
-    void updateDataMap(jsonObject_t &dataMap);
+    void updateDataMap(jsonObject_t& dataMap);
 
   private:
     void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
@@ -115,8 +57,7 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
-
-  class AuthenticatorOKTA : public IDPAuthenticator
+  class AuthenticatorOKTA : public IAuthenticatorOKTA
   {
   public:
       AuthenticatorOKTA(SF_CONNECT *conn);
@@ -124,26 +65,12 @@ namespace Client
       ~AuthenticatorOKTA();
 
       void authenticate();
-
       void updateDataMap(jsonObject_t& dataMap);
-
-  protected:
-      void curl_get_call(SFURL& url, jsonObject_t& resp, int64 curlTimeout,
-          int64 retryTimeout, int8 flags, int8 maxRetryCount, bool injectCURLTimeout, int64 renewTimeout,
-          int8* retriedCount, bool isNewRetry, bool parseJSON, std::string& rawData);
+      void curl_post_call(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+      void curl_get_call(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data);
 
   private:
-      std::string m_samlResponse;
-      std::string oneTimeToken;
-
-      void getOneTimeToken();
-
-      void getSAMLResponse();
-
-      /**
-       * Extract post back url from samel response. Input is in HTML format.
-      */
-      std::string extractPostBackUrlFromSamlResponse(std::string html);
+      SF_CONNECT* m_connection;
   };
 } // namespace Client
 } // namespace Snowflake

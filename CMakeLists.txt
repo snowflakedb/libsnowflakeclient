@@ -198,7 +198,6 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
         include/snowflake/SnowflakeTransferException.hpp
-        include/snowflake/IJwt.hpp
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
         include/snowflake/entities.hpp
@@ -216,6 +215,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
+        include/snowflake/IJwt.hpp
+        include/snowflake/IAuth.hpp
         cpp/lib/SnowflakeUtil.cpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
@@ -239,6 +240,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp	
+        cpp/lib/IAuth.cpp
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
