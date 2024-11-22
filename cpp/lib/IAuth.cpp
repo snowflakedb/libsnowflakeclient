@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ */
+
+#include <string>
+#include "snowflake/Exceptions.hpp"
+#include "cJSON.h"
+#include "../include/snowflake/entities.hpp"
+#include "../logger/SFLogger.hpp"
+#include "snowflake/IAuth.hpp"
+
+namespace Snowflake
+{
+namespace Client
+{
+    namespace IAuth {
+        using namespace picojson;
+
+        void IAuthenticator::renewDataMap(jsonObject_t& dataMap)
+        {
+            authenticate();
+            updateDataMap(dataMap);
+        }
+
+        void IIDPAuthenticator::getIDPInfo()
+        {
+            jsonObject_t dataMap;
+            SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
+            dataMap["ACCOUNT_NAME"] = value(m_account);
+            dataMap["AUTHENTICATOR"] = value(m_authenticator);
+            dataMap["LOGIN_NAME"] = value(m_user);
+            dataMap["PORT"] = value(m_port);
+            dataMap["PROTOCOL"] = value(m_protocol);
+            dataMap["CLIENT_APP_ID"] = value(m_appID);
+            dataMap["CLIENT_APP_VERSION"] = value(m_appVersion);;
+
+            jsonObject_t authnData, respData;
+            authnData["data"] = value(dataMap);
+
+            curl_post_call(connectURL, authnData, respData);
+            jsonObject_t& data = respData["data"].get<jsonObject_t>();
+            tokenURLStr = data["tokenUrl"].get<std::string>();
+            ssoURLStr = data["ssoUrl"].get<std::string>();
+        }
+
+        SFURL IIDPAuthenticator::getServerURLSync()
+        {
+            SFURL url = SFURL().scheme(m_protocol)
+                .host(m_host)
+                .port(m_port);
+
+            return url;
+        }
+
+        void IAuthenticatorOKTA::authenticate()
+        {
+            // 1. get authenticator info
+            getIDPInfo();
+
+            // 2. verify ssoUrl and tokenUrl contains same prefix
+            if (!SFURL::urlHasSamePrefix(tokenURLStr, m_authenticator))
+            {
+                CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
+                    "The specified authenticator is not supported, "
+                    "authenticator=%s, token url=%s, sso url=%s",
+                    m_authenticator.c_str(), tokenURLStr.c_str(), ssoURLStr.c_str());
+                AUTH_THROW("SFAuthenticatorVerificationFailed: the token URL does not have the same prefix with the authenticator");
+            }
+
+            // 3. get one time token from okta
+            while (true)
+            {
+                SFURL tokenURL = SFURL::parse(tokenURLStr);
+
+                jsonObject_t dataMap, respData;
+                dataMap["username"] = picojson::value(m_user);
+                dataMap["password"] = picojson::value(m_password);
+
+                try {
+                    curl_post_call(tokenURL, dataMap, respData);
+                }
+                catch (...)
+                {
+                    CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getOneTimeToken",
+                        "Fail to get one time token response, response body=%s",
+                        picojson::value(respData).serialize().c_str());
+                    AUTH_THROW("Failed to get the one time token from Okta authentication.")
+                }
+
+                oneTimeToken = respData["sessionToken"].get<std::string>();
+                if (oneTimeToken.empty()) {
+                    oneTimeToken = respData["cookieToken"].get<std::string>();
+                }
+                // 4. get SAML response
+                try {
+
+                    jsonObject_t resp;
+                    SFURL sso_url = SFURL::parse(ssoURLStr);
+                    sso_url.addQueryParam("onetimetoken", oneTimeToken);
+                    curl_get_call(sso_url, resp, false, m_samlResponse);
+                    break;
+                }
+                catch (RenewTimeoutException& e)
+                {
+                    int64 elapsedSeconds = e.getElapsedSeconds();
+
+                    if (elapsedSeconds >= m_retryTimeout)
+                    {
+                        CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponse",
+                            "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+                            m_retryTimeout, elapsedSeconds);
+
+                        AUTH_THROW("timeout");
+                    }
+
+                    m_retriedCount = e.getRetriedCount();
+                    m_retryTimeout -= elapsedSeconds;
+                    CXX_LOG_TRACE("sf", "Connection", "Connect",
+                        "Retry on getting SAML response with one time token renewed for %d times "
+                        "with updated retryTimeout = %d",
+                        m_retriedCount, m_retryTimeout);
+                }
+            }
+
+            // 5. Validate post_back_url matches Snowflake URL
+            std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
+            std::string server_url = getServerURLSync().toString();
+            if ((!m_disableSamlUrlCheck) &&
+                (!SFURL::urlHasSamePrefix(post_back_url, server_url)))
+            {
+                CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
+                    "The specified authenticator and destination URL in "
+                    "Saml Assertion did not "
+                    "match, expected=%s, post back=%s",
+                    server_url.c_str(),
+                    post_back_url.c_str());
+                AUTH_THROW("SFSamlResponseVerificationFailed");
+            }
+        }
+
+        void IAuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
+        {
+            dataMap["RAW_SAML_RESPONSE"] = picojson::value(m_samlResponse);
+        }
+
+        std::string IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse(std::string html)
+        {
+            std::size_t form_start = html.find("<form");
+            std::size_t post_back_start = html.find("action=\"", form_start);
+            post_back_start += 8;
+            std::size_t post_back_end = html.find("\"", post_back_start);
+
+            std::string post_back_url = html.substr(post_back_start,
+                post_back_end - post_back_start);
+            CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+                "extractPostBackUrlFromSamlResponse",
+                "Post back url before unescape: %s", post_back_url.c_str());
+            char unescaped_url[200];
+            decode_html_entities_utf8(unescaped_url, post_back_url.c_str());
+            CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+                "extractPostBackUrlFromSamlResponse",
+                "Post back url after unescape: %s", unescaped_url);
+            return std::string(unescaped_url);
+        }
+    } // namespace IAuth
+} // namespace Client
+} // namespace Snowflake
