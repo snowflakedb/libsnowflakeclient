@@ -28,7 +28,7 @@ class CompilerWarning:
     snippet: Optional[str]
     source: str
     def key(self):
-        return self.file_path, self.message, self.flag, self.snippet
+        return self.file_path, self.message, self.flag
 
 @dataclass
 class WarningDiff:
@@ -74,7 +74,11 @@ def parse_warnings(path: str) -> List[CompilerWarning]:
                 state = ParserState.MESSAGE
                 continue
 
-        return warnings
+    result = []
+    for w in warnings:
+        if w not in result:
+            result.append(w)
+    return result
 
 def dump_warnings(warnings: List[CompilerWarning]) -> str:
     warnings_as_dict = [dataclasses.asdict(w) for w in warnings]
@@ -110,12 +114,14 @@ def generate_report(path: str, new_warnings: List[CompilerWarning], old_warnings
         for d in diff.values():
             balance = len(d.new) - len(d.old)
             if balance < 0:
-                f.write("Removed {} compiler warnings from {} [{}].\n".format(-balance, d.old[0].file_path, d.old[0].flag))
+                f.write("- Removed {} compiler warnings from {} [{}].\n".format(-balance, d.old[0].file_path, d.old[0].flag))
 
             if balance > 0:
-                f.write("Added {} compiler warnings to {} [{}]. Please remove following warnings:\n".format(balance, d.new[0].file_path, d.new[0].flag))
+                f.write("- Added {} compiler warnings to {} [{}]. Please remove following warnings:\n".format(balance, d.new[0].file_path, d.new[0].flag))
                 for w in d.new:
+                    f.write("```\n")
                     f.write(w.source)
+                    f.write("```\n")
 
 parser = argparse.ArgumentParser(
     prog='generate_warning_report',

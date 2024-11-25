@@ -41,12 +41,15 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: report
-            path: report.txt
+            path: report.md
         - name: Upload warnings
           uses: actions/upload-artifact@v4
           with:
             name: warnings
             path: warnings.json
+        - uses: mshick/add-pr-comment@v2
+          with:
+            message-path: report.md
     build-test-linux:
         name: Build-Test-Linux
         runs-on: ubuntu-latest
