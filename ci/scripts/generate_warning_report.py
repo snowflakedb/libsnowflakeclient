@@ -111,6 +111,16 @@ def generate_report(path: str, new_warnings: List[CompilerWarning], old_warnings
 
             diff[ow.key()].old.append(ow)
 
+        failed = False
+        for d in diff.values():
+            if len(d.new) > len(d.old):
+                failed = True
+
+        if failed:
+            f.write("### Failed\n\n")
+        else:
+            f.write("### Succeeded\n\n")
+
         for d in diff.values():
             balance = len(d.new) - len(d.old)
             if balance < 0:

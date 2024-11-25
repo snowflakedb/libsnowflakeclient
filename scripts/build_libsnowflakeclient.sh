@@ -31,7 +31,6 @@ cmake_opts=(
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
     "-DCLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE}"
-    "-DUSE_EXTRA_WARNINGS=1"
 )
 
 # Check to see if we are doing a universal build or not.
@@ -57,13 +56,16 @@ if [[ "$BUILD_SOURCE_ONLY" == "true" ]]; then
     cmake_opts+=("-DBUILD_TESTS=OFF")
 fi
 
+if [[ "$USE_EXTRA_WARNINGS" == "true" ]]; then
+    cmake_opts+=("-DUSE_EXTRA_WARNINGS=1")
+fi
+
 if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
     cmake_opts+=("-DMOCK=ON")
 fi
 
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
-
 
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
