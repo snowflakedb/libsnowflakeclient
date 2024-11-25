@@ -93,34 +93,32 @@ std::string EasyLoggingConfigParser::resolveClientConfigPath(
   const std::string& in_configFilePath)
 {
   char envbuf[MAX_PATH + 1];
+
+  // 1. Try config file if it was passed in
   if (!in_configFilePath.empty())
   {
-    // 1. Try config file if it was passed in
     CXX_LOG_INFO("Using client configuration path from a connection string: %s", in_configFilePath.c_str());
     return in_configFilePath;
   }
-  else if (const char* clientConfigEnv = sf_getenv_s(SF_CLIENT_CONFIG_ENV_NAME.c_str(), envbuf, sizeof(envbuf)))
+
+  // 2. Try environment variable SF_CLIENT_CONFIG_ENV_NAME
+  if (const char* clientConfigEnv = sf_getenv_s(SF_CLIENT_CONFIG_ENV_NAME.c_str(), envbuf, sizeof(envbuf)))
   {
-    // 2. Try environment variable SF_CLIENT_CONFIG_ENV_NAME
     CXX_LOG_INFO("Using client configuration path from an environment variable: %s", clientConfigEnv);
     return clientConfigEnv;
   }
-  else
+
+  // 3. Try DLL binary dir
+  std::string binaryDir = getBinaryPath();
+  std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
+  if (boost::filesystem::is_regular_file(binaryDirFilePath))
   {
-    // 3. Try DLL binary dir
-    std::string binaryDir = getBinaryPath();
-    std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
-    if (boost::filesystem::is_regular_file(binaryDirFilePath))
-    {
-      CXX_LOG_INFO("Using client configuration path from binary directory: %s", binaryDirFilePath.c_str());
-      return binaryDirFilePath;
-    }
-    else
-    {
-      // 4. Try user home dir
-      return resolveHomeDirConfigPath();
-    }
+    CXX_LOG_INFO("Using client configuration path from binary directory: %s", binaryDirFilePath.c_str());
+    return binaryDirFilePath;
   }
+
+  // 4. Try user home dir
+  return resolveHomeDirConfigPath();
 }
 
 // Private =====================================================================
@@ -195,7 +193,6 @@ void EasyLoggingConfigParser::parseConfigFile(
   }
   catch (std::exception& e)
   {
-    configFile.close();
     throw;
   }
 
@@ -218,7 +215,6 @@ void EasyLoggingConfigParser::parseConfigFile(
       sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
     }
   }
-  configFile.close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
