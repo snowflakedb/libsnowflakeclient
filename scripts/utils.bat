@@ -75,10 +75,6 @@ goto :EOF
 
 :zip_file
     setlocal
-    if not defined JENKINS_URL (
-        echo === No zip file is created if not Jenkins
-        goto :EOF
-    )
     set component_name=%~1
     set component_version=%~2
     if not exist artifacts md artifacts
@@ -94,10 +90,6 @@ goto :EOF
 
 :zip_files
     setlocal
-    if not defined JENKINS_URL (
-        echo === No zip file is created if not Jenkins
-        goto :EOF
-    )
     set component_name=%~1
     set component_version=%~2
     set files=%~3
