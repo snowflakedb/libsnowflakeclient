@@ -82,7 +82,20 @@ goto :EOF
     call %build_script% :get_version
     call %utils_script% :get_zip_file_name %component_name% %version%
     if defined GITHUB_ACTIONS (
-        call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
+        cmd /c copy %curdir%\dep-cache\%zip_file_name% %curdir%\artifacts\
+        if !ERRORLEVEL! NEQ 0 (
+            call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime%
+            echo === copying %curdir%\artifacts\%zip_file_name% ===
+            if not exist "%curdir%\dep-cache" md "%curdir%\dep-cache"
+            cmd /c copy "artifacts\%zip_file_name%" "%curdir%\dep-cache\"
+        ) else (
+            if not exist deps-build\%arcdir%\%vsdir%\%build_type% md deps-build\%arcdir%\%vsdir%\%build_type%
+            pushd deps-build\%arcdir%\%vsdir%\%build_type%
+                if !ERRORLEVEL! NEQ 0 goto :error
+                rd /s /q %component_name%
+                7z x "%curdir%\artifacts\%zip_file_name%"
+            popd
+        )
         if !ERRORLEVEL! NEQ 0 goto :error
     ) else (
         echo === download or build: %component_name% ===

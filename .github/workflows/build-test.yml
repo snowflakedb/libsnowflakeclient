@@ -20,13 +20,27 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
               run: ci/build_linux.sh
-            - uses: actions/setup-python@v1
+            - name: Cache deps
+              id: cache-save-deps
+              uses: actions/cache/save@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.sha }}-Linux-dep-cache
+              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -37,6 +51,7 @@ jobs:
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+
     build-test-win:
         name: Build-Test-Win
         runs-on: windows-2019
@@ -48,7 +63,14 @@ jobs:
                 vs_version: [ 'VS16' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.event.pull_request.base.sha }}-Win-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: cmd
               env:
@@ -56,7 +78,14 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
               run: ci\build_win.bat
-            - uses: actions/setup-python@v1
+            - name: Cache deps
+              id: cache-save-deps
+              uses: actions/cache/save@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
+              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -80,7 +109,14 @@ jobs:
                 vs_version: [ 'VS17' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.event.pull_request.base.sha }}-Win-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: cmd
               env:
@@ -88,7 +124,14 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
               run: ci\build_win.bat
-            - uses: actions/setup-python@v1
+            - name: Cache deps
+              id: cache-save-deps
+              uses: actions/cache/save@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
+              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -110,15 +153,29 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Mac-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: bash
               env:
                 BUILD_TYPE: ${{ matrix.build_type }}
               run: ./ci/build_mac.sh
+            - name: Cache deps
+              id: cache-save-deps
+              uses: actions/cache/save@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.sha }}-Mac-dep-cache
+              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
             - name: Test
               shell: bash
               env:
@@ -135,14 +192,14 @@ jobs:
             matrix:
                 build_type: [ 'Release' ]
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - name: Build
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
-            - uses: actions/setup-python@v1
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -163,7 +220,7 @@ jobs:
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v5
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
