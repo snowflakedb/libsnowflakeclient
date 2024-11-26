@@ -406,7 +406,7 @@ int main(int argc, char **argv)
     // should be around 5 seconds but no longer than 10.
     if ((end_time - start_time) > 10)
     {
-        fprintf(stderr, "Delay check FAILED! Delayed %d seconds\n", end_time - start_time);
+        fprintf(stderr, "Delay check FAILED! Delayed %ld seconds\n", end_time - start_time);
         exit(1);
     }
     else
