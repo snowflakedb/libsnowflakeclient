@@ -146,12 +146,6 @@ extern "C" {
     snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
     snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
 
-    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator))
-    {
-        snowflake_cJSON_AddStringToObject(body, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
-        snowflake_cJSON_AddStringToObject(body, "TOKEN", conn->oauth_token);
-    }
-
     if (!conn || !conn->auth_object)
     {
       return;
@@ -160,7 +154,6 @@ extern "C" {
     try
     {
         jsonObject_t picoBody;
-        cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
         cJSONtoPicoJson(data, picoBody);
         static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
             updateDataMap(picoBody);
