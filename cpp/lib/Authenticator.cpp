@@ -146,6 +146,12 @@ extern "C" {
     snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
     snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
 
+    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator))
+    {
+        snowflake_cJSON_AddStringToObject(body, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_AddStringToObject(body, "TOKEN", conn->oauth_token);
+    }
+
     if (!conn || !conn->auth_object)
     {
       return;
@@ -202,15 +208,7 @@ extern "C" {
     AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
     try
     {
-        /*delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);*/
-        if (AUTH_JWT == auth_type)
-        {
-            delete static_cast<Snowflake::Client::AuthenticatorJWT*>(conn->auth_object);
-        }
-        if (AUTH_OKTA == auth_type)
-        {
-            delete static_cast<Snowflake::Client::AuthenticatorOKTA*>(conn->auth_object);
-        }
+        delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
     }
     catch (...)
     {

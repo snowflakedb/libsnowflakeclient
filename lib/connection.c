@@ -199,12 +199,6 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     // update authentication information to body
     auth_update_json_body(sf, body);
 
-    if (AUTH_OAUTH == getAuthenticatorType(sf->authenticator))
-    {
-        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
-        snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
-    }
-
     return body;
 }
 
