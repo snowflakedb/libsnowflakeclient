@@ -187,6 +187,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
             snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
         }
     }
+
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
                                   session_parameters);
@@ -197,6 +198,12 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
     // update authentication information to body
     auth_update_json_body(sf, body);
+
+    if (AUTH_OAUTH == getAuthenticatorType(sf->authenticator))
+    {
+        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
+    }
 
     return body;
 }
