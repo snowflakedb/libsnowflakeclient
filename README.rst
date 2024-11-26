@@ -84,6 +84,7 @@ Set the Snowflake connection info in ``parameters.json`` and place it in the roo
     }
 
 where:
+
 - :code:`<your_snowflake_url>` is optional. Set it when your Snowflake URL is not in the format of :code:`account.snowflakecomputing.com`.
 - :code:`<CLOUD_PROVIDER>` is the cloud platform of your Snowflake account. (:code:`AWS`, :code:`AZURE` or :code:`GCP`).
 
@@ -115,7 +116,7 @@ Linux and OSX
 
 .. code-block:: bash
 
-    ./ci/test/test.sh
+    ./scripts/run_tests.sh
 
 Windows
 ^^^^^^^^^^
@@ -125,8 +126,8 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
 .. code-block:: bash
 
     set platform=x64
-    set build_type=Debug
-    set vs_version=VS14
+    set build_type=Release
+    set vs_version=VS17
 
    .\scripts\run_tests.bat
 
