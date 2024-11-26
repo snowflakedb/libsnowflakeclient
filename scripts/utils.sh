@@ -117,6 +117,18 @@ function upload_to_sfc_dev1_data()
     aws s3 cp --only-show-errors $UTILS_DIR/../artifacts/$zip_file_name $DEP_URL_PREFIX/$component_name/
 }
 
+function cache_dependency()
+{
+
+    local component_name=$1
+    local component_version=$2
+    local build_type=$3
+
+    local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
+    mkdir -p $CACHE_DIR
+    cp $UTILS_DIR/../artifacts/$zip_file_name "$CACHE_DIR/"
+}
+
 function upload_to_sfc_jenkins()
 {
     local component_name=$1
@@ -180,3 +192,4 @@ function set_parameters()
         exit 1
     fi
 }
+
