@@ -24,6 +24,13 @@ jobs:
         with:
           python-version: '3.7'
           architecture: 'x64'
+      - name: Restore cached deps
+        id: cache-restore-deps
+        uses: actions/cache/restore@v4
+        with:
+          path: dep-cache
+          key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+        if: github.event_name == 'pull_request'
       - name: Build
         shell: bash
         env:
