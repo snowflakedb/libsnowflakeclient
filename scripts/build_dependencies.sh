@@ -15,8 +15,8 @@ source $DIR/_init.sh $@
 if [[ "$PLATFORM" == "linux" ]]; then
     source $DIR/build_uuid.sh -t $target
 fi
-source $DIR/build_zlib.sh -t $target
 source $DIR/build_openssl.sh -t $target
+source $DIR/build_zlib.sh -t $target
 source $DIR/build_oob.sh -t $target
 source $DIR/build_curl.sh    -t $target
 source $DIR/build_awssdk.sh  -t $target

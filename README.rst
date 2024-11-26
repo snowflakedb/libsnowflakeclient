@@ -32,6 +32,7 @@ To build libsnowflakeclient, the following software must be installed:
   - cmake 3.17 or higher
 
 To run test cases, the following software must be installed:
+
 - jq: https://jqlang.github.io/jq/download/
 - python 3.7 or higher
 
