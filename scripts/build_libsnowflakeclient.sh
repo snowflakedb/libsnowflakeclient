@@ -69,6 +69,7 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
+cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient_dynamic.a $BUILD_DIR/lib
 
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
