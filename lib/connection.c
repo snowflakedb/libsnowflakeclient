@@ -17,7 +17,7 @@
 #define QUERYCODE_LEN 7
 #define REQUEST_GUID_KEY_SIZE 13
 
-/*
+/* /
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
  */
 static void
