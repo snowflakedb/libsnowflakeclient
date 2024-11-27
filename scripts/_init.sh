@@ -10,6 +10,7 @@ export TERM=vt100
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPS_DIR=$(cd $DIR/../deps && pwd)
 ARTIFACTS_DIR=$DIR/../artifacts
+CACHE_DIR="$DIR/../dep-cache"
 mkdir -p $ARTIFACTS_DIR
 
 PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
