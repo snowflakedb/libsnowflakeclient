@@ -51,6 +51,7 @@ curl_configure_opts+=(
     "--without-brotli"
     "--without-zstd"
     "--without-libpsl"
+    "--without-nghttp2"
     "--disable-rtsp"
     "--disable-ldap"
     "--disable-ldaps"
