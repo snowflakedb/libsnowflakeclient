@@ -906,8 +906,6 @@ uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt);
  *
  * For Positional parameters:
  * SF_BIND_INPUT name = NULL;
- * 
- * 
  *
  * @param input preallocated SF_BIND_INPUT instance
  * @return void

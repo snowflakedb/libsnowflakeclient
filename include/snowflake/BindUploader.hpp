@@ -2,6 +2,11 @@
  * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
  */
 
+/*
+ * Notice: For Snowflake internal use only.
+ *         External application should not use this class.
+ */
+
 #pragma once
 #ifndef SNOWFLAKECLIENT_BINDUPLOADER_HPP
 #define SNOWFLAKECLIENT_BINDUPLOADER_HPP
