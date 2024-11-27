@@ -10,6 +10,11 @@ on:
         branches:
             - '**'
 
+concurrency:
+    # older builds for the same pull request numer or branch should be cancelled
+    cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
 jobs:
     build-test-linux:
         name: Build-Test-Linux
