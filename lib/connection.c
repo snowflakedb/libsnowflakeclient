@@ -212,7 +212,6 @@ cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, c
 #endif
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
-    snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
     snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", submission_time);
     snowflake_cJSON_AddBoolToObject(body, "describeOnly", is_describe_only);

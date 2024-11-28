@@ -295,6 +295,25 @@ typedef enum SF_STMT_ATTRIBUTE {
 } SF_STMT_ATTRIBUTE;
 
 /**
+ * The query status
+ */
+typedef enum SF_QUERY_STATUS {
+    SF_QUERY_STATUS_RUNNING,
+    SF_QUERY_STATUS_ABORTING,
+    SF_QUERY_STATUS_SUCCESS,
+    SF_QUERY_STATUS_FAILED_WITH_ERROR,
+    SF_QUERY_STATUS_ABORTED,
+    SF_QUERY_STATUS_QUEUED,
+    SF_QUERY_STATUS_FAILED_WITH_INCIDENT,
+    SF_QUERY_STATUS_DISCONNECTED,
+    SF_QUERY_STATUS_RESUMING_WAREHOUSE,
+    SF_QUERY_STATUS_QUEUED_REPAIRING_WAREHOUSE,
+    SF_QUERY_STATUS_RESTARTED,
+    SF_QUERY_STATUS_BLOCKED,
+    SF_QUERY_STATUS_NO_DATA
+} SF_QUERY_STATUS;
+
+/**
  * Snowflake Error
  */
 typedef struct SF_ERROR_STRUCT {
@@ -614,6 +633,16 @@ SF_STATUS STDCALL snowflake_get_attribute(
 SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
 
 /**
+ * Creates sf SNOWFLAKE_STMT context for async queries.
+ *
+ * @param sf The SF_CONNECT context.
+ * @param query_id the query id of the async query.
+ *
+ * @return sfstmt SNOWFLAKE_STMT context for async queries.
+ */
+SF_STMT* STDCALL snowflake_async_stmt(SF_CONNECT *sf, const char *query_id);
+
+/**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
  * Note that this only frees the struct itself, and *not* the underlying
  * capture buffer! The caller is responsible for managing that.
@@ -774,6 +803,14 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+
+/**
+ * Executes a statement asynchronously.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ *
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_async_execute(SF_STMT *sfstmt);
 
 /**
  * Executes a statement with capture.
