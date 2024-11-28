@@ -19,10 +19,10 @@ jobs:
       matrix:
         build_type: [ 'Release' ]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.7'
+          python-version: '3.13'
           architecture: 'x64'
       - name: Restore cached deps
         id: cache-restore-deps

@@ -1,3 +1,0 @@
-Added 1 compiler warnings to /tmp/libsnowflakeclient/lib/client.c [-Wunused-variable]. Please remove following warnings:
-/tmp/libsnowflakeclient/lib/client.c:1896:12: warning: unused variable 'raw_row_result' [-Wunused-variable]
- 1896 |     cJSON *raw_row_result;
