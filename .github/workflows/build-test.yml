@@ -10,6 +10,11 @@ on:
         branches:
             - '**'
 
+concurrency:
+    # older builds for the same pull request numer or branch should be cancelled
+    cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
 jobs:
     build-test-linux:
         name: Build-Test-Linux
@@ -20,7 +25,7 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
@@ -40,7 +45,7 @@ jobs:
                 path: dep-cache
                 key: ${{ matrix.build_type }}-${{ github.sha }}-Linux-dep-cache
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
-            - uses: actions/setup-python@v1
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -63,7 +68,7 @@ jobs:
                 vs_version: [ 'VS16' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
@@ -85,7 +90,7 @@ jobs:
                 path: dep-cache
                 key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
-            - uses: actions/setup-python@v1
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -109,7 +114,7 @@ jobs:
                 vs_version: [ 'VS17' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
@@ -131,7 +136,7 @@ jobs:
                 path: dep-cache
                 key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
-            - uses: actions/setup-python@v1
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -153,7 +158,7 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@v4
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
@@ -192,14 +197,14 @@ jobs:
             matrix:
                 build_type: [ 'Release' ]
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - name: Build
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
-            - uses: actions/setup-python@v1
+            - uses: actions/setup-python@v5
               with:
                 python-version: '3.7'
                 architecture: 'x64'
@@ -220,7 +225,7 @@ jobs:
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v5
               with:
                 # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
