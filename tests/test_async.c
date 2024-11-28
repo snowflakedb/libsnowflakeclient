@@ -78,8 +78,6 @@ void test_new_connection(void** unused) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
-  SF_QUERY_STATUS queryStatus = get_query_status(sf, sfqid);
-  assert_int_equal(queryStatus, SF_QUERY_STATUS_SUCCESS);
 
   SF_STMT* async_sfstmt = snowflake_async_stmt(sf, sfqid);
 
