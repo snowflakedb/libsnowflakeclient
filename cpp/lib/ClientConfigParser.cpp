@@ -37,16 +37,12 @@ sf_bool load_client_config(
 {
 // Disable easy logging for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available
-#if !defined(_WIN32) && !defined(_DEBUG)
-  try {
-    EasyLoggingConfigParser configParser;
-    configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
-  } catch (std::exception e) {
-    CXX_LOG_ERROR("Error loading client configuration: %s", e.what());
-    return false;
-  }
-#endif
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
+  EasyLoggingConfigParser configParser;
+  return configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
+#else
   return true;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +72,7 @@ EasyLoggingConfigParser::~EasyLoggingConfigParser()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void EasyLoggingConfigParser::loadClientConfig(
+sf_bool EasyLoggingConfigParser::loadClientConfig(
   const std::string& in_configFilePath,
   client_config& out_clientConfig)
 {
@@ -84,8 +80,9 @@ void EasyLoggingConfigParser::loadClientConfig(
 
   if (!derivedConfigPath.empty())
   {
-    parseConfigFile(derivedConfigPath, out_clientConfig);
+    return parseConfigFile(derivedConfigPath, out_clientConfig);
   }
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,14 +125,15 @@ std::string EasyLoggingConfigParser::resolveHomeDirConfigPath()
   char envbuf[MAX_PATH + 1];
 #if defined(WIN32) || defined(_WIN64)
   std::string homeDirFilePath;
-  char* homeDir;
-  if ((homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf))) && strlen(homeDir) != 0)
+  char* homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf));
+  if (homeDir && strlen(homeDir) != 0)
   {
-    homeDirFilePath = homeDir + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+    homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
   } else {
     // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
+    char envbuf2[MAX_PATH + 1];
     char* homeDriveEnv = sf_getenv_s("HOMEDRIVE", envbuf, sizeof(envbuf));
-    char* homePathEnv = sf_getenv_s("HOMEPATH", envbuf, sizeof(envbuf));
+    char* homePathEnv = sf_getenv_s("HOMEPATH", envbuf2, sizeof(envbuf2));
     if (homeDriveEnv && strlen(homeDriveEnv) != 0 && homePathEnv && strlen(homePathEnv) != 0)
     {
       homeDirFilePath = std::string(homeDriveEnv) + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
@@ -162,38 +160,32 @@ std::string EasyLoggingConfigParser::resolveHomeDirConfigPath()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void EasyLoggingConfigParser::parseConfigFile(
+sf_bool EasyLoggingConfigParser::parseConfigFile(
   const std::string& in_filePath,
   client_config& out_clientConfig)
 {
   value jsonConfig;
   std::string err;
   std::ifstream configFile;
-  try
+  configFile.open(in_filePath, std::fstream::in | std::ios::binary);
+  if (!configFile)
   {
-    configFile.open(in_filePath, std::fstream::in | std::ios::binary);
-    if (!configFile)
-    {
-      CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
-        in_filePath.c_str());
-      std::string errMsg = "Error finding client configuration file: " + in_filePath;
-      throw ClientConfigException(errMsg.c_str());
-    }
-#if !defined(WIN32) && !defined(_WIN64)
-    checkIfValidPermissions(in_filePath);
-#endif
-    err = parse(jsonConfig, configFile);
-
-    if (!err.empty())
-    {
-      CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
-      std::string errMsg = "Error parsing client configuration file: " + in_filePath;
-      throw ClientConfigException(errMsg.c_str());
-    }
+    CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
+      in_filePath.c_str());
+    return false;
   }
-  catch (std::exception& e)
+#if !defined(WIN32) && !defined(_WIN64)
+  if (!checkIfValidPermissions(in_filePath))
   {
-    throw;
+    return false;
+  }
+#endif
+  err = parse(jsonConfig, configFile);
+
+  if (!err.empty())
+  {
+    CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
+    return false;
   }
 
   value commonProps = jsonConfig.get("common");
@@ -215,10 +207,11 @@ void EasyLoggingConfigParser::parseConfigFile(
       sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
     }
   }
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_filePath)
+sf_bool EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_filePath)
 {
   boost::filesystem::file_status fileStatus = boost::filesystem::status(in_filePath);
   boost::filesystem::perms permissions = fileStatus.permissions();
@@ -227,9 +220,9 @@ void EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_file
   {
     CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
       in_filePath.c_str());
-    std::string errMsg = "Error due to other users having permission to modify the config file: " + in_filePath;
-    throw ClientConfigException(errMsg.c_str());
+    return false;
   }
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

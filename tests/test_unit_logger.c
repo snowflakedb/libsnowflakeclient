@@ -36,7 +36,7 @@ void test_invalid_client_config_path(void** unused) {
   // Parse client config for log details
   client_config clientConfig = { 0 };
   sf_bool result = load_client_config(configFilePath, &clientConfig);
-#if !defined(_WIN32) && !defined(_DEBUG)
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
 #else
   assert_true(result);
@@ -57,7 +57,7 @@ void test_client_config_log_invalid_json(void** unused) {
   // Parse client config for log details
   client_config clientConfig = { 0 };
   sf_bool result = load_client_config(configFilePath, &clientConfig);
-#if !defined(_WIN32) && !defined(_DEBUG)
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
 #else
   assert_true(result);
@@ -107,6 +107,7 @@ void test_client_config_log(void **unused) {
     // Cleanup
     remove(configFilePath);
     remove(LOG_PATH);
+    SF_FREE(LOG_PATH);
 }
 
 /**
@@ -141,6 +142,49 @@ void test_client_config_log_init(void** unused) {
   // Cleanup
   remove(configFilePath);
   remove(LOG_PATH);
+}
+
+/**
+ * Tests log settings from client config file via global init in home dir
+ */
+void test_client_config_log_init_home_config(void** unused) {
+  char LOG_PATH[MAX_PATH] = { 0 };
+
+  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+
+  char envbuf[MAX_PATH + 1];
+  char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf));
+  char configFile[] = "/sf_client_config.json";
+  size_t log_path_size = strlen(homeDir) + strlen(configFile) + 1;
+  char *configFilePath = (char*)SF_CALLOC(1, log_path_size);
+  sf_strcat(configFilePath, log_path_size, homeDir);
+  sf_strcat(configFilePath, log_path_size, configFile);
+  FILE* file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "%s", clientConfigJSON);
+  fclose(file);
+
+  snowflake_global_set_attribute(SF_GLOBAL_CLIENT_CONFIG_FILE, "");
+  snowflake_global_init("./logs", SF_LOG_DEFAULT, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+  assert_int_not_equal(access(LOG_PATH, F_OK), 0);
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
+  log_close();
+
+  // Cleanup
+  remove(configFilePath);
+  remove(LOG_PATH);
+  SF_FREE(configFilePath);
 }
 
 /**
@@ -264,6 +308,7 @@ int main(void) {
 #ifndef _WIN32
         cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_init),
+        cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_log_creation),
         cmocka_unit_test(test_mask_secret_log),
 #endif

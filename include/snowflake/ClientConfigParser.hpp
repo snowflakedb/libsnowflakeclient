@@ -13,17 +13,6 @@ namespace Snowflake
 {
 namespace Client
 {
-  struct ClientConfigException : public std::exception
-  {
-    ClientConfigException(const std::string& message) : message_(message) {}
-    const char* what() const noexcept
-    {
-      return message_.c_str();
-    }
-
-    std::string message_;
-  };
-
   class EasyLoggingConfigParser
   {
     // Public ==================================================================
@@ -47,8 +36,10 @@ namespace Client
        *
        * @param in_configFilePath       The config file path passed in by the user.
        * @param out_clientConfig        The SFClientConfig object to be filled.
+       * 
+       * @return whether the client config was loaded properly
        */
-      void loadClientConfig(
+      sf_bool loadClientConfig(
         const std::string& in_configFilePath,
         client_config& out_clientConfig);
 
@@ -75,8 +66,10 @@ namespace Client
        *
        * @param in_filePath             The filePath of the config file to parse.
        * @param out_clientConfig        The SFClientConfig object to be filled.
+       * 
+       * @return whether parsing the client config file was successful.
        */
-      void parseConfigFile(
+      sf_bool parseConfigFile(
         const std::string& in_filePath,
         client_config& out_clientConfig);
 
@@ -84,8 +77,10 @@ namespace Client
        * @ brief Check if other have permission to modify file
        *
        * @param in_filePath             The file path of the config file to check permissions.
+       * 
+       * @return whether the file has valid permissions
        */
-      void checkIfValidPermissions(const std::string& in_filePath);
+      sf_bool checkIfValidPermissions(const std::string& in_filePath);
 
       /**
        * @ brief Check if there are unknown entries in config file
