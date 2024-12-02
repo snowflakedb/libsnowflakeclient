@@ -708,7 +708,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode = NULL;
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
-        sf->ocsp_fail_open = SF_BOOLEAN_FALSE;
+        sf->ocsp_fail_open = SF_BOOLEAN_TRUE;
         sf->autocommit = SF_BOOLEAN_TRUE;
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->include_retry_reason = SF_BOOLEAN_TRUE;
@@ -1129,7 +1129,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_OCSP_FAIL_OPEN:
-          sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
