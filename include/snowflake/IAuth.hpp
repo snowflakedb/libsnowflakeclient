@@ -56,25 +56,25 @@ namespace IAuth
     };
 
 
-    class IIDPAuthenticator
+    class IDPAuthenticator
     {
     public:
-        IIDPAuthenticator()
+        IDPAuthenticator()
         {};
 
-        virtual ~IIDPAuthenticator()
+        virtual ~IDPAuthenticator()
         {};
 
         void getIDPInfo();
 
         virtual SFURL getServerURLSync();
-    protected:
         /*
          * Get IdpInfo for OKTA and SAML 2.0 application
          */
         virtual void curl_post_call(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual void curl_get_call(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data) = 0;
-
+    
+    protected:
         std::string tokenURLStr;
         std::string ssoURLStr;
         //For EXTERNALBROSER in the future
@@ -91,7 +91,7 @@ namespace IAuth
         std::string m_protocol;
     };
 
-    class IAuthenticatorOKTA : public IIDPAuthenticator, public IAuthenticator
+    class IAuthenticatorOKTA : public IDPAuthenticator, public IAuthenticator
     {
     public:
         IAuthenticatorOKTA() {};

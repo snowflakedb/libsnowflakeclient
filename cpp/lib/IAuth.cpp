@@ -22,7 +22,7 @@ namespace Client
             updateDataMap(dataMap);
         }
 
-        void IIDPAuthenticator::getIDPInfo()
+        void IDPAuthenticator::getIDPInfo()
         {
             jsonObject_t dataMap;
             SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
@@ -43,7 +43,7 @@ namespace Client
             ssoURLStr = data["ssoUrl"].get<std::string>();
         }
 
-        SFURL IIDPAuthenticator::getServerURLSync()
+        SFURL IDPAuthenticator::getServerURLSync()
         {
             SFURL url = SFURL().scheme(m_protocol)
                 .host(m_host)

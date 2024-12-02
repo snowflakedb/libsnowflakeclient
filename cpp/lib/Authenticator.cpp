@@ -381,44 +381,49 @@ namespace Client
       SF_HEADER* httpExtraHeaders = sf_header_create();
       std::string s_body = value(obj).serialize();
       cJSON* resp_data = NULL;
+      try {
+          httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+          if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
+              log_trace("sf", "IDPAuthenticator",
+                  "post_curl_call",
+                  "Failed to create the header for the request to get the token URL and the SSO URL");
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
+              AUTH_THROW(err);
+          }
 
-      httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
-      if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          log_trace("sf", "IDPAuthenticator",
-              "post_curl_call",
-              "Failed to create the header for the request to get the token URL and the SSO URL");
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
-          AUTH_THROW(err);
-          goto cleanup;
+          if (!::curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
+              &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
+              &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
+          {
+              log_info("sf", "IDPAuthenticator", "post_curl_call",
+                  "Fail to get authenticator info, response body=%s\n",
+                  snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "SFConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
+              AUTH_THROW(err);
+          }
+
+          if (elapsedTime >= m_retryTimeout)
+          {
+              CXX_LOG_WARN("sf", "IDPAuthenticator", "post_curl_call",
+                  "timeout reached: %d, elapsed time: %d",
+                  m_retryTimeout, elapsedTime);
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+              AUTH_THROW(err);
+          }
+          cJSONtoPicoJson(resp_data, resp);
+      }
+      catch (AuthException& e) {
+          // just to escape from the try block
       }
 
-      if (!::curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
-          &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
-          &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
-      {
-          log_info("sf", "IDPAuthenticator", "post_curl_call",
-              "Fail to get authenticator info, response body=%s\n",
-              snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "SFConnectionFailed", SF_SQLSTATE_GENERAL_ERROR);
-          AUTH_THROW(err);
-          goto cleanup;
-      }
-
-      if (elapsedTime >= m_retryTimeout)
-      {
-          CXX_LOG_WARN("sf", "IDPAuthenticator", "post_curl_call",
-              "timeout reached: %d, elapsed time: %d",
-              m_retryTimeout, elapsedTime);
-
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-          AUTH_THROW(err);
-      }
-
-  cleanup:
+      //Clean up resources
       m_retryTimeout -= elapsedTime;
-      cJSONtoPicoJson(resp_data, resp);
       sf_header_destroy(httpExtraHeaders);
+      free_curl_desc(curl_desc);
       snowflake_cJSON_Delete(resp_data);
+      if (err->error_code != SF_STATUS_SUCCESS) {
+          AUTH_THROW(err);
+      }
   }
 
 
@@ -470,44 +475,48 @@ namespace Client
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
-
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
-      if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          log_trace("sf", "AuthenticatorOKTA",
-              "get_curl_call",
-              "Failed to create the header for the request to get onetime token");
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
-          goto cleanup;
-      }
 
-      if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp,
+      try {
+          if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
+              log_trace("sf", "AuthenticatorOKTA",
+                  "get_curl_call",
+                  "Failed to create the header for the request to get onetime token");
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, "OktaConnectionFailed: failed to create the header", SF_SQLSTATE_GENERAL_ERROR);
+              AUTH_THROW(err);
+          }
+
+          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp,
               curlTimeout, SF_BOOLEAN_FALSE, err,
               m_connection->insecure_mode, m_connection->ocsp_fail_open,
               m_connection->retry_on_curle_couldnt_connect_count,
               renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
-              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE)) 
-      {
-          //Fail to get the saml response. Retry.
+              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
+          {
+              //Fail to get the saml response. Retry.
               isRetry = true;
-              goto cleanup;
+              AUTH_THROW("retry");
+          }
+
+          if (elapsedTime >= m_retryTimeout)
+          {
+              CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
+                  "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+                  m_retryTimeout, elapsedTime);
+
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
+              AUTH_THROW(err);
+          }
+          rawData = buf.buffer;
+      }
+      catch (AuthException& e) {
+          // just to escape from the try block
       }
 
-      if (elapsedTime >= m_retryTimeout)
-      {
-          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
-              "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-              m_retryTimeout, elapsedTime);
-
-          SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_REQUEST_TIMEOUT, "OktaConnectionFailed: timeout reached", SF_SQLSTATE_GENERAL_ERROR);
-          goto cleanup;
-      }
-
-      rawData = buf.buffer;
-  cleanup:
       m_retryTimeout -= elapsedTime;
       sf_header_destroy(httpExtraHeaders);
       free_curl_desc(curl_desc);
-      SF_FREE(raw_resp);
+      delete raw_resp;
       if (isRetry) {
           RETRY_THROW(elapsedTime, m_retriedCount);
       }
