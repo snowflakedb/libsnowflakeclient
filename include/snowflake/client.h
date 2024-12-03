@@ -651,7 +651,7 @@ SF_STMT* STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char 
  * 
  * @return The query status.
  */
-SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT sfstmt);
+SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
