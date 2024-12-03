@@ -89,7 +89,7 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   if (response->stage_info->endPoint != NULL) {
     putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
   }
-  putGetParseResponse->stageInfo.useRegionalUrl = (SF_BOOLEAN_TRUE == response->stage_info->useRegionalUrl);
+  putGetParseResponse->stageInfo.useRegionalUrl = response->stage_info->useRegionalUrl;
   if (sf_strncasecmp(response->stage_info->location_type, "s3", 2) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::S3;
