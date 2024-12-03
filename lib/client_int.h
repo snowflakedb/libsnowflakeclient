@@ -25,6 +25,9 @@
 
 #define SF_DEFAULT_MAX_OBJECT_SIZE 16777216
 
+#define SF_DEFAULT_STAGE_BINDING_THRESHOLD 65280
+#define SF_DEFAULT_STAGE_BINDING_MAX_FILESIZE 100 * 1024 * 1024
+
 // defaults for put get configurations
 #define SF_DEFAULT_PUT_COMPRESS_LEVEL (-1)
 #define SF_MAX_PUT_COMPRESS_LEVEL 9
@@ -173,6 +176,12 @@ sf_bool STDCALL _is_put_get_command(char* sql_text);
  */
 PARAM_TYPE STDCALL _snowflake_get_param_style(const SF_BIND_INPUT *input);
 
+/**
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @return parameter bindings in cJSON.
+ */
+cJSON* STDCALL _snowflake_get_binding_json(SF_STMT *sfstmt);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,13 +199,52 @@ _snowflake_query_put_get_legacy(SF_STMT* sfstmt, const char* command, size_t com
 /**
  * Executes put get command natively.
  * @param sfstmt SNOWFLAKE_STMT context.
+ * @param upload_stream Internal support for bind uploading, pointer to std::basic_iostream<char>.
+ * @param stream_size The data size of upload_stream.
  * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
  *
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL _snowflake_execute_put_get_native(
                       SF_STMT *sfstmt,
+                      void* upload_stream,
+                      size_t stream_size,
                       struct SF_QUERY_RESULT_CAPTURE* result_capture);
+
+/*
+ * @return size of single binding value per data type.
+ */
+size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT* bind);
+
+#define SF_PARAM_NAME_BUF_LEN 20
+/**
+ * Get parameter binding by index for both POSITIONAL and NAMED cases.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ * @param index The 0 based index of parameter binding to get.
+ * @param name Output the name of binding.
+ * @param name_buf The buffer to store name.
+                   Used for POSITIONAL and name will point to this buffer in such case.
+ * @param name_buf_len The size of name_buf.
+ * @return parameter binding with specified index.
+ */
+SF_BIND_INPUT* STDCALL _snowflake_get_binding_by_index(SF_STMT* sfstmt,
+  size_t index,
+  char** name,
+  char* name_buf,
+  size_t name_buf_len);
+
+sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT* sfstmt);
+
+/**
+ * Upload parameter bindings through internal stage.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ *
+ * @return Stage path for uploaded bindings if success,
+ *         otherwise NULL is returned and error is put in sfstmt->error.
+ */
+char* STDCALL
+_snowflake_stage_bind_upload(SF_STMT* sfstmt);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

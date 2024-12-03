@@ -17,6 +17,7 @@
 #include "crypto/Cryptor.hpp"
 #include "util/CompressionUtil.hpp"
 #include "util/ThreadPool.hpp"
+#include "util/SnowflakeCommon.hpp"
 #include "EncryptionProvider.hpp"
 #include "logger/SFLogger.hpp"
 #include "error.h"
@@ -31,35 +32,11 @@
 using ::std::string;
 using ::std::vector;
 using ::Snowflake::Client::RemoteStorageRequestOutcome;
+using namespace Snowflake::Client::Util;
 
 namespace
 {
   const std::string FILE_PROTOCOL = "file://";
-
-  void replaceStrAll(std::string& stringToReplace,
-                  std::string const& oldValue,
-                  std::string const& newValue)
-  {
-    size_t oldValueLen = oldValue.length();
-    size_t newValueLen = newValue.length();
-    if (0 == oldValueLen)
-    {
-      return;
-    }
-
-    size_t index = 0;
-    while (true) {
-      /* Locate the substring to replace. */
-      index = stringToReplace.find(oldValue, index);
-      if (index == std::string::npos) break;
-
-      /* Make the replacement. */
-      stringToReplace.replace(index, oldValueLen, newValue);
-
-      /* Advance index forward so the next iteration doesn't pick it up as well. */
-      index += newValueLen;
-    }
-  }
 }
 
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
@@ -968,6 +945,8 @@ using namespace Snowflake::Client;
 extern "C" {
   SF_STATUS STDCALL _snowflake_execute_put_get_native(
                         SF_STMT* sfstmt,
+                        void* upload_stream,
+                        size_t stream_size,
                         struct SF_QUERY_RESULT_CAPTURE* result_capture)
   {
     if (!sfstmt)
@@ -995,6 +974,11 @@ extern "C" {
     agent.setGetFastFail(sfconn->get_fastfail);
     agent.setGetMaxRetries(sfconn->get_maxretries);
     agent.setRandomDeviceAsUrand(sfconn->put_use_urand_dev);
+
+    if (upload_stream)
+    {
+      agent.setUploadStream((std::basic_iostream<char>*)upload_stream, stream_size);
+    }
 
     ITransferResult* result;
     try
