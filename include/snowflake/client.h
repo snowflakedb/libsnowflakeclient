@@ -495,6 +495,8 @@ typedef struct SF_STMT {
     SF_STATS *stats;
     void *stmt_attrs;
     sf_bool is_dml;
+    sf_bool is_async;
+    sf_bool is_async_initialized;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -640,7 +642,16 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
  *
  * @return sfstmt SNOWFLAKE_STMT context for async queries.
  */
-SF_STMT* STDCALL snowflake_async_stmt(SF_CONNECT *sf, const char *query_id);
+SF_STMT* STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char *query_id);
+
+/**
+ * Get the status of a query
+ * 
+ * @param sfstmt The SF_STMT context.
+ * 
+ * @return The query status.
+ */
+SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT sfstmt);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.

@@ -79,7 +79,7 @@ void test_new_connection(void** unused) {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  SF_STMT* async_sfstmt = snowflake_async_stmt(sf, sfqid);
+  SF_STMT* async_sfstmt = snowflake_create_async_query_result(sf, sfqid);
 
   /* get results */
   int64 out = 0;
@@ -128,7 +128,7 @@ void test_invalid_query_id(void** unused) {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   char* fake_sfqid = "fake-query-id";
-  SF_STMT* async_sfstmt = snowflake_async_stmt(sf, fake_sfqid);
+  SF_STMT* async_sfstmt = snowflake_create_async_query_result(sf, fake_sfqid);
 
   assert_non_null(async_sfstmt);
   assert_non_null(async_sfstmt->connection);

@@ -98,26 +98,28 @@ SF_QUERY_STATUS get_status_from_string(const char *query_status) {
 
 /**
  * Get the metadata of the query
- * @param sf the SF_CONNECT context
- * @param query_id the query id
+ * 
+ * @param sfstmt The SF_STMT context.
+ * 
+ * The query metadata
  */
-char *get_query_metadata(SF_CONNECT *sf, const char *query_id) {
+char *get_query_metadata(SF_STMT* sfstmt) {
   cJSON *resp = NULL;
   cJSON *data = NULL;
   cJSON *queries = NULL;
   char *s_resp = NULL;
   const char *error_msg;
-  size_t url_size = strlen(QUERY_MONITOR_URL) -2 + strlen(query_id) + 1;
+  size_t url_size = strlen(QUERY_MONITOR_URL) -2 + strlen(sfstmt->sfqid) + 1;
   char *status_query = (char*)SF_CALLOC(1, url_size);
-  sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, query_id);
+  sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, sfstmt->sfqid);
 
-  if (request(sf, &resp, status_query, NULL, 0, NULL, NULL,
-    GET_REQUEST_TYPE, &sf->error, SF_BOOLEAN_TRUE,
-    0, sf->retry_count, get_retry_timeout(sf),
+  if (request(sfstmt->connection, &resp, status_query, NULL, 0, NULL, NULL,
+    GET_REQUEST_TYPE, &sfstmt->error, SF_BOOLEAN_TRUE,
+    0, sfstmt->connection->retry_count, get_retry_timeout(sfstmt->connection),
     NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
 
     s_resp = snowflake_cJSON_Print(resp);
-    log_info("Here is JSON response:\n%s", s_resp);
+    log_trace("Here is JSON response:\n%s", s_resp);
 
     data = snowflake_cJSON_GetObjectItem(resp, "data");
 
@@ -131,28 +133,37 @@ char *get_query_metadata(SF_CONNECT *sf, const char *query_id) {
     return metadata;
   }
   SF_FREE(status_query);
-  log_trace("Error getting query metadata.");
+  log_error("Error getting query metadata. Query id: %s", sfstmt->sfqid);
   return NULL;
 }
 
-/**
- * Get the status of the query
- * @param sf the SF_CONNECT context
- * @param query_id the query id
- */
-SF_QUERY_STATUS get_query_status(SF_CONNECT *sf, const char *query_id) {
+
+SF_QUERY_STATUS snowflake_get_query_status(SF_STMT *sfstmt) {
   SF_QUERY_STATUS ret = SF_QUERY_STATUS_NO_DATA;
-  char *metadata = get_query_metadata(sf, query_id);
+  char *metadata = get_query_metadata(sfstmt);
   if (metadata) {
     cJSON* metadataJson = snowflake_cJSON_Parse(metadata);
 
     cJSON* status = snowflake_cJSON_GetObjectItem(metadataJson, "status");
-    if (snowflake_cJSON_IsString(status))
-    {
+    if (snowflake_cJSON_IsString(status)) {
       char* queryStatus = snowflake_cJSON_GetStringValue(status);
       ret = get_status_from_string(queryStatus);
     }
+    else {
+      SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+        SF_STATUS_ERROR_GENERAL,
+        "Error retrieving the status from the metadata.",
+        NULL,
+        sfstmt->sfqid);
+    }
     snowflake_cJSON_Delete(metadataJson);
+  }
+  else {
+    SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+      SF_STATUS_ERROR_GENERAL,
+      "Error retrieving query metadata.",
+      NULL,
+      sfstmt->sfqid);
   }
 
   return ret;
@@ -174,8 +185,9 @@ sf_bool is_query_still_running(SF_QUERY_STATUS query_status) {
  * Get the results of the async query
  * @param sfstmt The SF_STMT context
  */
-void get_real_results(SF_STMT * sfstmt) {
-  SF_QUERY_STATUS query_status = get_query_status(sfstmt->connection, sfstmt->sfqid);
+void get_real_results(SF_STMT *sfstmt) {
+  //Get status until query is complete or timed out
+  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
   int retry = 0;
   int no_data_retry = 0;
   int no_data_max_retries = 30;
@@ -183,14 +195,16 @@ void get_real_results(SF_STMT * sfstmt) {
   int max_retries = 7;
   while (query_status != SF_QUERY_STATUS_SUCCESS) {
     if (!is_query_still_running(query_status) && query_status != SF_QUERY_STATUS_SUCCESS) {
-      log_error("Query status is done running and did not succeed. Status is %s", query_status_names[query_status]);
+      log_error("Query status is done running and did not succeed. Status is %s",
+        query_status_names[query_status]);
       return;
     }
     if (query_status == SF_QUERY_STATUS_NO_DATA) {
       no_data_retry++;
       if (no_data_retry >= no_data_max_retries) {
         log_error(
-          "Cannot retrieve data on the status of this query. No information returned from server for queryID=%s", sfstmt->sfqid);
+          "Cannot retrieve data on the status of this query. No information returned from server for queryID=%s",
+          sfstmt->sfqid);
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
           SF_STATUS_ERROR_GENERAL,
           "Cannot retrieve data on the status of this query.",
@@ -199,27 +213,43 @@ void get_real_results(SF_STMT * sfstmt) {
         return;
       }
     }
-  }
-  int sleep_time = retry_pattern[retry] * 500;
-#ifdef _WIN32
-  Sleep(sleep_time);
-#else
-  usleep(sleep_time * 1000);
-#endif
-  if (retry < max_retries) {
-    retry++;
-  } else {
-    log_error(
-      "Cannot retrieve data on the status of this query. Max retries hit with queryID=%s", sfstmt->sfqid);
-  }
-  query_status = get_query_status(sfstmt->connection, sfstmt->sfqid);
 
+    int sleep_time = retry_pattern[retry] * 500;
+#ifdef _WIN32
+    Sleep(sleep_time);
+#else
+    usleep(sleep_time * 1000);
+#endif
+    if (retry < max_retries) {
+      retry++;
+    }
+    else {
+      log_error(
+        "Cannot retrieve data on the status of this query. Max retries hit with queryID=%s", sfstmt->sfqid);
+    }
+    query_status = snowflake_get_query_status(sfstmt);
+  }
+
+  // Get query results
   char query[1024];
   char* query_template = "select * from table(result_scan('%s'))";
   sf_sprintf(query, strlen(query_template) - 2 + strlen(sfstmt->sfqid) + 1, query_template, sfstmt->sfqid);
   SF_STATUS ret = snowflake_query(sfstmt, query, strlen(query));
   if (ret != SF_STATUS_SUCCESS) {
     snowflake_propagate_error(sfstmt->connection, sfstmt);
+  }
+
+  // Get query stats
+  char* metadata_str = get_query_metadata(sfstmt);
+  if (metadata_str) {
+    cJSON* metadata = snowflake_cJSON_Parse(metadata_str);
+    cJSON* stats = snowflake_cJSON_GetObjectItem(metadata, "stats");
+    if (snowflake_cJSON_IsObject(stats)) {
+      if (sfstmt->stats) {
+        SF_FREE(sfstmt->stats);
+      }
+      sfstmt->stats = set_stats(stats);
+    }
   }
 }
 
@@ -1739,7 +1769,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
     return sfstmt;
 }
 
-SF_STMT *STDCALL snowflake_async_stmt(SF_CONNECT *sf, const char *query_id) {
+SF_STMT *STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char *query_id) {
   if (!sf) {
     return NULL;
   }
@@ -1749,18 +1779,8 @@ SF_STMT *STDCALL snowflake_async_stmt(SF_CONNECT *sf, const char *query_id) {
     _snowflake_stmt_reset(sfstmt);
     sfstmt->connection = sf;
     sf_strcpy(sfstmt->sfqid, SF_UUID4_LEN, query_id);
-  }
-
-  get_real_results(sfstmt);
-
-  char *metadata_str = get_query_metadata(sfstmt->connection, query_id);
-  if (metadata_str) {
-    cJSON* metadata = snowflake_cJSON_Parse(metadata_str);
-    cJSON* stats = snowflake_cJSON_GetObjectItem(metadata, "stats");
-    if (snowflake_cJSON_IsObject(stats)) {
-      _snowflake_stmt_row_metadata_reset(sfstmt);
-      sfstmt->stats = set_stats(stats);
-    }
+    sfstmt->is_async = SF_BOOLEAN_TRUE;
+    sfstmt->is_async_initialized = SF_BOOLEAN_FALSE;
   }
 
   return sfstmt;
@@ -1939,6 +1959,11 @@ SF_STATUS STDCALL snowflake_query(
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+
+    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
+      get_real_results(sfstmt);
+      sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
     }
 
     clear_snowflake_error(&sfstmt->error);
@@ -2634,6 +2659,11 @@ int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt) {
         return -1;
     }
 
+    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
+      get_real_results(sfstmt);
+      sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
+    }
+
     return sfstmt->total_rowcount;
 }
 
@@ -2641,6 +2671,12 @@ int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return -1;
     }
+
+    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
+      get_real_results(sfstmt);
+      sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
+    }
+
     return sfstmt->total_fieldcount;
 }
 
@@ -2649,6 +2685,12 @@ uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt) {
         // TODO change to -1?
         return 0;
     }
+
+    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
+      get_real_results(sfstmt);
+      sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
+    }
+
     ARRAY_LIST *p = (ARRAY_LIST *) sfstmt->params;
     return p->used;
 }
