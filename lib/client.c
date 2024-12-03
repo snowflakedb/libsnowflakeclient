@@ -138,7 +138,7 @@ char *get_query_metadata(SF_STMT* sfstmt) {
 }
 
 
-SF_QUERY_STATUS snowflake_get_query_status(SF_STMT *sfstmt) {
+SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt) {
   SF_QUERY_STATUS ret = SF_QUERY_STATUS_NO_DATA;
   char *metadata = get_query_metadata(sfstmt);
   if (metadata) {
