@@ -57,8 +57,8 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
 .. code-block:: bash
 
     set platform=x64
-    set build_type=Debug
-    set vs_version=VS14
+    set build_type=Release
+    set vs_version=VS17
 
     .\scripts\build_dependencies.bat
     .\scripts\build_libsnowflakeclient.bat

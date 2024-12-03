@@ -946,9 +946,6 @@ void test_column_as_timestamp_windows_helper(sf_bool use_arrow) {
                         ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
                         : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
 
-    sf_setenv("TZ", "UTC");
-    sf_tzset();
-
     snowflake_query(sfstmt, "select "
                             "NULL, "
                             "to_timestamp_tz('2018-10-10 12:34:56 -7:00'), "

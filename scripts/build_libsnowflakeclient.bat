@@ -5,9 +5,12 @@
 set scriptdir=%~dp0
 for /f "tokens=3" %%A in ('findstr SF_API_VERSION %scriptdir%..\include\snowflake\version.h') do @set V=%%A
 set libsnowflakeclient_version=%v:"=%
-call :build %platform% %build_type% %vs_version% OFF ON
-if %ERRORLEVEL% NEQ 0 exit /b 1
-exit /b 0
+if "%*"=="" (
+    call :build %platform% %build_type% %vs_version% OFF ON
+) else (
+    call %*
+)
+goto :EOF
 
 :get_version
 	set version=%libsnowflakeclient_version%
