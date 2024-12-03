@@ -1,4 +1,5 @@
 #include "../../lib/snowflake_util.h"
+#include "../include/snowflake/SFURL.hpp"
 
 namespace Snowflake
 {
@@ -27,6 +28,26 @@ namespace Client
 			jsonValue_t v;
 			picojson::parse(v, str);
 			picojson = v.get<picojson::object>();
+		}
+
+		bool urlHasSamePrefix(std::string url1, std::string url2)
+		{
+			SFURL parsed_url1 = SFURL::parse(url1);
+			SFURL parsed_url2 = SFURL::parse(url2);
+
+			if (parsed_url1.port() == "" && parsed_url1.scheme() == "https")
+			{
+				parsed_url1.port("443");
+			}
+
+			if (parsed_url2.port() == "" && parsed_url2.scheme() == "https")
+			{
+				parsed_url2.port("443");
+			}
+
+			return parsed_url1.scheme() == parsed_url2.scheme() &&
+				parsed_url1.host() == parsed_url2.host() &&
+				parsed_url1.port() == parsed_url2.port();
 		}
 	}
 }

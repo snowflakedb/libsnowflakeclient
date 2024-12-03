@@ -26,6 +26,16 @@ extern "C" {
 	*/
 	void strToPicoJson(jsonObject_t& picojson, std::string& str);
 
+
+	/**
+	 * Verify that if two urls has same prefix (protocl + host + port)
+	 * @param url1
+	 * @param url2
+	 *
+	 * @return true if same prefix otherwise false
+	 */
+	bool urlHasSamePrefix(std::string url1, std::string url2);
+
 #ifdef __cplusplus
 }
 #endif

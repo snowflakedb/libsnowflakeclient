@@ -58,7 +58,7 @@ namespace Client
             getIDPInfo();
 
             // 2. verify ssoUrl and tokenUrl contains same prefix
-            if (!SFURL::urlHasSamePrefix(tokenURLStr, m_authenticator))
+            if (!urlHasSamePrefix(tokenURLStr, m_authenticator))
             {
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator is not supported, "
@@ -126,7 +126,7 @@ namespace Client
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
             std::string server_url = getServerURLSync().toString();
             if ((!m_disableSamlUrlCheck) &&
-                (!SFURL::urlHasSamePrefix(post_back_url, server_url)))
+                (!urlHasSamePrefix(post_back_url, server_url)))
             {
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator and destination URL in "

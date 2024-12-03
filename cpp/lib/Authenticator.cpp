@@ -468,7 +468,7 @@ namespace Client
 
       SF_ERROR_STRUCT *err = &m_connection->error;
 
-      NON_JSON_RESP* raw_resp = new NON_JSON_RESP;
+      NON_JSON_RESP* raw_resp = (NON_JSON_RESP*) SF_MALLOC(sizeof(NON_JSON_RESP));
       raw_resp->write_callback = non_json_resp_write_callback;
       RAW_JSON_BUFFER buf = { NULL,0 };
       raw_resp->buffer = (void*)&buf;
@@ -516,7 +516,7 @@ namespace Client
       m_retryTimeout -= elapsedTime;
       sf_header_destroy(httpExtraHeaders);
       free_curl_desc(curl_desc);
-      delete raw_resp;
+      SF_FREE(raw_resp);
       if (isRetry) {
           RETRY_THROW(elapsedTime, m_retriedCount);
       }
