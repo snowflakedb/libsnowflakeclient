@@ -196,7 +196,7 @@ void test_fake_table(void** unused) {
 
   /* query */
   SF_STMT* sfstmt = snowflake_stmt(sf);
-  status = snowflake_prepare(sfstmt, "select * from fake_table;", 0);
+  status = snowflake_prepare(sfstmt, "select * from my_fake_table;", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_async_execute(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
