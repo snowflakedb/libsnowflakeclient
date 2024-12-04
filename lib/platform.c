@@ -236,6 +236,15 @@ struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
 }
 #endif
 
+void STDCALL sf_sleep_ms(int sleep_ms)
+{
+#ifdef _WIN32
+  Sleep(sleep_ms);
+#else
+  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
+#endif
+}
+
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result) {
 #ifdef _WIN32
   return sfchrono_gmtime(timep, result);

@@ -413,8 +413,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             break;
         }
 
-        while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
-               strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0) {
+        while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0) {
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
             memset(query_code, 0, QUERYCODE_LEN);
