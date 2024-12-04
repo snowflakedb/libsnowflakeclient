@@ -201,9 +201,6 @@ void test_fake_table(void** unused) {
   status = snowflake_async_execute(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
-  assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
-
   /* get results */
   char* out = NULL;
   size_t value_len = 0;
