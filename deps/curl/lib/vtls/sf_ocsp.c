@@ -1718,7 +1718,10 @@ end:
 
 static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, bool oob_enable)
 {
-  infof(data, "OCSP responder didn't respond correctly. Assuming certificate is not revoked.");
+  char *ocsp_log_data = NULL;
+  ocsp_log_data = generateOCSPTelemetryData(ocsp_log);
+  infof(data, "OCSP responder didn't respond correctly. Assuming certificate is not revoked."
+              " Details:%s", ocsp_log_data);
 }
 
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)
