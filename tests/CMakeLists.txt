@@ -158,10 +158,6 @@ if (UNIX)
 endif ()
 
 if (LINUX)
-    if ($ENV{GCCVERSION} STRGREATER "9")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
-    endif ()
 
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS
