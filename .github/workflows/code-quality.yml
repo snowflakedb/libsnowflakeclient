@@ -50,6 +50,8 @@ jobs:
         if: steps.cache-restore-warnings.outputs.cache-hit == true
       - name: Warning report
         shell: bash
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: ci/scripts/warning_report.sh
       - name: Upload build log
         uses: actions/upload-artifact@v4
