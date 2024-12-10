@@ -31,17 +31,24 @@ using namespace ::Snowflake::Client;
 class MockedGCSStatement : public Snowflake::Client::IStatementPutGet
 {
 public:
-  MockedGCSStatement(bool useGcsToken)
+  MockedGCSStatement(bool useGcsToken,
+                     bool useRegionalUrl = false,
+                     std::string region = "",
+                     std::string endpoint = "",
+                     std::string expectedEndpoint = "storage.googleapis.com")
     : m_useGcsToken(useGcsToken),
       m_firstTime(true),
       m_isPut(false),
       Snowflake::Client::IStatementPutGet()
   {
     m_stageInfo.stageType = Snowflake::Client::StageType::GCS;
+    m_stageInfo.useRegionalUrl = useRegionalUrl;
+    m_stageInfo.region = region;
+    m_stageInfo.endPoint = endpoint;
     if (m_useGcsToken)
     {
       m_stageInfo.credentials = { { "GCS_ACCESS_TOKEN", (char*)"fake gcs token"} };
-      m_expectedUrl = "https://storage.googleapis.com/FakeGcsLocation/small_file.csv.gz";
+      m_expectedUrl = std::string("https://") + expectedEndpoint + "/FakeGcsLocation/small_file.csv.gz";
     }
     else
     {
@@ -226,6 +233,25 @@ void get_gcs_test_core(bool useGcsToken)
   }
 }
 
+// test helper for regional url
+void gcs_regional_url_test_core(bool useRegionalUrl, std::string region, std::string endpoint, std::string expectedEndpoint)
+{
+  std::string cmd = std::string("put file://small_file.csv.gz @odbctestStage AUTO_COMPRESS=false");
+
+  MockedGCSStatement mockedStatementPut(true, useRegionalUrl, region, endpoint, expectedEndpoint);
+
+  Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
+
+  ITransferResult* result = agent.execute(&cmd);
+
+  std::string put_status;
+  while (result->next())
+  {
+    result->getColumnAsString(6, put_status);
+    assert_string_equal("UPLOADED", put_status.c_str());
+  }
+}
+
 /**
  * Simple put test case with gcs token
  */
@@ -258,6 +284,21 @@ void test_simple_get_gcs_with_presignedurl(void ** unused)
   get_gcs_test_core(false);
 }
 
+void test_gcs_use_regional_url(void** unused)
+{
+  gcs_regional_url_test_core(true, "testregion", "", "storage.testregion.rep.googleapis.com");
+}
+
+void test_gcs_use_me2_region(void** unused)
+{
+  gcs_regional_url_test_core(false, "me-central2", "", "storage.me-central2.rep.googleapis.com");
+}
+
+void test_gcs_override_endpoint(void** unused)
+{
+  gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com");
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -270,6 +311,9 @@ int main(void) {
     cmocka_unit_test(test_simple_get_gcs_with_token),
     cmocka_unit_test(test_simple_put_gcs_with_presignedurl),
     cmocka_unit_test(test_simple_get_gcs_with_presignedurl),
+    cmocka_unit_test(test_gcs_use_regional_url),
+    cmocka_unit_test(test_gcs_use_me2_region),
+    cmocka_unit_test(test_gcs_override_endpoint),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;

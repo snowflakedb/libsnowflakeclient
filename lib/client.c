@@ -2407,6 +2407,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "storageAccount");
                 json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
                                  stage_info, "endPoint");
+                sf_bool useS3RegionalUrl = SF_BOOLEAN_FALSE;
+                json_copy_bool(&useS3RegionalUrl, stage_info, "useS3RegionalUrl");
+                sfstmt->put_get_response->stage_info->useS3RegionalUrl = useS3RegionalUrl;
+                sf_bool useRegionalURL = SF_BOOLEAN_FALSE;
+                json_copy_bool(&useRegionalURL, stage_info, "useRegionalUrl");
+                sfstmt->put_get_response->stage_info->useRegionalUrl = useRegionalURL;
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");
@@ -2422,7 +2428,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_copy_string(
                     &sfstmt->put_get_response->localLocation, data,
                     "localLocation");
-
             } else {
                 // Set Database info
                 _mutex_lock(&sfstmt->connection->mutex_parameters);
