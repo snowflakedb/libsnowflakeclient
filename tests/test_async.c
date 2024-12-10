@@ -8,7 +8,7 @@
  /**
   * Test normal query flow with async
   */
-void test_select(void **unused) {
+void test_select() {
     SF_CONNECT* sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -47,7 +47,7 @@ void test_select(void **unused) {
 /**
  * Test normal getting query status
  */
-void test_query_status(void** unused) {
+void test_query_status() {
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -96,7 +96,7 @@ void test_query_status(void** unused) {
 /**
  * Test premature fetch
  */
-void test_premature_fetch(void** unused) {
+void test_premature_fetch() {
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -135,7 +135,7 @@ void test_premature_fetch(void** unused) {
 /**
  * Test async with new connection
  */
-void test_new_connection(void** unused) {
+void test_new_connection() {
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -186,7 +186,7 @@ void test_new_connection(void** unused) {
 /**
  * Test async query with fake table
  */
-void test_fake_table(void** unused) {
+void test_fake_table() {
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
@@ -202,9 +202,6 @@ void test_fake_table(void** unused) {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   /* get results */
-  char* out = NULL;
-  size_t value_len = 0;
-  size_t max_value_size = 0;
   status = snowflake_fetch(sfstmt);
   assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
   snowflake_stmt_term(sfstmt);
@@ -214,7 +211,7 @@ void test_fake_table(void** unused) {
 /**
  * Test async query with invalid query id
  */
-void test_invalid_query_id(void** unused) {
+void test_invalid_query_id() {
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {

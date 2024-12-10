@@ -108,7 +108,6 @@ char *get_query_metadata(SF_STMT* sfstmt) {
   cJSON *data = NULL;
   cJSON *queries = NULL;
   char *s_resp = NULL;
-  const char *error_msg;
   size_t url_size = strlen(QUERY_MONITOR_URL) -2 + strlen(sfstmt->sfqid) + 1;
   char *status_query = (char*)SF_CALLOC(1, url_size);
   sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, sfstmt->sfqid);
