@@ -188,26 +188,31 @@ sf_bool EasyLoggingConfigParser::parseConfigFile(
     return false;
   }
 
-  value commonProps = jsonConfig.get("common");
-  checkUnknownEntries(commonProps);
-  if (commonProps.is<object>())
+  if (jsonConfig.is<object>())
   {
-    if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
+    value commonProps = jsonConfig.get("common");
+    if (commonProps.is<object>())
     {
-      const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
-      size_t logLevelSize = strlen(logLevel) + 1;
-      out_clientConfig.logLevel = (char*)SF_CALLOC(1, logLevelSize);
-      sf_strcpy(out_clientConfig.logLevel, logLevelSize, logLevel);
-    }
-    if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
-    {
-      const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
-      size_t logPathSize = strlen(logPath) + 1;
-      out_clientConfig.logPath = (char*)SF_CALLOC(1, logPathSize);
-      sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
+      checkUnknownEntries(commonProps);
+      if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
+      {
+        const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
+        size_t logLevelSize = strlen(logLevel) + 1;
+        out_clientConfig.logLevel = (char*)SF_CALLOC(1, logLevelSize);
+        sf_strcpy(out_clientConfig.logLevel, logLevelSize, logLevel);
+      }
+      if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
+      {
+        const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
+        size_t logPathSize = strlen(logPath) + 1;
+        out_clientConfig.logPath = (char*)SF_CALLOC(1, logPathSize);
+        sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
+      }
+      return true;
     }
   }
-  return true;
+  CXX_LOG_ERROR("Malformed client config file: %s", in_filePath.c_str());
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
