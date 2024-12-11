@@ -23,7 +23,17 @@ function download_build_component()
     local component_version=$($component_script -v)
     local zip_file_name=$(get_zip_file_name $component_name $component_version $build_type)
     if [[ -n "$GITHUB_ACTIONS" ]]; then
-        "$component_script" -t "$build_type"
+        if cp "$CACHE_DIR/$zip_file_name" "$ARTIFACTS_DIR";
+        then
+            echo "=== using cached: $component_name ==="
+            pushd $DEPENDENCY_DIR >& /dev/null
+                tar xvfz $ARTIFACTS_DIR/$zip_file_name
+            popd >& /dev/null
+        else
+            echo "=== building dep: $component_name ==="
+            "$component_script" -t "$build_type"
+            cache_dependency $component_name $component_version $build_type
+        fi
     else
         echo "=== download or build $component_name ==="
         ret="$(check_directory $component_name $build_type)"
@@ -63,6 +73,7 @@ function build_component()
     echo "=== build: $component_name ==="
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
+
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
         if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
