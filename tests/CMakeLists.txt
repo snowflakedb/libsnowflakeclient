@@ -57,6 +57,7 @@ SET(TESTS_CXX
         test_unit_jwt
         test_unit_cipher_stream_buf
         test_unit_cred_renew
+        test_unit_encryption
         test_unit_file_metadata_init
         test_unit_file_type_detect
         test_unit_stream_splitter
@@ -158,10 +159,6 @@ if (UNIX)
 endif ()
 
 if (LINUX)
-    if ($ENV{GCCVERSION} STRGREATER "9")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
-    endif ()
 
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS

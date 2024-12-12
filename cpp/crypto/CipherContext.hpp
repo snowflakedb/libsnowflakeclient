@@ -7,7 +7,6 @@
 
 #include "CryptoTypes.hpp"
 #include "CipherContext.hpp"
-#include <cstring>
 #include <memory>
 
 namespace Snowflake
@@ -58,8 +57,37 @@ public:
    */
   CipherContext &operator=(CipherContext &&other) noexcept;
 
+  void initialize_encryption();
+
+  void initialize_decryption();
+
   /**
-   * Whether or not this is a valid context that can be used for encryption
+   * Set padding in the cipher context
+   */
+  void set_padding();
+
+  /**
+   * Set the additional authenticated data for the current operation.
+   * Invalid additional data will cause the finalize step of the decryption.
+   *
+   * The operation is only permitted for GCM encryption and requires the CipherContext to be initialized.
+   *
+   * @param aad Additional authenticated data
+   * @param aad_len Size of the AAD
+   */
+  void set_aad(const unsigned char *aad, int aad_len);
+
+  /**
+   * Initialize a new encryption or decryption operation and call @link set_aad
+   *
+   * @param op Encryption or decryption
+   * @param aad Additional authenticated data
+   * @param aad_len Size of the AAD
+   */
+  void initialize(CryptoOperation op, const unsigned char *aad, int aad_len);
+
+  /**
+   * Whether this is a valid context that can be used for encryption
    * or decryption. Returns 'false' for default constructed context object or
    * context objects that have been the source of a move construction or
    * move assignment.
@@ -107,6 +135,22 @@ public:
   size_t next(void *out,
               const void *in,
               size_t len);
+
+  /**
+   * Finalize current operation. After finalize() has been called, another
+   * operation can be started by calling initialize().
+   *
+   * WARNING: If padding is enabled, the output memory must be at least
+   * 'len' plus the cipher block size of the encryption algorithm.
+   *
+   * @param out Output block
+   * @param tag GCM message authentication code tag
+   *  that provides the authenticity assurance over the encrypted data.
+   *  Tag is returned by the encryption operation and has to be provided for decryption
+   *  to confirm the encrypted data wasn't altered.
+   * @return Number of bytes written during the operation.
+   */
+  size_t finalize(void *out, unsigned char *tag);
 
   /**
    * Finalize current operation. After finalize() has been called, another

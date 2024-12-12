@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 CURL_SRC_VERSION=8.10.1
-CURL_BUILD_VERSION=2
+CURL_BUILD_VERSION=3
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -51,6 +51,7 @@ curl_configure_opts+=(
     "--without-brotli"
     "--without-zstd"
     "--without-libpsl"
+    "--without-nghttp2"
     "--disable-rtsp"
     "--disable-ldap"
     "--disable-ldaps"
