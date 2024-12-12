@@ -73,6 +73,6 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: warnings.json
-          key: ${{ github.event.pull_request.base.sha }}-compile-warnings
+          key: ${{ github.sha }}-compile-warnings
         if: github.ref_name == github.event.repository.default_branch
 
