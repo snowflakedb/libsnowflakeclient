@@ -47,7 +47,7 @@ jobs:
       - name: Use cached warnings as a baseline
         shell: bash
         run: cp warnings.json ./ci/scripts/warnings_baseline.json
-        if: steps.cache-restore-warnings.outputs.cache-hit == true
+        if: steps.cache-restore-warnings.outputs.cache-hit == 'true'
       - name: Warning report
         shell: bash
         env:
