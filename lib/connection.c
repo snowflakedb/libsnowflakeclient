@@ -415,9 +415,11 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
         sf_bool isAsyncExec = SF_BOOLEAN_FALSE;
         cJSON *json_body = snowflake_cJSON_Parse(body);
-        cJSON *async = snowflake_cJSON_GetObjectItem(json_body, "asyncExec");
-        if (async && snowflake_cJSON_IsBool(async)) {
-          isAsyncExec = snowflake_cJSON_IsTrue(async);
+        if (json_body && snowflake_cJSON_IsObject(json_body)) {
+          cJSON* async = snowflake_cJSON_GetObjectItem(json_body, "asyncExec");
+          if (async && snowflake_cJSON_IsBool(async)) {
+            isAsyncExec = snowflake_cJSON_IsTrue(async);
+          }
         }
 
         if (!isAsyncExec) {
@@ -428,33 +430,33 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             memset(query_code, 0, QUERYCODE_LEN);
             data = snowflake_cJSON_GetObjectItem(*json, "data");
             if (json_copy_string(&result_url, data, "getResultUrl") !=
-              SF_JSON_ERROR_NONE) {
-              stop = SF_BOOLEAN_TRUE;
-              JSON_ERROR_MSG(json_error, error_msg, "Result URL");
-              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
-                SF_SQLSTATE_UNABLE_TO_CONNECT);
-              break;
+                SF_JSON_ERROR_NONE) {
+                stop = SF_BOOLEAN_TRUE;
+                JSON_ERROR_MSG(json_error, error_msg, "Result URL");
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                break;
             }
 
             log_trace("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
-              GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
-              0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
-              // Error came from request up, just break
-              stop = SF_BOOLEAN_TRUE;
-              break;
+                         GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
+                         0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                // Error came from request up, just break
+                stop = SF_BOOLEAN_TRUE;
+                break;
             }
 
             if (
               (json_error = json_copy_string_no_alloc(query_code, *json, "code",
-                QUERYCODE_LEN)) !=
+                                                      QUERYCODE_LEN)) !=
               SF_JSON_ERROR_NONE &&
               json_error != SF_JSON_ERROR_ITEM_NULL) {
-              stop = SF_BOOLEAN_TRUE;
-              JSON_ERROR_MSG(json_error, error_msg, "Query code");
-              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
-                SF_SQLSTATE_UNABLE_TO_CONNECT);
-              break;
+                stop = SF_BOOLEAN_TRUE;
+                JSON_ERROR_MSG(json_error, error_msg, "Query code");
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON, error_msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                break;
             }
           }
         }

@@ -226,13 +226,19 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
   char* metadata_str = get_query_metadata(sfstmt);
   if (metadata_str) {
     cJSON* metadata = snowflake_cJSON_Parse(metadata_str);
-    cJSON* stats = snowflake_cJSON_GetObjectItem(metadata, "stats");
-    if (snowflake_cJSON_IsObject(stats)) {
-      if (sfstmt->stats) {
-        SF_FREE(sfstmt->stats);
+    if (metadata && snowflake_cJSON_IsObject(metadata)) {
+      cJSON* stats = snowflake_cJSON_GetObjectItem(metadata, "stats");
+      if (snowflake_cJSON_IsObject(stats)) {
+        if (sfstmt->stats) {
+          SF_FREE(sfstmt->stats);
+        }
+        sfstmt->stats = set_stats(stats);
       }
-      sfstmt->stats = set_stats(stats);
+      log_error(
+        "Error parsing query stats from query id: %s", sfstmt->sfqid);
     }
+    log_error(
+      "Error parsing query metadata from query id: %s", sfstmt->sfqid);
   }
   return SF_BOOLEAN_TRUE;
 }
@@ -2285,11 +2291,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                   is_string_empty(sfstmt->connection->directURL) ?
                                   NULL : sfstmt->request_id, is_describe_only);
 
-    if (is_async_exec) {
-      snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_TRUE);
-    } else {
-      snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
-    }
+    snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
 
     if (bindings != NULL) {
         /* binding parameters if exists */
