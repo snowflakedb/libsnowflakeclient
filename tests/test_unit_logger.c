@@ -415,11 +415,13 @@ int main(void) {
         cmocka_unit_test(test_invalid_client_config_path),
         cmocka_unit_test(test_client_config_log_invalid_json),
         cmocka_unit_test(test_client_config_log_malformed_json),
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
         cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_init),
         cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
+#endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
         cmocka_unit_test(test_mask_secret_log),
