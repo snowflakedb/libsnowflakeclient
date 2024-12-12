@@ -422,7 +422,7 @@ static int gr_teardown(void **unused)
   system(rmCmd);
 #else
   sprintf(rmCmd, "rm -rf %s", testDir.c_str());
-  int ret = system(rmCmd);
+  (void)system(rmCmd);
 #endif
   return 0;
 }
