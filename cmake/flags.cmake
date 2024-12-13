@@ -27,7 +27,7 @@ if (LINUX)
     # Code coverage for Linux
     if (CLIENT_CODE_COVERAGE)    # Only when code coverage is enabled
         message("Code coverage is enabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
-        add_compile_options(--coverage -O0 $<$<COMPILE_LANGUAGE:CXX>:-fno-elide-constructors> -fno-inline -fno-inline-small-functions -fno-default-inline)
+        add_compile_options(--coverage -fprofile-arcs -ftest-coverage -O0 $<$<COMPILE_LANGUAGE:CXX>:-fno-elide-constructors> $<$<COMPILE_LANGUAGE:CXX>:-fno-inline> $<$<COMPILE_LANGUAGE:CXX>:-fno-inline-small-functions> $<$<COMPILE_LANGUAGE:CXX>:-fno-default-inline>)
         add_link_options(--coverage)
     else()
         message("Code coverage is disabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
