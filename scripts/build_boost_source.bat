@@ -26,7 +26,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-set curdir=%cd%
+set currdir=%cd%
 
 if /I "%platform%"=="x64" (
     set engine_dir=Program Files
@@ -68,7 +68,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
 
-cd "%curdir%"
+cd "%currdir%"
 
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file boost %boost_version%
@@ -80,5 +80,5 @@ goto :success
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

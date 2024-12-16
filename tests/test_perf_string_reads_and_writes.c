@@ -139,6 +139,7 @@ void test_col_buffer_copy_unknown_size_dynamic_memory_helper(sf_bool use_arrow) 
 }
 
 void test_col_buffer_copy_concat_multiple_rows_helper(sf_bool use_arrow) {
+    SF_STATUS status;
     SF_CONNECT *sf = NULL;
     SF_STMT *sfstmt = NULL;
     struct timespec begin, end;
@@ -158,7 +159,14 @@ void test_col_buffer_copy_concat_multiple_rows_helper(sf_bool use_arrow) {
                         ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
                         : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
 
-    snowflake_query(sfstmt, "select * from public_domain_books order by id, text_part;", 0);
+    status = snowflake_query(sfstmt, "select * from public_domain_books order by id, text_part;", 0);
+    if (SF_STATUS_SUCCESS != status)
+    {
+        // skip if no access
+        snowflake_stmt_term(sfstmt);
+        snowflake_term(sf);
+        return;
+    }
 
     // Begin timing
     clock_gettime(clk_id, &begin);

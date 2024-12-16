@@ -25,7 +25,7 @@ set scriptdir=%~dp0
 
 call "%scriptdir%\_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set curdir=%cd%
+set currdir=%cd%
 
 if /I "%platform%"=="x64" (
         set engine_dir=Program Files
@@ -51,7 +51,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 @echo ====== Building oob
-set OOB_SOURCE_DIR=%curdir%\deps\%OOB_DIR%
+set OOB_SOURCE_DIR=%currdir%\deps\%OOB_DIR%
 
 cd %OOB_SOURCE_DIR%
 set CURL_DIR=curl
@@ -59,7 +59,7 @@ nmake -f Makefile.msc clean
 nmake -f Makefile.msc
 
 echo === Staging oob
-cd "%curdir%"
+cd "%currdir%"
 rd /q /s .\deps-build\%build_dir%\oob
 md .\deps-build\%build_dir%\oob\include
 md .\deps-build\%build_dir%\oob\lib
@@ -76,9 +76,9 @@ goto :success
 
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1
