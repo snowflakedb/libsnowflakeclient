@@ -549,7 +549,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       long validity = (pday*24*60*60 + psec)/100;
       skewInSec = validity > skewInSec ? validity : skewInSec;
       infof(data, "Diff between thisupd and nextupd "
-              "day: %d, sec: %d, Tolerant skew: %d", pday, psec,
+              "day: %d, sec: %d, Tolerant skew: %ld", pday, psec,
               skewInSec);
     }
     else
@@ -779,7 +779,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     }
     else
     {
-      snprintf(urlbuf, sizeof(urlbuf),
+      snprintf(urlbuf, sizeof(urlbuf), "%s",
                ocsp_cache_server_retry_url_pattern);
     }
   }
@@ -882,7 +882,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
         }
         else if (response_code < 200 || response_code >= 300)
         {
-          failf(data, "OCSP request failed with non-200 level code: %d",
+          failf(data, "OCSP request failed with non-200 level code: %ld",
                 response_code);
 
           if (ocsp_retry_cnt == max_retry-1)
@@ -1247,7 +1247,7 @@ static SF_OCSP_STATUS checkResponseTimeValidity(OCSP_RESPONSE *resp, struct Curl
             long validity = (pday*24*60*60 + psec)/100;
             skewInSec = validity > skewInSec ? validity : skewInSec;
             infof(data, "Diff between thisupd and nextupd "
-            "day: %d, sec: %d, Tolerant skew: %d", pday, psec,
+            "day: %d, sec: %d, Tolerant skew: %ld", pday, psec,
             skewInSec);
         }
         else
@@ -1550,7 +1550,7 @@ void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last
     }
     else if (response_code < 200 || response_code >= 300 )
     {
-      failf(data, "OCSP cache download request failed with non-200 level code: %d, OCSP Cache Could not be downloaded",
+      failf(data, "OCSP cache download request failed with non-200 level code: %ld, OCSP Cache Could not be downloaded",
             response_code);
       sf_otd_set_event_sub_type(OCSP_RESPONSE_CACHE_DOWNLOAD_FAILED, ocsp_log_data);
       goto end;
@@ -2440,7 +2440,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 
   sf_otd_set_insecure_mode(0, &ocsp_log_data);
 
-  infof(data, "Cert Data Store: %s, Certifcate Chain: %s", st, ch);
+  infof(data, "Cert Data Store: %s, Certifcate Chain: %s", (char*)st, (char*)ch);
   initOCSPCacheServer(data);
 
   infof(data, "Start SF OCSP Validation...");

@@ -12,37 +12,61 @@ Snowflake Connector for C/C++
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
+Prerequisites
+================================================================================
+
+Operating system
+For a list of the operating systems supported by Snowflake clients, see `Operating system support <https://docs.snowflake.com/en/release-notes/requirements#label-client-operating-system-support>`_.
+
+To build libsnowflakeclient, the following software must be installed:
+
+- On Windows: Visual Studio 2015, 2017, 2019 or 2022
+- On Linux:
+
+  - gcc/g++ 8.3 or higher. **Note**: on certain OS (e.g. Centos 7) the preinstalled gcc/libstdc++ version is below the required minimum. For Centos 7, this is 4.8.5, which is below the requirement. Building libsnowflakeclient might be unsuccessful on such OS's until the prerequisite is fulfilled, i.e. libraries upgraded to at least the minimum version.
+  - cmake 3.17 or higher
+
+- On macOS:
+
+  - clang
+  - cmake 3.17 or higher
+
+To run test cases, the following software must be installed:
+
+- jq: https://jqlang.github.io/jq/download/
+- python 3.7 or higher
+
 Build and Tests
 ======================================================================
 
 Build
 ----------------------------------------------------------------------
 
-Ensure you have cmake 3.17 or later version.
-
 Linux and OSX
 ^^^^^^^^^^^^^
 
 .. code-block:: bash
 
+    ./scripts/build_dependencies.sh
     ./scripts/build_libsnowflakeclient.sh
 
 Windows
 ^^^^^^^^^^
-
 Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
 
     set platform=x64
-    set build_type=Debug
-    set vs_version=VS14
-    ci\build.bat
+    set build_type=Release
+    set vs_version=VS17
+
+    .\scripts\build_dependencies.bat
+    .\scripts\build_libsnowflakeclient.bat
 
 Prepare for Test
 ----------------------------------------------------------------------
 
-Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
+Set the Snowflake connection info in ``parameters.json`` and place it in the root path of libsnowflakeclient repository:
 
 .. code-block:: json
 
@@ -55,8 +79,15 @@ Set the Snowflake connection info in ``parameters.json`` and place it in $HOME:
             "SNOWFLAKE_TEST_DATABASE":  "<your_database>",
             "SNOWFLAKE_TEST_SCHEMA":    "<your_schema>",
             "SNOWFLAKE_TEST_ROLE":      "<your_role>"
+            "SNOWFLAKE_TEST_HOST":      "<your_snowflake_url>"
+            "CLOUD_PROVIDER":           "<your_cloud_provider>"
         }
     }
+
+where:
+
+- :code:`<your_snowflake_url>` is optional. Set it when your Snowflake URL is not in the format of :code:`account.snowflakecomputing.com`.
+- :code:`<CLOUD_PROVIDER>` is the cloud platform of your Snowflake account. (:code:`AWS`, :code:`AZURE` or :code:`GCP`).
 
 Proxy
 ^^^^^^^^^^
@@ -96,9 +127,10 @@ Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], V
 .. code-block:: bash
 
     set platform=x64
-    set build_type=Debug
-    set vs_version=VS14
-    ci\test.bat
+    set build_type=Release
+    set vs_version=VS17
+
+   .\scripts\run_tests.bat
 
 	
 Code Coverage (Linux)

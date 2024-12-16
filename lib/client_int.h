@@ -106,8 +106,15 @@ typedef struct SF_STAGE_INFO {
   char *location;
   char *path;
   char *region;
-  char *storageAccount; // For Azure only
+  // An endpoint (Azure, AWS FIPS and GCS custom endpoint override)
   char *endPoint; //For FIPS and Azure support
+  // whether to use s3 regional URL (AWS Only)
+  // TODO SNOW-1818804: this field will be deprecated when the server returns {@link
+  // #useRegionalUrl}
+  sf_bool useS3RegionalUrl;
+  // whether to use regional URL (AWS and GCS only)
+  sf_bool useRegionalUrl;
+  char* storageAccount; // For Azure only
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
 

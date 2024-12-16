@@ -44,6 +44,7 @@ docker run \
         -e GITHUB_EVENT_NAME \
         -e GITHUB_REF \
         -e CLIENT_CODE_COVERAGE \
+        -e USE_EXTRA_WARNINGS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/ci/build/build.sh"

@@ -106,14 +106,18 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
   putGetParseResponse->stageInfo.location = response->stage_info->location;
   putGetParseResponse->stageInfo.path = response->stage_info->path;
 
+  if (response->stage_info->region != NULL)
+  {
+    putGetParseResponse->stageInfo.region = response->stage_info->region;
+  }
+  if (response->stage_info->endPoint != NULL) {
+    putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
+  }
+  putGetParseResponse->stageInfo.useRegionalUrl = response->stage_info->useRegionalUrl;
   if (sf_strncasecmp(response->stage_info->location_type, "s3", 2) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::S3;
-    putGetParseResponse->stageInfo.region = response->stage_info->region;
-    // FIPS Support
-    if (response->stage_info->endPoint != NULL) {
-      putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
-    }
+    putGetParseResponse->stageInfo.useS3RegionalUrl = (SF_BOOLEAN_TRUE == response->stage_info->useS3RegionalUrl);
     putGetParseResponse->stageInfo.credentials = {
             {"AWS_KEY_ID",     response->stage_info->stage_cred->aws_key_id},
             {"AWS_SECRET_KEY", response->stage_info->stage_cred->aws_secret_key},

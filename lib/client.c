@@ -2749,6 +2749,12 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                  stage_info, "storageAccount");
                 json_copy_string(&sfstmt->put_get_response->stage_info->endPoint,
                                  stage_info, "endPoint");
+                sf_bool useS3RegionalUrl = SF_BOOLEAN_FALSE;
+                json_copy_bool(&useS3RegionalUrl, stage_info, "useS3RegionalUrl");
+                sfstmt->put_get_response->stage_info->useS3RegionalUrl = useS3RegionalUrl;
+                sf_bool useRegionalURL = SF_BOOLEAN_FALSE;
+                json_copy_bool(&useRegionalURL, stage_info, "useRegionalUrl");
+                sfstmt->put_get_response->stage_info->useRegionalUrl = useRegionalURL;
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");
@@ -2767,7 +2773,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                 json_copy_string(
                     &sfstmt->put_get_response->localLocation, data,
                     "localLocation");
-
             } else {
                 int64 stmt_type_id;
                 if (json_copy_int(&stmt_type_id, data, "statementTypeId")) {
@@ -3700,15 +3705,17 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts,
         return SF_STATUS_ERROR_NULL_POINTER;
     }
 
-    time_t epoch_time_local;
+    time_t epoch_time;
 
     ts->tm_obj.tm_isdst = -1;
-    epoch_time_local = (time_t) mktime(&ts->tm_obj);
     // mktime takes into account tm_gmtoff which is a Linux and OS X ONLY field
 #if defined(__linux__) || defined(__APPLE__)
-    epoch_time_local += ts->tm_obj.tm_gmtoff;
+    epoch_time = (time_t)mktime(&ts->tm_obj);
+    epoch_time += ts->tm_obj.tm_gmtoff;
+#else
+    epoch_time = _mkgmtime64(&ts->tm_obj);
 #endif
-    *epoch_time_ptr = epoch_time_local - (ts->tzoffset * 60);
+    *epoch_time_ptr = epoch_time - (ts->tzoffset * 60);
 
     return SF_STATUS_SUCCESS;
 }

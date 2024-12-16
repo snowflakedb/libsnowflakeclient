@@ -29,7 +29,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-set curdir=%cd%
+set currdir=%cd%
 
 set target_name=cmocka_a.lib
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
@@ -40,7 +40,7 @@ set INSTALL_DIR=%TMP%\cmocka
 rd /S /Q "%INSTALL_DIR%"
 md "%INSTALL_DIR%"
 
-cd "%curdir%\deps\%CMOCKA_DIR%"
+cd "%currdir%\deps\%CMOCKA_DIR%"
 set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
 rd /S /Q %cmake_dir%
 md %cmake_dir%
@@ -56,7 +56,7 @@ cmake --build . --config %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === staging cmocka
-cd "%curdir%"
+cd "%currdir%"
 rmdir /q /s .\deps-build\%build_dir%\cmocka
 md .\deps-build\%build_dir%\cmocka\include
 md .\deps-build\%build_dir%\cmocka\lib
@@ -77,9 +77,9 @@ if %ERRORLEVEL% NEQ 0 goto :error
 goto :success
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

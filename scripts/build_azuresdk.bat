@@ -27,7 +27,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-set curdir=%cd%
+set currdir=%cd%
 
 if /I "%platform%"=="x64" (
     set engine_dir=Program Files
@@ -71,7 +71,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 msbuild INSTALL.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-cd "%curdir%"
+cd "%currdir%"
 xcopy /S /E /I /Y /Q  %AZURE_CMAKE_BUILD_DIR%\%build_type%\azure-storage-lite.lib %AZURE_INSTALL_DIR%\lib\
 xcopy /S /E /I /Y /Q  %AZURE_SOURCE_DIR%\include %AZURE_INSTALL_DIR%\include
 
@@ -85,5 +85,5 @@ goto :success
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1
