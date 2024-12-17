@@ -22,8 +22,9 @@ namespace Client
             updateDataMap(dataMap);
         }
 
-        void IDPAuthenticator::getIDPInfo()
+        bool IDPAuthenticator::getIDPInfo()
         {
+            bool ret = true;
             jsonObject_t dataMap;
             SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
             dataMap["ACCOUNT_NAME"] = value(m_account);
@@ -37,10 +38,19 @@ namespace Client
             jsonObject_t authnData, respData;
             authnData["data"] = value(dataMap);
 
-            curl_post_call(connectURL, authnData, respData);
-            jsonObject_t& data = respData["data"].get<jsonObject_t>();
-            tokenURLStr = data["tokenUrl"].get<std::string>();
-            ssoURLStr = data["ssoUrl"].get<std::string>();
+            if (curl_post_call(connectURL, authnData, respData))
+            {
+                jsonObject_t& data = respData["data"].get<jsonObject_t>();
+                tokenURLStr = data["tokenUrl"].get<std::string>();
+                ssoURLStr = data["ssoUrl"].get<std::string>();
+            }
+            else {
+                CXX_LOG_INFO("sf", "Connection", "getIdpInfo",
+                    "Fail to get authenticator info");
+                m_errMsg = "Fail to get authenticator info";
+                ret = false;
+            }
+            return ret;
         }
 
         SFURL IDPAuthenticator::getServerURLSync()
@@ -54,7 +64,9 @@ namespace Client
 
         void IAuthenticatorOKTA::authenticate() {
             // 1. get authenticator info
-            getIDPInfo();
+            if (!getIDPInfo()) {
+                return;
+            }
 
             // 2. verify ssoUrl and tokenUrl contains same prefix
             if (!urlHasSamePrefix(tokenURLStr, m_authenticator))
@@ -81,7 +93,6 @@ namespace Client
                     CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getOneTimeToken",
                         "Fail to get one time token response, response body=%s",
                         picojson::value(respData).serialize().c_str());
-                    m_errMsg = "Failed to get the one time token from Okta authentication.";
                     return;
                 }
 

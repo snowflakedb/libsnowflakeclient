@@ -523,10 +523,7 @@ namespace Client
   void AuthenticatorOKTA::authenticate()
   {
       IAuthenticatorOKTA::authenticate();
-      if ((m_connection->error).error_code != SF_STATUS_SUCCESS) {
-          return;
-      }
-      else if (m_errMsg != "")
+      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && m_errMsg != "")
       {
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_errMsg.c_str(), SF_SQLSTATE_GENERAL_ERROR);
       }

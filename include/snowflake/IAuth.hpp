@@ -65,7 +65,7 @@ namespace IAuth
         virtual ~IDPAuthenticator()
         {};
 
-        void getIDPInfo();
+        bool getIDPInfo();
 
         virtual SFURL getServerURLSync();
         /*

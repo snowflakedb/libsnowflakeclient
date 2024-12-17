@@ -66,6 +66,8 @@ namespace Client
 
       void authenticate();
       void updateDataMap(jsonObject_t& dataMap);
+      
+      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
       bool curl_post_call(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
       bool curl_get_call(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
 
