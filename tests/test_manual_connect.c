@@ -196,42 +196,42 @@ void test_none(void** unused) {}
 
 int main(void)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
-  struct CMUnitTest tests[1] = {
-      cmocka_unit_test(test_none)
-  };
-  const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-  if (manual_test)
-  {
-    if (strcmp(manual_test, "test_oauth_connect") == 0) {
-      tests[0].name = "test_oauth_connect";
-      tests[0].test_func = test_oauth_connect;
-    }
-    else if (strcmp(manual_test, "test_mfa_connect_with_duo_push") == 0) {
-      tests[0].name = "test_mfa_connect_with_duo_push";
-      tests[0].test_func = test_mfa_connect_with_duo_push;
-    }
-    else if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") == 0) {
-      tests[0].name = "test_mfa_connect_with_duo_passcode";
-      tests[0].test_func = test_mfa_connect_with_duo_passcode;
-    }
-    else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
-      tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
-      tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
-    }
-    else  if (strcmp(manual_test, "test_okta_connect") == 0) {
-      tests[0].name = "test_okta_connect";
-      tests[0].test_func = test_okta_connect;
+    initialize_test(SF_BOOLEAN_FALSE);
+    struct CMUnitTest tests[1] = {
+        cmocka_unit_test(test_none)
+    };
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test)
+    {
+        if (strcmp(manual_test, "test_oauth_connect") == 0) {
+            tests[0].name = "test_oauth_connect";
+            tests[0].test_func = test_oauth_connect;
+        }
+        else if (strcmp(manual_test, "test_mfa_connect_with_duo_push") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_push";
+            tests[0].test_func = test_mfa_connect_with_duo_push;
+        }
+        else if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_passcode";
+            tests[0].test_func = test_mfa_connect_with_duo_passcode;
+        }
+        else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
+            tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
+        }
+        else  if (strcmp(manual_test, "test_okta_connect") == 0) {
+            tests[0].name = "test_okta_connect";
+            tests[0].test_func = test_okta_connect;
+        }
+        else {
+            printf("No matching test found for: %s\n", manual_test);
+        }
     }
     else {
-      printf("No matching test found for: %s\n", manual_test);
+        printf("No value in SNOWFLAKE_MANUAL_TEST_TYPE. Skip the test\n");
     }
-  }
-  else {
-    printf("No value in SNOWFLAKE_MANUAL_TEST_TYPE. Skip the test\n");
-  }
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
-  snowflake_global_term();
-  return ret;
+    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    snowflake_global_term();
+    return ret;
 }
 

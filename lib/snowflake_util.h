@@ -19,7 +19,7 @@ extern "C" {
 	/*
 	* Convert the picojson to cJSON
 	*/
-	void picoJsonTocJson(jsonObject_t &picojson, cJSON** cjson);
+	void picoJsonTocJson(jsonObject_t& picojson, cJSON** cjson);
 
 	/*
 	* Stringfy the picojson data.
@@ -39,5 +39,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
 #endif //SNOWFLAKE_UTIL_H

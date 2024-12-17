@@ -126,86 +126,85 @@ static uint32 uimax(uint32 a, uint32 b) {
 }
 
 
-cJSON* STDCALL create_auth_json_body(SF_CONNECT* sf,
-  const char* application,
-  const char* int_app_name,
-  const char* int_app_version,
-  const char* timezone,
-  sf_bool autocommit) {
-  cJSON* body;
-  cJSON* data;
-  cJSON* client_env;
-  cJSON* session_parameters;
-  char os_version[128];
+cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
+                                     const char *application,
+                                     const char *int_app_name,
+                                     const char *int_app_version,
+                                     const char *timezone,
+                                     sf_bool autocommit) {
+    cJSON *body;
+    cJSON *data;
+    cJSON *client_env;
+    cJSON *session_parameters;
+    char os_version[128];
 
-  //Create Client Environment JSON blob
-  client_env = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
-  snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
+    //Create Client Environment JSON blob
+    client_env = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
+    snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
 #ifdef MOCK_ENABLED
-  os_version[0] = '0';
-  os_version[1] = '\0';
+    os_version[0] = '0';
+    os_version[1] = '\0';
 #else
-  sf_os_version(os_version, sizeof(os_version));
+    sf_os_version(os_version, sizeof(os_version));
 #endif
-  snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
+    snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
 
-  session_parameters = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(
-    session_parameters,
-    "AUTOCOMMIT",
-    autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
-    : SF_BOOLEAN_INTERNAL_FALSE_STR);
+    session_parameters = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(
+        session_parameters,
+        "AUTOCOMMIT",
+        autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
+                                      : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
-  snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
+    snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
 
-  //Create Request Data JSON blob
-  data = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddStringToObject(data, CLIENT_APP_ID_KEY, int_app_name);
+    //Create Request Data JSON blob
+    data = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_ID_KEY, int_app_name);
 #ifdef MOCK_ENABLED
-  snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, "0.0.0");
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, "0.0.0");
 #else
-  snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, int_app_version);
+    snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, int_app_version);
 #endif
-  snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
-  snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
-  // Add password if one exists
-  if (sf->password && *(sf->password)) {
-    snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
+    snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
+    snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    // Add password if one exists
+    if (sf->password && *(sf->password)) {
+        snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
 
-    if (sf->passcode_in_password) {
-      snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
-      snowflake_cJSON_AddBoolToObject(data, "passcodeInPassword", SF_BOOLEAN_TRUE);
+        if (sf->passcode_in_password) {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
+            snowflake_cJSON_AddBoolToObject(data, "passcodeInPassword", SF_BOOLEAN_TRUE);
+        }
+        else if (sf->passcode && *(sf->passcode))
+        {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
+            snowflake_cJSON_AddStringToObject(data, "PASSCODE", sf->passcode);
+        }
+        else
+        {
+            snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
+        }
     }
-    else if (sf->passcode && *(sf->passcode))
+    snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
+    snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
+                                  session_parameters);
+
+    //Create body
+    body = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddItemToObject(body, "data", data);
+
+    // update authentication information to body
+    auth_update_json_body(sf, body);
+
+    if (AUTH_OAUTH == getAuthenticatorType(sf->authenticator))
     {
-      snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "passcode");
-      snowflake_cJSON_AddStringToObject(data, "PASSCODE", sf->passcode);
+        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
     }
-    else
-    {
-      snowflake_cJSON_AddStringToObject(data, "EXT_AUTHN_DUO_METHOD", "push");
-    }
-  }
 
-  snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
-  snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS",
-    session_parameters);
-
-  //Create body
-  body = snowflake_cJSON_CreateObject();
-  snowflake_cJSON_AddItemToObject(body, "data", data);
-
-  // update authentication information to body
-  auth_update_json_body(sf, body);
-
-  if (AUTH_OAUTH == getAuthenticatorType(sf->authenticator))
-  {
-    snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
-    snowflake_cJSON_AddStringToObject(data, "TOKEN", sf->oauth_token);
-  }
-
-  return body;
+    return body;
 }
 
 cJSON *STDCALL create_query_json_body(const char *sql_text, int64 sequence_id, const char *request_id, sf_bool is_describe_only) {
@@ -482,7 +481,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               int8 retry_max_count,
                               int64 retry_timeout,
                               int64* elapsed_time,
-                              int8* retried_count){
+                              int8* retried_count) {
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
@@ -498,7 +497,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
+                          renew_timeout, retry_max_count, elapsed_time, retried_count, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -530,7 +529,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                if (!curl_get_call(sf, curl, url, new_header, json, error, retry_max_count, renew_timeout, retry_timeout, elapsed_time, retried_count)) {
+                if (!curl_get_call(sf, curl, url, new_header, json, error)) {
                     // Error is set in curl call
                     break;
                 }
@@ -965,7 +964,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                                  elapsed_time, retried_count, is_renew,
                                  renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
-            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error, 
+            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error,
                 renew_timeout, retry_max_count, retry_timeout, elapsed_time, retried_count);
         } else {
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
