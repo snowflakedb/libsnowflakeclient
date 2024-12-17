@@ -267,13 +267,14 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
     SF_CON_MAX_VARIANT_SIZE,
+    SF_CON_DISABLE_SAML_URL_CHECK,
     SF_CON_OCSP_FAIL_OPEN,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_QUERY_RESULT_TYPE,
-    SF_CON_OAUTH_TOKEN
+    SF_CON_OAUTH_TOKEN,
 } SF_ATTRIBUTE;
 
 /**
@@ -402,6 +403,7 @@ typedef struct SF_CONNECT {
     uint64 max_binary_size;
     uint64 max_variant_size;
 
+    sf_bool disable_saml_url_check;
     //token for OAuth authentication
     char *oauth_token;
 } SF_CONNECT;
