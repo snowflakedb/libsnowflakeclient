@@ -3,7 +3,6 @@
 # Initialize varizbles
 
 set -o pipefail
-
 export PATH=/usr/local/bin:$PATH
 export TERM=vt100
 
@@ -35,64 +34,67 @@ if [[ -z "$GCC" || -z "$GXX" ]]; then
     elif (test -f "/usr/lib64/ccache/gcc52") && (test -f "/usr/lib64/ccache/g++52"); then
         GCC="/usr/lib64/ccache/gcc52"
         GXX="/usr/lib64/ccache/g++52"
-    elif which gcc-5 >& /dev/null; then
+    elif which g++-5 >& /dev/null; then
         GCC="$(which gcc-5)"
         GXX="$(which g++-5)"
-    elif which gcc5 >& /dev/null; then
+    elif which g++5 >& /dev/null; then
         GCC="$(which gcc5)"
         GXX="$(which g++5)"
-    elif which gcc-62 >& /dev/null; then
+    elif which g++-62 >& /dev/null; then
         GCC="$(which gcc-62)"
         GXX="$(which g++-62)"
-    elif which gcc62 >& /dev/null; then
+    elif which g++62 >& /dev/null; then
         GCC="$(which gcc62)"
         GXX="$(which g++62)"
-    elif which gcc-6 >& /dev/null; then
+    elif which g++-6 >& /dev/null; then
         GCC="$(which gcc-6)"
         GXX="$(which g++-6)"
-    elif which gcc6 >& /dev/null; then
+    elif which g++6 >& /dev/null; then
         GCC="$(which gcc6)"
         GXX="$(which g++6)"
-    elif which gcc-72 >& /dev/null; then
+    elif which g++-72 >& /dev/null; then
         GCC="$(which gcc-72)"
         GXX="$(which g++-72)"
-    elif which gcc72 >& /dev/null; then
+    elif which g++72 >& /dev/null; then
         GCC="$(which gcc72)"
         GXX="$(which g++72)"
-    elif which gcc-7 >& /dev/null; then
+    elif which g++-7 >& /dev/null; then
         GCC="$(which gcc-7)"
         GXX="$(which g++-7)"
-    elif which gcc7 >& /dev/null; then
+    elif which g++7 >& /dev/null; then
         GCC="$(which gcc7)"
         GXX="$(which g++7)"
-    elif which gcc-82 >& /dev/null; then
+    elif which g++-82 >& /dev/null; then
         GCC="$(which gcc-82)"
         GXX="$(which g++-82)"
-    elif which gcc82 >& /dev/null; then
+    elif which g++82 >& /dev/null; then
         GCC="$(which gcc82)"
         GXX="$(which g++82)"
-    elif which gcc-8 >& /dev/null; then
+    elif which g++-8 >& /dev/null; then
         GCC="$(which gcc-8)"
         GXX="$(which g++-8)"
-    elif which gcc8 >& /dev/null; then
+    elif which g++8 >& /dev/null; then
         GCC="$(which gcc8)"
         GXX="$(which g++8)"
-    elif which gcc-92 >& /dev/null; then
+    elif which g++-92 >& /dev/null; then
         GCC="$(which gcc-92)"
         GXX="$(which g++-92)"
-    elif which gcc92 >& /dev/null; then
+    elif which g++92 >& /dev/null; then
         GCC="$(which gcc92)"
         GXX="$(which g++92)"
-    elif which gcc-9 >& /dev/null; then
+    elif which g++-9 >& /dev/null; then
         GCC="$(which gcc-9)"
         GXX="$(which g++-9)"
-    elif which gcc9 >& /dev/null; then
+    elif which g++9 >& /dev/null; then
         GCC="$(which gcc9)"
         GXX="$(which g++9)"
-    else
+    elif which g++ >& /dev/null; then
         # Default to system
         GCC="$(which gcc)"
         GXX="$(which g++)"
+    else
+        echo "Error: gcc/g++ not found. Please install gcc/g++."
+        exit 1
     fi
 fi
 
@@ -164,3 +166,4 @@ fi
 
 export DEPENDENCY_DIR=$DIR/../deps-build/$PLATFORM/$target
 mkdir -p $DEPENDENCY_DIR
+

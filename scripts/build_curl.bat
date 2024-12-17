@@ -1,13 +1,6 @@
 ::
 :: Build Curl
 :: GitHub repo: https://github.com/curl/curl.git
-::
-:: Prerequisite:
-:: - VC 2015 or 2017
-:: Arguments:
-:: - x86 / x64
-:: - Debug / Release
-:: - vs14 / vs15
 
 @echo off
 set CURL_SRC_VERSION=8.10.1
@@ -34,7 +27,7 @@ set dynamic_runtime=%4
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set curdir=%cd%
+set currdir=%cd%
 
 if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
@@ -96,7 +89,7 @@ copy /v /y .\deps-build\%build_dir%\oob\include\*.h %curl_dep%\include
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === building curl
-cd "%curdir%"
+cd "%currdir%"
 set install_dir=.\deps\%CURL_DIR%\builds\libcurl-vc%vc_version%-%arch%-%buildtype%-static-ssl-static-zlib-static-ipv6-sspi
 rmdir /S /Q %install_dir%-obj
 rmdir /S /Q %install_dir%-obj-curl
@@ -116,7 +109,7 @@ nmake ^
     MACHINE=%arch%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-cd "%curdir%"
+cd "%currdir%"
 rd /s /q .\deps-build\%build_dir%\curl
 md .\deps-build\%build_dir%\curl\bin
 md .\deps-build\%build_dir%\curl\lib
@@ -142,9 +135,9 @@ call "%scriptdir%utils.bat" :zip_file curl %curl_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1
