@@ -268,7 +268,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
  *                        during the connection retry. Set renew timeout in such
  *                        case so http_perform will return when renew_timeout is
  *                        reached and the caller can renew the credentials and
- *                        then go back to the retry by calling curl_post_call() again.
+ *                        then go back to the retry by calling curl_get_call() again.
  *                        0 means no renew timeout needed.
  *                        For Okta Authentication, whenever the authentication failed, the connector
  *                        should update the onetime token. In this case, the renew timeout < 0, which means
@@ -276,7 +276,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
  * @param retry_max_count The max number of retry attempts. 0 means no limit.
  * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
  * @param elapsed_time    The in/out paramter to record the elapsed time before
- *                        curl_post_call() returned due to renew timeout last time
+ *                        curl_get_call() returned due to renew timeout last time
  * @param retried_count   The in/out paramter to record the number of retry attempts
  *                        has been done before http_perform() returned due to renew
  *                        timeout last time.

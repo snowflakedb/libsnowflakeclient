@@ -4,9 +4,10 @@
 namespace Snowflake
 {
 namespace Client
-{
-	// wrapper functions for C
-	extern "C" {
+	{
+		// wrapper functions for C
+	extern "C" 
+	{
 		void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson)
 		{
 			jsonValue_t v;
@@ -23,7 +24,7 @@ namespace Client
 			snowflake_cJSON_AddItemToObject(*cjson, "data", new_body);
 		}
 
-		void strToPicoJson(jsonObject_t& picojson, std::string& str) 
+		void strToPicoJson(jsonObject_t& picojson, std::string& str)
 		{
 			jsonValue_t v;
 			picojson::parse(v, str);
