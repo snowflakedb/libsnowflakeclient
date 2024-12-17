@@ -497,7 +497,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time, retried_count, SF_BOOLEAN_FALSE,
+                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -529,7 +529,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                if (!curl_get_call(sf, curl, url, new_header, json, error)) {
+                if (!curl_get_call(sf, curl, url, new_header, json, error, renew_timeout, retry_max_count, retry_timeout,elapsed_time, retried_count)) {
                     // Error is set in curl call
                     break;
                 }
