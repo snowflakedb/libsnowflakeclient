@@ -464,3 +464,5 @@ add_subdirectory(examples)
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+add_subdirectory(pet_http)
