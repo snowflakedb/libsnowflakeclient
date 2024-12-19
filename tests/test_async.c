@@ -30,11 +30,9 @@ void test_select() {
     int64 out = 0;
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-    int counter = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
       snowflake_column_as_int64(sfstmt, 1, &out);
       assert_int_equal(out, 1);
-      ++counter;
     }
     if (status != SF_STATUS_EOF) {
       dump_error(&(sfstmt->error));
@@ -91,6 +89,7 @@ void test_query_status() {
   assert_int_equal(status, SF_STATUS_EOF);
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+  SF_FREE(out);
 }
 
 /**
@@ -130,6 +129,7 @@ void test_premature_fetch() {
   assert_int_equal(status, SF_STATUS_EOF);
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+  SF_FREE(out);
 }
 
 /**
@@ -168,6 +168,7 @@ void test_new_connection() {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   SF_STMT* async_sfstmt = snowflake_create_async_query_result(sf, sfqid);
+  SF_FREE(sfqid);
 
   /* get results */
   int64 out = 0;
