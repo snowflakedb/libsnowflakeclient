@@ -375,6 +375,8 @@ namespace Client
       m_retriedCount = 0;
       m_retryTimeout = get_retry_timeout(m_connection);
 
+
+      //Todo: Need the server change. Currently testing with ODBC info.
       //m_appID = m_connection->application_name;
       //m_appVersion = m_connection->application_version;
       m_appID = "ODBC";
@@ -387,7 +389,7 @@ namespace Client
   }
 
 
-  bool AuthenticatorOKTA::curl_post_call(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+  bool AuthenticatorOKTA::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
   {
       bool ret = true;
       std::string destination = url.toString();
@@ -416,7 +418,7 @@ namespace Client
 
       if (ret)
       {
-          if (!::curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
+          if (!curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
               &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
@@ -448,7 +450,7 @@ namespace Client
       return ret;
   }
 
-  bool AuthenticatorOKTA::curl_get_call(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
+  bool AuthenticatorOKTA::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
   {
       isRetry = false;
       bool ret = true;

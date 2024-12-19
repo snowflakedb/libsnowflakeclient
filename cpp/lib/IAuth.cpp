@@ -39,7 +39,7 @@ namespace Client
             jsonObject_t authnData, respData;
             authnData["data"] = value(dataMap);
 
-            if (curl_post_call(connectURL, authnData, respData))
+            if (curlPostCall(connectURL, authnData, respData))
             {
                 jsonObject_t& data = respData["data"].get<jsonObject_t>();
                 tokenURLStr = data["tokenUrl"].get<std::string>();
@@ -89,7 +89,7 @@ namespace Client
                 dataMap["username"] = picojson::value(m_user);
                 dataMap["password"] = picojson::value(m_password);
 
-                if (!curl_post_call(tokenURL, dataMap, respData))
+                if (!curlPostCall(tokenURL, dataMap, respData))
                 {
                     CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getOneTimeToken",
                         "Fail to get one time token response, response body=%s",
@@ -106,7 +106,7 @@ namespace Client
                 bool isRetry = false;
                 SFURL sso_url = SFURL::parse(ssoURLStr);
                 sso_url.addQueryParam("onetimetoken", oneTimeToken);
-                if (!curl_get_call(sso_url, resp, false, m_samlResponse, isRetry))
+                if (!curlGetCall(sso_url, resp, false, m_samlResponse, isRetry))
                 {
                     if (isRetry)
                     {

@@ -8,7 +8,6 @@
 #include <string>
 #include <snowflake/SFURL.hpp>
 #include "../../lib/snowflake_util.h"
-#include "./Exceptions.hpp"
 
 #define AUTH_THROW(msg)      \
 {                            \
@@ -71,8 +70,8 @@ namespace IAuth
         /*
          * Get IdpInfo for OKTA and SAML 2.0 application
          */
-        virtual bool curl_post_call(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
-        virtual bool curl_get_call(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
+        virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
+        virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
 
         std::string m_errMsg = "";
     
