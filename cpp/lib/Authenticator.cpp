@@ -469,7 +469,7 @@ namespace Client
 
       NON_JSON_RESP* raw_resp = (NON_JSON_RESP*)SF_MALLOC(sizeof(NON_JSON_RESP));
       raw_resp->write_callback = non_json_resp_write_callback;
-      RAW_JSON_BUFFER buf = { NULL,0 };
+      RAW_CHAR_BUFFER buf = { NULL,0 };
       raw_resp->buffer = (void*)&buf;
 
       // add headers for account and authentication
@@ -486,8 +486,8 @@ namespace Client
 
       if (ret)
       {
-          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp,
-              curlTimeout, SF_BOOLEAN_FALSE, err,
+          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL, 
+              raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
               m_connection->insecure_mode, m_connection->ocsp_fail_open,
               m_connection->retry_on_curle_couldnt_connect_count,
               renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,

@@ -16,8 +16,6 @@ set dynamic_runtime=%4
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set currdir=%cd%
-
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
