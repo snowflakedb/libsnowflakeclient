@@ -124,7 +124,7 @@ void test_mask_secret_log(void **unused) {
         fseek(fp, 0, SEEK_SET);
         log_trace("%s", logtext[i][0]);
         fseek(fp, 0, SEEK_SET);
-        getline(&line, &len, fp);
+        len = getline(&line, &len, fp);
         if (i != 0)
         {
             assert_null(strstr(line, logtext[i][0]));

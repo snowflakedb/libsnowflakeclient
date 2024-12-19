@@ -60,6 +60,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-mmacosx-version-min=10.14 -arch $ARCH  -Xarch_$ARCH"
         make LIB=libtelemetry.a
     fi
+    export AR=
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1

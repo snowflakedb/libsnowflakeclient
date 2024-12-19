@@ -31,7 +31,7 @@ set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
-set curdir=%cd%
+set currdir=%cd%
 set dependencydir=%scriptdir%..\deps-build\
 cd %dependencydir%
 
@@ -55,7 +55,7 @@ if defined GITHUB_ACTIONS (
     del %dependencydir%\*.gz
 )
 
-cd "%curdir%"
+cd "%currdir%"
 
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps boost"
@@ -64,9 +64,9 @@ if %ERRORLEVEL% NEQ 0 goto :error
 goto :success
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

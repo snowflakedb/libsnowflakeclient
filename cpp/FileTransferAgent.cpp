@@ -265,7 +265,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
       }
       else if( outcome == RemoteStorageRequestOutcome::FAILED)
       {
-        m_failedTransfers.append(m_largeFilesMeta[i].srcFileName) + ", ";
+        m_failedTransfers += m_largeFilesMeta[i].srcFileName + ", ";
         //Fast fail, return when the first file fails to upload.
         if (isPutFastFailEnabled())
         {
@@ -351,7 +351,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         {
           if (outcome == RemoteStorageRequestOutcome::FAILED) {
             CXX_LOG_DEBUG("Sequential upload %s FAILED.", metadata->srcFileName.c_str());
-            m_failedTransfers.append(metadata->srcFileName) + ", ";
+            m_failedTransfers += metadata->srcFileName + ", ";
             //Fast fail, return when the first file fails to upload.
             if(isPutFastFailEnabled())
             {
@@ -405,7 +405,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             //Cannot throw and catch error from a thread.
             CXX_LOG_DEBUG("Parallel upload %s FAILED", metadata->srcFileName.c_str());
             _mutex_lock(&m_parallelFailedMsgMutex);
-            m_failedTransfers.append(metadata->srcFileName) + ", ";
+            m_failedTransfers += metadata->srcFileName + ", ";
             _mutex_unlock(&m_parallelFailedMsgMutex);
           }
           else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
@@ -682,7 +682,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
       {
         CXX_LOG_DEBUG("Putget serial large file download, %s file download FAILED.",
                       m_largeFilesMeta[i].srcFileName.c_str());
-        m_failedTransfers.append(m_largeFilesMeta[i].srcFileName) + ", ";
+        m_failedTransfers += m_largeFilesMeta[i].srcFileName + ", ";
         //Fast fail, return when the first file fails to download.
         if (isGetFastFailEnabled())
         {
@@ -748,7 +748,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
         else if (outcome == RemoteStorageRequestOutcome::FAILED)
         {
           CXX_LOG_DEBUG("Sequential download %s FAILED.", metadata->srcFileName.c_str());
-          m_failedTransfers.append(metadata->srcFileName) + ", ";
+          m_failedTransfers += metadata->srcFileName + ", ";
           //Fast fail, return when the first file fails to download.
           if (isGetFastFailEnabled())
           {
@@ -796,7 +796,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
             {
               CXX_LOG_DEBUG("Parallel download %s FAILED.", metadata->srcFileName.c_str());
               _mutex_lock(&m_parallelFailedMsgMutex);
-              m_failedTransfers.append(metadata->srcFileName) + ", ";
+              m_failedTransfers += metadata->srcFileName + ", ";
               _mutex_unlock(&m_parallelFailedMsgMutex);
             }
             else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
@@ -810,7 +810,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
               RemoteStorageRequestOutcome::FAILED, resultIndex);
             CXX_LOG_DEBUG("Parallel download %s FAILED.", metadata->srcFileName.c_str());
             _mutex_lock(&m_parallelFailedMsgMutex);
-            m_failedTransfers.append(metadata->srcFileName) + ", ";
+            m_failedTransfers += metadata->srcFileName + ", ";
             _mutex_unlock(&m_parallelFailedMsgMutex);
           }
 
