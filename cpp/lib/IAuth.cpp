@@ -3,7 +3,6 @@
  */
 
 #include <string>
-#include "snowflake/Exceptions.hpp"
 #include "cJSON.h"
 #include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
