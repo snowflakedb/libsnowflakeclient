@@ -394,16 +394,20 @@ void test_array_binding_supported_false(void** unused) {
         dump_error(&(stmt->error));
       }
       assert_int_equal(status, SF_STATUS_SUCCESS);
-      const char* result = NULL;
+      char* result = NULL;
+      size_t value_len = 0;
+      size_t max_value_size = 0;
 
-      snowflake_column_as_const_str(stmt, 1, &result);
+      snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
       assert_string_equal(result, bind_data_a[i]);
-      snowflake_column_as_const_str(stmt, 2, &result);
+      snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
       assert_string_equal(result, bind_data_b[i]);
-      snowflake_column_as_const_str(stmt, 3, &result);
+      snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
       assert_string_equal(result, bind_data_c[i]);
-      snowflake_column_as_const_str(stmt, 4, &result);
+      snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
       assert_string_equal(result, bind_data_d[i]);
+
+      free(result);
     }
 
     snowflake_stmt_term(stmt);

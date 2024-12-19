@@ -1990,7 +1990,6 @@ cJSON* STDCALL _snowflake_get_binding_json(SF_STMT* sfstmt, int64 index)
     const char* type;
     char name_buf[SF_PARAM_NAME_BUF_LEN];
     char* name = NULL;
-    char* value = NULL;
     cJSON* bindings = NULL;
 
     if (_snowflake_get_current_param_style(sfstmt) == INVALID_PARAM_TYPE)
@@ -2602,10 +2601,9 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESUL
 
 static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                                                   sf_bool is_put_get_command,
-                                                  sf_bool is_native_put_get,
                                                   SF_QUERY_RESULT_CAPTURE* result_capture,
                                                   sf_bool is_describe_only,
-                                                  cJSON* bind_stage,
+                                                  char* bind_stage,
                                                   cJSON* bindings)
 {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -2887,7 +2885,6 @@ static SF_STATUS _batch_dml_execute(SF_STMT* sfstmt,
         bindings = _snowflake_get_binding_json(sfstmt, i);
         ret = _snowflake_execute_with_binds_ex(sfstmt,
                                                SF_BOOLEAN_FALSE,
-                                               SF_BOOLEAN_FALSE,
                                                result_capture,
                                                SF_BOOLEAN_FALSE,
                                                NULL,
@@ -2943,7 +2940,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         {
             ret = _snowflake_execute_with_binds_ex(sfstmt,
                                                    is_put_get_command,
-                                                   is_native_put_get,
                                                    result_capture,
                                                    SF_BOOLEAN_TRUE,
                                                    NULL, NULL);
@@ -2976,7 +2972,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
 
     return _snowflake_execute_with_binds_ex(sfstmt,
                                             is_put_get_command,
-                                            is_native_put_get,
                                             result_capture,
                                             is_describe_only,
                                             bind_stage,
