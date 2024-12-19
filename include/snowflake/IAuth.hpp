@@ -9,11 +9,6 @@
 #include <snowflake/SFURL.hpp>
 #include "../../lib/snowflake_util.h"
 
-#define AUTH_THROW(msg)      \
-{                            \
-  throw AuthException(msg);  \
-}
-
 namespace Snowflake
 {
 namespace Client
