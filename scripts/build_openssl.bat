@@ -1,13 +1,6 @@
 ::
 :: Build OpenSSL
 :: GitHub repo: https://github.com/openssl/openssl.git
-::
-:: Prerequisite:
-:: - VC 2015 or 2017
-:: Arguments:
-:: - x86 / x64
-:: - Debug / Release
-:: - vs14 / vs15
 
 @echo off
 set OPENSSL_SRC_VERSION=3.0.15
@@ -41,7 +34,7 @@ set "path=%scriptdir%..\ci\tools;%path%"
 
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set curdir=%cd%
+set currdir=%cd%
 
 if /I "%platform%"=="x64" (
     set openssl_target=VC-WIN64A
@@ -65,7 +58,7 @@ set ssl_target_name=libssl_a.lib
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
-echo === building openssl: %curdir%\..\deps\%OPENSSL_DIR%
+echo === building openssl: %currdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
 echo === %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256 /Qspectre /sdl
 %PERL_EXE% Configure %openssl_debug_option% %openssl_target% no-shared enable-fips /ZH:SHA_256 /Qspectre /sdl
@@ -81,13 +74,13 @@ if %ERRORLEVEL% NEQ 0 goto :error
 REM no doc build
 nmake install_sw install_ssldirs DESTDIR=.\_install
 if %ERRORLEVEL% NEQ 0 goto :error
-cd "%curdir%"
+cd "%currdir%"
 
 echo === staging openssl artifacts
-rd /S /Q %curdir%\deps-build\%build_dir%\openssl
-md "%curdir%\deps-build\%build_dir%\openssl\bin"
-md "%curdir%\deps-build\%build_dir%\openssl\include\openssl"
-md "%curdir%\deps-build\%build_dir%\openssl\lib"
+rd /S /Q %currdir%\deps-build\%build_dir%\openssl
+md "%currdir%\deps-build\%build_dir%\openssl\bin"
+md "%currdir%\deps-build\%build_dir%\openssl\include\openssl"
+md "%currdir%\deps-build\%build_dir%\openssl\lib"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
@@ -129,9 +122,9 @@ call "%scriptdir%utils.bat" :zip_file openssl %openssl_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

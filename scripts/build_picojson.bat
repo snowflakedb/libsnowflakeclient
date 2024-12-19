@@ -16,6 +16,8 @@ set dynamic_runtime=%4
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
+set currdir=%cd%
+
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
@@ -30,7 +32,7 @@ md %PICOJSON_INSTALL_DIR%
 md %PICOJSON_INSTALL_DIR%\include
 copy %PICOJSON_SOURCE_DIR%\picojson.h %PICOJSON_INSTALL_DIR%\include
 
-cd "%curdir%"
+cd "%currdir%"
 
 echo === archiving the library
 call "%scriptdir%utils.bat" :zip_file picojson %picojson_version%
@@ -42,5 +44,5 @@ goto :success
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1
