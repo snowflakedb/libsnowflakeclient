@@ -361,7 +361,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             return status;
         }
 
-        if ((floatData > SF_INT64_MAX) || (floatData < SF_INT64_MIN))
+        if (floatData > static_cast<float64>(SF_INT64_MAX) || floatData < static_cast<float64>(SF_INT64_MIN))
         {
             m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
                 "Value out of range for int64.");
@@ -408,7 +408,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         case arrow::Type::type::DOUBLE:
         {
             double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
-            if ((dblData > SF_INT64_MAX) || (dblData < SF_INT64_MIN))
+            if (dblData > static_cast<float64>(SF_INT64_MAX) || dblData < static_cast<float64>(SF_INT64_MIN))
             {
                 m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
                     "Value out of range for int64.");
@@ -542,7 +542,7 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
     case arrow::Type::type::DOUBLE:
     {
         double dblData = m_columns[colIdx].arrowDouble->Value(m_currRowIndexInBatch);
-        if ((dblData > SF_UINT64_MAX) || (dblData < SF_INT64_MIN))
+        if (dblData > static_cast<double>(SF_UINT64_MAX) || dblData < static_cast<double>(SF_INT64_MIN))
         {
             m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
                 "Value out of range for uint64.");
