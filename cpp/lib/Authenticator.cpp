@@ -409,7 +409,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf", "IDPAuthenticator",
+          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
               "post_curl_call",
               "Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -422,10 +422,10 @@ namespace Client
               &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
-              CXX_LOG_INFO("sf", "IDPAuthenticator", "post_curl_call",
+              CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
                   "Fail to get authenticator info, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-              m_errMsg = "SFConnectionFailed";
+              m_errMsg = "SFConnectionFailed:curlPostCall";
               ret = false;
           }
           else

@@ -55,6 +55,7 @@ SET(TESTS_C
 
 SET(TESTS_CXX
         test_unit_jwt
+		test_unit_okta
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_encryption

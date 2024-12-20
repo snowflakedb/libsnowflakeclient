@@ -75,7 +75,7 @@ namespace Client
                     "The specified authenticator is not supported, "
                     "authenticator=%s, token url=%s, sso url=%s",
                     m_authenticator.c_str(), tokenURLStr.c_str(), ssoURLStr.c_str());
-                m_errMsg = "OktaConnectionFailed: failed to create the header";
+                m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
                 return;
             }
 
