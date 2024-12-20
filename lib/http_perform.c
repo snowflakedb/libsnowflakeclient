@@ -547,7 +547,6 @@ sf_bool STDCALL http_perform(CURL *curl,
         snowflake_cJSON_Delete(*json);
         *json = NULL;
         *json = snowflake_cJSON_Parse(buffer.buffer);
-        
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
             if (is_one_time_token_request(*json)) {

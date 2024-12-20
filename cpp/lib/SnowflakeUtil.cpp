@@ -51,5 +51,5 @@ namespace Client
 				parsed_url1.port() == parsed_url2.port();
 		}
 	}
-}
-}
+} // namespace Client
+} // namespace Snowflake

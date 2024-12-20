@@ -112,8 +112,8 @@ namespace IAuth
         std::string oneTimeToken;
         std::string m_samlResponse;
     };
-} // namespace Auth
+} // namespace IAuth
 } // namespace Client
 } // namespace Snowflake
 
-#endif //SNOWFLAKECLIENT_IIDP_AUTH_HPP
+#endif //SNOWFLAKECLIENT_IAUTH_HPP

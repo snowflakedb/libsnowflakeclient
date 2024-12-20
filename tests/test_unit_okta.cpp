@@ -6,31 +6,19 @@
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
 #include "../lib/Authenticator.h"
-#include "../include/snowflake/IAuth.hpp"
+//#include "../include/snowflake/IAuth.hpp"
+#include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 
 using namespace Snowflake::Client;
 
-class MockOkta : public IAuth::IAuthenticatorOKTA {
+class MockOkta : public AuthenticatorOKTA {
 
 public:
     MockOkta(
-        SF_CONNECT* connection) : m_connection(connection)
-    {
-        m_account = m_connection->account;
-        m_authenticator = m_connection->authenticator;
-        m_user = m_connection->user;
-        m_password = m_connection->password;
-        m_port = m_connection->port;
-        m_host = m_connection->host;
-        m_protocol = m_connection->protocol;
-        m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
-        m_retriedCount = 0;
-        m_retryTimeout = get_retry_timeout(m_connection);
-        m_appID = m_connection->application_name;
-        m_appVersion = m_connection->application_version;
-    }
+        SF_CONNECT* connection) : AuthenticatorOKTA(connection), m_connection(connection)
+    {};
 
     ~MockOkta() {};
     bool curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp);
@@ -76,16 +64,16 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
 }
 
 std::string MockOkta::getTokenURL() {
-    return IDPAuthenticator::tokenURLStr;
+    return tokenURLStr;
 }
 
 std::string MockOkta::getSSOURL() {
-    return IDPAuthenticator::ssoURLStr;
+    return ssoURLStr;
 }
 
 
 std::string MockOkta::getErrorMessage() {
-    return IDPAuthenticator::m_errMsg;
+    return m_errMsg;
 }
 
 void test_idp_authenticator(void**)
