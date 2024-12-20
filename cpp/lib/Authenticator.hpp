@@ -65,10 +65,12 @@ namespace Client
       ~AuthenticatorOKTA();
 
       void authenticate();
+
       void updateDataMap(jsonObject_t& dataMap);
       
       // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
       bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+
       bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
 
   private:

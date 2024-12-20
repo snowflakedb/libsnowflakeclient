@@ -423,9 +423,9 @@ namespace Client
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
               CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
-                  "Fail to get authenticator info, response body=%s\n",
+                  "post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-              m_errMsg = "SFConnectionFailed:curlPostCall";
+              m_errMsg = "SFConnectionFailed: Fail to get one time toke";
               ret = false;
           }
           else

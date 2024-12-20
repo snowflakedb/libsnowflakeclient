@@ -6,7 +6,6 @@
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
 #include "../lib/Authenticator.h"
-//#include "../include/snowflake/IAuth.hpp"
 #include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -16,8 +15,7 @@ using namespace Snowflake::Client;
 class MockOkta : public AuthenticatorOKTA {
 
 public:
-    MockOkta(
-        SF_CONNECT* connection) : AuthenticatorOKTA(connection), m_connection(connection)
+    MockOkta(SF_CONNECT* connection) : AuthenticatorOKTA(connection), m_connection(connection)
     {};
 
     ~MockOkta() {};
@@ -31,7 +29,6 @@ public:
     bool isCurrentCallFailed = false;
     bool isPostCallFailed = false;
     bool isCurlGetRequestFailed = false;
-
 };
 
 bool MockOkta::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry) 
@@ -54,6 +51,8 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
         m_errMsg = "SFConnectionFailed:curlPostCall";
     }
 
+    //The curPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
+    //This code is to test the get onetime token failure
     if (isCurrentCallFailed) {
         return false;
     }
@@ -70,7 +69,6 @@ std::string MockOkta::getTokenURL() {
 std::string MockOkta::getSSOURL() {
     return ssoURLStr;
 }
-
 
 std::string MockOkta::getErrorMessage() {
     return m_errMsg;
@@ -103,7 +101,6 @@ void test_okta_getAuthetnicate(void**)
 {
     assert_int_equal(getAuthenticatorType("hello"), AUTH_OKTA);
     assert_int_equal(getAuthenticatorType("www.okta.com"), AUTH_OKTA);
-
 }
 
 void test_okta_authenticator_succeed(void**)
@@ -162,20 +159,14 @@ void test_okta_authenticator_fail(void**)
     snowflake_term(sf);
 }
 
-
-static int gr_setup(void **unused)
-{
-  initialize_test(SF_BOOLEAN_FALSE);
-  return 0;
-}
-
 int main(void) {
+  initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_idp_authenticator),
     cmocka_unit_test(test_okta_getAuthetnicate),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
   };
-  int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
+  int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
 }

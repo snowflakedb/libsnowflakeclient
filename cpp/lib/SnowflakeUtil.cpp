@@ -5,7 +5,7 @@ namespace Snowflake
 {
 namespace Client
 	{
-		// wrapper functions for C
+	// wrapper functions for C
 	extern "C" 
 	{
 		void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson)
