@@ -30,14 +30,14 @@ extern "C" {
     * name(sf_client_config.json) under user home directory 5. Searches for default config file
     * name(sf_client_config.json) under tmp directory
     * 
-    * @param in_configFilePath       The config file path passed in by the user.
-    * @param out_clientConfig        The client_config object to be filled.
+    * @param configFilePath          The config file path passed in by the user.
+    * @param clientConfig            The client_config object to be filled.
     * 
     * @return true if successful
     */
   sf_bool load_client_config(
-    const char* in_configFilePath,
-    client_config* out_clientConfig);
+    const char* configFilePath,
+    client_config* clientConfig);
 
   /**
     * Free client config memory

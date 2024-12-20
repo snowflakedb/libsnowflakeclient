@@ -34,25 +34,25 @@ namespace Client
        * name(sf_client_config.json) under user home directory 5. Searches for default config file
        * name(sf_client_config.json) under tmp directory
        *
-       * @param in_configFilePath       The config file path passed in by the user.
-       * @param out_clientConfig        The SFClientConfig object to be filled.
+       * @param configFilePath          The config file path passed in by the user.
+       * @param clientConfig            The SFClientConfig object to be filled.
        * 
        * @return whether the client config was loaded properly
        */
       sf_bool loadClientConfig(
-        const std::string& in_configFilePath,
-        client_config& out_clientConfig);
+        const std::string& configFilePath,
+        client_config& clientConfig);
 
     // Private =================================================================
     private:
       /**
        * @brief Resolve the client config path.
        *
-       * @param in_configFilePath        The config file path passed in by the user.
+       * @param configFilePath           The config file path passed in by the user.
        * 
        * @return The client config path
        */
-      std::string resolveClientConfigPath(const std::string& in_configFilePath);
+      std::string resolveClientConfigPath(const std::string& configFilePath);
 
       /**
        * @brief Resolve home directory config path.
@@ -64,30 +64,30 @@ namespace Client
       /**
        * @brief Parse JSON string.
        *
-       * @param in_filePath             The filePath of the config file to parse.
-       * @param out_clientConfig        The SFClientConfig object to be filled.
+       * @param filePath                The filePath of the config file to parse.
+       * @param clientConfig            The SFClientConfig object to be filled.
        * 
        * @return whether parsing the client config file was successful.
        */
       sf_bool parseConfigFile(
-        const std::string& in_filePath,
-        client_config& out_clientConfig);
+        const std::string& filePath,
+        client_config& clientConfig);
 
       /**
        * @ brief Check if other have permission to modify file
        *
-       * @param in_filePath             The file path of the config file to check permissions.
+       * @param filePath                The file path of the config file to check permissions.
        * 
        * @return whether the file has valid permissions
        */
-      sf_bool checkIfValidPermissions(const std::string& in_filePath);
+      sf_bool checkIfValidPermissions(const std::string& filePath);
 
       /**
        * @ brief Check if there are unknown entries in config file
        *
-       * @param in_jsonString           The json object to check in json config file.
+       * @param jsonString             The json object to check in json config file.
        */
-      void checkUnknownEntries(picojson::value& in_config);
+      void checkUnknownEntries(picojson::value& config);
 
       /**
        * @ brief Get the path to the binary file

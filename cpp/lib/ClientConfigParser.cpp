@@ -32,14 +32,14 @@ namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 sf_bool load_client_config(
-  const char* in_configFilePath,
-  client_config* out_clientConfig)
+  const char* configFilePath,
+  client_config* clientConfig)
 {
 // Disable easy logging for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   EasyLoggingConfigParser configParser;
-  return configParser.loadClientConfig(in_configFilePath, *out_clientConfig);
+  return configParser.loadClientConfig(configFilePath, *clientConfig);
 #else
   return true;
 #endif
@@ -73,29 +73,29 @@ EasyLoggingConfigParser::~EasyLoggingConfigParser()
 
 ////////////////////////////////////////////////////////////////////////////////
 sf_bool EasyLoggingConfigParser::loadClientConfig(
-  const std::string& in_configFilePath,
-  client_config& out_clientConfig)
+  const std::string& configFilePath,
+  client_config& clientConfig)
 {
-  std::string derivedConfigPath = resolveClientConfigPath(in_configFilePath);
+  std::string derivedConfigPath = resolveClientConfigPath(configFilePath);
 
   if (!derivedConfigPath.empty())
   {
-    return parseConfigFile(derivedConfigPath, out_clientConfig);
+    return parseConfigFile(derivedConfigPath, clientConfig);
   }
   return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 std::string EasyLoggingConfigParser::resolveClientConfigPath(
-  const std::string& in_configFilePath)
+  const std::string& configFilePath)
 {
   char envbuf[MAX_PATH + 1];
 
   // 1. Try config file if it was passed in
-  if (!in_configFilePath.empty())
+  if (!configFilePath.empty())
   {
-    CXX_LOG_INFO("Using client configuration path from a connection string: %s", in_configFilePath.c_str());
-    return in_configFilePath;
+    CXX_LOG_INFO("Using client configuration path from a connection string: %s", configFilePath.c_str());
+    return configFilePath;
   }
 
   // 2. Try environment variable SF_CLIENT_CONFIG_ENV_NAME
@@ -161,21 +161,21 @@ std::string EasyLoggingConfigParser::resolveHomeDirConfigPath()
 
 ////////////////////////////////////////////////////////////////////////////////
 sf_bool EasyLoggingConfigParser::parseConfigFile(
-  const std::string& in_filePath,
-  client_config& out_clientConfig)
+  const std::string& filePath,
+  client_config& clientConfig)
 {
   value jsonConfig;
   std::string err;
   std::ifstream configFile;
-  configFile.open(in_filePath, std::fstream::in | std::ios::binary);
+  configFile.open(filePath, std::fstream::in | std::ios::binary);
   if (!configFile)
   {
     CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
-      in_filePath.c_str());
+      filePath.c_str());
     return false;
   }
 #if !defined(WIN32) && !defined(_WIN64)
-  if (!checkIfValidPermissions(in_filePath))
+  if (!checkIfValidPermissions(filePath))
   {
     return false;
   }
@@ -184,7 +184,7 @@ sf_bool EasyLoggingConfigParser::parseConfigFile(
 
   if (!err.empty())
   {
-    CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", in_filePath.c_str(), err.c_str());
+    CXX_LOG_ERROR("Error in parsing JSON: %s, err: %s", filePath.c_str(), err.c_str());
     return false;
   }
 
@@ -198,44 +198,44 @@ sf_bool EasyLoggingConfigParser::parseConfigFile(
       {
         const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
         size_t logLevelSize = strlen(logLevel) + 1;
-        out_clientConfig.logLevel = (char*)SF_CALLOC(1, logLevelSize);
-        sf_strcpy(out_clientConfig.logLevel, logLevelSize, logLevel);
+        clientConfig.logLevel = (char*)SF_CALLOC(1, logLevelSize);
+        sf_strcpy(clientConfig.logLevel, logLevelSize, logLevel);
       }
       if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
       {
         const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
         size_t logPathSize = strlen(logPath) + 1;
-        out_clientConfig.logPath = (char*)SF_CALLOC(1, logPathSize);
-        sf_strcpy(out_clientConfig.logPath, logPathSize, logPath);
+        clientConfig.logPath = (char*)SF_CALLOC(1, logPathSize);
+        sf_strcpy(clientConfig.logPath, logPathSize, logPath);
       }
       return true;
     }
   }
-  CXX_LOG_ERROR("Malformed client config file: %s", in_filePath.c_str());
+  CXX_LOG_ERROR("Malformed client config file: %s", filePath.c_str());
   return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-sf_bool EasyLoggingConfigParser::checkIfValidPermissions(const std::string& in_filePath)
+sf_bool EasyLoggingConfigParser::checkIfValidPermissions(const std::string& filePath)
 {
-  boost::filesystem::file_status fileStatus = boost::filesystem::status(in_filePath);
+  boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
   boost::filesystem::perms permissions = fileStatus.permissions();
   if (permissions & boost::filesystem::group_write ||
       permissions & boost::filesystem::others_write)
   {
     CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
-      in_filePath.c_str());
+      filePath.c_str());
     return false;
   }
   return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void EasyLoggingConfigParser::checkUnknownEntries(value& in_config)
+void EasyLoggingConfigParser::checkUnknownEntries(value& config)
 {
-  if (in_config.is<object>())
+  if (config.is<object>())
   {
-    const value::object& configObj = in_config.get<object>();
+    const value::object& configObj = config.get<object>();
     for (value::object::const_iterator i = configObj.begin(); i != configObj.end(); ++i)
     {
       std::string key = i->first;
