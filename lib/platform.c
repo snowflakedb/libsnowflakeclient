@@ -236,7 +236,7 @@ struct tm* sfchrono_localtime(const time_t *timep, struct tm *tm)
 }
 #endif
 
-void STDCALL sf_sleep_ms(int sleep_ms)
+void sf_sleep_ms(int sleep_ms)
 {
 #ifdef _WIN32
   Sleep(sleep_ms);

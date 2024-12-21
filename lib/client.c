@@ -57,19 +57,20 @@ _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
                              cJSON *session_info, sf_bool do_validate);
 
 static const char* query_status_names[] = {
-    "RUNNING",
-    "ABORTING",
-    "SUCCESS",
-    "FAILED_WITH_ERROR",
     "ABORTED",
-    "QUEUED",
-    "FAILED_WITH_INCIDENT",
+    "ABORTING",
+    "BLOCKED",
     "DISCONNECTED",
-    "RESUMING_WAREHOUSE",
+    "FAILED_WITH_ERROR",
+    "FAILED_WITH_INCIDENT",
+    "NO_DATA",
+    "RUNNING",
+    "QUEUED",
     "QUEUED_REPAIRING_WAREHOUSE",
     "RESTARTED",
-    "BLOCKED",
-    "NO_DATA"
+    "RESUMING_WAREHOUSE",
+    "SUCCESS",
+    "UNKNOWN"
 };
 
 /**
@@ -84,10 +85,10 @@ sf_bool validate_application(const char *application);
  */
 SF_QUERY_STATUS get_status_from_string(const char *query_status) {
   if (query_status == NULL) {
-    return SF_QUERY_STATUS_NO_DATA;
+    return SF_QUERY_STATUS_UNKNOWN;
   }
   int idx = 0, last = 0;
-  for (idx = 0, last = (int)SF_QUERY_STATUS_NO_DATA; idx <= last; ++idx) {
+  for (idx = 0, last = (int)SF_QUERY_STATUS_UNKNOWN; idx <= last; ++idx) {
     size_t len = strlen(query_status_names[idx]);
     if (sf_strncasecmp(query_status_names[idx], query_status, len) == 0) {
       return (SF_QUERY_STATUS)idx;
@@ -108,7 +109,7 @@ char *get_query_metadata(SF_STMT* sfstmt) {
   cJSON *data = NULL;
   cJSON *queries = NULL;
   char *s_resp = NULL;
-  size_t url_size = strlen(QUERY_MONITOR_URL) -2 + strlen(sfstmt->sfqid) + 1;
+  size_t url_size = strlen(QUERY_MONITOR_URL) - 2 + strlen(sfstmt->sfqid) + 1;
   char *status_query = (char*)SF_CALLOC(1, url_size);
   sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, sfstmt->sfqid);
 
