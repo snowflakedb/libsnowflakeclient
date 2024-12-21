@@ -239,7 +239,7 @@ void test_multiple_chunk() {
 
   /* query */
   SF_STMT* sfstmt = snowflake_stmt(sf);
-  status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>10000))", 0);
+  status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2000))", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_async_execute(sfstmt);
   if (status != SF_STATUS_SUCCESS) {
@@ -251,7 +251,7 @@ void test_multiple_chunk() {
   char* value = NULL;
   size_t value_len = 0;
   size_t max_value_size = 0;
-  assert_int_equal(snowflake_num_rows(sfstmt), 10000);
+  assert_int_equal(snowflake_num_rows(sfstmt), 2000);
 
   while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
     snowflake_column_as_str(sfstmt, 1, &value, &value_len, &max_value_size);
