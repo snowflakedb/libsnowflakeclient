@@ -23,7 +23,7 @@ public:
     bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry);
     std::string getTokenURL();
     std::string getSSOURL();
-    std::string MockOkta::getErrorMessage();
+    std::string getErrorMessage();
 
     SF_CONNECT* m_connection;
     bool isCurrentCallFailed = false;
