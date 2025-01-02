@@ -145,8 +145,20 @@ extern "C" {
       snowflake_cJSON_AddItemToObject(body, "data", data);
     }
 
-    snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-    snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator))
+    {
+        cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+        if (!data)
+        {
+            data = snowflake_cJSON_CreateObject();
+            snowflake_cJSON_AddItemToObject(body, "data", data);
+        }
+
+        snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
+    }
 
     if (!conn || !conn->auth_object)
     {
@@ -301,6 +313,8 @@ namespace Client
 
   void AuthenticatorJWT::updateDataMap(jsonObject_t& dataMap)
   {
+    dataMap.erase("AUTHENTICATOR");
+    dataMap.erase("TOKEN");
     dataMap["AUTHENTICATOR"] = picojson::value(SF_AUTHENTICATOR_JWT);
     dataMap["TOKEN"] = picojson::value(m_jwt->serialize(m_privKey));
   }
@@ -533,6 +547,9 @@ namespace Client
       dataMap.erase("LOGIN_NAME");
       dataMap.erase("PASSWORD");
       dataMap.erase("EXT_AUTHN_DUO_METHOD");
+      dataMap.erase("AUTHENTICATOR");
+      dataMap.erase("TOKEN");
+
       IAuthenticatorOKTA::updateDataMap(dataMap);
   }
 } // namespace Client
