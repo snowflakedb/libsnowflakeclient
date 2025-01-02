@@ -5,7 +5,7 @@
 #include <string>
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
-#include "../lib/Authenticator.h"
+#include "../lib/authenticator.h"
 #include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
@@ -51,7 +51,7 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
         m_errMsg = "SFConnectionFailed:curlPostCall";
     }
 
-    //The curPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
+    //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
     //This code is to test the get onetime token failure
     if (isCurrentCallFailed) {
         return false;
