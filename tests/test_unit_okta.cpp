@@ -42,6 +42,7 @@ bool MockOkta::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::
 
 bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
 {
+    bool ret = true;
     jsonObject_t data;
     data["tokenUrl"] = picojson::value("https://fake.okta.com/tokenurl");
     data["ssoUrl"] = picojson::value("https://fake.okta.com/ssourl");
@@ -54,12 +55,13 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
     //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
     //This code is to test the get onetime token failure
     if (isCurrentCallFailed) {
-        return false;
+        ret = false;
     }
     else if (isPostCallFailed) {
         isCurrentCallFailed = true;
-        return true;
+        ret = true;
     }
+    return ret;
 }
 
 std::string MockOkta::getTokenURL() {
