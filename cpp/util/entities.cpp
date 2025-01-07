@@ -1,3 +1,7 @@
+/*
+ * This file is essential for decoding the SAML response used in Okta authentication.
+ */
+
 /**
  * Copyright 2012, 2016 Christoph Gärtner
  * Distributed under the Boost Software License, Version 1.0
