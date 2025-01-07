@@ -1388,6 +1388,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_DISABLE_SAML_URL_CHECK:
             *value = &sf->disable_saml_url_check;
+            break;
         case SF_CON_PUT_TEMPDIR:
             *value = sf->put_temp_dir;
             break;
