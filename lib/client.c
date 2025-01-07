@@ -757,6 +757,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
 
         sf->oauth_token = NULL;
+        sf->disable_console_login = SF_BOOLEAN_TRUE;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -1196,6 +1197,11 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_DISABLE_CONSOLE_LOGIN:
+            sf->disable_console_login = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+            break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            sf->disable_saml_url_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
             break;
@@ -1383,6 +1389,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_VARIANT_SIZE:
             *value = &sf->max_variant_size;
+            break;
+        case SF_CON_DISABLE_CONSOLE_LOGIN:
+            *value = &sf->disable_console_login;
+            break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            *value = &sf->disable_saml_url_check;
             break;
         case SF_CON_PUT_TEMPDIR:
             *value = sf->put_temp_dir;

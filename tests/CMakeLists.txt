@@ -49,12 +49,13 @@ SET(TESTS_C
 # will enable lob test when the change on server side will be published
 #        test_lob
 #        test_stats
-# This test needs the Oauth token, so it should be run manually
-       test_manual_connect
+# MFA, Oauth, and Okta connections are only able to run testing manually.
+         test_manual_connect
         )
 
 SET(TESTS_CXX
         test_unit_jwt
+		test_unit_okta
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_encryption
