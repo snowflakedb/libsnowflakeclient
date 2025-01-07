@@ -48,7 +48,7 @@ extern "C" {
   AuthenticatorType getAuthenticatorType(const char* authenticator)
   {
     if ((!authenticator) || (strlen(authenticator) == 0) ||
-      (strcasecmp(authenticator, SF_AUTHENTICATOR_DEFAULT) == 0))
+        (strcasecmp(authenticator, SF_AUTHENTICATOR_DEFAULT) == 0))
     {
       return AUTH_SNOWFLAKE;
     }
@@ -58,13 +58,13 @@ extern "C" {
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH) == 0)
     {
-      return AUTH_OAUTH;
+        return AUTH_OAUTH;
     }
 
-    return AUTH_OKTA;
+    return AUTH_UNSUPPORTED;
   }
 
-  SF_STATUS STDCALL auth_initialize(SF_CONNECT* conn)
+  SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
   {
     if (!conn)
     {
@@ -77,26 +77,26 @@ extern "C" {
       if (AUTH_JWT == auth_type)
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-          new Snowflake::Client::AuthenticatorJWT(conn));
+                              new Snowflake::Client::AuthenticatorJWT(conn));
       }
-      else if (AUTH_OKTA == auth_type)
+      if (AUTH_OKTA == auth_type)
       {
-        conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-          new Snowflake::Client::AuthenticatorOKTA(conn));
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorOKTA(conn));
       }
     }
     catch (...)
     {
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-        "authenticator initialization failed",
-        SF_SQLSTATE_GENERAL_ERROR);
+                          "authenticator initialization failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
     return SF_STATUS_SUCCESS;
   }
 
-  int64 auth_get_renew_timeout(SF_CONNECT* conn)
+  int64 auth_get_renew_timeout(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -106,7 +106,7 @@ extern "C" {
     try
     {
       return static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)
-        ->getAuthRenewTimeout();
+               ->getAuthRenewTimeout();
     }
     catch (...)
     {
@@ -114,7 +114,7 @@ extern "C" {
     }
   }
 
-  SF_STATUS STDCALL auth_authenticate(SF_CONNECT* conn)
+  SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -128,24 +128,24 @@ extern "C" {
     catch (...)
     {
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-        "authentication failed",
-        SF_SQLSTATE_GENERAL_ERROR);
+                          "authentication failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
     return SF_STATUS_SUCCESS;
   }
 
-  void auth_update_json_body(SF_CONNECT* conn, cJSON* body)
+  void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
   {
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
     if (!data)
     {
-      data = snowflake_cJSON_CreateObject();
-      snowflake_cJSON_AddItemToObject(body, "data", data);
+        data = snowflake_cJSON_CreateObject();
+        snowflake_cJSON_AddItemToObject(body, "data", data);
     }
 
-    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator))
+    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator)) 
     {
         cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
         if (!data)
@@ -155,8 +155,8 @@ extern "C" {
         }
 
         snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
     }
 
@@ -181,7 +181,7 @@ extern "C" {
     return;
   }
 
-  void auth_renew_json_body(SF_CONNECT* conn, cJSON* body)
+  void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
   {
     if (!conn || !conn->auth_object)
     {
@@ -205,7 +205,7 @@ extern "C" {
     return;
   }
 
-  void STDCALL auth_terminate(SF_CONNECT* conn)
+  void STDCALL auth_terminate(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -215,7 +215,10 @@ extern "C" {
     AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
     try
     {
-      delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
+      if (AUTH_JWT == auth_type)
+      {
+        delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
+      }
     }
     catch (...)
     {
@@ -423,7 +426,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_WARN("sf", "AuthenticatorOKTA",
               "post_curl_call",
               "Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -436,7 +439,7 @@ namespace Client
               &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
-              CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
+              CXX_LOG_WARN("sf", "AuthenticatorOKTA", "post_curl_call",
                   "post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
               m_errMsg = "SFConnectionFailed: Fail to get one time toke";
@@ -491,7 +494,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_WARN("sf", "AuthenticatorOKTA",
               "get_curl_call",
               "Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -500,7 +503,7 @@ namespace Client
 
       if (ret)
       {
-          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL, 
+          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
               raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
               m_connection->insecure_mode, m_connection->ocsp_fail_open,
               m_connection->retry_on_curle_couldnt_connect_count,
@@ -510,6 +513,10 @@ namespace Client
               //Fail to get the saml response. Retry.
               isRetry = true;
               ret = false;
+              CXX_LOG_WARN("sf", "Connection", "Connect",
+                  "Retry on getting SAML response with one time token renewed for %d times "
+                  "with updated retryTimeout = %d",
+                  m_retriedCount, m_retryTimeout - elapsedTime);
           }
           else
           {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string>
@@ -45,7 +45,7 @@ namespace Client
                 ssoURLStr = data["ssoUrl"].get<std::string>();
             }
             else {
-                CXX_LOG_INFO("sf", "Connection", "getIdpInfo",
+                CXX_LOG_WARN("sf", "Connection", "getIdpInfo",
                     "Fail to get authenticator info");
                 m_errMsg = "Fail to get authenticator info";
                 ret = false;
@@ -115,6 +115,9 @@ namespace Client
                             m_retriedCount, m_retryTimeout);
                         continue;
                     }
+                    CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
+                        "Fail to get SAML response, response body=%s",
+                        picojson::value(resp).serialize());
                     return;
                 }
                 break;
