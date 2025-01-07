@@ -510,13 +510,13 @@ namespace Client
               renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
               m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
           {
-              //Fail to get the saml response. Retry.
-              isRetry = true;
-              ret = false;
               CXX_LOG_WARN("sf", "Connection", "Connect",
                   "Retry on getting SAML response with one time token renewed for %d times "
                   "with updated retryTimeout = %d",
                   m_retriedCount, m_retryTimeout - elapsedTime);
+              isRetry = true;
+              ret = false;
+              
           }
           else
           {

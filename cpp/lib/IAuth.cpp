@@ -45,7 +45,7 @@ namespace Client
                 ssoURLStr = data["ssoUrl"].get<std::string>();
             }
             else {
-                CXX_LOG_WARN("sf", "Connection", "getIdpInfo",
+                CXX_LOG_ERROR("sf", "Connection", "getIdpInfo",
                     "Fail to get authenticator info");
                 m_errMsg = "Fail to get authenticator info";
                 ret = false;
