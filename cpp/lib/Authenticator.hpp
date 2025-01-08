@@ -91,6 +91,7 @@ namespace Client
       bool m_consent_cache_id_token;
       std::string m_origin;
       int m_timeout;
+      std::string m_errMsg;
 
       void parseAndRespondOptionsRequest(std::string response);
       void parseAndRespondPostRequest(std::string response);
@@ -149,6 +150,8 @@ namespace Client
        * Set the timeout for the web server.
        */
       void setTimeout(int timeout);
+
+      std::string getErrorMessage();
   };
 
   class AuthenticatorExternalBrowser : public IAuthenticator, public IDPAuthenticator
@@ -184,6 +187,10 @@ namespace Client
        */
       virtual std::string generateProofKey();
 
+      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
+      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
+
   private:
       typedef Snowflake::Client::Util::IBase64 Base64;
 
@@ -194,6 +201,7 @@ namespace Client
       std::string m_token;
       bool m_consentCacheIdToken;
       std::string m_origin;
+      std::string m_errMsg;
 
 #ifdef __APPLE__
       void openURL(const std::string& url_str);

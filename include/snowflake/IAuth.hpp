@@ -103,6 +103,8 @@ namespace IAuth
         std::string m_port;
         std::string m_host;
         std::string m_protocol;
+        int8 m_retriedCount;
+        int64 m_retryTimeout;
     };
 
     class IAuthenticatorOKTA : public IDPAuthenticator, public IAuthenticator
@@ -125,8 +127,7 @@ namespace IAuth
         //These fields should be definied in the child class.
         std::string m_password;
         bool m_disableSamlUrlCheck;
-        int8 m_retriedCount;
-        int64 m_retryTimeout;
+
         std::string oneTimeToken;
         std::string m_samlResponse;
     };

@@ -24,6 +24,7 @@
 #include "snowflake/Exceptions.hpp"
 #include "cJSON.h"
 #include "memory.h"
+#include "../include/snowflake/platform.h"
 
 #include <fstream>
 
@@ -62,6 +63,10 @@ extern "C" {
     {
       return AUTH_OAUTH;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_EXTERNAL_BROWSER) == 0)
+    {
+        return AUTH_EXTERNALBROWSER;
+    }
 
     return AUTH_OKTA;
   }
@@ -85,6 +90,11 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
           new Snowflake::Client::AuthenticatorOKTA(conn));
+      }
+      else if (AUTH_EXTERNALBROWSER == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorExternalBrowser(conn));
       }
     }
     catch (...)
@@ -592,6 +602,8 @@ namespace Client
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not create a socket. err: %s",
               "");
+          m_errMsg = "SFAuthWebBrowserFailed";
+          return;
           //simba_strerror(errno).c_str());
       //SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));
       }
@@ -607,6 +619,9 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not bind a port. err: %s", "");
+          m_errMsg = "SFAuthWebBrowserFailed";
+          return;
+
           //simba_strerror(errno).c_str());
       //SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));
       }
@@ -615,6 +630,9 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not listen a port. err: %s", "");
+          m_errMsg = "SFAuthWebBrowserFailed";
+          return;
+
           //simba_strerror(errno).c_str());
       //SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));
       }
@@ -625,6 +643,10 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not get the port. err: %s", "");
+          m_errMsg = "SFAuthWebBrowserFailed";
+          return;
+
+
           /*      simba_strerror(errno).c_str());
             SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));*/
       }
@@ -652,6 +674,9 @@ namespace Client
               CXX_LOG_ERROR(
                   "sf", "AuthWebServer", "stop",
                   "Failed to accept the SAML token err: %s", "")
+                  m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request";
+              return;
+
                   //simba_strerror(errno).c_str());
               //SF_THROWGEN1("SFAuthWebBrowserFailed", std::string("Not HTTP request"));
           }
@@ -672,6 +697,9 @@ namespace Client
                   "Failed to stop web server. err: %s", "")
                   //simba_strerror(errno).c_str());
                   m_socket_descriptor = 0;
+              m_errMsg = "SFAuthWebBrowserFailed";
+              return;
+
               //SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));
           }
       }
@@ -717,6 +745,8 @@ namespace Client
               CXX_LOG_ERROR(
                   "sf", "AuthWebServer", "startAccept",
                   "Failed to receive SAML token. Could not accept a request. err: %s", "");
+              return;
+
               //simba_strerror(errno).c_str());
           //SF_THROWGEN1("SFAuthWebBrowserFailed", simba_strerror(errno));
           }
@@ -725,6 +755,8 @@ namespace Client
       {
           std::string errMsg = "Auth browser timed out";
           CXX_LOG_ERROR("sf", "AuthWebServer", "startAccept", errMsg.c_str(), "");
+          return;
+
           //SF_THROWGEN1("SFAuthWebBrowserFailed", errMsg);
       }
       else
@@ -871,7 +903,7 @@ namespace Client
       char current_timestamp[50];
       std::time_t t = (time_t)ms.count() / 1000;
       std::tm tms;
-      strftime(current_timestamp, sizeof(current_timestamp), "%a, %d %b %Y %H:%M:%S GMT", sf_gmtime(&tms, &t));
+      strftime(current_timestamp, sizeof(current_timestamp), "%a, %d %b %Y %H:%M:%S GMT", sf_gmtime(&t, &tms));
 
       std::stringstream buf;
       buf << "HTTP/1.0 200 OK" << "\r\n"
@@ -920,7 +952,7 @@ namespace Client
       respond(std::string(&path[2]));
   }
 
-  void AuthWebServer::respondJson(picojson::value& json)
+  void AuthWebServer::respondJson(jsonValue_t& json)
   {
       m_saml_token = json.get("token").get<std::string&>();
       m_consent_cache_id_token = json.get("consent").get<bool>();
@@ -1137,7 +1169,7 @@ namespace Client
           out[std::string("LOGIN_URL")] = url;
           out[std::string("PROOF_KEY")] = proofKey;
       }
-      CXX_LOG_DEBUG("sf", "AuthenticatorExternalBrowser", "getSSOUrl",
+      CXX_LOG_DEBUG("sf", "AuthenticatorExternalBrowser", "getSS  OUrl",
           "SSO URL: %s", url.c_str());
   }
 
@@ -1148,6 +1180,70 @@ namespace Client
       return Base64::encodePadding(randomness);
   }
 
+  bool AuthenticatorExternalBrowser::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+  {
+      bool ret = true;
+      std::string destination = url.toString();
+      void* curl_desc;
+      CURL* curl;
+      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl = get_curl_from_desc(curl_desc);
+      SF_ERROR_STRUCT* err = &m_connection->error;
+
+      int64 elapsedTime = 0;
+      int8 maxRetryCount = get_login_retry_count(m_connection);
+      int64 renewTimeout = auth_get_renew_timeout(m_connection);
+
+      // add headers for account and authentication
+      SF_HEADER* httpExtraHeaders = sf_header_create();
+      std::string s_body = value(obj).serialize();
+      cJSON* resp_data = NULL;
+      httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+      if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
+          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+              "post_curl_call",
+              "Failed to create the header for the request to get the token URL and the SSO URL");
+          m_errMsg = "OktaConnectionFailed: failed to create the header";
+          ret = false;
+      }
+
+      if (ret)
+      {
+          if (!curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
+              &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
+              &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
+          {
+              CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
+                  "post call failed, response body=%s\n",
+                  snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+              m_errMsg = "SFConnectionFailed: Fail to get one time toke";
+              ret = false;
+          }
+          else
+          {
+              cJSONtoPicoJson(resp_data, resp);
+          }
+      }
+
+      if (ret && elapsedTime >= m_retryTimeout)
+      {
+          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
+              "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+              m_retryTimeout, elapsedTime);
+
+          m_errMsg = "OktaConnectionFailed: timeout reached";
+          ret = false;
+      }
+
+      sf_header_destroy(httpExtraHeaders);
+      free_curl_desc(curl_desc);
+      snowflake_cJSON_Delete(resp_data);
+      return ret;
+  }
+  bool AuthenticatorExternalBrowser::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) 
+  {
+      return true;
+  }
   /**
    * Start web browser so that the user can type IdP user and password
    * @param ssoUrl SSO URL

@@ -445,7 +445,7 @@ typedef struct SF_CONNECT {
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
 
-    sf_bool disable_console_login
+    sf_bool disable_console_login;
 } SF_CONNECT;
 
 /**
