@@ -3283,15 +3283,17 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts,
         return SF_STATUS_ERROR_NULL_POINTER;
     }
 
-    time_t epoch_time_local;
+    time_t epoch_time;
 
     ts->tm_obj.tm_isdst = -1;
-    epoch_time_local = (time_t) mktime(&ts->tm_obj);
     // mktime takes into account tm_gmtoff which is a Linux and OS X ONLY field
 #if defined(__linux__) || defined(__APPLE__)
-    epoch_time_local += ts->tm_obj.tm_gmtoff;
+    epoch_time = (time_t)mktime(&ts->tm_obj);
+    epoch_time += ts->tm_obj.tm_gmtoff;
+#else
+    epoch_time = _mkgmtime64(&ts->tm_obj);
 #endif
-    *epoch_time_ptr = epoch_time_local - (ts->tzoffset * 60);
+    *epoch_time_ptr = epoch_time - (ts->tzoffset * 60);
 
     return SF_STATUS_SUCCESS;
 }
