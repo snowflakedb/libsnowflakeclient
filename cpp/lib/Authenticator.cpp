@@ -10,7 +10,6 @@
 #include <functional>
 #include <WS2tcpip.h>
 
-
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
@@ -19,6 +18,7 @@
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/rand.h>
 #include <connection.h>
 #include "curl_desc_pool.h"
 #include "snowflake/Exceptions.hpp"
@@ -563,9 +563,7 @@ namespace Client
       m_saml_token(""),
       m_consent_cache_id_token(true),
       m_origin(""),
-      //m_timeout(SF_DEFAULT_BROWSER_RESPONSE_TIMEOUT)
-      m_timeout(300)
-
+      m_timeout(SF_BROWSER_RESPONSE_TIMEOUT)
   {
       // nop
   }
@@ -1041,10 +1039,20 @@ namespace Client
       m_consentCacheIdToken(true),
       m_origin("")
   {
+
       if (m_authWebServer == NULL)
       {
           m_authWebServer = new AuthWebServer();
       }
+
+      m_account = m_connection->account;
+      m_authenticator = m_connection->authenticator;
+      m_user = m_connection->user;
+      m_port = m_connection->port;
+      m_host = m_connection->host;
+      m_protocol = m_connection->protocol;
+      m_appID = "ODBC";
+      m_appVersion = "3.4.1";
   }
 
   AuthenticatorExternalBrowser::~AuthenticatorExternalBrowser()
@@ -1074,7 +1082,7 @@ namespace Client
       startWebBrowser(out[std::string("LOGIN_URL")]);
       m_proofKey = out[std::string("PROOF_KEY")];
 
-      m_authWebServer->setTimeout(m_connection->browser);
+      m_authWebServer->setTimeout(m_connection->browser_response_timeout);
       m_authWebServer->startAccept();
       // accept SAML token
       while (m_authWebServer->receive())
@@ -1111,17 +1119,17 @@ namespace Client
       {
           jsonObject_t dataMap;
           dataMap["BROWSER_MODE_REDIRECT_PORT"] = picojson::value((double)port);
-          //const ConstJsonPtr respData = m_connection->getIdpInfo(dataMap);
-          //url = respData->get("ssoUrl").getd<std::string>("");
-          //std::string proofKey = respData->get("proofKey").getd<std::string>("");
+          if (!getIDPInfo()) {
+              return;
+          }
           out[std::string("LOGIN_URL")] = url;
           out[std::string("PROOF_KEY")] = proofKey;
       }
       else
       {
           std::string proofKey = generateProofKey();
-          SFURL connectURL = m_connection->getServerURLSync().path("/console/login");
-          connectURL.addQueryParam("login_name", m_connection->getUser());
+          SFURL connectURL = getServerURLSync().path("/console/login");
+          connectURL.addQueryParam("login_name", m_user);
           connectURL.addQueryParam("browser_mode_redirect_port", std::to_string(m_authWebServer->getPort()));
           connectURL.addQueryParam("proof_key", proofKey);
 

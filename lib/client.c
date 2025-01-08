@@ -727,6 +727,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
         sf->network_timeout = 0;
+        sf->browser_response_timeout = SF_BROWSER_RESPONSE_TIMEOUT;
         sf->retry_timeout = SF_RETRY_TIMEOUT;
         sf->sequence_counter = 0;
         _mutex_init(&sf->mutex_sequence_counter);

@@ -43,6 +43,7 @@ namespace Client
                 jsonObject_t& data = respData["data"].get<jsonObject_t>();
                 tokenURLStr = data["tokenUrl"].get<std::string>();
                 ssoURLStr = data["ssoUrl"].get<std::string>();
+                proofKey = data["proofKey"].get<std::string>();
             }
             else {
                 CXX_LOG_INFO("sf", "Connection", "getIdpInfo",

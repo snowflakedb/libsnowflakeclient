@@ -15,6 +15,25 @@ namespace Client
 {
 namespace IAuth
 {
+
+    class IAuthWebServer
+    {
+    public:
+        IAuthWebServer()
+        {}
+
+        virtual ~IAuthWebServer()
+        {}
+
+        virtual void start() = 0;
+        virtual void stop() = 0;
+        virtual int getPort() = 0;
+        virtual void startAccept() = 0;
+        virtual bool receive() = 0;
+        virtual std::string getSAMLToken() = 0;
+        virtual bool isConsentCacheIdToken() = 0;
+        virtual void setTimeout(int timeout) = 0;
+    };
     /**
      * Authenticator
      */
@@ -73,8 +92,7 @@ namespace IAuth
     protected:
         std::string tokenURLStr;
         std::string ssoURLStr;
-        //For EXTERNALBROSER in the future
-        std::string proofKeyStr;
+        std::string proofKey;
 
         //These fields should be definied in the child class.
         std::string m_authenticator;

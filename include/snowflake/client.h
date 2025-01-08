@@ -62,6 +62,11 @@ extern "C" {
 #define SF_COMMAND_LEN 10
 
 /**
+ * Browser response timeout in seconds
+ */
+#define SF_BROWSER_RESPONSE_TIMEOUT 120
+
+/**
  * Login timeout in seconds
  */
 // make the login timetout defaults to 300 to be inline with retry timeout
@@ -385,6 +390,7 @@ typedef struct SF_CONNECT {
 
     int64 login_timeout;
     int64 network_timeout;
+    int64 browser_response_timeout;
     // retry timeout for new retry strategy
     int64 retry_timeout;
 

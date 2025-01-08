@@ -80,25 +80,6 @@ namespace Client
  /**
   * Web Server for external Browser authentication
   */
-  class IAuthWebServer
-  {
-  public:
-      IAuthWebServer()
-      {}
-
-      virtual ~IAuthWebServer()
-      {}
-
-      virtual void start() = 0;
-      virtual void stop() = 0;
-      virtual int getPort() = 0;
-      virtual void startAccept() = 0;
-      virtual bool receive() = 0;
-      virtual std::string getSAMLToken() = 0;
-      virtual bool isConsentCacheIdToken() = 0;
-      virtual void setTimeout(int timeout) = 0;
-  };
-
   class AuthWebServer : public IAuthWebServer
   {
 
@@ -170,7 +151,7 @@ namespace Client
       void setTimeout(int timeout);
   };
 
-  class AuthenticatorExternalBrowser : public IAuthenticator
+  class AuthenticatorExternalBrowser : public IAuthenticator, public IDPAuthenticator
   {
   public:
       AuthenticatorExternalBrowser(
