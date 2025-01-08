@@ -187,6 +187,7 @@ _snowflake_stage_bind_upload(SF_STMT* sfstmt)
                      "Stage binding disabled for this connection.",
                      uploader.getError().c_str());
         sfstmt->connection->stage_binding_disabled = SF_BOOLEAN_TRUE;
+        return NULL;
       }
       bindInfo[j].val_ptr = (char*)bindInfo[j].val_ptr + bindInfo[j].step;
     }

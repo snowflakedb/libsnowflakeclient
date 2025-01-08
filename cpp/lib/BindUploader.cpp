@@ -115,6 +115,8 @@ bool BindUploader::putBinds()
     CXX_LOG_INFO("BindUploader::putBinds: total time: %ld, serialize time: %d, compress time: %ld, put time %ld",
                  totalTime, m_serializeTime, m_compressTime, m_putTime);
   }
+
+  return true;
 }
 
 size_t BindUploader::compressWithGzip()
