@@ -389,7 +389,6 @@ namespace Client
       m_host = m_connection->host;
       m_protocol = m_connection->protocol;
       m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
-      m_retriedCount = 0;
       m_retryTimeout = get_retry_timeout(m_connection);
 
 
