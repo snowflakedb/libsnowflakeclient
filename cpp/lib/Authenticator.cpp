@@ -61,7 +61,7 @@ extern "C" {
         return AUTH_OAUTH;
     }
 
-    return AUTH_UNSUPPORTED;
+    return AUTH_OKTA;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
