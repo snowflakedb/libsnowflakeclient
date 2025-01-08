@@ -947,6 +947,7 @@ extern "C" {
                         SF_STMT* sfstmt,
                         void* upload_stream,
                         size_t stream_size,
+                        int stream_upload_max_retries,
                         struct SF_QUERY_RESULT_CAPTURE* result_capture)
   {
     if (!sfstmt)
@@ -978,6 +979,7 @@ extern "C" {
     if (upload_stream)
     {
       agent.setUploadStream((std::basic_iostream<char>*)upload_stream, stream_size);
+      agent.setPutMaxRetries(stream_upload_max_retries);
     }
 
     ITransferResult* result;

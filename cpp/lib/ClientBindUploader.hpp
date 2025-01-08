@@ -43,9 +43,9 @@ protected:
   * Check whether the session's temporary stage has been created, and create it
   * if not.
   *
-  * @throws Exception if creating the stage fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void createStageIfNeeded() override;
+  virtual bool createStageIfNeeded() override;
 
   /**
   * Execute uploading for single data file.
@@ -54,9 +54,9 @@ protected:
   * @param uploadStream stream for data file to be uploaded
   * @param dataSize Size of the data to be uploaded.
   *
-  * @throws Exception if uploading fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void executeUploading(const std::string &sql,
+  virtual bool executeUploading(const std::string &sql,
                                 std::basic_iostream<char>& uploadStream,
                                 size_t dataSize) override;
 

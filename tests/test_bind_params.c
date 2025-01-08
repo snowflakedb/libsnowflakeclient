@@ -112,7 +112,7 @@ void test_bind_parameters(void **unused) {
     snowflake_term(sf);
 }
 
-void test_array_binding_core(unsigned int array_size) {
+void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     /* init */
     SF_STATUS status;
     int8* int8_array = NULL;
@@ -264,7 +264,18 @@ void test_array_binding_core(unsigned int array_size) {
     status = snowflake_bind_param_array(stmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    if (fallback)
+    {
+      // set invalid proxy for storage endpoints to fail put command
+      sf_setenv("https_proxy", "a.b.c");
+      sf_setenv("no_proxy", ".snowflakecomputing.com");
+    }
     status = snowflake_execute(stmt);
+    if (fallback)
+    {
+      sf_unsetenv("https_proxy");
+      sf_unsetenv("no_proxy");
+    }
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_affected_rows(stmt), array_size);
 
@@ -291,11 +302,15 @@ void test_array_binding_core(unsigned int array_size) {
 }
 
 void test_array_binding_normal(void** unused) {
-    test_array_binding_core(1000);
+    test_array_binding_core(1000, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage(void** unused) {
-    test_array_binding_core(100000);
+    test_array_binding_core(100000, SF_BOOLEAN_FALSE);
+}
+
+void test_array_binding_stage_fallback(void** unused) {
+  test_array_binding_core(100000, SF_BOOLEAN_TRUE);
 }
 
 void test_array_binding_supported_false_update(void** unused) {
@@ -516,6 +531,7 @@ int main(void) {
       cmocka_unit_test(test_array_binding_supported_false_update),
       cmocka_unit_test(test_array_binding_supported_false_insert),
       cmocka_unit_test(test_array_binding_supported_false_select),
+      cmocka_unit_test(test_array_binding_stage_fallback),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -47,8 +47,6 @@ namespace
     " auto_compress=false"     // we compress already
     " source_compression=gzip" // (with gzip)
   );
-
-  static const unsigned int PUT_RETRY_COUNT = 3;
 }
 
 namespace Snowflake
@@ -61,7 +59,6 @@ BindUploader::BindUploader(const std::string& stageDir,
                            int compressLevel) :
   m_stagePath("@" + STAGE_NAME + "/" + stageDir + "/"),
   m_fileNo(0),
-  m_retryCount(PUT_RETRY_COUNT),
   m_maxFileSize(maxFileSize),
   m_numParams(numParams),
   m_numParamSets(numParamSets),
@@ -82,40 +79,32 @@ BindUploader::BindUploader(const std::string& stageDir,
                 maxFileSize, compressLevel);
 }
 
-void BindUploader::putBinds()
+bool BindUploader::putBinds()
 {
   // count serialize time since this function is called when serialization for
   // one chunk is done
   m_serializeTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_serializeStartTime).count();
   m_serializeStartTime = std::chrono::steady_clock::now();
 
-  createStageIfNeeded();
+  if (!createStageIfNeeded())
+  {
+    return false;
+  }
+
   auto compressStartTime = std::chrono::steady_clock::now();
   size_t compressedSize = compressWithGzip();
   m_compressTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - compressStartTime).count();
 
   auto putStartTime = std::chrono::steady_clock::now();
   std::string filename = std::to_string(m_fileNo++);
-  while (m_retryCount > 0)
+  std::string putStmt = getPutStmt(filename);
+  // No retry needed here as PUT command execution already has retries.
+  if (!executeUploading(putStmt, m_compressStream, compressedSize))
   {
-    std::string putStmt = getPutStmt(filename);
-    try
-    {
-      executeUploading(putStmt, m_compressStream, compressedSize);
-      m_hasBindingUploaded = true;
-      break;
-    }
-    catch (...)
-    {
-      CXX_LOG_WARN("BindUploader::putBinds: Failed to upload array binds, retry");
-      m_retryCount--;
-      if (0 == m_retryCount)
-      {
-        CXX_LOG_ERROR("BindUploader::putBinds: Failed to upload array binds with all retry");
-        throw;
-      }
-    }
+    return false;
   }
+
+  m_hasBindingUploaded = true;
   m_putTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - putStartTime).count();
 
   m_csvStream = std::stringstream();
@@ -194,7 +183,7 @@ std::string BindUploader::getCreateStageStmt()
   return CREATE_STAGE_STMT;
 }
 
-void BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
+bool BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
 {
   if (m_curParamIndex != 0)
   {
@@ -275,12 +264,14 @@ void BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
     if ((m_dataSize >= m_maxFileSize) ||
       (m_curParamSetIndex >= m_numParamSets))
     {
-      putBinds();
+      return putBinds();
     }
   }
+
+  return true;
 }
 
-void BindUploader::addNullValue()
+bool BindUploader::addNullValue()
 {
   if (m_curParamIndex != 0)
   {
@@ -301,9 +292,11 @@ void BindUploader::addNullValue()
     if ((m_dataSize >= m_maxFileSize) ||
       (m_curParamSetIndex >= m_numParamSets))
     {
-      putBinds();
+      return putBinds();
     }
   }
+
+  return true;
 }
 
 bool BindUploader::csvGetNextField(std::string& fieldValue,
