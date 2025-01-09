@@ -46,6 +46,7 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
     jsonObject_t data;
     data["tokenUrl"] = picojson::value("https://fake.okta.com/tokenurl");
     data["ssoUrl"] = picojson::value("https://fake.okta.com/ssourl");
+    data["proofKey"] = picojson::value("proofKey");
     resp["data"] = picojson::value(data);
     resp["sessionToken"] = picojson::value("onetimetoken");
     if (isPostCallFailed) {

@@ -842,7 +842,7 @@ namespace Client
                   "Error in parsing JSON: %s, err: %s", payload.c_str(), err.c_str());
               return;
           }
-          respondJson(json);
+          //respondJson(json);
       }
   }
 
@@ -952,25 +952,25 @@ namespace Client
       respond(std::string(&path[2]));
   }
 
-  void AuthWebServer::respondJson(jsonValue_t& json)
-  {
-      m_saml_token = json.get("token").get<std::string&>();
-      m_consent_cache_id_token = json.get("consent").get<bool>();
+  //void AuthWebServer::respondJson(picojson::value& json)
+  //{
+  //    m_saml_token = json.get("token").get<std::string&>();
+  //    m_consent_cache_id_token = json.get("consent").get<bool>();
 
-      jsonObject_t payloadBody;
-      payloadBody["consent"] = picojson::value(m_consent_cache_id_token);
-      auto payloadBodyString = picojson::value(payloadBody).serialize();
+  //    jsonObject_t payloadBody;
+  //    payloadBody["consent"] = picojson::value(m_consent_cache_id_token);
+  //    auto payloadBodyString = picojson::value(payloadBody).serialize();
 
-      std::stringstream buf;
-      buf << "HTTP/1.0 200 OK" << "\r\n"
-          << "Content-Type: text/html" << "\r\n"
-          << "Content-Length: " << payloadBodyString.size() << "\r\n"
-          << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
-          << "Vary: Accept-Encoding, Origin" << "\r\n"
-          << "\r\n"
-          << payloadBodyString;
-      send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-  }
+  //    std::stringstream buf;
+  //    buf << "HTTP/1.0 200 OK" << "\r\n"
+  //        << "Content-Type: text/html" << "\r\n"
+  //        << "Content-Length: " << payloadBodyString.size() << "\r\n"
+  //        << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
+  //        << "Vary: Accept-Encoding, Origin" << "\r\n"
+  //        << "\r\n"
+  //        << payloadBodyString;
+  //    send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
+  //}
 
   void AuthWebServer::respond(std::string queryParameters)
   {

@@ -97,7 +97,7 @@ namespace Client
       void parseAndRespondPostRequest(std::string response);
       void parseAndRespondGetRequest(char** rest_mesg);
       void respond(std::string queryParameters);
-      void respondJson(jsonValue_t& json);
+      //void respondJson(picojson::value& json);
 
       std::vector<std::string> splitString(const std::string& s, char delimiter);
       std::string unquote(std::string src);
