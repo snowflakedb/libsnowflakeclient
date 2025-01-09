@@ -1198,6 +1198,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_DISABLE_SAML_URL_CHECK:
             sf->disable_saml_url_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
             break;
