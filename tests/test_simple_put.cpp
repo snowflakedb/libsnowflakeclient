@@ -118,7 +118,8 @@ void test_simple_put_core(const char * fileName,
                           int compressLevel = -1,
                           bool overwrite = false,
                           SF_CONNECT * connection = nullptr,
-                          bool testUnicode = false)
+                          bool testUnicode = false,
+                          bool native = false)
 {
   /* init */
   SF_STATUS status;
@@ -194,71 +195,140 @@ void test_simple_put_core(const char * fileName,
       putCommand += " overwrite=true";
   }
   std::unique_ptr<IStatementPutGet> stmtPutGet;
-  if (testUnicode)
+  if (!native)
   {
-    stmtPutGet = std::unique_ptr
-      <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
-  }
-  else
-  {
-    stmtPutGet = std::unique_ptr
-      <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    if (testUnicode)
+    {
+      stmtPutGet = std::unique_ptr
+        <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
+    }
+    else
+    {
+      stmtPutGet = std::unique_ptr
+        <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+    }
   }
 
   TransferConfig transConfig;
   TransferConfig * transConfigPtr = nullptr;
   if (tmpDir)
   {
+    if (native)
+    {
+      snowflake_set_attribute(sf, SF_CON_PUT_TEMPDIR, tmpDir);
+    }
+    else
+    {
       transConfig.tempDir = tmpDir;
       transConfigPtr = &transConfig;
+    }
   }
   if(useS3regionalUrl)
   {
-    transConfig.useS3regionalUrl = true;
-    transConfigPtr = &transConfig;
+    if (native)
+    {
+      std::string cmd = "alter session set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1=true";
+      snowflake_query(sfstmt, cmd.c_str(), cmd.size());
+    }
+    else
+    {
+      transConfig.useS3regionalUrl = true;
+      transConfigPtr = &transConfig;
+    }
   }
   if(compressLevel > 0)
   {
-    transConfig.compressLevel = compressLevel;
-    transConfigPtr = &transConfig;
+    if (native)
+    {
+      int8 lv = (int8)compressLevel;
+      snowflake_set_attribute(sf, SF_CON_PUT_COMPRESSLV, &lv);
+    }
+    else
+    {
+      transConfig.compressLevel = compressLevel;
+      transConfigPtr = &transConfig;
+    }
   }
 
   Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
 
   if(useDevUrand){
-    agent.setRandomDeviceAsUrand(true);
+    if (native)
+    {
+      sf_bool use_urand = SF_BOOLEAN_TRUE;
+      snowflake_set_attribute(sf, SF_CON_PUT_USE_URANDOM_DEV, &use_urand);
+    }
+    else
+    {
+      agent.setRandomDeviceAsUrand(true);
+    }
   }
 
-  ITransferResult * results = agent.execute(&putCommand);
-  assert_int_equal(1, results->getResultSize());
+  std::string expectedSrc = sf_filename_from_path(fileName);
+  std::string expectedTarget = (autoCompress && !strstr(expectedSrc.c_str(), ".gz")) ?
+                               expectedSrc + ".gz" : expectedSrc;
+  std::string expectedSourceCompression = !strstr(fileName, ".gz") ? "none" : "gzip";
+  std::string expectedTargetCompression = (!autoCompress && !strstr(fileName, ".gz")) ? "none" : "gzip";
 
-  while(results->next())
+  if (native)
   {
-    std::string value;
-    results->getColumnAsString(0, value); // source
-    assert_string_equal( sf_filename_from_path(fileName), value.c_str());
+    ret = snowflake_query(sfstmt, putCommand.c_str(), putCommand.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    std::string expectedTarget = (autoCompress && !strstr(fileName, ".gz")) ?
-                                 std::string(fileName) + ".gz" :
-                                 std::string(fileName);
-    results->getColumnAsString(1, value); // get target
-    assert_string_equal(sf_filename_from_path(expectedTarget.c_str()), value.c_str());
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-    std::string expectedSourceCompression = !strstr(fileName, ".gz") ?
-                                            "none" : "gzip";
-    results->getColumnAsString(4, value); // get source_compression
-    assert_string_equal(expectedSourceCompression.c_str(), value.c_str());
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-    std::string expectedTargetCompression = (!autoCompress &&
-      !strstr(fileName, ".gz")) ? "none" : "gzip";
-    results->getColumnAsString(5, value); // get target_compression
-    assert_string_equal(expectedTargetCompression.c_str(), value.c_str());
+    const char *out;
+    // source
+    snowflake_column_as_const_str(sfstmt, 1, &out);
+    assert_string_equal(expectedSrc.c_str(), out);
+    // target
+    snowflake_column_as_const_str(sfstmt, 2, &out);
+    assert_string_equal(expectedTarget.c_str(), out);
+    // source comparession
+    snowflake_column_as_const_str(sfstmt, 5, &out);
+    assert_string_equal(expectedSourceCompression.c_str(), out);
+    // target compression
+    snowflake_column_as_const_str(sfstmt, 6, &out);
+    assert_string_equal(expectedTargetCompression.c_str(), out);
+    snowflake_column_as_const_str(sfstmt, 7, &out);
+    // status
+    assert_string_equal("UPLOADED", out);
+    // encryption
+    snowflake_column_as_const_str(sfstmt, 8, &out);
+    assert_string_equal("ENCRYPTED", out);
 
-    results->getColumnAsString(6, value); // get encryption
-    assert_string_equal("UPLOADED", value.c_str());
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_EOF, ret);
+  }
+  else
+  {
+    ITransferResult * results = agent.execute(&putCommand);
+    assert_int_equal(1, results->getResultSize());
 
-    results->getColumnAsString(7, value); // get encryption
-    assert_string_equal("ENCRYPTED", value.c_str());
+    while(results->next())
+    {
+      std::string value;
+      results->getColumnAsString(0, value); // source
+      assert_string_equal(expectedSrc.c_str(), value.c_str());
+
+      results->getColumnAsString(1, value); // get target
+      assert_string_equal(expectedTarget.c_str(), value.c_str());
+
+      results->getColumnAsString(4, value); // get source_compression
+      assert_string_equal(expectedSourceCompression.c_str(), value.c_str());
+
+      results->getColumnAsString(5, value); // get target_compression
+      assert_string_equal(expectedTargetCompression.c_str(), value.c_str());
+
+      results->getColumnAsString(6, value); // get encryption
+      assert_string_equal("UPLOADED", value.c_str());
+
+      results->getColumnAsString(7, value); // get encryption
+      assert_string_equal("ENCRYPTED", value.c_str());
+    }
   }
 
   if (copyUploadFile)
@@ -352,7 +422,8 @@ static int teardown(void **unused)
 }
 
 void test_simple_get_data(const char *getCommand, const char *size,
-                          long getThreshold = 0, bool testUnicode = false)
+                          long getThreshold = 0, bool testUnicode = false,
+                          bool native = false)
 {
     /* init */
     SF_STATUS status;
@@ -367,39 +438,72 @@ void test_simple_get_data(const char *getCommand, const char *size,
     sfstmt = snowflake_stmt(sf);
 
     std::unique_ptr<IStatementPutGet> stmtPutGet;
-    if (testUnicode)
+    if (!native)
     {
-      stmtPutGet = std::unique_ptr
-        <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
-    }
-    else
-    {
-      stmtPutGet = std::unique_ptr
-        <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+      if (testUnicode)
+      {
+        stmtPutGet = std::unique_ptr
+          <StatementPutGetUnicode>(new Snowflake::Client::StatementPutGetUnicode(sfstmt));
+      }
+      else
+      {
+        stmtPutGet = std::unique_ptr
+          <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
+      }
     }
 
     TransferConfig transConfig;
     TransferConfig * transConfigPtr = nullptr;
     if (getThreshold > 0)
     {
+      if (native)
+      {
+        int64 threshold = getThreshold;
+        status = snowflake_set_attribute(sf, SF_CON_GET_THRESHOLD, &threshold);
+        assert_int_equal(SF_STATUS_SUCCESS, status);
+      }
+      else
+      {
         transConfig.getSizeThreshold = getThreshold;
         transConfigPtr = &transConfig;
+      }
     }
 
-    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
-
-    // load first time should return uploaded
-    std::string get_status;
-    std::string getcmd(getCommand);
-    ITransferResult * results = agent.execute(&getcmd);
-    while(results && results->next())
+    if (native)
     {
-        results->getColumnAsString(1, get_status);
+      status = snowflake_query(sfstmt, getCommand, strlen(getCommand));
+      assert_int_equal(SF_STATUS_SUCCESS, status);
+
+      while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
+      {
+        const char *out;
+        // source
+        snowflake_column_as_const_str(sfstmt, 2, &out);
         //Compressed File sizes vary on Windows/Linux, So not verifying size.
-        results->getColumnAsString(2, get_status);
-        assert_string_equal("DOWNLOADED", get_status.c_str());
-        results->getColumnAsString(3, get_status);
-        assert_string_equal("DECRYPTED", get_status.c_str());
+        snowflake_column_as_const_str(sfstmt, 3, &out);
+        assert_string_equal("DOWNLOADED", out);
+        snowflake_column_as_const_str(sfstmt, 4, &out);
+        assert_string_equal("DECRYPTED", out);
+      }
+      assert_int_equal(SF_STATUS_EOF, status);
+    }
+    else
+    {
+      Snowflake::Client::FileTransferAgent agent(stmtPutGet.get(), transConfigPtr);
+
+      // load first time should return uploaded
+      std::string get_status;
+      std::string getcmd(getCommand);
+      ITransferResult * results = agent.execute(&getcmd);
+      while(results && results->next())
+      {
+          results->getColumnAsString(1, get_status);
+          //Compressed File sizes vary on Windows/Linux, So not verifying size.
+          results->getColumnAsString(2, get_status);
+          assert_string_equal("DOWNLOADED", get_status.c_str());
+          results->getColumnAsString(3, get_status);
+          assert_string_equal("DECRYPTED", get_status.c_str());
+      }
     }
 
     snowflake_stmt_term(sfstmt);
@@ -409,7 +513,7 @@ void test_simple_get_data(const char *getCommand, const char *size,
 
 }
 
-void test_large_put_auto_compress(void **unused)
+void test_large_put_auto_compress_core(bool native)
 {
   char *cenv = getenv("CLOUD_PROVIDER");
   if ( cenv && !strncmp(cenv, "AWS", 4) ) {
@@ -423,8 +527,30 @@ void test_large_put_auto_compress(void **unused)
                        false,   // auto compress
                        true,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
-                       true    // copy data from Table to Staging.
+                       true,   // copy data from Table to Staging.
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64*1024*1024, // customThreshold
+                       false, // useDevUrand
+                       false, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, //compressLevel
+                       false, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
   );
+}
+
+void test_large_put_auto_compress(void **unused)
+{
+  test_large_put_auto_compress_core(false);
+}
+
+void test_large_put_auto_compress_native(void **unused)
+{
+  test_large_put_auto_compress_core(true);
 }
 
 void test_large_put_threshold(void **unused)
@@ -448,10 +574,10 @@ void test_large_put_threshold(void **unused)
   );
 }
 
-void test_large_reupload(void **unused)
+void test_large_reupload_core(bool native)
 {
-	char *cenv = getenv("CLOUD_PROVIDER");
-	if (cenv && !strncmp(cenv, "AWS", 4)) {
+    char *cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AWS", 4)) {
         errno = 0;
         return;
     }
@@ -476,7 +602,7 @@ void test_large_reupload(void **unused)
     char tempFile[MAX_BUF_SIZE] ={0};
     sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
-	getLongTempPath(tempDir);
+    getLongTempPath(tempDir);
 #endif
     for(const std::string s : fileList) {
         tempFile[0] = 0;
@@ -487,10 +613,30 @@ void test_large_reupload(void **unused)
                              true,   // Load data into table
                              false,  // Run select * on loaded table (Not good for large data set)
                              false,    // copy data from Table to Staging.
-                             true       //Creates a dup table to compare uploaded data.
+                             true,       //Creates a dup table to compare uploaded data.
+                             false, // setCustomThreshold
+                             64*1024*1024, // customThreshold
+                             false, // useDevUrand
+                             false, // createSubfolder
+                             nullptr, // tmpDir
+                             false, // useS3regionalUrl
+                             -1, //compressLevel
+                             false, // overwrite
+                             nullptr, // connection
+                             false, // testUnicode
+                             native
         );
     }
+}
 
+void test_large_reupload(void** unused)
+{
+  test_large_reupload_core(false);
+}
+
+void test_large_reupload_native(void** unused)
+{
+  test_large_reupload_core(true);
 }
 
 /*
@@ -538,7 +684,7 @@ void test_verify_upload(void **unused)
 
 }
 
-void test_simple_put_use_dev_urandom(void **unused)
+void test_simple_put_use_dev_urandom_core(bool native)
 {
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + "medium_file.csv";
@@ -567,32 +713,67 @@ void test_simple_put_use_dev_urandom(void **unused)
 
   std::string putCommand = "put file://" + file + " @%test_small_put auto_compress=true overwrite=true";
 
-  std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
-	  <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
-
-  Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());  
-  agent.setRandomDeviceAsUrand(true);
-
-  ITransferResult * results = agent.execute(&putCommand);
-  assert_int_equal(1, results->getResultSize());
-
-  while (results->next())
+  if (native)
   {
-	  std::string value;
-	  results->getColumnAsString(0, value); // source
-	  assert_string_equal(sf_filename_from_path(file.c_str()), value.c_str());
+    sf_bool useUrand = SF_BOOLEAN_TRUE;
+    ret = snowflake_set_attribute(sf, SF_CON_PUT_USE_URANDOM_DEV, &useUrand);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    ret = snowflake_query(sfstmt, putCommand.c_str(), putCommand.size());
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-	  results->getColumnAsString(1, value); // get target
-	  assert_string_equal("medium_file.csv.gz", value.c_str());
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
 
-	  results->getColumnAsString(4, value); // get source_compression
-	  assert_string_equal("none", value.c_str());
+    const char* out = NULL;
+    // source
+    snowflake_column_as_const_str(sfstmt, 1, &out);
+    assert_string_equal(sf_filename_from_path(file.c_str()), out);
+    // target
+    snowflake_column_as_const_str(sfstmt, 2, &out);
+    assert_string_equal("medium_file.csv.gz", out);
+    // source compression
+    snowflake_column_as_const_str(sfstmt, 5, &out);
+    assert_string_equal("none", out);
+    // status
+    snowflake_column_as_const_str(sfstmt, 7, &out);
+    assert_string_equal("UPLOADED", out);
+    // encryption
+    snowflake_column_as_const_str(sfstmt, 8, &out);
+    assert_string_equal("ENCRYPTED", out);
 
-	  results->getColumnAsString(6, value); // get encryption
-	  assert_string_equal("UPLOADED", value.c_str());
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_EOF, ret);
+  }
+  else
+  {
+    std::unique_ptr<IStatementPutGet> stmtPutGet = std::unique_ptr
+      <StatementPutGet>(new Snowflake::Client::StatementPutGet(sfstmt));
 
-	  results->getColumnAsString(7, value); // get encryption
-	  assert_string_equal("ENCRYPTED", value.c_str());
+    Snowflake::Client::FileTransferAgent agent(stmtPutGet.get());
+    agent.setRandomDeviceAsUrand(true);
+
+    ITransferResult * results = agent.execute(&putCommand);
+    assert_int_equal(1, results->getResultSize());
+
+    while (results->next())
+    {
+      std::string value;
+      results->getColumnAsString(0, value); // source
+      assert_string_equal(sf_filename_from_path(file.c_str()), value.c_str());
+
+      results->getColumnAsString(1, value); // get target
+      assert_string_equal("medium_file.csv.gz", value.c_str());
+
+      results->getColumnAsString(4, value); // get source_compression
+      assert_string_equal("none", value.c_str());
+
+      results->getColumnAsString(6, value); // get encryption
+      assert_string_equal("UPLOADED", value.c_str());
+
+      results->getColumnAsString(7, value); // get encryption
+      assert_string_equal("ENCRYPTED", value.c_str());
+    }
   }
 
   std::string copyCommand = "copy into test_small_put from @%test_small_put";
@@ -610,30 +791,56 @@ void test_simple_put_use_dev_urandom(void **unused)
 
   for(int i = 0; i < 200000; ++i)
   {
-	  ret = snowflake_fetch(sfstmt);
-	  assert_int_equal(SF_STATUS_SUCCESS, ret);
-	  snowflake_column_as_const_str(sfstmt, 1, &out_c1);
-	  snowflake_column_as_const_str(sfstmt, 2, &out_c2);
-	  snowflake_column_as_const_str(sfstmt, 3, &out_c3);
-	  std::string c1 = std::to_string(i);
-	  std::string c2 = std::to_string(i + 1);
-	  assert_string_equal(out_c1, c1.c_str());
-	  assert_string_equal(out_c2, c2.c_str());
-	  assert_string_equal(out_c3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-	  out_c1 = NULL;
-	  out_c2 = NULL;
-	  out_c3 = NULL;
+    ret = snowflake_fetch(sfstmt);
+    assert_int_equal(SF_STATUS_SUCCESS, ret);
+    snowflake_column_as_const_str(sfstmt, 1, &out_c1);
+    snowflake_column_as_const_str(sfstmt, 2, &out_c2);
+    snowflake_column_as_const_str(sfstmt, 3, &out_c3);
+    std::string c1 = std::to_string(i);
+    std::string c2 = std::to_string(i + 1);
+    assert_string_equal(out_c1, c1.c_str());
+    assert_string_equal(out_c2, c2.c_str());
+    assert_string_equal(out_c3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    out_c1 = NULL;
+    out_c2 = NULL;
+    out_c3 = NULL;
   }
   ret = snowflake_fetch(sfstmt);
   assert_int_equal(SF_STATUS_EOF, ret);
 
 }
 
-void test_simple_put_auto_compress(void **unused)
+void test_simple_put_use_dev_urandom(void **unused)
+{
+  test_simple_put_use_dev_urandom_core(false);
+}
+
+void test_simple_put_use_dev_urandom_native(void **unused)
+{
+  test_simple_put_use_dev_urandom_core(true);
+}
+
+
+void test_simple_put_auto_compress_core(bool native)
 {
   test_simple_put_core("small_file.csv", // filename
                        "auto", //source compression
-                       true // auto compress
+                       true, // auto compress
+                       true, // copyUploadFile
+                       true, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64*1024*1024, // customThreshold
+                       false, // useDevUrand
+                       false, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, //compressLevel
+                       false, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
   );
 
   test_simple_put_core("small_file.csv", // filename
@@ -650,7 +857,11 @@ void test_simple_put_auto_compress(void **unused)
                        nullptr,
                        false,
                        1,
-                       true);
+                       true, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
+  );
 
   test_simple_put_core("small_file.csv", // filename
                        "auto", //source compression
@@ -666,10 +877,24 @@ void test_simple_put_auto_compress(void **unused)
                        nullptr,
                        false,
                        9,
-                       true);
+                       true, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
+  );
 }
 
-void test_simple_put_config_temp_dir(void **unused)
+void test_simple_put_auto_compress(void **unused)
+{
+  test_simple_put_auto_compress_core(false);
+}
+
+void test_simple_put_auto_compress_native(void **unused)
+{
+  test_simple_put_auto_compress_core(true);
+}
+
+void test_simple_put_config_temp_dir_core(bool native)
 {
   char tmpDir[MAX_PATH] = {0};
   char tmpDirInjection[MAX_PATH] = {0};
@@ -696,7 +921,13 @@ void test_simple_put_config_temp_dir(void **unused)
                        64*1024*1024, // customThreshold
                        false, // useDevUrand
                        false, // createSubfolder
-                       tmpDir
+                       tmpDir,
+                       false, // useS3regionalUrl
+                       -1, //compressLevel
+                       false, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
   );
 
   assert_true(sf_is_directory_exist(tmpDir));
@@ -721,31 +952,51 @@ void test_simple_put_config_temp_dir(void **unused)
     sf_delete_directory_if_exists(tmpDir);
   }
 
-  // try injection the command for folder deletion like
-  // rm -rf xxx ; mkdir <tmpDir>/injection ; xxx
-  sprintf(tmpDirInjection, "xxx %s mkdir %s %s xxx",
-          CMD_SEPARATOR, tmpDir, CMD_SEPARATOR);
-  try
+  // native execution doesn't throw exception
+  if (!native)
   {
-    test_simple_put_core("small_file.csv", // filename
-                         "auto", //source compression
-                         true, // auto compress
-                         true, // copyUploadFile
-                         true, // verifyCopyUploadFile
-                         false, // copyTableToStaging
-                         false, // createDupTable
-                         false, // setCustomThreshold
-                         64*1024*1024, // customThreshold
-                         false, // useDevUrand
-                         false, // createSubfolder
-                         tmpDirInjection
-    );
-  }
-  catch (...)
-  {
-    //ignore exception as the failure is expected.
-  }
-  assert_false(sf_is_directory_exist(tmpDir));
+    // try injection the command for folder deletion like
+    // rm -rf xxx ; mkdir <tmpDir>/injection ; xxx
+    sprintf(tmpDirInjection, "xxx %s mkdir %s %s xxx",
+            CMD_SEPARATOR, tmpDir, CMD_SEPARATOR);
+    try
+    {
+      test_simple_put_core("small_file.csv", // filename
+                           "auto", //source compression
+                           true, // auto compress
+                           true, // copyUploadFile
+                           true, // verifyCopyUploadFile
+                           false, // copyTableToStaging
+                           false, // createDupTable
+                           false, // setCustomThreshold
+                           64*1024*1024, // customThreshold
+                           false, // useDevUrand
+                           false, // createSubfolder
+                           tmpDirInjection,
+                           false, // useS3regionalUrl
+                           -1, //compressLevel
+                           false, // overwrite
+                           nullptr, // connection
+                           false, // testUnicode
+                           native
+      );
+    }
+    catch (...)
+    {
+      //ignore exception as the failure is expected.
+    }
+    assert_false(sf_is_directory_exist(tmpDir));
+    }
+}
+
+void test_simple_put_config_temp_dir(void **unused)
+{
+  test_simple_put_config_temp_dir_core(false);
+}
+
+void test_simple_put_config_temp_dir_native(void **unused)
+{
+  test_simple_put_config_temp_dir_core(true);
 }
 
 void test_simple_put_auto_detect_gzip(void ** unused)
@@ -789,7 +1040,7 @@ void test_simple_put_create_subfolder(void **unused)
   test_simple_put_core("small_file.csv.gz", "gzip", false, false, false, false, false, false, 100*1024*1024, false, true);
 }
 
-void test_simple_put_use_s3_regionalURL(void **unused)
+void test_simple_put_use_s3_regionalURL_core(bool native)
 {
   test_simple_put_core("small_file.csv.gz", "gzip", false,false,
                        false,
@@ -800,30 +1051,107 @@ void test_simple_put_use_s3_regionalURL(void **unused)
                        false,
                        false,
                        nullptr,
-                       true);
+                       true, // useS3regionalUrl
+                       -1, //compressLevel
+                       false, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
+  );
+}
+
+void test_simple_put_use_s3_regionalURL(void **unused)
+{
+  test_simple_put_use_s3_regionalURL_core(false);
+}
+
+void test_simple_put_use_s3_regionalURL_native(void **unused)
+{
+  test_simple_put_use_s3_regionalURL_core(true);
+}
+
+void test_simple_get_core(bool native)
+{
+  test_simple_put_core("small_file.csv", // filename
+                       "auto", //source compression
+                       true, // auto compress
+                       true, // copyUploadFile
+                       true, // verifyCopyUploadFile
+                       false, // copyTableToStaging
+                       false, // createDupTable
+                       false, // setCustomThreshold
+                       64*1024*1024, // customThreshold
+                       false, // useDevUrand
+                       false, // createSubfolder
+                       nullptr, // tmpDir
+                       false, // useS3regionalUrl
+                       -1, //compressLevel
+                       false, // overwrite
+                       nullptr, // connection
+                       false, // testUnicode
+                       native
+  );
+
+  char tempDir[MAX_BUF_SIZE] = { 0 };
+  char command[MAX_BUF_SIZE] = "get @%test_small_put/small_file.csv.gz file://";
+  sf_get_tmp_dir(tempDir);
+#ifdef _WIN32
+  getLongTempPath(tempDir);
+#endif
+  strcat(command, tempDir);
+  test_simple_get_data(command, // getCommand
+                       "48", // size
+                       0, // getThreshold
+                       false, // testUnicode
+                       native
+  );
 }
 
 void test_simple_get(void **unused)
 {
-  test_simple_put_core("small_file.csv", // filename
-                       "auto", //source compression
-                       true // auto compress
-  );
+  test_simple_get_core(false);
+}
 
+void test_simple_get_native(void **unused)
+{
+  test_simple_get_core(true);
+}
+
+void test_large_get_core(bool native)
+{
   char tempDir[MAX_BUF_SIZE] = { 0 };
-  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/small_file.csv.gz file://";
+  char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
+    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
+        errno = 0;
+        return;
+    }
   sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
   getLongTempPath(tempDir);
 #endif
-  strcat(tempPath, tempDir);
-  test_simple_get_data(tempPath, "48");
+  strcat(command, tempDir);
+  test_simple_get_data(command, // getCommand
+                       "5166848", // size
+                       0, // getThreshold
+                       false, // testUnicode
+                       native
+  );
 }
 
 void test_large_get(void **unused)
 {
+  test_large_get_core(false);
+}
+
+void test_large_get_native(void **unused)
+{
+  test_large_get_core(true);
+}
+
+void test_large_get_threshold_core(bool native)
+{
   char tempDir[MAX_BUF_SIZE] = { 0 };
-  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
+  char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
     if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
         errno = 0;
         return;
@@ -832,29 +1160,41 @@ void test_large_get(void **unused)
 #ifdef _WIN32
   getLongTempPath(tempDir);
 #endif
-  strcat(tempPath, tempDir);
-  test_simple_get_data(tempPath, "5166848");
+  strcat(command, tempDir);
+  test_simple_get_data(command, // getCommand
+                       "5166848", // size
+                       1000000, // getThreshold
+                       false, // testUnicode
+                       native
+  );
 }
 
 void test_large_get_threshold(void **unused)
 {
-  char tempDir[MAX_BUF_SIZE] = { 0 };
-  char tempPath[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
-  sf_get_tmp_dir(tempDir);
-#ifdef _WIN32
-  getLongTempPath(tempDir);
-#endif
-  strcat(tempPath, tempDir);
-  test_simple_get_data(tempPath, "5166848", 1000000);
+  test_large_get_threshold_core(false);
+}
+
+void test_large_get_threshold_native(void **unused)
+{
+  test_large_get_threshold_core(true);
 }
 
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
+
+  // TODO SNOW-1526335
+  // Sometime we can't get OCSP response from cache server or responder
+  // Usually happen on GCP and should be ignored by FAIL_OPEN
+  // Unfortunately libsnowflakeclient doesn't support FAIL_OPEN for now
+  // so we have to disable OCSP validation to around it.
+  // Will remove this code when adding support for FAIL_OPEN (which is
+  // the default behavior for all other drivers)
+  char *cenv = getenv("CLOUD_PROVIDER");
+  if (cenv && !strncmp(cenv, "GCP", 4)) {
+    sf_bool value = SF_BOOLEAN_FALSE;
+    snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
+  }
 
   if(!setup_random_database()) {
     std::cout << "Failed to setup random database, fallback to use regular one." << std::endl;
@@ -1231,12 +1571,6 @@ void test_2GBlarge_put(void **unused)
       return;
     }
   }
-  // put/get for GCP is not supported in libsnowflakeclient
-  // will test that in odbc.
-  if (cenv && !strncmp(cenv, "GCP", 4)) {
-    errno = 0;
-    return;
-  }
 
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
@@ -1269,12 +1603,6 @@ void test_2GBlarge_get(void **unused)
       errno = 0;
       return;
     }
-  }
-  // put/get for GCP is not supported in libsnowflakeclient
-  // will test that in odbc.
-  if (cenv && !strncmp(cenv, "GCP", 4)) {
-    errno = 0;
-    return;
   }
 
 // Jenkins node on Mac has issue with large file.
@@ -1637,7 +1965,7 @@ int main(void) {
       }); 
   if(testAccount.find("GCP") != std::string::npos)
   {
-    setenv("CLOUD_PROVIDER", "GCP", 1); 
+    setenv("CLOUD_PROVIDER", "GCP", 1);
   }
   else if(testAccount.find("AZURE") != std::string::npos)
   {
@@ -1651,13 +1979,9 @@ int main(void) {
   char *cp = getenv("CLOUD_PROVIDER");
   std::cout << "Cloud provider is " << cp << std::endl; 
 #endif
-  const char *cloud_provider = std::getenv("CLOUD_PROVIDER");
-  if(cloud_provider && ( strcmp(cloud_provider, "GCP") == 0 ) ) {
-    std::cout << "GCP put/get feature is not available in libsnowflakeclient." << std::endl;
-    return 0;
-  }
 
   const struct CMUnitTest tests[] = {
+/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -1689,6 +2013,17 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
     cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
+*/
+    cmocka_unit_test_teardown(test_simple_put_auto_compress_native, teardown),
+    cmocka_unit_test_teardown(test_simple_put_config_temp_dir_native, teardown),
+    cmocka_unit_test_teardown(test_simple_get_native, teardown),
+    cmocka_unit_test_teardown(test_large_put_auto_compress_native, donothing),
+    cmocka_unit_test_teardown(test_large_get_native, donothing),
+    cmocka_unit_test_teardown(test_large_get_threshold_native, donothing),
+    cmocka_unit_test_teardown(test_large_reupload_native, donothing),
+    cmocka_unit_test_teardown(test_verify_upload, teardown),
+    cmocka_unit_test_teardown(test_simple_put_use_dev_urandom_native, teardown),
+    cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL_native, teardown),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
