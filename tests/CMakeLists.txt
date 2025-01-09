@@ -141,13 +141,6 @@ if (UNIX)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
-if (LINUX)
-    if ($ENV{GCCVERSION} STRGREATER "9")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=unused-result")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-result")
-    endif ()
-endif ()
-
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
     if ($ENV{ARROW_FROM_SOURCE})

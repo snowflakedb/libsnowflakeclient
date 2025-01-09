@@ -5,7 +5,11 @@
 set scriptdir=%~dp0
 for /f "tokens=3" %%A in ('findstr SF_API_VERSION %scriptdir%..\include\snowflake\version.h') do @set V=%%A
 set libsnowflakeclient_version=%v:"=%
-call %*
+if "%*"=="" (
+    call :build %platform% %build_type% %vs_version% OFF ON
+) else (
+    call %*
+)
 goto :EOF
 
 :get_version
@@ -47,7 +51,7 @@ echo === share_lib: %share_lib%
 
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set curdir=%cd%
+set currdir=%cd%
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
@@ -76,7 +80,7 @@ msbuild ALL_BUILD.vcxproj /property:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 
-cd "%curdir%"
+cd "%currdir%"
 rd /s /q .\deps-build\%build_dir%\libsnowflakeclient
 if %ERRORLEVEL% NEQ 0 goto :error
 
@@ -118,9 +122,9 @@ if defined JENKINS_URL (
     echo === No zip file is created.
 )
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

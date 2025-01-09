@@ -112,6 +112,8 @@ private:
   IStatementPutGet* m_statement;
 
   std::string m_gcsAccessToken;
+
+  std::string m_stageEndpoint;
 };
 }
 }

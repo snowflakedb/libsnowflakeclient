@@ -2,13 +2,6 @@
 :: Build zlib for Windows
 :: GitHub repo: https://github.com/madler/zlib.git
 ::
-:: Prerequisite:
-:: - VC 2015 or 2017
-:: Arguments:
-:: - x86 / x64
-:: - Debug / Release
-:: - vs14 / vs15
-::
 @echo off
 set ZLIB_SRC_VERSION=1.3.1
 set ZLIB_BUILD_VERSION=6
@@ -37,7 +30,7 @@ set source_name="zlibstatic.lib"
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
-set curdir=%cd%
+set currdir=%cd%
 
 set target_name=zlib_a.lib
 if "%build_type%"=="Debug" (
@@ -50,8 +43,8 @@ if "%build_type%"=="Release" (
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
 echo === building zlib
-echo %curdir%\deps\%ZLIB_DIR%
-cd %curdir%\deps\%ZLIB_DIR%
+echo %currdir%\deps\%ZLIB_DIR%
+cd %currdir%\deps\%ZLIB_DIR%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
@@ -69,7 +62,7 @@ cmake --build . --config %build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === staging zlib
-cd "%curdir%"
+cd "%currdir%"
 rd /q /s .\deps-build\%build_dir%\zlib
 md .\deps-build\%build_dir%\zlib\include
 md .\deps-build\%build_dir%\zlib\lib
@@ -85,9 +78,9 @@ call "%scriptdir%utils.bat" :zip_file zlib %zlib_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
-cd "%curdir%"
+cd "%currdir%"
 exit /b 0
 
 :error
-cd "%curdir%"
+cd "%currdir%"
 exit /b 1

@@ -21,7 +21,12 @@ namespace
   static const std::string GCS_TOKEN_KEY = "GCS_ACCESS_TOKEN";
   // followings are from GCS documentation, XML API
   // https://cloud.google.com/storage/docs
-  static const std::string GCS_ENDPOINT = "https://storage.googleapis.com";
+  static const std::string GCS_ENDPOINT = "storage.googleapis.com";
+  static const std::string GCS_REGIONAL_ENDPOINT = "storage.%s.rep.googleapis.com";
+  // me-central2 GCS region always use regional urls
+  // TODO SNOW-1818804: the value is hardcoded now, but it should be server driven
+  static const std::string GCS_REGION_ME_CENTRAL_2 = "me-central2";
+  static const size_t URL_MAX_LEN = 2048;
   static const std::string GCS_AUTH_HEADER = "Authorization: Bearer ";
 }
 
@@ -41,10 +46,34 @@ SnowflakeGCSClient::SnowflakeGCSClient(StageInfo *stageInfo, unsigned int parall
     CXX_LOG_INFO("Using GCS down scoped token.");
   }
 
+  if (!m_stageInfo)
+  {
+    CXX_LOG_INFO("Internal error: invalid stage info");
+    return;
+  }
+
   //Ensure the stage location ended with /
   if ((!m_stageInfo->location.empty()) && (m_stageInfo->location.back() != '/'))
   {
     m_stageInfo->location.push_back('/');
+  }
+
+  m_stageEndpoint = GCS_ENDPOINT;
+  if (!m_stageInfo->endPoint.empty())
+  {
+    m_stageEndpoint = m_stageInfo->endPoint;
+  }
+  else
+  {
+    bool isMeCentral2 = (0 == sf_strncasecmp(GCS_REGION_ME_CENTRAL_2.c_str(),
+                                             m_stageInfo->region.c_str(),
+                                             GCS_REGION_ME_CENTRAL_2.size()));
+    if (isMeCentral2 || m_stageInfo->useRegionalUrl)
+    {
+      char buf[URL_MAX_LEN + 1];
+      sf_sprintf(buf, sizeof(buf), GCS_REGIONAL_ENDPOINT.c_str(), m_stageInfo->region.c_str());
+      m_stageEndpoint = buf;
+    }
   }
 }
 
@@ -274,7 +303,7 @@ void SnowflakeGCSClient::buildGcsRequest(const std::string& filePathFull,
   object = encodeUrlName(object);
 
   // https://storage.googleapis.com//BUCKET_NAME/OBJECT_NAME
-  url = GCS_ENDPOINT + "/" + bucket + "/" + object;
+  url = "https://" + m_stageEndpoint + "/" + bucket + "/" + object;
   CXX_LOG_DEBUG("Build GCS request for file %s as URL: %s", filePathFull.c_str(), url.c_str());
 
   return;

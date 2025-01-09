@@ -4,93 +4,26 @@
 #
 cmake_minimum_required(VERSION 3.17)
 project(snowflakeclient)
-
-if (CLIENT_CODE_COVERAGE)    # Only when code coverage is enabled
-    #  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
-    message("Code coverage is enabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -fprofile-arcs -ftest-coverage -O0")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage -O0 -fno-elide-constructors -fno-inline  -fno-inline-small-functions  -fno-default-inline")
-else()
-    message("Code coverage is disabled CLIENT_CODE_COVERAGE=" ${CLIENT_CODE_COVERAGE})
-endif ()
+include(cmake/platform.cmake)
+include(cmake/flags.cmake)
 
 # Enabling tests by Ctest. Don't use INCLUDE(Ctest) as
 # we don't need Dart and other tools.
 enable_testing()
 
-add_definitions(-DLOG_USE_COLOR)
+add_compile_definitions(LOG_USE_COLOR)
 
 option(BUILD_TESTS "True if build tests" on)
 option(MOCK "True if mock should be used" off)
 set(OPENSSL_VERSION_NUMBER  0x11100000L)
+
 # Developers can uncomment this to enable mock builds on their local VMs
 #set(MOCK TRUE)
 
 # Generates compile_commands.json file for clangd to parse.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-if (MOCK)
-    set(MOCK_OBJECT_WRAPPER_FLAGS -Wl,--wrap=http_perform)
-    add_definitions(-DMOCK_ENABLED)
-else()
-    set(MOCK_OBJECT_WRAPPER_FLAGS )
-endif ()
-
-if (UNIX AND NOT APPLE)
-    set(LINUX TRUE)
-endif ()
-
-if (LINUX)
-    set(PLATFORM linux)
-    message("Platform: Linux")
-endif ()
-if (APPLE)
-    set(PLATFORM darwin)
-    message("Platform: Apple OSX")
-endif ()
-if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    set(PLATFORM win64)
-    message("Platform: Windows 64bit")
-endif ()
-if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
-    set(PLATFORM win32)
-    message("Platform: Windows 32bit")
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        set (WIN32_DEBUG ON)
-        message("WIN32_DEBUG: ${WIN32_DEBUG}")
-    endif ()
-endif ()
-
 set(CMAKE_VERBOSE_MAKEFILE ON)
-if (UNIX)
-    # Linux and OSX
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -std=gnu99 -g -fPIC -Werror -Wno-error=deprecated-declarations -D_LARGEFILE64_SOURCE ${MOCK_OBJECT_WRAPPER_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -std=gnu++17 -fPIC -Werror -Wno-error=deprecated-declarations ${MOCK_OBJECT_WRAPPER_FLAGS}")
-else()
-    # Windows
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZH:SHA_256 /guard:cf /Qspectre /sdl")
-    if ($ENV{ARROW_FROM_SOURCE})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /D_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING")
-    endif ()
-endif ()
-if (LINUX)
-    # Linux. MacOS doesn't require pthread option
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-endif ()
-
-if (LINUX)
-    # Profiler for Linux
-    if (NOT "$ENV{BUILD_WITH_PROFILE_OPTION}" STREQUAL "")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-    endif ()
-
-    # Code coverage for Linux
-    if (NOT "$ENV{BUILD_WITH_GCOV_OPTION}" STREQUAL "")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gp -fprofile-arcs -ftest-coverage")
-    endif ()
-endif ()
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(SOURCE_FILES
         include/snowflake/basic_types.h
@@ -340,8 +273,6 @@ if (WIN32)
     find_library(AWS_C_SDKUTILS_LIB aws-c-sdkutils.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
 	if ($ENV{ARROW_FROM_SOURCE})
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBOOST_ALL_NO_LIB")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_ALL_NO_LIB")
         find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_REGEX_LIB libboost_regex.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_SYSTEM_LIB libboost_system.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -459,8 +390,16 @@ if (MOCK)
 endif ()
 
 add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
-set_target_properties(snowflakeclient PROPERTIES LINKER_LANGUAGE CXX)
-set_property(TARGET snowflakeclient PROPERTY C_STANDARD 99)
+target_compile_features(snowflakeclient PUBLIC cxx_std_17)
+target_compile_features(snowflakeclient PUBLIC c_std_99)
+if (UNIX)
+    target_compile_definitions(snowflakeclient PUBLIC _LARGEFILE64_SOURCE)
+endif ()
+
+if (LINUX)
+    target_compile_options(snowflakeclient PUBLIC -pthread)
+    target_link_options(snowflakeclient PUBLIC -pthread)
+endif ()
 #set (CMAKE_CXX_STANDARD 11)
 
 if (BUILD_SHARED_LIBS)
