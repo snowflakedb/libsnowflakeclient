@@ -1030,7 +1030,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             char* mfa_token = NULL;
             if (json_copy_string(&mfa_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              cred_cache_save_credential(sf->token_cache, sf->account, sf->host, sf->user, MFA_TOKEN, mfa_token);
+              cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, mfa_token);
             }
 
             _mutex_lock(&sf->mutex_parameters);

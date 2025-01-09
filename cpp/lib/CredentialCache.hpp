@@ -16,7 +16,6 @@ namespace Snowflake {
 namespace Client {
 
   struct CredentialKey {
-    std::string account;
     std::string host;
     std::string user;
     CredentialType type;

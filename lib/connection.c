@@ -98,7 +98,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 sf->token_cache = cred_cache_init();
             }
 
-            char* token = cred_cache_get_credential(sf->token_cache, sf->account, sf->host, sf->user, MFA_TOKEN);
+            char* token = cred_cache_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
             if (token != NULL)
             {
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);

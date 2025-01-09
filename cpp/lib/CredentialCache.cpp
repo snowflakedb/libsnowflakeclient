@@ -165,9 +165,9 @@ cred_cache_ptr cred_cache_init() {
     return CredentialCache::make();
 }
 
-char* cred_cache_get_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type)
+char* cred_cache_get_credential(cred_cache_ptr tc, const char* host, const char* user, CredentialType type)
 {
-  Snowflake::Client::CredentialKey key = { account, host, user, type };
+  Snowflake::Client::CredentialKey key = { host, user, type };
   auto tokenOpt = reinterpret_cast<Snowflake::Client::CredentialCache *>(tc)->get(key);
   if (!tokenOpt)
   {
@@ -183,15 +183,15 @@ void cred_cache_free_credential(char* cred) {
     delete[] cred;
 }
 
-void cred_cache_save_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type, const char *cred)
+void cred_cache_save_credential(cred_cache_ptr tc, const char* host, const char* user, CredentialType type, const char *cred)
 {
-  Snowflake::Client::CredentialKey key = { account, host, user, type };
+  Snowflake::Client::CredentialKey key = { host, user, type };
   reinterpret_cast<Snowflake::Client::CredentialCache *>(tc)->save(key, std::string(cred));
 }
 
-void cred_cache_remove_credential(cred_cache_ptr tc, const char* account, const char* host, const char* user, CredentialType type)
+void cred_cache_remove_credential(cred_cache_ptr tc, const char* host, const char* user, CredentialType type)
 {
-  Snowflake::Client::CredentialKey key = { account, host, user, type };
+  Snowflake::Client::CredentialKey key = { host, user, type };
   reinterpret_cast<Snowflake::Client::CredentialCache *>(tc)->remove(key);
 }
 

@@ -65,6 +65,7 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
+        cpp/lib/CacheFile.cpp
 )
 
 set (SOURCE_FILES_PUT_GET

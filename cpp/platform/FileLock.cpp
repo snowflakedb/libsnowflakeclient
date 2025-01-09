@@ -22,8 +22,8 @@ namespace Client {
 
   FileLock::FileLock(const std::string &path_)
       : path{path_ + lock_suffix},
-        locked(false) {
-    // Try to create file lock
+        locked(false)
+  {
     for (int retries = 0; !locked && retries < MAX_LOCK_RETRIES; retries++) {
       bool retry = try_lock();
 
@@ -33,17 +33,8 @@ namespace Client {
 
       std::this_thread::sleep_for(lock_retry_sleep);
     }
-
-    if (!locked) {
-      CXX_LOG_INFO("Failed to acquire file lock(path=%s), resetting the lock", path.c_str());
-      boost::system::error_code ec;
-      bool removed = boost::filesystem::remove(path, ec);
-
-      if (!removed || ec) {
-        CXX_LOG_ERROR("Failed to reset file lock(path=%s), removing lock failed with: %d", path.c_str(), ec.value())
-      } else {
-        try_lock();
-      }
+    if (locked) {
+      CXX_LOG_TRACE("Created file lock(path=%s)", path.c_str())
     }
   }
 
@@ -54,25 +45,50 @@ namespace Client {
       if (!removed || ec) {
         CXX_LOG_ERROR("Failed to release file lock(path=%s)", path.c_str());
       }
+      else {
+        CXX_LOG_TRACE("Released file lock(path=%s)", path.c_str());
+      }
     }
   }
 
+  // Returns true if locking should be retried
   bool FileLock::try_lock() {
     boost::system::error_code ec;
     bool created = boost::filesystem::create_directory(path, ec);
 
-    if (ec) {
+    if (ec)
+    {
       CXX_LOG_ERROR("Failed to acquire file lock(path=%s) with error code: %d", path.c_str(), ec.value());
       return false;
     }
 
-    if (!created) {
-      CXX_LOG_INFO("Failed to acquire file lock(path=%s), lock already acquired");
+    if (created)
+    {
+      locked = true;
+      return false;
+    }
+
+    CXX_LOG_INFO("Failed to acquire file lock(path=%s), lock already acquired");
+    std::time_t creation_time_epoch_seconds = boost::filesystem::creation_time(path, ec);
+    if (ec)
+    {
+      CXX_LOG_ERROR("Failed to get creation time for path=%s with error code: %d", path.c_str(), ec.value());
       return true;
     }
 
-    locked = true;
-    return false;
+    std::time_t now_epoch_seconds = time(nullptr);
+    if (creation_time_epoch_seconds + 60 < now_epoch_seconds)
+    {
+      CXX_LOG_INFO("Cleaning up stale lock.")
+      boost::filesystem::remove(path, ec);
+      if (ec)
+      {
+        CXX_LOG_ERROR("Failed to remove stale lock(path=%s) with error code: %d", path.c_str(), ec.value());
+      }
+    }
+
+    return true;
+
   }
 }
 
