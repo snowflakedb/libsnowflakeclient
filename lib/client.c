@@ -476,7 +476,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     char* top_domain = strrchr(sf->host, '.');
-    char host_without_top_domain[1024];
+    char host_without_top_domain[1024] = { 0 };
     if (top_domain)
     {
         top_domain++;
