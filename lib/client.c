@@ -2949,6 +2949,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             }
             if ((sfstmt->is_dml) && (!sfstmt->array_bind_supported))
             {
+                log_debug("Array bind is not supported - each parameter set entry "
+                          "will be executed as a single request for query: %s",
+                          sfstmt->sql_text);
                 need_batch_exec = SF_BOOLEAN_TRUE;
             }
         }

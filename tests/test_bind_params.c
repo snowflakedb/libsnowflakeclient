@@ -298,7 +298,7 @@ void test_array_binding_stage(void** unused) {
     test_array_binding_core(100000);
 }
 
-void test_array_binding_supported_false(void** unused) {
+void test_array_binding_supported_false_update(void** unused) {
     SF_STATUS status;
     char bind_data_b[2][4] = { "2.3", "3.4" };
     char bind_data_c[2][7] = { "bind", "insert" };
@@ -414,13 +414,103 @@ void test_array_binding_supported_false(void** unused) {
     snowflake_term(sf);
 }
 
+void test_array_binding_supported_false_select(void** unused) {
+    SF_STATUS status;
+    char bind_data[2][2] = { "1", "" };
+
+    SF_BIND_INPUT bind_input;
+
+    snowflake_bind_input_init(&bind_input);
+
+    bind_input.idx = 1;
+    bind_input.c_type = SF_C_TYPE_STRING;
+    bind_input.value = bind_data;
+    bind_input.len = SF_BIND_LEN_NTS;
+
+    /* Connect with all parameters set */
+    SF_CONNECT* sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* Create a statement once and reused */
+    SF_STMT* stmt = snowflake_stmt(sf);
+    status = snowflake_query(
+        stmt,
+        "create or replace temporary table foo1(a string)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    int64 paramset_size = 2;
+    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
+    status = snowflake_prepare(
+        stmt,
+        "INSERT INTO foo1 (c) VALUES (NULLIF(?, ''))",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_bind_param(stmt, &bind_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_affected_rows(stmt), 2);
+
+    status = snowflake_query(stmt, "select * from foo1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), 2);
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
+void test_array_binding_supported_false_insert(void** unused) {
+    SF_STATUS status;
+    char bind_data[2][2] = { "1", "2" };
+
+    SF_BIND_INPUT bind_input;
+
+    snowflake_bind_input_init(&bind_input);
+
+    bind_input.idx = 1;
+    bind_input.c_type = SF_C_TYPE_STRING;
+    bind_input.value = bind_data;
+    bind_input.len = 2;
+
+    /* Connect with all parameters set */
+    SF_CONNECT* sf = setup_snowflake_connection();
+    status = snowflake_connect(sf);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* Create a statement once and reused */
+    SF_STMT* stmt = snowflake_stmt(sf);
+
+    int64 paramset_size = 2;
+    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
+    status = snowflake_prepare(stmt, "select ?", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_bind_param(stmt, &bind_input);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // expected failure for non-dml query with array binding unsupported.
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
+      cmocka_unit_test(test_array_binding_supported_false_insert),
       cmocka_unit_test(test_bind_parameters),
       cmocka_unit_test(test_array_binding_normal),
       cmocka_unit_test(test_array_binding_stage),
-      cmocka_unit_test(test_array_binding_supported_false),
+      cmocka_unit_test(test_array_binding_supported_false_update),
+      cmocka_unit_test(test_array_binding_supported_false_select),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
