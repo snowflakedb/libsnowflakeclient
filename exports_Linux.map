@@ -31,6 +31,7 @@
         snowflake_execute;
         snowflake_execute_with_capture;
         snowflake_describe_with_capture;
+        snowflake_next_result;
         snowflake_fetch;
         snowflake_num_params;
         snowflake_bind_input_init;
@@ -73,6 +74,7 @@
         sf_unsetenv;
         sf_getenv_s;
         sf_get_tmp_dir;
+        sf_calloc;
         uuid4_generate;
 	local: *;
 };

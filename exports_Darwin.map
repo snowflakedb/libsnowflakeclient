@@ -36,6 +36,7 @@ _snowflake_stmt_get_attr
 _snowflake_execute
 _snowflake_execute_with_capture
 _snowflake_describe_with_capture
+_snowflake_next_result
 _snowflake_fetch
 _snowflake_num_params
 _snowflake_bind_input_init
@@ -78,4 +79,5 @@ _sf_setenv
 _sf_unsetenv
 _sf_getenv_s
 _sf_get_tmp_dir
+_sf_calloc
 _uuid4_generate

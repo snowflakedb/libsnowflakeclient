@@ -137,7 +137,7 @@ goto :EOF
     set dynamic_runtime=%~3
 
     echo === build: %component_name% ===
-    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON
+    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON ON
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version

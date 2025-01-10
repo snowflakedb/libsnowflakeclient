@@ -191,7 +191,7 @@ if (WIN32)
 endif()
 set(TESTLIB_OPTS_C_UNIT ${TESTLIB_OPTS_C})
 if (BUILD_SHARED_LIBS)
-    set(TESTLIB_OPTS_C snowflakeclient_dynamic ${CMOCKA_LIB})
+    set(TESTLIB_OPTS_C_DYNAMIC snowflakeclient_dynamic ${CMOCKA_LIB})
 endif()
 
 if (MOCK)
@@ -247,6 +247,37 @@ else()
                 --error-exitcode=1
                 --suppressions=${VALGRIND_SUPPRESSION}
                 ./${T})
+          endif()
+        endif()
+    ENDFOREACH ()
+
+    FOREACH (T ${TESTS_C})
+        add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            )
+            set_target_properties(
+		    ${T}_dynamic PROPERTIES LINK_FLAGS "/ignore:4099")
+        else()
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
+        target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
+        add_test(${T}_dynamic ${T}_dynamic)
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}_dynamic
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T}_dynamic)
           endif()
         endif()
     ENDFOREACH ()
