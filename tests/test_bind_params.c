@@ -416,7 +416,7 @@ void test_array_binding_supported_false_update(void** unused) {
 
 void test_array_binding_supported_false_insert(void** unused) {
 
-// TODO: disable for now due to server issue.
+// SNOW-1878297 TODO: disable for now due to server issue.
 // Sever returns arrayBindSupported=true while it's not really supported.
     return;
 
