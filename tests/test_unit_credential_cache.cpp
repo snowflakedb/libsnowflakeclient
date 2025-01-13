@@ -87,7 +87,7 @@ void test_credential_cache_two_keys(void **unused)
 }
 
 int main(void) {
-  /* Testing only file based credential cache */
+  /* Testing only file based credential cache, available on linux */
 #ifndef __linux__
   return 0;
 #endif

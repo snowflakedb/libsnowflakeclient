@@ -71,6 +71,7 @@ namespace Client {
 
   boost::optional<std::string> getSfTemporaryCacheDir()
   {
+#ifdef __linux__
     auto SF_TEMPORARY_CREDENTIAL_CACHE_DIR_OPT = getEnv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR");
     if (!SF_TEMPORARY_CREDENTIAL_CACHE_DIR_OPT)
     {
@@ -110,12 +111,16 @@ namespace Client {
         return {};
       }
     }
-
     return SF_TEMPORARY_CREDENTIAL_CACHE_DIR;
+#else
+    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
+    return {};
+#endif
   }
 
   boost::optional<std::string> getXdgCacheDir()
   {
+#ifdef __linux__
     auto XDG_CACHE_HOME_OPT = getEnv("XDG_CACHE_HOME");
     if (!XDG_CACHE_HOME_OPT)
     {
@@ -152,10 +157,15 @@ namespace Client {
     }
 
     return cacheDir;
+#else
+    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
+    return {};
+#endif
   }
 
   boost::optional<std::string> getHomeCacheDir()
   {
+#ifdef __linux__
     auto HOME_OPT = getEnv("HOME");
     if (!HOME_OPT)
     {
@@ -198,6 +208,10 @@ namespace Client {
     }
 
     return cacheDir;
+#else
+    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
+    return {};
+#endif
   }
 
   boost::optional<std::string> getCredentialFilePath()

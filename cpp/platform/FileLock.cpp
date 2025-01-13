@@ -56,19 +56,13 @@ namespace Client {
     boost::system::error_code ec;
     bool created = boost::filesystem::create_directory(path, ec);
 
-    if (ec)
-    {
-      CXX_LOG_ERROR("Failed to acquire file lock(path=%s) with error code: %d", path.c_str(), ec.value());
-      return false;
-    }
-
-    if (created)
+    if (created && !ec)
     {
       locked = true;
       return false;
     }
 
-    CXX_LOG_INFO("Failed to acquire file lock(path=%s), lock already acquired");
+    CXX_LOG_ERROR("Failed to acquire file lock(path=%s) with error code: %d", path.c_str(), ec.value());
     std::time_t creation_time_epoch_seconds = boost::filesystem::creation_time(path, ec);
     if (ec)
     {
