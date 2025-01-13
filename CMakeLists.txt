@@ -58,6 +58,8 @@ set(SOURCE_FILES
         lib/error.h
         lib/error.c
         lib/snowflake_util.h
+        lib/util.c
+        lib/util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
