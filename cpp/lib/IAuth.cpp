@@ -117,7 +117,7 @@ namespace Client
                     }
                     CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
                         "Fail to get SAML response, response body=%s",
-                        picojson::value(resp).serialize());
+                        (picojson::value(resp).serialize()).c_str());
                     return;
                 }
                 break;
