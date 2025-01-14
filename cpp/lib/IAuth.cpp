@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string>
@@ -7,6 +7,7 @@
 #include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"
+#include "../../lib/authenticator.h"
 
 namespace Snowflake
 {
@@ -22,18 +23,36 @@ namespace Client
             updateDataMap(dataMap);
         }
 
-        bool IDPAuthenticator::getIDPInfo()
+        std::string IAuthenticator::getErrorMessage()
+        {
+            return m_errMsg;
+        }
+
+        bool IAuthenticator::isError()
+        {
+            return !m_errMsg.empty();
+        }
+
+
+        std::string IDPAuthenticator::getErrorMessage()
+        {
+            return m_errMsg;
+        }
+
+        bool IDPAuthenticator::isError()
+        {
+            return !m_errMsg.empty();
+        }
+
+        bool IDPAuthenticator::getIDPInfo(jsonObject_t& dataMap)
         {
             bool ret = true;
-            jsonObject_t dataMap;
             SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
             dataMap["ACCOUNT_NAME"] = value(m_account);
             dataMap["AUTHENTICATOR"] = value(m_authenticator);
             dataMap["LOGIN_NAME"] = value(m_user);
             dataMap["PORT"] = value(m_port);
             dataMap["PROTOCOL"] = value(m_protocol);
-            dataMap["CLIENT_APP_ID"] = value(m_appID);
-            dataMap["CLIENT_APP_VERSION"] = value(m_appVersion);;
 
             jsonObject_t authnData, respData;
             authnData["data"] = value(dataMap);
@@ -41,11 +60,18 @@ namespace Client
             if (curlPostCall(connectURL, authnData, respData))
             {
                 jsonObject_t& data = respData["data"].get<jsonObject_t>();
-                tokenURLStr = data["tokenUrl"].get<std::string>();
                 ssoURLStr = data["ssoUrl"].get<std::string>();
+
+                if (getAuthenticatorType(m_authenticator.c_str()) == AUTH_OKTA) {
+                    tokenURLStr = data["tokenUrl"].get<std::string>();
+                }
+
+                if (getAuthenticatorType(m_authenticator.c_str()) == AUTH_EXTERNALBROWSER) {
+                    proofKey = data["proofKey"].get<std::string>();
+                }
             }
             else {
-                CXX_LOG_ERROR("sf", "Connection", "getIdpInfo",
+                CXX_LOG_INFO("sf", "Connection", "getIdpInfo",
                     "Fail to get authenticator info");
                 m_errMsg = "Fail to get authenticator info";
                 ret = false;
@@ -64,17 +90,20 @@ namespace Client
 
         void IAuthenticatorOKTA::authenticate() {
             // 1. get authenticator info
-            if (!getIDPInfo()) {
+            jsonObject_t dataMap;
+            dataMap["CLIENT_APP_ID"] = value(m_appID);
+            dataMap["CLIENT_APP_VERSION"] = value(m_appVersion);
+            if (!m_idp->getIDPInfo(dataMap)) {
                 return;
             }
 
             // 2. verify ssoUrl and tokenUrl contains same prefix
-            if (!urlHasSamePrefix(tokenURLStr, m_authenticator))
+            if (!urlHasSamePrefix(m_idp->tokenURLStr, m_idp->m_authenticator))
             {
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator is not supported, "
                     "authenticator=%s, token url=%s, sso url=%s",
-                    m_authenticator.c_str(), tokenURLStr.c_str(), ssoURLStr.c_str());
+                    m_idp->m_authenticator.c_str(), m_idp->tokenURLStr.c_str(), m_idp->ssoURLStr.c_str());
                 m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
                 return;
             }
@@ -82,13 +111,13 @@ namespace Client
             // 3. get one time token from okta
             while (true)
             {
-                SFURL tokenURL = SFURL::parse(tokenURLStr);
+                SFURL tokenURL = SFURL::parse(m_idp->tokenURLStr);
 
                 jsonObject_t dataMap, respData;
-                dataMap["username"] = picojson::value(m_user);
+                dataMap["username"] = picojson::value(m_idp->m_user);
                 dataMap["password"] = picojson::value(m_password);
 
-                if (!curlPostCall(tokenURL, dataMap, respData))
+                if (!m_idp->curlPostCall(tokenURL, dataMap, respData))
                 {
                     CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getOneTimeToken",
                         "Fail to get one time token response, response body=%s",
@@ -103,21 +132,18 @@ namespace Client
                 // 4. get SAML response
                 jsonObject_t resp;
                 bool isRetry = false;
-                SFURL sso_url = SFURL::parse(ssoURLStr);
+                SFURL sso_url = SFURL::parse(m_idp->ssoURLStr);
                 sso_url.addQueryParam("onetimetoken", oneTimeToken);
-                if (!curlGetCall(sso_url, resp, false, m_samlResponse, isRetry))
+                if (!m_idp->curlGetCall(sso_url, resp, false, m_samlResponse, isRetry))
                 {
                     if (isRetry)
                     {
                         CXX_LOG_TRACE("sf", "Connection", "Connect",
                             "Retry on getting SAML response with one time token renewed for %d times "
                             "with updated retryTimeout = %d",
-                            m_retriedCount, m_retryTimeout);
+                            m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
-                    CXX_LOG_WARN("sf", "AuthenticatorOKTA", "getSamlResponseUsingOkta",
-                        "Fail to get SAML response, response body=%s",
-                        (picojson::value(resp).serialize()).c_str());
                     return;
                 }
                 break;
@@ -125,7 +151,7 @@ namespace Client
 
             // 5. Validate post_back_url matches Snowflake URL
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
-            std::string server_url = getServerURLSync().toString();
+            std::string server_url = m_idp->getServerURLSync().toString();
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {

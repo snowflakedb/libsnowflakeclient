@@ -15,10 +15,10 @@
 #include "snowflake/IJwt.hpp"
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
-#include "picojson.h"
 #include "snowflake/SFURL.hpp"
 #include "../../lib/snowflake_util.h"
 #include "../include/snowflake/IAuth.hpp"
+#include "picojson.h"
 
 namespace Snowflake
 {
@@ -57,6 +57,19 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
+  class CIDPAuthenticator : public IDPAuthenticator
+  {
+  public:
+      CIDPAuthenticator(SF_CONNECT* conn);
+      ~CIDPAuthenticator();
+
+      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
+      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
+  private:
+      SF_CONNECT* m_connection;
+  };
+
   class AuthenticatorOKTA : public IAuthenticatorOKTA
   {
   public:
@@ -67,11 +80,6 @@ namespace Client
       void authenticate();
 
       void updateDataMap(jsonObject_t& dataMap);
-      
-      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
-      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
-
-      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
 
   private:
       SF_CONNECT* m_connection;
