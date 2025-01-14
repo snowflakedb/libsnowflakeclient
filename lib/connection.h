@@ -644,7 +644,6 @@ int64 get_retry_timeout(SF_CONNECT *sf);
 * Get current time since epoch in milliseconds
 */
 uint64 sf_get_current_time_millis();
-
 #ifdef __cplusplus
 }
 #endif
