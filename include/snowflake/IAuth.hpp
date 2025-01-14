@@ -33,6 +33,11 @@ namespace IAuth
         virtual std::string getSAMLToken() = 0;
         virtual bool isConsentCacheIdToken() = 0;
         virtual void setTimeout(int timeout) = 0;
+        std::string getErrorMessage();
+        bool isError();
+
+    protected:
+        std::string m_errMsg;
     };
     /**
      * Authenticator
@@ -64,8 +69,12 @@ namespace IAuth
         // The default behavior is to call authenticate() and updateDataMap().
         virtual void renewDataMap(jsonObject_t& dataMap);
 
+        std::string getErrorMessage();
+        bool isError();
+
     protected:
         int64 m_renewTimeout;
+        std::string m_errMsg;
     };
 
 
@@ -78,7 +87,7 @@ namespace IAuth
         virtual ~IDPAuthenticator()
         {};
 
-        bool getIDPInfo();
+        bool getIDPInfo(jsonObject_t& dataMap);
 
         virtual SFURL getServerURLSync();
         /*
@@ -86,10 +95,10 @@ namespace IAuth
          */
         virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
+        
+        std::string getErrorMessage();
+        bool isError();
 
-        std::string m_errMsg = "";
-    
-    protected:
         std::string tokenURLStr;
         std::string ssoURLStr;
         std::string proofKey;
@@ -97,17 +106,16 @@ namespace IAuth
         //These fields should be definied in the child class.
         std::string m_authenticator;
         std::string m_account;
-        std::string m_appID;
-        std::string m_appVersion;
         std::string m_user;
         std::string m_port;
         std::string m_host;
         std::string m_protocol;
         int8 m_retriedCount;
         int64 m_retryTimeout;
+        std::string m_errMsg;
     };
 
-    class IAuthenticatorOKTA : public IDPAuthenticator, public IAuthenticator
+    class IAuthenticatorOKTA : public IAuthenticator
     {
     public:
         IAuthenticatorOKTA() {};
@@ -118,6 +126,8 @@ namespace IAuth
 
         virtual void updateDataMap(jsonObject_t& dataMap);
 
+        IDPAuthenticator* m_idp;
+
         /**
          * Extract post back url from samel response. Input is in HTML format.
         */
@@ -126,6 +136,8 @@ namespace IAuth
     protected:
         //These fields should be definied in the child class.
         std::string m_password;
+        std::string m_appID;
+        std::string m_appVersion;
         bool m_disableSamlUrlCheck;
 
         std::string oneTimeToken;

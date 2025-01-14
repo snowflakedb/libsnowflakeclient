@@ -12,26 +12,41 @@
 
 using namespace Snowflake::Client;
 
-class MockOkta : public AuthenticatorOKTA {
-
+class MockIDP : public IDPAuthenticator
+{
 public:
-    MockOkta(SF_CONNECT* connection) : AuthenticatorOKTA(connection), m_connection(connection)
-    {};
+    MockIDP(SF_CONNECT* connection) : m_connection(connection)
+    {
+        m_account = m_connection->account;
+        m_authenticator = m_connection->authenticator;
+        m_user = m_connection->user;
+        m_port = m_connection->port;
+        m_host = m_connection->host;
+        m_protocol = m_connection->protocol;
+        m_retriedCount = 0;
+        m_retryTimeout = get_retry_timeout(m_connection);
+    }
 
-    ~MockOkta() {};
+    ~MockIDP()
+    {
+
+    }
     bool curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp);
     bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry);
+
     std::string getTokenURL();
     std::string getSSOURL();
     std::string getErrorMessage();
 
-    SF_CONNECT* m_connection;
     bool isCurrentCallFailed = false;
     bool isPostCallFailed = false;
     bool isCurlGetRequestFailed = false;
+
+private:
+    SF_CONNECT* m_connection;
 };
 
-bool MockOkta::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry) 
+bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
 {
     rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
     if (isCurlGetRequestFailed) {
@@ -40,7 +55,7 @@ bool MockOkta::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::
     return !isCurlGetRequestFailed;
 }
 
-bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+bool MockIDP::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
 {
     bool ret = true;
     jsonObject_t data;
@@ -65,17 +80,80 @@ bool MockOkta::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& r
     return ret;
 }
 
-std::string MockOkta::getTokenURL() {
+std::string MockIDP::getTokenURL() {
     return tokenURLStr;
 }
 
-std::string MockOkta::getSSOURL() {
+std::string MockIDP::getSSOURL() {
     return ssoURLStr;
 }
 
-std::string MockOkta::getErrorMessage() {
+std::string MockIDP::getErrorMessage() {
     return m_errMsg;
 }
+
+class MockOkta : public IAuthenticatorOKTA {
+
+public:
+    MockOkta(SF_CONNECT* connection) : m_connection(connection)
+    {
+        m_idp = new MockIDP(connection);
+    };
+
+    ~MockOkta()
+    {
+        delete m_idp;
+    };
+
+    bool getCurrentCallFailed();
+    bool getPostCallFailed();
+    bool getCurlGetRequestFailed();
+
+    void setCurrentCallFailed(bool value);
+    void setPostCallFailed(bool value);
+    void setCurlGetRequestFailed(bool value);
+
+private:
+    SF_CONNECT* m_connection;
+
+};
+
+bool MockOkta::getCurrentCallFailed() 
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    return idp->isCurrentCallFailed;
+}
+
+bool MockOkta::getPostCallFailed()
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    return idp->isPostCallFailed;
+}
+
+bool MockOkta::getCurlGetRequestFailed()
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    return idp->isCurlGetRequestFailed;
+}
+
+void MockOkta::setCurrentCallFailed(bool value)
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    idp->isCurrentCallFailed = value;
+}
+
+void MockOkta::setPostCallFailed(bool value)
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    idp->isPostCallFailed = value;
+}
+
+void MockOkta::setCurlGetRequestFailed(bool value)
+{
+    MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
+    idp->isCurlGetRequestFailed = value;
+}
+
 
 void test_idp_authenticator(void**)
 {
@@ -88,14 +166,15 @@ void test_idp_authenticator(void**)
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
 
-    MockOkta okta = MockOkta(sf);
-    okta.getIDPInfo();
-    assert_string_equal(okta.getTokenURL().c_str(), "https://fake.okta.com/tokenurl");
-    assert_string_equal(okta.getSSOURL().c_str(), "https://fake.okta.com/ssourl");
+    jsonObject_t dataMap;
+    MockIDP idp = MockIDP(sf);
+    idp.getIDPInfo(dataMap);
+    assert_string_equal(idp.getTokenURL().c_str(), "https://fake.okta.com/tokenurl");
+    assert_string_equal(idp.getSSOURL().c_str(), "https://fake.okta.com/ssourl");
 
-    okta.isCurrentCallFailed = true;
-    okta.getIDPInfo();
-    assert_string_equal(okta.getErrorMessage().c_str(), "Fail to get authenticator info");
+    idp.isCurrentCallFailed = true;
+    idp.getIDPInfo(dataMap);
+    assert_string_equal(idp.getErrorMessage().c_str(), "Fail to get authenticator info");
 
     snowflake_term(sf);
 }
@@ -143,21 +222,23 @@ void test_okta_authenticator_fail(void**)
     okta.authenticate();
     assert_string_equal(okta.getErrorMessage().c_str(), "SFSamlResponseVerificationFailed");
 
-    okta.isCurlGetRequestFailed = true;
+    okta.setCurlGetRequestFailed(true);
     okta.authenticate();
-    assert_string_equal(okta.getErrorMessage().c_str(), "SFConnectionFailed:curlGetCall");
+    assert_string_equal(okta.m_idp->m_errMsg.c_str(), "SFConnectionFailed:curlGetCall");
 
-    okta.isCurlGetRequestFailed = false;
-    okta.isCurrentCallFailed = false;
-    okta.isPostCallFailed = true;
+    okta.setCurlGetRequestFailed(false);
+    okta.setCurrentCallFailed(false);
+    okta.setPostCallFailed(true);
 
     okta.authenticate();
-    assert_string_equal(okta.getErrorMessage().c_str(), "SFConnectionFailed:curlPostCall");
+    assert_string_equal(okta.m_idp->m_errMsg.c_str(), "SFConnectionFailed:curlPostCall");
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://wrong.okta.com");
-    okta = MockOkta(sf);
-    okta.authenticate();
-    assert_string_equal(okta.getErrorMessage().c_str(), "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator");
+
+
+    MockOkta okta2 = MockOkta(sf);
+    okta2.authenticate();
+    assert_string_equal(okta2.getErrorMessage().c_str(), "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator");
 
     snowflake_term(sf);
 }

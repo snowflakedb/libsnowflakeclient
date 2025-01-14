@@ -15,10 +15,10 @@
 #include "snowflake/IJwt.hpp"
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
-#include "picojson.h"
 #include "snowflake/SFURL.hpp"
 #include "../../lib/snowflake_util.h"
 #include "../include/snowflake/IAuth.hpp"
+#include "picojson.h"
 
 namespace Snowflake
 {
@@ -57,6 +57,19 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
+  class CIDPAuthenticator : public IDPAuthenticator
+  {
+  public:
+      CIDPAuthenticator(SF_CONNECT* conn);
+      ~CIDPAuthenticator();
+
+      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
+      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
+  private:
+      SF_CONNECT* m_connection;
+  };
+
   class AuthenticatorOKTA : public IAuthenticatorOKTA
   {
   public:
@@ -67,11 +80,6 @@ namespace Client
       void authenticate();
 
       void updateDataMap(jsonObject_t& dataMap);
-      
-      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
-      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
-
-      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
 
   private:
       SF_CONNECT* m_connection;
@@ -97,7 +105,7 @@ namespace Client
       void parseAndRespondPostRequest(std::string response);
       void parseAndRespondGetRequest(char** rest_mesg);
       void respond(std::string queryParameters);
-      //void respondJson(picojson::value& json);
+      void respondJson(picojson::value& json);
 
       std::vector<std::string> splitString(const std::string& s, char delimiter);
       std::string unquote(std::string src);
@@ -151,10 +159,15 @@ namespace Client
        */
       void setTimeout(int timeout);
 
+      bool hasrror() 
+      {
+          return !m_errMsg.empty();
+      }
+
       std::string getErrorMessage();
   };
 
-  class AuthenticatorExternalBrowser : public IAuthenticator, public IDPAuthenticator
+  class AuthenticatorExternalBrowser : public IAuthenticator
   {
   public:
       AuthenticatorExternalBrowser(
@@ -187,21 +200,18 @@ namespace Client
        */
       virtual std::string generateProofKey();
 
-      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
-      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
-      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
-
   private:
       typedef Snowflake::Client::Util::IBase64 Base64;
 
       SF_CONNECT* m_connection;
       IAuthWebServer* m_authWebServer;
+      IDPAuthenticator* m_idp;
+
   protected:
       std::string m_proofKey;
       std::string m_token;
       bool m_consentCacheIdToken;
       std::string m_origin;
-      std::string m_errMsg;
 
 #ifdef __APPLE__
       void openURL(const std::string& url_str);

@@ -201,6 +201,9 @@ void test_external_browser(void** unused)
         getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    //sf_bool disable_console_login = SF_BOOLEAN_FALSE;
+    //snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN,
+    //    &disable_console_login);
     char* host, * port, * protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {
