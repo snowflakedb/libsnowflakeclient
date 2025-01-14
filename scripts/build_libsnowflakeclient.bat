@@ -98,6 +98,10 @@ copy /v /y ^
 	.\deps-build\%build_dir%\libsnowflakeclient\lib
 
 copy /v /y ^
+    .\%cmake_dir%\%build_type%\snowflakeclient_dynamic.* ^
+	.\%cmake_dir%\tests\%build_type%
+
+copy /v /y ^
     .\include\snowflake\* ^
 	.\deps-build\%build_dir%\libsnowflakeclient\include\snowflake\*
 
