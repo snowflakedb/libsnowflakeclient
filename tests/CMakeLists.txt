@@ -37,7 +37,6 @@ SET(TESTS_C
         test_native_timestamp
         test_stmt_functions
         test_ocsp_fail_open
-        test_unit_privatelink
         test_multiple_statements
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
@@ -54,7 +53,8 @@ SET (TESTS_C_UNIT
         test_get_query_result_response
         test_get_describe_only_query_result
         test_unit_oauth
-        test_unit_mfa_auth)
+        test_unit_mfa_auth
+        test_unit_privatelink)
 
 SET(TESTS_CXX
         test_unit_jwt
