@@ -193,6 +193,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
         cpp/util/CurlDescPool.cpp
+        cpp/util/Sha256.cpp
+        cpp/util/Sha256.hpp
+        cpp/platform/SecureStorageImpl.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h

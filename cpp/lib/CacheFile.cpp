@@ -1,3 +1,8 @@
+/*
+ * File:   CacheFile.cpp *
+ * Copyright (c) 2025 Snowflake Computing
+ */
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -10,9 +15,7 @@
 #include "CredentialCache.hpp"
 #include "snowflake/platform.h"
 #include "../logger/SFLogger.hpp"
-#include "openssl/sha.h"
-#include "openssl/types.h"
-#include "openssl/evp.h"
+#include "../util/Sha256.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <sys/stat.h>
@@ -22,20 +25,6 @@ namespace Snowflake {
 
 namespace Client {
   const char* CREDENTIAL_FILE_NAME = "credential_cache_v1.json";
-
-  const std::vector<std::string> CACHE_ROOT_ENV_VARS =
-  {
-      "SF_TEMPORARY_CREDENTIAL_CACHE_DIR",
-      "HOME",
-      "TMP"
-  };
-
-  const std::vector<std::string> CACHE_DIR_PATH =
-  {
-      ".cache",
-      "snowflake"
-  };
-
 
   bool mkdirIfNotExists(const std::string& dir)
   {
@@ -238,31 +227,6 @@ namespace Client {
     return {};
   };
 
-  boost::optional<std::string> sha256(const std::string& str)
-  {
-    auto mdctx = std::unique_ptr<EVP_MD_CTX, std::function<void(EVP_MD_CTX*)>>(EVP_MD_CTX_new(), EVP_MD_CTX_free);
-    if (mdctx.get() == nullptr)
-      return {};
-
-    if(EVP_DigestInit_ex(mdctx.get(), EVP_sha256(), nullptr) != 1)
-      return {};
-
-    if(EVP_DigestUpdate(mdctx.get(), str.c_str(), str.length()) != 1)
-      return {};
-
-    std::vector<unsigned char> buf(EVP_MD_size(EVP_sha256()));
-    unsigned int size = 0;
-    if(EVP_DigestFinal_ex(mdctx.get(), buf.data(), &size) != 1)
-      return {};
-
-    std::stringstream ss;
-    for (short b : buf)
-    {
-      ss << std::hex << std::setw(2) << std::setfill('0') << b;
-    }
-    return ss.str();
-  }
-
   boost::optional<std::string> credItemStr(const CredentialKey &key)
   {
     std::string plainTextKey = key.host + ":" + key.user + ":" + credTypeToString(key.type);
@@ -335,7 +299,7 @@ namespace Client {
       return "Failed to open the file";
     }
 
-    if (!ensurePermissions(path, 0700))
+    if (!ensurePermissions(path, 0600))
     {
       return "Cannot ensure correct permissions on a file";
     }

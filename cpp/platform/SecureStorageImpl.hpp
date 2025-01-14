@@ -3,8 +3,8 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#ifndef PROJECT_SECURESTORAGE_IMPL_H
-#define PROJECT_SECURESTORAGE_IMPL_H
+#ifndef PROJECT_SECURESTORAGE_IMPL_HPP
+#define PROJECT_SECURESTORAGE_IMPL_HPP
 
 #include <string>
 
@@ -28,7 +28,6 @@ namespace Client {
     static std::string convertTarget(const std::string& host,
                                      const std::string& username,
                                      const std::string& credType);
-
   public:
 
     /**

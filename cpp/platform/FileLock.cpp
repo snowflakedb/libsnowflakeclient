@@ -1,6 +1,7 @@
-//
-// Created by Jakub Szczerbinski on 15.10.24.
-//
+/*
+ * File:   FileLock.cpp *
+ * Copyright (c) 2025 Snowflake Computing
+ */
 
 #include "FileLock.hpp"
 

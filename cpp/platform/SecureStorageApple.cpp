@@ -16,8 +16,6 @@
 #include <sstream>
 
 #define MAX_TOKEN_LEN 1024
-// TODO Make :SNOWFLAKE-ODBC-DRIVER: part more generic (support generic driver, PHP etc.)
-#define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"
 #define COLON_CHAR_LENGTH 1
 #define NULL_CHAR_LENGTH 1
 
@@ -30,19 +28,10 @@ namespace Client
 
   using Snowflake::Client::SFLogger;
 
-  std::string SecureStorageImpl::convertTarget(const std::string& host,
-                                               const std::string& username,
-                                               const std::string& credType)
-  {
-    std::stringstream ss;
-    ss << host << ":" << username << ":" << DRIVER_NAME << ":" << credType;
-    return ss.str();
-  }
-
   SecureStorageStatus SecureStorageImpl::storeToken(const std::string& host,
-                                                      const std::string& username,
-                                                      const std::string& credType,
-                                                      const std::string& cred)
+                                                    const std::string& username,
+                                                    const std::string& credType,
+                                                    const std::string& cred)
   {
     /*
      * More on OS X Types can be read here:

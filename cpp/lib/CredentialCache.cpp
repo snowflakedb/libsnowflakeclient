@@ -1,6 +1,7 @@
-//
-// Created by Jakub Szczerbinski on 10.10.24.
-//
+/*
+ * File:   CredentialCache.cpp *
+ * Copyright (c) 2025 Snowflake Computing
+ */
 
 #include <cstring>
 #include <fstream>

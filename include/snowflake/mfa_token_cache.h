@@ -1,6 +1,8 @@
-//
-// Created by Jakub Szczerbinski on 10.10.24.
-//
+/*
+ * File:   mfa_token_cache.h *
+ * Copyright (c) 2025 Snowflake Computing
+ */
+
 
 #ifndef SNOWFLAKECLIENT_MFA_TOKEN_CACHE_H
 #define SNOWFLAKECLIENT_MFA_TOKEN_CACHE_H

@@ -1,6 +1,7 @@
-//
-// Created by Jakub Szczerbinski on 15.10.24.
-//
+/*
+ * File:   FileLock.hpp *
+ * Copyright (c) 2025 Snowflake Computing
+ */
 
 #ifndef SNOWFLAKECLIENT_FILELOCK_HPP
 #define SNOWFLAKECLIENT_FILELOCK_HPP

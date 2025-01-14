@@ -25,17 +25,7 @@ namespace Snowflake
 
 namespace Client
 {
-
   using Snowflake::Client::SFLogger;
-
-  std::string SecureStorageImpl::convertTarget(const std::string& host,
-                                               const std::string& username,
-                                               const std::string& credType)
-  {
-    std::stringstream ss;
-    ss << host << ":" << username << ":" << DRIVER_NAME << ":" << credType;
-    return ss.str();
-  }
 
   SecureStorageStatus SecureStorageImpl::storeToken(const std::string &host,
                                                       const std::string& username,

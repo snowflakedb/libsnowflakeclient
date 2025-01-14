@@ -1,6 +1,8 @@
-//
-// Created by Jakub Szczerbinski on 05.11.24.
-//
+/*
+ * File:   mfa_token_cache.cpp
+ * Copyright (c) 2025 Snowflake Computing
+ */
+
 #include <boost/filesystem.hpp>
 
 #include "lib/CredentialCache.hpp"
