@@ -8,7 +8,6 @@
 #include <chrono>
 #include <regex>
 #include <functional>
-#include <WS2tcpip.h>
 
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
