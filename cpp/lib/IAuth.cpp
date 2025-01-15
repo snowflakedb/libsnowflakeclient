@@ -17,31 +17,20 @@ namespace Client
     {
         using namespace picojson;
 
+        const char* AuthErrorHandler::getErrorMessage()
+        {
+            return m_errMsg.c_str();
+        }
+
+        bool AuthErrorHandler::isError()
+        {
+            return !m_errMsg.empty();
+        }
+
         void IAuthenticator::renewDataMap(jsonObject_t& dataMap)
         {
             authenticate();
             updateDataMap(dataMap);
-        }
-
-        std::string IAuthenticator::getErrorMessage()
-        {
-            return m_errMsg;
-        }
-
-        bool IAuthenticator::isError()
-        {
-            return !m_errMsg.empty();
-        }
-
-
-        std::string IDPAuthenticator::getErrorMessage()
-        {
-            return m_errMsg;
-        }
-
-        bool IDPAuthenticator::isError()
-        {
-            return !m_errMsg.empty();
         }
 
         bool IDPAuthenticator::getIDPInfo(jsonObject_t& dataMap)
@@ -88,7 +77,8 @@ namespace Client
             return url;
         }
 
-        void IAuthenticatorOKTA::authenticate() {
+        void IAuthenticatorOKTA::authenticate() 
+        {
             // 1. get authenticator info
             jsonObject_t dataMap;
             dataMap["CLIENT_APP_ID"] = value(m_appID);
@@ -188,18 +178,6 @@ namespace Client
                 "extractPostBackUrlFromSamlResponse",
                 "Post back url after unescape: %s", unescaped_url);
             return std::string(unescaped_url);
-
-        }
-
-
-        std::string IAuthWebServer::getErrorMessage() 
-        {
-            return m_errMsg;
-        }
-
-        bool IAuthWebServer::isError()
-        {
-            return !m_errMsg.empty();
         }
     }// namespace IAuth
 } // namespace Client

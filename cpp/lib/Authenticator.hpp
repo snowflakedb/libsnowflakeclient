@@ -99,7 +99,6 @@ namespace Client
       bool m_consent_cache_id_token;
       std::string m_origin;
       int m_timeout;
-      std::string m_errMsg;
 
       void parseAndRespondOptionsRequest(std::string response);
       void parseAndRespondPostRequest(std::string response);
@@ -158,13 +157,6 @@ namespace Client
        * Set the timeout for the web server.
        */
       void setTimeout(int timeout);
-
-      bool hasrror() 
-      {
-          return !m_errMsg.empty();
-      }
-
-      std::string getErrorMessage();
   };
 
   class AuthenticatorExternalBrowser : public IAuthenticator
@@ -223,7 +215,7 @@ namespace Client
   /**
    * Winsock start and cleanup
    */
-  class AuthWinSock
+  class AuthWinSock : public AuthErrorHandler
   {
   public:
       AuthWinSock();

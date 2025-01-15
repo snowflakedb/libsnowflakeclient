@@ -165,6 +165,7 @@ void test_okta_connect(void** unused)
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
+//TODO: Change OKTA to External browser
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USERNAME"));
     snowflake_set_attribute(sf, SF_CON_PASSWORD,
         getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));

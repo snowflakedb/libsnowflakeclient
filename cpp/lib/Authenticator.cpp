@@ -8,7 +8,9 @@
 #include <chrono>
 #include <regex>
 #include <functional>
+#ifdef _WIN32
 #include <WS2tcpip.h>
+#endif
 
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
@@ -26,6 +28,7 @@
 #include "memory.h"
 #include "../include/snowflake/platform.h"
 
+
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
@@ -33,6 +36,9 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
 #include <ApplicationServices/ApplicationServices.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #ifdef _WIN32
@@ -411,7 +417,8 @@ namespace Client
       IAuthenticatorOKTA::authenticate();
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, IAuthenticatorOKTA::getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
       }
   }
 
@@ -612,6 +619,7 @@ namespace Client
               "Failed to start web server. Could not create a socket. err: %s",
               "");
           m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not create a socket.";
+          return;
       }
 
       struct sockaddr_in recv_server;
@@ -625,7 +633,8 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not bind a port. err: %s", "");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not bind a port";
+          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not bind a port"; 
+          return;
       }
       if (listen(m_socket_descriptor, 0) < 0)
       {
@@ -633,6 +642,7 @@ namespace Client
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not listen a port. err: %s", "");
           m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not listen a port";
+          return;
       }
       socklen_t len = sizeof(recv_server);
       if (getsockname(m_socket_descriptor,
@@ -642,6 +652,7 @@ namespace Client
               "sf", "AuthWebServer", "start",
               "Failed to start web server. Could not get the port. err: %s", "");
           m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not get the port.";
+          return;
       }
       m_port = ntohs(recv_server.sin_port);
       CXX_LOG_INFO("sf", "AuthWebServer", "start",
@@ -1081,11 +1092,16 @@ namespace Client
   {
 #ifdef _WIN32
       AuthWinSock authWinSock;
+      if (authWinSock.isError()) 
+      {
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, authWinSock.getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
+          return;
+      }
 #endif
       m_authWebServer->start();
       if (m_authWebServer->isError())
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
           return;
       }
 
@@ -1093,14 +1109,14 @@ namespace Client
       getLoginUrl(out, m_authWebServer->getPort());
       if (isError())
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
           return;
       }
 
       startWebBrowser(out[std::string("LOGIN_URL")]);
       if (isError())
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_errMsg.c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
           return;
       }
       m_proofKey = out[std::string("PROOF_KEY")];
@@ -1109,7 +1125,7 @@ namespace Client
       m_authWebServer->startAccept();
       if (m_authWebServer->isError())
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
           return;
       }
       // accept SAML token
@@ -1120,7 +1136,7 @@ namespace Client
       m_authWebServer->stop();
       if (m_authWebServer->isError())
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
           return;
       }
       m_token = m_authWebServer->getSAMLToken();
@@ -1256,7 +1272,6 @@ namespace Client
                   CXX_LOG_ERROR("sf", "AuthenticatorExternalBrowser", "startWebBrowser",
                       "Failed to start web browser. xdg-open returned %d", es);
                   m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser. xdg-open returned";
-
               }
           }
       }
@@ -1290,7 +1305,7 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWinSock", "constructor",
               "Failed to call WSAStartup: %d", err);
-          //SF_THROWGEN1("SFAuthWebBrowserFailed", std::to_string(err));
+          m_errMsg = "SFAuthWebBrowserFailed: Failed to call WSAStartup";
       }
       if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
       {
@@ -1300,7 +1315,7 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWinSock", "constructor",
               "Could not find a usable version of Winsock.dll.%s", "");
-          //SF_THROWGEN1("SFAuthWebBrowserFailed", std::to_string(err));
+          m_errMsg = "SFAuthWebBrowserFailed: Could not find a usable version of Winsock.dll";
       }
 
       CXX_LOG_INFO("sf", "AuthWinSock",
