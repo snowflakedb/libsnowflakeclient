@@ -19,6 +19,7 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
+#include "util.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -482,15 +483,39 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     char* top_domain = strrchr(sf->host, '.');
+    char host_without_top_domain[1024] = { 0 };
     if (top_domain)
     {
         top_domain++;
+        size_t length = top_domain - sf->host;
+        sf_strncpy(host_without_top_domain, sizeof(host_without_top_domain), sf->host,length);
     }
     else
     {
         // It's basically impossible not finding top domain in host.
         // Log the entire host just in case.
         top_domain = sf->host;
+        host_without_top_domain[0] = '\0';
+    }
+
+    //check privatelink
+    if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
+    {
+        char url_buf[4096];
+        sf_snprintf(url_buf, sizeof(url_buf), sizeof(url_buf)-1, "http://ocsp.%s/%s",
+           sf->host, "ocsp_response_cache.json");
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL")) 
+        {
+            log_warn(
+                "sf", "Connection", "connect",
+                "Replace SF_OCSP_RESPONSE_CACHE_SERVER_URL from %s to %s",
+                getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"),url_buf);
+        }
+        log_trace(
+            "sf", "Connection", "connect",
+            "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
+            url_buf);
+        sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", url_buf);
     }
 
     log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
@@ -1203,6 +1228,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_DISABLE_SAML_URL_CHECK:
             sf->disable_saml_url_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
             break;

@@ -94,6 +94,11 @@ extern "C" {
 #define SF_JWT_CNXN_WAIT_TIME 10
 
 /**
+ * Privatelink host suffix.
+ */
+#define PRIVATELINK_HOSTNAME_SUFFIX ".privatelink.snowflakecomputing."
+
+/**
  * Snowflake Data types
  *
  * Use snowflake_type_to_string to get the string representation.
@@ -444,7 +449,6 @@ typedef struct SF_CONNECT {
     // by the setting from connection attribute
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
-
     sf_bool disable_console_login;
 } SF_CONNECT;
 

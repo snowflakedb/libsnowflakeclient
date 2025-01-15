@@ -57,7 +57,12 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
+<<<<<<< HEAD
         lib/snowflake_util.h
+=======
+        lib/util.c
+        lib/util.h
+>>>>>>> c4b0fe29530e78a6264607c517b8dbe650e9a35d
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
