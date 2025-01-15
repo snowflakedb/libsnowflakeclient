@@ -139,7 +139,7 @@ namespace Client {
       return {};
     }
 
-    if (chmod(cacheDir.c_str(), 700) != 0)
+    if (chmod(cacheDir.c_str(), 0700) != 0)
     {
       CXX_LOG_INFO("Failed to set permissions on directory=%s, errno=%d. Skipping it in cache file location lookup.", XDG_CACHE_HOME.c_str(), errno);
       return {};
@@ -190,7 +190,7 @@ namespace Client {
       }
     }
 
-    if (chmod(cacheDir.c_str(), 700) != 0)
+    if (chmod(cacheDir.c_str(), 0700) != 0)
     {
       CXX_LOG_INFO("Failed to set permissions on directory=%s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
       return {};
