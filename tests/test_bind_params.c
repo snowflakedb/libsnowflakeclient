@@ -323,7 +323,6 @@ void test_array_binding_stage(void** unused) {
 }
 
 void test_array_binding_stage_fallback(void** unused) {
-    SKIP_IF_PROXY_ENV_IS_SET;
     test_array_binding_core(100000, SF_BOOLEAN_TRUE);
 }
 
