@@ -1,0 +1,10 @@
+coverage:
+  range: 80..90
+  round: down
+  precision: 2
+ignore:
+- examples/.*
+- deps-build/.*
+comment:
+  layout: " diff, flags, files"
+  behavior: default
