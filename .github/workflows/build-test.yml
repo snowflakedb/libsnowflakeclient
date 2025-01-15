@@ -224,6 +224,14 @@ jobs:
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+            - name: Test on GCP
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
+                  CLOUD_PROVIDER: GCP
+                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+              run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
               with:
