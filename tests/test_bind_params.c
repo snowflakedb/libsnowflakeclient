@@ -299,6 +299,7 @@ void test_array_binding_stage(void** unused) {
 }
 
 void test_array_binding_supported_false_update(void** unused) {
+    UNUSED(unused);
     SF_STATUS status;
     char bind_data_b[2][4] = { "2.3", "3.4" };
     char bind_data_c[2][7] = { "bind", "insert" };
@@ -415,6 +416,7 @@ void test_array_binding_supported_false_update(void** unused) {
 }
 
 void test_array_binding_supported_false_insert(void** unused) {
+    UNUSED(unused);
 
 // SNOW-1878297 TODO: disable for now due to server issue.
 // Sever returns arrayBindSupported=true while it's not really supported.
@@ -471,6 +473,7 @@ void test_array_binding_supported_false_insert(void** unused) {
 }
 
 void test_array_binding_supported_false_select(void** unused) {
+    UNUSED(unused);
     SF_STATUS status;
     char bind_data[2][2] = { "1", "2" };
 
