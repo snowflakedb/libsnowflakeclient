@@ -92,8 +92,14 @@ namespace Client
   {
 
   private:
+#ifdef _WIN32
       SOCKET m_socket_descriptor; // socket
       SOCKET m_socket_desc_web_client; // socket (client)
+#else
+      int m_socket_descriptor; // socket
+      int m_socket_desc_web_client; // socket (client)
+#endif
+
       int m_port; // port to listen
       std::string m_saml_token;
       bool m_consent_cache_id_token;

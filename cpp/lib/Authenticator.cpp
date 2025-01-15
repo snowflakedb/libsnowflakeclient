@@ -10,6 +10,10 @@
 #include <functional>
 #ifdef _WIN32
 #include <WS2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #include "Authenticator.hpp"
@@ -36,9 +40,6 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
 #include <ApplicationServices/ApplicationServices.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #endif
 
 #ifdef _WIN32
