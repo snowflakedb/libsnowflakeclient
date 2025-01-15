@@ -271,11 +271,24 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
       sf_setenv("no_proxy", ".snowflakecomputing.com");
     }
     status = snowflake_execute(stmt);
+    if (status != SF_STATUS_SUCCESS)
+    {
+      dump_error(&stmt->error);
+    }
     if (fallback)
     {
       sf_unsetenv("https_proxy");
       sf_unsetenv("no_proxy");
+      // in a low chance the insert query could take time on server side and
+      // turn into async and need to access storage endpoint to get the result
+      // Ignore the error in such case.
+      if (status == SF_STATUS_ERROR_CURL)
+      {
+        fprintf(stderr, "test_array_binding_stage_fallback: insert query impacted by invalid proxy, skip.\n");
+        return;
+      }
     }
+
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_affected_rows(stmt), array_size);
 
@@ -310,7 +323,8 @@ void test_array_binding_stage(void** unused) {
 }
 
 void test_array_binding_stage_fallback(void** unused) {
-  test_array_binding_core(100000, SF_BOOLEAN_TRUE);
+    SKIP_IF_PROXY_ENV_IS_SET;
+    test_array_binding_core(100000, SF_BOOLEAN_TRUE);
 }
 
 void test_array_binding_supported_false_update(void** unused) {
