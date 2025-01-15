@@ -21,11 +21,7 @@ extern "C" {
 #include <snowflake/platform.h>
 
 // Defined for unused function parameters.
-#ifdef _MSC_VER
-#define UNUSED(...) (__VA_ARGS__)
-#else
-#define UNUSED(...)
-#endif
+#define UNUSED(x) (void)(x)
 
 #define SKIP_IF_PROXY_ENV_IS_SET \
 {                                                                                                               \
