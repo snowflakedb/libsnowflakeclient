@@ -36,7 +36,6 @@ public:
 
     std::string getTokenURL();
     std::string getSSOURL();
-    std::string getErrorMessage();
 
     bool isCurrentCallFailed = false;
     bool isPostCallFailed = false;
@@ -86,10 +85,6 @@ std::string MockIDP::getTokenURL() {
 
 std::string MockIDP::getSSOURL() {
     return ssoURLStr;
-}
-
-std::string MockIDP::getErrorMessage() {
-    return m_errMsg;
 }
 
 class MockOkta : public IAuthenticatorOKTA {
@@ -174,7 +169,7 @@ void test_idp_authenticator(void**)
 
     idp.isCurrentCallFailed = true;
     idp.getIDPInfo(dataMap);
-    assert_string_equal(idp.getErrorMessage().c_str(), "Fail to get authenticator info");
+    assert_string_equal(idp.getErrorMessage(), "Fail to get authenticator info");
 
     snowflake_term(sf);
 }
