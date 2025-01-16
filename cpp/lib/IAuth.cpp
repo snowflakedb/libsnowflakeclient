@@ -17,7 +17,7 @@ namespace Client
     {
         using namespace picojson;
 
-        const char* AuthErrorHandler::getErrorMessage()
+        std::string AuthErrorHandler::getErrorMessage()
         {
             return m_errMsg.c_str();
         }

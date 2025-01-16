@@ -19,7 +19,7 @@ namespace IAuth
     class AuthErrorHandler
     {
     public:
-        const char* getErrorMessage();
+        std::string getErrorMessage();
         bool isError();
 
     protected:
