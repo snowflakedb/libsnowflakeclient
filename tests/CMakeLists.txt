@@ -42,11 +42,11 @@ SET(TESTS_C
         test_get_describe_only_query_result
         test_stmt_functions
         test_unit_oauth
+        test_unit_pat
         test_unit_mfa_auth
         test_ocsp_fail_open
         test_unit_privatelink
         test_multiple_statements
-        test_pat
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
