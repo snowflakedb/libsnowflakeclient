@@ -54,7 +54,7 @@ namespace IAuth
     {
     public:
 
-        IAuthenticator() : m_renewTimeout(0)
+        IAuthenticator() : AuthErrorHandler(), m_renewTimeout(0)
         {}
 
         virtual ~IAuthenticator()
@@ -85,7 +85,7 @@ namespace IAuth
     class IDPAuthenticator : public AuthErrorHandler
     {
     public:
-        IDPAuthenticator()
+        IDPAuthenticator() : AuthErrorHandler()
         {};
 
         virtual ~IDPAuthenticator()
