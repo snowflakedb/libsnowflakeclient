@@ -424,6 +424,7 @@ typedef struct SF_CONNECT {
 
     //token for OAuth authentication
     char *oauth_token;
+
     //programmatic access token
     char *programmatic_access_token;
 
