@@ -19,7 +19,7 @@ namespace Client
 
         std::string AuthErrorHandler::getErrorMessage()
         {
-            return m_errMsg.c_str();
+            return m_errMsg;
         }
 
         bool AuthErrorHandler::isError()
