@@ -19,10 +19,14 @@ namespace IAuth
     class AuthErrorHandler
     {
     public:
+        AuthErrorHandler() : m_errMsg("") {};
+
+        virtual ~AuthErrorHandler() {};
+
         std::string getErrorMessage();
         bool isError();
-
-        volatile std::string m_errMsg = "";
+    protected:
+        std::string m_errMsg;
     };
 
     class IAuthWebServer : public AuthErrorHandler
