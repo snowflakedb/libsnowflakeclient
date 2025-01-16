@@ -15,10 +15,39 @@ namespace Client
 {
 namespace IAuth
 {
+
+    class AuthErrorHandler
+    {
+    public:
+        const char* getErrorMessage();
+        bool isError();
+
+    protected:
+        std::string m_errMsg;
+    };
+
+    class IAuthWebServer : public AuthErrorHandler
+    {
+    public:
+        IAuthWebServer()
+        {}
+
+        virtual ~IAuthWebServer()
+        {}
+
+        virtual void start() = 0;
+        virtual void stop() = 0;
+        virtual int getPort() = 0;
+        virtual void startAccept() = 0;
+        virtual bool receive() = 0;
+        virtual std::string getSAMLToken() = 0;
+        virtual bool isConsentCacheIdToken() = 0;
+        virtual void setTimeout(int timeout) = 0;
+    };
     /**
      * Authenticator
      */
-    class IAuthenticator
+    class IAuthenticator : public AuthErrorHandler
     {
     public:
 
@@ -43,18 +72,14 @@ namespace IAuth
 
         // Renew the autentication and update datamap.
         // The default behavior is to call authenticate() and updateDataMap().
-        virtual void renewDataMap(jsonObject_t& dataMap);
-
-        std::string getErrorMessage();
-        bool isError();
+        virtual void renewDataMap(jsonObject_t& dataMap);;
 
     protected:
         int64 m_renewTimeout;
-        std::string m_errMsg;
     };
 
 
-    class IDPAuthenticator
+    class IDPAuthenticator : public AuthErrorHandler
     {
     public:
         IDPAuthenticator()
@@ -71,9 +96,6 @@ namespace IAuth
          */
         virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
-        
-        std::string getErrorMessage();
-        bool isError();
 
         std::string tokenURLStr;
         std::string ssoURLStr;
@@ -88,7 +110,6 @@ namespace IAuth
         std::string m_protocol;
         int8 m_retriedCount;
         int64 m_retryTimeout;
-        std::string m_errMsg;
     };
 
     class IAuthenticatorOKTA : public IAuthenticator
