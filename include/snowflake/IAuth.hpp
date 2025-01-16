@@ -22,7 +22,7 @@ namespace IAuth
         std::string getErrorMessage();
         bool isError();
 
-        std::string m_errMsg;
+        std::string m_errMsg = "";
     };
 
     class IAuthWebServer : public AuthErrorHandler
