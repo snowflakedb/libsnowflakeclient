@@ -22,7 +22,6 @@ namespace IAuth
         std::string getErrorMessage();
         bool isError();
 
-    protected:
         std::string m_errMsg;
     };
 
