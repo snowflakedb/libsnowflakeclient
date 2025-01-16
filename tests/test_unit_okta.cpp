@@ -49,7 +49,7 @@ bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::s
 {
     rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
     if (isCurlGetRequestFailed) {
-        m_errMsg = "SFConnectionFailed:curlGetCall";
+        IDPAuthenticator::m_errMsg = "SFConnectionFailed:curlGetCall";
     }
     return !isCurlGetRequestFailed;
 }
@@ -64,7 +64,7 @@ bool MockIDP::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& re
     resp["data"] = picojson::value(data);
     resp["sessionToken"] = picojson::value("onetimetoken");
     if (isPostCallFailed) {
-        m_errMsg = "SFConnectionFailed:curlPostCall";
+        IDPAuthenticator::m_errMsg = "SFConnectionFailed:curlPostCall";
     }
 
     //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
