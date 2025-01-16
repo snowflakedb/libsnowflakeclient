@@ -23,7 +23,7 @@ namespace IAuth
 
         virtual ~AuthErrorHandler() {};
 
-        std::string getErrorMessage();
+        const char* getErrorMessage();
         bool isError();
     protected:
         std::string m_errMsg;
@@ -54,7 +54,7 @@ namespace IAuth
     {
     public:
 
-        IAuthenticator() : AuthErrorHandler(), m_renewTimeout(0)
+        IAuthenticator() : m_renewTimeout(0)
         {}
 
         virtual ~IAuthenticator()
@@ -85,7 +85,7 @@ namespace IAuth
     class IDPAuthenticator : public AuthErrorHandler
     {
     public:
-        IDPAuthenticator() : AuthErrorHandler()
+        IDPAuthenticator()
         {};
 
         virtual ~IDPAuthenticator()
