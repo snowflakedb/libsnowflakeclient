@@ -159,6 +159,7 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
+  size_t srcSize = file_size(file);
   std::string putCommand = "put file://" + file + " @%test_small_put";
   if (testUnicode)
   {
@@ -281,12 +282,55 @@ void test_simple_put_core(const char * fileName,
     assert_int_equal(SF_STATUS_SUCCESS, ret);
 
     const char *out;
+    int8 out_int8;
+    int32 out_int32;
+    int64 out_int64;
+    uint8 out_uint8;
+    uint32 out_uint32;
+    uint64 out_uint64;
+    float32 out_float32;
+    float64 out_float64;
+    sf_bool out_bool;
+    SF_TIMESTAMP out_timestamp;
+
     // source
     snowflake_column_as_const_str(sfstmt, 1, &out);
     assert_string_equal(expectedSrc.c_str(), out);
+    // special behavior of int8/uint8 get first character of string
+    snowflake_column_as_int8(sfstmt, 1, &out_int8);
+    assert_int_equal(out_int8, (int8)expectedSrc[0]);
+    snowflake_column_as_uint8(sfstmt, 1, &out_uint8);
+    assert_int_equal(out_uint8, (uint8)expectedSrc[0]);
+
     // target
     snowflake_column_as_const_str(sfstmt, 2, &out);
     assert_string_equal(expectedTarget.c_str(), out);
+
+    // source size with all retrieval methods
+    // don't varify size with auto compression as the source size
+    // would be compressed size.
+    if (!autoCompress)
+    {
+      snowflake_column_as_int32(sfstmt, 3, &out_int32);
+      assert_int_equal(out_int32, (int32)srcSize);
+      snowflake_column_as_int64(sfstmt, 3, &out_int64);
+      assert_int_equal(out_int64, (int64)srcSize);
+      snowflake_column_as_uint32(sfstmt, 3, &out_uint32);
+      assert_int_equal(out_uint32, (uint32)srcSize);
+      snowflake_column_as_uint64(sfstmt, 3, &out_uint64);
+      assert_int_equal(out_uint64, (uint64)srcSize);
+      snowflake_column_as_float32(sfstmt, 3, &out_float32);
+      assert_int_equal(out_float32, (float32)srcSize);
+      snowflake_column_as_float64(sfstmt, 3, &out_float64);
+      assert_int_equal(out_float64, (float64)srcSize);
+    }
+    ret = snowflake_column_as_boolean(sfstmt, 3, &out_bool);
+    assert_int_equal(ret, SF_STATUS_ERROR_CONVERSION_FAILURE);
+    ret = snowflake_column_as_timestamp(sfstmt, 3, &out_timestamp);
+    assert_int_equal(ret, SF_STATUS_ERROR_CONVERSION_FAILURE);
+    snowflake_column_is_null(sfstmt, 3, &out_bool);
+    assert_int_equal(out_bool, SF_BOOLEAN_FALSE);
+
     // source comparession
     snowflake_column_as_const_str(sfstmt, 5, &out);
     assert_string_equal(expectedSourceCompression.c_str(), out);
