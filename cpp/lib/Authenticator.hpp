@@ -165,7 +165,7 @@ namespace Client
       void setTimeout(int timeout);
   };
 
-  class AuthenticatorExternalBrowser : public IAuthenticator
+  class AuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
   {
   public:
       AuthenticatorExternalBrowser(

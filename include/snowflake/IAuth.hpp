@@ -23,7 +23,7 @@ namespace IAuth
 
         virtual ~AuthErrorHandler() {};
 
-        virtual const char* getErrorMessage();
+        const char* getErrorMessage();
         bool isError();
     protected:
         std::string m_errMsg;
@@ -50,7 +50,7 @@ namespace IAuth
     /**
      * Authenticator
      */
-    class IAuthenticator : public AuthErrorHandler
+    class IAuthenticator
     {
     public:
 
@@ -115,7 +115,7 @@ namespace IAuth
         int64 m_retryTimeout;
     };
 
-    class IAuthenticatorOKTA : public IAuthenticator
+    class IAuthenticatorOKTA : public IAuthenticator, public AuthErrorHandler
     {
     public:
         IAuthenticatorOKTA() {};
