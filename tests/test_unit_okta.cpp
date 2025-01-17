@@ -107,6 +107,7 @@ public:
     void setCurrentCallFailed(bool value);
     void setPostCallFailed(bool value);
     void setCurlGetRequestFailed(bool value);
+    const char* getErrorMessage();
 
 private:
     SF_CONNECT* m_connection;
@@ -147,6 +148,11 @@ void MockOkta::setCurlGetRequestFailed(bool value)
 {
     MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
     idp->isCurlGetRequestFailed = value;
+}
+
+const char* MockOkta::getErrorMessage()
+{
+    return m_errMsg.c_str();
 }
 
 
