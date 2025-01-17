@@ -16,38 +16,10 @@ namespace Client
 namespace IAuth
 {
 
-    class AuthErrorHandler
-    {
-    public:
-        const char* getErrorMessage();
-        bool isError();
-
-    protected:
-        std::string m_errMsg;
-    };
-
-    class IAuthWebServer : public AuthErrorHandler
-    {
-    public:
-        IAuthWebServer()
-        {}
-
-        virtual ~IAuthWebServer()
-        {}
-
-        virtual void start() = 0;
-        virtual void stop() = 0;
-        virtual int getPort() = 0;
-        virtual void startAccept() = 0;
-        virtual bool receive() = 0;
-        virtual std::string getSAMLToken() = 0;
-        virtual bool isConsentCacheIdToken() = 0;
-        virtual void setTimeout(int timeout) = 0;
-    };
     /**
      * Authenticator
      */
-    class IAuthenticator : public AuthErrorHandler
+    class IAuthenticator 
     {
     public:
 
@@ -79,7 +51,7 @@ namespace IAuth
     };
 
 
-    class IDPAuthenticator : public AuthErrorHandler
+    class IDPAuthenticator 
     {
     public:
         IDPAuthenticator()
@@ -96,6 +68,8 @@ namespace IAuth
          */
         virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
+        const char* getErrorMessage();
+        bool isError();
 
         std::string tokenURLStr;
         std::string ssoURLStr;
@@ -110,6 +84,7 @@ namespace IAuth
         std::string m_protocol;
         int8 m_retriedCount;
         int64 m_retryTimeout;
+        std::string m_errMsg;
     };
 
     class IAuthenticatorOKTA : public IAuthenticator
@@ -129,6 +104,8 @@ namespace IAuth
          * Extract post back url from samel response. Input is in HTML format.
         */
         std::string extractPostBackUrlFromSamlResponse(std::string html);
+        const char* getErrorMessage();
+        bool isError();
 
     protected:
         //These fields should be definied in the child class.
@@ -139,6 +116,8 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
+        std::string m_errMsg;
+
     };
 } // namespace IAuth
 } // namespace Client
