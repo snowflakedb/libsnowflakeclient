@@ -41,7 +41,7 @@
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
-#include <LSOpen.h>
+#include <CoreServices/CoreServices.h>
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 

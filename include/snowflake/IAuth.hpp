@@ -115,7 +115,7 @@ namespace IAuth
         int64 m_retryTimeout;
     };
 
-    class IAuthenticatorOKTA : public IAuthenticator 
+    class IAuthenticatorOKTA : public IAuthenticator, public AuthErrorHandler
     {
     public:
         IAuthenticatorOKTA() {};
@@ -142,7 +142,6 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
-        std::string errorMessage = "";
     };
 } // namespace IAuth
 } // namespace Client
