@@ -15,11 +15,22 @@ namespace Client
 {
 namespace IAuth
 {
+    class AuthErrorHandler
+    {
+    public:
+        AuthErrorHandler() {};
+        virtual ~AuthErrorHandler() {};
+
+        bool isError();
+        const char* getErrorMessage();
+
+        std::string m_errMsg;
+    };
 
     /**
      * Authenticator
      */
-    class IAuthenticator 
+    class IAuthenticator : public AuthErrorHandler
     {
     public:
 
@@ -51,7 +62,7 @@ namespace IAuth
     };
 
 
-    class IDPAuthenticator 
+    class IDPAuthenticator : public AuthErrorHandler
     {
     public:
         IDPAuthenticator()
@@ -84,7 +95,6 @@ namespace IAuth
         std::string m_protocol;
         int8 m_retriedCount;
         int64 m_retryTimeout;
-        std::string m_errMsg;
     };
 
     class IAuthenticatorOKTA : public IAuthenticator
@@ -104,8 +114,6 @@ namespace IAuth
          * Extract post back url from samel response. Input is in HTML format.
         */
         std::string extractPostBackUrlFromSamlResponse(std::string html);
-        const char* getErrorMessage();
-        bool isError();
 
     protected:
         //These fields should be definied in the child class.
@@ -116,8 +124,6 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
-        std::string m_errMsg;
-
     };
 } // namespace IAuth
 } // namespace Client
