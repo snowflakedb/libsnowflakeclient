@@ -419,9 +419,9 @@ namespace Client
   void AuthenticatorOKTA::authenticate()
   {
       IAuthenticatorOKTA::authenticate();
-      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
+      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (errorMessage != "" || m_idp->isError()))
       {
-          const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          const char* err = m_idp->isError() ?  m_idp->getErrorMessage(): errorMessage.c_str();
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
       }
   }

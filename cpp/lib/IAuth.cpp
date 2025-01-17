@@ -94,7 +94,7 @@ namespace Client
                     "The specified authenticator is not supported, "
                     "authenticator=%s, token url=%s, sso url=%s",
                     m_idp->m_authenticator.c_str(), m_idp->tokenURLStr.c_str(), m_idp->ssoURLStr.c_str());
-                m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
+                errorMessage = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
                 return;
             }
 
@@ -151,8 +151,7 @@ namespace Client
                     "match, expected=%s, post back=%s",
                     server_url.c_str(),
                     post_back_url.c_str());
-                m_errMsg = "SFSamlResponseVerificationFailed";
-                return;
+                errorMessage = "SFSamlResponseVerificationFailed";
             }
         }
 
