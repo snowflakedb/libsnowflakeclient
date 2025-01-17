@@ -79,8 +79,6 @@ namespace IAuth
          */
         virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
-        const char* getErrorMessage();
-        bool isError();
 
         std::string tokenURLStr;
         std::string ssoURLStr;

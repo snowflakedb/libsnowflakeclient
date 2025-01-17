@@ -17,6 +17,16 @@ namespace Client
     {
         using namespace picojson;
 
+        const char* AuthErrorHandler::getErrorMessage()
+        {
+            return m_errMsg.c_str();
+        }
+
+        bool AuthErrorHandler::isError()
+        {
+            return !m_errMsg.empty();
+        }
+
         void IAuthenticator::renewDataMap(jsonObject_t& dataMap)
         {
             authenticate();
@@ -168,26 +178,6 @@ namespace Client
                 "extractPostBackUrlFromSamlResponse",
                 "Post back url after unescape: %s", unescaped_url);
             return std::string(unescaped_url);
-        }
-
-        const char* IDPAuthenticator::getErrorMessage()
-        {
-            return m_errMsg.c_str();
-        }
-
-        bool IDPAuthenticator::isError()
-        {
-            return !m_errMsg.empty();
-        }
-
-        const char* IAuthenticatorOKTA::getErrorMessage()
-        {
-            return m_errMsg.c_str();
-        }
-
-        bool IAuthenticatorOKTA::isError()
-        {
-            return !m_errMsg.empty();
         }
     }// namespace IAuth
 } // namespace Client
