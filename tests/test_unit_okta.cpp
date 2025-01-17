@@ -213,9 +213,6 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
 
     MockOkta okta = MockOkta(sf);
-    okta.authenticate();
-    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed");
-
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();
     assert_string_equal(okta.m_idp->getErrorMessage(), "SFConnectionFailed:curlGetCall");
@@ -227,9 +224,12 @@ void test_okta_authenticator_fail(void**)
     okta.authenticate();
     assert_string_equal(okta.m_idp->getErrorMessage(), "SFConnectionFailed:curlPostCall");
 
+
+    MockOkta okta3 = MockOkta(sf);
+    okta3.authenticate();
+    assert_string_equal(okta3.getErrorMessage(), "SFSamlResponseVerificationFailed");
+
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://wrong.okta.com");
-
-
     MockOkta okta2 = MockOkta(sf);
     okta2.authenticate();
     assert_string_equal(okta2.getErrorMessage(), "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator");
