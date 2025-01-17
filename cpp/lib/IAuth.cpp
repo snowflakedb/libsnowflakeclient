@@ -145,13 +145,13 @@ namespace Client
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {
+                m_errMsg = "SFSamlResponseVerificationFailed";
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator and destination URL in "
                     "Saml Assertion did not "
                     "match, expected=%s, post back=%s",
                     server_url.c_str(),
                     post_back_url.c_str());
-                m_errMsg = "SFSamlResponseVerificationFailed";
             }
         }
 
