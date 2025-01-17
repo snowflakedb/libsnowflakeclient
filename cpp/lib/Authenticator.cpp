@@ -25,6 +25,7 @@
 #include "memory.h"
 #include "../include/snowflake/platform.h"
 
+
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
@@ -384,7 +385,6 @@ namespace Client
 
       m_password = m_connection->password;
       m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
-
       //m_appID = m_connection->application_name;
       //m_appVersion = m_connection->application_version;
       m_appID = "ODBC";
@@ -402,7 +402,8 @@ namespace Client
       IAuthenticatorOKTA::authenticate();
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, IAuthenticatorOKTA::getErrorMessage().c_str(), SF_SQLSTATE_GENERAL_ERROR);
+          const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
       }
   }
 
@@ -563,6 +564,5 @@ namespace Client
       SF_FREE(raw_resp);
       return ret;
   }
-
 } // namespace Client
 } // namespace Snowflake

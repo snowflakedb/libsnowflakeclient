@@ -15,10 +15,11 @@ namespace Client
 {
 namespace IAuth
 {
+
     /**
      * Authenticator
      */
-    class IAuthenticator
+    class IAuthenticator 
     {
     public:
 
@@ -43,18 +44,14 @@ namespace IAuth
 
         // Renew the autentication and update datamap.
         // The default behavior is to call authenticate() and updateDataMap().
-        virtual void renewDataMap(jsonObject_t& dataMap);
-
-        std::string getErrorMessage();
-        bool isError();
+        virtual void renewDataMap(jsonObject_t& dataMap);;
 
     protected:
         int64 m_renewTimeout;
-        std::string m_errMsg;
     };
 
 
-    class IDPAuthenticator
+    class IDPAuthenticator 
     {
     public:
         IDPAuthenticator()
@@ -71,8 +68,7 @@ namespace IAuth
          */
         virtual bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp) = 0;
         virtual bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry) = 0;
-        
-        std::string getErrorMessage();
+        const char* getErrorMessage();
         bool isError();
 
         std::string tokenURLStr;
@@ -108,6 +104,8 @@ namespace IAuth
          * Extract post back url from samel response. Input is in HTML format.
         */
         std::string extractPostBackUrlFromSamlResponse(std::string html);
+        const char* getErrorMessage();
+        bool isError();
 
     protected:
         //These fields should be definied in the child class.
@@ -118,6 +116,8 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
+        std::string m_errMsg;
+
     };
 } // namespace IAuth
 } // namespace Client
