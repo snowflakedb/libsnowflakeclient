@@ -215,7 +215,7 @@ void test_okta_authenticator_fail(void**)
 
     MockOkta okta = MockOkta(sf);
     okta.authenticate();
-    assert_string_equal(okta.m_idp->getErrorMessage(), "SFSamlResponseVerificationFailed");
+    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed");
 
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();

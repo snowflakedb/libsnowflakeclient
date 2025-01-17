@@ -50,7 +50,7 @@ namespace IAuth
     /**
      * Authenticator
      */
-    class IAuthenticator : virtual public AuthErrorHandler
+    class IAuthenticator : public AuthErrorHandler
     {
     public:
 
@@ -82,7 +82,7 @@ namespace IAuth
     };
 
 
-    class IDPAuthenticator : virtual public AuthErrorHandler
+    class IDPAuthenticator : public AuthErrorHandler
     {
     public:
         IDPAuthenticator()
