@@ -159,7 +159,15 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
-  size_t srcSize = file_size(file);
+  size_t srcSize = 0;
+  if (is_regular_file(file))
+  {
+    srcSize = file_size(file);
+  }
+  else if (is_regular_file(fileName))
+  {
+    srcSize = file_size(fileName);
+  }
   std::string putCommand = "put file://" + file + " @%test_small_put";
   if (testUnicode)
   {
