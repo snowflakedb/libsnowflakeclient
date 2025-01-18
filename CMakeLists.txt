@@ -58,6 +58,8 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
+        lib/util.c
+        lib/util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
@@ -124,6 +126,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/logger/SFLogger.hpp
         cpp/logger/SecretDetector.cpp
         cpp/logger/SecretDetector.hpp
+        cpp/lib/ResultSetPutGet.cpp
+        cpp/lib/ResultSetPutGet.hpp
         include/snowflake/IFileTransferAgent.hpp
         include/snowflake/ISFLogger.hpp
         include/snowflake/IStatementPutGet.hpp
@@ -147,7 +151,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
-        include/snowflake/ClientConfigParser.hpp
+	include/snowflake/ClientConfigParser.hpp
+        include/snowflake/BindUploader.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -160,8 +165,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientQueryContextCache.cpp
         cpp/lib/ClientQueryContextCache.hpp
         cpp/lib/result_set.cpp
-        cpp/lib/result_set_arrow.cpp
-        cpp/lib/result_set_json.cpp
         cpp/lib/ResultSet.cpp
         cpp/lib/ResultSet.hpp
         cpp/lib/ResultSetArrow.cpp
@@ -170,15 +173,16 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
         cpp/lib/Authenticator.hpp
-        cpp/lib/ClientConfigParser.cpp
+        cpp/lib/BindUploader.cpp
+        cpp/lib/ClientBindUploader.hpp
+        cpp/lib/ClientBindUploader.cpp
+	cpp/lib/ClientConfigParser.cpp
         cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
         cpp/util/CurlDescPool.cpp
         lib/result_set.h
-        lib/result_set_arrow.h
-        lib/result_set_json.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h)
