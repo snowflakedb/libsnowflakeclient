@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 Snowflake Computing
+ * Copyright (c) 2025 Snowflake Computing
  */
 
 #include "snowflake/ClientConfigParser.hpp"
@@ -105,12 +105,12 @@ std::string EasyLoggingConfigParser::resolveClientConfigPath(
     return clientConfigEnv;
   }
 
-  // 3. Try DLL binary dir
+  // 3. Try DLL library dir
   std::string binaryDir = getBinaryPath();
   std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
   if (boost::filesystem::is_regular_file(binaryDirFilePath))
   {
-    CXX_LOG_INFO("Using client configuration path from binary directory: %s", binaryDirFilePath.c_str());
+    CXX_LOG_INFO("Using client configuration path from library directory: %s", binaryDirFilePath.c_str());
     return binaryDirFilePath;
   }
 

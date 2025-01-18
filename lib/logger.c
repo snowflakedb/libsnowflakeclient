@@ -19,6 +19,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+ /*
+  * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
+  */
 
 #include <stdio.h>
 #include <stdlib.h>
