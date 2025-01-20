@@ -542,6 +542,15 @@ typedef struct SF_TIMESTAMP {
 } SF_TIMESTAMP;
 
 /**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+  char *stats;
+} SF_QUERY_METADATA;
+
+/**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
  * Note that these need to be released by calling snowflake_query_result_capture_term().
  *

@@ -104,11 +104,12 @@ SF_QUERY_STATUS get_status_from_string(const char *query_status) {
  * 
  * The query metadata
  */
-char *get_query_metadata(SF_STMT* sfstmt) {
+SF_QUERY_METADATA *get_query_metadata(SF_STMT* sfstmt) {
   cJSON *resp = NULL;
   cJSON *data = NULL;
   cJSON *queries = NULL;
   char *s_resp = NULL;
+  SF_QUERY_METADATA *query_metadata = (SF_QUERY_METADATA*)SF_CALLOC(1, sizeof(SF_QUERY_METADATA));
   size_t url_size = strlen(QUERY_MONITOR_URL) - 2 + strlen(sfstmt->sfqid) + 1;
   char *status_query = (char*)SF_CALLOC(1, url_size);
   sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, sfstmt->sfqid);
@@ -119,39 +120,45 @@ char *get_query_metadata(SF_STMT* sfstmt) {
     NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
 
     s_resp = snowflake_cJSON_Print(resp);
-    log_trace("Here is JSON response:\n%s", s_resp);
+    log_trace("GET %s returned response:\n%s", status_query, s_resp);
 
     data = snowflake_cJSON_GetObjectItem(resp, "data");
 
     queries = snowflake_cJSON_GetObjectItem(data, "queries");
     cJSON* query = snowflake_cJSON_GetArrayItem(queries, 0);
 
-    char *metadata = snowflake_cJSON_Print(query);
+    query_metadata->qid = sfstmt->sfqid;
+    cJSON* status = snowflake_cJSON_GetObjectItem(query, "status");
+    if (snowflake_cJSON_IsString(status)) {
+      query_metadata->status = get_status_from_string(snowflake_cJSON_GetStringValue(status));
+    } else {
+      log_error(
+        "Error parsing query status from query with id: %s", sfstmt->sfqid);
+    }
+    cJSON* stats = snowflake_cJSON_GetObjectItem(query, "stats");
+    if (snowflake_cJSON_IsObject(stats)) {
+      query_metadata->stats = snowflake_cJSON_Print(stats);
+    } else {
+      log_error(
+        "Error parsing query stats from query with id: %s", sfstmt->sfqid);
+    }
+
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_resp);
     SF_FREE(status_query);
-    return metadata;
+    return query_metadata;
   }
   SF_FREE(status_query);
-  log_info("No query metadata found. Query id: %s", sfstmt->sfqid);
-  return NULL;
+  log_error("No query metadata found. Query id: %s", sfstmt->sfqid);
+  return query_metadata;
 }
 
 
 SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt) {
   SF_QUERY_STATUS ret = SF_QUERY_STATUS_NO_DATA;
-  char *metadata = get_query_metadata(sfstmt);
-  if (metadata) {
-    cJSON* metadataJson = snowflake_cJSON_Parse(metadata);
-
-    cJSON* status = snowflake_cJSON_GetObjectItem(metadataJson, "status");
-    if (snowflake_cJSON_IsString(status)) {
-      char* queryStatus = snowflake_cJSON_GetStringValue(status);
-      ret = get_status_from_string(queryStatus);
-    }
-    snowflake_cJSON_Delete(metadataJson);
-  }
-
+  SF_QUERY_METADATA *metadata = get_query_metadata(sfstmt);
+  ret = metadata->status;
+  SF_FREE(metadata);
   return ret;
 }
 
@@ -224,23 +231,19 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
   }
 
   // Get query stats
-  char* metadata_str = get_query_metadata(sfstmt);
-  if (metadata_str) {
-    cJSON* metadata = snowflake_cJSON_Parse(metadata_str);
-    if (metadata && snowflake_cJSON_IsObject(metadata)) {
-      cJSON* stats = snowflake_cJSON_GetObjectItem(metadata, "stats");
-      if (snowflake_cJSON_IsObject(stats)) {
-        if (sfstmt->stats) {
-          SF_FREE(sfstmt->stats);
-        }
-        sfstmt->stats = set_stats(stats);
+  SF_QUERY_METADATA *metadata = get_query_metadata(sfstmt);
+  if (metadata->stats) {
+    cJSON* stats = snowflake_cJSON_Parse(metadata->stats);
+    if (snowflake_cJSON_IsObject(stats)) {
+      if (sfstmt->stats) {
+        SF_FREE(sfstmt->stats);
       }
-      log_error(
-        "Error parsing query stats from query id: %s", sfstmt->sfqid);
+      sfstmt->stats = set_stats(stats);
     }
     log_error(
-      "Error parsing query metadata from query id: %s", sfstmt->sfqid);
+      "Error parsing query stats from query id: %s", sfstmt->sfqid);
   }
+  SF_FREE(metadata);
   return SF_BOOLEAN_TRUE;
 }
 
