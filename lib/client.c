@@ -1705,15 +1705,16 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
 
     // Determine query result format and detach rowset object from data.
     cJSON * qrf = snowflake_cJSON_GetObjectItem(data, "queryResultFormat");
-    char * qrf_str = snowflake_cJSON_GetStringValue(qrf);
-    cJSON * rowset = NULL;
+    if (qrf) {
+      char* qrf_str = snowflake_cJSON_GetStringValue(qrf);
+      cJSON* rowset = NULL;
 
-    if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
+      if (strcmp(qrf_str, "arrow") == 0 || strcmp(qrf_str, "arrow_force") == 0) {
 #ifdef SF_WIN32
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT,
-            "Query results were fetched using Arrow, "
-            "but the client library does not yet support decoding Arrow results", "",
-            sfstmt->sfqid);
+          "Query results were fetched using Arrow, "
+          "but the client library does not yet support decoding Arrow results", "",
+          sfstmt->sfqid);
 
         return SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT;
 #endif
@@ -1721,104 +1722,105 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
         rowset = snowflake_cJSON_DetachItemFromObject(data, "rowsetBase64");
         if (!rowset)
         {
-            log_error("No valid rowset found in response");
-            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                SF_STATUS_ERROR_BAD_JSON,
-                "Missing rowset from response. No results found.",
-                SF_SQLSTATE_APP_REJECT_CONNECTION,
-                sfstmt->sfqid);
-            return SF_BOOLEAN_FALSE;
+          log_error("No valid rowset found in response");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+            SF_STATUS_ERROR_BAD_JSON,
+            "Missing rowset from response. No results found.",
+            SF_SQLSTATE_APP_REJECT_CONNECTION,
+            sfstmt->sfqid);
+          return SF_BOOLEAN_FALSE;
         }
-    }
-    else if (strcmp(qrf_str, "json") == 0) {
+      }
+      else if (strcmp(qrf_str, "json") == 0) {
         sfstmt->qrf = SF_JSON_FORMAT;
-        if (json_detach_array_from_object((cJSON **)(&rowset), data, "rowset"))
+        if (json_detach_array_from_object((cJSON**)(&rowset), data, "rowset"))
         {
-            log_error("No valid rowset found in response");
-            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-                SF_STATUS_ERROR_BAD_JSON,
-                "Missing rowset from response. No results found.",
-                SF_SQLSTATE_APP_REJECT_CONNECTION,
-                sfstmt->sfqid);
-            return SF_BOOLEAN_FALSE;
+          log_error("No valid rowset found in response");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+            SF_STATUS_ERROR_BAD_JSON,
+            "Missing rowset from response. No results found.",
+            SF_SQLSTATE_APP_REJECT_CONNECTION,
+            sfstmt->sfqid);
+          return SF_BOOLEAN_FALSE;
         }
-    }
-    else {
+      }
+      else {
         log_error("Unsupported query result format: %s", qrf_str);
         return SF_BOOLEAN_FALSE;
-    }
-    // Index starts at 0 and incremented each fetch
-    sfstmt->total_row_index = 0;
-    cJSON* chunks = NULL;
-    cJSON* chunk_headers = NULL;
-    char* qrmk = NULL;
-    // When the result set is sufficient large, the server response will contain
-    // an empty "rowset" object. Instead, it will have a "chunks" object that contains,
-    // among other fields, a URL from which the result set can be downloaded in chunks.
-    // In this case, we initialize the chunk downloader, which will download in the
-    // background as calls to snowflake_fetch() are made.
-    if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
+      }
+      // Index starts at 0 and incremented each fetch
+      sfstmt->total_row_index = 0;
+      cJSON* chunks = NULL;
+      cJSON* chunk_headers = NULL;
+      char* qrmk = NULL;
+      // When the result set is sufficient large, the server response will contain
+      // an empty "rowset" object. Instead, it will have a "chunks" object that contains,
+      // among other fields, a URL from which the result set can be downloaded in chunks.
+      // In this case, we initialize the chunk downloader, which will download in the
+      // background as calls to snowflake_fetch() are made.
+      if ((chunks = snowflake_cJSON_GetObjectItem(data, "chunks")) != NULL) {
         // We don't care if there is no qrmk, so ignore return code
         json_copy_string(&qrmk, data, "qrmk");
         chunk_headers = snowflake_cJSON_GetObjectItem(data, "chunkHeaders");
         NON_JSON_RESP* (*callback_create_resp)(void) = NULL;
         if (SF_ARROW_FORMAT == sfstmt->qrf) {
-            callback_create_resp = callback_create_arrow_resp;
+          callback_create_resp = callback_create_arrow_resp;
         }
         sfstmt->chunk_downloader = chunk_downloader_init(
-                qrmk,
-                chunk_headers,
-                chunks,
-                2, // thread count
-                4, // fetch slot
-                &sfstmt->error,
-                sfstmt->connection->insecure_mode,
-                sfstmt->connection->ocsp_fail_open,
-                callback_create_resp,
-                sfstmt->connection->proxy,
-                sfstmt->connection->no_proxy,
-                get_retry_timeout(sfstmt->connection),
-                sfstmt->connection->retry_count);
+          qrmk,
+          chunk_headers,
+          chunks,
+          2, // thread count
+          4, // fetch slot
+          &sfstmt->error,
+          sfstmt->connection->insecure_mode,
+          sfstmt->connection->ocsp_fail_open,
+          callback_create_resp,
+          sfstmt->connection->proxy,
+          sfstmt->connection->no_proxy,
+          get_retry_timeout(sfstmt->connection),
+          sfstmt->connection->retry_count);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
-            // Unable to create chunk downloader.
-            // Error is set in chunk_downloader_init function.
-            return SF_BOOLEAN_FALSE;
+          // Unable to create chunk downloader.
+          // Error is set in chunk_downloader_init function.
+          return SF_BOOLEAN_FALSE;
         }
         // Even when the result set is split into chunks, JSON format will still
         // response with the first chunk in "rowset", so be sure to include it.
         sfstmt->result_set = rs_create_with_json_result(
-            rowset,
-            sfstmt->desc,
-            sfstmt->qrf,
-            sfstmt->connection->timezone);
+          rowset,
+          sfstmt->desc,
+          sfstmt->qrf,
+          sfstmt->connection->timezone);
         // Update chunk row count. Controls the chunk downloader.
         sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-            sfstmt->result_set);
+          sfstmt->result_set);
         // Update total row count. Used in snowflake_num_rows().
         if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-            log_warn(
-                "No total count found in response. Reverting to using array size of results");
-            sfstmt->total_rowcount = sfstmt->chunk_rowcount;
+          log_warn(
+            "No total count found in response. Reverting to using array size of results");
+          sfstmt->total_rowcount = sfstmt->chunk_rowcount;
         }
-    } else {
+      }
+      else {
         // Create a result set object and update the total rowcount.
         sfstmt->result_set = rs_create_with_json_result(
-            rowset,
-            sfstmt->desc,
-            sfstmt->qrf,
-            sfstmt->connection->timezone);
+          rowset,
+          sfstmt->desc,
+          sfstmt->qrf,
+          sfstmt->connection->timezone);
         // Update chunk row count. Controls the chunk downloader.
         sfstmt->chunk_rowcount = rs_get_row_count_in_chunk(
-            sfstmt->result_set);
+          sfstmt->result_set);
         // Update total row count. Used in snowflake_num_rows().
         if (json_copy_int(&sfstmt->total_rowcount, data, "total")) {
-            log_warn(
-                "No total count found in response. Reverting to using array size of results");
-            sfstmt->total_rowcount = sfstmt->chunk_rowcount;
+          log_warn(
+            "No total count found in response. Reverting to using array size of results");
+          sfstmt->total_rowcount = sfstmt->chunk_rowcount;
         }
+      }
     }
-
     return SF_BOOLEAN_TRUE;
 }
 
@@ -2790,7 +2792,7 @@ cleanup:
 
 SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture) {
-    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), result_capture, SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_FALSE, result_capture, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt) {
