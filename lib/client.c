@@ -2571,7 +2571,7 @@ SF_STATUS STDCALL _snowflake_query_put_get_legacy(
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    return _snowflake_execute_ex(sfstmt, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE);
+    return _snowflake_execute_ex(sfstmt, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 }
 
 SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
