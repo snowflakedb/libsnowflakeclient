@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
+// Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
 //
 
 #include <string.h>
 #include "utils/test_setup.h"
 #include "connection.h"
+#include "error.h"
 #include "memory.h"
 
 /*
@@ -23,7 +24,7 @@ void test_pat_with_no_token(void** unused)
     SF_STATUS status = snowflake_connect(sf);
     assert_int_not_equal(status, SF_STATUS_SUCCESS);
     SF_ERROR_STRUCT* error = snowflake_error(sf);
-    assert_int_equal(error->error_code, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS);
+    assert_string_equal(error->msg, ERR_MSG_PAT_PARAMETER_IS_MISSING);
     snowflake_term(sf);
 }
 
