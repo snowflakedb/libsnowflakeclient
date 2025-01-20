@@ -86,10 +86,13 @@ namespace Client
             if (!m_idp->getIDPInfo(dataMap)) {
                 return;
             }
+            CXX_LOG_INFO("Okta 1step Error. ErrorMessage: %s", m_errMsg.c_str());
 
             // 2. verify ssoUrl and tokenUrl contains same prefix
             if (!urlHasSamePrefix(m_idp->tokenURLStr, m_idp->m_authenticator))
             {
+                CXX_LOG_INFO("Okta 2step Error. ErrorMessage: %s", m_errMsg.c_str());
+
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator is not supported, "
                     "authenticator=%s, token url=%s, sso url=%s",
@@ -138,6 +141,7 @@ namespace Client
                 }
                 break;
             }
+            CXX_LOG_INFO("Okta 4step Error. ErrorMessage: %s", m_errMsg.c_str());
 
             // 5. Validate post_back_url matches Snowflake URL
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
@@ -152,6 +156,7 @@ namespace Client
                     server_url.c_str(),
                     post_back_url.c_str());
                 m_errMsg = "SFSamlResponseVerificationFailed";
+                CXX_LOG_INFO("Okta 5step Error. ErrorMessage: %s", m_errMsg.c_str());
             }
         }
 

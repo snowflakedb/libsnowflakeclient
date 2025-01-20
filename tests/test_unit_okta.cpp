@@ -9,6 +9,7 @@
 #include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
+#include "../cpp/logger/SFLogger.hpp"
 
 using namespace Snowflake::Client;
 
@@ -93,6 +94,7 @@ public:
     MockOkta(SF_CONNECT* connection) : m_connection(connection)
     {
         m_idp = new MockIDP(connection);
+        CXX_LOG_INFO("ErrorMessage in MockOkta: %s", m_errMsg.c_str());
     };
 
     ~MockOkta()
@@ -213,8 +215,8 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
 
     MockOkta okta = MockOkta(sf);
-    //okta.authenticate();
-    //assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed");
+    okta.authenticate();
+    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed");
 
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();
