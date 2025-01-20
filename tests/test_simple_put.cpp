@@ -2033,7 +2033,6 @@ int main(void) {
 #endif
 
   const struct CMUnitTest tests[] = {
-/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -2065,7 +2064,6 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
     cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
-*/
     cmocka_unit_test_teardown(test_simple_put_auto_compress_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir_native, teardown),
     cmocka_unit_test_teardown(test_simple_get_native, teardown),
