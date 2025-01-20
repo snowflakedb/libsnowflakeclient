@@ -100,7 +100,7 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define CA_OCSP_RESPONDER_MAX_RETRY_FO 1
 
 // Max number of connection retry attempts for OCSP Responder in Fail Close Mode
-#define CA_OCSP_RESPONDER_MAX_RETRY_FC 3
+#define CA_OCSP_RESPONDER_MAX_RETRY_FC 2
 
 // Max number of connection retry attempts for OCSP Cache Server
 #define OCSP_CACHE_SERVER_MAX_RETRY 1
@@ -1667,7 +1667,6 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     char *ocsp_url = sk_OPENSSL_STRING_value(ocsp_list, i);
     if (ocsp_url == NULL)
     {
-      failf(data, "OCSP Validation URL is not present");
       /*
        * Try the next OCSP Server in ocsp_list, if present.
        */
@@ -1698,8 +1697,9 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     break; /* good if any OCSP server works */
   }
 
-  if(ocsp_url_missing || ocsp_url_invalid)
+  if((ocsp_url_missing || ocsp_url_invalid) && (ocsp_fail_open == DISABLED))
   {
+    failf(data, "OCSP Validation URL is not present or invalid.");
     sf_otd_set_event_sub_type(OCSP_URL_MISSING_OR_INVALID, ocsp_log_data);
   }
 
@@ -1720,18 +1720,8 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, b
 {
   char *ocsp_log_data = NULL;
   ocsp_log_data = generateOCSPTelemetryData(ocsp_log);
-  infof(data, "WARNING!!! Using fail-open to connect. Driver is connecting to an "
-              "HTTPS endpoint without OCSP based Certificate Revocation checking "
-              "as it could not obtain a valid OCSP Response to use from the CA OCSP "
-              "responder. Details:%s",ocsp_log_data);
-  if (ocsp_log_data)
-  {
-    if (oob_enable)
-    {
-      sendOOBevent(ocsp_log_data);
-    }
-    if(ocsp_log_data) sf_curl_cJSON_free(ocsp_log_data);
-  }
+  infof(data, "OCSP responder didn't respond correctly. Assuming certificate is not revoked."
+              " Details:%s", ocsp_log_data);
 }
 
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log)

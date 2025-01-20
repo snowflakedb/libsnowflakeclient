@@ -52,5 +52,7 @@ docker run \
 #remove image to save disk space on github
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     docker rm -vf $(docker ps -aq --filter ancestor=${BUILD_IMAGE_NAME})
-	docker rmi -f "${BUILD_IMAGE_NAME}"
+    if [[ $CLIENT_CODE_COVERAGE -ne 1 ]] && [[ "$BUILD_TYPE" != "Debug" ]]; then
+        docker rmi -f "${BUILD_IMAGE_NAME}"
+    fi
 fi
