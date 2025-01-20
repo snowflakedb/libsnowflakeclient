@@ -258,10 +258,10 @@ void test_multiple_chunk() {
     assert_int_equal(strlen(value), 100);
   }
   SF_FREE(value);
-  if (status != SF_STATUS_EOF | SF_STATUS_SUCCESS) {
+  if (status != (SF_STATUS_EOF | SF_STATUS_SUCCESS)) {
     dump_error(&(sfstmt->error));
   }
-  assert_int_equal(status, SF_STATUS_EOF | SF_STATUS_SUCCESS);
+  assert_int_equal(status, (SF_STATUS_EOF | SF_STATUS_SUCCESS));
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
 }
