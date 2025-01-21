@@ -8,6 +8,8 @@
 #include <string>
 #include <snowflake/SFURL.hpp>
 #include "../../lib/snowflake_util.h"
+#include "snowflake/IBase64.hpp"
+
 
 namespace Snowflake
 {
@@ -15,7 +17,6 @@ namespace Client
 {
 namespace IAuth
 {
-
     class AuthErrorHandler
     {
     public:
@@ -32,20 +33,44 @@ namespace IAuth
     class IAuthWebServer : public AuthErrorHandler
     {
     public:
-        IAuthWebServer()
-        {}
+        IAuthWebServer();
 
-        virtual ~IAuthWebServer()
-        {}
+        virtual ~IAuthWebServer();
 
-        virtual void start() = 0;
-        virtual void stop() = 0;
-        virtual int getPort() = 0;
-        virtual void startAccept() = 0;
-        virtual bool receive() = 0;
-        virtual std::string getSAMLToken() = 0;
-        virtual bool isConsentCacheIdToken() = 0;
-        virtual void setTimeout(int timeout) = 0;
+        virtual void start();
+        virtual void stop();
+        virtual int getPort();
+        virtual void startAccept();
+        virtual bool receive();
+        virtual std::string getSAMLToken();
+        virtual bool isConsentCacheIdToken();
+        virtual void setTimeout(int timeout);
+
+    protected:
+#ifdef _WIN32
+        SOCKET m_socket_descriptor; // socket
+        SOCKET m_socket_desc_web_client; // socket (client)
+#else
+        int m_socket_descriptor; // socket
+        int m_socket_desc_web_client; // socket (client)
+#endif
+
+        int m_port; // port to listen
+        std::string m_saml_token;
+        bool m_consent_cache_id_token;
+        std::string m_origin;
+        int m_timeout;
+
+        virtual void parseAndRespondOptionsRequest(std::string response);
+        virtual  void parseAndRespondPostRequest(std::string response);
+        virtual void parseAndRespondGetRequest(char** rest_mesg);
+        virtual void respond(std::string queryParameters);
+        virtual void respondJson(picojson::value& json);
+
+        std::vector<std::string> splitString(const std::string& s, char delimiter);
+        std::string unquote(std::string src);
+        std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
+
     };
     /**
      * Authenticator
@@ -142,6 +167,74 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
+    };
+
+
+#if defined(WIN32) || defined(_WIN64)
+    /**
+     * Winsock start and cleanup
+     */
+    class AuthWinSock : public AuthErrorHandler
+    {
+    public:
+        AuthWinSock();
+        ~AuthWinSock();
+    };
+#endif
+
+    class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
+    {
+    public:
+        IAuthenticatorExternalBrowser() {};
+
+        virtual ~IAuthenticatorExternalBrowser() {};
+
+        int getPort(void);
+
+        virtual void authenticate();
+
+        void updateDataMap(jsonObject_t& dataMap);
+
+        /**
+         * Start web browser so that the user can type IdP user and password
+         * @param ssoUrl SSO URL
+         */
+        virtual void startWebBrowser(std::string ssoUrl);
+
+        /**
+         * Get Login URL for multiple SAML
+         * @param out the login URL
+         * @param port port number listening to get SAML token
+         */
+        virtual void getLoginUrl(std::map<std::string, std::string>& out, int port);
+
+        /**
+         * Generate the proof key
+         * @return The proof key
+         */
+        virtual std::string generateProofKey();
+
+    private:
+        typedef Snowflake::Client::Util::IBase64 Base64;
+
+    protected:
+#ifdef _WIN32
+        AuthWinSock m_authWinSock;
+#endif
+        IAuthWebServer* m_authWebServer;
+        IDPAuthenticator* m_idp;
+        std::string m_proofKey;
+        std::string m_token;
+        bool m_consentCacheIdToken;
+        bool m_disable_console_login;
+        std::string m_origin;
+        int64 m_browser_response_timeout;
+        
+
+  #ifdef __APPLE__
+        void openURL(const std::string& url_str);
+  #endif
+
     };
 } // namespace IAuth
 } // namespace Client

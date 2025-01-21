@@ -85,87 +85,7 @@ namespace Client
       SF_CONNECT* m_connection;
   };
 
- /**
-  * Web Server for external Browser authentication
-  */
-  class AuthWebServer : public IAuthWebServer
-  {
-
-  private:
-#ifdef _WIN32
-      SOCKET m_socket_descriptor; // socket
-      SOCKET m_socket_desc_web_client; // socket (client)
-#else
-      int m_socket_descriptor; // socket
-      int m_socket_desc_web_client; // socket (client)
-#endif
-
-      int m_port; // port to listen
-      std::string m_saml_token;
-      bool m_consent_cache_id_token;
-      std::string m_origin;
-      int m_timeout;
-
-      void parseAndRespondOptionsRequest(std::string response);
-      void parseAndRespondPostRequest(std::string response);
-      void parseAndRespondGetRequest(char** rest_mesg);
-      void respond(std::string queryParameters);
-      void respondJson(picojson::value& json);
-
-      std::vector<std::string> splitString(const std::string& s, char delimiter);
-      std::string unquote(std::string src);
-      std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
-
-  public:
-      AuthWebServer();
-
-      ~AuthWebServer();
-
-      /**
-       * Start a web server
-       */
-      void start();
-
-      /**
-       * Stop a web server
-       */
-      void stop();
-
-      /**
-       * Start accepting the request
-       */
-      void startAccept();
-
-      /**
-       * Receive a SAML token
-       */
-      bool receive();
-
-      /**
-       * Return the port listening to accept SAML token.
-       * @return port number
-       */
-      int getPort();
-
-      /**
-       * Return SAML Token provided by GS.
-       * @return SAML token
-       */
-      std::string getSAMLToken();
-
-      /**
-       * Did consent cache id token?
-       * @return true or false
-       */
-      bool isConsentCacheIdToken();
-
-      /**
-       * Set the timeout for the web server.
-       */
-      void setTimeout(int timeout);
-  };
-
-  class AuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
+  class AuthenticatorExternalBrowser : public IAuthenticatorExternalBrowser
   {
   public:
       AuthenticatorExternalBrowser(
@@ -173,63 +93,11 @@ namespace Client
 
       virtual ~AuthenticatorExternalBrowser();
 
-      int getPort(void);
-
       void authenticate();
-
-      void updateDataMap(jsonObject_t& dataMap);
-
-      /**
-       * Start web browser so that the user can type IdP user and password
-       * @param ssoUrl SSO URL
-       */
-      virtual void startWebBrowser(std::string ssoUrl);
-
-      /**
-       * Get Login URL for multiple SAML
-       * @param out the login URL
-       * @param port port number listening to get SAML token
-       */
-      virtual void getLoginUrl(std::map<std::string, std::string>& out, int port);
-
-      /**
-       * Generate the proof key
-       * @return The proof key
-       */
-      virtual std::string generateProofKey();
-
   private:
       typedef Snowflake::Client::Util::IBase64 Base64;
-
       SF_CONNECT* m_connection;
-      IAuthWebServer* m_authWebServer;
-      IDPAuthenticator* m_idp;
-
-  protected:
-      std::string m_proofKey;
-      std::string m_token;
-      bool m_consentCacheIdToken;
-      std::string m_origin;
-
-#ifdef __APPLE__
-      void openURL(const std::string& url_str);
-#endif
-
   };
-
-#if defined(WIN32) || defined(_WIN64)
-  /**
-   * Winsock start and cleanup
-   */
-  class AuthWinSock : public AuthErrorHandler
-  {
-  public:
-      AuthWinSock();
-      ~AuthWinSock();
-  };
-#endif
-
-
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP
