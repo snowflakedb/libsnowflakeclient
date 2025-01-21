@@ -89,7 +89,10 @@ namespace Client
 
             // 2. verify ssoUrl and tokenUrl contains same prefix
             if (!urlHasSamePrefix(m_idp->tokenURLStr, m_idp->m_authenticator))
+
             {
+                CXX_LOG_INFO("OKTA 2step ERROR");
+
                 CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
                     "The specified authenticator is not supported, "
                     "authenticator=%s, token url=%s, sso url=%s",
@@ -97,6 +100,8 @@ namespace Client
                 m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
                 return;
             }
+
+            CXX_LOG_INFO("OKTA 3step DONE");
 
             // 3. get one time token from okta
             while (true)
@@ -138,6 +143,7 @@ namespace Client
                 }
                 break;
             }
+            CXX_LOG_INFO("OKTA 4step DONE");
 
             // 5. Validate post_back_url matches Snowflake URL
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
@@ -145,7 +151,8 @@ namespace Client
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {
-                CXX_LOG_ERROR("sf", "AuthenticatorOKTA", "authenticate",
+                CXX_LOG_INFO("OKTA 5step error");
+                CXX_LOG_ERROR("sf","AuthenticatorOKTA", "authenticate",
                     "The specified authenticator and destination URL in "
                     "Saml Assertion did not "
                     "match, expected=%s, post back=%s",
