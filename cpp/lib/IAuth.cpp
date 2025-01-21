@@ -398,7 +398,7 @@ namespace Client
         }
 
 #ifdef __APPLE__
-        void AuthenticatorExternalBrowser::openURL(const std::string& url_str) {
+        void IAuthenticatorExternalBrowser::openURL(const std::string& url_str) {
             CFURLRef url = CFURLCreateWithBytes(
                 NULL,                        // allocator
                 (UInt8*)url_str.c_str(),     // URLBytes
