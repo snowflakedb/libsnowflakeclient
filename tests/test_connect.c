@@ -193,14 +193,14 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
 * variables and disable the proxy through proxy parameter to ensure the settings
 * in parameter are being used.
 */
-void test_connect_with_proxy(void **unused) {
+void test_connect_with_proxy(void** unused) {
   SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
   sf_setenv("http_proxy", "a.b.c");
   sf_unsetenv("no_proxy");
-  SF_CONNECT *sf = setup_snowflake_connection();
+  SF_CONNECT* sf = setup_snowflake_connection();
 
   // ensure the connection fails with invalid proxy
   SF_STATUS status = snowflake_connect(sf);
@@ -232,6 +232,87 @@ void test_connect_with_proxy(void **unused) {
   sf_unsetenv("http_proxy");
 }
 
+/**
+* Test connection with session token renew
+* Need accountadmin privilege to change parameters.
+* Ignore when changing parameter fails.
+*/
+
+void renew_session_token_setup() {
+  SF_CONNECT* sf = setup_snowflake_connection();
+
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT *sfstmt = snowflake_stmt(sf);
+  status = snowflake_query(sfstmt, "use role accountadmin;", 0);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+  }
+  status = snowflake_query(sfstmt, "alter system set MASTER_TOKEN_VALIDITY=600, SESSION_TOKEN_VALIDITY=5;", 0);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+  }
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+}
+
+void renew_session_token_teardown() {
+  SF_CONNECT* sf = setup_snowflake_connection();
+
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT* sfstmt = snowflake_stmt(sf);
+  status = snowflake_query(sfstmt, "use role accountadmin;", 0);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+  }
+  status = snowflake_query(sfstmt, "alter system set MASTER_TOKEN_VALIDITY=default, SESSION_TOKEN_VALIDITY=default;", 0);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sfstmt->error));
+  }
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+}
+
+void test_connect_with_renew(void** unused) {
+  UNUSED(unused);
+
+  renew_session_token_setup();
+
+  SF_CONNECT* sf = setup_snowflake_connection();
+
+  SF_STATUS status = snowflake_connect(sf);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT* sfstmt = snowflake_stmt(sf);
+
+  // The query will be completed.
+  status = snowflake_query(sfstmt, "select seq8() from table(generator(timelimit=>7))", 0);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  // The query will renew the session token in the beginning and be completed.
+  status = snowflake_query(sfstmt, "select seq8() from table(generator(timelimit=>3))", 0);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  // The query will renew the session token in the middle of running.
+  status = snowflake_query(sfstmt, "select seq8() from table(generator(timelimit=>60))", 0);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+  renew_session_token_teardown();
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -242,6 +323,7 @@ int main(void) {
       cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
+      cmocka_unit_test(test_connect_with_renew),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -612,8 +612,8 @@ void test_large_put_threshold(void **unused)
                        false,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
                        false,    // copy data from Table to Staging.
-                       false,
-                       false,
+                       false, // createDupTable
+                       true, // setCustomThreshold
                        20*1024*1024
   );
 }
