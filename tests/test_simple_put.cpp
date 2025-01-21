@@ -612,8 +612,8 @@ void test_large_put_threshold(void **unused)
                        false,   // Load data into table
                        false,  // Run select * on loaded table (Not good for large data set)
                        false,    // copy data from Table to Staging.
-                       false, // createDupTable
-                       true, // setCustomThreshold
+                       false,
+                       false,
                        20*1024*1024
   );
 }
@@ -1586,19 +1586,6 @@ void test_simple_put_uploadfail(void **unused) {
 
 void test_2GBlarge_put(void **unused)
 {
-  // on github the existing test case for large file put/get is skipped for
-  // aws so do the same. Make it available for manual test though
-  // since we do have code changes for all platforms.
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if (githubenv && strlen(githubenv) > 0)
-  {
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-      errno = 0;
-      return;
-    }
-  }
-
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
   char* jobname = getenv("JOB_NAME");
