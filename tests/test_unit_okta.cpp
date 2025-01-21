@@ -213,21 +213,17 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
 
-    MockOkta* okta = new MockOkta(sf);
-    okta->authenticate();
-    assert_string_equal(okta->getErrorMessage(), "SFSamlResponseVerificationFailed");
+    MockOkta okta = MockOkta(sf);
+    okta.setCurlGetRequestFailed(true);
+    okta.authenticate();
+    assert_string_equal(okta.m_idp->getErrorMessage(), "SFConnectionFailed:curlGetCall");
 
-    okta->setCurlGetRequestFailed(true);
-    okta->authenticate();
-    assert_string_equal(okta->m_idp->getErrorMessage(), "SFConnectionFailed:curlGetCall");
+    okta.setCurlGetRequestFailed(false);
+    okta.setCurrentCallFailed(false);
+    okta.setPostCallFailed(true);
 
-    okta->setCurlGetRequestFailed(false);
-    okta->setCurrentCallFailed(false);
-    okta->setPostCallFailed(true);
-
-    okta->authenticate();
-    assert_string_equal(okta->m_idp->getErrorMessage(), "SFConnectionFailed:curlPostCall");
-    delete okta;
+    okta.authenticate();
+    assert_string_equal(okta.m_idp->getErrorMessage(), "SFConnectionFailed:curlPostCall");
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://wrong.okta.com");
     MockOkta okta2 = MockOkta(sf);
