@@ -569,11 +569,6 @@ void test_simple_get_data(const char *getCommand, const char *size,
 
 void test_large_put_auto_compress_core(bool native)
 {
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -609,11 +604,6 @@ void test_large_put_auto_compress_native(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -630,11 +620,6 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload_core(bool native)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-        errno = 0;
-        return;
-    }
     //Before re-upload delete the already existing staged files.
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -706,10 +691,6 @@ void test_large_reupload_native(void** unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -1175,10 +1156,6 @@ void test_large_get_core(bool native)
 {
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
   sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
   getLongTempPath(tempDir);
@@ -1206,10 +1183,6 @@ void test_large_get_threshold_core(bool native)
 {
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
   sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
   getLongTempPath(tempDir);
@@ -1885,12 +1858,6 @@ std::string getLastModifiedFromStage(SF_STMT * sfstmt)
 
 void test_upload_file_to_stage_using_stream(void **unused)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-        errno = 0;
-        return;
-    }
-
     SF_CONNECT* sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(SF_STATUS_SUCCESS, status);
