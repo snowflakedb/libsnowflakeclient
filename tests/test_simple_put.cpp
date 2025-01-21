@@ -468,6 +468,7 @@ static int teardown(void **unused)
   truncate = "drop table if exists test_small_put_dup";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
   createOnlyOnce = true;
+  fileList.clear();
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
