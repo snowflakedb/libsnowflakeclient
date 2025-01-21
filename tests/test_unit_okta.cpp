@@ -214,6 +214,9 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
 
     MockOkta okta = MockOkta(sf);
+    okta.authenticate();
+    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed");
+
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();
     assert_string_equal(okta.m_idp->getErrorMessage(), "SFConnectionFailed:curlGetCall");
