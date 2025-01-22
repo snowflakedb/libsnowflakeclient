@@ -193,14 +193,14 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
 * variables and disable the proxy through proxy parameter to ensure the settings
 * in parameter are being used.
 */
-void test_connect_with_proxy(void** unused) {
+void test_connect_with_proxy(void **unused) {
   SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
   sf_setenv("http_proxy", "a.b.c");
   sf_unsetenv("no_proxy");
-  SF_CONNECT* sf = setup_snowflake_connection();
+  SF_CONNECT *sf = setup_snowflake_connection();
 
   // ensure the connection fails with invalid proxy
   SF_STATUS status = snowflake_connect(sf);
