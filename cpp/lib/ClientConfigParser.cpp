@@ -105,7 +105,7 @@ std::string EasyLoggingConfigParser::resolveClientConfigPath(
     return clientConfigEnv;
   }
 
-  // 3. Try DLL library dir
+  // 3. Try library dir
   std::string binaryDir = getBinaryPath();
   std::string binaryDirFilePath = binaryDir + SF_CLIENT_CONFIG_FILE_NAME;
   if (boost::filesystem::is_regular_file(binaryDirFilePath))
