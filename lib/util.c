@@ -1,5 +1,6 @@
 #include "util.h"
 #include <string.h>
+#include <unistd.h>
 
 sf_bool ends_with(char* str, char* suffix)
 {
