@@ -147,7 +147,11 @@ namespace Client
 
             // 5. Validate post_back_url matches Snowflake URL
             std::string post_back_url = extractPostBackUrlFromSamlResponse(m_samlResponse);
+            CXX_LOG_INFO("OKTA 4step DONE");
+
             std::string server_url = m_idp->getServerURLSync().toString();
+            CXX_LOG_INFO("OKTA 4step DONE");
+
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {

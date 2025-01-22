@@ -92,6 +92,7 @@ class MockOkta : public IAuthenticatorOKTA {
 public:
     MockOkta(SF_CONNECT* connection) : m_connection(connection)
     {
+        m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
         m_idp = new MockIDP(connection);
     };
 
@@ -212,6 +213,8 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+    sf_bool disable_saml_url_check = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_SAML_URL_CHECK, &disable_saml_url_check);
 
     log_set_quiet(SF_BOOLEAN_FALSE);
     MockOkta okta = MockOkta(sf);
