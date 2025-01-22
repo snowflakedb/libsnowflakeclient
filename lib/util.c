@@ -14,3 +14,12 @@ sf_bool ends_with(char* str, char* suffix)
 
     return sf_strncasecmp(str_suffix, suffix, suffix_length) == 0;
 }
+
+void sf_sleep_ms(int sleep_ms)
+{
+#ifdef _WIN32
+  Sleep(sleep_ms);
+#else
+  usleep(sleep_ms * 1000); // usleep takes sleep time in us (1 millionth of a second)
+#endif
+}
