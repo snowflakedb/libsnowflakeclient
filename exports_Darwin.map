@@ -80,4 +80,5 @@ _sf_unsetenv
 _sf_getenv_s
 _sf_get_tmp_dir
 _sf_calloc
+_sf_free
 _uuid4_generate

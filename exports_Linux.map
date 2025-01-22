@@ -75,6 +75,7 @@
         sf_getenv_s;
         sf_get_tmp_dir;
         sf_calloc;
+        sf_free;
         uuid4_generate;
 	local: *;
 };

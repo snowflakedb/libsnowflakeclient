@@ -80,4 +80,5 @@ EXPORTS
     sf_getenv_s                                    @73
     sf_get_tmp_dir                                 @74
     sf_calloc                                      @75
-    uuid4_generate                                 @76
+    sf_free                                        @76
+    uuid4_generate                                 @77
