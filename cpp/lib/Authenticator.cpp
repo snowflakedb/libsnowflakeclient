@@ -25,7 +25,6 @@
 #include "memory.h"
 #include "../include/snowflake/platform.h"
 
-
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
@@ -389,7 +388,6 @@ namespace Client
       //m_appVersion = m_connection->application_version;
       m_appID = "ODBC";
       m_appVersion = "3.4.1";
-
   }
 
   AuthenticatorOKTA::~AuthenticatorOKTA()
