@@ -1,6 +1,8 @@
 #include "util.h"
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 sf_bool ends_with(char* str, char* suffix)
 {
