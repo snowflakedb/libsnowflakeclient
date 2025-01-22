@@ -78,6 +78,9 @@ void test_large_result_set_arrow(void **unused) {
 }
 
 void test_large_result_set_json(void **unused) {
+#ifdef _WIN32
+    log_set_quiet(SF_BOOLEAN_FALSE);
+#endif
     test_large_result_set_helper(SF_BOOLEAN_FALSE);
 }
 
