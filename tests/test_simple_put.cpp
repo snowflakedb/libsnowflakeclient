@@ -1228,14 +1228,6 @@ static int gr_setup(void **unused)
   }
 
   // create large 2GB file
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  if (githubenv && strlen(githubenv) > 0)
-  {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-      return 0;
-    }
-  }
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
   char* jobname = getenv("JOB_NAME");
