@@ -361,19 +361,25 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
 
     // If log path is specified, use absolute path. Otherwise set logging dir to be relative to current directory
     log_path_size += 30; // Size of static format characters
-    if (sf_log_path) {
+    if (sf_log_path && (strlen(sf_log_path) != 0)) {
+      if (strcasecmp(sf_log_path, "STDOUT") != 0) {
         log_path_size += strlen(sf_log_path);
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
+      } else { LOG_PATH = ""; }
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
     }
     if (LOG_PATH != NULL) {
+      if (strlen(LOG_PATH) != 0) {
         // Set the log path only, the log file will be created when actual log output is needed.
         log_set_path(LOG_PATH);
+      } else {
+        log_set_quiet(0);
+      }
     } else {
         sf_fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
