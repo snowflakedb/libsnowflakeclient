@@ -4,6 +4,7 @@
 #include <string.h>
 #include "memory.h"
 #include "utils/test_setup.h"
+#include "util.h"
 
  /**
   * Test normal query flow with async
