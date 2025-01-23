@@ -6,6 +6,7 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
 #include "memory.h"
+#include <stdio.h>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -46,6 +47,7 @@ void test_invalid_client_config_path() {
 #else
   assert_true(result);
 #endif
+  free_client_config(&clientConfig);
 }
 
 /**
@@ -70,6 +72,7 @@ void test_client_config_log_invalid_json() {
 
   // Cleanup
   remove(configFilePath);
+  free_client_config(&clientConfig);
 }
 
 /**
@@ -94,6 +97,7 @@ void test_client_config_log_malformed_json() {
 
   // Cleanup
   remove(configFilePath);
+  free_client_config(&clientConfig);
 }
 
 /**
@@ -137,6 +141,60 @@ void test_client_config_log() {
     remove(configFilePath);
     remove(LOG_PATH);
     SF_FREE(LOG_PATH);
+    free_client_config(&clientConfig);
+}
+
+/**
+ * Tests log unknown entries
+ */
+void test_client_config_log_unknown_entries() {
+  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\",\"unknownEntry\":\"fakeValue\"}}";
+  char configFilePath[] = "sf_client_config.json";
+  char logPath[] = "./test/";
+  char logLevel[] = "warn";
+  FILE* file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "%s", clientConfigJSON);
+  fclose(file);
+
+  // Set log name and level
+  char logname[] = "%s/dummy.log";
+  size_t log_path_size = 1 + strlen(logname);
+  log_path_size += strlen(logPath);
+  char* LOG_PATH = (char*)SF_CALLOC(1, log_path_size);
+  sf_sprintf(LOG_PATH, log_path_size, logname, logPath);
+  log_set_level(log_from_str_to_level(logLevel));
+  log_set_path(LOG_PATH);
+
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Load client config and log unknown entries
+  client_config clientConfig = { 0 };
+  load_client_config(configFilePath, &clientConfig);
+  log_close();
+
+  // Ensure that log file is created
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
+
+  // Check unknown entries is logged
+  char line[1024];
+  sf_bool unknown_found = 0;
+  file = fopen(LOG_PATH, "r");
+  while (fgets(line, sizeof(line), file)) {
+    if (strstr(line, "Unknown configuration entry:") != NULL) {
+      unknown_found = 1;
+    }
+  }
+  fclose(file);
+
+  assert_int_equal(unknown_found, 1);
+
+  // Cleanup
+  remove(configFilePath);
+  remove(LOG_PATH);
+  SF_FREE(LOG_PATH);
+  free_client_config(&clientConfig);
 }
 
 /**
@@ -296,6 +354,37 @@ void test_client_config_log_no_path() {
 }
 
 /**
+ * Tests STDOUT log
+ */
+void test_client_config_stdout() {
+  char LOG_PATH[MAX_PATH] = { 0 };
+  char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"STDOUT\"}}";
+  char configFilePath[] = "sf_client_config.json";
+  FILE* file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "%s", clientConfigJSON);
+  fclose(file);
+
+  snowflake_global_set_attribute(SF_GLOBAL_CLIENT_CONFIG_FILE, configFilePath);
+  snowflake_global_init("", SF_LOG_DEFAULT, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  // Ensure the log file doesn't exist at the beginning
+  assert_string_equal(LOG_PATH, "");
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  log_close();
+
+  // Cleanup
+  remove(configFilePath);
+}
+
+/**
  * Tests timing of log file creation
  */
 void test_log_creation() {
@@ -417,10 +506,12 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_malformed_json),
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
         cmocka_unit_test(test_client_config_log),
+        cmocka_unit_test(test_client_config_log_unknown_entries),
         cmocka_unit_test(test_client_config_log_init),
         cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
+        cmocka_unit_test(test_client_config_stdout),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
