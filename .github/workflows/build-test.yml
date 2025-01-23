@@ -188,9 +188,9 @@ jobs:
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_mac.sh
-    build-test-codecov:
+    build-test-codecov-aws:
         needs: [build-test-linux, build-test-win]
-        name: Build-Test-CodeCov-Linux
+        name: Build-Test-CodeCov-Linux-AWS
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
@@ -216,7 +216,33 @@ jobs:
                   CLOUD_PROVIDER: AWS
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
-            - name: Test on Azure
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v5
+              with:
+                # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
+                token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
+                fail_ci_if_error: true
+    build-test-codecov-azure:
+        needs: [build-test-linux, build-test-win]
+        name: Build-Test-CodeCov-Linux-AZURE
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                build_type: [ 'Release' ]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Build
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
+              run: ci/build_linux.sh
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.13'
+                architecture: 'x64'
+            - name: Test on AZURE
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
@@ -224,6 +250,32 @@ jobs:
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v5
+              with:
+                # without the token code cov may fail because of Github limits https://github.com/codecov/codecov-action/issues/557
+                token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
+                fail_ci_if_error: true
+    build-test-codecov-gcp:
+        needs: [build-test-linux, build-test-win]
+        name: Build-Test-CodeCov-Linux-GCP
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                build_type: [ 'Release' ]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Build
+              shell: bash
+              env:
+                  BUILD_TYPE: ${{ matrix.build_type }}
+                  CLIENT_CODE_COVERAGE: 1
+              run: ci/build_linux.sh
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.13'
+                architecture: 'x64'
             - name: Test on GCP
               shell: bash
               env:
