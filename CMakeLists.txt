@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+# Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
 #
 # CMakeList for Snowflake Client
 #
