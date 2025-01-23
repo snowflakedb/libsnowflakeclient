@@ -12,18 +12,14 @@
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
-#include "../include/snowflake/entities.hpp"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#include <openssl/rand.h>
 #include <connection.h>
 #include "curl_desc_pool.h"
-#include "snowflake/Exceptions.hpp"
 #include "cJSON.h"
 #include "memory.h"
-#include "../include/snowflake/platform.h"
 
 #include <fstream>
 
@@ -50,7 +46,7 @@ extern "C" {
   AuthenticatorType getAuthenticatorType(const char* authenticator)
   {
     if ((!authenticator) || (strlen(authenticator) == 0) ||
-      (strcasecmp(authenticator, SF_AUTHENTICATOR_DEFAULT) == 0))
+        (strcasecmp(authenticator, SF_AUTHENTICATOR_DEFAULT) == 0))
     {
       return AUTH_SNOWFLAKE;
     }
@@ -60,13 +56,13 @@ extern "C" {
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH) == 0)
     {
-      return AUTH_OAUTH;
+        return AUTH_OAUTH;
     }
 
     return AUTH_OKTA;
   }
 
-  SF_STATUS STDCALL auth_initialize(SF_CONNECT* conn)
+  SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
   {
     if (!conn)
     {
@@ -79,26 +75,26 @@ extern "C" {
       if (AUTH_JWT == auth_type)
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-          new Snowflake::Client::AuthenticatorJWT(conn));
+                              new Snowflake::Client::AuthenticatorJWT(conn));
       }
-      else if (AUTH_OKTA == auth_type)
+      if (AUTH_OKTA == auth_type)
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-          new Snowflake::Client::AuthenticatorOKTA(conn));
+                              new Snowflake::Client::AuthenticatorOKTA(conn));
       }
     }
     catch (...)
     {
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-        "authenticator initialization failed",
-        SF_SQLSTATE_GENERAL_ERROR);
+                          "authenticator initialization failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
     return SF_STATUS_SUCCESS;
   }
 
-  int64 auth_get_renew_timeout(SF_CONNECT* conn)
+  int64 auth_get_renew_timeout(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -108,7 +104,7 @@ extern "C" {
     try
     {
       return static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)
-        ->getAuthRenewTimeout();
+               ->getAuthRenewTimeout();
     }
     catch (...)
     {
@@ -116,7 +112,7 @@ extern "C" {
     }
   }
 
-  SF_STATUS STDCALL auth_authenticate(SF_CONNECT* conn)
+  SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
@@ -130,24 +126,24 @@ extern "C" {
     catch (...)
     {
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
-        "authentication failed",
-        SF_SQLSTATE_GENERAL_ERROR);
+                          "authentication failed",
+                          SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
     return SF_STATUS_SUCCESS;
   }
 
-  void auth_update_json_body(SF_CONNECT* conn, cJSON* body)
+  void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
   {
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
     if (!data)
     {
-      data = snowflake_cJSON_CreateObject();
-      snowflake_cJSON_AddItemToObject(body, "data", data);
+        data = snowflake_cJSON_CreateObject();
+        snowflake_cJSON_AddItemToObject(body, "data", data);
     }
 
-    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator))
+    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator)) 
     {
         cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
         if (!data)
@@ -157,8 +153,8 @@ extern "C" {
         }
 
         snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
         snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
     }
 
@@ -172,7 +168,7 @@ extern "C" {
       jsonObject_t picoBody;
       cJSONtoPicoJson(data, picoBody);
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        updateDataMap(picoBody);
+          updateDataMap(picoBody);
       picoJsonTocJson(picoBody, &body);
     }
     catch (...)
@@ -183,7 +179,7 @@ extern "C" {
     return;
   }
 
-  void auth_renew_json_body(SF_CONNECT* conn, cJSON* body)
+  void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
   {
     if (!conn || !conn->auth_object)
     {
@@ -196,7 +192,7 @@ extern "C" {
       cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
       cJSONtoPicoJson(data, picoBody);
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        renewDataMap(picoBody);
+          renewDataMap(picoBody);
       picoJsonTocJson(picoBody, &body);
     }
     catch (...)
@@ -207,7 +203,7 @@ extern "C" {
     return;
   }
 
-  void STDCALL auth_terminate(SF_CONNECT* conn)
+  void STDCALL auth_terminate(SF_CONNECT * conn)
   {
     if (!conn || !conn->auth_object)
     {
