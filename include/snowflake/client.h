@@ -62,6 +62,11 @@ extern "C" {
 #define SF_COMMAND_LEN 10
 
 /**
+ * Browser response timeout in seconds
+ */
+#define SF_BROWSER_RESPONSE_TIMEOUT 120
+
+/**
  * Login timeout in seconds
  */
 // make the login timetout defaults to 300 to be inline with retry timeout
@@ -283,7 +288,9 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_QUERY_RESULT_TYPE,
-    SF_CON_OAUTH_TOKEN
+    SF_CON_OAUTH_TOKEN,
+    SF_CON_DISABLE_CONSOLE_LOGIN,
+    SF_CON_BROWSER_RESPONSE_TIMEOUT,
 } SF_ATTRIBUTE;
 
 /**
@@ -387,6 +394,7 @@ typedef struct SF_CONNECT {
 
     int64 login_timeout;
     int64 network_timeout;
+    int64 browser_response_timeout;
     // retry timeout for new retry strategy
     int64 retry_timeout;
 
@@ -439,6 +447,7 @@ typedef struct SF_CONNECT {
     // by the setting from connection attribute
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
+    sf_bool disable_console_login;
 } SF_CONNECT;
 
 /**
