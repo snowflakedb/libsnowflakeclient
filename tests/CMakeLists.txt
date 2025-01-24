@@ -272,6 +272,9 @@ else()
                     ${T}_dynamic PUBLIC
                     ../deps-build/${PLATFORM}/cmocka/include
             )
+            if (APPLE)
+                list(APPEND CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR})
+            endif()
         endif()
         target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
         target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
