@@ -114,6 +114,19 @@ private:
 
 };
 
+class MockOkta2 : public AuthenticatorOKTA {
+
+public:
+    MockOkta2(SF_CONNECT* connection) : AuthenticatorOKTA(connection)
+    {
+        m_samlResponse = "MOCK SAML_RESPONSE";
+    };
+
+    ~MockOkta2()
+    {
+    };
+};
+
 bool MockOkta::getCurrentCallFailed() 
 {
     MockIDP* idp = dynamic_cast<MockIDP*>(m_idp);
@@ -181,6 +194,26 @@ void test_okta_getAuthetnicate(void**)
     assert_int_equal(getAuthenticatorType("www.okta.com"), AUTH_OKTA);
 }
 
+void test_okta_initializie_and_terminatie(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
+
+    auth_initialize(sf);
+    IAuthenticator* auth = static_cast<IAuthenticator*>(sf->auth_object);
+    std::string type = typeid(*auth).name();
+    assert_string_equal(type.c_str(), "class Snowflake::Client::AuthenticatorOKTA");
+
+    auth_terminate(sf);
+    assert_true(sf->auth_object == nullptr);
+}
+
 void test_okta_authenticator_succeed(void**)
 {
     SF_CONNECT* sf = snowflake_init();
@@ -200,6 +233,10 @@ void test_okta_authenticator_succeed(void**)
     okta.updateDataMap(data);
     assert_string_equal(data["RAW_SAML_RESPONSE"].get<std::string>().c_str(), "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/");
 
+    data.clear();
+    MockOkta2 okta2 = MockOkta2(sf);
+    okta2.updateDataMap(data);
+    assert_string_equal(data["RAW_SAML_RESPONSE"].get<std::string>().c_str(), "MOCK SAML_RESPONSE");
     snowflake_term(sf);
 }
 
@@ -215,6 +252,10 @@ void test_okta_authenticator_fail(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "https://fake.okta.com");
     sf_bool disable_saml_url_check = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_SAML_URL_CHECK, &disable_saml_url_check);
+
+    AuthenticatorOKTA* auth = new AuthenticatorOKTA(sf);
+    auth->authenticate();
+    assert_int_not_equal(sf->error.error_code, SF_STATUS_SUCCESS);
 
     MockOkta okta = MockOkta(sf);
     okta.authenticate();
@@ -244,6 +285,7 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_idp_authenticator),
     cmocka_unit_test(test_okta_getAuthetnicate),
+    cmocka_unit_test(test_okta_initializie_and_terminatie),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
   };

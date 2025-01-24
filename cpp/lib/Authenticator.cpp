@@ -214,6 +214,7 @@ extern "C" {
     try
     {
       delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
+      conn->auth_object = nullptr;
     }
     catch (...)
     {
@@ -449,7 +450,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_TRACE("sf", "Authenticator",
               "post_curl_call",
               "Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -462,7 +463,7 @@ namespace Client
               &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
-              CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
+              CXX_LOG_INFO("sf", "Authenticator", "post_curl_call",
                   "post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
               m_errMsg = "SFConnectionFailed: Fail to get one time token";
@@ -476,7 +477,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
+          CXX_LOG_WARN("sf", "Authenticator", "get_curl_call",
               "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
@@ -517,7 +518,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_TRACE("sf", "Authenticator",
               "get_curl_call",
               "Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
