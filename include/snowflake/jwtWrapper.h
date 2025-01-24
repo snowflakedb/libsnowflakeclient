@@ -63,13 +63,6 @@ const char * HDR_getCustomHeaderEntry(HEADER cjwt_header, const char *entry_type
 CLAIMSET  CSET_buildClaimset();
 
 /**
- * Parse claimset
- * @param cjwt_cset - void pointer to store claimset object
- * @param text - claimset in string that needs to be parsed
- */
-void CSET_parseClaimset(CLAIMSET cjwt_cset, const char *text);
-
-/**
  * Check if a claim "key" is present in a ClaimSet
  * @param cjwt_cset
  * @param key
@@ -116,6 +109,15 @@ long CSET_getClaimsetLong(CLAIMSET cjwt_cset, const char *key);
  * @return
  */
 double CSET_getClaimsetDouble(CLAIMSET cjwt_cset, const char *key);
+
+/**
+ * Remove a value from iClaimSet object
+ * @param cjwt_cset
+ * @param key
+ * @return
+ */
+
+void CSET_removeClaim(CLAIMSET cjwt_cset, char* key);
 
 /**
  * Build a new empty, iJwt object

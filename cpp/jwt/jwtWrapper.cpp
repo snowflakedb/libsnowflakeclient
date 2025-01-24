@@ -64,13 +64,13 @@ int CSET_containsClaimset(CLAIMSET cjwt_cset, const char *key)
     return 0;
 }
 
-void CSET_addStrClaimset(CLAIMSET cjwt_cset, const char *key, char *val)
+void CSET_addStrClaim(CLAIMSET cjwt_cset, const char* key, const char* val)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     cset->addClaim(std::string(key), std::string(val));
 }
 
-void CSET_addIntClaimset(CLAIMSET cjwt_cset, const char *key, long value)
+void CSET_addIntClaim(CLAIMSET cjwt_cset, const char *key, long value)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     cset->addClaim(std::string(key), value);
@@ -196,7 +196,7 @@ HEADER CJWT_getHeader(CJWT cjwt_obj)
     return static_cast<HEADER>((ijwt_obj->getHeader()).get());
 }
 
-void CJWT_deleteToken(CJWT cjwt_obj)
+void CJWT_delete_cjwt(CJWT cjwt_obj)
 {
     IJwt *ijwt_obj = static_cast<IJwt *>(cjwt_obj);
     if (ijwt_obj->getHeader() != NULL)
