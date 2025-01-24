@@ -82,4 +82,3 @@ EXPORTS
     sf_calloc                                      @75
     sf_free                                        @76
     uuid4_generate                                 @77
-    log_set_quiet                                  @78
