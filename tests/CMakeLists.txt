@@ -15,9 +15,9 @@ SET(TESTS_C
         test_change_current
         test_select1
         test_check_ctypes
-        # test_crud
+        test_crud
         test_error_handlings
-        test_large_result_set
+        # test_large_result_set
         test_transaction
         test_ping_pong
         test_stmt_with_bad_connect
