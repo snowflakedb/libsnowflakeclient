@@ -273,7 +273,7 @@ else()
                     ../deps-build/${PLATFORM}/cmocka/include
             )
             if (APPLE)
-                list(APPEND CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR})
+                set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
             endif()
         endif()
         target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
