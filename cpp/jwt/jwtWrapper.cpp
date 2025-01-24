@@ -94,7 +94,7 @@ double CSET_getClaimsetDouble(CLAIMSET cjwt_cset, const char *key)
     return cset->getClaimInDouble(std::string(key));
 }
 
-void CSET_removeClaim(CLAIMSET cjwt_cset, char *key)
+void CSET_removeClaim(CLAIMSET cjwt_cset, const char *key)
 {
     IClaimSet *cset = static_cast<IClaimSet *>(cjwt_cset);
     cset->removeClaim(std::string(key));

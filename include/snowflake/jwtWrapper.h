@@ -117,7 +117,7 @@ double CSET_getClaimsetDouble(CLAIMSET cjwt_cset, const char *key);
  * @return
  */
 
-void CSET_removeClaim(CLAIMSET cjwt_cset, char* key);
+void CSET_removeClaim(CLAIMSET cjwt_cset, const char* key);
 
 /**
  * Build a new empty, iJwt object
