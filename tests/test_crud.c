@@ -198,6 +198,9 @@ void test_crud(void **unused) {
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
+#ifdef _WIN32
+    log_set_quiet(SF_BOOLEAN_FALSE);
+#endif
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_crud),
     };
