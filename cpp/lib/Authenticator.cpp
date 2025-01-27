@@ -381,10 +381,8 @@ namespace Client
 
       m_password = m_connection->password;
       m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
-      //m_appID = m_connection->application_name;
-      //m_appVersion = m_connection->application_version;
-      m_appID = "ODBC";
-      m_appVersion = "3.4.1";
+      m_appID = m_connection->application_name;
+      m_appVersion = m_connection->application_version;
   }
 
   AuthenticatorOKTA::~AuthenticatorOKTA()
