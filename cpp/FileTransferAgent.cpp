@@ -1014,7 +1014,7 @@ extern "C" {
     sfstmt->total_row_index = 0;
     sfstmt->result_set = resultset;
     sfstmt->chunk_rowcount = sfstmt->total_rowcount = result->getResultSize();
-    sfstmt->total_fieldcount = resultset->setup_column_desc(&sfstmt->desc);
+    sfstmt->total_fieldcount = resultset->setup_column_desc(&sfstmt->desc, sfstmt->connection->max_varchar_size);
 
     return SF_STATUS_SUCCESS;
   }

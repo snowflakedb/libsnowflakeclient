@@ -1506,7 +1506,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
         _snowflake_stmt_desc_reset(sfstmt);
         sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
           rowtype);
-        sfstmt->desc = set_description(rowtype);
+        sfstmt->desc = set_description(sfstmt, rowtype);
     }
     cJSON* stats = snowflake_cJSON_GetObjectItem(data, "stats");
     if (snowflake_cJSON_IsObject(stats)) {
