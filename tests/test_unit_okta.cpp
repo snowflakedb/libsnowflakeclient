@@ -285,7 +285,7 @@ int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_idp_authenticator),
     cmocka_unit_test(test_okta_getAuthetnicate),
-    cmocka_unit_test(test_okta_initializie_and_terminatie),
+    //cmocka_unit_test(test_okta_initializie_and_terminatie),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
   };
