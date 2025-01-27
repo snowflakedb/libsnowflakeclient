@@ -131,8 +131,10 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     float64 float_value = 1.23;
     char float_expected_result[] = "1.23";
     char* string_array = NULL;
-    char string_value[] = "str";
-    char string_expected_result[] = "str";
+    char string_value[] = "\"str\"";
+    char string_expected_result[] = "\"str\"";
+    int* null_ind_array = NULL;
+    char* null_expected_result = NULL;
     unsigned char* binary_array = NULL;
     unsigned char binary_value[] = {0x12, 0x34, 0x56, 0x78};
     char binary_expected_result[] = "12345678";
@@ -147,9 +149,10 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     SF_BIND_INPUT string_input;
     SF_BIND_INPUT binary_input;
     SF_BIND_INPUT bool_input;
+    SF_BIND_INPUT null_input;
 
-    SF_BIND_INPUT input_array[8];
-    char* expected_results[8];
+    SF_BIND_INPUT input_array[9];
+    char* expected_results[9];
     unsigned int i = 0, j = 0;
 
     // initialize bindings with argument
@@ -161,6 +164,8 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     string_array = SF_CALLOC(array_size, sizeof(string_value));
     binary_array = SF_CALLOC(array_size, sizeof(binary_value));
     bool_array = SF_CALLOC(array_size, sizeof(bool_value));
+    bool_array = SF_CALLOC(array_size, sizeof(bool_value));
+    null_ind_array = SF_CALLOC(array_size, sizeof(int));
 
     for (i = 0; i < array_size; i++)
     {
@@ -172,6 +177,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
         memcpy(string_array + sizeof(string_value) * i, string_value, sizeof(string_value));
         memcpy(binary_array + sizeof(binary_value) * i, binary_value, sizeof(binary_value));
         bool_array[i] = bool_value;
+        null_ind_array[i] = SF_BIND_LEN_NULL;
     }
 
     snowflake_bind_input_init(&int8_input);
@@ -182,6 +188,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     snowflake_bind_input_init(&string_input);
     snowflake_bind_input_init(&binary_input);
     snowflake_bind_input_init(&bool_input);
+    snowflake_bind_input_init(&null_input);
 
     int8_input.idx = 1;
     int8_input.c_type = SF_C_TYPE_INT8;
@@ -217,6 +224,11 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     bool_input.c_type = SF_C_TYPE_BOOLEAN;
     bool_input.value = bool_array;
 
+    null_input.idx = 9;
+    null_input.c_type = SF_C_TYPE_STRING;
+    null_input.value = NULL;
+    null_input.len_ind = null_ind_array;
+
     input_array[0] = int8_input;
     input_array[1] = uint8_input;
     input_array[2] = int64_input;
@@ -225,6 +237,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     input_array[5] = string_input;
     input_array[6] = binary_input;
     input_array[7] = bool_input;
+    input_array[8] = null_input;
 
     expected_results[0] = int8_expected_result;
     expected_results[1] = uint8_expected_result;
@@ -234,6 +247,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     expected_results[5] = string_expected_result;
     expected_results[6] = binary_expected_result;
     expected_results[7] = bool_expected_result;
+    expected_results[8] = null_expected_result;
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
@@ -247,7 +261,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     SF_STMT* stmt = snowflake_stmt(sf);
     status = snowflake_query(
       stmt,
-      "create or replace temporary table t (c1 number, c2 number, c3 number, c4 number, c5 float, c6 string, c7 binary, c8 boolean)",
+      "create or replace temporary table t (c1 number, c2 number, c3 number, c4 number, c5 float, c6 string, c7 binary, c8 boolean, c9 string)",
       0
     );
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -256,7 +270,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
     status = snowflake_prepare(
       stmt,
-      "insert into t values(?, ?, ?, ?, ?, ?, ?, ?)",
+      "insert into t values(?, ?, ?, ?, ?, ?, ?, ?, ?)",
       0
     );
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -304,10 +318,17 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
       }
       assert_int_equal(status, SF_STATUS_SUCCESS);
       const char* result = NULL;
-      for (j = 0; j < 8; j++)
+      for (j = 0; j < 9; j++)
       {
         snowflake_column_as_const_str(stmt, j + 1, &result);
-        assert_string_equal(result, expected_results[j]);
+        if (expected_results[j])
+        {
+          assert_string_equal(result, expected_results[j]);
+        }
+        else
+        {
+          assert_ptr_equal(result, expected_results[j]);
+        }
       }
     }
     snowflake_stmt_term(stmt);

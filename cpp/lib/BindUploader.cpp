@@ -187,6 +187,8 @@ std::string BindUploader::getCreateStageStmt()
 
 bool BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
 {
+  UNUSED(type);
+
   if (m_curParamIndex != 0)
   {
     m_csvStream << ",";
@@ -204,52 +206,19 @@ bool BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
   }
   else
   {
-    switch (type)
+    if (std::string::npos == val.find_first_of("\"\n,\\"))
     {
-      case SF_DB_TYPE_TIME:
-      {
-        std::string timeStr = convertTimeFormat(val);
-        m_csvStream << timeStr;
-        m_dataSize += timeStr.length();
-        break;
-      }
+      m_csvStream << val;
+      m_dataSize += val.length();
+    }
+    else
+    {
+      std::string escapeStr(val);
+      replaceStrAll(escapeStr, "\"", "\"\"");
+      escapeStr = "\"" + escapeStr + "\"";
 
-      case SF_DB_TYPE_DATE:
-      {
-        std::string dateStr = convertDateFormat(val);
-        m_csvStream << dateStr;
-        m_dataSize += dateStr.length();
-        break;
-      }
-
-      case SF_DB_TYPE_TIMESTAMP_LTZ:
-      case SF_DB_TYPE_TIMESTAMP_NTZ:
-      case SF_DB_TYPE_TIMESTAMP_TZ:
-      {
-        std::string timestampStr = convertTimestampFormat(val, type);
-        m_csvStream << timestampStr;
-        m_dataSize += timestampStr.length();
-        break;
-      }
-
-      default:
-      {
-        if (std::string::npos == val.find_first_of("\"\n,\\"))
-        {
-          m_csvStream << val;
-          m_dataSize += val.length();
-        }
-        else
-        {
-          std::string escapeStr(val);
-          replaceStrAll(escapeStr, "\"", "\"\"");
-          escapeStr = "\"" + escapeStr + "\"";
-
-          m_csvStream << escapeStr;
-          m_dataSize += escapeStr.length();
-        }
-        break;
-      }
+      m_csvStream << escapeStr;
+      m_dataSize += escapeStr.length();
     }
   }
 
@@ -298,115 +267,6 @@ bool BindUploader::addNullValue()
     }
   }
 
-  return true;
-}
-
-bool BindUploader::csvGetNextField(std::string& fieldValue,
-                                   bool& isNull, bool& isEndOfRow)
-{
-  char c;
-
-  // the flag indecate if currently in a quoted value
-  bool inQuote = false;
-  // the flag indecate if the value has been quoted, quoted empty string is
-  // empty value (like ,"",) while unquoted empty string is null (like ,,)
-  bool quoted = false;
-  // the flag indecate a value is found to end the loop
-  bool done = false;
-  // the flag indicate the next char already fetched by checking double quote escape ("")
-  bool nextCharFetched = false;
-
-  fieldValue.clear();
-
-  if (!m_csvStream.get(c))
-  {
-    return false;
-  }
-
-  while (!done)
-  {
-    switch (c)
-    {
-      case ',':
-      {
-        if (!inQuote)
-        {
-          done = true;
-        }
-        else
-        {
-          fieldValue.push_back(c);
-        }
-        break;
-      }
-
-      case '\n':
-      {
-        if (!inQuote)
-        {
-          done = true;
-          isEndOfRow = true;
-        }
-        else
-        {
-          fieldValue.push_back(c);
-        }
-        break;
-      }
-
-      case '\"':
-      {
-        if (!inQuote)
-        {
-          quoted = true;
-          inQuote = true;
-        }
-        else
-        {
-          if (!m_csvStream.get(c))
-          {
-            isEndOfRow = true;
-            done = true;
-          }
-          else
-          {
-            if (c == '\"')
-            {
-              // escape double qoute in quoted string
-              fieldValue.push_back(c);
-            }
-            else
-            {
-              inQuote = false;
-              nextCharFetched = true;
-            }
-          }
-        }
-
-        break;
-      }
-
-      default:
-      {
-        fieldValue.push_back(c);
-      }
-    }
-
-    if ((!done) && (!nextCharFetched))
-    {
-      if (!m_csvStream.get(c))
-      {
-        isEndOfRow = true;
-        break;
-      }
-    }
-    else
-    {
-      nextCharFetched = false;
-    }
-  }
-
-  isNull = (fieldValue.empty() && !quoted);
   return true;
 }
 
