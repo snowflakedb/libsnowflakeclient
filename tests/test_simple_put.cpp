@@ -159,6 +159,15 @@ void test_simple_put_core(const char * fileName,
 
   std::string dataDir = TestSetup::getDataDir();
   std::string file = dataDir + fileName;
+  size_t srcSize = 0;
+  if (is_regular_file(file))
+  {
+    srcSize = file_size(file);
+  }
+  else if (is_regular_file(fileName))
+  {
+    srcSize = file_size(fileName);
+  }
   std::string putCommand = "put file://" + file + " @%test_small_put";
   if (testUnicode)
   {
@@ -281,12 +290,55 @@ void test_simple_put_core(const char * fileName,
     assert_int_equal(SF_STATUS_SUCCESS, ret);
 
     const char *out;
+    int8 out_int8;
+    int32 out_int32;
+    int64 out_int64;
+    uint8 out_uint8;
+    uint32 out_uint32;
+    uint64 out_uint64;
+    float32 out_float32;
+    float64 out_float64;
+    sf_bool out_bool;
+    SF_TIMESTAMP out_timestamp;
+
     // source
     snowflake_column_as_const_str(sfstmt, 1, &out);
     assert_string_equal(expectedSrc.c_str(), out);
+    // special behavior of int8/uint8 get first character of string
+    snowflake_column_as_int8(sfstmt, 1, &out_int8);
+    assert_int_equal(out_int8, (int8)expectedSrc[0]);
+    snowflake_column_as_uint8(sfstmt, 1, &out_uint8);
+    assert_int_equal(out_uint8, (uint8)expectedSrc[0]);
+
     // target
     snowflake_column_as_const_str(sfstmt, 2, &out);
     assert_string_equal(expectedTarget.c_str(), out);
+
+    // source size with all retrieval methods
+    // don't varify size with auto compression as the source size
+    // would be compressed size.
+    if (!autoCompress)
+    {
+      snowflake_column_as_int32(sfstmt, 3, &out_int32);
+      assert_int_equal(out_int32, (int32)srcSize);
+      snowflake_column_as_int64(sfstmt, 3, &out_int64);
+      assert_int_equal(out_int64, (int64)srcSize);
+      snowflake_column_as_uint32(sfstmt, 3, &out_uint32);
+      assert_int_equal(out_uint32, (uint32)srcSize);
+      snowflake_column_as_uint64(sfstmt, 3, &out_uint64);
+      assert_int_equal(out_uint64, (uint64)srcSize);
+      snowflake_column_as_float32(sfstmt, 3, &out_float32);
+      assert_int_equal(out_float32, (float32)srcSize);
+      snowflake_column_as_float64(sfstmt, 3, &out_float64);
+      assert_int_equal(out_float64, (float64)srcSize);
+    }
+    ret = snowflake_column_as_boolean(sfstmt, 3, &out_bool);
+    assert_int_equal(ret, SF_STATUS_ERROR_CONVERSION_FAILURE);
+    ret = snowflake_column_as_timestamp(sfstmt, 3, &out_timestamp);
+    assert_int_equal(ret, SF_STATUS_ERROR_CONVERSION_FAILURE);
+    snowflake_column_is_null(sfstmt, 3, &out_bool);
+    assert_int_equal(out_bool, SF_BOOLEAN_FALSE);
+
     // source comparession
     snowflake_column_as_const_str(sfstmt, 5, &out);
     assert_string_equal(expectedSourceCompression.c_str(), out);
@@ -415,6 +467,8 @@ static int teardown(void **unused)
 
   truncate = "drop table if exists test_small_put_dup";
   snowflake_query(sfstmt, truncate.c_str(), truncate.size());
+  createOnlyOnce = true;
+  fileList.clear();
 
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
@@ -515,11 +569,6 @@ void test_simple_get_data(const char *getCommand, const char *size,
 
 void test_large_put_auto_compress_core(bool native)
 {
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -555,11 +604,6 @@ void test_large_put_auto_compress_native(void **unused)
 
 void test_large_put_threshold(void **unused)
 {
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if ( cenv && !strncmp(cenv, "AWS", 4) ) {
-      errno = 0;
-      return;
-  }
   std::string destinationfile="large_file.csv.gz";
   std::string destFile = TestSetup::getDataDir() + destinationfile;
   test_simple_put_core(destinationfile.c_str(), // filename
@@ -576,11 +620,6 @@ void test_large_put_threshold(void **unused)
 
 void test_large_reupload_core(bool native)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-        errno = 0;
-        return;
-    }
     //Before re-upload delete the already existing staged files.
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -652,10 +691,6 @@ void test_large_reupload_native(void** unused)
  */
 void test_verify_upload(void **unused)
 {
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
@@ -1121,10 +1156,6 @@ void test_large_get_core(bool native)
 {
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
   sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
   getLongTempPath(tempDir);
@@ -1152,10 +1183,6 @@ void test_large_get_threshold_core(bool native)
 {
   char tempDir[MAX_BUF_SIZE] = { 0 };
   char command[MAX_BUF_SIZE] = "get @%test_small_put/bigFile.csv.gz file://";
-    if ( ! strncmp(getenv("CLOUD_PROVIDER"), "AWS", 6) ) {
-        errno = 0;
-        return;
-    }
   sf_get_tmp_dir(tempDir);
 #ifdef _WIN32
   getLongTempPath(tempDir);
@@ -1201,14 +1228,6 @@ static int gr_setup(void **unused)
   }
 
   // create large 2GB file
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  if (githubenv && strlen(githubenv) > 0)
-  {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-      return 0;
-    }
-  }
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
   char* jobname = getenv("JOB_NAME");
@@ -1559,19 +1578,6 @@ void test_simple_put_uploadfail(void **unused) {
 
 void test_2GBlarge_put(void **unused)
 {
-  // on github the existing test case for large file put/get is skipped for
-  // aws so do the same. Make it available for manual test though
-  // since we do have code changes for all platforms.
-  char *githubenv = getenv("GITHUB_ACTIONS");
-  char *cenv = getenv("CLOUD_PROVIDER");
-  if (githubenv && strlen(githubenv) > 0)
-  {
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-      errno = 0;
-      return;
-    }
-  }
-
 // Jenkins node on Mac has issue with large file.
 #ifdef __APPLE__
   char* jobname = getenv("JOB_NAME");
@@ -1831,12 +1837,6 @@ std::string getLastModifiedFromStage(SF_STMT * sfstmt)
 
 void test_upload_file_to_stage_using_stream(void **unused)
 {
-    char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "AWS", 4)) {
-        errno = 0;
-        return;
-    }
-
     SF_CONNECT* sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(SF_STATUS_SUCCESS, status);
@@ -1981,7 +1981,6 @@ int main(void) {
 #endif
 
   const struct CMUnitTest tests[] = {
-/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -2013,7 +2012,6 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
     cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
-*/
     cmocka_unit_test_teardown(test_simple_put_auto_compress_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir_native, teardown),
     cmocka_unit_test_teardown(test_simple_get_native, teardown),
