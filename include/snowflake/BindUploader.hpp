@@ -39,7 +39,7 @@ public:
                         unsigned int maxFileSize,
                         int compressLevel);
 
-  void addStringValue(const std::string& value, SF_DB_TYPE type);
+  virtual void addStringValue(const std::string& value, SF_DB_TYPE type);
 
   void addNullValue();
 
@@ -88,63 +88,7 @@ protected:
    * data/time data as string.
    */
 
-  /**
-  * Convert time data format from nanoseconds to HH:MM:SS.F9
-  * @param timeInNano The time data string in nanoseconds.
-  */
-  virtual std::string convertTimeFormat(const std::string& timeInNano)
-  {
-    return timeInNano;
-  }
-
-  /**
-  * Convert date data format from days to YYYY-MM-DD
-  * @param milliseconds since Epoch
-  */
-  virtual std::string convertDateFormat(const std::string& millisecondSinceEpoch)
-  {
-    return millisecondSinceEpoch;
-  }
-
-  /**
-  * Convert timestamp data format from nanoseconds to YYYY_MM_DD HH:MM:SS.F9
-  * @param timestampInNano The timestamp data string in nanoseconds.
-  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-  */
-  virtual std::string convertTimestampFormat(const std::string& timestampInNano,
-                                     SF_DB_TYPE type)
-  {
-    return timestampInNano;
-  }
-
-  /**
-  * Revert time data format from HH:MM:SS.F9 to nanoseconds
-  * @param formatedTime The time data string in HH:MM:SS.F9.
-  */
-  virtual std::string revertTimeFormat(const std::string& formatedTime)
-  {
-    return formatedTime;
-  }
-
-  /**
-  * Convert date data format from YYYY-MM-DD to milliseconds since Epoch
-  * @param formatedDate the date string in YYYY-MM-DD
-  */
-  virtual std::string revertDateFormat(const std::string& formatedDate)
-  {
-    return formatedDate;
-  }
-
-  /**
-  * Convert timestamp data format from YYYY_MM_DD HH:MM:SS.F9 to nanoseconds
-  * @param Formatedtimestamp The timestamp data string in YYYY_MM_DD HH:MM:SS.F9.
-  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-  */
-  virtual std::string revertTimestampFormat(const std::string& Formatedtimestamp,
-                                    SF_DB_TYPE type)
-  {
-    return Formatedtimestamp;
-  }
+  std::stringstream m_csvStream;
 
 private:
   /**
@@ -166,19 +110,6 @@ private:
   * @param srcFilePath The faked source file path to upload.
   */
   std::string getPutStmt(const std::string& srcFilePath);
-
-  /**
-  * csv parsing function called by convertBindingFromCsvToJson(), get value of
-  * next field.
-  * @param fieldValue The output of the field value.
-  * @param isNull The output of the flag whether the filed is null.
-  * @param isEndofRow The output of the flag wether the end of row is reached.
-  * @return true if a field value is retrieved successfully, false if end of data
-  *         is reached and no field value available.
-  */
-  bool csvGetNextField(std::string& fieldValue, bool& isNull, bool& isEndofRow);
-
-  std::stringstream m_csvStream;
 
   std::stringstream m_compressStream;
 

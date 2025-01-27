@@ -20,6 +20,13 @@ void test_syntax_error(void **unused) {
     }
     assert_int_equal(error->error_code, 1003);
 
+    // Propagate SF_STMT error to SF_CONNECT
+    error = snowflake_error(sf);
+    assert_int_equal(error->error_code, 0);
+    status  = snowflake_propagate_error(sf, sfstmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(error->error_code, 1003);
+
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
