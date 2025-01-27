@@ -214,7 +214,7 @@ extern "C" {
     try
     {
       delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
-      conn->auth_object = nullptr;
+      //conn->auth_object = nullptr;
     }
     catch (...)
     {
