@@ -248,13 +248,14 @@ char *value_to_string(void *value, size_t len, SF_C_TYPE c_type) {
     }
 }
 
-SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
+SF_COLUMN_DESC * set_description(SF_STMT* sfstmt, const cJSON *rowtype) {
     int i;
     cJSON *blob;
     cJSON *column;
     SF_COLUMN_DESC *desc = NULL;
     size_t array_size = (size_t) snowflake_cJSON_GetArraySize(rowtype);
-    if (rowtype == NULL || array_size == 0) {
+    if (sfstmt == NULL || sfstmt->connection == NULL ||
+        rowtype == NULL || array_size == 0) {
         return desc;
     }
     desc = (SF_COLUMN_DESC *) SF_CALLOC(array_size, sizeof(SF_COLUMN_DESC));
@@ -264,12 +265,6 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
         desc[i].idx = (size_t) i + 1;
         if(json_copy_string(&desc[i].name, column, "name")) {
             desc[i].name = NULL;
-        }
-        if (json_copy_int(&desc[i].byte_size, column, "byteLength")) {
-            desc[i].byte_size = 0;
-        }
-        if (json_copy_int(&desc[i].internal_size, column, "length")) {
-            desc[i].internal_size = 0;
         }
         if (json_copy_int(&desc[i].precision, column, "precision")) {
             desc[i].precision = 0;
@@ -290,6 +285,22 @@ SF_COLUMN_DESC * set_description(const cJSON *rowtype) {
         }
         desc[i].c_type = snowflake_to_c_type(desc[i].type, desc[i].precision, desc[i].scale);
         log_debug("Found type and ctype; %i: %i", desc[i].type, desc[i].c_type);
+
+        int64 default_size = 0;
+        if (desc[i].c_type == SF_C_TYPE_STRING)
+        {
+            default_size = sfstmt->connection->max_varchar_size;
+        }
+        else if (desc[i].c_type == SF_C_TYPE_BINARY)
+        {
+            default_size = sfstmt->connection->max_binary_size;
+        }
+        if (json_copy_int(&desc[i].byte_size, column, "byteLength")) {
+            desc[i].byte_size = default_size;
+        }
+        if (json_copy_int(&desc[i].internal_size, column, "length")) {
+            desc[i].internal_size = default_size;
+        }
 
     }
 
