@@ -9,6 +9,7 @@
 #define INPUT_ARRAY_SIZE 3
 
 void test_bind_parameters(void **unused) {
+    UNUSED(unused);
     /* init */
     SF_STATUS status;
     SF_BIND_INPUT input_array[INPUT_ARRAY_SIZE];
@@ -259,15 +260,15 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     if (stage_threshold > 0)
     {
         int64* cur_threshold;
-        snowflake_set_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, &stage_threshold);
-        snowflake_get_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, &cur_threshold);
+        snowflake_set_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, (void*)&stage_threshold);
+        snowflake_get_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, (void**)&cur_threshold);
         assert_int_equal(*cur_threshold, stage_threshold);
     }
     sf_bool* cur_stage_disabled;
     if (stage_disable)
     {
-        snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &stage_disable);
-        snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &cur_stage_disabled);
+        snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void*)&stage_disable);
+        snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void**)&cur_stage_disabled);
         assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
     }
 
@@ -306,7 +307,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     if (fallback)
     {
       // stage disabled after fallback
-      snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &cur_stage_disabled);
+      snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void**)&cur_stage_disabled);
       assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
       sf_unsetenv("https_proxy");
       sf_unsetenv("no_proxy");
@@ -353,14 +354,17 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
 }
 
 void test_array_binding_normal(void** unused) {
+    UNUSED(unused);
     test_array_binding_core(1000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage(void** unused) {
+    UNUSED(unused);
     test_array_binding_core(100000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage_fallback(void** unused) {
+    UNUSED(unused);
     test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
 }
 
