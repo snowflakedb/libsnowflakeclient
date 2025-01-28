@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <memory>
 
 #include "boost/optional.hpp"
 #include "openssl/sha.h"
@@ -16,9 +17,11 @@
 
 
 
-  namespace Snowflake::Client {
-    boost::optional<std::string> sha256(const std::string &str) {
-        auto mdctx = std::unique_ptr<EVP_MD_CTX, std::function<void(EVP_MD_CTX * )>>(EVP_MD_CTX_new(), EVP_MD_CTX_free);
+  namespace Snowflake {
+
+    namespace Client {
+      boost::optional<std::string> sha256(const std::string &str) {
+        auto mdctx = std::unique_ptr<EVP_MD_CTX, std::function<void(EVP_MD_CTX *)>>(EVP_MD_CTX_new(), EVP_MD_CTX_free);
         if (mdctx.get() == nullptr) {
           return {};
         }
@@ -43,4 +46,6 @@
         }
         return ss.str();
       }
-}
+    }
+
+  }

@@ -8,6 +8,7 @@
 #define SNOWFLAKECLIENT_SHA256_HPP
 
 #include <string>
+#include <vector>
 #include <boost/optional.hpp>
 
 namespace Snowflake::Client {
