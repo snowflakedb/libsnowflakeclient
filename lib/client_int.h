@@ -185,9 +185,11 @@ PARAM_TYPE STDCALL _snowflake_get_param_style(const SF_BIND_INPUT *input);
 
 /**
  * @param sfstmt SNOWFLAKE_STMT context.
+ * @param index The parameter set index (for batch execution), -1 to return all
+ *        parameter sets (non-batch execution)
  * @return parameter bindings in cJSON.
  */
-cJSON* STDCALL _snowflake_get_binding_json(SF_STMT *sfstmt);
+cJSON* STDCALL _snowflake_get_binding_json(SF_STMT *sfstmt, int64 index);
 
 #ifdef __cplusplus
 extern "C" {
