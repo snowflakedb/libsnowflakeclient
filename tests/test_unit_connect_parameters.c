@@ -2,6 +2,7 @@
  * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
  */
 #include <string.h>
+#include <curl/curl.h>
 #include "utils/test_setup.h"
 #include "memory.h"
 
@@ -220,7 +221,46 @@ void test_connection_parameters_application(void **unused) {
     SF_FREE(sf);
 }
 
+/**
+* Test connection with session token renew
+*/
+
+extern sf_bool STDCALL renew_session(CURL* curl, SF_CONNECT* sf, SF_ERROR_STRUCT* error);
+void test_connect_with_renew(void** unused) {
+    UNUSED(unused);
+
+    SF_CONNECT* sf = setup_snowflake_connection();
+
+    SF_STATUS status = snowflake_connect(sf);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+
+    // renew session
+    CURL* curl = curl_easy_init();
+    sf_bool debug = SF_BOOLEAN_TRUE;
+    // turn on DEBUG mode to test with debug mode logging as well
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
+    sf_bool renew_result = renew_session(curl, sf, &sf->error);
+    curl_easy_cleanup(curl);
+    debug = SF_BOOLEAN_FALSE;
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
+    if (!renew_result)
+    {
+        dump_error(&sf->error);
+    }
+    assert_int_equal(renew_result, SF_BOOLEAN_TRUE);
+
+    // The query will be completed after sessin renew.
+    status = snowflake_query(sfstmt, "select 1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 int main(void) {
+    initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_connection_parameters_default_port),
         cmocka_unit_test(test_connection_parameters_no_host),
@@ -231,6 +271,7 @@ int main(void) {
         cmocka_unit_test(test_connection_parameters_for_global_url_basic),
         cmocka_unit_test(test_connection_parameters_for_global_url_full),
         cmocka_unit_test(test_connection_parameters_application),
+        cmocka_unit_test(test_connect_with_renew),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     return ret;
