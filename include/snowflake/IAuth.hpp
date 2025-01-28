@@ -61,7 +61,6 @@ namespace IAuth
         int64 m_renewTimeout;
     };
 
-
     class IDPAuthenticator : public AuthErrorHandler
     {
     public:

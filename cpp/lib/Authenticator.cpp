@@ -210,7 +210,6 @@ extern "C" {
       return;
     }
 
-    AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
     try
     {
       delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
