@@ -47,7 +47,7 @@ void remove_cache_file()
   assert_true(!ec);
 }
 
-void test_credential_cache_simple(void **unused)
+void test_credential_cache_simple(void **)
 {
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
   std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
@@ -61,7 +61,7 @@ void test_credential_cache_simple(void **unused)
   assert_false(cache->get(key).has_value());
 }
 
-void test_credential_cache_two_keys(void **unused)
+void test_credential_cache_two_keys(void **)
 {
   remove_cache_file();
   sf_setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");

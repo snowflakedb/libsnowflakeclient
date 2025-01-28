@@ -7,8 +7,9 @@
 /**
  * Test connection with OAuth authentication.
  */
-void test_oauth_connect(void **unused) 
+void test_oauth_connect(void **unused)
 {
+    UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -49,6 +50,7 @@ void test_oauth_connect(void **unused)
 
 void test_mfa_connect_with_duo_push(void** unused)
 {
+    UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -83,6 +85,7 @@ void test_mfa_connect_with_duo_push(void** unused)
 
 void test_mfa_connect_with_duo_passcode(void** unused)
 {
+    UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -125,6 +128,7 @@ void test_mfa_connect_with_duo_passcode(void** unused)
 
 void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 {
+    UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -162,6 +166,7 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 
 void test_mfa_connect_with_mfa_cache(void** unused)
 {
+  UNUSED(unused);
   /*
    * Should trigger mfa push notification at most once.
    * Make sure ALLOW_CLIENT_MFA_CACHING is set to true
@@ -205,7 +210,9 @@ void test_mfa_connect_with_mfa_cache(void** unused)
   }
 }
 
-void test_none(void** unused) {}
+void test_none(void** unused) {
+  UNUSED(unused);
+}
 
 
 int main(void) 

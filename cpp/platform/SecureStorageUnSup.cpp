@@ -13,33 +13,33 @@ namespace Snowflake {
 
 namespace Client {
 
-  SecureStorageStatus SecureStorageImpl::storeToken(const std::string &host,
-                                                    const std::string &username,
-                                                    const std::string &credType,
-                                                    const std::string &token)
+  SecureStorageStatus SecureStorageImpl::storeToken(const std::string &,
+                                                    const std::string &,
+                                                    const std::string &,
+                                                    const std::string &)
   {
     return SecureStorageStatus::Unsupported;
   }
 
-  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string &host,
-                                                       const std::string &username,
-                                                       const std::string &credType,
-                                                       std::string &token)
+  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string &,
+                                                       const std::string &,
+                                                       const std::string &,
+                                                       std::string &)
   {
     return SecureStorageStatus::Unsupported;
   }
 
-  SecureStorageStatus SecureStorageImpl::updateToken(const std::string &host,
-                                                     const std::string &username,
-                                                     const std::string &credType,
-                                                     const std::string &token)
+  SecureStorageStatus SecureStorageImpl::updateToken(const std::string &,
+                                                     const std::string &,
+                                                     const std::string &,
+                                                     const std::string &)
   {
     return SecureStorageStatus::Unsupported;
   }
 
-  SecureStorageStatus SecureStorageImpl::removeToken(const std::string &host,
-                                                     const std::string &username,
-                                                     const std::string &credType)
+  SecureStorageStatus SecureStorageImpl::removeToken(const std::string &,
+                                                     const std::string &,
+                                                     const std::string &)
   {
     return SecureStorageStatus::Unsupported;
   }
