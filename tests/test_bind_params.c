@@ -370,7 +370,7 @@ void test_array_binding_stage_fallback(void** unused) {
     if (cenv && !strncmp(cenv, "AZURE", 5))
     {
       printf("Skipping - fallback test take too long on Azure\n");
-      return 0;
+      return;
     }
     test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
 }
@@ -389,7 +389,7 @@ void test_array_binding_threshold_fallback(void** unused) {
   if (cenv && !strncmp(cenv, "AZURE", 5))
   {
       printf("Skipping - fallback test take too long on Azure\n");
-      return 0;
+      return;
   }
   test_array_binding_core(1000, SF_BOOLEAN_TRUE, 500, SF_BOOLEAN_FALSE);
 }
