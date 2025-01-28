@@ -11,8 +11,10 @@
 #include <vector>
 #include <boost/optional.hpp>
 
-namespace Snowflake::Client {
-  boost::optional<std::string> sha256(const std::string &input);
+namespace Snowflake {
+  namespace Client {
+    boost::optional<std::string> sha256(const std::string &input);
+  }
 }
 
 #endif //SNOWFLAKECLIENT_SHA256_HPP
