@@ -210,6 +210,9 @@ _snowflake_query_put_get_legacy(SF_STMT* sfstmt, const char* command, size_t com
  * @param sfstmt SNOWFLAKE_STMT context.
  * @param upload_stream Internal support for bind uploading, pointer to std::basic_iostream<char>.
  * @param stream_size The data size of upload_stream.
+ * @param stream_upload_max_retries The max number of retries for stream uploading.
+ *                                  Internal support for bind uploading so we can disable retry
+ *                                  and fallback to regular binding directly.
  * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
  *
  * @return 0 if success, otherwise an errno is returned.
@@ -218,6 +221,7 @@ SF_STATUS STDCALL _snowflake_execute_put_get_native(
                       SF_STMT *sfstmt,
                       void* upload_stream,
                       size_t stream_size,
+                      int stream_upload_max_retries,
                       struct SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /*
