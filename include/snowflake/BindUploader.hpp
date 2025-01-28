@@ -48,7 +48,7 @@ public:
   *
   * @Return true if succeeded, false otherwise.
   */
-  virtual void addStringValue(const std::string& value, SF_DB_TYPE type);
+  virtual bool addStringValue(const std::string& value, SF_DB_TYPE type);
 
   /**
    * Add NULL value to binding stream and do uploading as needed.

@@ -1974,11 +1974,11 @@ size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT* bind)
     }
 }
 
-#define SF_BIND_ALL -1
 /**
- * @param index The index for array binding. -1 for single binding.
+ * @param index The index for array binding. SF_BIND_ALL(-1) for single binding.
  * @return single parameter binding value in cJSON.
  */
+#define SF_BIND_ALL -1
 static cJSON* get_single_binding_value_json(SF_BIND_INPUT* input, int64 index)
 {
     char* value = NULL;

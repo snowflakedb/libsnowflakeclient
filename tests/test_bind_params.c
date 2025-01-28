@@ -112,7 +112,7 @@ void test_bind_parameters(void **unused) {
     snowflake_term(sf);
 }
 
-void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
+void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 stage_threshold, sf_bool stage_disable) {
     /* init */
     SF_STATUS status;
     int8* int8_array = NULL;
@@ -251,11 +251,25 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
-	// turn on FAIL_OPEN to around certificate issue with GCP
+    // turn on FAIL_OPEN to around certificate issue with GCP
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
+    if (stage_threshold > 0)
+    {
+        int64* cur_threshold;
+        snowflake_set_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, &stage_threshold);
+        snowflake_get_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, &cur_threshold);
+        assert_int_equal(*cur_threshold, stage_threshold);
+    }
+    sf_bool* cur_stage_disabled;
+    if (stage_disable)
+    {
+        snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &stage_disable);
+        snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &cur_stage_disabled);
+        assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
+    }
 
     /* Create a statement once and reused */
     SF_STMT* stmt = snowflake_stmt(sf);
@@ -291,6 +305,9 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
     }
     if (fallback)
     {
+      // stage disabled after fallback
+      snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &cur_stage_disabled);
+      assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
       sf_unsetenv("https_proxy");
       sf_unsetenv("no_proxy");
       // in a low chance the insert query could take time on server side and
@@ -336,224 +353,32 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback) {
 }
 
 void test_array_binding_normal(void** unused) {
-    test_array_binding_core(1000, SF_BOOLEAN_FALSE);
+    test_array_binding_core(1000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage(void** unused) {
-    test_array_binding_core(100000, SF_BOOLEAN_FALSE);
+    test_array_binding_core(100000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage_fallback(void** unused) {
-    test_array_binding_core(100000, SF_BOOLEAN_TRUE);
+    test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
 }
 
-void test_array_binding_supported_false_update(void** unused) {
-    SF_STATUS status;
-    char bind_data_b[2][4] = { "2.3", "3.4" };
-    char bind_data_c[2][7] = { "bind", "insert" };
-    char bind_data_d[2][11] = { "2001-10-12",
-                                "2001-10-12" };
-    char bind_data_a[2][2] = { "2", "3" };
-
-    SF_BIND_INPUT input_a;
-    SF_BIND_INPUT input_b;
-    SF_BIND_INPUT input_c;
-    SF_BIND_INPUT input_d;
-
-    SF_BIND_INPUT input_array[4];
-
-    snowflake_bind_input_init(&input_a);
-    snowflake_bind_input_init(&input_b);
-    snowflake_bind_input_init(&input_c);
-    snowflake_bind_input_init(&input_d);
-
-    input_b.idx = 1;
-    input_b.c_type = SF_C_TYPE_STRING;
-    input_b.value = bind_data_b;
-    input_b.len = 4;
-
-    input_c.idx = 2;
-    input_c.c_type = SF_C_TYPE_STRING;
-    input_c.value = bind_data_c;
-    input_c.len = 7;
-
-    input_d.idx = 3;
-    input_d.c_type = SF_C_TYPE_STRING;
-    input_d.value = bind_data_d;
-    input_d.len = 11;
-
-    input_a.idx = 4;
-    input_a.c_type = SF_C_TYPE_STRING;
-    input_a.value = bind_data_a;
-    input_a.len = 2;
-
-    input_array[0] = input_b;
-    input_array[1] = input_c;
-    input_array[2] = input_d;
-    input_array[3] = input_a;
-
-    /* Connect with all parameters set */
-    SF_CONNECT* sf = setup_snowflake_connection();
-	// turn on FAIL_OPEN to around certificate issue with GCP
-    sf_bool value = SF_BOOLEAN_TRUE;
-    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
-    status = snowflake_connect(sf);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    /* Create a statement once and reused */
-    SF_STMT* stmt = snowflake_stmt(sf);
-    status = snowflake_query(
-        stmt,
-        "create or replace temporary table foo1(a int, b double, c string, d date)",
-        0
-    );
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_query(
-      stmt,
-      "insert into foo1 values (2, NULL, NULL, NULL), (3, NULL, NULL, NULL)",
-      0
-    );
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    int64 paramset_size = 2;
-    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
-    status = snowflake_prepare(
-      stmt,
-      "update foo1 set b = ?, c = ?, d = ? where a = ?",
-      0
-    );
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_bind_param_array(stmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_execute(stmt);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_affected_rows(stmt), 2);
-
-    status = snowflake_query(stmt, "select * from foo1", 0);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(stmt), 2);
-
-    for (int i = 0; i < 2; i++)
-    {
-      status = snowflake_fetch(stmt);
-      if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(stmt->error));
-      }
-      assert_int_equal(status, SF_STATUS_SUCCESS);
-      char* result = NULL;
-      size_t value_len = 0;
-      size_t max_value_size = 0;
-
-      snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
-      assert_string_equal(result, bind_data_a[i]);
-      snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
-      assert_string_equal(result, bind_data_b[i]);
-      snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
-      assert_string_equal(result, bind_data_c[i]);
-      snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
-      assert_string_equal(result, bind_data_d[i]);
-
-      free(result);
-    }
-
-    snowflake_stmt_term(stmt);
-    snowflake_term(sf);
+void test_array_binding_threshold(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_FALSE);
 }
 
-void test_array_binding_supported_false_insert(void** unused) {
-
-// SNOW-1878297 TODO: disable for now due to server issue.
-// Sever returns arrayBindSupported=true while it's not really supported.
-    return;
-
-    SF_STATUS status;
-    char bind_data[2][2] = { "1", "" };
-
-    SF_BIND_INPUT bind_input;
-
-    snowflake_bind_input_init(&bind_input);
-
-    bind_input.idx = 1;
-    bind_input.c_type = SF_C_TYPE_STRING;
-    bind_input.value = bind_data;
-    bind_input.len = 2;
-
-    /* Connect with all parameters set */
-    SF_CONNECT* sf = setup_snowflake_connection();
-    status = snowflake_connect(sf);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    /* Create a statement once and reused */
-    SF_STMT* stmt = snowflake_stmt(sf);
-    status = snowflake_query(
-        stmt,
-        "create or replace temporary table foo1(a string)",
-        0
-    );
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    int64 paramset_size = 2;
-    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
-    status = snowflake_prepare(
-        stmt,
-        "INSERT INTO foo1 (a) VALUES (NULLIF(?, ''))",
-        0
-    );
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_bind_param(stmt, &bind_input);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_execute(stmt);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_affected_rows(stmt), 2);
-
-    status = snowflake_query(stmt, "select * from foo1", 0);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(stmt), 2);
-
-    snowflake_stmt_term(stmt);
-    snowflake_term(sf);
+// test threshold with fallback so we can ensure stage binding
+// is actually used with lower threshold and disabled after fallback
+void test_array_binding_threshold_fallback(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_TRUE, 500, SF_BOOLEAN_FALSE);
 }
 
-void test_array_binding_supported_false_select(void** unused) {
-    SF_STATUS status;
-    char bind_data[2][2] = { "1", "2" };
-
-    SF_BIND_INPUT bind_input;
-
-    snowflake_bind_input_init(&bind_input);
-
-    bind_input.idx = 1;
-    bind_input.c_type = SF_C_TYPE_STRING;
-    bind_input.value = bind_data;
-    bind_input.len = 2;
-
-    /* Connect with all parameters set */
-    SF_CONNECT* sf = setup_snowflake_connection();
-    status = snowflake_connect(sf);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    /* Create a statement once and reused */
-    SF_STMT* stmt = snowflake_stmt(sf);
-
-    int64 paramset_size = 2;
-    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
-    status = snowflake_prepare(stmt, "select ?", 0);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    status = snowflake_bind_param(stmt, &bind_input);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    // expected failure for non-dml query with array binding unsupported.
-    status = snowflake_execute(stmt);
-    assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
-
-    snowflake_stmt_term(stmt);
-    snowflake_term(sf);
+void test_array_binding_disable(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_TRUE);
 }
 
 void test_array_binding_supported_false_update(void** unused) {
@@ -778,6 +603,9 @@ int main(void) {
       cmocka_unit_test(test_array_binding_supported_false_insert),
       cmocka_unit_test(test_array_binding_supported_false_select),
       cmocka_unit_test(test_array_binding_stage_fallback),
+      cmocka_unit_test(test_array_binding_threshold),
+      cmocka_unit_test(test_array_binding_threshold_fallback),
+      cmocka_unit_test(test_array_binding_disable),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
