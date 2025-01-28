@@ -20,7 +20,7 @@ For a list of the operating systems supported by Snowflake clients, see `Operati
 
 To build libsnowflakeclient, the following software must be installed:
 
-- On Windows: Visual Studio 2015, 2017, 2019 or 2022
+- On Windows: 2017, 2019 or 2022
 - On Linux:
 
   - gcc/g++ 8.3 or higher. **Note**: on certain OS (e.g. Centos 7) the preinstalled gcc/libstdc++ version is below the required minimum. For Centos 7, this is 4.8.5, which is below the requirement. Building libsnowflakeclient might be unsuccessful on such OS's until the prerequisite is fulfilled, i.e. libraries upgraded to at least the minimum version.
@@ -52,7 +52,7 @@ Linux and OSX
 
 Windows
 ^^^^^^^^^^
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
 
@@ -122,7 +122,7 @@ Linux and OSX
 Windows
 ^^^^^^^^^^
 
-Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS14, VS15, VS16, VS17] and run the script.
+Set environment variables: PLATFORM: [x64, x86], BUILD_TYPE: [Debug, Release], VS_VERSION: [VS15, VS16, VS17] and run the script.
 
 .. code-block:: bash
 
