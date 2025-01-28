@@ -365,6 +365,13 @@ void test_array_binding_stage(void** unused) {
 
 void test_array_binding_stage_fallback(void** unused) {
     UNUSED(unused);
+    // Azure SDK take too long (14min) to fail with invalid proxy
+    char* cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AZURE", 5))
+    {
+      printf("Skipping - fallback test take too long on Azure\n");
+      return 0;
+    }
     test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
 }
 
@@ -377,6 +384,13 @@ void test_array_binding_threshold(void** unused) {
 // is actually used with lower threshold and disabled after fallback
 void test_array_binding_threshold_fallback(void** unused) {
   UNUSED(unused);
+  // Azure SDK take too long (14min) to fail with invalid proxy
+  char* cenv = getenv("CLOUD_PROVIDER");
+  if (cenv && !strncmp(cenv, "AZURE", 5))
+  {
+      printf("Skipping - fallback test take too long on Azure\n");
+      return 0;
+  }
   test_array_binding_core(1000, SF_BOOLEAN_TRUE, 500, SF_BOOLEAN_FALSE);
 }
 
@@ -598,6 +612,29 @@ void test_array_binding_supported_false_select(void** unused) {
 }
 
 int main(void) {
+#ifdef __APPLE__
+    std::string testAccount =  getenv("SNOWFLAKE_TEST_ACCOUNT");
+
+    std::for_each(testAccount.begin(), testAccount.end(), [](char & c) {
+                  c = ::toupper(c);
+                  });
+    if(testAccount.find("GCP") != std::string::npos)
+    {
+        setenv("CLOUD_PROVIDER", "GCP", 1);
+    }
+    else if(testAccount.find("AZURE") != std::string::npos)
+    {
+       setenv("CLOUD_PROVIDER", "AZURE", 1);
+    }
+    else
+    {
+        setenv("CLOUD_PROVIDER", "AWS", 1);
+    }
+
+    char *cp = getenv("CLOUD_PROVIDER");
+    std::cout << "Cloud provider is " << cp << std::endl;
+#endif
+
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_bind_parameters),
