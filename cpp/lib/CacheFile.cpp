@@ -12,7 +12,7 @@
 #include "picojson.h"
 
 #include "CacheFile.hpp"
-#include "CredentialCache.hpp"
+#include "snowflake/CredentialCache.hpp"
 #include "snowflake/platform.h"
 #include "../logger/SFLogger.hpp"
 #include "../util/Sha256.hpp"

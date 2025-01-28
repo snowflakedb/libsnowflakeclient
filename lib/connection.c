@@ -94,6 +94,8 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 1
             );
 
+            // TODO Enable token_cache
+/*
             if (sf->token_cache == NULL) {
                 sf->token_cache = cred_cache_init();
             }
@@ -104,6 +106,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
                 cred_cache_free_credential(token);
             }
+*/
         }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);

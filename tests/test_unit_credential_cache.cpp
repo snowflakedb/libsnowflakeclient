@@ -5,7 +5,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "lib/CredentialCache.hpp"
+#include "snowflake/CredentialCache.hpp"
 #include "utils/test_setup.h"
 
 class EnvOverride
@@ -126,9 +126,9 @@ void test_credential_cache_home_dir(void **)
   assert_true(cache->save(key, token));
   assert_true(cache->get(key).value() == token);
 
-  assert_true(boost::filesystem::exists(std::string(".cache/snowflake/") + CACHE_FILENAME));
-  assert_permissions(".cache/snowflake", boost::filesystem::owner_all);
-  assert_permissions(std::string(".cache/snowflake/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
+  assert_true(boost::filesystem::exists(std::string("home/.cache/snowflake/") + CACHE_FILENAME));
+  assert_permissions("home/.cache/snowflake", boost::filesystem::owner_all);
+  assert_permissions(std::string("home/.cache/snowflake/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
 }
 
 void test_credential_cache_xdg_cache_home(void **)

@@ -32,6 +32,7 @@ set(SOURCE_FILES
         include/snowflake/version.h
         include/snowflake/platform.h
         include/snowflake/mfa_token_cache.h
+        include/snowflake/CredentialCache.hpp
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -180,7 +181,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/CacheFile.cpp
         cpp/lib/CacheFile.hpp
         cpp/lib/CredentialCache.cpp
-        cpp/lib/CredentialCache.hpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorage.hpp
         cpp/platform/SecureStorageApple.cpp

@@ -6,7 +6,7 @@
 
 #include "picojson.h"
 
-#include "CredentialCache.hpp"
+#include "snowflake/CredentialCache.hpp"
 
 namespace Snowflake {
 

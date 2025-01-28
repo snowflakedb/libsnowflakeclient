@@ -12,7 +12,7 @@
 
 #include "snowflake/mfa_token_cache.h"
 
-#include "CredentialCache.hpp"
+#include "snowflake/CredentialCache.hpp"
 #include "../platform/SecureStorage.hpp"
 #include "CacheFile.hpp"
 #include "../logger/SFLogger.hpp"
