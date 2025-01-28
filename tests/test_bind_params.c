@@ -612,29 +612,6 @@ void test_array_binding_supported_false_select(void** unused) {
 }
 
 int main(void) {
-#ifdef __APPLE__
-    std::string testAccount =  getenv("SNOWFLAKE_TEST_ACCOUNT");
-
-    std::for_each(testAccount.begin(), testAccount.end(), [](char & c) {
-                  c = ::toupper(c);
-                  });
-    if(testAccount.find("GCP") != std::string::npos)
-    {
-        setenv("CLOUD_PROVIDER", "GCP", 1);
-    }
-    else if(testAccount.find("AZURE") != std::string::npos)
-    {
-       setenv("CLOUD_PROVIDER", "AZURE", 1);
-    }
-    else
-    {
-        setenv("CLOUD_PROVIDER", "AWS", 1);
-    }
-
-    char *cp = getenv("CLOUD_PROVIDER");
-    std::cout << "Cloud provider is " << cp << std::endl;
-#endif
-
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_bind_parameters),
