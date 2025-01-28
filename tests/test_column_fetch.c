@@ -1436,6 +1436,97 @@ void test_column_as_str_json(void **unused) {
     test_column_as_str_helper(SF_BOOLEAN_FALSE);
 }
 
+sf_bool set_bundle_202408_enabled(sf_bool enabled)
+{
+  SF_CONNECT* sf = setup_snowflake_connection();
+
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS)
+  {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT* sfstmt = snowflake_stmt(sf);
+  status = snowflake_query(sfstmt, "use role accountadmin;", 0);
+  if (status != SF_STATUS_SUCCESS)
+  {
+    dump_error(&(sfstmt->error));
+    // can't use accoutadmin, return false to skip the test
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+    return SF_BOOLEAN_FALSE;
+  }
+
+  if (enabled)
+  {
+    status = snowflake_query(sfstmt, "select SYSTEM$ENABLE_BEHAVIOR_CHANGE_BUNDLE('2024_08');", 0);
+  }
+  else
+  {
+    status = snowflake_query(sfstmt, "select SYSTEM$DISABLE_BEHAVIOR_CHANGE_BUNDLE('2024_08');", 0);
+  }
+  if (status != SF_STATUS_SUCCESS)
+  {
+    dump_error(&(sfstmt->error));
+    // can't setup BCR bundle, return false to skip the test
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+    return SF_BOOLEAN_FALSE;
+  }
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+
+  return SF_BOOLEAN_TRUE;
+}
+
+void test_column_length_with_bundle_202408_helper(sf_bool enabled)
+{
+
+  if (!set_bundle_202408_enabled(enabled))
+  {
+    sf_fprintf(stderr, "test_column_length_with_bundle_202408: failed to setup BCR bundle, skip.\n");
+    return;
+  }
+
+  SF_CONNECT* sf = setup_snowflake_connection();
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS)
+  {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT* sfstmt = snowflake_stmt(sf);
+  status = snowflake_query(sfstmt, "SELECT PARSE_XML('<test>22257e111</test>'), TO_BINARY('1234');", 0);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+  SF_COLUMN_DESC* desc = snowflake_desc(sfstmt);
+  uint64* max_varchar_size_p = NULL;
+  uint64* max_binary_size_p = NULL;
+  snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
+  snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_BINARY_SIZE, (void**)&max_binary_size_p);
+  assert_int_equal(desc[0].c_type, SF_C_TYPE_STRING);
+  assert_int_equal(desc[0].byte_size, *max_varchar_size_p);
+  assert_int_equal(desc[0].internal_size, *max_varchar_size_p);
+  assert_int_equal(desc[1].c_type, SF_C_TYPE_BINARY);
+  assert_int_equal(desc[1].byte_size, *max_binary_size_p);
+  assert_int_equal(desc[1].internal_size, *max_binary_size_p);
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+}
+
+void test_column_length_with_bundle_202408_disabled(void** unused) {
+  UNUSED(unused);
+  test_column_length_with_bundle_202408_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_column_length_with_bundle_202408_enabled(void** unused) {
+  UNUSED(unused);
+  test_column_length_with_bundle_202408_helper(SF_BOOLEAN_TRUE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -1472,6 +1563,8 @@ int main(void) {
       cmocka_unit_test(test_column_strlen_json),
       cmocka_unit_test(test_column_as_str_arrow),
       cmocka_unit_test(test_column_as_str_json),
+      cmocka_unit_test(test_column_length_with_bundle_202408_disabled),
+      cmocka_unit_test(test_column_length_with_bundle_202408_enabled),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
