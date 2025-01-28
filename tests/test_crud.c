@@ -5,7 +5,6 @@
 #include "utils/test_setup.h"
 
 void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
-    char *cenv = getenv("CLOUD_PROVIDER");
     SF_STATUS status = snowflake_query(sfstmt, "select * from t", 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
@@ -17,6 +16,7 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
     assert_int_equal(num_fields, 2);
 
     SF_COLUMN_DESC *descs = snowflake_desc(sfstmt);
+    uint64 min_default_varchar_size = 16 * 1024 * 1024;
     uint64* max_varchar_size_p = NULL;
     snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
     int i;
@@ -38,11 +38,8 @@ void _fetch_data(SF_STMT *sfstmt, int64 expected_sum) {
                 assert_int_equal(descs[i].idx, 2);
                 assert_int_equal(descs[i].type, SF_DB_TYPE_TEXT);
                 assert_int_equal(descs[i].c_type, SF_C_TYPE_STRING);
-                // TODO: SNOW-1899737 temporarily disable length check on AZURE/GCP
-                if (cenv && !strncmp(cenv, "AWS", 4)) {
-                    assert_int_equal(descs[i].byte_size, *max_varchar_size_p);
-                    assert_int_equal(descs[i].internal_size, *max_varchar_size_p);
-                }
+                assert_in_range(descs[i].byte_size, min_default_varchar_size, *max_varchar_size_p);
+                assert_in_range(descs[i].internal_size, min_default_varchar_size, *max_varchar_size_p);
                 assert_int_equal(descs[i].precision, 0);
                 assert_int_equal(descs[i].scale, 0);
                 assert_int_equal(descs[i].null_ok, 1);
