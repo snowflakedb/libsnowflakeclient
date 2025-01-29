@@ -2873,7 +2873,8 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE* result_capture,
                                                   sf_bool is_describe_only,
                                                   char* bind_stage,
-                                                  cJSON* bindings)
+                                                  cJSON* bindings,
+                                                  sf_bool is_async_exec)
 {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     SF_JSON_ERROR json_error;
@@ -2907,7 +2908,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                                   NULL : sfstmt->request_id, is_describe_only,
                                   sfstmt->multi_stmt_count);
 								  
-	snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
+	  snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
 	
     if (bind_stage)
     {
@@ -3160,7 +3161,8 @@ static SF_STATUS _batch_dml_execute(SF_STMT* sfstmt,
                                                result_capture,
                                                SF_BOOLEAN_FALSE,
                                                NULL,
-                                               bindings);
+                                               bindings,
+                                               SF_BOOLEAN_FALSE);
         if (ret != SF_STATUS_SUCCESS)
         {
             return ret;
@@ -3176,7 +3178,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         sf_bool is_native_put_get,
                                         SF_QUERY_RESULT_CAPTURE* result_capture,
-                                        sf_bool is_describe_only) {
+                                        sf_bool is_describe_only,
+                                        sf_bool is_async_exec) {
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     cJSON* bindings = NULL;
     char* bind_stage = NULL;
@@ -3214,7 +3217,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                                    is_put_get_command,
                                                    result_capture,
                                                    SF_BOOLEAN_TRUE,
-                                                   NULL, NULL);
+                                                   NULL, NULL,
+                                                   is_async_exec);
             if (ret != SF_STATUS_SUCCESS)
             {
                 return ret;
@@ -3250,7 +3254,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                             result_capture,
                                             is_describe_only,
                                             bind_stage,
-                                            bindings);
+                                            bindings,
+                                            is_async_exec);
 }
 
 SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf) {
