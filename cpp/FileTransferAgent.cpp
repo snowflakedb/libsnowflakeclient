@@ -947,6 +947,7 @@ extern "C" {
                         SF_STMT* sfstmt,
                         void* upload_stream,
                         size_t stream_size,
+                        int stream_upload_max_retries,
                         struct SF_QUERY_RESULT_CAPTURE* result_capture)
   {
     if (!sfstmt)
@@ -978,6 +979,7 @@ extern "C" {
     if (upload_stream)
     {
       agent.setUploadStream((std::basic_iostream<char>*)upload_stream, stream_size);
+      agent.setPutMaxRetries(stream_upload_max_retries);
     }
 
     ITransferResult* result;
@@ -1014,7 +1016,7 @@ extern "C" {
     sfstmt->total_row_index = 0;
     sfstmt->result_set = resultset;
     sfstmt->chunk_rowcount = sfstmt->total_rowcount = result->getResultSize();
-    sfstmt->total_fieldcount = resultset->setup_column_desc(&sfstmt->desc);
+    sfstmt->total_fieldcount = resultset->setup_column_desc(&sfstmt->desc, sfstmt->connection->max_varchar_size);
 
     return SF_STATUS_SUCCESS;
   }

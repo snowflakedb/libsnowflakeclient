@@ -187,7 +187,8 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if (strcmp(name->valuestring, "ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1") == 0) {
                 sf->use_s3_regional_url = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
             }
-            else if (strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) {
+            else if ((strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) &&
+                     !sf->binding_threshold_overridden) {
                 sf->stage_binding_threshold = snowflake_cJSON_GetUint64Value(value);
             }
         }
@@ -1275,6 +1276,21 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_GET_THRESHOLD:
             sf->get_threshold = value ? *((int64 *)value) : SF_DEFAULT_GET_THRESHOLD;
             break;
+        case SF_CON_STAGE_BIND_THRESHOLD:
+            if (value)
+            {
+                sf->stage_binding_threshold = *((int64*)value);
+                sf->binding_threshold_overridden = SF_BOOLEAN_TRUE;
+            }
+            else
+            {
+                sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+                sf->binding_threshold_overridden = SF_BOOLEAN_FALSE;
+            }
+            break;
+        case SF_CON_DISABLE_STAGE_BIND:
+          sf->stage_binding_disabled = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1448,6 +1464,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_GET_THRESHOLD:
             *value = &sf->get_threshold;
             break;
+        case SF_CON_STAGE_BIND_THRESHOLD:
+          *value = &sf->stage_binding_threshold;
+          break;
+        case SF_CON_DISABLE_STAGE_BIND:
+          *value = &sf->stage_binding_disabled;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1524,7 +1546,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
         _snowflake_stmt_desc_reset(sfstmt);
         sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
           rowtype);
-        sfstmt->desc = set_description(rowtype);
+        sfstmt->desc = set_description(sfstmt, rowtype);
     }
     cJSON* stats = snowflake_cJSON_GetObjectItem(data, "stats");
     if (snowflake_cJSON_IsObject(stats)) {
@@ -1967,11 +1989,11 @@ size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT* bind)
     }
 }
 
-#define SF_BIND_ALL -1
 /**
- * @param index The index for array binding. -1 for single binding.
+ * @param index The index for array binding. SF_BIND_ALL(-1) for single binding.
  * @return single parameter binding value in cJSON.
  */
+#define SF_BIND_ALL -1
 static cJSON* get_single_binding_value_json(SF_BIND_INPUT* input, int64 index)
 {
     char* value = NULL;
@@ -2956,7 +2978,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     if (is_put_get_command && is_native_put_get && !is_describe_only)
     {
         _snowflake_stmt_desc_reset(sfstmt);
-        return _snowflake_execute_put_get_native(sfstmt, NULL, 0, result_capture);
+        return _snowflake_execute_put_get_native(sfstmt, NULL, 0, 0, result_capture);
     }
 
     clear_snowflake_error(&sfstmt->error);
