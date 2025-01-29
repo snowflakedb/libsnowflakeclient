@@ -365,6 +365,13 @@ void test_array_binding_stage(void** unused) {
 
 void test_array_binding_stage_fallback(void** unused) {
     UNUSED(unused);
+    // Azure SDK take too long (14min) to fail with invalid proxy
+    char* cenv = getenv("CLOUD_PROVIDER");
+    if (cenv && !strncmp(cenv, "AZURE", 5))
+    {
+      printf("Skipping - fallback test take too long on Azure\n");
+      return;
+    }
     test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
 }
 
@@ -377,6 +384,13 @@ void test_array_binding_threshold(void** unused) {
 // is actually used with lower threshold and disabled after fallback
 void test_array_binding_threshold_fallback(void** unused) {
   UNUSED(unused);
+  // Azure SDK take too long (14min) to fail with invalid proxy
+  char* cenv = getenv("CLOUD_PROVIDER");
+  if (cenv && !strncmp(cenv, "AZURE", 5))
+  {
+      printf("Skipping - fallback test take too long on Azure\n");
+      return;
+  }
   test_array_binding_core(1000, SF_BOOLEAN_TRUE, 500, SF_BOOLEAN_FALSE);
 }
 
