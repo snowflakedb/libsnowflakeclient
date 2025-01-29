@@ -12,6 +12,11 @@ extern "C" {
  */
 sf_bool ends_with(char* str, char* suffix);
 
+/**
+ * Helper sleep function
+ */
+void sf_sleep_ms(int sleep_ms);
+
 #ifdef __cplusplus
 }
 #endif
