@@ -9,6 +9,7 @@
 #define INPUT_ARRAY_SIZE 3
 
 void test_bind_parameters(void **unused) {
+    UNUSED(unused);
     /* init */
     SF_STATUS status;
     SF_BIND_INPUT input_array[INPUT_ARRAY_SIZE];
@@ -112,7 +113,7 @@ void test_bind_parameters(void **unused) {
     snowflake_term(sf);
 }
 
-void test_array_binding_core(unsigned int array_size) {
+void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 stage_threshold, sf_bool stage_disable) {
     /* init */
     SF_STATUS status;
     int8* int8_array = NULL;
@@ -251,11 +252,25 @@ void test_array_binding_core(unsigned int array_size) {
 
     /* Connect with all parameters set */
     SF_CONNECT* sf = setup_snowflake_connection();
-	// turn on FAIL_OPEN to around certificate issue with GCP
+    // turn on FAIL_OPEN to around certificate issue with GCP
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
+    if (stage_threshold > 0)
+    {
+        int64* cur_threshold;
+        snowflake_set_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, (void*)&stage_threshold);
+        snowflake_get_attribute(sf, SF_CON_STAGE_BIND_THRESHOLD, (void**)&cur_threshold);
+        assert_int_equal(*cur_threshold, stage_threshold);
+    }
+    sf_bool* cur_stage_disabled;
+    if (stage_disable)
+    {
+        snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void*)&stage_disable);
+        snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void**)&cur_stage_disabled);
+        assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
+    }
 
     /* Create a statement once and reused */
     SF_STMT* stmt = snowflake_stmt(sf);
@@ -278,7 +293,34 @@ void test_array_binding_core(unsigned int array_size) {
     status = snowflake_bind_param_array(stmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    if (fallback)
+    {
+      // set invalid proxy for storage endpoints to fail put command
+      sf_setenv("https_proxy", "a.b.c");
+      sf_setenv("no_proxy", ".snowflakecomputing.com");
+    }
     status = snowflake_execute(stmt);
+    if (status != SF_STATUS_SUCCESS)
+    {
+      dump_error(&stmt->error);
+    }
+    if (fallback)
+    {
+      // stage disabled after fallback
+      snowflake_get_attribute(sf, SF_CON_DISABLE_STAGE_BIND, (void**)&cur_stage_disabled);
+      assert_int_equal(*cur_stage_disabled, SF_BOOLEAN_TRUE);
+      sf_unsetenv("https_proxy");
+      sf_unsetenv("no_proxy");
+      // in a low chance the insert query could take time on server side and
+      // turn into async and need to access storage endpoint to get the result
+      // Ignore the error in such case.
+      if (status == SF_STATUS_ERROR_CURL)
+      {
+        fprintf(stderr, "test_array_binding_stage_fallback: insert query impacted by invalid proxy, skip.\n");
+        return;
+      }
+    }
+
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_affected_rows(stmt), array_size);
 
@@ -312,11 +354,35 @@ void test_array_binding_core(unsigned int array_size) {
 }
 
 void test_array_binding_normal(void** unused) {
-    test_array_binding_core(1000);
+    UNUSED(unused);
+    test_array_binding_core(1000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage(void** unused) {
-    test_array_binding_core(100000);
+    UNUSED(unused);
+    test_array_binding_core(100000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
+}
+
+void test_array_binding_stage_fallback(void** unused) {
+    UNUSED(unused);
+    test_array_binding_core(100000, SF_BOOLEAN_TRUE, 0, SF_BOOLEAN_FALSE);
+}
+
+void test_array_binding_threshold(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_FALSE);
+}
+
+// test threshold with fallback so we can ensure stage binding
+// is actually used with lower threshold and disabled after fallback
+void test_array_binding_threshold_fallback(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_TRUE, 500, SF_BOOLEAN_FALSE);
+}
+
+void test_array_binding_disable(void** unused) {
+  UNUSED(unused);
+  test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_TRUE);
 }
 
 void test_array_binding_supported_false_update(void** unused) {
@@ -540,6 +606,10 @@ int main(void) {
       cmocka_unit_test(test_array_binding_supported_false_update),
       cmocka_unit_test(test_array_binding_supported_false_insert),
       cmocka_unit_test(test_array_binding_supported_false_select),
+      cmocka_unit_test(test_array_binding_stage_fallback),
+      cmocka_unit_test(test_array_binding_threshold),
+      cmocka_unit_test(test_array_binding_threshold_fallback),
+      cmocka_unit_test(test_array_binding_disable),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

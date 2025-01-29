@@ -62,11 +62,12 @@ void test_large_result_set_helper(sf_bool use_arrow) {
         // printf("output: %lld, %s\n", out, c2buf);
         counter++;
     }
-    assert_int_equal(counter, rows);
-    assert_int_equal(snowflake_num_rows(sfstmt), rows);
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
     }
+	// check counter later for better error visibility
+    assert_int_equal(snowflake_num_rows(sfstmt), rows);
+    assert_int_equal(counter, rows);
     assert_int_equal(status, SF_STATUS_EOF);
 
     snowflake_stmt_term(sfstmt);
