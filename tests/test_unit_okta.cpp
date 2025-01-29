@@ -65,12 +65,13 @@ bool MockIDP::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& re
 {
     bool ret = true;
     jsonObject_t data;
-    data["tokenUrl"] = picojson::value("https://fake.okta.com/tokenurl");
-    data["ssoUrl"] = picojson::value("https://fake.okta.com/ssourl");
-    data["proofKey"] = picojson::value("proofKey");
-    resp["data"] = picojson::value(data);
-    resp["body"] = picojson::value(picojson::value(obj).serialize());
-    resp["sessionToken"] = picojson::value("onetimetoken");
+    data["tokenUrl"] = jsonValue_t("https://fake.okta.com/tokenurl");
+    data["ssoUrl"] = jsonValue_t("https://fake.okta.com/ssourl");
+    data["proofKey"] = jsonValue_t("proofKey");
+    resp["data"] = jsonValue_t(data);
+    resp["body"] = jsonValue_t(jsonValue_t(obj).serialize());
+    resp["destination"] = jsonValue_t(url.toString());
+    resp["sessionToken"] = jsonValue_t("onetimetoken");
     if (isPostCallFailed) {
         m_errMsg = "SFConnectionFailed:curlPostCall";
     }
