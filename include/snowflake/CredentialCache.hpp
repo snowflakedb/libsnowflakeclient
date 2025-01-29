@@ -39,6 +39,12 @@ namespace Client {
     switch (type) {
       case CredentialType::MFA_TOKEN:
         return "MFA_TOKEN";
+      case CredentialType::SSO_TOKEN:
+        return "SSO_TOKEN";
+      case CredentialType::OAUTH_REFRESH_TOKEN:
+        return "OAUTH_REFRESH_TOKEN";
+      case CredentialType::OAUTH_ACCESS_TOKEN:
+        return "OAUTH_ACCESS_TOKEN";
       default:
         return "UNKNOWN";
     }

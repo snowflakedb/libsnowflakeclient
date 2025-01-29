@@ -10,7 +10,10 @@
 typedef void* cred_cache_ptr;
 
 typedef enum {
-  MFA_TOKEN
+  MFA_TOKEN,
+  SSO_TOKEN,
+  OAUTH_REFRESH_TOKEN,
+  OAUTH_ACCESS_TOKEN
 } CredentialType;
 
 #ifdef __cplusplus

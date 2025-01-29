@@ -19,6 +19,7 @@ namespace Client {
 
   constexpr int MAX_LOCK_RETRIES = 10;
   constexpr std::chrono::seconds lock_retry_sleep(1);
+  constexpr std::chrono::seconds lock_expired_timeout(60);
   constexpr const char *lock_suffix = ".lck";
 
   FileLock::FileLock(const std::string &path_)
@@ -52,7 +53,7 @@ namespace Client {
     }
   }
 
-  // Returns true if locking should be retried
+  // Returns true when locking should be retried
   bool FileLock::try_lock() {
     boost::system::error_code ec;
     bool created = boost::filesystem::create_directory(path, ec);
@@ -72,7 +73,7 @@ namespace Client {
     }
 
     std::time_t now_epoch_seconds = time(nullptr);
-    if (creation_time_epoch_seconds + 60 < now_epoch_seconds)
+    if (std::chrono::seconds(creation_time_epoch_seconds) + lock_expired_timeout < std::chrono::seconds(now_epoch_seconds))
     {
       CXX_LOG_INFO("Cleaning up stale lock.")
       boost::filesystem::remove(path, ec);
