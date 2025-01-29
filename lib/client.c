@@ -374,7 +374,8 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if (strcmp(name->valuestring, "ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1") == 0) {
                 sf->use_s3_regional_url = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
             }
-            else if (strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) {
+            else if ((strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) &&
+                     !sf->binding_threshold_overridden) {
                 sf->stage_binding_threshold = snowflake_cJSON_GetUint64Value(value);
             }
         }
@@ -1447,6 +1448,21 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_GET_THRESHOLD:
             sf->get_threshold = value ? *((int64 *)value) : SF_DEFAULT_GET_THRESHOLD;
             break;
+        case SF_CON_STAGE_BIND_THRESHOLD:
+            if (value)
+            {
+                sf->stage_binding_threshold = *((int64*)value);
+                sf->binding_threshold_overridden = SF_BOOLEAN_TRUE;
+            }
+            else
+            {
+                sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+                sf->binding_threshold_overridden = SF_BOOLEAN_FALSE;
+            }
+            break;
+        case SF_CON_DISABLE_STAGE_BIND:
+          sf->stage_binding_disabled = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1620,6 +1636,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_GET_THRESHOLD:
             *value = &sf->get_threshold;
             break;
+        case SF_CON_STAGE_BIND_THRESHOLD:
+          *value = &sf->stage_binding_threshold;
+          break;
+        case SF_CON_DISABLE_STAGE_BIND:
+          *value = &sf->stage_binding_disabled;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1688,12 +1710,15 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
     } else {
         sfstmt->is_dml = detect_stmt_type(stmt_type_id);
     }
+
+    json_copy_bool(&sfstmt->array_bind_supported, data, "arrayBindSupported");
+
     cJSON* rowtype = snowflake_cJSON_GetObjectItem(data, "rowtype");
     if (snowflake_cJSON_IsArray(rowtype)) {
         _snowflake_stmt_desc_reset(sfstmt);
         sfstmt->total_fieldcount = snowflake_cJSON_GetArraySize(
           rowtype);
-        sfstmt->desc = set_description(rowtype);
+        sfstmt->desc = set_description(sfstmt, rowtype);
     }
     cJSON* stats = snowflake_cJSON_GetObjectItem(data, "stats");
     if (snowflake_cJSON_IsObject(stats)) {
@@ -2139,17 +2164,68 @@ size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT* bind)
 }
 
 /**
+ * @param index The index for array binding. SF_BIND_ALL(-1) for single binding.
+ * @return single parameter binding value in cJSON.
+ */
+#define SF_BIND_ALL -1
+static cJSON* get_single_binding_value_json(SF_BIND_INPUT* input, int64 index)
+{
+    char* value = NULL;
+    cJSON* single_val = NULL;
+    int64 val_len = 0;
+    size_t step = 0;
+    void* val_ptr = NULL;
+
+    if (index < 0)
+    {
+        value = value_to_string(input->value, input->len, input->c_type);
+        single_val = snowflake_cJSON_CreateString(value);
+        SF_FREE(value);
+    }
+    else
+    {
+        val_len = (int64)input->len;
+        step = _snowflake_get_binding_value_size(input);
+        val_ptr = (char*)(input->value) + step * index;
+        if (input->len_ind)
+        {
+            val_len = input->len_ind[index];
+        }
+
+        if (SF_BIND_LEN_NULL == val_len)
+        {
+            single_val = snowflake_cJSON_CreateNull();
+        }
+        else
+        {
+            if ((SF_C_TYPE_STRING == input->c_type) &&
+                (SF_BIND_LEN_NTS == val_len))
+            {
+                val_len = (int64)strlen((char*)val_ptr);
+            }
+
+            value = value_to_string(val_ptr, val_len, input->c_type);
+            single_val = snowflake_cJSON_CreateString(value);
+            SF_FREE(value);
+        }
+    }
+
+    return single_val;
+}
+
+/**
  * @param sfstmt SNOWFLAKE_STMT context.
+ * @param index The parameter set index (for batch execution), -1 to return all
+ *        parameter sets (non-batch execution)
  * @return parameter bindings in cJSON.
  */
-cJSON* STDCALL _snowflake_get_binding_json(SF_STMT* sfstmt)
+cJSON* STDCALL _snowflake_get_binding_json(SF_STMT* sfstmt, int64 index)
 {
     size_t i;
     SF_BIND_INPUT* input;
     const char* type;
     char name_buf[SF_PARAM_NAME_BUF_LEN];
     char* name = NULL;
-    char* value = NULL;
     cJSON* bindings = NULL;
 
     if (_snowflake_get_current_param_style(sfstmt) == INVALID_PARAM_TYPE)
@@ -2159,7 +2235,9 @@ cJSON* STDCALL _snowflake_get_binding_json(SF_STMT* sfstmt)
     bindings = snowflake_cJSON_CreateObject();
     for (i = 0; i < sfstmt->params_len; i++)
     {
-        cJSON* binding;
+        cJSON* binding = NULL;
+        cJSON* single_val = NULL;
+
         input = _snowflake_get_binding_by_index(sfstmt, i, &name,
                                                 name_buf, SF_PARAM_NAME_BUF_LEN);
         if (input == NULL)
@@ -2170,50 +2248,22 @@ cJSON* STDCALL _snowflake_get_binding_json(SF_STMT* sfstmt)
         binding = snowflake_cJSON_CreateObject();
         type = snowflake_type_to_string(
             c_type_to_snowflake(input->c_type, SF_DB_TYPE_TIMESTAMP_NTZ));
-        if (sfstmt->paramset_size > 1)
+        // json array for all parameter sets
+        if ((sfstmt->paramset_size > 1) && (index < 0))
         {
             cJSON* val_array = snowflake_cJSON_CreateArray();
-            size_t step = _snowflake_get_binding_value_size(input);
-            void* val_ptr = input->value;
-            int64 val_len;
-            cJSON* single_val = NULL;
-            for (int64 j = 0; j < sfstmt->paramset_size; j++, val_ptr = (char*)val_ptr + step)
+            // get all parameter sets, use array
+            for (int64 j = 0; j < sfstmt->paramset_size; j++)
             {
-                val_len = input->len;
-                if (input->len_ind)
-                {
-                    val_len = input->len_ind[j];
-                }
-
-                if (SF_BIND_LEN_NULL == val_len)
-                {
-                    single_val = snowflake_cJSON_CreateNull();
-                    snowflake_cJSON_AddItemToArray(val_array, single_val);
-                    continue;
-                }
-
-                if ((SF_C_TYPE_STRING == input->c_type) &&
-                    (SF_BIND_LEN_NTS == val_len))
-                {
-                    val_len = strlen((char*)val_ptr);
-                }
-
-                value = value_to_string(val_ptr, val_len, input->c_type);
-                single_val = snowflake_cJSON_CreateString(value);
+                single_val = get_single_binding_value_json(input, j);
                 snowflake_cJSON_AddItemToArray(val_array, single_val);
-                if (value) {
-                  SF_FREE(value);
-                }
             }
             snowflake_cJSON_AddItemToObject(binding, "value", val_array);
         }
-        else // paramset_size = 1, single value binding
+        else // single value binding
         {
-            value = value_to_string(input->value, input->len, input->c_type);
-            snowflake_cJSON_AddStringToObject(binding, "value", value);
-            if (value) {
-                SF_FREE(value);
-            }
+            single_val = get_single_binding_value_json(input, index);
+            snowflake_cJSON_AddItemToObject(binding, "value", single_val);
         }
         snowflake_cJSON_AddStringToObject(binding, "type", type);
         snowflake_cJSON_AddItemToObject(bindings, name, binding);
@@ -2227,7 +2277,7 @@ sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT* sfstmt)
     if (!sfstmt || !sfstmt->connection ||
         (_snowflake_get_current_param_style(sfstmt) == INVALID_PARAM_TYPE) ||
         sfstmt->connection->stage_binding_disabled ||
-        sfstmt->paramset_size <= 1)
+        sfstmt->paramset_size <= 1 || !sfstmt->array_bind_supported)
     {
         return SF_BOOLEAN_FALSE;
     }
@@ -2280,6 +2330,8 @@ static void STDCALL _snowflake_stmt_reset(SF_STMT *sfstmt) {
     sfstmt->params = NULL;
     sfstmt->params_len = 0;
     sfstmt->name_list = NULL;
+    sfstmt->array_bind_supported = SF_BOOLEAN_FALSE;
+    sfstmt->affected_rows = -1;
 
     _snowflake_stmt_desc_reset(sfstmt);
 
@@ -2361,6 +2413,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
         sfstmt->multi_stmt_count = SF_MULTI_STMT_COUNT_UNSET;
         // single value binding by default
         sfstmt->paramset_size = 1;
+        sfstmt->affected_rows = -1;
     }
     return sfstmt;
 }
@@ -2739,6 +2792,11 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt) {
     }
 
     if (sfstmt->is_dml == SF_BOOLEAN_TRUE) {
+        if (sfstmt->affected_rows >= 0)
+        {
+            // use the value initialized previously from batch execution
+            return sfstmt->affected_rows;
+        }
         if (SF_STATUS_SUCCESS != snowflake_fetch(sfstmt))
         {
             return -1;
@@ -2810,23 +2868,13 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt, SF_QUERY_RESUL
     return _snowflake_execute_ex(sfstmt, _is_put_get_command(sfstmt->sql_text), SF_BOOLEAN_TRUE, result_capture, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 }
 
-SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
-                                        sf_bool is_put_get_command,
-                                        sf_bool is_native_put_get,
-                                        SF_QUERY_RESULT_CAPTURE* result_capture,
-                                        sf_bool is_describe_only,
-                                        sf_bool is_async_exec) {
-    if (!sfstmt) {
-        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
-    }
-
-    if (is_put_get_command && is_native_put_get && !is_describe_only)
-    {
-        _snowflake_stmt_desc_reset(sfstmt);
-        return _snowflake_execute_put_get_native(sfstmt, NULL, 0, result_capture);
-    }
-
-    clear_snowflake_error(&sfstmt->error);
+static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
+                                                  sf_bool is_put_get_command,
+                                                  SF_QUERY_RESULT_CAPTURE* result_capture,
+                                                  sf_bool is_describe_only,
+                                                  char* bind_stage,
+                                                  cJSON* bindings)
+{
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
     SF_JSON_ERROR json_error;
     const char *error_msg;
@@ -2840,25 +2888,6 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
     URL_KEY_VALUE url_params[] = {
             {.key="requestId=", .value=sfstmt->request_id, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0}
     };
-    size_t i;
-    cJSON *bindings = NULL;
-    char* bind_stage = NULL;
-    SF_BIND_INPUT *input;
-    const char *type;
-    char *value;
-
-    _mutex_lock(&sfstmt->connection->mutex_sequence_counter);
-    sfstmt->sequence_counter = ++sfstmt->connection->sequence_counter;
-    _mutex_unlock(&sfstmt->connection->mutex_sequence_counter);
-
-    if (_snowflake_needs_stage_binding(sfstmt))
-    {
-        bind_stage = _snowflake_stage_bind_upload(sfstmt);
-    }
-    if (!bind_stage)
-    {
-        bindings = _snowflake_get_binding_json(sfstmt);
-    }
 
     if (is_string_empty(sfstmt->connection->directURL) &&
         (is_string_empty(sfstmt->connection->master_token) ||
@@ -3034,7 +3063,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                   sfstmt->is_multi_stmt = (_SF_STMT_TYPE_MULTI_STMT == stmt_type_id);
                 }
 
-                if (sfstmt->is_multi_stmt)
+                if ((sfstmt->is_multi_stmt) && (!is_describe_only))
                 {
                     if (!setup_multi_stmt_result(sfstmt, data))
                     {
@@ -3103,6 +3132,125 @@ cleanup:
     // if result_capture is not NULL
 
     return ret;
+}
+
+static SF_STATUS _batch_dml_execute(SF_STMT* sfstmt,
+                                    SF_QUERY_RESULT_CAPTURE* result_capture)
+{
+    SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
+    cJSON* bindings = NULL;
+    int64 affected_rows = 0;
+
+    // impossible but just in case
+    if (!sfstmt->is_dml)
+    {
+        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+            SF_STATUS_ERROR_GENERAL,
+            "Internal error. _batch_dml_execute is called for non-dml query.",
+            SF_SQLSTATE_GENERAL_ERROR,
+            sfstmt->sfqid);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    sfstmt->affected_rows = -1;
+    for (int64 i = 0; i < sfstmt->paramset_size; i++)
+    {
+        bindings = _snowflake_get_binding_json(sfstmt, i);
+        ret = _snowflake_execute_with_binds_ex(sfstmt,
+                                               SF_BOOLEAN_FALSE,
+                                               result_capture,
+                                               SF_BOOLEAN_FALSE,
+                                               NULL,
+                                               bindings);
+        if (ret != SF_STATUS_SUCCESS)
+        {
+            return ret;
+        }
+        affected_rows += snowflake_affected_rows(sfstmt);
+    }
+
+    sfstmt->affected_rows = affected_rows;
+    return SF_STATUS_SUCCESS;
+}
+
+SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
+                                        sf_bool is_put_get_command,
+                                        sf_bool is_native_put_get,
+                                        SF_QUERY_RESULT_CAPTURE* result_capture,
+                                        sf_bool is_describe_only) {
+    SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
+    cJSON* bindings = NULL;
+    char* bind_stage = NULL;
+
+    if (!sfstmt) {
+        return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
+    }
+
+    if (is_put_get_command && is_native_put_get && !is_describe_only)
+    {
+        _snowflake_stmt_desc_reset(sfstmt);
+        return _snowflake_execute_put_get_native(sfstmt, NULL, 0, 0, result_capture);
+    }
+
+    clear_snowflake_error(&sfstmt->error);
+
+    _mutex_lock(&sfstmt->connection->mutex_sequence_counter);
+    sfstmt->sequence_counter = ++sfstmt->connection->sequence_counter;
+    _mutex_unlock(&sfstmt->connection->mutex_sequence_counter);
+
+    // batch execution needed when application using array binding for DML
+    // queries and in some cases that's not supported by server:
+    // paramset_size > 1 && arrayBindSupported = false
+    // fallback to execute the query with each parmeter set in such case
+    sf_bool need_batch_exec = SF_BOOLEAN_FALSE;
+
+    // describe request only returns metadata and doesn't need bindings
+    if (!is_describe_only)
+    {
+        // for parameter array bindings, send describe request first to
+        // check whether that's supported by server (by checking arrayBindSupported)
+        if (sfstmt->paramset_size > 1)
+        {
+            ret = _snowflake_execute_with_binds_ex(sfstmt,
+                                                   is_put_get_command,
+                                                   result_capture,
+                                                   SF_BOOLEAN_TRUE,
+                                                   NULL, NULL);
+            if (ret != SF_STATUS_SUCCESS)
+            {
+                return ret;
+            }
+            if ((sfstmt->is_dml) && (!sfstmt->array_bind_supported))
+            {
+                log_debug("Array bind is not supported - each parameter set entry "
+                          "will be executed as a single request for query: %s",
+                          sfstmt->sql_text);
+                need_batch_exec = SF_BOOLEAN_TRUE;
+            }
+        }
+        if (!need_batch_exec)
+        {
+            if (_snowflake_needs_stage_binding(sfstmt))
+            {
+                bind_stage = _snowflake_stage_bind_upload(sfstmt);
+            }
+            if (!bind_stage)
+            {
+                bindings = _snowflake_get_binding_json(sfstmt, SF_BIND_ALL);
+            }
+        }
+    }
+
+    if (need_batch_exec)
+    {
+        return _batch_dml_execute(sfstmt, result_capture);
+    }
+
+    return _snowflake_execute_with_binds_ex(sfstmt,
+                                            is_put_get_command,
+                                            result_capture,
+                                            is_describe_only,
+                                            bind_stage,
+                                            bindings);
 }
 
 SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf) {

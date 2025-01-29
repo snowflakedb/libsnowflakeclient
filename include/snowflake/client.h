@@ -278,6 +278,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_GET_MAXRETRIES,
     SF_CON_GET_THRESHOLD,
     SF_CON_STAGE_BIND_THRESHOLD,
+    SF_CON_DISABLE_STAGE_BIND,
     SF_DIR_QUERY_URL,
     SF_DIR_QUERY_URL_PARAM,
     SF_DIR_QUERY_TOKEN,
@@ -545,8 +546,9 @@ typedef struct SF_STMT {
     void* multi_stmt_result_ids;
     int64 multi_stmt_count;
     int64 paramset_size;
+	sf_bool array_bind_supported;
+    int64 affected_rows;
     sf_bool is_async;
-    sf_bool is_async_initialized;
 
     /**
      * User realloc function used in snowflake_fetch
