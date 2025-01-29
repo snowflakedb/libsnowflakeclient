@@ -9,7 +9,6 @@
 #include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
-#include "../include/snowflake/platform.h"
 
 using namespace Snowflake::Client;
 
@@ -51,6 +50,7 @@ bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::s
     SF_UNUSED(url);
     SF_UNUSED(parseJSON);
     SF_UNUSED(isRetry);
+    SF_UNUSED(resp);
 
     rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
     if (isCurlGetRequestFailed) {

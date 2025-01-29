@@ -9,7 +9,13 @@
  */
 void test_oauth_connect(void **unused) 
 {
-    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (strcmp(manual_test, "test_oauth_connect") != 0) 
+    {
+        printf("This test was skipped");
+        return;
+    }
+
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -50,7 +56,13 @@ void test_oauth_connect(void **unused)
 
 void test_mfa_connect_with_duo_push(void** unused)
 {
-    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (strcmp(manual_test, "test_mfa_connect_with_duo_push") != 0)
+    {
+        printf("This test was skipped");
+        return;
+    }
+
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -85,7 +97,13 @@ void test_mfa_connect_with_duo_push(void** unused)
 
 void test_mfa_connect_with_duo_passcode(void** unused)
 {
-    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") != 0)
+    {
+        printf("This test was skipped");
+        return;
+    }
+
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -128,7 +146,13 @@ void test_mfa_connect_with_duo_passcode(void** unused)
 
 void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 {
-    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") != 0)
+    {
+        printf("This test was skipped");
+        return;
+    }
+
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -166,7 +190,13 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 
 void test_okta_connect(void** unused)
 {
-    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (strcmp(manual_test, "test_okta_connect") != 0)
+    {
+        printf("This test was skipped");
+        return;
+    }
+
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -196,45 +226,17 @@ void test_okta_connect(void** unused)
     snowflake_term(sf);
 }
 
-void test_none(void** unused) {}
-
-
 int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
-    struct CMUnitTest tests[1] = {
-        cmocka_unit_test(test_none)
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_oauth_connect),
+        cmocka_unit_test(test_mfa_connect_with_duo_passcode),
+        cmocka_unit_test(test_mfa_connect_with_duo_push),
+        cmocka_unit_test(test_mfa_connect_with_duo_passcodeInPassword),
+        cmocka_unit_test(test_okta_connect),
     };
-    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (manual_test)
-    {
-        if (strcmp(manual_test, "test_oauth_connect") == 0) {
-            tests[0].name = "test_oauth_connect";
-            tests[0].test_func = test_oauth_connect;
-        }
-        else if (strcmp(manual_test, "test_mfa_connect_with_duo_push") == 0) {
-            tests[0].name = "test_mfa_connect_with_duo_push";
-            tests[0].test_func = test_mfa_connect_with_duo_push;
-        }
-        else if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") == 0) {
-            tests[0].name = "test_mfa_connect_with_duo_passcode";
-            tests[0].test_func = test_mfa_connect_with_duo_passcode;
-        }
-        else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
-            tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
-            tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
-        }
-        else  if (strcmp(manual_test, "test_okta_connect") == 0) {
-            tests[0].name = "test_okta_connect";
-            tests[0].test_func = test_okta_connect;
-        }
-        else {
-            printf("No matching test found for: %s\n", manual_test);
-        }
-    }
-    else {
-        printf("No value in SNOWFLAKE_MANUAL_TEST_TYPE. Skip the test\n");
-    }
+
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
     return ret;
