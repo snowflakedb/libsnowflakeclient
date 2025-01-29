@@ -116,10 +116,10 @@ namespace Client
                     return;
                 }
 
-                oneTimeToken = respData["sessionToken"].get<std::string>();
-                if (oneTimeToken.empty()) {
-                    oneTimeToken = respData["cookieToken"].get<std::string>();
-                }
+                oneTimeToken = respData.find("sessionToken") != respData.end() ?
+                    respData["sessionToken"].get<std::string>() : 
+                    respData["cookieToken"].get<std::string>();
+
                 // 4. get SAML response
                 jsonObject_t resp;
                 bool isRetry = false;

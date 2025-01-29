@@ -47,8 +47,15 @@ private:
 
 bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
 {
+    if (parseJSON)
+    {
+        resp["url"] = jsonValue_t(url.toString());
+        resp["m_samlResponse"] = jsonValue_t("<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/");
+    }
+    
     rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
     if (isCurlGetRequestFailed) {
+        isRetry = false;
         m_errMsg = "SFConnectionFailed:curlGetCall";
     }
     return !isCurlGetRequestFailed;
@@ -62,6 +69,7 @@ bool MockIDP::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& re
     data["ssoUrl"] = picojson::value("https://fake.okta.com/ssourl");
     data["proofKey"] = picojson::value("proofKey");
     resp["data"] = picojson::value(data);
+    resp["body"] = picojson::value(picojson::value(obj).serialize());
     resp["sessionToken"] = picojson::value("onetimetoken");
     if (isPostCallFailed) {
         m_errMsg = "SFConnectionFailed:curlPostCall";
