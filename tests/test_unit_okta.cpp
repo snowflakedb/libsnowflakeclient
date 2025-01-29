@@ -9,6 +9,7 @@
 #include "../cpp/lib/Authenticator.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
+#include "../include/snowflake/platform.h"
 
 using namespace Snowflake::Client;
 
@@ -47,15 +48,12 @@ private:
 
 bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
 {
-    if (parseJSON)
-    {
-        resp["url"] = jsonValue_t(url.toString());
-        resp["m_samlResponse"] = jsonValue_t("<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/");
-    }
-    
+    SF_UNUSED(url);
+    SF_UNUSED(parseJSON);
+    SF_UNUSED(isRetry);
+
     rawData = "<form action=\"https&#x3a;&#x2f;&#x2f;host.com&#x2f;fed&#x2f;login/";
     if (isCurlGetRequestFailed) {
-        isRetry = false;
         m_errMsg = "SFConnectionFailed:curlGetCall";
     }
     return !isCurlGetRequestFailed;
@@ -63,14 +61,15 @@ bool MockIDP::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::s
 
 bool MockIDP::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
 {
+    SF_UNUSED(url);
+    SF_UNUSED(obj);
+
     bool ret = true;
     jsonObject_t data;
     data["tokenUrl"] = jsonValue_t("https://fake.okta.com/tokenurl");
     data["ssoUrl"] = jsonValue_t("https://fake.okta.com/ssourl");
     data["proofKey"] = jsonValue_t("proofKey");
     resp["data"] = jsonValue_t(data);
-    resp["body"] = jsonValue_t(jsonValue_t(obj).serialize());
-    resp["destination"] = jsonValue_t(url.toString());
     resp["sessionToken"] = jsonValue_t("onetimetoken");
     if (isPostCallFailed) {
         m_errMsg = "SFConnectionFailed:curlPostCall";
