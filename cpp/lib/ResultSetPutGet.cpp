@@ -10,13 +10,13 @@
 // helper functions
 namespace
 {
-  void setup_string_column_desc(const std::string& name, SF_COLUMN_DESC& col_desc, size_t idx)
+  void setup_string_column_desc(const std::string& name, SF_COLUMN_DESC& col_desc, size_t idx, int64 def_strlen)
   {
     col_desc.name = (char*)SF_CALLOC(1, name.length() + 1);
     sf_strncpy(col_desc.name, name.length() + 1, name.c_str(), name.length() + 1);
-    col_desc.byte_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+    col_desc.byte_size = def_strlen;
     col_desc.c_type = SF_C_TYPE_STRING;
-    col_desc.internal_size = SF_DEFAULT_MAX_OBJECT_SIZE;
+    col_desc.internal_size = def_strlen;
     col_desc.null_ok = SF_BOOLEAN_TRUE;
     col_desc.precision = 0;
     col_desc.scale = 0;
@@ -98,7 +98,7 @@ ResultSetPutGet::~ResultSetPutGet()
 
 // Public methods ==================================================================================
 
-size_t ResultSetPutGet::setup_column_desc(SF_COLUMN_DESC** desc)
+size_t ResultSetPutGet::setup_column_desc(SF_COLUMN_DESC** desc, int64 def_strlen)
 {
   if ((m_cmdType != CommandType::UPLOAD) && (m_cmdType != CommandType::DOWNLOAD))
   {
@@ -117,7 +117,7 @@ size_t ResultSetPutGet::setup_column_desc(SF_COLUMN_DESC** desc)
     }
     else
     {
-      setup_string_column_desc(PUTGET_COLUMNS[m_cmdType][i].name, col_desc[i], i + 1);
+      setup_string_column_desc(PUTGET_COLUMNS[m_cmdType][i].name, col_desc[i], i + 1, def_strlen);
     }
   }
 

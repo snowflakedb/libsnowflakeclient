@@ -47,8 +47,6 @@ namespace
     " auto_compress=false"     // we compress already
     " source_compression=gzip" // (with gzip)
   );
-
-  static const unsigned int PUT_RETRY_COUNT = 3;
 }
 
 namespace Snowflake
@@ -61,7 +59,6 @@ BindUploader::BindUploader(const std::string& stageDir,
                            int compressLevel) :
   m_stagePath("@" + STAGE_NAME + "/" + stageDir + "/"),
   m_fileNo(0),
-  m_retryCount(PUT_RETRY_COUNT),
   m_maxFileSize(maxFileSize),
   m_numParams(numParams),
   m_numParamSets(numParamSets),
@@ -82,40 +79,32 @@ BindUploader::BindUploader(const std::string& stageDir,
                 maxFileSize, compressLevel);
 }
 
-void BindUploader::putBinds()
+bool BindUploader::putBinds()
 {
   // count serialize time since this function is called when serialization for
   // one chunk is done
   m_serializeTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_serializeStartTime).count();
   m_serializeStartTime = std::chrono::steady_clock::now();
 
-  createStageIfNeeded();
+  if (!createStageIfNeeded())
+  {
+    return false;
+  }
+
   auto compressStartTime = std::chrono::steady_clock::now();
   size_t compressedSize = compressWithGzip();
   m_compressTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - compressStartTime).count();
 
   auto putStartTime = std::chrono::steady_clock::now();
   std::string filename = std::to_string(m_fileNo++);
-  while (m_retryCount > 0)
+  std::string putStmt = getPutStmt(filename);
+  // No retry needed here as PUT command execution already has retries.
+  if (!executeUploading(putStmt, m_compressStream, compressedSize))
   {
-    std::string putStmt = getPutStmt(filename);
-    try
-    {
-      executeUploading(putStmt, m_compressStream, compressedSize);
-      m_hasBindingUploaded = true;
-      break;
-    }
-    catch (...)
-    {
-      CXX_LOG_WARN("BindUploader::putBinds: Failed to upload array binds, retry");
-      m_retryCount--;
-      if (0 == m_retryCount)
-      {
-        CXX_LOG_ERROR("BindUploader::putBinds: Failed to upload array binds with all retry");
-        throw;
-      }
-    }
+    return false;
   }
+
+  m_hasBindingUploaded = true;
   m_putTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - putStartTime).count();
 
   m_csvStream = std::stringstream();
@@ -126,6 +115,8 @@ void BindUploader::putBinds()
     CXX_LOG_INFO("BindUploader::putBinds: total time: %ld, serialize time: %d, compress time: %ld, put time %ld",
                  totalTime, m_serializeTime, m_compressTime, m_putTime);
   }
+
+  return true;
 }
 
 size_t BindUploader::compressWithGzip()
@@ -194,8 +185,10 @@ std::string BindUploader::getCreateStageStmt()
   return CREATE_STAGE_STMT;
 }
 
-void BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
+bool BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
 {
+  SF_UNUSED(type);
+
   if (m_curParamIndex != 0)
   {
     m_csvStream << ",";
@@ -213,52 +206,19 @@ void BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
   }
   else
   {
-    switch (type)
+    if (std::string::npos == val.find_first_of("\"\n,\\"))
     {
-      case SF_DB_TYPE_TIME:
-      {
-        std::string timeStr = convertTimeFormat(val);
-        m_csvStream << timeStr;
-        m_dataSize += timeStr.length();
-        break;
-      }
+      m_csvStream << val;
+      m_dataSize += val.length();
+    }
+    else
+    {
+      std::string escapeStr(val);
+      replaceStrAll(escapeStr, "\"", "\"\"");
+      escapeStr = "\"" + escapeStr + "\"";
 
-      case SF_DB_TYPE_DATE:
-      {
-        std::string dateStr = convertDateFormat(val);
-        m_csvStream << dateStr;
-        m_dataSize += dateStr.length();
-        break;
-      }
-
-      case SF_DB_TYPE_TIMESTAMP_LTZ:
-      case SF_DB_TYPE_TIMESTAMP_NTZ:
-      case SF_DB_TYPE_TIMESTAMP_TZ:
-      {
-        std::string timestampStr = convertTimestampFormat(val, type);
-        m_csvStream << timestampStr;
-        m_dataSize += timestampStr.length();
-        break;
-      }
-
-      default:
-      {
-        if (std::string::npos == val.find_first_of("\"\n,\\"))
-        {
-          m_csvStream << val;
-          m_dataSize += val.length();
-        }
-        else
-        {
-          std::string escapeStr(val);
-          replaceStrAll(escapeStr, "\"", "\"\"");
-          escapeStr = "\"" + escapeStr + "\"";
-
-          m_csvStream << escapeStr;
-          m_dataSize += escapeStr.length();
-        }
-        break;
-      }
+      m_csvStream << escapeStr;
+      m_dataSize += escapeStr.length();
     }
   }
 
@@ -275,12 +235,14 @@ void BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
     if ((m_dataSize >= m_maxFileSize) ||
       (m_curParamSetIndex >= m_numParamSets))
     {
-      putBinds();
+      return putBinds();
     }
   }
+
+  return true;
 }
 
-void BindUploader::addNullValue()
+bool BindUploader::addNullValue()
 {
   if (m_curParamIndex != 0)
   {
@@ -301,117 +263,10 @@ void BindUploader::addNullValue()
     if ((m_dataSize >= m_maxFileSize) ||
       (m_curParamSetIndex >= m_numParamSets))
     {
-      putBinds();
-    }
-  }
-}
-
-bool BindUploader::csvGetNextField(std::string& fieldValue,
-                                   bool& isNull, bool& isEndOfRow)
-{
-  char c;
-
-  // the flag indecate if currently in a quoted value
-  bool inQuote = false;
-  // the flag indecate if the value has been quoted, quoted empty string is
-  // empty value (like ,"",) while unquoted empty string is null (like ,,)
-  bool quoted = false;
-  // the flag indecate a value is found to end the loop
-  bool done = false;
-  // the flag indicate the next char already fetched by checking double quote escape ("")
-  bool nextCharFetched = false;
-
-  fieldValue.clear();
-
-  if (!m_csvStream.get(c))
-  {
-    return false;
-  }
-
-  while (!done)
-  {
-    switch (c)
-    {
-      case ',':
-      {
-        if (!inQuote)
-        {
-          done = true;
-        }
-        else
-        {
-          fieldValue.push_back(c);
-        }
-        break;
-      }
-
-      case '\n':
-      {
-        if (!inQuote)
-        {
-          done = true;
-          isEndOfRow = true;
-        }
-        else
-        {
-          fieldValue.push_back(c);
-        }
-        break;
-      }
-
-      case '\"':
-      {
-        if (!inQuote)
-        {
-          quoted = true;
-          inQuote = true;
-        }
-        else
-        {
-          if (!m_csvStream.get(c))
-          {
-            isEndOfRow = true;
-            done = true;
-          }
-          else
-          {
-            if (c == '\"')
-            {
-              // escape double qoute in quoted string
-              fieldValue.push_back(c);
-            }
-            else
-            {
-              inQuote = false;
-              nextCharFetched = true;
-            }
-          }
-        }
-
-        break;
-      }
-
-      default:
-      {
-        fieldValue.push_back(c);
-      }
-    }
-
-    if ((!done) && (!nextCharFetched))
-    {
-      if (!m_csvStream.get(c))
-      {
-        isEndOfRow = true;
-        break;
-      }
-    }
-    else
-    {
-      nextCharFetched = false;
+      return putBinds();
     }
   }
 
-  isNull = (fieldValue.empty() && !quoted);
   return true;
 }
 

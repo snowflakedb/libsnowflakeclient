@@ -23,7 +23,7 @@ namespace Client
 class BindUploader
 {
 public:
-  /**
+ /**
   * constructor
   *
   * @param stageDir The unique stage path for bindings uploading, could be a GUID.
@@ -39,9 +39,23 @@ public:
                         unsigned int maxFileSize,
                         int compressLevel);
 
-  void addStringValue(const std::string& value, SF_DB_TYPE type);
+ /**
+  * Add string value to binding stream and do uploading as needed.
+  * @param value The string value to be added.
+  * @param type The DB type of the value, for ODBC only when format
+  *             conversion for date/time types between stage/regular
+  *             binding is needed. (implementing convert/revert functions)
+  *
+  * @Return true if succeeded, false otherwise.
+  */
+  virtual bool addStringValue(const std::string& value, SF_DB_TYPE type);
 
-  void addNullValue();
+  /**
+   * Add NULL value to binding stream and do uploading as needed.
+   *
+  * @Return true if succeeded, false otherwise.
+   */
+  bool addNullValue();
 
   inline std::string getStagePath()
   {
@@ -53,19 +67,29 @@ public:
     return m_hasBindingUploaded;
   }
 
+  inline std::string getError()
+  {
+    return m_errorMessage;
+  }
+
 protected:
   /**
   * @return The statement for creating temporary stage for bind uploading.
   */
   std::string getCreateStageStmt();
 
+  void setError(const std::string& errMsg)
+  {
+    m_errorMessage = errMsg;
+  }
+
   /**
   * Check whether the session's temporary stage has been created, and create it
   * if not.
   *
-  * @throws Exception if creating the stage fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void createStageIfNeeded() = 0;
+  virtual bool createStageIfNeeded() = 0;
 
   /**
   * Execute uploading for single data file.
@@ -74,9 +98,9 @@ protected:
   * @param uploadStream stream for data file to be uploaded
   * @param dataSize Size of the data to be uploaded.
   *
-  * @throws Exception if uploading fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void executeUploading(const std::string &sql,
+  virtual bool executeUploading(const std::string &sql,
                                 std::basic_iostream<char>& uploadStream,
                                 size_t dataSize) = 0;
 
@@ -88,71 +112,15 @@ protected:
    * data/time data as string.
    */
 
-  /**
-  * Convert time data format from nanoseconds to HH:MM:SS.F9
-  * @param timeInNano The time data string in nanoseconds.
-  */
-  virtual std::string convertTimeFormat(const std::string& timeInNano)
-  {
-    return timeInNano;
-  }
-
-  /**
-  * Convert date data format from days to YYYY-MM-DD
-  * @param milliseconds since Epoch
-  */
-  virtual std::string convertDateFormat(const std::string& millisecondSinceEpoch)
-  {
-    return millisecondSinceEpoch;
-  }
-
-  /**
-  * Convert timestamp data format from nanoseconds to YYYY_MM_DD HH:MM:SS.F9
-  * @param timestampInNano The timestamp data string in nanoseconds.
-  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-  */
-  virtual std::string convertTimestampFormat(const std::string& timestampInNano,
-                                     SF_DB_TYPE type)
-  {
-    return timestampInNano;
-  }
-
-  /**
-  * Revert time data format from HH:MM:SS.F9 to nanoseconds
-  * @param formatedTime The time data string in HH:MM:SS.F9.
-  */
-  virtual std::string revertTimeFormat(const std::string& formatedTime)
-  {
-    return formatedTime;
-  }
-
-  /**
-  * Convert date data format from YYYY-MM-DD to milliseconds since Epoch
-  * @param formatedDate the date string in YYYY-MM-DD
-  */
-  virtual std::string revertDateFormat(const std::string& formatedDate)
-  {
-    return formatedDate;
-  }
-
-  /**
-  * Convert timestamp data format from YYYY_MM_DD HH:MM:SS.F9 to nanoseconds
-  * @param Formatedtimestamp The timestamp data string in YYYY_MM_DD HH:MM:SS.F9.
-  * @param type Either TIMESTAMP_LTZ or NTZ depends on CLIENT_TIMESTAMP_TYPE_MAPPING
-  */
-  virtual std::string revertTimestampFormat(const std::string& Formatedtimestamp,
-                                    SF_DB_TYPE type)
-  {
-    return Formatedtimestamp;
-  }
+  std::stringstream m_csvStream;
 
 private:
   /**
   * Upload serialized binds in CSV stream to stage
   *
-  * @throws BindException if uploading the binds fails
+  * @Return true if succeeded, false otherwise.
   */
-  void putBinds();
+  bool putBinds();
 
   /**
   * Compress data from csv stream to compress stream with gzip
@@ -167,26 +135,11 @@ private:
   */
   std::string getPutStmt(const std::string& srcFilePath);
 
-  /**
-  * csv parsing function called by convertBindingFromCsvToJson(), get value of
-  * next field.
-  * @param fieldValue The output of the field value.
-  * @param isNull The output of the flag whether the filed is null.
-  * @param isEndofRow The output of the flag wether the end of row is reached.
-  * @return true if a field value is retrieved successfully, false if end of data
-  *         is reached and no field value available.
-  */
-  bool csvGetNextField(std::string& fieldValue, bool& isNull, bool& isEndofRow);
-
-  std::stringstream m_csvStream;
-
   std::stringstream m_compressStream;
 
   std::string m_stagePath;
 
   unsigned int m_fileNo;
-
-  unsigned int m_retryCount;
 
   unsigned int m_maxFileSize;
 
@@ -213,6 +166,8 @@ private:
   bool m_hasBindingUploaded;
 
   int m_compressLevel;
+
+  std::string m_errorMessage;
 
 };
 
