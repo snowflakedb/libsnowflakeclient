@@ -187,7 +187,7 @@ std::string BindUploader::getCreateStageStmt()
 
 bool BindUploader::addStringValue(const std::string& val, SF_DB_TYPE type)
 {
-  UNUSED(type);
+  SF_UNUSED(type);
 
   if (m_curParamIndex != 0)
   {
