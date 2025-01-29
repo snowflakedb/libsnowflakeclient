@@ -10,9 +10,9 @@
 void test_oauth_connect(void **unused) 
 {
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (strcmp(manual_test, "test_oauth_connect") != 0) 
+    if (manual_test == NULL || strcmp(manual_test, "test_oauth_connect") != 0) 
     {
-        printf("This test was skipped");
+        printf("This test was skipped.\n");
         return;
     }
 
@@ -57,9 +57,9 @@ void test_oauth_connect(void **unused)
 void test_mfa_connect_with_duo_push(void** unused)
 {
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (strcmp(manual_test, "test_mfa_connect_with_duo_push") != 0)
+    if (manual_test == NULL || strcmp(manual_test, "test_mfa_connect_with_duo_push") != 0)
     {
-        printf("This test was skipped");
+        printf("This test was skipped.\n");
         return;
     }
 
@@ -98,9 +98,9 @@ void test_mfa_connect_with_duo_push(void** unused)
 void test_mfa_connect_with_duo_passcode(void** unused)
 {
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") != 0)
+    if (manual_test == NULL || strcmp(manual_test, "test_mfa_connect_with_duo_passcode") != 0)
     {
-        printf("This test was skipped");
+        printf("This test was skipped.\n");
         return;
     }
 
@@ -147,9 +147,9 @@ void test_mfa_connect_with_duo_passcode(void** unused)
 void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 {
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") != 0)
+    if (manual_test == NULL || strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") != 0)
     {
-        printf("This test was skipped");
+        printf("This test was skipped.\n");
         return;
     }
 
@@ -191,9 +191,9 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 void test_okta_connect(void** unused)
 {
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if (strcmp(manual_test, "test_okta_connect") != 0)
+    if (manual_test == NULL || strcmp(manual_test, "test_okta_connect") != 0)
     {
-        printf("This test was skipped");
+        printf("This test was skipped.\n");
         return;
     }
 
