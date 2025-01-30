@@ -3,6 +3,7 @@
  */
 
 #include <string.h>
+#include <assert.h>
 #include "results.h"
 #include "connection.h"
 #include "memory.h"
@@ -63,6 +64,8 @@ SF_DB_TYPE string_to_snowflake_type(const char *string) {
         return SF_DB_TYPE_ANY;
     } else {
         // Everybody loves a string, so lets return it by default
+        log_debug("Found unknown type: %s", string);
+        assert(0);
         return SF_DB_TYPE_TEXT;
     }
 }
@@ -308,11 +311,12 @@ SF_COLUMN_DESC * set_description(SF_STMT* sfstmt, const cJSON *rowtype) {
         case SF_DB_TYPE_ARRAY:
           default_size = sfstmt->connection->max_variant_size;
           break;
-        // treat any known type as string
+        // treat any unknown type as string impossible to hit default though.
         case SF_DB_TYPE_TEXT:
         case SF_DB_TYPE_ANY:
         default:
           default_size = sfstmt->connection->max_varchar_size;
+          break;
         }
         if (json_copy_int(&desc[i].byte_size, column, "byteLength")) {
             desc[i].byte_size = default_size;
@@ -320,7 +324,6 @@ SF_COLUMN_DESC * set_description(SF_STMT* sfstmt, const cJSON *rowtype) {
         if (json_copy_int(&desc[i].internal_size, column, "length")) {
             desc[i].internal_size = default_size;
         }
-
     }
 
     return desc;
