@@ -56,7 +56,7 @@ private:
   boost::optional<std::string> oldValue;
 };
 
-constexpr const char* CACHE_FILENAME = "secure_storage_v1.json";
+constexpr const char* CACHE_FILENAME = "credential_cache_v1.json";
 
 using namespace Snowflake::Client;
 
