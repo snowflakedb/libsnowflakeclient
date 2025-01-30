@@ -38,10 +38,11 @@ public:
    * param desc The output parameter to return the pointer to the buffer allocated
    *            for the column description.
    *            Needs to be freed by the caller using SF_FREE.
+   * param def_strlen The default size of string data.
    *
    * @return The number of columns.
    */
-  size_t setup_column_desc(SF_COLUMN_DESC** desc);
+  size_t setup_column_desc(SF_COLUMN_DESC** desc, int64 def_strlen);
 
   /**
    * Advances the internal iterator to the next row. If there are no more rows to consume,

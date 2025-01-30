@@ -22,6 +22,9 @@ extern "C" {
 #define SF_BOOLEAN_FALSE 0
 #define SF_BOOLEAN_TRUE 1
 
+// Defined for unused function parameters.
+#define UNUSED(x) (void)(x)
+
 #define SKIP_IF_PROXY_ENV_IS_SET \
 {                                                                                                               \
     char envbuf[1024];                                                                                          \
