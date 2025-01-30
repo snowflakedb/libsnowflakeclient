@@ -1,11 +1,11 @@
 /*
  * File:   SecureStorageApple.cpp *
- * Copyright (c) 2013-2020 Snowflake Computing
+ * Copyright (c) 2013-2025 Snowflake Computing
  */
 
 #ifdef __APPLE__
 
-#include "SecureStorageImpl.hpp"
+#include "snowflake/SecureStorage.hpp"
 
 #include "../logger/SFLogger.hpp"
 
@@ -28,56 +28,51 @@ namespace Client
 
   using Snowflake::Client::SFLogger;
 
-  SecureStorageStatus SecureStorageImpl::storeToken(const std::string& host,
-                                                    const std::string& username,
-                                                    const std::string& credType,
-                                                    const std::string& cred)
+  SecureStorageStatus SecureStorage::storeToken(const SecureStorageKey& key, const std::string& cred)
   {
-    /*
-     * More on OS X Types can be read here:
-     * https://developer.apple.com/documentation/corefoundation?language=objc
-     */
-    CFTypeRef keys[4];
-    CFTypeRef values[4];
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
+    bool first_try = true;
 
-    keys[0] = kSecClass;
-    keys[1] = kSecAttrServer;
-    keys[2] = kSecAttrAccount;
-    keys[3] = kSecValueData;
+    do {
+      CFTypeRef keys[4];
+      CFTypeRef values[4];
 
-    values[0] = kSecClassInternetPassword;
-    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
-    values[3] = CFStringCreateWithCString(kCFAllocatorDefault, cred.c_str(), kCFStringEncodingUTF8);
+      keys[0] = kSecClass;
+      keys[1] = kSecAttrServer;
+      keys[2] = kSecAttrAccount;
+      keys[3] = kSecValueData;
 
-    CFDictionaryRef query;
-    query = CFDictionaryCreate(kCFAllocatorDefault, (const void**) keys, (const void**) values, 4, NULL, NULL);
+      values[0] = kSecClassInternetPassword;
+      values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
+      values[2] = CFStringCreateWithCString(kCFAllocatorDefault, key.user.c_str(), kCFStringEncodingUTF8);
+      values[3] = CFStringCreateWithCString(kCFAllocatorDefault, cred.c_str(), kCFStringEncodingUTF8);
 
-    OSStatus result = SecItemAdd(query, NULL);
+      CFDictionaryRef query = CFDictionaryCreate(kCFAllocatorDefault, (const void **) keys, (const void **) values, 4, NULL, NULL);
 
-    if (result == errSecDuplicateItem)
-    {
-      CXX_LOG_DEBUG("Token already exists, updating");
-      return updateToken(host, username, credType, cred);
+      OSStatus result = SecItemAdd(query, NULL);
+
+      if (first_try && result == errSecDuplicateItem) {
+        CXX_LOG_DEBUG("Token already exists, updating");
+        removeToken(key);
+        first_try = false;
+        continue;
+      }
+
+      if (result != errSecSuccess)
+      {
+        CXX_LOG_ERROR("Failed to store secure token");
+        return SecureStorageStatus::Error;
+      }
+
+      CXX_LOG_DEBUG("Successfully stored secure token");
+      return SecureStorageStatus::Success;
     }
-
-    if (result != errSecSuccess)
-    {
-      CXX_LOG_ERROR("Failed to store secure token");
-      return SecureStorageStatus::Error;
-    }
-
-    CXX_LOG_DEBUG("Successfully stored secure token");
-    return SecureStorageStatus::Success;
+    while(true);
   }
 
-  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
-                                                         const std::string& username,
-                                                         const std::string& credType,
-                                                         std::string& cred)
+  SecureStorageStatus SecureStorage::retrieveToken(const SecureStorageKey& key, std::string& cred)
   {
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
 
     CFTypeRef keys[5];
     keys[0] = kSecClass;
@@ -89,7 +84,7 @@ namespace Client
     CFTypeRef values[5];
     values[0] = kSecClassInternetPassword;
     values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, key.user.c_str(), kCFStringEncodingUTF8);
     values[3] = kCFBooleanTrue;
     values[4] = kCFBooleanTrue;
 
@@ -118,15 +113,11 @@ namespace Client
     return SecureStorageStatus::Success;
   }
 
-  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
-                                                       const std::string& username,
-                                                       const std::string& credType,
-                                                       const std::string& token)
+  SecureStorageStatus SecureStorage::removeToken(const SecureStorageKey& key)
   {
-    OSStatus result = errSecSuccess;
     CFTypeRef keys[4];
     CFTypeRef values[4];
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
 
     keys[0] = kSecClass;
     keys[1] = kSecAttrServer;
@@ -135,47 +126,21 @@ namespace Client
 
     values[0] = kSecClassInternetPassword;
     values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
-    values[3] = kSecMatchLimitOne;
-
-    CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
-                                                       (const void **)values, 4, NULL, NULL);
-    result = SecItemDelete(extract_query);
-
-    if (result != errSecSuccess && result != errSecItemNotFound)
-    {
-      CXX_LOG_ERROR("Failed to update secure token");
-      return SecureStorageStatus::Error;
-    }
-
-    return storeToken(host, username, credType, token);
-  }
-
-  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
-                                                       const std::string& username,
-                                                       const std::string& credType)
-  {
-    CFTypeRef keys[4];
-    CFTypeRef values[4];
-    std::string target = convertTarget(host, username, credType);
-
-    keys[0] = kSecClass;
-    keys[1] = kSecAttrServer;
-    keys[2] = kSecAttrAccount;
-    keys[3] = kSecMatchLimit;
-
-    values[0] = kSecClassInternetPassword;
-    values[1] = CFStringCreateWithCString(kCFAllocatorDefault, target.c_str(), kCFStringEncodingUTF8);
-    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, username.c_str(), kCFStringEncodingUTF8);
+    values[2] = CFStringCreateWithCString(kCFAllocatorDefault, key.user.c_str(), kCFStringEncodingUTF8);
     values[3] = kSecMatchLimitOne;
 
     CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
                                                        (const void **)values, 4, NULL, NULL);
     OSStatus result = SecItemDelete(extract_query);
-    if (result != errSecSuccess && result != errSecItemNotFound)
+    if (result != errSecSuccess)
     {
       CXX_LOG_ERROR("Failed to remove secure token");
       return SecureStorageStatus::Error;
+    }
+
+    if (result != errSecItemNotFound)
+    {
+      CXX_LOG_WARN("Failed to remove token: not found.")
     }
 
     CXX_LOG_DEBUG("Successfully removed secure token");

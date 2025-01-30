@@ -3,10 +3,11 @@
 
 #include <string>
 #include <fstream>
+#include <boost/optional.hpp>
 
 #include "picojson.h"
 
-#include "snowflake/CredentialCache.hpp"
+#include "snowflake/SecureStorage.hpp"
 
 namespace Snowflake {
 
@@ -18,11 +19,11 @@ namespace Client {
 
   std::string writeFile(const std::string &path, const picojson::value &result);
 
-  void cacheFileUpdate(picojson::value &cache, const CredentialKey &key, const std::string &credential);
+  void cacheFileUpdate(picojson::value &cache, const SecureStorageKey &key, const std::string &credential);
 
-  void cacheFileRemove(picojson::value &cache, const CredentialKey &key);
+  void cacheFileRemove(picojson::value &cache, const SecureStorageKey &key);
 
-  boost::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key);
+  boost::optional<std::string> cacheFileGet(picojson::value &cache, const SecureStorageKey &key);
 
 }
 

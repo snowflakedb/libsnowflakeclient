@@ -12,10 +12,10 @@
 #include "picojson.h"
 
 #include "CacheFile.hpp"
-#include "snowflake/CredentialCache.hpp"
 #include "snowflake/platform.h"
 #include "../logger/SFLogger.hpp"
 #include "../util/Sha256.hpp"
+#include "snowflake/SecureStorage.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <sys/stat.h>
@@ -227,9 +227,9 @@ namespace Client {
     return {};
   };
 
-  boost::optional<std::string> credItemStr(const CredentialKey &key)
+  boost::optional<std::string> credItemStr(const SecureStorageKey &key)
   {
-    std::string plainTextKey = key.host + ":" + key.user + ":" + credTypeToString(key.type);
+    std::string plainTextKey = key.host + ":" + key.user + ":"  + keyTypeToString(key.type);
     return sha256(plainTextKey);
   }
 
@@ -308,7 +308,7 @@ namespace Client {
     return {};
   }
 
-  void cacheFileUpdate(picojson::value &cache, const CredentialKey &key, const std::string &credential)
+  void cacheFileUpdate(picojson::value &cache, const SecureStorageKey &key, const std::string &credential)
   {
     picojson::object& tokens = getTokens(cache);
     auto keyStrOpt = credItemStr(key);
@@ -320,7 +320,7 @@ namespace Client {
     tokens.emplace(keyStrOpt.get(), credential);
   }
 
-  void cacheFileRemove(picojson::value &cache, const CredentialKey &key)
+  void cacheFileRemove(picojson::value &cache, const SecureStorageKey &key)
   {
     picojson::object& tokens = getTokens(cache);
     auto keyStrOpt = credItemStr(key);
@@ -332,7 +332,7 @@ namespace Client {
     tokens.erase(keyStrOpt.get());
   }
 
-  boost::optional<std::string> cacheFileGet(picojson::value &cache, const CredentialKey &key) {
+  boost::optional<std::string> cacheFileGet(picojson::value &cache, const SecureStorageKey &key) {
     picojson::object& tokens = getTokens(cache);
     auto keyStrOpt = credItemStr(key);
     if (!keyStrOpt)

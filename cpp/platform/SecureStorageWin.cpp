@@ -1,5 +1,5 @@
 /*
- * File:   SecureStorage.cpp *
+ * File:   SecureStorageWin.cpp *
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
@@ -9,7 +9,7 @@
 #include "windows.h"
 #include "wincred.h"
 
-#include "SecureStorageImpl.hpp"
+#include "snowflake/SecureStorage.hpp"
 #include <vector>
 #include <sstream>
 #include <algorithm>
@@ -25,14 +25,10 @@ namespace Snowflake
 
 namespace Client
 {
-  using Snowflake::Client::SFLogger;
 
-  SecureStorageStatus SecureStorageImpl::storeToken(const std::string &host,
-                                                      const std::string& username,
-                                                      const std::string& credType,
-                                                      const std::string& token)
+  SecureStorageStatus SecureStorage::storeToken(const SecureStorageKey& key, const std::string& token)
   {
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
     std::wstring wide_target = std::wstring(target.begin(), target.end());
 
     CREDENTIALW creds = { 0 };
@@ -54,12 +50,9 @@ namespace Client
     }
   }
 
-  SecureStorageStatus SecureStorageImpl::retrieveToken(const std::string& host,
-                                                       const std::string& username,
-                                                       const std::string& credType,
-                                                       std::string& token)
+  SecureStorageStatus SecureStorage::retrieveToken(const SecureStorageKey& key, std::string& token)
   {
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
     std::wstring wide_target = std::wstring(target.begin(), target.end());
     PCREDENTIALW retcreds = nullptr;
 
@@ -90,19 +83,9 @@ namespace Client
     return SecureStorageStatus::Success;
   }
 
-  SecureStorageStatus SecureStorageImpl::updateToken(const std::string& host,
-                                                       const std::string& username,
-                                                       const std::string& credType,
-                                                       const std::string& token)
+  SecureStorageStatus SecureStorage::removeToken(const SecureStorageKey& key)
   {
-    return storeToken(host, username, credType, token);
-  }
-
-  SecureStorageStatus SecureStorageImpl::removeToken(const std::string& host,
-                                                       const std::string& username,
-                                                       const std::string& credType)
-  {
-    std::string target = convertTarget(host, username, credType);
+    std::string target = convertTarget(key);
     std::wstring wide_target = std::wstring(target.begin(), target.end());
 
     if (!CredDeleteW(wide_target.data(), CRED_TYPE_GENERIC, 0))

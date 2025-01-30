@@ -1,12 +1,14 @@
 /*
- * File:   mfa_token_cache.cpp
+ * File:   test_unit_secure_storage.cpp
  * Copyright (c) 2025 Snowflake Computing
  */
 
 #include <boost/filesystem.hpp>
+#include <iostream>
 
-#include "snowflake/CredentialCache.hpp"
+#include "snowflake/SecureStorage.hpp"
 #include "utils/test_setup.h"
+#include <boost/optional.hpp>
 
 class EnvOverride
 {
@@ -54,7 +56,9 @@ private:
   boost::optional<std::string> oldValue;
 };
 
-constexpr const char* CACHE_FILENAME = "credential_cache_v1.json";
+constexpr const char* CACHE_FILENAME = "secure_storage_v1.json";
+
+using namespace Snowflake::Client;
 
 void remove_file_if_exists(const std::string& path)
 {
@@ -69,79 +73,89 @@ void assert_permissions(const std::string& path, boost::filesystem::perms permis
   assert_true((s.permissions() & boost::filesystem::perms_mask) == permissions);
 }
 
-void test_credential_cache_simple(void **)
+void test_secure_storage_simple(void **)
 {
   remove_file_if_exists(CACHE_FILENAME);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
-  std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
-  Snowflake::Client::CredentialKey key { "host", "user", CredentialType::MFA_TOKEN };
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
-  assert_true(cache->save(key, token));
-  assert_true(cache->get(key).value() == token);
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
   assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
   assert_permissions(".", boost::filesystem::owner_all);
 
-  assert_true(cache->remove(key));
-  assert_false(cache->get(key).has_value());
+  assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
 }
 
-void test_credential_cache_two_keys(void **)
+void test_secure_storage_two_keys(void **)
 {
   remove_file_if_exists(CACHE_FILENAME);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
-  std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
-  Snowflake::Client::CredentialKey key1 { "host", "user1", CredentialType::MFA_TOKEN };
-  Snowflake::Client::CredentialKey key2 { "host", "user2", CredentialType::MFA_TOKEN };
+  SecureStorage ss;
+  SecureStorageKey key1 { "host", "user1", SecureStorageKeyType::MFA_TOKEN };
+  SecureStorageKey key2 { "host", "user2", SecureStorageKeyType::MFA_TOKEN };
   std::string token1 = "example_token";
   std::string token2 = "example_token";
+  std::string retrievedToken;
 
-  assert_true(cache->save(key1, token1));
-  assert_true(cache->get(key1).value() == token1);
+  assert_true(ss.storeToken(key1, token1) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key1, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token1);
   assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
   assert_permissions(".", boost::filesystem::owner_all);
 
-  assert_true(cache->save(key2, token2));
-  assert_true(cache->get(key2).value() == token2);
+  assert_true(ss.storeToken(key2, token2) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key2, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token2);
 
-  assert_true(cache->remove(key1));
-  assert_false(cache->get(key1).has_value());
-  assert_true(cache->get(key2).has_value());
+  assert_true(ss.removeToken(key1) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key1, retrievedToken) == SecureStorageStatus::NotFound);
+  assert_true(ss.retrieveToken(key2, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token2);
 
-  assert_true(cache->remove(key2));
-  assert_false(cache->get(key1).has_value());
-  assert_false(cache->get(key2).has_value());
+  assert_true(ss.removeToken(key2) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key1, retrievedToken) == SecureStorageStatus::NotFound);
+  assert_true(ss.retrieveToken(key2, retrievedToken) == SecureStorageStatus::NotFound);
 }
 
-void test_credential_cache_home_dir(void **)
+void test_secure_storage_home_dir(void **)
 {
   boost::filesystem::remove_all("home");
   boost::filesystem::create_directory("home");
   EnvOverride override1("XDG_CACHE_HOME", boost::none);
   EnvOverride override2("HOME", "home");
-  std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
-  Snowflake::Client::CredentialKey key { "host", "user", CredentialType::MFA_TOKEN };
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
-  assert_true(cache->save(key, token));
-  assert_true(cache->get(key).value() == token);
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
 
   assert_true(boost::filesystem::exists(std::string("home/.cache/snowflake/") + CACHE_FILENAME));
   assert_permissions("home/.cache/snowflake", boost::filesystem::owner_all);
   assert_permissions(std::string("home/.cache/snowflake/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
 }
 
-void test_credential_cache_xdg_cache_home(void **)
+void test_secure_storage_xdg_cache_home(void **)
 {
   boost::filesystem::remove_all("cache_dir");
   boost::filesystem::create_directory("cache_dir");
   EnvOverride override("XDG_CACHE_HOME", "cache_dir");
-  std::unique_ptr<Snowflake::Client::CredentialCache> cache{Snowflake::Client::CredentialCache::make()};
-  Snowflake::Client::CredentialKey key { "host", "user", CredentialType::MFA_TOKEN };
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
-  assert_true(cache->save(key, token));
-  assert_true(cache->get(key).value() == token);
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
 
   assert_true(boost::filesystem::exists(std::string("cache_dir/snowflake/") + CACHE_FILENAME));
   assert_permissions("cache_dir/snowflake", boost::filesystem::owner_all);
@@ -154,10 +168,10 @@ int main(void) {
   return 0;
 #endif
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_credential_cache_simple),
-      cmocka_unit_test(test_credential_cache_two_keys),
-      cmocka_unit_test(test_credential_cache_xdg_cache_home),
-      cmocka_unit_test(test_credential_cache_home_dir),
+      cmocka_unit_test(test_secure_storage_simple),
+      cmocka_unit_test(test_secure_storage_two_keys),
+      cmocka_unit_test(test_secure_storage_xdg_cache_home),
+      cmocka_unit_test(test_secure_storage_home_dir),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

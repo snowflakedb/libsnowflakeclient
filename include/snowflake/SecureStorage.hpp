@@ -7,28 +7,48 @@
 #define PROJECT_SECURESTORAGE_IMPL_HPP
 
 #include <string>
+#include "snowflake/secure_storage.h"
 
-enum class SecureStorageStatus
-{
-  NotFound,
-  Error,
-  Success,
-  Unsupported
-};
 
 namespace Snowflake {
 
 namespace Client {
+  enum class SecureStorageStatus
+  {
+    NotFound,
+    Error,
+    Success,
+    Unsupported
+  };
+
+  inline std::string keyTypeToString(SecureStorageKeyType type) {
+    switch (type) {
+      case SecureStorageKeyType::MFA_TOKEN:
+        return "MFA_TOKEN";
+      case SecureStorageKeyType::SSO_TOKEN:
+        return "SSO_TOKEN";
+      case SecureStorageKeyType::OAUTH_REFRESH_TOKEN:
+        return "OAUTH_REFRESH_TOKEN";
+      case SecureStorageKeyType::OAUTH_ACCESS_TOKEN:
+        return "OAUTH_ACCESS_TOKEN";
+      default:
+        return "UNKNOWN";
+    }
+  }
+  struct SecureStorageKey {
+    std::string host;
+    std::string user;
+    SecureStorageKeyType type;
+  };
   /**
    * Class SecureStorage
    */
-  class SecureStorageImpl
+
+  class SecureStorage
   {
 
-    static std::string convertTarget(const std::string& host,
-                                     const std::string& username,
-                                     const std::string& credType);
   public:
+    static std::string convertTarget(const SecureStorageKey& key);
 
     /**
      * storeToken
@@ -42,9 +62,7 @@ namespace Client {
      *
      * @return ERROR / SUCCESS
      */
-    SecureStorageStatus storeToken(const std::string& host,
-                                   const std::string& username,
-                                   const std::string& credType,
+    SecureStorageStatus storeToken(const SecureStorageKey& key,
                                    const std::string& cred);
 
     /**
@@ -62,28 +80,8 @@ namespace Client {
      * @param credLen - on return, length of the credential retrieved
      * @return NOT_FOUND, ERROR, SUCCESS
      */
-    SecureStorageStatus retrieveToken(const std::string& host,
-                                      const std::string& username,
-                                      const std::string& credType,
+    SecureStorageStatus retrieveToken(const SecureStorageKey& key,
                                       std::string& cred);
-
-    /**
-     * updateToken
-     *
-     * API to update an existing credential.
-     *
-     * @param host - snowflake host url associated
-     * with the credential
-     * @param username - snowflake username assoicated with
-     * the credential
-     * @param credType - type of snowflake credential to be updated
-     * @param cred - credential to be stored in the keychain.
-     * @return ERROR / SUCCESS
-     */
-    SecureStorageStatus updateToken(const std::string& host,
-                                    const std::string& username,
-                                    const std::string& credType,
-                                    const std::string& cred);
 
     /**
      * remove
@@ -98,9 +96,7 @@ namespace Client {
      *
      * @return ERROR / SUCCESS
      */
-    SecureStorageStatus removeToken(const std::string& host,
-                                    const std::string& username,
-                                    const std::string& credType);
+    SecureStorageStatus removeToken(const SecureStorageKey& key);
   };
 
 }

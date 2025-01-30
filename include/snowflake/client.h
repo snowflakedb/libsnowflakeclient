@@ -14,7 +14,7 @@ extern "C" {
 #include "platform.h"
 #include "version.h"
 #include "logger.h"
-#include "mfa_token_cache.h"
+#include "secure_storage.h"
 
 /**
  * API Name
@@ -389,7 +389,7 @@ typedef struct SF_CONNECT {
     void * qcc;
 
     // MFA Token Cache
-    cred_cache_ptr token_cache;
+    secure_storage_ptr token_cache;
 
     // whether to include retry reason in retry for query request
     sf_bool include_retry_reason;

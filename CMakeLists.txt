@@ -31,8 +31,7 @@ set(SOURCE_FILES
         include/snowflake/logger.h
         include/snowflake/version.h
         include/snowflake/platform.h
-        include/snowflake/mfa_token_cache.h
-        include/snowflake/CredentialCache.hpp
+        include/snowflake/secure_storage.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -154,6 +153,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
         include/snowflake/BindUploader.hpp
+        include/snowflake/SecureStorage.hpp
         cpp/jwt/jwtWrapper.cpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
@@ -180,12 +180,10 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientBindUploader.cpp
         cpp/lib/CacheFile.cpp
         cpp/lib/CacheFile.hpp
-        cpp/lib/CredentialCache.cpp
+        cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
-        cpp/platform/SecureStorage.hpp
         cpp/platform/SecureStorageApple.cpp
-        cpp/platform/SecureStorageImpl.hpp
-        cpp/platform/SecureStorageUnSup.cpp
+        cpp/platform/SecureStorageLinux.cpp
         cpp/platform/SecureStorageWin.cpp
         cpp/platform/FileLock.cpp
         cpp/platform/FileLock.hpp
@@ -195,7 +193,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/CurlDescPool.cpp
         cpp/util/Sha256.cpp
         cpp/util/Sha256.hpp
-        cpp/platform/SecureStorageImpl.cpp
+        cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
@@ -304,6 +302,7 @@ if (WIN32)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         else()
+            message(deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/)
             find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
