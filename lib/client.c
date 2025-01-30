@@ -209,8 +209,8 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
     }
 
     int sleep_time = retry_pattern[retry] * 500;
-    sf_sleep_ms(sleep_time);
-    if (retry < (max_retries - 1)) {
+    if (retry < (max_retries)) {
+      sf_sleep_ms(sleep_time);
       retry++;
     }
     else {
