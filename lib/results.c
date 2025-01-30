@@ -287,13 +287,32 @@ SF_COLUMN_DESC * set_description(SF_STMT* sfstmt, const cJSON *rowtype) {
         log_debug("Found type and ctype; %i: %i", desc[i].type, desc[i].c_type);
 
         int64 default_size = 0;
-        if (desc[i].c_type == SF_C_TYPE_STRING)
+        switch (desc[i].type)
         {
-            default_size = sfstmt->connection->max_varchar_size;
-        }
-        else if (desc[i].c_type == SF_C_TYPE_BINARY)
-        {
-            default_size = sfstmt->connection->max_binary_size;
+        case SF_DB_TYPE_FIXED:
+        case SF_DB_TYPE_REAL:
+        case SF_DB_TYPE_DATE:
+        case SF_DB_TYPE_TIMESTAMP_LTZ:
+        case SF_DB_TYPE_TIMESTAMP_NTZ:
+        case SF_DB_TYPE_TIMESTAMP_TZ:
+        case SF_DB_TYPE_TIME:
+        case SF_DB_TYPE_BOOLEAN:
+          // 0 for types with fixed length
+          default_size = 0;
+          break;
+        case SF_DB_TYPE_BINARY:
+          default_size = sfstmt->connection->max_binary_size;
+          break;
+        case SF_DB_TYPE_VARIANT:
+        case SF_DB_TYPE_OBJECT:
+        case SF_DB_TYPE_ARRAY:
+          default_size = sfstmt->connection->max_variant_size;
+          break;
+        // treat any known type as string
+        case SF_DB_TYPE_TEXT:
+        case SF_DB_TYPE_ANY:
+        default:
+          default_size = sfstmt->connection->max_varchar_size;
         }
         if (json_copy_int(&desc[i].byte_size, column, "byteLength")) {
             desc[i].byte_size = default_size;
