@@ -546,7 +546,7 @@ typedef struct SF_STMT {
     void* multi_stmt_result_ids;
     int64 multi_stmt_count;
     int64 paramset_size;
-	  sf_bool array_bind_supported;
+    sf_bool array_bind_supported;
     int64 affected_rows;
     sf_bool is_async;
     sf_bool is_async_initialized;

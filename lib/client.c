@@ -210,7 +210,7 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
 
     int sleep_time = retry_pattern[retry] * 500;
     sf_sleep_ms(sleep_time);
-    if (retry < max_retries) {
+    if (retry < (max_retries - 1)) {
       retry++;
     }
     else {
@@ -2907,9 +2907,9 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                                   is_string_empty(sfstmt->connection->directURL) ?
                                   NULL : sfstmt->request_id, is_describe_only,
                                   sfstmt->multi_stmt_count);
-								  
-	  snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
-	
+
+    snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
+
     if (bind_stage)
     {
       snowflake_cJSON_AddStringToObject(body, "bindStage", bind_stage);

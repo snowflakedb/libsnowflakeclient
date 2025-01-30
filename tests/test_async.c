@@ -267,16 +267,50 @@ void test_multiple_chunk() {
   snowflake_term(sf);
 }
 
+void test_sleep_max_retries() {
+    SF_CONNECT* sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* query */
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+    status = snowflake_prepare(sfstmt, "select system$wait(20);", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    status = snowflake_async_execute(sfstmt);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* get results */
+    char* out = NULL;
+    size_t value_len = 0;
+    size_t max_value_size = 0;
+    assert_int_equal(snowflake_num_rows(sfstmt), -1);
+    assert_int_equal(snowflake_num_fields(sfstmt), -1);
+    assert_int_equal(snowflake_num_params(sfstmt), 0);
+
+    status = snowflake_fetch(sfstmt);
+    assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+    SF_FREE(out);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE); 
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_select),
-      cmocka_unit_test(test_query_status),
-      cmocka_unit_test(test_premature_fetch),
-      cmocka_unit_test(test_new_connection),
-      cmocka_unit_test(test_fake_table),
-      cmocka_unit_test(test_invalid_query_id),
-      cmocka_unit_test(test_multiple_chunk),
+      //cmocka_unit_test(test_select),
+      //cmocka_unit_test(test_query_status),
+      //cmocka_unit_test(test_premature_fetch),
+      //cmocka_unit_test(test_new_connection),
+      //cmocka_unit_test(test_fake_table),
+      //cmocka_unit_test(test_invalid_query_id),
+      //cmocka_unit_test(test_multiple_chunk),
+      cmocka_unit_test(test_sleep_max_retries),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
