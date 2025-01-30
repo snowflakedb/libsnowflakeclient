@@ -54,6 +54,10 @@ extern "C" {
     {
         return AUTH_OAUTH;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_PAT) == 0)
+    {
+        return AUTH_PAT;
+    }
 
     return AUTH_UNSUPPORTED;
   }
@@ -127,7 +131,8 @@ extern "C" {
 
   void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
   {
-    if (AUTH_OAUTH == getAuthenticatorType(conn->authenticator)) 
+    auto authenticator = getAuthenticatorType(conn->authenticator);
+    if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
     {
         cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
         if (!data)
@@ -137,9 +142,15 @@ extern "C" {
         }
 
         snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-        snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
         snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
-        snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
+
+        if (AUTH_PAT == authenticator) {
+          snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_PAT);
+          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->programmatic_access_token);
+        } else {
+          snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
+        }
     }
 
     if (!conn || !conn->auth_object)
