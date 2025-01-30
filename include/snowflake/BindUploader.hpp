@@ -23,7 +23,7 @@ namespace Client
 class BindUploader
 {
 public:
-  /**
+ /**
   * constructor
   *
   * @param stageDir The unique stage path for bindings uploading, could be a GUID.
@@ -39,9 +39,23 @@ public:
                         unsigned int maxFileSize,
                         int compressLevel);
 
-  virtual void addStringValue(const std::string& value, SF_DB_TYPE type);
+ /**
+  * Add string value to binding stream and do uploading as needed.
+  * @param value The string value to be added.
+  * @param type The DB type of the value, for ODBC only when format
+  *             conversion for date/time types between stage/regular
+  *             binding is needed. (implementing convert/revert functions)
+  *
+  * @Return true if succeeded, false otherwise.
+  */
+  virtual bool addStringValue(const std::string& value, SF_DB_TYPE type);
 
-  void addNullValue();
+  /**
+   * Add NULL value to binding stream and do uploading as needed.
+   *
+  * @Return true if succeeded, false otherwise.
+   */
+  bool addNullValue();
 
   inline std::string getStagePath()
   {
@@ -53,19 +67,29 @@ public:
     return m_hasBindingUploaded;
   }
 
+  inline std::string getError()
+  {
+    return m_errorMessage;
+  }
+
 protected:
   /**
   * @return The statement for creating temporary stage for bind uploading.
   */
   std::string getCreateStageStmt();
 
+  void setError(const std::string& errMsg)
+  {
+    m_errorMessage = errMsg;
+  }
+
   /**
   * Check whether the session's temporary stage has been created, and create it
   * if not.
   *
-  * @throws Exception if creating the stage fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void createStageIfNeeded() = 0;
+  virtual bool createStageIfNeeded() = 0;
 
   /**
   * Execute uploading for single data file.
@@ -74,9 +98,9 @@ protected:
   * @param uploadStream stream for data file to be uploaded
   * @param dataSize Size of the data to be uploaded.
   *
-  * @throws Exception if uploading fails
+  * @Return true if succeeded, false otherwise.
   */
-  virtual void executeUploading(const std::string &sql,
+  virtual bool executeUploading(const std::string &sql,
                                 std::basic_iostream<char>& uploadStream,
                                 size_t dataSize) = 0;
 
@@ -94,9 +118,9 @@ private:
   /**
   * Upload serialized binds in CSV stream to stage
   *
-  * @throws BindException if uploading the binds fails
+  * @Return true if succeeded, false otherwise.
   */
-  void putBinds();
+  bool putBinds();
 
   /**
   * Compress data from csv stream to compress stream with gzip
@@ -116,8 +140,6 @@ private:
   std::string m_stagePath;
 
   unsigned int m_fileNo;
-
-  unsigned int m_retryCount;
 
   unsigned int m_maxFileSize;
 
@@ -144,6 +166,8 @@ private:
   bool m_hasBindingUploaded;
 
   int m_compressLevel;
+
+  std::string m_errorMessage;
 
 };
 
