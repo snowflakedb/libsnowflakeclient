@@ -154,7 +154,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/CurlDescPool.hpp
         include/snowflake/BindUploader.hpp
         include/snowflake/SecureStorage.hpp
-        cpp/jwt/jwtWrapper.cpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
