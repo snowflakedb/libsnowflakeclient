@@ -35,8 +35,6 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
-        test_get_query_result_response
-        test_get_describe_only_query_result
         test_stmt_functions
         test_ocsp_fail_open
         test_multiple_statements
@@ -52,6 +50,8 @@ SET (TESTS_C_UNIT
         test_unit_connect_parameters
         test_unit_logger
         test_unit_retry_context
+        test_get_query_result_response
+        test_get_describe_only_query_result
         test_unit_oauth
         test_unit_mfa_auth
         test_unit_privatelink)
