@@ -7,8 +7,9 @@
 /**
  * Test connection with OAuth authentication.
  */
-void test_oauth_connect(void **unused) 
+void test_oauth_connect(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -49,6 +50,7 @@ void test_oauth_connect(void **unused)
 
 void test_mfa_connect_with_duo_push(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -83,6 +85,7 @@ void test_mfa_connect_with_duo_push(void** unused)
 
 void test_mfa_connect_with_duo_passcode(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -125,6 +128,7 @@ void test_mfa_connect_with_duo_passcode(void** unused)
 
 void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -160,12 +164,60 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
     snowflake_term(sf);
 }
 
-void test_none(void** unused) {}
+void test_mfa_connect_with_mfa_cache(void** unused)
+{
+  SF_UNUSED(unused);
+  /*
+   * Should trigger mfa push notification at most once.
+   * Make sure ALLOW_CLIENT_MFA_CACHING is set to true
+   * For more details refer to: https://docs.snowflake.com/en/user-guide/security-mfa#using-mfa-token-caching-to-minimize-the-number-of-prompts-during-authentication-optional
+   */
+  for (int i = 0; i < 2; i++) {
+    SF_CONNECT *sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_APPLICATION_NAME, "ODBC");
+    snowflake_set_attribute(sf, SF_CON_APPLICATION_VERSION, "2.30.0");
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+                            getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+                            getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char *host, *port, *protocol, *passcode;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+      snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+      snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+      snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    passcode = getenv("SNOWFLAKE_TEST_PASSCODE");
+    if (passcode) {
+      snowflake_set_attribute(sf, SF_CON_PASSCODE, passcode);
+    } else {
+      dump_error(&(sf->error));
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+      dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+  }
+}
+
+void test_none(void** unused) {
+  SF_UNUSED(unused);
+}
 
 
 int main(void) 
 {
-    initialize_test(SF_BOOLEAN_FALSE);
+    initialize_test(SF_BOOLEAN_TRUE);
     struct CMUnitTest tests[1] = {
         cmocka_unit_test(test_none)
     };
@@ -186,6 +238,10 @@ int main(void)
             else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
                 tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
                 tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
+            }
+            else if (strcmp(manual_test, "test_mfa_connect_with_mfa_cache") == 0) {
+                tests[0].name = "test_mfa_connect_with_mfa_cache";
+                tests[0].test_func = test_mfa_connect_with_mfa_cache;
             }
             else {
                 printf("No matching test found for: %s\n", manual_test);
