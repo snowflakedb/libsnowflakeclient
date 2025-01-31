@@ -31,11 +31,13 @@ public:
 
     inline void startWebBrowser(std::string ssoUrl)
     {
-       
+        SF_UNUSED(ssoUrl);
     }
 
     inline void getLoginUrl(std::map<std::string, std::string>& out, int port)
     {
+        SF_UNUSED(port);
+
         if (m_errortesting)
         { 
             m_errMsg = "getLoginUrl Error";
@@ -92,7 +94,9 @@ public:
     }
 
     inline void setTimeout(int timeout)
-    {}
+    {
+        SF_UNUSED(timeout);
+    }
 
 };
 
@@ -150,7 +154,9 @@ public:
     }
 
     inline void setTimeout(int timeout)
-    {}
+    {
+        SF_UNUSED(timeout);
+    }
 
     inline void cleanError()
     {

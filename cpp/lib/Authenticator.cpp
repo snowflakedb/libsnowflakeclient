@@ -219,7 +219,6 @@ extern "C" {
       return;
     }
 
-    AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
     try
     {
       delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
@@ -429,7 +428,7 @@ namespace Client
       if (ret)
       {
           if (!curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
-              &resp_data, &m_connection->error, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
+              &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
               CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
@@ -464,6 +463,7 @@ namespace Client
   {
       isRetry = false;
       bool ret = true;
+      sf_bool isHttpSuccess = SF_BOOLEAN_TRUE;
       int64 maxRetryCount = get_login_retry_count(m_connection);
       int64 elapsedTime = 0;
       int64 renewTimeout = auth_get_renew_timeout(m_connection);
@@ -481,13 +481,14 @@ namespace Client
       raw_resp->write_callback = non_json_resp_write_callback;
       RAW_CHAR_BUFFER buf = { NULL,0 };
       raw_resp->buffer = (void*)&buf;
+      cJSON* resp_data = NULL;
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_TRACE("sf", "Authenticator",
               "get_curl_call",
               "Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -496,12 +497,26 @@ namespace Client
 
       if (ret)
       {
-          if (!http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-              raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
-              m_connection->insecure_mode, m_connection->ocsp_fail_open,
-              m_connection->retry_on_curle_couldnt_connect_count,
-              renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
-              m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
+          if (parseJSON)
+          {
+              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
+                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->retry_on_curle_couldnt_connect_count,
+                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
+                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+          }
+          else
+          {
+              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
+                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->retry_on_curle_couldnt_connect_count,
+                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
+                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+          }
+
+          if (!isHttpSuccess)
           {
               //Fail to get the saml response. Retry.
               isRetry = true;
@@ -509,7 +524,14 @@ namespace Client
           }
           else
           {
-              rawData = buf.buffer;
+              if (parseJSON)
+              {
+                  cJSONtoPicoJson(resp_data, resp);
+              }
+              else
+              {
+                  rawData = buf.buffer;
+              }
           }
       }
 
