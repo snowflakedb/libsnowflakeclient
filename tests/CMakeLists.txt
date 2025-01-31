@@ -53,6 +53,7 @@ SET (TESTS_C_UNIT
         test_get_query_result_response
         test_get_describe_only_query_result
         test_unit_oauth
+        test_unit_pat
         test_unit_mfa_auth
         test_unit_privatelink)
 
