@@ -108,6 +108,7 @@ namespace Client {
     if (!lock.isLocked())
     {
       CXX_LOG_ERROR("Failed to delete token. Could not acquire file lock(path=%s)", lock.getPath().c_str());
+      return SecureStorageStatus::Error;
     }
 
     picojson::value contents;

@@ -162,6 +162,62 @@ void test_secure_storage_xdg_cache_home(void **)
   assert_permissions(std::string("cache_dir/snowflake/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
 }
 
+void test_secure_storage_fails_to_lock(void **)
+{
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
+
+  std::string token = "example_token";
+  std::string retrievedToken;
+  boost::filesystem::create_directory(std::string(CACHE_FILENAME) + ".lck");
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Error);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Error);
+  assert_true(ss.removeToken(key) == SecureStorageStatus::Error);
+}
+
+void test_secure_storage_fails_to_find_cache_path(void **)
+{
+  EnvOverride override1("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", boost::none);
+  EnvOverride override2("XDG_CACHE_HOME", boost::none);
+  EnvOverride override3("HOME", boost::none);
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
+
+  std::string token = "example_token";
+  std::string retrievedToken;
+  std::string lockPath = std::string(CACHE_FILENAME) + ".lck";
+  boost::filesystem::create_directory(lockPath);
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Error);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Error);
+  assert_true(ss.removeToken(key) == SecureStorageStatus::Error);
+  boost::filesystem::remove(lockPath);
+}
+
+void test_secure_storage_c_api(void **)
+{
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  std::string token = "example_token";
+
+  secure_storage_ptr ss = secure_storage_init();
+
+  assert_true(secure_storage_save_credential(ss, key.host.c_str(), key.user.c_str(), key.type, token.c_str()));
+
+  char* cred = secure_storage_get_credential(ss, key.host.c_str(), key.user.c_str(), key.type);
+  assert_true(cred != nullptr);
+  assert_true(strcmp(cred, "example_token") == 0);
+  secure_storage_free_credential(cred);
+
+  assert_true(secure_storage_remove_credential(ss, key.host.c_str(), key.user.c_str(), key.type));
+
+  cred = secure_storage_get_credential(ss, key.host.c_str(), key.user.c_str(), key.type);
+  assert_true(cred == nullptr);
+  secure_storage_free_credential(cred);
+
+  secure_storage_term(ss);
+}
+
 int main(void) {
   /* Testing only file based credential cache, available on linux */
 #ifndef __linux__
@@ -172,6 +228,9 @@ int main(void) {
       cmocka_unit_test(test_secure_storage_two_keys),
       cmocka_unit_test(test_secure_storage_xdg_cache_home),
       cmocka_unit_test(test_secure_storage_home_dir),
+      cmocka_unit_test(test_secure_storage_c_api),
+      cmocka_unit_test(test_secure_storage_fails_to_lock),
+      cmocka_unit_test(test_secure_storage_fails_to_find_cache_path)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
