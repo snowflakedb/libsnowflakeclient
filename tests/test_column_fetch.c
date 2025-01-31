@@ -1483,13 +1483,13 @@ sf_bool set_bundle_202408_enabled(sf_bool enabled)
 
 void test_column_length_with_bundle_202408_helper(sf_bool enabled)
 {
-
   if (!set_bundle_202408_enabled(enabled))
   {
     sf_fprintf(stderr, "test_column_length_with_bundle_202408: failed to setup BCR bundle, skip.\n");
     return;
   }
 
+  int i = 0;
   SF_CONNECT* sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS)
@@ -1499,20 +1499,44 @@ void test_column_length_with_bundle_202408_helper(sf_bool enabled)
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   SF_STMT* sfstmt = snowflake_stmt(sf);
-  status = snowflake_query(sfstmt, "SELECT PARSE_XML('<test>22257e111</test>'), TO_BINARY('1234');", 0);
+  status = snowflake_query(sfstmt,
+                           "SELECT PARSE_XML('<test>22257e111</test>'), TO_BINARY('1234'), "
+                           "TO_VARCHAR('1234'), TO_DATE('1989-12-30'), TO_TIME('12:30'), "
+                           "TO_TIMESTAMP_LTZ('1989-12-30 12:30'), TO_TIMESTAMP_NTZ('1989-12-30 12:30'), "
+                           "TO_TIMESTAMP_TZ('1989-12-30 12:30'), TO_NUMBER('1234'), "
+                           "TO_DOUBLE('1234'), TO_BOOLEAN(1), "
+                           "TO_VARIANT('1234'), TO_ARRAY('1234'), TO_OBJECT(PARSE_JSON('{\"a\":1}'));", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   SF_COLUMN_DESC* desc = snowflake_desc(sfstmt);
   uint64* max_varchar_size_p = NULL;
   uint64* max_binary_size_p = NULL;
+  uint64* max_variant_size_p = NULL;
   snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
   snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_BINARY_SIZE, (void**)&max_binary_size_p);
+  snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARIANT_SIZE, (void**)&max_variant_size_p);
+  // PARSE_XML
   assert_int_equal(desc[0].c_type, SF_C_TYPE_STRING);
   assert_int_equal(desc[0].byte_size, *max_varchar_size_p);
   assert_int_equal(desc[0].internal_size, *max_varchar_size_p);
+  // BINARY
   assert_int_equal(desc[1].c_type, SF_C_TYPE_BINARY);
   assert_int_equal(desc[1].byte_size, *max_binary_size_p);
   assert_int_equal(desc[1].internal_size, *max_binary_size_p);
-
+  // VARCHAR
+  assert_int_equal(desc[2].byte_size, *max_varchar_size_p);
+  assert_int_equal(desc[2].internal_size, *max_varchar_size_p);
+  // types with fixed length date, time, ltz, ntz, tz, number, double, boolean
+  for (i = 3; i < 11; i++)
+  {
+    assert_int_equal(desc[i].byte_size, 0);
+    assert_int_equal(desc[i].internal_size, 0);
+  }
+  // variant, object, array
+  for (i = 11; i < 14; i++)
+  {
+      assert_int_equal(desc[i].byte_size, *max_variant_size_p);
+      assert_int_equal(desc[i].internal_size, *max_variant_size_p);
+  }
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
 }
