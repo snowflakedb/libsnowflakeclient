@@ -29,6 +29,7 @@ void test_select() {
 
     /* get results */
     int64 out = 0;
+    assert_int_equal(snowflake_num_fields(sfstmt), 1);
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
@@ -228,6 +229,9 @@ void test_invalid_query_id() {
   assert_non_null(async_sfstmt->connection);
   assert_string_equal(async_sfstmt->sfqid, fake_sfqid);
   assert_null(async_sfstmt->result_set);
+
+  SF_QUERY_STATUS query_status = snowflake_get_query_status(async_sfstmt);
+  assert_int_equal(query_status, SF_QUERY_STATUS_UNKNOWN);
 }
 
 void test_multiple_chunk() {
@@ -277,7 +281,7 @@ void test_sleep_max_retries() {
 
     /* query */
     SF_STMT* sfstmt = snowflake_stmt(sf);
-    status = snowflake_prepare(sfstmt, "select system$wait(20);", 0);
+    status = snowflake_prepare(sfstmt, "select system$wait(60);", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
     status = snowflake_async_execute(sfstmt);
     if (status != SF_STATUS_SUCCESS) {
@@ -300,6 +304,46 @@ void test_sleep_max_retries() {
     SF_FREE(out);
 }
 
+void test_ordered_results() {
+    SF_CONNECT* sf = setup_snowflake_connection();
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* query */
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+    status = snowflake_prepare(
+      sfstmt,
+      "with recursive test as (select 1 as num union all select num + 1 from test where num < 10) select num from test;",
+      0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    status = snowflake_async_execute(sfstmt);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* get results */
+    int64 out = 0;
+    assert_int_equal(snowflake_num_rows(sfstmt), 10);
+    assert_int_equal(snowflake_num_fields(sfstmt), 1);
+
+    int i = 1;
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_int64(sfstmt, 1, &out);
+        assert_int_equal(out, i);
+        i++;
+    }
+    if (status != SF_STATUS_EOF) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_EOF);
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE); 
     const struct CMUnitTest tests[] = {
@@ -311,6 +355,7 @@ int main(void) {
       cmocka_unit_test(test_invalid_query_id),
       cmocka_unit_test(test_multiple_chunk),
       cmocka_unit_test(test_sleep_max_retries),
+      cmocka_unit_test(test_ordered_results),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

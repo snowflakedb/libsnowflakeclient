@@ -57,7 +57,7 @@ static SF_STATUS STDCALL
 _reset_connection_parameters(SF_CONNECT *sf, cJSON *parameters,
                              cJSON *session_info, sf_bool do_validate);
 
-static const char* query_status_names[] = {
+static const char* const query_status_names[] = {
     "ABORTED",
     "ABORTING",
     "BLOCKED",
@@ -151,6 +151,7 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT* sfstmt) {
   }
   SF_FREE(status_query);
   log_error("No query metadata found. Query id: %s", sfstmt->sfqid);
+  query_metadata->status = SF_QUERY_STATUS_UNKNOWN;
   return query_metadata;
 }
 
@@ -216,17 +217,13 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
     else {
       log_error(
         "Cannot retrieve data on the status of this query. Max retries hit with queryID=%s", sfstmt->sfqid);
-      break;
+      return SF_BOOLEAN_FALSE;
     }
     query_status = snowflake_get_query_status(sfstmt);
   }
 
   // Get query results
-  char query[1024];
-  char* query_template = "select * from table(result_scan('%s'))";
-  sf_sprintf(query, strlen(query_template) - 2 + strlen(sfstmt->sfqid) + 1, query_template, sfstmt->sfqid);
-  SF_STATUS ret = snowflake_query(sfstmt, query, strlen(query));
-  if (ret != SF_STATUS_SUCCESS) {
+  if (snowflake_next_result(sfstmt) != SF_STATUS_SUCCESS) {
     snowflake_propagate_error(sfstmt->connection, sfstmt);
     return SF_BOOLEAN_FALSE;
   }
@@ -1906,43 +1903,48 @@ static sf_bool setup_multi_stmt_result(SF_STMT* sfstmt, cJSON* data)
 
 SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt)
 {
+    char* result_url = NULL;
     cJSON* result_id_json = NULL;
-    if (!sfstmt || !sfstmt->is_multi_stmt || !sfstmt->multi_stmt_result_ids ||
-        !snowflake_cJSON_IsArray(sfstmt->multi_stmt_result_ids) ||
-        !(result_id_json = snowflake_cJSON_DetachItemFromArray(sfstmt->multi_stmt_result_ids, 0)))
+    if (sfstmt && sfstmt->is_multi_stmt && sfstmt->multi_stmt_result_ids &&
+        snowflake_cJSON_IsArray(sfstmt->multi_stmt_result_ids) &&
+        (result_id_json = snowflake_cJSON_DetachItemFromArray(sfstmt->multi_stmt_result_ids, 0)))
     {
+        char* result_id = snowflake_cJSON_GetStringValue(result_id_json);
+        if (!result_id || (strlen(result_id) == 0))
+        {
+            log_error("Empty result id found for multiple statements.");
+            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                SF_STATUS_ERROR_BAD_RESPONSE,
+                "Empty result id found in multiple statements response.",
+                SF_SQLSTATE_GENERAL_ERROR,
+                sfstmt->sfqid);
+            snowflake_cJSON_Delete(result_id_json);
+            return SF_STATUS_ERROR_BAD_RESPONSE;
+        }
+
+        size_t url_size = strlen(QUERY_RESULT_URL_FORMAT) - 2 + strlen(result_id) + 1;
+        result_url = (char*)SF_CALLOC(1, url_size);
+
+        if (!result_url)
+        {
+            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+                SF_STATUS_ERROR_OUT_OF_MEMORY,
+                "Run out of memory trying to create result url.",
+                SF_SQLSTATE_MEMORY_ALLOCATION_ERROR,
+                sfstmt->sfqid);
+            snowflake_cJSON_Delete(result_id_json);
+            return SF_STATUS_ERROR_OUT_OF_MEMORY;
+        }
+        sf_sprintf(result_url, url_size, QUERY_RESULT_URL_FORMAT, result_id);
+        snowflake_cJSON_Delete(result_id_json);
+    } else if (sfstmt->is_async) {
+        size_t url_size = strlen(QUERY_RESULT_URL_FORMAT) - 2 + strlen(sfstmt->sfqid) + 1;
+        result_url = (char*)SF_CALLOC(1, url_size);
+        sf_sprintf(result_url, url_size, QUERY_RESULT_URL_FORMAT, sfstmt->sfqid);
+    } else {
         // no more results available.
         return SF_STATUS_EOF;
     }
-
-    char* result_id = snowflake_cJSON_GetStringValue(result_id_json);
-    if (!result_id || (strlen(result_id) == 0))
-    {
-        log_error("Empty result id found for multiple statements.");
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-            SF_STATUS_ERROR_BAD_RESPONSE,
-            "Empty result id found in multiple statements response.",
-            SF_SQLSTATE_GENERAL_ERROR,
-            sfstmt->sfqid);
-        snowflake_cJSON_Delete(result_id_json);
-        return SF_STATUS_ERROR_BAD_RESPONSE;
-    }
-
-    char* result_url = NULL;
-    size_t url_size = strlen(QUERY_RESULT_URL_FORMAT) - 2 + strlen(result_id) + 1;
-    result_url = (char*)SF_CALLOC(1, url_size);
-    if (!result_url)
-    {
-        SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
-            SF_STATUS_ERROR_OUT_OF_MEMORY,
-            "Run out of memory trying to create result url.",
-            SF_SQLSTATE_MEMORY_ALLOCATION_ERROR,
-            sfstmt->sfqid);
-        snowflake_cJSON_Delete(result_id_json);
-        return SF_STATUS_ERROR_OUT_OF_MEMORY;
-    }
-    sf_sprintf(result_url, url_size, QUERY_RESULT_URL_FORMAT, result_id);
-    snowflake_cJSON_Delete(result_id_json);
 
     cJSON* result = NULL;
     if (!request(sfstmt->connection, &result, result_url, NULL, 0, NULL, NULL,
