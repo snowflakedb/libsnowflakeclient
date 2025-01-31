@@ -227,7 +227,7 @@ void test_connection_parameters_application(void **unused) {
 
 extern sf_bool STDCALL renew_session(CURL* curl, SF_CONNECT* sf, SF_ERROR_STRUCT* error);
 void test_connect_with_renew(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
 
     SF_CONNECT* sf = setup_snowflake_connection();
 

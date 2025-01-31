@@ -446,9 +446,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    // For now check password if it's not jwt, will add more condition when
-    // support other authentications
-    if ((AUTH_JWT != auth_type) && (AUTH_OAUTH != auth_type) && (is_string_empty(sf->password))) {
+    if ((AUTH_JWT != auth_type) && (AUTH_OAUTH != auth_type) && (AUTH_PAT != auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -477,6 +475,16 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             &sf->error,
             SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
             ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
+    if ((AUTH_PAT == auth_type) && (is_string_empty(sf->programmatic_access_token))) {
+        log_error(ERR_MSG_PAT_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_PAT_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
@@ -591,6 +599,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
     if (AUTH_OAUTH == auth_type) {
         log_debug("oauth_token: %s", sf->oauth_token ? "provided" : "not provided");
+    }
+    if (AUTH_PAT == auth_type) {
+        log_debug("programmatic_access_token: %s", sf->programmatic_access_token ? "provided" : "not provided");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
@@ -841,6 +852,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
 
         sf->oauth_token = NULL;
+        sf->programmatic_access_token = NULL;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -1208,6 +1220,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_token, value);
+            break;
+        case SF_CON_PAT:
+            alloc_buffer_and_copy(&sf->programmatic_access_token, value);
             break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
