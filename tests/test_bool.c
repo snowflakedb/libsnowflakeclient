@@ -17,10 +17,12 @@ void test_bool_helper(sf_bool use_arrow) {
     const sf_bool large_value = (sf_bool) 64;
     const sf_bool zero_value = (sf_bool) 0;
     const sf_bool negative_value = (sf_bool) -12;
+    const sf_bool true_value = SF_BOOLEAN_TRUE;
+    const sf_bool false_value = SF_BOOLEAN_FALSE;
 
     TEST_CASE_TO_STRING test_cases[] = {
-      {.c1in = 1, .c2in = &SF_BOOLEAN_TRUE, .c2out = "1", .c2_is_null=SF_BOOLEAN_FALSE},
-      {.c1in = 2, .c2in = &SF_BOOLEAN_FALSE, .c2out = "", .c2_is_null=SF_BOOLEAN_FALSE},
+      {.c1in = 1, .c2in = &true_value, .c2out = "1", .c2_is_null=SF_BOOLEAN_FALSE},
+      {.c1in = 2, .c2in = &false_value, .c2out = "", .c2_is_null=SF_BOOLEAN_FALSE},
       {.c1in = 3, .c2in = &large_value, .c2out = "1", .c2_is_null=SF_BOOLEAN_FALSE},
       {.c1in = 4, .c2in = &zero_value, .c2out = "", .c2_is_null=SF_BOOLEAN_FALSE},
       {.c1in = 5, .c2in = NULL, .c2out = NULL, .c2_is_null=SF_BOOLEAN_TRUE},
