@@ -144,7 +144,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Column.hpp
         include/snowflake/Param.hpp
         include/snowflake/Exceptions.hpp
-        include/snowflake/jwtWrapper.h
         include/snowflake/QueryContextCache.hpp
         include/snowflake/BaseClasses.hpp
         include/snowflake/SFURL.hpp
@@ -178,7 +177,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
-        cpp/jwt/jwtWrapper.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
