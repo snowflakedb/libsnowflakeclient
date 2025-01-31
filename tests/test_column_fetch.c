@@ -1518,12 +1518,12 @@ void test_column_length_with_bundle_202408_helper(sf_bool enabled)
 }
 
 void test_column_length_with_bundle_202408_disabled(void** unused) {
-  UNUSED(unused);
+  SF_UNUSED(unused);
   test_column_length_with_bundle_202408_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_column_length_with_bundle_202408_enabled(void** unused) {
-  UNUSED(unused);
+  SF_UNUSED(unused);
   test_column_length_with_bundle_202408_helper(SF_BOOLEAN_TRUE);
 }
 
