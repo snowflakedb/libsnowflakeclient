@@ -9,7 +9,7 @@
 #define INPUT_ARRAY_SIZE 3
 
 void test_bind_parameters(void **unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     /* init */
     SF_STATUS status;
     SF_BIND_INPUT input_array[INPUT_ARRAY_SIZE];
@@ -354,17 +354,17 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
 }
 
 void test_array_binding_normal(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     test_array_binding_core(1000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     test_array_binding_core(100000, SF_BOOLEAN_FALSE, 0, SF_BOOLEAN_FALSE);
 }
 
 void test_array_binding_stage_fallback(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     // Azure SDK take too long (14min) to fail with invalid proxy
     char* cenv = getenv("CLOUD_PROVIDER");
     if (cenv && !strncmp(cenv, "AZURE", 5))
@@ -376,14 +376,14 @@ void test_array_binding_stage_fallback(void** unused) {
 }
 
 void test_array_binding_threshold(void** unused) {
-  UNUSED(unused);
+  SF_UNUSED(unused);
   test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_FALSE);
 }
 
 // test threshold with fallback so we can ensure stage binding
 // is actually used with lower threshold and disabled after fallback
 void test_array_binding_threshold_fallback(void** unused) {
-  UNUSED(unused);
+  SF_UNUSED(unused);
   // Azure SDK take too long (14min) to fail with invalid proxy
   char* cenv = getenv("CLOUD_PROVIDER");
   if (cenv && !strncmp(cenv, "AZURE", 5))
@@ -395,12 +395,12 @@ void test_array_binding_threshold_fallback(void** unused) {
 }
 
 void test_array_binding_disable(void** unused) {
-  UNUSED(unused);
+  SF_UNUSED(unused);
   test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_TRUE);
 }
 
 void test_array_binding_supported_false_update(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     SF_STATUS status;
     char bind_data_b[2][4] = { "2.3", "3.4" };
     char bind_data_c[2][7] = { "bind", "insert" };
@@ -517,7 +517,7 @@ void test_array_binding_supported_false_update(void** unused) {
 }
 
 void test_array_binding_supported_false_insert(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
 
 // SNOW-1878297 TODO: disable for now due to server issue.
 // Sever returns arrayBindSupported=true while it's not really supported.
@@ -574,7 +574,7 @@ void test_array_binding_supported_false_insert(void** unused) {
 }
 
 void test_array_binding_supported_false_select(void** unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     SF_STATUS status;
     char bind_data[2][2] = { "1", "2" };
 

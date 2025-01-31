@@ -46,6 +46,11 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_OAUTH "oauth"
 
+ /**
+ * Authenticator, programmatic access token
+ */
+#define SF_AUTHENTICATOR_PAT "programmatic_access_token"
+
 /**
  * UUID4 length
  */
@@ -284,7 +289,8 @@ typedef enum SF_ATTRIBUTE {
     SF_DIR_QUERY_TOKEN,
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_QUERY_RESULT_TYPE,
-    SF_CON_OAUTH_TOKEN
+    SF_CON_OAUTH_TOKEN,
+    SF_CON_PAT
 } SF_ATTRIBUTE;
 
 /**
@@ -439,6 +445,9 @@ typedef struct SF_CONNECT {
 
     //token for OAuth authentication
     char *oauth_token;
+
+    //programmatic access token
+    char *programmatic_access_token;
 
     // put get configurations
     sf_bool use_s3_regional_url;
