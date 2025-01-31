@@ -160,36 +160,72 @@ void test_mfa_connect_with_duo_passcodeInPassword(void** unused)
     snowflake_term(sf);
 }
 
+void test_external_browser(void** unused)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USERNAME"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
 void test_none(void** unused) {}
 
 
-int main(void) 
+int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     struct CMUnitTest tests[1] = {
         cmocka_unit_test(test_none)
     };
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
-    if(manual_test) {
-            if (strcmp(manual_test, "test_oauth_connect") == 0) {
-                tests[0].name = "test_oauth_connect";
-                tests[0].test_func = test_oauth_connect;
-            }
-            else if (strcmp(manual_test, "test_mfa_connect_with_duo_push") == 0) {
-                tests[0].name = "test_mfa_connect_with_duo_push";
-                tests[0].test_func = test_mfa_connect_with_duo_push;
-            }
-            else if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") == 0) {
-                tests[0].name = "test_mfa_connect_with_duo_passcode";
-                tests[0].test_func = test_mfa_connect_with_duo_passcode;
-            }
-            else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
-                tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
-                tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
-            }
-            else {
-                printf("No matching test found for: %s\n", manual_test);
-            }
+    if (manual_test)
+    {
+        if (strcmp(manual_test, "test_oauth_connect") == 0) {
+            tests[0].name = "test_oauth_connect";
+            tests[0].test_func = test_oauth_connect;
+        }
+        else if (strcmp(manual_test, "test_mfa_connect_with_duo_push") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_push";
+            tests[0].test_func = test_mfa_connect_with_duo_push;
+        }
+        else if (strcmp(manual_test, "test_mfa_connect_with_duo_passcode") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_passcode";
+            tests[0].test_func = test_mfa_connect_with_duo_passcode;
+        }
+        else  if (strcmp(manual_test, "test_mfa_connect_with_duo_passcodeInPassword") == 0) {
+            tests[0].name = "test_mfa_connect_with_duo_passcodeInPassword";
+            tests[0].test_func = test_mfa_connect_with_duo_passcodeInPassword;
+        }
+        else  if (strcmp(manual_test, "test_external_browser") == 0) {
+            tests[0].name = "test_external_browser";
+            tests[0].test_func = test_external_browser;
+        }
+        else {
+            printf("No matching test found for: %s\n", manual_test);
+        }
     }
     else {
         printf("No value in SNOWFLAKE_MANUAL_TEST_TYPE. Skip the test\n");

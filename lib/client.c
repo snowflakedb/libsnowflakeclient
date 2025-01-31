@@ -764,6 +764,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
         sf->network_timeout = 0;
+        sf->browser_response_timeout = SF_BROWSER_RESPONSE_TIMEOUT;
         sf->retry_timeout = SF_RETRY_TIMEOUT;
         sf->sequence_counter = 0;
         _mutex_init(&sf->mutex_sequence_counter);
@@ -794,7 +795,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->max_variant_size = SF_DEFAULT_MAX_OBJECT_SIZE;
 
         sf->oauth_token = NULL;
+        sf->disable_console_login = SF_BOOLEAN_TRUE;
         sf->programmatic_access_token = NULL;
+
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -1178,6 +1181,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_NETWORK_TIMEOUT:
             sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
+        case SF_CON_BROWSER_RESPONSE_TIMEOUT:
+            sf->browser_response_timeout = value ? *((int64*)value) : SF_BROWSER_RESPONSE_TIMEOUT;
+            break;
         case SF_CON_RETRY_TIMEOUT:
           sf->retry_timeout = value ? *((int64 *)value) : SF_RETRY_TIMEOUT;
           if ((sf->retry_timeout < SF_RETRY_TIMEOUT) && (sf->retry_timeout != 0))
@@ -1236,6 +1242,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
+            break;
+        case SF_CON_DISABLE_CONSOLE_LOGIN:
+            sf->disable_console_login = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
             break;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
@@ -1439,6 +1448,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_VARIANT_SIZE:
             *value = &sf->max_variant_size;
+            break;
+        case SF_CON_DISABLE_CONSOLE_LOGIN:
+            *value = &sf->disable_console_login;
             break;
         case SF_CON_PUT_TEMPDIR:
             *value = sf->put_temp_dir;
