@@ -290,9 +290,6 @@ void test_sleep_max_retries() {
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     /* get results */
-    char* out = NULL;
-    size_t value_len = 0;
-    size_t max_value_size = 0;
     assert_int_equal(snowflake_num_rows(sfstmt), -1);
     assert_int_equal(snowflake_num_fields(sfstmt), -1);
     assert_int_equal(snowflake_num_params(sfstmt), 0);
@@ -301,7 +298,6 @@ void test_sleep_max_retries() {
     assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
-    SF_FREE(out);
 }
 
 void test_ordered_results() {
