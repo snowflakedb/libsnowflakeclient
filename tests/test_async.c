@@ -281,7 +281,7 @@ void test_sleep_max_retries() {
 
     /* query */
     SF_STMT* sfstmt = snowflake_stmt(sf);
-    status = snowflake_prepare(sfstmt, "select system$wait(60);", 0);
+    status = snowflake_prepare(sfstmt, "select system$wait(120);", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
     status = snowflake_async_execute(sfstmt);
     if (status != SF_STATUS_SUCCESS) {
