@@ -30,6 +30,7 @@ cmake_opts=(
     "-DCMAKE_C_COMPILER=$GCC"
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
+    "-DBUILD_SHARED_LIBS=ON"
     "-DCLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE}"
 )
 
@@ -72,6 +73,15 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
 cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
+
+if [[ "$PLATFORM" == "linux" ]]; then
+    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient_dynamic.so $BUILD_DIR/lib
+elif [[ "$PLATFORM" == "darwin" ]]; then
+    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient_dynamic.dylib $BUILD_DIR/lib
+else
+    echo "[ERROR] Unknown platform: $PLATFORM"
+    exit 1
+fi
 
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"

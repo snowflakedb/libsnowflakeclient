@@ -8,9 +8,6 @@ include_directories(
 )
 
 SET(TESTS_C
-        test_unit_connect_parameters
-        test_unit_logger
-        test_unit_retry_context
         test_connect
         test_connect_negative
         test_bind_params
@@ -38,14 +35,8 @@ SET(TESTS_C
         test_issue_76
         test_column_fetch
         test_native_timestamp
-        test_get_query_result_response
-        test_get_describe_only_query_result
         test_stmt_functions
-        test_unit_oauth
-        test_unit_pat
-        test_unit_mfa_auth
         test_ocsp_fail_open
-        test_unit_privatelink
         test_multiple_statements
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
@@ -54,6 +45,17 @@ SET(TESTS_C
 # This test needs the Oauth token, so it should be run manually
        test_manual_connect
         )
+
+SET (TESTS_C_UNIT
+        test_unit_connect_parameters
+        test_unit_logger
+        test_unit_retry_context
+        test_get_query_result_response
+        test_get_describe_only_query_result
+        test_unit_oauth
+        test_unit_pat
+        test_unit_mfa_auth
+        test_unit_privatelink)
 
 SET(TESTS_CXX
         test_unit_jwt
@@ -107,24 +109,6 @@ set(SOURCE_UTILS_CXX
         utils/mock_setup.h
         utils/mock_setup.c)
 
-set(AWS_ALL_LIBS
-        ${AWS_S3_LIB}
-        ${AWS_CORE_LIB}
-        ${AWS_CRT_CPP_LIB}
-        ${AWS_C_EVENT_STREAM_LIB}
-        ${AWS_C_CHECKSUMS_LIB}
-        ${AWS_C_S3_LIB}
-        ${AWS_C_AUTH_LIB}
-        ${AWS_C_HTTP_LIB}
-        ${AWS_C_COMPRESSION_LIB}
-        ${AWS_C_IO_LIB}
-        ${AWS_C_CAL_LIB}
-        ${AWS_C_MQTT_LIB}
-        ${AWS_S2N_LIB}
-        ${AWS_C_COMMON_LIB}
-        ${AWS_C_SDKUTILS_LIB}
-    )
-
 SET(TEST_DATA
         TestOrcFile.test1.orc
         brotli_sample.txt.br
@@ -165,60 +149,13 @@ if (UNIX)
     find_file(VALGRIND_SUPPRESSION valgrind_suppressions.txt utils)
 endif ()
 
-if (LINUX)
-
-    # Group all arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
-        ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
-        ${ARROW_DOUBLECONVERSION_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOCPIC_LIB}
-        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZSTD_LIB})
-endif ()
-
-if (APPLE)
-    # Group all Arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
-        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_JEMALLOCPIC_LIB}
-        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZSTD_LIB})
-endif ()
-
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
-
     if ($ENV{ARROW_FROM_SOURCE})
         set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
     else ()
         set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_REGEX_LIB})
     endif ()
-    # Groups all Arrow dependencies.
-    set(ARROW_ALL_LIBS
-        ${ARROW_ARROW_LIB}
-        ${BOOST_ALL_LIBS}
-        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
-        ${ARROW_BZ2_LIB}
-        ${ARROW_DOUBLECONVERSION_LIB}
-        ${ARROW_EVENT_LIB} ${ARROW_EVENTCORE_LIB} ${ARROW_EVENTEXTRA_LIB}
-        ${ARROW_FLATBUFFERS_LIB}
-        ${ARROW_GFLAGS_LIB}
-        ${ARROW_GLOG_LIB}
-        ${ARROW_LZ4_LIB}
-        ${ARROW_SNAPPY_LIB}
-        ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
 endif ()
 
 message("libcmocka is located at " ${CMOCKA_LIB})
@@ -226,6 +163,7 @@ if (LINUX)
     message("libuuid.a is located at " ${UUID_LIB})
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
+
 if (LINUX)
     set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
             -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
@@ -251,6 +189,16 @@ if (WIN32)
                 Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
         set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
                 Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+    endif()
+endif()
+set(TESTLIB_OPTS_C_UNIT ${TESTLIB_OPTS_C})
+if (BUILD_SHARED_LIBS)
+    if (LINUX)
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient_dynamic.so)
+    elseif (APPLE)
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient_dynamic.dylib)
+    else()
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/snowflakeclient_dynamic.lib)
     endif()
 endif()
 
@@ -311,6 +259,69 @@ else()
         endif()
     ENDFOREACH ()
 
+    FOREACH (T ${TESTS_C})
+        add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            )
+        else()
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+            if (APPLE)
+                set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
+            endif()
+        endif()
+        target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
+        target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
+        add_test(${T}_dynamic ${T}_dynamic)
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}_dynamic
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T}_dynamic)
+          endif()
+        endif()
+    ENDFOREACH ()
+
+    FOREACH (T ${TESTS_C_UNIT})
+        add_executable(${T} ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            )
+            set_target_properties(
+		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+        else()
+            target_include_directories(
+                    ${T} PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+        endif()
+        target_link_libraries(${T} ${TESTLIB_OPTS_C_UNIT})
+        add_test(${T} ${T})
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T})
+          endif()
+        endif()
+    ENDFOREACH ()
 
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
