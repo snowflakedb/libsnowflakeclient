@@ -82,6 +82,8 @@ namespace Client
       void authenticate();
   private:
       typedef Snowflake::Client::Util::IBase64 Base64;
+      SF_CONNECT* m_connection;
+  };
 
   class AuthenticatorOKTA : public IAuthenticatorOKTA
   {

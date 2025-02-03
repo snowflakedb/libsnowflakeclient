@@ -798,7 +798,6 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->disable_console_login = SF_BOOLEAN_TRUE;
         sf->programmatic_access_token = NULL;
 
-
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
         sf->put_compress_level = SF_DEFAULT_PUT_COMPRESS_LEVEL;

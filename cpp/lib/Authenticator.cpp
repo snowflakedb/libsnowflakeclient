@@ -87,9 +87,9 @@ extern "C" {
       }
       if (AUTH_EXTERNALBROWSER == auth_type)
       {
-        conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-                              new Snowflake::Client::AuthenticatorExternalBrowser(conn));
-
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorExternalBrowser(conn));
+      }
       if (AUTH_OKTA == auth_type)
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
@@ -155,7 +155,6 @@ extern "C" {
         data = snowflake_cJSON_CreateObject();
         snowflake_cJSON_AddItemToObject(body, "data", data);
     }
-
     auto authenticator = getAuthenticatorType(conn->authenticator);
     if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
 

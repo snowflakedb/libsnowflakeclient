@@ -19,63 +19,6 @@ namespace IAuth
     class AuthErrorHandler
     {
     public:
-        AuthErrorHandler() : m_errMsg("") {};
-
-        virtual ~AuthErrorHandler() {};
-
-        const char* getErrorMessage();
-        bool isError();
-    protected:
-        std::string m_errMsg;
-    };
-
-    class IAuthWebServer : public AuthErrorHandler
-    {
-    public:
-        IAuthWebServer();
-
-        virtual ~IAuthWebServer();
-
-        virtual void start();
-        virtual void stop();
-        virtual int getPort();
-        virtual void startAccept();
-        virtual bool receive();
-        virtual std::string getSAMLToken();
-        virtual bool isConsentCacheIdToken();
-        virtual void setTimeout(int timeout);
-
-    protected:
-#ifdef _WIN32
-        SOCKET m_socket_descriptor; // socket
-        SOCKET m_socket_desc_web_client; // socket (client)
-#else
-        int m_socket_descriptor; // socket
-        int m_socket_desc_web_client; // socket (client)
-#endif
-
-        int m_port; // port to listen
-        std::string m_saml_token;
-        bool m_consent_cache_id_token;
-        std::string m_origin;
-        int m_timeout;
-
-        virtual void parseAndRespondOptionsRequest(std::string response);
-        virtual  void parseAndRespondPostRequest(std::string response);
-        virtual void parseAndRespondGetRequest(char** rest_mesg);
-        virtual void respond(std::string queryParameters);
-        virtual void respondJson(picojson::value& json);
-
-        std::vector<std::string> splitString(const std::string& s, char delimiter);
-        std::string unquote(std::string src);
-        std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
-
-    };
-  
-    /**
-     * Authenticator
-     */
-    class IAuthenticator
         AuthErrorHandler() {};
         virtual ~AuthErrorHandler() {};
 
@@ -85,10 +28,22 @@ namespace IAuth
         std::string m_errMsg;
     };
 
+#if defined(WIN32) || defined(_WIN64)
+    /**
+     * Winsock start and cleanup
+     */
+    class AuthWinSock : public AuthErrorHandler
+    {
+    public:
+        AuthWinSock();
+        ~AuthWinSock();
+    };
+#endif
+
     /**
      * Authenticator
      */
-    class IAuthenticator : public AuthErrorHandler
+    class IAuthenticator
     {
     public:
 
@@ -152,17 +107,76 @@ namespace IAuth
         int64 m_retryTimeout;
     };
 
-#if defined(WIN32) || defined(_WIN64)
-    /**
-     * Winsock start and cleanup
-     */
-    class AuthWinSock : public AuthErrorHandler
+    class IAuthenticatorOKTA : public IAuthenticator, public AuthErrorHandler
     {
     public:
-        AuthWinSock();
-        ~AuthWinSock();
+        IAuthenticatorOKTA() {};
+
+        virtual ~IAuthenticatorOKTA() {};
+
+        virtual void authenticate();
+
+        virtual void updateDataMap(jsonObject_t& dataMap);
+
+        IDPAuthenticator* m_idp;
+
+        /**
+         * Extract post back url from samel response. Input is in HTML format.
+        */
+        std::string extractPostBackUrlFromSamlResponse(std::string html);
+
+    protected:
+        //These fields should be definied in the child class.
+        std::string m_password;
+        std::string m_appID;
+        std::string m_appVersion;
+        bool m_disableSamlUrlCheck;
+
+        std::string oneTimeToken;
+        std::string m_samlResponse;
     };
+
+    class IAuthWebServer : public AuthErrorHandler
+    {
+    public:
+        IAuthWebServer();
+
+        virtual ~IAuthWebServer();
+
+        virtual void start();
+        virtual void stop();
+        virtual int getPort();
+        virtual void startAccept();
+        virtual bool receive();
+        virtual std::string getSAMLToken();
+        virtual bool isConsentCacheIdToken();
+        virtual void setTimeout(int timeout);
+
+    protected:
+#ifdef _WIN32
+        SOCKET m_socket_descriptor; // socket
+        SOCKET m_socket_desc_web_client; // socket (client)
+#else
+        int m_socket_descriptor; // socket
+        int m_socket_desc_web_client; // socket (client)
 #endif
+
+        int m_port; // port to listen
+        std::string m_saml_token;
+        bool m_consent_cache_id_token;
+        std::string m_origin;
+        int m_timeout;
+
+        virtual void parseAndRespondOptionsRequest(std::string response);
+        virtual  void parseAndRespondPostRequest(std::string response);
+        virtual void parseAndRespondGetRequest(char** rest_mesg);
+        virtual void respond(std::string queryParameters);
+        virtual void respondJson(picojson::value& json);
+
+        std::vector<std::string> splitString(const std::string& s, char delimiter);
+        std::string unquote(std::string src);
+        std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
+    };
 
     class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
     {
@@ -211,39 +225,10 @@ namespace IAuth
         bool m_disable_console_login;
         std::string m_origin;
         int64 m_browser_response_timeout;
-        
 
-  #ifdef __APPLE__
+#ifdef __APPLE__
         void openURL(const std::string& url_str);
-  #endif
-
-    class IAuthenticatorOKTA : public IAuthenticator
-    {
-    public:
-        IAuthenticatorOKTA() {};
-
-        virtual ~IAuthenticatorOKTA() {};
-
-        virtual void authenticate();
-
-        virtual void updateDataMap(jsonObject_t& dataMap);
-
-        IDPAuthenticator* m_idp;
-
-        /**
-         * Extract post back url from samel response. Input is in HTML format.
-        */
-        std::string extractPostBackUrlFromSamlResponse(std::string html);
-
-    protected:
-        //These fields should be definied in the child class.
-        std::string m_password;
-        std::string m_appID;
-        std::string m_appVersion;
-        bool m_disableSamlUrlCheck;
-
-        std::string oneTimeToken;
-        std::string m_samlResponse;
+#endif
     };
 } // namespace IAuth
 } // namespace Client
