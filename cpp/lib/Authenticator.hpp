@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #pragma once
@@ -15,46 +15,16 @@
 #include "snowflake/IJwt.hpp"
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
-#include "cJSON.h"
+#include "snowflake/SFURL.hpp"
+#include "../../lib/snowflake_util.h"
+#include "../include/snowflake/IAuth.hpp"
+#include "picojson.h"
 
 namespace Snowflake
 {
 namespace Client
 {
-  /**
-   * Authenticator
-   */
-  class IAuthenticator
-  {
-  public:
-
-    IAuthenticator() : m_renewTimeout(0)
-    {}
-
-    virtual ~IAuthenticator()
-    {}
-
-    virtual void authenticate()=0;
-
-    virtual void updateDataMap(cJSON * dataMap)=0;
-
-    // Retrieve authenticator renew timeout, return 0 if not available.
-    // When the authenticator renew timeout is available, the connection should
-    // renew the authentication (call renewDataMap) for each time the
-    // authenticator specific timeout exceeded within the entire login timeout.
-    int64 getAuthRenewTimeout()
-    {
-      return m_renewTimeout;
-    }
-
-    // Renew the autentication and update datamap.
-    // The default behavior is to call authenticate() and updateDataMap().
-    virtual void renewDataMap(cJSON * dataMap);
-
-  protected:
-    int64 m_renewTimeout;
-  };
-
+    using namespace Snowflake::Client::IAuth;
   /**
    * JWT Authenticator
    */
@@ -67,7 +37,7 @@ namespace Client
 
     void authenticate();
 
-    void updateDataMap(cJSON* dataMap);
+    void updateDataMap(jsonObject_t& dataMap);
 
   private:
     void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
@@ -87,6 +57,32 @@ namespace Client
     static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
+  class CIDPAuthenticator : public IDPAuthenticator
+  {
+  public:
+      CIDPAuthenticator(SF_CONNECT* conn);
+      ~CIDPAuthenticator();
+
+      // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
+      bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+      bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
+  private:
+      SF_CONNECT* m_connection;
+  };
+
+  class AuthenticatorExternalBrowser : public IAuthenticatorExternalBrowser
+  {
+  public:
+      AuthenticatorExternalBrowser(
+          SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr);
+
+      virtual ~AuthenticatorExternalBrowser();
+
+      void authenticate();
+  private:
+      typedef Snowflake::Client::Util::IBase64 Base64;
+      SF_CONNECT* m_connection;
+  };
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP
