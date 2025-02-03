@@ -21,6 +21,7 @@ then
     exit 0
   else
     echo "Warnings check failed. Check workflow summary to find out the details."
+    cat report.md
     exit 1
   fi
 fi
