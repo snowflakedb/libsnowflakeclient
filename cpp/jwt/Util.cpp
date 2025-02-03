@@ -22,8 +22,7 @@ std::vector<char> CJSONOperation::serialize(cJSON *root)
   if (json_str == nullptr) throw JwtException("Error serializing JSon object");
   size_t json_str_len = strlen(json_str.get());
 
-  // include the final '/0'
-  std::vector<char> result(json_str.get(), json_str.get() + json_str_len + 1);
+  std::vector<char> result(json_str.get(), json_str.get() + json_str_len);
 
   return result;
 }
