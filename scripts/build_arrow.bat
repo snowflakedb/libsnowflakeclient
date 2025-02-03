@@ -101,11 +101,21 @@ if %ERRORLEVEL% NEQ 0 goto :error
 msbuild INSTALL.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+if defined GITHUB_ACTIONS (
+    del %dependencydir%\*.zip
+    del %dependencydir%\*.gz
+)
+
 cd "%currdir%"
+
+echo === archiving the library
+call "%scriptdir%utils.bat" :zip_files arrow %arrow_version% "arrow arrow_deps"
+if %ERRORLEVEL% NEQ 0 goto :error
 
 goto :success
 
 :success
+cd "%currdir%"
 exit /b 0
 
 :error
