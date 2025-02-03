@@ -80,6 +80,9 @@ def parse_warnings(path: str) -> List[CompilerWarning]:
             result.append(w)
     return result
 
+def filter_dep_warnings(warnings: List[CompilerWarning]) -> List[CompilerWarning]:
+    return [w for w in warnings if "deps-build" not in w.file_path]
+
 def dump_warnings(warnings: List[CompilerWarning]) -> str:
     warnings_as_dict = [dataclasses.asdict(w) for w in warnings]
     return json.dumps(warnings_as_dict, indent=2)
@@ -146,6 +149,7 @@ parser.add_argument('--report', required=True)
 args = parser.parse_args()
 
 new_warnings = parse_warnings(args.build_log)
+new_warnings = filter_dep_warnings(new_warnings)
 old_warnings = load_warnings(read(args.load_warnings))
 generate_report(args.report, new_warnings, old_warnings)
 write(args.dump_warnings, dump_warnings(new_warnings))

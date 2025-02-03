@@ -20,7 +20,8 @@ then
     echo "Failures are ignored on master since there is no base branch to reference."
     exit 0
   else
-    echo "Warnings check failed. Check workflow summary to find out the details."
+    echo "Warnings check failed. Check workflow summary to see rendered report."
+    cat report.md
     exit 1
   fi
 fi
