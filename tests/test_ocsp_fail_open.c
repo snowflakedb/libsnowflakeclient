@@ -38,14 +38,17 @@ void setCacheFile(char *cache_file)
 #endif
 }
 
-void test_fail_open_is_default(void **unused) {
+void test_fail_open_is_default_mode(void **unused) {
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
-    assert_int_equal(sf->ocsp_fail_open, SF_BOOLEAN_TRUE);
+    sf_bool ocsp_fail_open = SF_BOOLEAN_FALSE;
+    snowflake_get_attribute(sf, SF_CON_OCSP_FAIL_OPEN, (void**)&ocsp_fail_open);
+    assert_int_equal(ocsp_fail_open, SF_BOOLEAN_TRUE);
     snowflake_term(sf);
 }
 
 void test_fail_open_revoked(void **unused) {
+    SF_UNUSED(unused);
     char cache_file[4096];
     setCacheFile(cache_file);
     remove(cache_file);
@@ -65,6 +68,7 @@ void test_fail_open_revoked(void **unused) {
 }
 
 void test_fail_close_timeout(void** unused) {
+    SF_UNUSED(unused);
     char cache_file[4096];
     setCacheFile(cache_file);
     remove(cache_file);
@@ -74,6 +78,8 @@ void test_fail_close_timeout(void** unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT* sf = setup_snowflake_connection();
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_TRUE);
+
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT* sferr = snowflake_error(sf);
@@ -85,6 +91,7 @@ void test_fail_close_timeout(void** unused) {
 }
 
 void test_fail_open_timeout(void** unused) {
+    SF_UNUSED(unused);
     char cache_file[4096];
     setCacheFile(cache_file);
     remove(cache_file);
