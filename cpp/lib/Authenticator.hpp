@@ -70,6 +70,7 @@ namespace Client
       SF_CONNECT* m_connection;
   };
 
+
   class AuthenticatorExternalBrowser : public IAuthenticatorExternalBrowser
   {
   public:
@@ -81,6 +82,19 @@ namespace Client
       void authenticate();
   private:
       typedef Snowflake::Client::Util::IBase64 Base64;
+
+  class AuthenticatorOKTA : public IAuthenticatorOKTA
+  {
+  public:
+      AuthenticatorOKTA(SF_CONNECT *conn);
+
+      ~AuthenticatorOKTA();
+
+      void authenticate();
+
+      void updateDataMap(jsonObject_t& dataMap);
+
+  private:
       SF_CONNECT* m_connection;
   };
 } // namespace Client

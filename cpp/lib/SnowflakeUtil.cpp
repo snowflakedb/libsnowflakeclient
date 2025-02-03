@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
+ */
+
 #include "../../lib/snowflake_util.h"
 #include "../include/snowflake/SFURL.hpp"
 
@@ -50,8 +54,6 @@ namespace Client
 				parsed_url1.host() == parsed_url2.host() &&
 				parsed_url1.port() == parsed_url2.port();
 		}
-
-
 	}
 } // namespace Client
 } // namespace Snowflake

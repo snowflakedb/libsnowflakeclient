@@ -67,7 +67,7 @@ extern "C" {
         return AUTH_PAT;
     }
 
-    return AUTH_UNSUPPORTED;
+    return AUTH_OKTA;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
@@ -89,6 +89,11 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorExternalBrowser(conn));
+
+      if (AUTH_OKTA == auth_type)
+      {
+        conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+                              new Snowflake::Client::AuthenticatorOKTA(conn));
       }
     }
     catch (...)
@@ -222,6 +227,7 @@ extern "C" {
     try
     {
       delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
+      conn->auth_object = nullptr;
     }
     catch (...)
     {
@@ -381,6 +387,43 @@ namespace Client
     return coded;
   }
 
+  AuthenticatorOKTA::AuthenticatorOKTA(
+      SF_CONNECT* connection) : m_connection(connection)
+  {
+      m_idp = new CIDPAuthenticator(connection);
+
+      m_password = m_connection->password;
+      m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
+      m_appID = m_connection->application_name;
+      m_appVersion = m_connection->application_version;
+  }
+
+  AuthenticatorOKTA::~AuthenticatorOKTA()
+  {
+      delete m_idp;
+  }
+
+  void AuthenticatorOKTA::authenticate()
+  {
+      IAuthenticatorOKTA::authenticate();
+      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
+      {
+          const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
+      }
+  }
+
+  void AuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
+  {
+      dataMap.erase("LOGIN_NAME");
+      dataMap.erase("PASSWORD");
+      dataMap.erase("EXT_AUTHN_DUO_METHOD");
+      dataMap.erase("AUTHENTICATOR");
+      dataMap.erase("TOKEN");
+
+      IAuthenticatorOKTA::updateDataMap(dataMap);
+  }
+
   CIDPAuthenticator::CIDPAuthenticator(SF_CONNECT* conn) : m_connection(conn)
   {
       m_account = m_connection->account;
@@ -418,7 +461,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf", "AuthenticatorOKTA",
+          CXX_LOG_TRACE("sf", "Authenticator",
               "post_curl_call",
               "Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header";
@@ -431,7 +474,7 @@ namespace Client
               &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
               &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
           {
-              CXX_LOG_INFO("sf", "AuthenticatorOKTA", "post_curl_call",
+              CXX_LOG_INFO("sf", "Authenticator", "post_curl_call",
                   "post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
               m_errMsg = "SFConnectionFailed: Fail to get one time token";
@@ -445,7 +488,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
+          CXX_LOG_WARN("sf", "Authenticator", "get_curl_call",
               "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
@@ -497,7 +540,7 @@ namespace Client
 
       if (ret)
       {
-          if (parseJSON)
+          if (parseJSON) 
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
                   raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
@@ -528,7 +571,7 @@ namespace Client
               {
                   cJSONtoPicoJson(resp_data, resp);
               }
-              else
+              else 
               {
                   rawData = buf.buffer;
               }

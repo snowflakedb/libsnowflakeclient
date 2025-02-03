@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <assert.h>
@@ -1246,6 +1246,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_DISABLE_CONSOLE_LOGIN:
             sf->disable_console_login = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            sf->disable_saml_url_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
             break;
@@ -1451,6 +1454,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_DISABLE_CONSOLE_LOGIN:
             *value = &sf->disable_console_login;
+            break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            *value = &sf->disable_saml_url_check;
             break;
         case SF_CON_PUT_TEMPDIR:
             *value = sf->put_temp_dir;

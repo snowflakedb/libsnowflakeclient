@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #ifndef SNOWFLAKECLIENT_IAUTH_HPP
@@ -9,7 +9,6 @@
 #include <snowflake/SFURL.hpp>
 #include "../../lib/snowflake_util.h"
 #include "snowflake/IBase64.hpp"
-
 
 namespace Snowflake
 {
@@ -72,10 +71,24 @@ namespace IAuth
         std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
 
     };
+  
     /**
      * Authenticator
      */
     class IAuthenticator
+        AuthErrorHandler() {};
+        virtual ~AuthErrorHandler() {};
+
+        bool isError();
+        const char* getErrorMessage();
+
+        std::string m_errMsg;
+    };
+
+    /**
+     * Authenticator
+     */
+    class IAuthenticator : public AuthErrorHandler
     {
     public:
 
@@ -105,7 +118,6 @@ namespace IAuth
     protected:
         int64 m_renewTimeout;
     };
-
 
     class IDPAuthenticator : public AuthErrorHandler
     {
@@ -205,6 +217,33 @@ namespace IAuth
         void openURL(const std::string& url_str);
   #endif
 
+    class IAuthenticatorOKTA : public IAuthenticator
+    {
+    public:
+        IAuthenticatorOKTA() {};
+
+        virtual ~IAuthenticatorOKTA() {};
+
+        virtual void authenticate();
+
+        virtual void updateDataMap(jsonObject_t& dataMap);
+
+        IDPAuthenticator* m_idp;
+
+        /**
+         * Extract post back url from samel response. Input is in HTML format.
+        */
+        std::string extractPostBackUrlFromSamlResponse(std::string html);
+
+    protected:
+        //These fields should be definied in the child class.
+        std::string m_password;
+        std::string m_appID;
+        std::string m_appVersion;
+        bool m_disableSamlUrlCheck;
+
+        std::string oneTimeToken;
+        std::string m_samlResponse;
     };
 } // namespace IAuth
 } // namespace Client
