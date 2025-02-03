@@ -31,6 +31,7 @@ set(SOURCE_FILES
         include/snowflake/logger.h
         include/snowflake/version.h
         include/snowflake/platform.h
+        include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -149,6 +150,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
+	include/snowflake/ClientConfigParser.hpp
         include/snowflake/BindUploader.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
@@ -173,6 +175,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
+	cpp/lib/ClientConfigParser.cpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
@@ -339,6 +342,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -354,6 +358,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
 endif()
@@ -368,6 +373,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
