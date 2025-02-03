@@ -7,6 +7,6 @@
 # [END AREA_COMPONENT_MAP]
 ### Data Platform: Ecosystem ###
 # [START AREA # Data Platform: Ecosystem]
-* @snowflakedb/Client 
+* @snowflakedb/snow-drivers-warsaw
 # [END AREA # Data Platform: Ecosystem]
 
