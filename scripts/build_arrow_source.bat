@@ -3,6 +3,11 @@
 :: GitHub repo: https://github.com/apache/arrow.git
 ::
 @echo off
+set arrow_src_version=15.0.0
+set arrow_build_version=6
+:: The full version number for dependency packaging/uploading/downloading
+set arrow_version=%arrow_src_version%.%arrow_build_version%
+
 call %*
 goto :EOF
 
