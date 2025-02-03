@@ -28,16 +28,6 @@ goto :EOF
         )
         goto :EOF
     )
-    if /I "%~1"=="VS14" (
-        if not "%VisualStudioVersion%"=="14.0" (
-            echo === setting up the Visual Studio 14 environments
-            call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-            :: installation of vs 14 on new jenkins nodes causes switching current directory - let's go back to workspace
-            set curdir=%WORKSPACE%
-            cd %curdir%
-        )
-        goto :EOF
-    )
     if not defined VisualStudioVersion (
         echo === ERROR: no VisualStudioVersion is set. %~1
         goto :error

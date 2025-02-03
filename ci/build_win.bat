@@ -25,7 +25,8 @@ set oob_build_script="%scriptdir%..\scripts\build_oob.bat"
 set aws_build_script="%scriptdir%..\scripts\build_awssdk.bat"
 set azure_build_script="%scriptdir%..\scripts\build_azuresdk.bat"
 set cmocka_build_script="%scriptdir%..\scripts\build_cmocka.bat"
-set arrow_build_script="%scriptdir%..\scripts\build_arrow.bat"
+set boost_build_script="%scriptdir%..\scripts\build_boost_source.bat"
+set arrow_build_script="%scriptdir%..\scripts\build_arrow_source.bat"
 set picojson_build_script="%scriptdir%..\scripts\build_picojson.bat"
 set libsnowflakeclient_build_script="%scriptdir%..\scripts\build_libsnowflakeclient.bat"
 
@@ -57,6 +58,8 @@ goto :EOF
     call :download_build_component azure "%azure_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component cmocka "%cmocka_build_script%" "%dynamic_runtime%"
+    if %ERRORLEVEL% NEQ 0 goto :error
+    call :download_build_component boost "%boost_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component arrow "%arrow_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
@@ -142,8 +145,6 @@ goto :EOF
 
     call %build_script% :get_version
     if defined JENKINS_URL (
-        :: Temporarily disable uploading of Arrow artifacts until we compile from source.
-        if "%component_name%"=="arrow" if not defined ARROW_FROM_SOURCE exit /b 0
         echo === uploading ...
         call %utils_script% :upload_to_sfc_jenkins %platform% %build_type% %vs_version% %component_name% %version%
         if !ERRORLEVEL! NEQ 0 goto :error

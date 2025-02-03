@@ -11,6 +11,11 @@ function usage() {
 }
 set -o pipefail
 
+export ARROW_SRC_VERSION=15.0.0
+export ARROW_BUILD_VERSION=6
+#The full version number for dependency packaging/uploading/downloading
+export ARROW_VERSION=${ARROW_SRC_VERSION}.${ARROW_BUILD_VERSION}
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
@@ -22,7 +27,7 @@ ARROW_BUILD_DIR=$DEPENDENCY_DIR/arrow
 ARROW_DEPS_BUILD_DIR=$DEPENDENCY_DIR/arrow_deps
 ARROW_CMAKE_BUILD_DIR=$ARROW_SOURCE_DIR/cpp/cmake-build
 
-ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread"
+ARROW_CXXFLAGS="-std=c++17 -O2 -fPIC -pthread -Wno-documentation"
 arrow_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     arrow_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
