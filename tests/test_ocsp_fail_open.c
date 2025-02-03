@@ -41,9 +41,10 @@ void setCacheFile(char *cache_file)
 void test_fail_open_is_default_mode(void **unused) {
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
-    sf_bool ocsp_fail_open = SF_BOOLEAN_FALSE;
-    snowflake_get_attribute(sf, SF_CON_OCSP_FAIL_OPEN, (void**)&ocsp_fail_open);
-    assert_int_equal(ocsp_fail_open, SF_BOOLEAN_TRUE);
+    sf_bool *ocsp_fail_open = NULL;
+    SF_STATUS ret = snowflake_get_attribute(sf, SF_CON_OCSP_FAIL_OPEN, (void**)&ocsp_fail_open);
+    assert_int_equal(ret, SF_STATUS_SUCCESS);
+    assert_int_equal(*ocsp_fail_open, SF_BOOLEAN_TRUE);
     snowflake_term(sf);
 }
 
