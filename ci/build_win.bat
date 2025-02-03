@@ -96,7 +96,7 @@ goto :EOF
             pushd deps-build\%arcdir%\%vsdir%\%build_type%
                 if !ERRORLEVEL! NEQ 0 goto :error
                 rd /s /q %component_name%
-                7z x "%curdir%\artifacts\%zip_file_name%"
+                7z x "%curdir%\artifacts\%zip_file_name%" -aos
             popd
         )
         if !ERRORLEVEL! NEQ 0 goto :error
@@ -125,7 +125,7 @@ goto :EOF
             pushd deps-build\%arcdir%\%vsdir%\%build_type%
                 if !ERRORLEVEL! NEQ 0 goto :error
                 rd /s /q %component_name%
-                7z x "%curdir%\artifacts\%zip_file_name%"
+                7z x "%curdir%\artifacts\%zip_file_name%" -aos
             popd
         )
     )
