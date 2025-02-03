@@ -37,9 +37,9 @@ call "%scriptdir%build_picojson.bat" :build %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_cmocka.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
-call "%scriptdir%build_boost_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+call "%scriptdir%build_boost.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
-call "%scriptdir%build_arrow_source.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+call "%scriptdir%build_arrow.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
