@@ -4,8 +4,6 @@
 
 #include "utils/test_setup.h"
 
-#define FAIL_OPEN_DEFAULT SF_BOOLEAN_TRUE
-
 void setCacheFile(char *cache_file)
 {
 #ifdef __linux__
@@ -40,6 +38,13 @@ void setCacheFile(char *cache_file)
 #endif
 }
 
+void test_fail_open_is_default(void **unused) {
+    SF_UNUSED(unused);
+    SF_CONNECT *sf = snowflake_init();
+    assert_int_equal(sf->ocsp_fail_open, SF_BOOLEAN_TRUE);
+    snowflake_term(sf);
+}
+
 void test_fail_open_revoked(void **unused) {
     char cache_file[4096];
     setCacheFile(cache_file);
@@ -49,13 +54,6 @@ void test_fail_open_revoked(void **unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT *sf = setup_snowflake_connection();
-
-    sf_bool value = SF_BOOLEAN_TRUE;
-    if (value != FAIL_OPEN_DEFAULT)
-    {
-        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
-    }
-
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT *sferr = snowflake_error(sf);
@@ -76,12 +74,6 @@ void test_fail_close_timeout(void** unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT* sf = setup_snowflake_connection();
-    sf_bool value = SF_BOOLEAN_FALSE;
-    if (value != FAIL_OPEN_DEFAULT)
-    {
-        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
-    }
-
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT* sferr = snowflake_error(sf);
@@ -102,12 +94,6 @@ void test_fail_open_timeout(void** unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT* sf = setup_snowflake_connection();
-    sf_bool value = SF_BOOLEAN_TRUE;
-    if (value != FAIL_OPEN_DEFAULT)
-    {
-        snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
-    }
-
     SF_STATUS ret = snowflake_connect(sf);
     if (ret != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
@@ -119,6 +105,7 @@ void test_fail_open_timeout(void** unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_fail_open_is_default),
         cmocka_unit_test(test_fail_open_revoked),
         cmocka_unit_test(test_fail_close_timeout),
         cmocka_unit_test(test_fail_open_timeout),
