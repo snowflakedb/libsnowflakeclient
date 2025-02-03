@@ -12,7 +12,7 @@
  * Test auth connection when the token was not provided.
  */
 void test_pat_with_no_token(void **unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -32,7 +32,7 @@ void test_pat_with_no_token(void **unused) {
  * Test the request body with pat connection.
  */
 void test_json_data_in_pat(void **unused) {
-    UNUSED(unused);
+    SF_UNUSED(unused);
     SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
