@@ -4,6 +4,11 @@
 #
 cmake_minimum_required(VERSION 3.17)
 project(snowflakeclient)
+
+option(BUILD_TESTS "True if build tests" on)
+option(MOCK "True if mock should be used" off)
+option(ARROW_FROM_SOURCE "Build Apache Arrow library from source" on)
+
 include(cmake/platform.cmake)
 include(cmake/flags.cmake)
 
@@ -13,8 +18,6 @@ enable_testing()
 
 add_compile_definitions(LOG_USE_COLOR)
 
-option(BUILD_TESTS "True if build tests" on)
-option(MOCK "True if mock should be used" off)
 set(OPENSSL_VERSION_NUMBER  0x11100000L)
 
 # Developers can uncomment this to enable mock builds on their local VMs
@@ -212,7 +215,7 @@ if (UNIX)
     find_library(BOOST_REGEX_LIB libboost_regex.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_SYSTEM_LIB libboost_system.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(ARROW_JEMALLOCPIC_LIB libjemalloc_pic.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
-    if ($ENV{ARROW_FROM_SOURCE})
+    if (ARROW_FROM_SOURCE)
     else()
         find_library(ARROW_FLATBUFFERS_LIB libflatbuffers.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(ARROW_GFLAGS_LIB libgflags.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -274,7 +277,7 @@ if (WIN32)
     find_library(AWS_C_S3_LIB aws-c-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_SDKUTILS_LIB aws-c-sdkutils.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AZURE_STORAGE_LITE_LIB azure-storage-lite.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
-	if ($ENV{ARROW_FROM_SOURCE})
+	if (ARROW_FROM_SOURCE)
         find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_REGEX_LIB libboost_regex.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_SYSTEM_LIB libboost_system.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -291,7 +294,7 @@ if (WIN32)
     endif()
     # No arrow on Win-32bit
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-        if ($ENV{ARROW_FROM_SOURCE})
+        if (ARROW_FROM_SOURCE)
             find_library(ARROW_ARROW_LIB arrow_static.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/lib/ REQUIRED NO_DEFAULT_PATH)
         else()
             find_library(ARROW_ARROW_LIB arrow.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/arrow/lib/ REQUIRED NO_DEFAULT_PATH)

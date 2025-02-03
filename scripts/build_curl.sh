@@ -17,7 +17,7 @@ CURL_BUILD_VERSION=4
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
+source $DIR/_init.sh $@
 source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0

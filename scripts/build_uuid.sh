@@ -18,7 +18,7 @@ UUID_BUILD_VERSION=5
 UUID_VERSION=$UUID_SRC_VERSION.$UUID_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/_init.sh
+source $DIR/_init.sh $@
 source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $UUID_VERSION && exit 0
 

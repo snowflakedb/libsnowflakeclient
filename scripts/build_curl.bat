@@ -59,9 +59,6 @@ if "%vs_version%"=="VS16" (
 if "%vs_version%"=="VS15" (
     set vc_version=15
 )
-if "%vs_version%"=="VS14" (
-    set vc_version=14
-)
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 

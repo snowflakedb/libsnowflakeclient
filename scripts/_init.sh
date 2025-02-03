@@ -105,15 +105,6 @@ fi
 
 export GCCVERSION="$($GCC --version | grep ^gcc | sed 's/^.* //g')"
 
-# Moving linux build to centos7 so ARROW_FROM_SOURCE should always
-# be turned on.
-# Keep ARROW_FROM_SOURCE for now in case we need to
-# disable it for some reason. Eventually will remove it when the
-# build on centos7 is stable.
-if [[ -z "$ARROW_FROM_SOURCE" ]]; then
-    export ARROW_FROM_SOURCE=1
-fi
-
 if [[ "$PLATFORM" == "darwin" ]]; then
     export CC=clang
     export CXX=clang++
@@ -143,6 +134,7 @@ export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
 export GET_VERSION=
 target=Release
+OPTIND=1
 while getopts ":hvpt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;

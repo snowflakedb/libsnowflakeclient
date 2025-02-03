@@ -19,9 +19,7 @@ timestamps {
       def jobs = [
         'Linux' : { build job: 'LibSfClient-Linux-Release', parameters: params },
         'Linux-aarch64' : { build job: 'LibSfClient-Linux-aarch64-Release', parameters: params },
-        'Win32-VS14' : { build job: 'LibSfClient-Win32-VS14-Release', parameters: params },
         'Win32-VS17' : { build job: 'LibSfClient-Win32-VS17-Release', parameters: params },
-        'Win64-VS14' : { build job: 'LibSfClient-Win64-VS14-Release', parameters: params },
         'Win64-VS17' : { build job: 'LibSfClient-Win64-VS17-Release', parameters: params },
         'Macaarch64' : { build job: 'LibSfClient-Macaarch64-Universal-Release', parameters: params }
       ]
