@@ -131,18 +131,19 @@ namespace Client
     CFDictionaryRef extract_query = CFDictionaryCreate(kCFAllocatorDefault, (const void **)keys,
                                                        (const void **)values, 4, NULL, NULL);
     OSStatus result = SecItemDelete(extract_query);
-    if (result != errSecSuccess)
+    switch (result)
     {
-      CXX_LOG_ERROR("Failed to remove secure token");
-      return SecureStorageStatus::Error;
+      case errSecSuccess:
+        CXX_LOG_DEBUG("Successfully removed secure token");
+        break;
+      case errSecItemNotFound:
+        CXX_LOG_WARN("Failed to remove token: not found.")
+        break;
+      default:
+        CXX_LOG_ERROR("Failed to remove secure token, %d", result);
+        return SecureStorageStatus::Error;
     }
 
-    if (result != errSecItemNotFound)
-    {
-      CXX_LOG_WARN("Failed to remove token: not found.")
-    }
-
-    CXX_LOG_DEBUG("Successfully removed secure token");
     return SecureStorageStatus::Success;
   }
 }
