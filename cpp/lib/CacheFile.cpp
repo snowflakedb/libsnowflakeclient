@@ -3,27 +3,25 @@
  * Copyright (c) 2025 Snowflake Computing
  */
 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <boost/filesystem.hpp>
-
-#include "picojson.h"
-
 #include "CacheFile.hpp"
-#include "snowflake/platform.h"
-#include "../logger/SFLogger.hpp"
-#include "../util/Sha256.hpp"
-#include "snowflake/SecureStorage.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <sys/stat.h>
 #endif
 
-namespace Snowflake {
+#include <fstream>
+#include <string>
+#include <sstream>
 
-namespace Client {
+#include <picojson.h>
+#include <boost/filesystem.hpp>
+
+#include "snowflake/platform.h"
+#include "../logger/SFLogger.hpp"
+#include "../util/Sha256.hpp"
+
+namespace {
+  using namespace Snowflake::Client;
   const char* CREDENTIAL_FILE_NAME = "credential_cache_v1.json";
 
   bool mkdirIfNotExists(const std::string& dir)
@@ -58,6 +56,47 @@ namespace Client {
     return std::string(root);
   }
 
+  void ensureObject(picojson::value &val)
+  {
+    if (!val.is<picojson::object>())
+    {
+      val = picojson::value(picojson::object());
+    }
+  }
+
+  picojson::object& getTokens(picojson::value& cache)
+  {
+    ensureObject(cache);
+    auto &obj = cache.get<picojson::object>();
+    auto pair = obj.emplace("tokens", picojson::value(picojson::object()));
+    auto& tokens = pair.first->second;
+    ensureObject(tokens);
+    return tokens.get<picojson::object>();
+  }
+
+#if defined(__linux__) || defined(__APPLE__)
+  bool ensurePermissions(const std::string& path, mode_t mode)
+  {
+    if (chmod(path.c_str(), mode) == -1)
+    {
+      CXX_LOG_ERROR("Cannot ensure permissions. chmod(%s, %o) failed with errno=%d", path.c_str(), mode, errno);
+      return false;
+    }
+
+    return true;
+  }
+#else
+  bool ensurePermissions(const std::string& path, unsigned mode)
+  {
+    CXX_LOG_ERROR("Cannot ensure permissions on current platform");
+    return false;
+  }
+#endif
+}
+
+namespace Snowflake {
+
+namespace Client {
   boost::optional<std::string> getCacheDir(const std::string& envVar, const std::vector<std::string>& subPathSegments)
   {
 #ifdef __linux__
@@ -128,30 +167,15 @@ namespace Client {
 #endif
   }
 
-  boost::optional<std::string> getSfTemporaryCacheDir()
-  {
-    return getCacheDir("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", {});
-  }
-
-  boost::optional<std::string> getXdgCacheDir()
-  {
-    return getCacheDir("XDG_CACHE_HOME", {"snowflake"});
-  }
-
-  boost::optional<std::string> getHomeCacheDir()
-  {
-    return getCacheDir("HOME", {".cache", "snowflake"});
-  }
-
   boost::optional<std::string> getCredentialFilePath()
   {
     std::vector<std::function<boost::optional<std::string>()>> lookupFunctions =
     {
-        getSfTemporaryCacheDir,
+        []() { return getCacheDir("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", {}); },
 #ifdef __linux__
-        getXdgCacheDir,
+        [](){ return getCacheDir("XDG_CACHE_HOME", {"snowflake"}); },
 #endif
-        getHomeCacheDir
+        [](){ return getCacheDir("HOME", {".cache", "snowflake"}); },
     };
 
     for (const auto& lf: lookupFunctions) {
@@ -166,31 +190,6 @@ namespace Client {
 
     return {};
   };
-
-  boost::optional<std::string> credItemStr(const SecureStorageKey &key)
-  {
-    std::string plainTextKey = key.host + ":" + key.user + ":"  + keyTypeToString(key.type);
-    return sha256(plainTextKey);
-  }
-
-  void ensureObject(picojson::value &val)
-  {
-    if (!val.is<picojson::object>())
-    {
-      val = picojson::value(picojson::object());
-    }
-  }
-
-  picojson::object& getTokens(picojson::value& cache)
-  {
-    ensureObject(cache);
-    auto &obj = cache.get<picojson::object>();
-    auto pair = obj.emplace("tokens", picojson::value(picojson::object()));
-    auto& tokens = pair.first->second;
-    ensureObject(tokens);
-    return tokens.get<picojson::object>();
-  }
-
 
   std::string readFile(const std::string &path, picojson::value &result) {
     if (!boost::filesystem::exists(path))
@@ -212,25 +211,6 @@ namespace Client {
     }
     return {};
   }
-
-#if defined(__linux__) || defined(__APPLE__)
-  bool ensurePermissions(const std::string& path, mode_t mode)
-  {
-    if (chmod(path.c_str(), mode) == -1)
-    {
-      CXX_LOG_ERROR("Cannot ensure permissions. chmod(%s, %o) failed with errno=%d", path.c_str(), mode, errno);
-      return false;
-    }
-
-    return true;
-  }
-#else
-  bool ensurePermissions(const std::string& path, unsigned mode)
-  {
-    CXX_LOG_ERROR("Cannot ensure permissions on current platform");
-    return false;
-  }
-#endif
 
   std::string writeFile(const std::string &path, const picojson::value &result) {
     std::ofstream cacheFile(path, std::ios_base::trunc);

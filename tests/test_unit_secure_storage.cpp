@@ -3,13 +3,15 @@
  * Copyright (c) 2025 Snowflake Computing
  */
 
-#include <boost/filesystem.hpp>
 #include <iostream>
 
-#include "snowflake/SecureStorage.hpp"
-#include "utils/test_setup.h"
-#include "lib/CacheFile.hpp"
 #include <boost/optional.hpp>
+#include <boost/filesystem.hpp>
+
+#include "snowflake/SecureStorage.hpp"
+#include "lib/CacheFile.hpp"
+
+#include "utils/test_setup.h"
 
 class EnvOverride
 {

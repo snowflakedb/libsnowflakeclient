@@ -7,18 +7,17 @@
 
 #include "snowflake/SecureStorage.hpp"
 
-#include "../logger/SFLogger.hpp"
-
-#include "CoreFoundation/CoreFoundation.h"
-#include "Security/Security.h"
-
 #include <string>
 #include <sstream>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <Security/Security.h>
+
+#include "../logger/SFLogger.hpp"
 
 #define MAX_TOKEN_LEN 1024
 #define COLON_CHAR_LENGTH 1
 #define NULL_CHAR_LENGTH 1
-
 
 namespace Snowflake
 {

@@ -5,15 +5,17 @@
 
 #ifdef _WIN32
 
-#include "../logger//SFLogger.hpp"
-#include "windows.h"
-#include "wincred.h"
-
 #include "snowflake/SecureStorage.hpp"
+
 #include <vector>
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+
+#include <windows.h>
+#include <wincred.h>
+
+#include "../logger/SFLogger.hpp"
 
 #define MAX_TOKEN_LEN 1024
 #define DRIVER_NAME "SNOWFLAKE_ODBC_DRIVER"

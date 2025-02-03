@@ -6,18 +6,17 @@
 #ifdef __linux__
 
 #include "snowflake/SecureStorage.hpp"
+
 #include <cstring>
-#include <sstream>
 #include <map>
+#include <string>
 
-#include "picojson.h"
-
+#include <picojson.h>
 
 #include "../lib/CacheFile.hpp"
 #include "../logger/SFLogger.hpp"
 #include "../platform/FileLock.hpp"
 
-#include <string>
 
 namespace Snowflake {
 

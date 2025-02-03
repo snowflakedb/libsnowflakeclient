@@ -7,8 +7,8 @@
 #define PROJECT_SECURESTORAGE_IMPL_HPP
 
 #include <string>
-#include "snowflake/secure_storage.h"
 
+#include "snowflake/secure_storage.h"
 
 namespace Snowflake {
 

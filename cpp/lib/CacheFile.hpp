@@ -3,11 +3,9 @@
 
 #include <string>
 #include <fstream>
+
 #include <boost/optional.hpp>
-
-#include "picojson.h"
-
-#include "snowflake/SecureStorage.hpp"
+#include <picojson.h>
 
 namespace Snowflake {
 

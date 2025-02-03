@@ -4,8 +4,10 @@
  */
 
 #include "snowflake/SecureStorage.hpp"
-#include "../util/Sha256.hpp"
+
 #include <sstream>
+
+#include "../util/Sha256.hpp"
 
 namespace Snowflake {
 
