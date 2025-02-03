@@ -58,149 +58,89 @@ namespace Client {
     return std::string(root);
   }
 
-  boost::optional<std::string> getSfTemporaryCacheDir()
+  boost::optional<std::string> getCacheDir(const std::string& envVar, const std::vector<std::string>& subPathSegments)
   {
 #ifdef __linux__
-    auto SF_TEMPORARY_CREDENTIAL_CACHE_DIR_OPT = getEnv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR");
-    if (!SF_TEMPORARY_CREDENTIAL_CACHE_DIR_OPT)
+    auto envVarValueOpt = getEnv(envVar);
+    if (!envVarValueOpt)
     {
       return {};
     }
 
-    const std::string& SF_TEMPORARY_CREDENTIAL_CACHE_DIR = SF_TEMPORARY_CREDENTIAL_CACHE_DIR_OPT.get();
+    const std::string& envVarValue = envVarValueOpt.get();
 
     struct stat s = {};
-    int err = stat(SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str(), &s);
+    int err = stat(envVarValue.c_str(), &s);
 
     if (err != 0)
     {
-      CXX_LOG_INFO("Failed to stat SF_TEMPORARY_CREDENTIAL_CACHE_DIR=%s, errno=%d. Skipping it in cache file location lookup.", SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str(), errno);
+      CXX_LOG_INFO("Failed to stat %s=%s, errno=%d. Skipping it in cache file location lookup.", envVar.c_str(), envVarValue.c_str(), errno);
       return {};
     }
 
     if (!S_ISDIR(s.st_mode))
     {
-      CXX_LOG_INFO("SF_TEMPORARY_CREDENTIAL_CACHE_DIR=%s is not a directory. Skipping it in cache file location lookup.", SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str());
+      CXX_LOG_INFO("%s=%s is not a directory. Skipping it in cache file location lookup.", envVar.c_str(), envVarValue.c_str());
       return {};
+    }
+
+    auto cacheDir = envVarValue;
+    for (const auto& segment: subPathSegments)
+    {
+      cacheDir.append(PATH_SEP + segment);
+      if (!mkdirIfNotExists(cacheDir))
+      {
+        CXX_LOG_INFO("Could not create cache dir=%s. Skipping it in cache file location lookup.", cacheDir.c_str());
+        return {};
+      }
+    }
+
+    if (!subPathSegments.empty())
+    {
+      err = stat(cacheDir.c_str(), &s);
+      if (err != 0)
+      {
+        CXX_LOG_INFO("Failed to stat %s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
+        return {};
+      }
     }
 
     if (s.st_uid != geteuid())
     {
-      CXX_LOG_INFO("SF_TEMPORARY_CREDENTIAL_CACHE_DIR=%s is not owned by current user. Skipping it in cache file location lookup.", SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str());
+      CXX_LOG_INFO("%s=%s is not owned by current user. Skipping it in cache file location lookup.", envVar.c_str(), envVarValue.c_str());
       return {};
     }
 
     unsigned permissions = s.st_mode & 0777;
     if (permissions != 0700)
     {
-      CXX_LOG_INFO("Incorrect permissions=%o for SF_TEMPORARY_CREDENTIAL_CACHE_DIR=%s. Changing permissions to 700.", permissions, SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str())
-      if (chmod(SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str(), 0700) != 0)
+      CXX_LOG_INFO("Incorrect permissions=%o for cache dir %s. Changing permissions to 700.", permissions, cacheDir.c_str())
+      if (chmod(cacheDir.c_str(), 0700) != 0)
       {
-        CXX_LOG_WARN("Failed to change permissions for a file SF_TEMPORARY_CREDENTIAL_CACHE_DIR=%s, errno=%d. Skipping it in cache file location lookup.", SF_TEMPORARY_CREDENTIAL_CACHE_DIR.c_str(), errno);
+        CXX_LOG_WARN("Failed to change permissions for a cache dir %s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
         return {};
       }
     }
-    return SF_TEMPORARY_CREDENTIAL_CACHE_DIR;
+    return cacheDir;
 #else
     CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
     return {};
 #endif
+  }
+
+  boost::optional<std::string> getSfTemporaryCacheDir()
+  {
+    return getCacheDir("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", {});
   }
 
   boost::optional<std::string> getXdgCacheDir()
   {
-#ifdef __linux__
-    auto XDG_CACHE_HOME_OPT = getEnv("XDG_CACHE_HOME");
-    if (!XDG_CACHE_HOME_OPT)
-    {
-      return {};
-    }
-    const std::string& XDG_CACHE_HOME = XDG_CACHE_HOME_OPT.get();
-
-    struct stat s = {};
-    int err = stat(XDG_CACHE_HOME.c_str(), &s);
-
-    if (err != 0)
-    {
-      CXX_LOG_INFO("Failed to stat XDG_CACHE_HOME=%s, errno=%d. Skipping it in cache file location lookup.", XDG_CACHE_HOME.c_str(), errno);
-      return {};
-    }
-
-    if (!S_ISDIR(s.st_mode))
-    {
-      CXX_LOG_INFO("XDG_CACHE_HOME=%s is not a directory. Skipping it in cache file location lookup.", XDG_CACHE_HOME.c_str());
-      return {};
-    }
-
-    auto cacheDir = XDG_CACHE_HOME + PATH_SEP + "snowflake";
-    if (!mkdirIfNotExists(cacheDir))
-    {
-      CXX_LOG_INFO("Could not create 'snowflake' directory in XDG_CACHE_HOME=%s. Skipping it in cache file location lookup.", XDG_CACHE_HOME.c_str());
-      return {};
-    }
-
-    if (chmod(cacheDir.c_str(), 0700) != 0)
-    {
-      CXX_LOG_INFO("Failed to set permissions on directory=%s, errno=%d. Skipping it in cache file location lookup.", XDG_CACHE_HOME.c_str(), errno);
-      return {};
-    }
-
-    return cacheDir;
-#else
-    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
-    return {};
-#endif
+    return getCacheDir("XDG_CACHE_HOME", {"snowflake"});
   }
 
   boost::optional<std::string> getHomeCacheDir()
   {
-#ifdef __linux__
-    auto HOME_OPT = getEnv("HOME");
-    if (!HOME_OPT)
-    {
-      return {};
-    }
-    const std::string& HOME = HOME_OPT.get();
-
-    struct stat s = {};
-    int err = stat(HOME.c_str(), &s);
-
-    if (err != 0)
-    {
-      CXX_LOG_INFO("Failed to stat HOME=%s, errno=%d. Skipping it in cache file location lookup.", HOME.c_str(), errno);
-      return {};
-    }
-
-    if (!S_ISDIR(s.st_mode))
-    {
-      CXX_LOG_INFO("HOME=%s is not a directory. Skipping it in cache file location lookup.", HOME.c_str());
-      return {};
-    }
-
-    std::vector<std::string> segments = {".cache", "snowflake"};
-
-    auto cacheDir = HOME;
-    for (const auto& segment: segments)
-    {
-      cacheDir.append(PATH_SEP + segment);
-      if (!mkdirIfNotExists(cacheDir))
-      {
-        CXX_LOG_INFO("Could not create cache dir=%s in HOME=%s. Skipping it in cache file location lookup.", cacheDir.c_str(), HOME.c_str());
-        return {};
-      }
-    }
-
-    if (chmod(cacheDir.c_str(), 0700) != 0)
-    {
-      CXX_LOG_INFO("Failed to set permissions on directory=%s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
-      return {};
-    }
-
-    return cacheDir;
-#else
-    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
-    return {};
-#endif
+    return getCacheDir("HOME", {".cache", "snowflake"});
   }
 
   boost::optional<std::string> getCredentialFilePath()
@@ -308,39 +248,21 @@ namespace Client {
     return {};
   }
 
-  void cacheFileUpdate(picojson::value &cache, const SecureStorageKey &key, const std::string &credential)
+  void cacheFileUpdate(picojson::value &cache, const std::string &key, const std::string &credential)
   {
     picojson::object& tokens = getTokens(cache);
-    auto keyStrOpt = credItemStr(key);
-    if (!keyStrOpt)
-    {
-      CXX_LOG_ERROR("Failed to create credential key, cache update failed.");
-      return;
-    }
-    tokens.emplace(keyStrOpt.get(), credential);
+    tokens.emplace(key, credential);
   }
 
-  void cacheFileRemove(picojson::value &cache, const SecureStorageKey &key)
+  void cacheFileRemove(picojson::value &cache, const std::string &key)
   {
     picojson::object& tokens = getTokens(cache);
-    auto keyStrOpt = credItemStr(key);
-    if (!keyStrOpt)
-    {
-      CXX_LOG_ERROR("Failed to create credential key, cache remove failed.");
-      return;
-    }
-    tokens.erase(keyStrOpt.get());
+    tokens.erase(key);
   }
 
-  boost::optional<std::string> cacheFileGet(picojson::value &cache, const SecureStorageKey &key) {
+  boost::optional<std::string> cacheFileGet(picojson::value &cache, const std::string &key) {
     picojson::object& tokens = getTokens(cache);
-    auto keyStrOpt = credItemStr(key);
-    if (!keyStrOpt)
-    {
-      CXX_LOG_ERROR("Failed to create credential key, cache get failed.");
-      return {};
-    }
-    auto it = tokens.find(keyStrOpt.get());
+    auto it = tokens.find(key);
 
     if (it == tokens.end())
     {

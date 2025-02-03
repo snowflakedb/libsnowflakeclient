@@ -17,12 +17,7 @@ std::string SecureStorage::convertTarget(const SecureStorageKey& key)
     ss << key.host << ":" << key.user << ":" << keyTypeToString(key.type);
     auto plain_text = ss.str();
     auto sha = sha256(ss.str());
-
-    if (sha) {
-      return sha.get();
-    }
-
-    return plain_text;
+    return sha.get();
   }
 
 }

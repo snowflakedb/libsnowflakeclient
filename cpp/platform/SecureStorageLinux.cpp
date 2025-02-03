@@ -48,7 +48,7 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    cacheFileUpdate(contents, key, token);
+    cacheFileUpdate(contents, convertTarget(key), token);
 
     error = writeFile(path, contents);
     if (!error.empty()) {
@@ -85,7 +85,7 @@ namespace Client {
     }
 
     std::string xd = contents.serialize();
-    auto tokenOpt = cacheFileGet(contents, key);
+    auto tokenOpt = cacheFileGet(contents, convertTarget(key));
     if (!tokenOpt)
     {
       return SecureStorageStatus::NotFound;
@@ -119,7 +119,7 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    cacheFileRemove(contents, key);
+    cacheFileRemove(contents, convertTarget(key));
 
     error = writeFile(path, contents);
     if (!error.empty()) {

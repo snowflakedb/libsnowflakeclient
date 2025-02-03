@@ -8,6 +8,7 @@
 
 #include "snowflake/SecureStorage.hpp"
 #include "utils/test_setup.h"
+#include "lib/CacheFile.hpp"
 #include <boost/optional.hpp>
 
 class EnvOverride
@@ -90,6 +91,55 @@ void test_secure_storage_simple(void **)
 
   assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
+}
+
+void test_secure_storage_malformed_cache(void **)
+{
+  remove_file_if_exists(CACHE_FILENAME);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
+
+  std::string token = "example_token";
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
+  assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
+  assert_permissions(".", boost::filesystem::owner_all);
+
+  {
+    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    assert_true(fs.is_open());
+    fs << "[]";
+  }
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
+
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
+
+  {
+    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    assert_true(fs.is_open());
+    fs << "{]";
+  }
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
+
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
+
+  {
+    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    assert_true(fs.is_open());
+    fs << "{ \"random field\": []}";
+  }
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
+
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(retrievedToken == token);
 }
 
 void test_secure_storage_two_keys(void **)
@@ -218,6 +268,23 @@ void test_secure_storage_c_api(void **)
   secure_storage_term(ss);
 }
 
+void test_get_cache_dir_bad_path(void **)
+{
+  EnvOverride override("ENV_VAR", "fakepath");
+  assert_false(getCacheDir("ENV_VAR", {}).is_initialized());
+}
+
+void test_get_cache_dir_not_a_dir(void **)
+{
+  EnvOverride override("ENV_VAR", "file");
+  std::ofstream file("file", std::ios_base::trunc);
+  assert_true(file.is_open());
+  file << "contents";
+  file.close();
+  assert_false(getCacheDir("ENV_VAR", {}).is_initialized());
+  boost::filesystem::remove("file");
+}
+
 int main(void) {
   /* Testing only file based credential cache, available on linux */
 #ifndef __linux__
@@ -225,12 +292,15 @@ int main(void) {
 #endif
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_secure_storage_simple),
+      cmocka_unit_test(test_secure_storage_malformed_cache),
       cmocka_unit_test(test_secure_storage_two_keys),
       cmocka_unit_test(test_secure_storage_xdg_cache_home),
       cmocka_unit_test(test_secure_storage_home_dir),
       cmocka_unit_test(test_secure_storage_c_api),
       cmocka_unit_test(test_secure_storage_fails_to_lock),
-      cmocka_unit_test(test_secure_storage_fails_to_find_cache_path)
+      cmocka_unit_test(test_secure_storage_fails_to_find_cache_path),
+      cmocka_unit_test(test_get_cache_dir_bad_path),
+      cmocka_unit_test(test_get_cache_dir_not_a_dir)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
