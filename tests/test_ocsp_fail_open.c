@@ -112,7 +112,7 @@ void test_fail_open_timeout(void** unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_fail_open_is_default),
+        cmocka_unit_test(test_fail_open_is_default_mode),
         cmocka_unit_test(test_fail_open_revoked),
         cmocka_unit_test(test_fail_close_timeout),
         cmocka_unit_test(test_fail_open_timeout),
