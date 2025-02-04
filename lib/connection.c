@@ -94,7 +94,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 1
             );
 
-            // TODO Enable token_cache
+            // SNOW-715510: TODO Enable token_cache
 /*
             if (sf->token_cache == NULL) {
                 sf->token_cache = cred_cache_init();

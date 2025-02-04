@@ -55,6 +55,7 @@ namespace Client {
       return SecureStorageStatus::Error;
     }
 
+    CXX_LOG_DEBUG("Successfully stored token.");
     return SecureStorageStatus::Success;
   }
 
@@ -83,13 +84,14 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    std::string xd = contents.serialize();
     auto tokenOpt = cacheFileGet(contents, convertTarget(key));
     if (!tokenOpt)
     {
       return SecureStorageStatus::NotFound;
     }
     token = tokenOpt.get();
+
+    CXX_LOG_DEBUG("Successfully retrieved token.");
     return SecureStorageStatus::Success;
   }
 
@@ -125,6 +127,8 @@ namespace Client {
       CXX_LOG_ERROR("Failed to write file(path=%s). Error: %s", path.c_str(), error.c_str());
       return SecureStorageStatus::Error;
     }
+
+    CXX_LOG_DEBUG("Successfully removed token.");
     return SecureStorageStatus::Success;
   }
 }

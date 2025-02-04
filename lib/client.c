@@ -848,7 +848,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
-    // TODO Enable token cache
+    // SNOW-715510: TODO Enable token cache
 /*
     cred_cache_term(sf->token_cache);
 */
@@ -1031,7 +1031,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 goto cleanup;
             }
 
-            // TODO Enable token cache
+            // SNOW-715510: TODO Enable token cache
 /*
             char* mfa_token = NULL;
             if (json_copy_string(&mfa_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {

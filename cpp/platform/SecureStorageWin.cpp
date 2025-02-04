@@ -47,7 +47,7 @@ namespace Client
     }
     else
     {
-      CXX_LOG_DEBUG("Successfully stored id token");
+      CXX_LOG_DEBUG("Successfully stored token");
       return SecureStorageStatus::Success;
     }
   }
@@ -79,7 +79,7 @@ namespace Client
         std::back_insert_iterator<std::string>(token)
     );
 
-    CXX_LOG_DEBUG("Copied token");
+    CXX_LOG_DEBUG("Successfully retrieved token.");
   
     CredFree(retcreds);
     return SecureStorageStatus::Success;
@@ -94,12 +94,9 @@ namespace Client
     {
       return SecureStorageStatus::Error;
     }
-    else
-    {
-      return SecureStorageStatus::Success;
-    }
 
     CXX_LOG_DEBUG("Successfully removed id token");
+    return SecureStorageStatus::Success;
   }
 }
 
