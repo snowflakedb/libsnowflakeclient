@@ -70,6 +70,21 @@ namespace Client
       SF_CONNECT* m_connection;
   };
 
+
+  class AuthenticatorExternalBrowser : public IAuthenticatorExternalBrowser
+  {
+  public:
+      AuthenticatorExternalBrowser(
+          SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr);
+
+      virtual ~AuthenticatorExternalBrowser();
+
+      void authenticate();
+  private:
+      typedef Snowflake::Client::Util::IBase64 Base64;
+      SF_CONNECT* m_connection;
+  };
+
   class AuthenticatorOKTA : public IAuthenticatorOKTA
   {
   public:

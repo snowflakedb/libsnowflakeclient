@@ -58,6 +58,10 @@ extern "C" {
     {
         return AUTH_OAUTH;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_EXTERNAL_BROWSER) == 0)
+    {
+      return AUTH_EXTERNALBROWSER;
+    }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_PAT) == 0)
     {
         return AUTH_PAT;
@@ -80,6 +84,11 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorJWT(conn));
+      }
+      if (AUTH_EXTERNALBROWSER == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorExternalBrowser(conn));
       }
       if (AUTH_OKTA == auth_type)
       {
@@ -146,7 +155,6 @@ extern "C" {
         data = snowflake_cJSON_CreateObject();
         snowflake_cJSON_AddItemToObject(body, "data", data);
     }
-    
     auto authenticator = getAuthenticatorType(conn->authenticator);
     if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
 
@@ -583,6 +591,56 @@ namespace Client
       free_curl_desc(curl_desc);
       SF_FREE(raw_resp);
       return ret;
+  }
+
+  AuthenticatorExternalBrowser::AuthenticatorExternalBrowser(
+      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection)
+  {
+      m_proofKey = "";
+      m_token = "";
+      m_consentCacheIdToken = true;
+      m_origin = "";
+      m_authWebServer = authWebServer;
+
+      if (m_authWebServer == NULL)
+      {
+          m_authWebServer = new IAuthWebServer();
+      }
+      m_idp = new CIDPAuthenticator(m_connection);
+
+      m_browser_response_timeout = connection->browser_response_timeout;
+      m_disable_console_login = connection->disable_console_login;
+  };
+
+  AuthenticatorExternalBrowser::~AuthenticatorExternalBrowser()
+  {
+      if (m_authWebServer != NULL)
+      {
+          delete m_authWebServer;
+      }
+      if (m_idp != NULL)
+      {
+          delete m_idp;
+      }
+  }
+
+  void AuthenticatorExternalBrowser::authenticate()
+  {
+      IAuthenticatorExternalBrowser::authenticate();
+      if (m_authWebServer->isError())
+      {
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
+      }
+      else if (isError())
+      {
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
+      }
+#ifdef _WIN32
+      else if (m_authWinSock.isError())
+      {
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWinSock.getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
+      }
+#endif
   }
 } // namespace Client
 } // namespace Snowflake
