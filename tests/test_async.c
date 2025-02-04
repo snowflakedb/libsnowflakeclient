@@ -232,6 +232,9 @@ void test_invalid_query_id() {
 
   SF_QUERY_STATUS query_status = snowflake_get_query_status(async_sfstmt);
   assert_int_equal(query_status, SF_QUERY_STATUS_UNKNOWN);
+
+  snowflake_stmt_term(async_sfstmt);
+  snowflake_term(sf);
 }
 
 void test_multiple_chunk() {
