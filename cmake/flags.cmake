@@ -12,9 +12,7 @@ if (UNIX)
 else()
     # Windows
     add_compile_options(/ZH:SHA_256 /guard:cf /Qspectre /sdl)
-    if (ARROW_FROM_SOURCE)
-        add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING BOOST_ALL_NO_LIB)
-    endif()
+    add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING BOOST_ALL_NO_LIB)
 endif()
 
 if (LINUX)

@@ -199,12 +199,7 @@ endif ()
 
 if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
-
-    if (ARROW_FROM_SOURCE)
-        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
-    else ()
-        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_REGEX_LIB})
-    endif ()
+    set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
     # Groups all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
