@@ -189,7 +189,6 @@ jobs:
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_mac.sh
     build-test-codecov-aws:
-        needs: [build-test-linux, build-test-win]
         name: Build-Test-CodeCov-Linux-AWS
         runs-on: ubuntu-latest
         strategy:
@@ -198,6 +197,13 @@ jobs:
                 build_type: [ 'Release' ]
         steps:
             - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: bash
               env:
@@ -223,7 +229,6 @@ jobs:
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
                 fail_ci_if_error: true
     build-test-codecov-azure:
-        needs: [build-test-linux, build-test-win]
         name: Build-Test-CodeCov-Linux-AZURE
         runs-on: ubuntu-latest
         strategy:
@@ -232,6 +237,13 @@ jobs:
                 build_type: [ 'Release' ]
         steps:
             - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: bash
               env:
@@ -257,7 +269,6 @@ jobs:
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
                 fail_ci_if_error: true
     build-test-codecov-gcp:
-        needs: [build-test-linux, build-test-win]
         name: Build-Test-CodeCov-Linux-GCP
         runs-on: ubuntu-latest
         strategy:
@@ -266,6 +277,13 @@ jobs:
                 build_type: [ 'Release' ]
         steps:
             - uses: actions/checkout@v4
+            - name: Restore cached deps
+              id: cache-restore-deps
+              uses: actions/cache/restore@v4
+              with:
+                path: dep-cache
+                key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+              if: github.event_name == 'pull_request'
             - name: Build
               shell: bash
               env:
