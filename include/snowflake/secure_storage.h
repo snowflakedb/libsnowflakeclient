@@ -1,5 +1,5 @@
 /*
- * File:   mfa_token_cache.h *
+ * File:   secure_storage.h *
  * Copyright (c) 2025 Snowflake Computing
  */
 

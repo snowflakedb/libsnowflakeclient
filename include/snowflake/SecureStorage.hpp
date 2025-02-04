@@ -3,8 +3,8 @@
  * Copyright (c) 2013-2020 Snowflake Computing
  */
 
-#ifndef PROJECT_SECURESTORAGE_IMPL_HPP
-#define PROJECT_SECURESTORAGE_IMPL_HPP
+#ifndef PROJECT_SECURESTORAGE_HPP
+#define PROJECT_SECURESTORAGE_HPP
 
 #include <string>
 
@@ -40,6 +40,7 @@ namespace Client {
     std::string user;
     SecureStorageKeyType type;
   };
+
   /**
    * Class SecureStorage
    */
@@ -55,9 +56,7 @@ namespace Client {
      *
      * API to secure store credential
      *
-     * @param host - snowflake host url
-     * @param username - snowflake user name
-     * @param credType - type of snowflake credential to be stored
+     * @param key - credential key
      * @param cred - credential to be secured
      *
      * @return ERROR / SUCCESS
@@ -70,14 +69,8 @@ namespace Client {
      *
      * API to retrieve credential
      *
-     * @param host - snowflake host url associated
-     * with the credential
-     * @param username - snowflake username associated with
-     * the credential
-     * @param cred - snowflake credential to be retrieved
-     * @param cred - on return , populated credential extracted
-     * from the keychain
-     * @param credLen - on return, length of the credential retrieved
+     * @param key - credential key
+     * @param cred - on succcess, retrieved credential will stored here
      * @return NOT_FOUND, ERROR, SUCCESS
      */
     SecureStorageStatus retrieveToken(const SecureStorageKey& key,
@@ -88,11 +81,7 @@ namespace Client {
      *
      * API to remove a credential.
      *
-     * @param host - snowflake host url associated
-     * with the credential
-     * @param username - snowflake username assoicated with
-     * the credential
-     * @param credType - type of credential to be removed.
+     * @param key - credenetial key
      *
      * @return ERROR / SUCCESS
      */
@@ -103,4 +92,4 @@ namespace Client {
 
 }
 
-#endif //PROJECT_SECURESTORAGE_IMPL_H
+#endif //PROJECT_SECURESTORAGE_H

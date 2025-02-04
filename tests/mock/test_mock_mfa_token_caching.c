@@ -27,7 +27,7 @@ char* first_mfa_request = NULL;
 char* first_mfa_response = NULL;
 char* second_mfa_request = NULL;
 
-void setup_mfa_connect_mock_1() {
+void setup_mfa_connect_initial_request_mock() {
   expect_string(__wrap_http_perform, url, "https://host:443/session/v1/login-request");
   expect_string(__wrap_http_perform, body, first_mfa_request);
   expect_string(__wrap_http_perform, request_type_str, "POST");
@@ -36,7 +36,7 @@ void setup_mfa_connect_mock_1() {
   will_return(__wrap_http_perform, cast_ptr_to_largest_integral_type(first_mfa_response));
 }
 
-void setup_mfa_term_mock_1() {
+void setup_mfa_term_initial_request_mock() {
   expect_string(__wrap_http_perform, url, "https://host:443/session");
   expect_value(__wrap_http_perform, body, NULL);
   expect_string(__wrap_http_perform, request_type_str, "POST");
@@ -45,7 +45,7 @@ void setup_mfa_term_mock_1() {
   will_return(__wrap_http_perform, "{}");
 }
 
-void setup_mfa_connect_mock_2() {
+void setup_mfa_connect_cached_mfa_request_mock() {
   expect_string(__wrap_http_perform, url, "https://host:443/session/v1/login-request");
   expect_string(__wrap_http_perform, body, second_mfa_request);
   expect_string(__wrap_http_perform, request_type_str, "POST");
@@ -54,7 +54,7 @@ void setup_mfa_connect_mock_2() {
   will_return(__wrap_http_perform, cast_ptr_to_largest_integral_type(first_mfa_response));
 }
 
-void setup_mfa_term_mock_2() {
+void setup_mfa_term_cached_mfa_request_mock() {
   expect_string(__wrap_http_perform, url, "https://host:443/session");
   expect_value(__wrap_http_perform, body, NULL);
   expect_string(__wrap_http_perform, request_type_str, "POST");
@@ -79,8 +79,8 @@ SF_CONNECT* sf_connect_init() {
 
 void test_mfa_token_caching(void **unused) {
   sf_setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
-  cred_cache_ptr cred_cache = cred_cache_init();
-  cred_cache_remove_credential(cred_cache, ACCOUNT, HOST, USER, MFA_TOKEN);
+  secure_storage_ptr ss = secure_storage_init();
+  secure_storage_remove_credential(ss, HOST, USER, MFA_TOKEN);
 
   {
     SF_CONNECT *sf = sf_connect_init();
@@ -88,7 +88,7 @@ void test_mfa_token_caching(void **unused) {
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
-    setup_mfa_connect_mock_1();
+    setup_mfa_connect_initial_request_mock();
     SF_STATUS status = snowflake_connect(sf);
 
     if (status != SF_STATUS_SUCCESS) {
@@ -96,7 +96,7 @@ void test_mfa_token_caching(void **unused) {
     }
 
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    setup_mfa_term_mock_1();
+    setup_mfa_term_initial_request_mock();
     snowflake_term(sf);
   }
 
@@ -106,7 +106,7 @@ void test_mfa_token_caching(void **unused) {
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
-    setup_mfa_connect_mock_2();
+    setup_mfa_connect_cached_mfa_request_mock();
     SF_STATUS status = snowflake_connect(sf);
 
     if (status != SF_STATUS_SUCCESS) {
@@ -114,7 +114,7 @@ void test_mfa_token_caching(void **unused) {
     }
 
     assert_int_equal(status, SF_STATUS_SUCCESS);
-    setup_mfa_term_mock_2();
+    setup_mfa_term_cached_mfa_request_mock();
     snowflake_term(sf);
   }
 }
