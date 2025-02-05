@@ -31,7 +31,8 @@ set(SOURCE_FILES
         include/snowflake/logger.h
         include/snowflake/version.h
         include/snowflake/platform.h
-        include/snowflake/client_config_parser.h
+        include/snowflake/secure_storage.h
+	include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -64,7 +65,9 @@ set(SOURCE_FILES
         lib/chunk_downloader.h
         lib/chunk_downloader.c
         lib/mock_http_perform.h
-        lib/http_perform.c)
+        lib/http_perform.c
+        cpp/lib/CacheFile.cpp
+)
 
 set (SOURCE_FILES_PUT_GET
         cpp/EncryptionProvider.cpp
@@ -150,8 +153,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
-	include/snowflake/ClientConfigParser.hpp
         include/snowflake/BindUploader.hpp
+        include/snowflake/SecureStorage.hpp
+	include/snowflake/ClientConfigParser.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -175,15 +179,28 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
+        cpp/lib/CacheFile.cpp
+        cpp/lib/CacheFile.hpp
 	cpp/lib/ClientConfigParser.cpp
+        cpp/platform/secure_storage.cpp
+        cpp/platform/SecureStorage.cpp
+        cpp/platform/SecureStorageApple.cpp
+        cpp/platform/SecureStorageLinux.cpp
+        cpp/platform/SecureStorageWin.cpp
+        cpp/platform/FileLock.cpp
+        cpp/platform/FileLock.hpp
         cpp/util/SnowflakeCommon.cpp
         cpp/util/SFURL.cpp
         cpp/util/CurlDesc.cpp
         cpp/util/CurlDescPool.cpp
+        cpp/util/Sha256.cpp
+        cpp/util/Sha256.hpp
+        cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
-        lib/authenticator.h)
+        lib/authenticator.h
+)
 
 if (UNIX)
     if (LINUX)
@@ -287,6 +304,7 @@ if (WIN32)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         else()
+            message(deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/)
             find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_SYSTEM_LIB boost_system-vc140-mt.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
