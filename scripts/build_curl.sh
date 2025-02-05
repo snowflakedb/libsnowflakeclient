@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 CURL_SRC_VERSION=8.10.1
-CURL_BUILD_VERSION=4
+CURL_BUILD_VERSION=5
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

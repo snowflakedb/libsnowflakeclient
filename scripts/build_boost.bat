@@ -4,7 +4,7 @@
 ::
 @echo off
 set boost_src_version=1.81.0
-set boost_build_version=1
+set boost_build_version=2
 set boost_version=%boost_src_version%.%boost_build_version%
 call %*
 goto :EOF
