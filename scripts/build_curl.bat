@@ -4,7 +4,7 @@
 
 @echo off
 set CURL_SRC_VERSION=8.10.1
-set CURL_BUILD_VERSION=4
+set CURL_BUILD_VERSION=5
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -58,9 +58,6 @@ if "%vs_version%"=="VS16" (
 )
 if "%vs_version%"=="VS15" (
     set vc_version=15
-)
-if "%vs_version%"=="VS14" (
-    set vc_version=14
 )
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
