@@ -143,6 +143,7 @@ export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
 export GET_VERSION=
 target=Release
+OPTIND=1
 while getopts ":hvpt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;

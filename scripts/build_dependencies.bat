@@ -2,11 +2,11 @@
 :: Build Dependencies
 ::
 :: Prerequisite:
-:: - VC 2015, 2017, 2019 or 2022
+:: - VC 2017, 2019 or 2022
 :: Arguments:
 :: - x86 / x64
 :: - Debug / Release
-:: - vs14 / vs15 / vs16 / vs17
+:: - vs15 / vs16 / vs17
 :: - ON / OFF
 @echo off
 
