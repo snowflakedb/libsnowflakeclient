@@ -84,13 +84,8 @@ if /I "%vs_version%"=="VS15" (
     set cmake_generator=Visual Studio 15 2017
     set vsdir=vs15
 )
-if /I "%vs_version%"=="VS14" (
-    set cmake_generator=Visual Studio 14 2015
-    set vsdir=vs14
-    set ARROW_FROM_SOURCE=0
-)
 if "%cmake_generator%"=="" (
-    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15, VS14]
+    echo Specify the VS_VERSION to the Visual Studio Version [VS17, VS16, VS15]
     goto :error
 )
 
