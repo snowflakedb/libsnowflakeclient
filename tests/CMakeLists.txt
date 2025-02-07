@@ -278,8 +278,6 @@ else()
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
-            set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
