@@ -271,39 +271,6 @@ else()
         endif()
     ENDFOREACH ()
 
-    FOREACH (T ${TESTS_C})
-        add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
-        if (WIN32)
-            target_include_directories(
-                    ${T}_dynamic PUBLIC
-                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
-            )
-        else()
-            target_include_directories(
-                    ${T}_dynamic PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
-            )
-            if (APPLE)
-                set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
-            endif()
-        endif()
-        target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
-        target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
-        add_test(${T}_dynamic ${T}_dynamic)
-        # Removed to suppress false alarm: "--run-libc-freeres=no"
-        if (LINUX)
-          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
-            add_test(valgrind_${T}_dynamic
-                valgrind
-                --tool=memcheck
-                --leak-check=full
-                --error-exitcode=1
-                --suppressions=${VALGRIND_SUPPRESSION}
-                ./${T}_dynamic)
-          endif()
-        endif()
-    ENDFOREACH ()
-
     FOREACH (T ${TESTS_C_UNIT})
         add_executable(${T} ${SOURCE_UTILS} ${T}.c)
         if (WIN32)
@@ -334,6 +301,41 @@ else()
           endif()
         endif()
     ENDFOREACH ()
+
+    if (BUILD_SHARED_LIBS)
+        FOREACH (T ${TESTS_C})
+            add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
+            if (WIN32)
+                target_include_directories(
+                        ${T}_dynamic PUBLIC
+                        ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+                )
+            else()
+                target_include_directories(
+                        ${T}_dynamic PUBLIC
+                        ../deps-build/${PLATFORM}/cmocka/include
+                )
+                if (APPLE)
+                    set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
+                endif()
+            endif()
+            target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
+            target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
+            add_test(${T}_dynamic ${T}_dynamic)
+            # Removed to suppress false alarm: "--run-libc-freeres=no"
+            if (LINUX)
+              if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+                add_test(valgrind_${T}_dynamic
+                    valgrind
+                    --tool=memcheck
+                    --leak-check=full
+                    --error-exitcode=1
+                    --suppressions=${VALGRIND_SUPPRESSION}
+                    ./${T}_dynamic)
+              endif()
+            endif()
+        ENDFOREACH ()
+    endif()
 
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
