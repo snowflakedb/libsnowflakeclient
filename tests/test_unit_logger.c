@@ -40,14 +40,13 @@ void test_invalid_client_config_path() {
   char configFilePath[] = "fakePath.json";
 
   // Parse client config for log details
-  client_config clientConfig = { 0 };
+  client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
 #else
   assert_true(result);
 #endif
-  free_client_config(&clientConfig);
 }
 
 /**
@@ -62,7 +61,7 @@ void test_client_config_log_invalid_json() {
   fclose(file);
 
   // Parse client config for log details
-  client_config clientConfig = { 0 };
+  client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
@@ -72,7 +71,6 @@ void test_client_config_log_invalid_json() {
 
   // Cleanup
   remove(configFilePath);
-  free_client_config(&clientConfig);
 }
 
 /**
@@ -87,7 +85,7 @@ void test_client_config_log_malformed_json() {
   fclose(file);
 
   // Parse client config for log details
-  client_config clientConfig = { 0 };
+  client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
@@ -97,7 +95,6 @@ void test_client_config_log_malformed_json() {
 
   // Cleanup
   remove(configFilePath);
-  free_client_config(&clientConfig);
 }
 
 /**
@@ -112,7 +109,7 @@ void test_client_config_log() {
     fclose(file);
 
     // Parse client config for log details
-    client_config clientConfig = { 0 };
+    client_config clientConfig;
     load_client_config(configFilePath, &clientConfig);
 
     // Set log name and level
@@ -141,7 +138,6 @@ void test_client_config_log() {
     remove(configFilePath);
     remove(LOG_PATH);
     SF_FREE(LOG_PATH);
-    free_client_config(&clientConfig);
 }
 
 /**
@@ -170,7 +166,7 @@ void test_client_config_log_unknown_entries() {
   remove(LOG_PATH);
 
   // Load client config and log unknown entries
-  client_config clientConfig = { 0 };
+  client_config clientConfig;
   load_client_config(configFilePath, &clientConfig);
   log_close();
 
@@ -194,7 +190,6 @@ void test_client_config_log_unknown_entries() {
   remove(configFilePath);
   remove(LOG_PATH);
   SF_FREE(LOG_PATH);
-  free_client_config(&clientConfig);
 }
 
 /**

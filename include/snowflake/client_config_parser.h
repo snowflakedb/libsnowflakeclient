@@ -15,10 +15,10 @@ extern "C" {
   typedef struct client_config
   {
     // The log level
-    char *logLevel;
+    char logLevel[64];
 
     // The log path
-    char *logPath;
+    char logPath[MAX_PATH];
   } client_config;
 
   /**
