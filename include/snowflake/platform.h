@@ -58,6 +58,13 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define SF_MACRO_DEPRECATED_WARNING(MSG)  _Pragma(MACRO_TO_STRING(GCC warning MSG))
 #endif
 
+// For marking functions public for dynamic library
+#ifdef _WIN32
+#define SF_DLL_PUBLIC __declspec(dllexport)
+#else
+#define SF_DLL_PUBLIC __attribute__((visibility("default")))
+#endif
+
 #include "SF_CRTFunctionSafe.h"
 
 struct tm *STDCALL sf_gmtime(const time_t *timep, struct tm *result);
@@ -66,11 +73,11 @@ struct tm *STDCALL sf_localtime(const time_t *timep, struct tm *result);
 
 void STDCALL sf_tzset(void);
 
-int STDCALL sf_setenv(const char *name, const char *value);
+SF_DLL_PUBLIC int STDCALL sf_setenv(const char *name, const char *value);
 
-char *STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize);
+SF_DLL_PUBLIC char *STDCALL sf_getenv_s(const char *name, char *outbuf, size_t bufsize);
 
-int STDCALL sf_unsetenv(const char *name);
+SF_DLL_PUBLIC int STDCALL sf_unsetenv(const char *name);
 
 int STDCALL sf_mkdir(const char *path);
 
@@ -141,7 +148,7 @@ int STDCALL sf_is_directory_exist(const char * directoryName);
 
 int STDCALL sf_delete_directory_if_exists(const char * directoryName);
 
-void STDCALL sf_get_tmp_dir(char * tmpDir);
+SF_DLL_PUBLIC void STDCALL sf_get_tmp_dir(char * tmpDir);
 
 void STDCALL sf_get_uniq_tmp_dir(char * tmpDir);
 

@@ -427,7 +427,7 @@ endif ()
 
 if (BUILD_SHARED_LIBS)
     if (WIN32)
-        add_library(snowflakeclient_dynamic ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER} ${CMAKE_CURRENT_SOURCE_DIR}/exports.def)
+        add_library(snowflakeclient_dynamic ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
     else()
         add_library(snowflakeclient_dynamic ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
         target_compile_definitions(snowflakeclient_dynamic PUBLIC _LARGEFILE64_SOURCE)
@@ -555,9 +555,9 @@ endif ()
 if (BUILD_SHARED_LIBS)
     if (LINUX)
         set(DYNAMICLIB_LINK_OPTS  rt dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB}
-                pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++ -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports_Linux.map)
+                pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
     elseif (APPLE)
-        set(DYNAMICLIB_LINK_OPTS  dl z pthread -exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/exports_Darwin.map "-framework CoreFoundation -framework SystemConfiguration -framework security"
+        set(DYNAMICLIB_LINK_OPTS  dl z pthread -exported_symbols_list "-framework CoreFoundation -framework SystemConfiguration -framework security"
                 ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB})
     elseif (WIN32)
         if (WIN32_DEBUG)

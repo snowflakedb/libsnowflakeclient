@@ -30,9 +30,9 @@ static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc, calloc};
 void sf_memory_init();
 void sf_memory_term();
 void *sf_malloc(size_t size, const char *file, int line);
-void *sf_calloc(size_t num, size_t size, const char *file, int line);
+SF_DLL_PUBLIC void *sf_calloc(size_t num, size_t size, const char *file, int line);
 void *sf_realloc(void *ptr, size_t size, const char *file, int line);
-void sf_free(void *ptr, const char *file, int line);
+SF_DLL_PUBLIC void sf_free(void *ptr, const char *file, int line);
 void sf_alloc_map_to_log(sf_bool cleanup);
 
 #ifdef __cplusplus
