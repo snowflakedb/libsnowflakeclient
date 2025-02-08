@@ -115,7 +115,7 @@ namespace
 
   ////////////////////////////////////////////////////////////////////////////////
   boost::filesystem::path resolveClientConfigPath(
-    const std::string& configFilePath)
+    const boost::filesystem::path& configFilePath)
   {
     // 1. Try config file if it was passed in
     if (!configFilePath.empty())
@@ -165,7 +165,7 @@ namespace
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  sf_bool checkIfValidPermissions(const std::string& filePath)
+  sf_bool checkIfValidPermissions(const boost::filesystem::path& filePath)
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
@@ -233,7 +233,7 @@ namespace
 
   ////////////////////////////////////////////////////////////////////////////////
   sf_bool loadClientConfig(
-    const std::string& configFilePath,
+    const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
   {
     boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
@@ -254,7 +254,7 @@ sf_bool load_client_config(
 // Disable easy logging for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-  return loadClientConfig(configFilePath, *clientConfig);
+  return loadClientConfig(boost::filesystem::path(configFilePath), *clientConfig);
 #else
   return true;
 #endif
