@@ -98,7 +98,6 @@ namespace
 #else
   std::string resolveHomeDirConfigPath()
   {
-    char envbuf[MAX_PATH + 1];
     std::string homeDir = getEnvironmentVariableValue("HOME");
     if (!homeDir.empty())
     {

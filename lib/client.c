@@ -332,7 +332,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     if (sf_log_path == NULL) {
       if (log_path && strlen(log_path) != 0) {
         sf_log_path = log_path;
-      } else if (clientConfig.logPath != NULL) {
+      } else if (strlen(clientConfig.logPath) != 0) {
         sf_log_path = clientConfig.logPath;
       }
     }
@@ -342,7 +342,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
       sf_log_level = log_from_str_to_level(sf_log_level_str);
     }
     else if (sf_log_level == SF_LOG_DEFAULT) {
-      if (clientConfig.logLevel != NULL) {
+      if (strlen(clientConfig.logLevel) != 0) {
         sf_log_level = log_from_str_to_level(clientConfig.logLevel);
       } else {
         sf_log_level = SF_LOG_FATAL;
