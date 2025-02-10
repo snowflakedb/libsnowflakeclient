@@ -42,11 +42,7 @@ void test_invalid_client_config_path() {
   // Parse client config for log details
   client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
-#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
-#else
-  assert_true(result);
-#endif
 }
 
 /**
@@ -63,11 +59,7 @@ void test_client_config_log_invalid_json() {
   // Parse client config for log details
   client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
-#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
-#else
-  assert_true(result);
-#endif
 
   // Cleanup
   remove(configFilePath);
@@ -87,11 +79,7 @@ void test_client_config_log_malformed_json() {
   // Parse client config for log details
   client_config clientConfig;
   sf_bool result = load_client_config(configFilePath, &clientConfig);
-#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   assert_false(result);
-#else
-  assert_true(result);
-#endif
 
   // Cleanup
   remove(configFilePath);

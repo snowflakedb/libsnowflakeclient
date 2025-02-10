@@ -317,11 +317,14 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
-    char client_config_file[MAX_PATH] = { 0 };
-    snowflake_global_get_attribute(
-      SF_GLOBAL_CLIENT_CONFIG_FILE, client_config_file, sizeof(client_config_file));
     client_config clientConfig;
-    load_client_config(client_config_file, &clientConfig);
+    if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
+    {
+      char client_config_file[MAX_PATH] = { 0 };
+      snowflake_global_get_attribute(
+        SF_GLOBAL_CLIENT_CONFIG_FILE, client_config_file, sizeof(client_config_file));
+      load_client_config(client_config_file, &clientConfig);
+    }
 
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
@@ -340,8 +343,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
       sf_log_level = log_from_str_to_level(sf_log_level_str);
-    }
-    else if (sf_log_level == SF_LOG_DEFAULT) {
+    } else if (sf_log_level == SF_LOG_DEFAULT) {
       if (strlen(clientConfig.logLevel) != 0) {
         sf_log_level = log_from_str_to_level(clientConfig.logLevel);
       } else {

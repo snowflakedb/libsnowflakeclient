@@ -32,16 +32,21 @@ namespace
 
   // helpers
   ////////////////////////////////////////////////////////////////////////////////
-#if defined(WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
   boost::filesystem::path getBinaryPath()
   {
     boost::filesystem::path binaryFullPath;
-    std::wstring path;
-    HMODULE hm = NULL;
-    wchar_t appName[256];
-    GetModuleFileNameW(hm, appName, 256);
-    path = appName;
-    binaryFullPath = std::string(path.begin(), path.end());
+#ifdef UNICODE
+    wchar_t path[MAX_PATH];
+#else
+    char path[MAX_PATH];
+#endif
+    if (auto pathLen = GetModuleFileName(NULL, path, MAX_PATH); pathLen < MAX_PATH + 1) {
+      binaryFullPath = std::string(path, path + pathLen);
+    } else {
+      std::string message = std::system_category().message(GetLastError());
+      CXX_LOG_ERROR("Error getting binary path: %s", message.c_str());
+    }
     return binaryFullPath.parent_path();
   }
 #else
@@ -70,10 +75,10 @@ namespace
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-#if defined(WIN32) || defined(_WIN64)
-  std::string resolveHomeDirConfigPath()
+#if defined(_WIN32) || defined(_WIN64)
+  boost::filesystem::path resolveHomeDirConfigPath()
   {
-    std::string homeDirFilePath;
+    boost::filesystem::path homeDirFilePath;
     std::string homeDir = getEnvironmentVariableValue("USERPROFILE");
     if (!homeDir.empty())
     {
@@ -96,12 +101,12 @@ namespace
     return "";
   }
 #else
-  std::string resolveHomeDirConfigPath()
+  boost::filesystem::path resolveHomeDirConfigPath()
   {
     std::string homeDir = getEnvironmentVariableValue("HOME");
     if (!homeDir.empty())
     {
-      std::string homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+      boost::filesystem::path homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
       if (boost::filesystem::is_regular_file(homeDirFilePath))
       {
         CXX_LOG_INFO("Using client configuration path from home directory: %s", homeDirFilePath.c_str());
@@ -110,7 +115,7 @@ namespace
     }
     return "";
   }
-  #endif
+#endif
 
   ////////////////////////////////////////////////////////////////////////////////
   boost::filesystem::path resolveClientConfigPath(
@@ -124,8 +129,8 @@ namespace
     }
 
     // 2. Try environment variable SF_CLIENT_CONFIG_ENV_NAME
-    char envbuf[MAX_PATH + 1];
-    if (const char* clientConfigEnv = sf_getenv_s(SF_CLIENT_CONFIG_ENV_NAME.c_str(), envbuf, sizeof(envbuf)))
+    std::string clientConfigEnv = getEnvironmentVariableValue(SF_CLIENT_CONFIG_ENV_NAME);
+    if (!clientConfigEnv.empty())
     {
       CXX_LOG_INFO("Using client configuration path from an environment variable: %s", clientConfigEnv);
       return clientConfigEnv;
@@ -193,7 +198,7 @@ namespace
         filePath.c_str());
       return false;
     }
-#if !defined(WIN32) && !defined(_WIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
     if (!checkIfValidPermissions(filePath))
     {
       return false;
@@ -216,12 +221,22 @@ namespace
         if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
         {
           const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
-          sf_strcpy(clientConfig.logLevel, strlen(logLevel) + 1, logLevel);
+          if (strlen(logLevel) < 64) {
+            sf_strcpy(clientConfig.logLevel, strlen(logLevel) + 1, logLevel);
+          } else {
+            CXX_LOG_ERROR("Error: The maximum length for log level is 64.");
+            return false;
+          }
         }
         if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
         {
           const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
-          sf_strcpy(clientConfig.logPath, strlen(logPath) + 1, logPath);
+          if (strlen(logPath) < MAX_PATH) {
+            sf_strcpy(clientConfig.logPath, strlen(logPath) + 1, logPath);
+          } else {
+            CXX_LOG_ERROR("Error: The maximum length for log path is %d", MAX_PATH);
+            return false;
+          }
         }
         return true;
       }
@@ -255,6 +270,6 @@ sf_bool load_client_config(
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   return loadClientConfig(boost::filesystem::path(configFilePath), *clientConfig);
 #else
-  return true;
+  return false;
 #endif
 }
