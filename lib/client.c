@@ -331,19 +331,25 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
 
     /* The environment variables takes precedence over the specified parameters.
        Specified parameters takes precedence over client config */
+    // Check environment variable
     sf_log_path = sf_getenv_s("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
     if (sf_log_path == NULL) {
+      // Check specified parameters
       if (log_path && strlen(log_path) != 0) {
         sf_log_path = log_path;
+        // Check client config
       } else if (strlen(clientConfig.logPath) != 0) {
         sf_log_path = clientConfig.logPath;
       }
     }
 
+    // Check environment variable
     sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
       sf_log_level = log_from_str_to_level(sf_log_level_str);
+      // Check specified parameters
     } else if (sf_log_level == SF_LOG_DEFAULT) {
+      // Check client config
       if (strlen(clientConfig.logLevel) != 0) {
         sf_log_level = log_from_str_to_level(clientConfig.logLevel);
       } else {
@@ -384,7 +390,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     } else {
         sf_fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
-        goto cleanup;
+        return ret;
     }
 
     snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));

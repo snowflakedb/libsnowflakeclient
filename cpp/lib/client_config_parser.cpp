@@ -57,7 +57,7 @@ namespace
     int result = dladdr((void*)load_client_config, &info);
     if (result)
     {
-      binaryFullPath = std::string(info.dli_fname);
+      binaryFullPath = info.dli_fname;
     }
     return binaryFullPath.parent_path();
   }
@@ -82,15 +82,16 @@ namespace
     std::string homeDir = getEnvironmentVariableValue("USERPROFILE");
     if (!homeDir.empty())
     {
-      homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
-    }
-    else {
+      homeDirFilePath = homeDir;
+      homeDirFilePath.append(SF_CLIENT_CONFIG_FILE_NAME);
+    } else {
       // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
       std::string homeDriveEnv = getEnvironmentVariableValue("HOMEDRIVE");
       std::string homePathEnv = getEnvironmentVariableValue("HOMEPATH");
       if (!homeDriveEnv.empty() && !homePathEnv.empty())
       {
-        homeDirFilePath = homeDriveEnv + homePathEnv + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+        homeDirFilePath = homeDriveEnv + homePathEnv;
+        homeDirFilePath.append(SF_CLIENT_CONFIG_FILE_NAME);
       }
     }
     if (boost::filesystem::is_regular_file(homeDirFilePath))
@@ -106,7 +107,8 @@ namespace
     std::string homeDir = getEnvironmentVariableValue("HOME");
     if (!homeDir.empty())
     {
-      boost::filesystem::path homeDirFilePath = std::string(homeDir) + PATH_SEP + SF_CLIENT_CONFIG_FILE_NAME;
+      boost::filesystem::path homeDirFilePath = homeDir;
+      homeDirFilePath.append(SF_CLIENT_CONFIG_FILE_NAME);
       if (boost::filesystem::is_regular_file(homeDirFilePath))
       {
         CXX_LOG_INFO("Using client configuration path from home directory: %s", homeDirFilePath.c_str());
@@ -152,7 +154,7 @@ namespace
   bool isKnownCommonEntry(const std::string& entry) {
     return std::any_of(KnownCommonEntries.begin(), KnownCommonEntries.end(),
       [&entry](auto& knownEntry) {
-      return sf_strncasecmp(entry.c_str(), knownEntry.c_str(), knownEntry.length()) == 0;
+        return sf_strncasecmp(entry.c_str(), knownEntry.c_str(), knownEntry.length()) == 0;
     });
   }
 
