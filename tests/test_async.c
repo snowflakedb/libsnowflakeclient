@@ -346,15 +346,15 @@ void test_ordered_results() {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE); 
     const struct CMUnitTest tests[] = {
-      //cmocka_unit_test(test_normal_async_select_query),
-      //cmocka_unit_test(test_long_query_get_query_status),
-      //cmocka_unit_test(test_premature_fetch),
-      //cmocka_unit_test(test_new_connection),
-      //cmocka_unit_test(test_fake_table),
+      cmocka_unit_test(test_normal_async_select_query),
+      cmocka_unit_test(test_long_query_get_query_status),
+      cmocka_unit_test(test_premature_fetch),
+      cmocka_unit_test(test_new_connection),
+      cmocka_unit_test(test_fake_table),
       cmocka_unit_test(test_invalid_query_id),
-      //cmocka_unit_test(test_multiple_chunk),
-      //cmocka_unit_test(test_sleep_max_retries),
-      //cmocka_unit_test(test_ordered_results),
+      cmocka_unit_test(test_multiple_chunk),
+      cmocka_unit_test(test_sleep_max_retries),
+      cmocka_unit_test(test_ordered_results),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
