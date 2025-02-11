@@ -132,7 +132,7 @@ namespace
     std::string clientConfigEnv = getEnvironmentVariableValue(SF_CLIENT_CONFIG_ENV_NAME);
     if (!clientConfigEnv.empty())
     {
-      CXX_LOG_INFO("Using client configuration path from an environment variable: %s", clientConfigEnv);
+      CXX_LOG_INFO("Using client configuration path from an environment variable: %s", clientConfigEnv.c_str());
       return clientConfigEnv;
     }
 
