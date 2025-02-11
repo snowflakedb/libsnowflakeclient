@@ -95,7 +95,7 @@ SF_QUERY_STATUS get_status_from_string(const char *query_status) {
       return (SF_QUERY_STATUS)idx;
     }
   }
-  return SF_QUERY_STATUS_NO_DATA;
+  return SF_QUERY_STATUS_UNKNOWN;
 }
 
 /**
@@ -215,8 +215,7 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
     if (retry < (max_retries)) {
       sf_sleep_ms(sleep_time);
       retry++;
-    }
-    else {
+    } else {
       log_error(
         "Cannot retrieve data on the status of this query. Max retries hit with queryID=%s", sfstmt->sfqid);
       char msg[1024];
@@ -1797,8 +1796,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             sfstmt->sfqid);
           return SF_BOOLEAN_FALSE;
         }
-      }
-      else if (strcmp(qrf_str, "json") == 0) {
+      } else if (strcmp(qrf_str, "json") == 0) {
         sfstmt->qrf = SF_JSON_FORMAT;
         if (json_detach_array_from_object((cJSON**)(&rowset), data, "rowset"))
         {
@@ -1810,8 +1808,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             sfstmt->sfqid);
           return SF_BOOLEAN_FALSE;
         }
-      }
-      else {
+      } else {
         log_error("Unsupported query result format: %s", qrf_str);
         return SF_BOOLEAN_FALSE;
       }
@@ -1869,8 +1866,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             "No total count found in response. Reverting to using array size of results");
           sfstmt->total_rowcount = sfstmt->chunk_rowcount;
         }
-      }
-      else {
+      } else {
         // Create a result set object and update the total rowcount.
         sfstmt->result_set = rs_create_with_json_result(
           rowset,
