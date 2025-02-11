@@ -563,8 +563,8 @@ typedef struct SF_STMT {
     int64 paramset_size;
     sf_bool array_bind_supported;
     int64 affected_rows;
-    sf_bool is_async;
-    sf_bool is_async_initialized;
+    sf_bool is_async; // whether the query is async
+    sf_bool is_async_results_fetched;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -737,7 +737,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
  *
  * @return sfstmt SNOWFLAKE_STMT context for async queries.
  */
-SF_STMT* STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char *query_id);
+SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *query_id);
 
 /**
  * Get the status of a query

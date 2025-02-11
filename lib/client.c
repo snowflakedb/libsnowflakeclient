@@ -111,6 +111,7 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT* sfstmt) {
   cJSON *queries = NULL;
   char *s_resp = NULL;
   SF_QUERY_METADATA *query_metadata = (SF_QUERY_METADATA*)SF_CALLOC(1, sizeof(SF_QUERY_METADATA));
+  query_metadata->status = SF_QUERY_STATUS_UNKNOWN;
   size_t url_size = strlen(QUERY_MONITOR_URL) - 2 + strlen(sfstmt->sfqid) + 1;
   char *status_query = (char*)SF_CALLOC(1, url_size);
   sf_sprintf(status_query, url_size, QUERY_MONITOR_URL, sfstmt->sfqid);
@@ -138,6 +139,7 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT* sfstmt) {
     }
     cJSON* stats = snowflake_cJSON_GetObjectItem(query, "stats");
     if (snowflake_cJSON_IsObject(stats)) {
+      sfstmt->stats = set_stats(stats);
       query_metadata->stats = snowflake_cJSON_Print(stats);
     } else {
       log_error(
@@ -157,9 +159,8 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT* sfstmt) {
 
 
 SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt) {
-  SF_QUERY_STATUS ret = SF_QUERY_STATUS_NO_DATA;
   SF_QUERY_METADATA *metadata = get_query_metadata(sfstmt);
-  ret = metadata->status;
+  SF_QUERY_STATUS ret = metadata->status;
   SF_FREE(metadata);
   return ret;
 }
@@ -182,7 +183,8 @@ sf_bool is_query_still_running(SF_QUERY_STATUS query_status) {
  */
 sf_bool get_real_results(SF_STMT *sfstmt) {
   //Get status until query is complete or timed out
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_METADATA* metadata = get_query_metadata(sfstmt);
+  SF_QUERY_STATUS query_status = metadata->status;
   int retry = 0;
   int no_data_retry = 0;
   int no_data_max_retries = 30;
@@ -217,9 +219,18 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
     else {
       log_error(
         "Cannot retrieve data on the status of this query. Max retries hit with queryID=%s", sfstmt->sfqid);
+      char msg[1024];
+      sf_sprintf(msg, sizeof(msg),
+        "Cannot retrieve data on the status of this query. Max retries hit. Query status: %d", query_status);
+      SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+        SF_STATUS_ERROR_GENERAL,
+        msg,
+        NULL,
+        sfstmt->sfqid);
       return SF_BOOLEAN_FALSE;
     }
-    query_status = snowflake_get_query_status(sfstmt);
+    metadata = get_query_metadata(sfstmt);
+    query_status = metadata->status;
   }
 
   // Get query results
@@ -229,7 +240,6 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
   }
 
   // Get query stats
-  SF_QUERY_METADATA *metadata = get_query_metadata(sfstmt);
   if (metadata->stats) {
     cJSON* stats = snowflake_cJSON_Parse(metadata->stats);
     if (snowflake_cJSON_IsObject(stats)) {
@@ -241,6 +251,7 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
     log_error(
       "Error parsing query stats from query id: %s", sfstmt->sfqid);
   }
+  sfstmt->is_async_results_fetched = SF_BOOLEAN_TRUE;
   SF_FREE(metadata);
   return SF_BOOLEAN_TRUE;
 }
@@ -2454,7 +2465,7 @@ SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf) {
     return sfstmt;
 }
 
-SF_STMT *STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char *query_id) {
+SF_STMT *STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *query_id) {
   if (!sf) {
     return NULL;
   }
@@ -2465,7 +2476,7 @@ SF_STMT *STDCALL snowflake_create_async_query_result(SF_CONNECT *sf, const char 
     sfstmt->connection = sf;
     sf_strcpy(sfstmt->sfqid, SF_UUID4_LEN, query_id);
     sfstmt->is_async = SF_BOOLEAN_TRUE;
-    sfstmt->is_async_initialized = SF_BOOLEAN_FALSE;
+    sfstmt->is_async_results_fetched = SF_BOOLEAN_FALSE;
   }
 
   return sfstmt;
@@ -2670,11 +2681,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
 
-    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
-      if (get_real_results(sfstmt)) {
-        sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
-      }
-      else {
+    if (sfstmt->is_async && !sfstmt->is_async_results_fetched) {
+      if (!get_real_results(sfstmt)) {
         return SF_STATUS_ERROR_GENERAL;
       }
     }
@@ -3313,11 +3321,8 @@ int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt) {
         return -1;
     }
 
-    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
-      if (get_real_results(sfstmt)) {
-        sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
-      }
-      else {
+    if (sfstmt->is_async && !sfstmt->is_async_results_fetched) {
+      if (!get_real_results(sfstmt)) {
         return -1;
       }
     }
@@ -3330,11 +3335,8 @@ int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt) {
         return -1;
     }
 
-    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
-      if (get_real_results(sfstmt)) {
-        sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
-      }
-      else {
+    if (sfstmt->is_async && !sfstmt->is_async_results_fetched) {
+      if (!get_real_results(sfstmt)) {
         return -1;
       }
     }
@@ -3348,11 +3350,8 @@ uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt) {
         return 0;
     }
 
-    if (sfstmt->is_async && !sfstmt->is_async_initialized) {
-      if (get_real_results(sfstmt)) {
-        sfstmt->is_async_initialized = SF_BOOLEAN_TRUE;
-      }
-      else {
+    if (sfstmt->is_async && !sfstmt->is_async_results_fetched) {
+      if (!get_real_results(sfstmt)) {
         return 0;
       }
     }
