@@ -396,8 +396,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));
 
     ret = SF_BOOLEAN_TRUE;
-
-  cleanup:
     return ret;
 }
 

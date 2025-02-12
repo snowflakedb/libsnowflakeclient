@@ -66,6 +66,7 @@ namespace
   ////////////////////////////////////////////////////////////////////////////////
   std::string getEnvironmentVariableValue(const std::string& envVarName)
   {
+    // Environment variables being checked point to file paths, hence MAX_PATH is used
     char envbuf[MAX_PATH + 1];
     if (char* value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
     {
