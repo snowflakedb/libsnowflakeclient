@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-extern int uuid4_generate(char *dst);
-
 // Long path space
 char PERFORMANCE_TEST_RESULTS_PATH[5000];
 
@@ -142,7 +140,7 @@ int setup_random_database()
     SF_CONNECT *sf;
     SF_STMT *sfstmt;
     char random_db_name[100];
-    char uuid[SF_UUID4_LEN];
+    char randStr[SF_UUID4_LEN];
     char query[200];
 
     if (strlen(RANDOM_DATABASE_NAME) > 0)
@@ -151,15 +149,15 @@ int setup_random_database()
         return 1;
     }
 
-    uuid4_generate(uuid);
-    for (int i = 0; i < sizeof(uuid); i++)
-    {
-        if (uuid[i] == '-')
-        {
-            uuid[i] = '_';
-        }
+    // create a random database name
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    srand(time(NULL));
+    for (int i = 0; i < SF_UUID4_LEN - 1; ++i) {
+        int index = rand() % (sizeof(charset) - 1);
+        randStr[i] = charset[index];
     }
-    sprintf(random_db_name, "random_test_db_%s", uuid);
+    randStr[SF_UUID4_LEN - 1] = '\0';
+    sprintf(random_db_name, "random_test_db_%s", randStr);
 
     sf = setup_snowflake_connection();
     status = snowflake_connect(sf);

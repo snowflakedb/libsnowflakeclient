@@ -557,7 +557,7 @@ if (BUILD_SHARED_LIBS)
         set(DYNAMICLIB_LINK_OPTS  rt dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB}
                 pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
     elseif (APPLE)
-        set(DYNAMICLIB_LINK_OPTS  dl z pthread -exported_symbols_list "-framework CoreFoundation -framework SystemConfiguration -framework security"
+        set(DYNAMICLIB_LINK_OPTS  dl z pthread "-framework CoreFoundation -framework SystemConfiguration -framework security"
                 ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB})
     elseif (WIN32)
         if (WIN32_DEBUG)
