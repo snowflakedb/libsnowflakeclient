@@ -509,7 +509,7 @@ void test_array_binding_supported_false_update(void** unused) {
       snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
       assert_string_equal(result, bind_data_d[i]);
 
-      free(result);
+      SF_FREE(result);
     }
 
     snowflake_stmt_term(stmt);

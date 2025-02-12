@@ -425,6 +425,17 @@ if (LINUX)
 endif ()
 #set (CMAKE_CXX_STANDARD 11)
 
+if (BUILD_SHARED_LIBS)
+    if (WIN32)
+        add_library(snowflakeclient_dynamic ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
+    else()
+        add_library(snowflakeclient_dynamic ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
+        target_compile_definitions(snowflakeclient_dynamic PUBLIC _LARGEFILE64_SOURCE)
+    endif()
+    target_compile_features(snowflakeclient_dynamic PUBLIC cxx_std_17)
+    target_compile_features(snowflakeclient_dynamic PUBLIC c_std_99)
+endif()
+
 if(LINUX)
     link_directories(
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib"
@@ -473,6 +484,65 @@ elseif()
     endif()
 endif()
 
+set(AWS_ALL_LIBS
+        ${AWS_S3_LIB}
+        ${AWS_CORE_LIB}
+        ${AWS_CRT_CPP_LIB}
+        ${AWS_C_EVENT_STREAM_LIB}
+        ${AWS_C_CHECKSUMS_LIB}
+        ${AWS_C_S3_LIB}
+        ${AWS_C_AUTH_LIB}
+        ${AWS_C_HTTP_LIB}
+        ${AWS_C_COMPRESSION_LIB}
+        ${AWS_C_IO_LIB}
+        ${AWS_C_CAL_LIB}
+        ${AWS_C_MQTT_LIB}
+        ${AWS_S2N_LIB}
+        ${AWS_C_COMMON_LIB}
+        ${AWS_C_SDKUTILS_LIB}
+    )
+
+if (LINUX)
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
+        ${ARROW_DOUBLECONVERSION_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_ZSTD_LIB})
+elseif (APPLE)
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_JEMALLOCPIC_LIB}
+        ${ARROW_LZ4_LIB} ${ARROW_LZO2_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_ZSTD_LIB})
+elseif (WIN32)
+    set(ARROW_ALL_LIBS
+        ${ARROW_ARROW_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_REGEX_LIB} ${BOOST_SYSTEM_LIB}
+        ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
+        ${ARROW_BZ2_LIB}
+        ${ARROW_DOUBLECONVERSION_LIB}
+        ${ARROW_EVENT_LIB} ${ARROW_EVENTCORE_LIB} ${ARROW_EVENTEXTRA_LIB}
+        ${ARROW_FLATBUFFERS_LIB}
+        ${ARROW_GFLAGS_LIB}
+        ${ARROW_GLOG_LIB}
+        ${ARROW_LZ4_LIB}
+        ${ARROW_SNAPPY_LIB}
+        ${ARROW_ZLIB_LIB} ${ARROW_ZSTD_LIB})
+endif ()
+
 if (LINUX)
     # Linux
     target_link_libraries(snowflakeclient rt dl z)
@@ -481,6 +551,25 @@ if (APPLE)
     # OSX. no librt is required.
     target_link_libraries(snowflakeclient dl z)
 endif ()
+
+if (BUILD_SHARED_LIBS)
+    if (LINUX)
+        set(DYNAMICLIB_LINK_OPTS  rt dl z ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB}
+                pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
+    elseif (APPLE)
+        set(DYNAMICLIB_LINK_OPTS  dl z pthread "-framework CoreFoundation -framework SystemConfiguration -framework security"
+                ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${UUID_LIB})
+    elseif (WIN32)
+        if (WIN32_DEBUG)
+            set(DYNAMICLIB_LINK_OPTS ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+        else()
+            set(DYNAMICLIB_LINK_OPTS ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+        endif()
+    endif()
+    target_link_libraries(snowflakeclient_dynamic ${DYNAMICLIB_LINK_OPTS})
+endif()
 
 add_subdirectory(examples)
 
