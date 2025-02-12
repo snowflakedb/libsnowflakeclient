@@ -211,8 +211,8 @@ sf_bool get_real_results(SF_STMT *sfstmt) {
       }
     }
 
-    int sleep_time = retry_pattern[retry] * 500;
-    if (retry < (max_retries)) {
+    if (retry < max_retries) {
+      int sleep_time = retry_pattern[retry] * 500;
       sf_sleep_ms(sleep_time);
       retry++;
     } else {
