@@ -20,18 +20,16 @@
 #include <dlfcn.h>
 #endif
 
-using namespace Snowflake::Client;
-using namespace picojson;
-
 namespace
 {
+  using namespace Snowflake::Client;
+
   // constants
   const std::string SF_CLIENT_CONFIG_FILE_NAME("sf_client_config.json");
   const std::string SF_CLIENT_CONFIG_ENV_NAME("SF_CLIENT_CONFIG_FILE");
   const std::initializer_list<const std::string> KnownCommonEntries{ "log_level", "log_path" };
 
   // helpers
-  ////////////////////////////////////////////////////////////////////////////////
 #if defined(_WIN32) || defined(_WIN64)
   boost::filesystem::path getBinaryPath()
   {
@@ -63,7 +61,6 @@ namespace
   }
 #endif
 
-  ////////////////////////////////////////////////////////////////////////////////
   std::string getEnvironmentVariableValue(const std::string& envVarName)
   {
     // Environment variables being checked point to file paths, hence MAX_PATH is used
@@ -75,7 +72,6 @@ namespace
     return "";
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
 #if defined(_WIN32) || defined(_WIN64)
   boost::filesystem::path resolveHomeDirConfigPath()
   {
@@ -120,7 +116,6 @@ namespace
   }
 #endif
 
-  ////////////////////////////////////////////////////////////////////////////////
   boost::filesystem::path resolveClientConfigPath(
     const boost::filesystem::path& configFilePath)
   {
@@ -151,7 +146,6 @@ namespace
     return resolveHomeDirConfigPath();
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
   bool isKnownCommonEntry(const std::string& entry) {
     return std::any_of(KnownCommonEntries.begin(), KnownCommonEntries.end(),
       [&entry](auto& knownEntry) {
@@ -159,10 +153,9 @@ namespace
     });
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  void checkUnknownEntries(value& config) {
-    if (config.is<object>()) {
-      for (auto& kv : config.get<object>()) {
+  void checkUnknownEntries(picojson::value& config) {
+    if (config.is<picojson::object>()) {
+      for (auto& kv : config.get<picojson::object>()) {
         if (!isKnownCommonEntry(kv.first)) {
           CXX_LOG_WARN("Unknown configuration entry: %s with value: %s",
             kv.first.c_str(), kv.second.to_str().c_str());
@@ -171,7 +164,6 @@ namespace
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
   sf_bool checkIfValidPermissions(const boost::filesystem::path& filePath)
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
@@ -186,12 +178,11 @@ namespace
     return true;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
   sf_bool parseConfigFile(
     const boost::filesystem::path& filePath,
     client_config& clientConfig)
   {
-    value jsonConfig;
+    picojson::value jsonConfig;
     std::string err;
     std::ifstream configFile;
     configFile.open(filePath.string(), std::fstream::in | std::ios::binary);
@@ -215,10 +206,10 @@ namespace
       return false;
     }
 
-    if (jsonConfig.is<object>())
+    if (jsonConfig.is<picojson::object>())
     {
-      value commonProps = jsonConfig.get("common");
-      if (commonProps.is<object>())
+      picojson::value commonProps = jsonConfig.get("common");
+      if (commonProps.is<picojson::object>())
       {
         checkUnknownEntries(commonProps);
         if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
@@ -248,7 +239,6 @@ namespace
     return false;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
   sf_bool loadClientConfig(
     const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
@@ -263,7 +253,6 @@ namespace
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
 sf_bool load_client_config(
   const char* configFilePath,
   client_config* clientConfig)
