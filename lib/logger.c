@@ -19,6 +19,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+ /*
+  * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
+  */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +33,10 @@
 #include <string.h>
 #include <assert.h>
 #include "memory.h"
+
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/types.h>
+#endif
 
 static struct {
     void *udata;
@@ -65,6 +72,16 @@ static void unlock(void) {
     }
 }
 
+#ifdef _WIN32
+int sf_mkdir_perm(const char* path, size_t mode) {
+  // mode is ignored on windows
+  return _mkdir(path);
+#else
+int sf_mkdir_perm(const char* path, mode_t mode) {
+  return mkdir(path, mode);
+#endif
+}
+
 /**
  * Make a directory with the mode
  * @param file_path directory name
@@ -76,7 +93,7 @@ static int mkpath(char* file_path) {
   char* p;
   for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
     *p = '\0';
-    if (sf_mkdir(file_path) == -1) {
+    if (sf_mkdir_perm(file_path, 0700) == -1) {
       if (errno != EEXIST) {
         *p = '/';
         return -1;
@@ -214,6 +231,10 @@ SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
         }
     }
     return SF_LOG_FATAL;
+}
+
+const char* log_from_level_to_str(SF_LOG_LEVEL level) {
+    return level_names[level];
 }
 
 void log_set_path(const char *path) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #ifndef SNOWFLAKE_CLIENT_H
@@ -16,9 +16,6 @@ extern "C" {
 #include "logger.h"
 #include "secure_storage.h"
 
-/**
- * API Name
- */
 #define SF_API_NAME "C API"
 
 /**
@@ -303,7 +300,10 @@ typedef enum SF_GLOBAL_ATTRIBUTE {
     SF_GLOBAL_CA_BUNDLE_FILE,
     SF_GLOBAL_SSL_VERSION,
     SF_GLOBAL_DEBUG,
-    SF_GLOBAL_OCSP_CHECK
+    SF_GLOBAL_OCSP_CHECK,
+    SF_GLOBAL_CLIENT_CONFIG_FILE,
+    SF_GLOBAL_LOG_LEVEL,
+    SF_GLOBAL_LOG_PATH
 } SF_GLOBAL_ATTRIBUTE;
 
 /**
