@@ -78,7 +78,7 @@ int sf_mkdir_perm(const char* path, size_t mode) {
   return _mkdir(path);
 #else
 int sf_mkdir_perm(const char* path, mode_t mode) {
-  return _mkdir(path, mode);
+  return mkdir(path, mode);
 #endif
 }
 
