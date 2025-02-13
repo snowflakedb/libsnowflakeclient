@@ -116,8 +116,6 @@ void test_premature_fetch() {
 
   /* get results */
   char* out = NULL;
-  size_t value_len = 0;
-  size_t max_value_size = 0;
 
   /* Premature fetch */
   status = snowflake_fetch(sfstmt);
