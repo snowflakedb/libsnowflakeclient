@@ -185,6 +185,7 @@ void test_client_config_log_unknown_entries() {
  */
 void test_client_config_log_init() {
   char LOG_PATH[MAX_PATH] = { 0 };
+  char LOG_LEVEL[64] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
   char configFilePath[] = "sf_client_config.json";
   FILE* file;
@@ -197,6 +198,9 @@ void test_client_config_log_init() {
 
   // Get the log path determined by libsnowflakeclient
   snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  // Get the log level determined by libsnowflakeclient and ensure that it's correctly set
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_LEVEL, LOG_LEVEL, 64);
+  assert_string_equal(LOG_LEVEL, "WARN");
   // Ensure the log file doesn't exist at the beginning
   remove(LOG_PATH);
 
