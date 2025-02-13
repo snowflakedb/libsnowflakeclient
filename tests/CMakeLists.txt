@@ -47,10 +47,8 @@ SET(TESTS_C
         test_ocsp_fail_open
         test_unit_privatelink
         test_multiple_statements
-# FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
-# will enable lob test when the change on server side will be published
-#        test_lob
-#        test_stats
+        test_lob
+        test_stats
 # This test needs the Oauth token, so it should be run manually
        test_manual_connect
         )
