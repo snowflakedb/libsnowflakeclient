@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string.h>
@@ -411,7 +411,12 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               char *url,
                               SF_HEADER *header,
                               cJSON **json,
-                              SF_ERROR_STRUCT *error) {
+                              SF_ERROR_STRUCT *error,
+                              int64 renew_timeout,
+                              int8 retry_max_count,
+                              int64 retry_timeout,
+                              int64* elapsed_time,
+                              int8* retried_count) {
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
@@ -427,7 +432,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
-                          0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -459,7 +464,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                if (!curl_get_call(sf, curl, url, new_header, json, error)) {
+                if (!curl_get_call(sf, curl, url, new_header, json, error, renew_timeout, retry_max_count, retry_timeout,elapsed_time, retried_count)) {
                     // Error is set in curl call
                     break;
                 }
@@ -894,7 +899,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                                  elapsed_time, retried_count, is_renew,
                                  renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
-            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
+            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error,
+                renew_timeout, retry_max_count, retry_timeout, elapsed_time, retried_count);
         } else {
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
                                 "An unknown request type was passed to the request function",
@@ -1285,4 +1291,14 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
+}
+
+sf_bool is_one_time_token_request(cJSON* resp)
+{
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+}
+
+size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+  return char_resp_cb(ptr, size, nmemb, userdata);
 }

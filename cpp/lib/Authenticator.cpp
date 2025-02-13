@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #include <string>
@@ -16,6 +16,10 @@
 #include <openssl/pem.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <connection.h>
+#include "curl_desc_pool.h"
+#include "cJSON.h"
+#include "memory.h"
 
 #include <fstream>
 
@@ -59,7 +63,12 @@ extern "C" {
         return AUTH_PAT;
     }
 
-    return AUTH_UNSUPPORTED;
+    if (strcasecmp(authenticator, "test") == 0)
+    {
+        return AUTH_TEST;
+    }
+
+    return AUTH_OKTA;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
@@ -76,6 +85,16 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorJWT(conn));
+      }
+      if (AUTH_OKTA == auth_type)
+      {
+        conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+                              new Snowflake::Client::AuthenticatorOKTA(conn));
+      }
+      if (AUTH_TEST == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorTest(conn));
       }
     }
     catch (...)
@@ -131,16 +150,17 @@ extern "C" {
 
   void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
   {
+    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    if (!data)
+    {
+        data = snowflake_cJSON_CreateObject();
+        snowflake_cJSON_AddItemToObject(body, "data", data);
+    }
+    
     auto authenticator = getAuthenticatorType(conn->authenticator);
     if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
-    {
-        cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
-        if (!data)
-        {
-            data = snowflake_cJSON_CreateObject();
-            snowflake_cJSON_AddItemToObject(body, "data", data);
-        }
 
+    {
         snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
         snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
 
@@ -160,8 +180,11 @@ extern "C" {
 
     try
     {
+      jsonObject_t picoBody;
+      cJSONtoPicoJson(data, picoBody);
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        updateDataMap(body);
+          updateDataMap(picoBody);
+      picoJsonTocJson(picoBody, &body);
     }
     catch (...)
     {
@@ -180,8 +203,12 @@ extern "C" {
 
     try
     {
+      jsonObject_t picoBody;
+      cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+      cJSONtoPicoJson(data, picoBody);
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-        renewDataMap(body);
+          renewDataMap(picoBody);
+      picoJsonTocJson(picoBody, &body);
     }
     catch (...)
     {
@@ -198,13 +225,10 @@ extern "C" {
       return;
     }
 
-    AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
     try
     {
-      if (AUTH_JWT == auth_type)
-      {
-        delete static_cast<Snowflake::Client::AuthenticatorJWT*>(conn->auth_object);
-      }
+      delete static_cast<Snowflake::Client::IAuth::IAuthenticator*>(conn->auth_object);
+      conn->auth_object = nullptr;
     }
     catch (...)
     {
@@ -220,12 +244,7 @@ namespace Snowflake
 {
 namespace Client
 {
-
-  void IAuthenticator::renewDataMap(cJSON *dataMap)
-  {
-    authenticate();
-    updateDataMap(dataMap);
-  }
+  using namespace picojson;
 
   void AuthenticatorJWT::loadPrivateKey(const std::string &privateKeyFile,
                                         const std::string &passcode)
@@ -305,18 +324,12 @@ namespace Client
     claimSet->addClaim("exp", (long)seconds.count() + m_timeOut);
   }
 
-  void AuthenticatorJWT::updateDataMap(cJSON* dataMap)
+  void AuthenticatorJWT::updateDataMap(jsonObject_t& dataMap)
   {
-    cJSON* data = snowflake_cJSON_GetObjectItem(dataMap, "data");
-    if (!data)
-    {
-      data = snowflake_cJSON_CreateObject();
-      snowflake_cJSON_AddItemToObject(dataMap, "data", data);
-    }
-    snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-    snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
-    snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_JWT);
-    snowflake_cJSON_AddStringToObject(data, "TOKEN", m_jwt->serialize(m_privKey).c_str());
+    dataMap.erase("AUTHENTICATOR");
+    dataMap.erase("TOKEN");
+    dataMap["AUTHENTICATOR"] = picojson::value(SF_AUTHENTICATOR_JWT);
+    dataMap["TOKEN"] = picojson::value(m_jwt->serialize(m_privKey));
   }
 
   std::string AuthenticatorJWT::extractPublicKey(EVP_PKEY *privKey)
@@ -373,6 +386,233 @@ namespace Client
     coded.resize(code_size);
 
     return coded;
+  }
+
+  AuthenticatorOKTA::AuthenticatorOKTA(
+      SF_CONNECT* connection) : m_connection(connection)
+  {
+      m_idp = new CIDPAuthenticator(connection);
+
+      m_password = m_connection->password;
+      m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
+      m_appID = m_connection->application_name;
+      m_appVersion = m_connection->application_version;
+  }
+
+  AuthenticatorOKTA::~AuthenticatorOKTA()
+  {
+      delete m_idp;
+  }
+
+  void AuthenticatorOKTA::authenticate()
+  {
+      IAuthenticatorOKTA::authenticate();
+      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
+      {
+          const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
+      }
+  }
+
+  void AuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
+  {
+      dataMap.erase("LOGIN_NAME");
+      dataMap.erase("PASSWORD");
+      dataMap.erase("EXT_AUTHN_DUO_METHOD");
+      dataMap.erase("AUTHENTICATOR");
+      dataMap.erase("TOKEN");
+
+      IAuthenticatorOKTA::updateDataMap(dataMap);
+  }
+
+  CIDPAuthenticator::CIDPAuthenticator(SF_CONNECT* conn) : m_connection(conn)
+  {
+      m_account = m_connection->account;
+      m_authenticator = m_connection->authenticator;
+      m_user = m_connection->user;
+      m_port = m_connection->port;
+      m_host = m_connection->host;
+      m_protocol = m_connection->protocol;
+      m_retriedCount = 0;
+      m_retryTimeout = get_retry_timeout(m_connection);
+  }
+
+  CIDPAuthenticator::~CIDPAuthenticator()
+  {
+      // nop
+  }
+
+  bool CIDPAuthenticator::curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+  {
+      bool ret = true;
+      std::string destination = url.toString();
+      void* curl_desc;
+      CURL* curl;
+      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl = get_curl_from_desc(curl_desc);
+      SF_ERROR_STRUCT* err = &m_connection->error;
+
+      int64 elapsedTime = 0;
+      int8 maxRetryCount = get_login_retry_count(m_connection);
+      int64 renewTimeout = auth_get_renew_timeout(m_connection);
+
+      // add headers for account and authentication
+      SF_HEADER* httpExtraHeaders = sf_header_create();
+      std::string s_body = value(obj).serialize();
+      cJSON* resp_data = NULL;
+      httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+      if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
+          CXX_LOG_TRACE("sf", "Authenticator",
+              "post_curl_call",
+              "Failed to create the header for the request to get the token URL and the SSO URL");
+          m_errMsg = "OktaConnectionFailed: failed to create the header";
+          ret = false;
+      }
+
+      if (ret)
+      {
+          if (!curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
+              &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
+              &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
+          {
+              CXX_LOG_INFO("sf", "Authenticator", "post_curl_call",
+                  "post call failed, response body=%s\n",
+                  snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+              m_errMsg = "SFConnectionFailed: Fail to get one time token";
+              ret = false;
+          }
+          else
+          {
+              cJSONtoPicoJson(resp_data, resp);
+          }
+      }
+
+      if (ret && elapsedTime >= m_retryTimeout)
+      {
+          CXX_LOG_WARN("sf", "Authenticator", "get_curl_call",
+              "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+              m_retryTimeout, elapsedTime);
+
+          m_errMsg = "OktaConnectionFailed: timeout reached";
+          ret = false;
+      }
+
+      sf_header_destroy(httpExtraHeaders);
+      free_curl_desc(curl_desc);
+      snowflake_cJSON_Delete(resp_data);
+      return ret;
+  }
+
+  bool CIDPAuthenticator::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
+  {
+      isRetry = false;
+      bool ret = true;
+      sf_bool isHttpSuccess = SF_BOOLEAN_TRUE;
+      int64 maxRetryCount = get_login_retry_count(m_connection);
+      int64 elapsedTime = 0;
+      int64 renewTimeout = auth_get_renew_timeout(m_connection);
+      int64 curlTimeout = m_connection->network_timeout;
+
+      std::string destination = url.toString();
+      void* curl_desc;
+      CURL* curl;
+      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl = get_curl_from_desc(curl_desc);
+
+      SF_ERROR_STRUCT* err = &m_connection->error;
+
+      NON_JSON_RESP* raw_resp = (NON_JSON_RESP*)SF_MALLOC(sizeof(NON_JSON_RESP));
+      raw_resp->write_callback = non_json_resp_write_callback;
+      RAW_CHAR_BUFFER buf = { NULL,0 };
+      raw_resp->buffer = (void*)&buf;
+      cJSON* resp_data = NULL;
+
+      // add headers for account and authentication
+      SF_HEADER* httpExtraHeaders = sf_header_create();
+      httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+      if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
+      {
+          CXX_LOG_TRACE("sf", "Authenticator",
+              "get_curl_call",
+              "Failed to create the header for the request to get onetime token");
+          m_errMsg = "OktaConnectionFailed: failed to create the header";
+          ret = false;
+      }
+
+      if (ret)
+      {
+          if (parseJSON) 
+          {
+              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
+                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->retry_on_curle_couldnt_connect_count,
+                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
+                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+          }
+          else
+          {
+              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
+                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->retry_on_curle_couldnt_connect_count,
+                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
+                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+          }
+
+          if (!isHttpSuccess)
+          {
+              //Fail to get the saml response. Retry.
+              isRetry = true;
+              ret = false;
+          }
+          else
+          {
+              if (parseJSON)
+              {
+                  cJSONtoPicoJson(resp_data, resp);
+              }
+              else 
+              {
+                  rawData = buf.buffer;
+              }
+          }
+      }
+
+      if (ret && elapsedTime >= m_retryTimeout)
+      {
+          CXX_LOG_WARN("sf", "AuthenticatorOKTA", "get_curl_call",
+              "Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+              m_retryTimeout, elapsedTime);
+
+          m_errMsg = "OktaConnectionFailed: timeout reached";
+          ret = false;
+      }
+
+      sf_header_destroy(httpExtraHeaders);
+      free_curl_desc(curl_desc);
+      SF_FREE(raw_resp);
+      return ret;
+  }
+
+  AuthenticatorTest::AuthenticatorTest(SF_CONNECT* conn) : m_connection(conn)
+  {
+  }
+
+  AuthenticatorTest::~AuthenticatorTest()
+  {
+      //nop
+  }
+
+  void AuthenticatorTest::authenticate()
+  {
+      //nop
+  }
+
+  void AuthenticatorTest::updateDataMap(jsonObject_t& dataMap) 
+  {
+      dataMap["test"] = picojson::value(count);
+      count++;
   }
 } // namespace Client
 } // namespace Snowflake
