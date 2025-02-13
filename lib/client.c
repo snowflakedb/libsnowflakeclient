@@ -19,7 +19,7 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
-#include "util.h"
+#include "snowflake_util.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>

@@ -63,6 +63,11 @@ extern "C" {
         return AUTH_PAT;
     }
 
+    if (strcasecmp(authenticator, "test") == 0)
+    {
+        return AUTH_TEST;
+    }
+
     return AUTH_OKTA;
   }
 
@@ -85,6 +90,11 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorOKTA(conn));
+      }
+      if (AUTH_TEST == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorTest(conn));
       }
     }
     catch (...)
@@ -583,6 +593,12 @@ namespace Client
       free_curl_desc(curl_desc);
       SF_FREE(raw_resp);
       return ret;
+  }
+
+  void AuthenticatorTest::updateDataMap(jsonObject_t& dataMap) 
+  {
+      dataMap["test"] = picojson::value(count);
+      count++;
   }
 } // namespace Client
 } // namespace Snowflake

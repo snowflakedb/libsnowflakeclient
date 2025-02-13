@@ -58,9 +58,9 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
+        lib/snowflake_cpp_util.h
+        lib/snowflake_util.c
         lib/snowflake_util.h
-        lib/util.c
-        lib/util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
@@ -156,7 +156,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/CurlDescPool.hpp
         include/snowflake/IJwt.hpp
         include/snowflake/IAuth.hpp
-        cpp/lib/SnowflakeUtil.cpp
         include/snowflake/BindUploader.hpp
         include/snowflake/SecureStorage.hpp
         cpp/lib/Exceptions.cpp
@@ -198,6 +197,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/CurlDescPool.cpp
         cpp/util/Sha256.cpp
         cpp/util/Sha256.hpp
+        cpp/util/SnowflakeCppUtil.cpp
         cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h

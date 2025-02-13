@@ -261,8 +261,6 @@ void test_okta_authenticator_fail(void**)
     sf_bool disable_saml_url_check = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_SAML_URL_CHECK, &disable_saml_url_check);
 
-    AuthenticatorOKTA* auth = new AuthenticatorOKTA(sf);
-    auth->authenticate();
     assert_int_not_equal(sf->error.error_code, SF_STATUS_SUCCESS);
 
     MockOkta okta = MockOkta(sf);
