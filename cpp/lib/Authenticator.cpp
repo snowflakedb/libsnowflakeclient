@@ -595,6 +595,20 @@ namespace Client
       return ret;
   }
 
+  AuthenticatorTest::AuthenticatorTest(SF_CONNECT* conn) : m_connection(conn)
+  {
+  }
+
+  AuthenticatorTest::~AuthenticatorTest()
+  {
+      //nop
+  }
+
+  void AuthenticatorTest::authenticate()
+  {
+      //nop
+  }
+
   void AuthenticatorTest::updateDataMap(jsonObject_t& dataMap) 
   {
       dataMap["test"] = picojson::value(count);

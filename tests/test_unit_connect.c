@@ -13,7 +13,8 @@
  */
 void test_unit_connect(void** unused) 
 {
-   SF_CONNECT *sf = snowflake_init();
+    SF_UNUSED(unused);
+    SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,"test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
     snowflake_set_attribute(sf, SF_CON_HOST, "host");

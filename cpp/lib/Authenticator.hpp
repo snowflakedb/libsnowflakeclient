@@ -88,11 +88,11 @@ namespace Client
   class AuthenticatorTest : public IAuthenticatorOKTA
   {
   public:
-      AuthenticatorTest(SF_CONNECT* conn) {};
+      AuthenticatorTest(SF_CONNECT* conn);
 
-      ~AuthenticatorTest() {};
+      ~AuthenticatorTest();
 
-      void authenticate() {};
+      void authenticate();
 
       void updateDataMap(jsonObject_t& dataMap);
 

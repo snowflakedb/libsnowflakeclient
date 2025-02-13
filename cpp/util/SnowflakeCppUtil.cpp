@@ -14,10 +14,8 @@ namespace Client
 	extern "C" {
 		void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson)
 		{
-			jsonValue_t v;
-			const char* dataStr = snowflake_cJSON_Print(cjson);
-			picojson::parse(v, dataStr);
-			picojson = v.get<picojson::object>();
+			std::string dataStr = snowflake_cJSON_Print(cjson);
+			strToPicoJson(picojson, dataStr);
 		}
 
 		void picoJsonTocJson(jsonObject_t& picojson, cJSON** cjson)
