@@ -297,7 +297,7 @@ int STDCALL sf_mkdir(const char *path) {
 #ifdef _WIN32
     return _mkdir(path);
 #else
-    return mkdir(path, 0700);
+    return mkdir(path, 0755);
 #endif
 }
 
