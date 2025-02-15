@@ -4,10 +4,11 @@
 #
 function usage() {
     echo "Usage: `basename $0` [-p]"
-    echo "-p                 : Rebuild Snowflake Client with profile option. default: no profile"
-    echo "-t <Release/Debug> : Release or Debug builds"
-    echo "-s                 : Build source only. Skipping building tests."
-    echo "-v                 : Version"
+    echo "-p                  : Rebuild Snowflake Client with profile option. default: no profile"
+    echo "-t <Release/Debug>  : Release or Debug builds"
+    echo "-l <Dynamic/Static> : Dynamic or Static linking builds. default: Static"
+    echo "-s                  : Build source only. Skipping building tests."
+    echo "-v                  : Version"
     exit 2
 }
 set -o pipefail
@@ -30,7 +31,6 @@ cmake_opts=(
     "-DCMAKE_C_COMPILER=$GCC"
     "-DCMAKE_CXX_COMPILER=$GXX"
     "-DCMAKE_BUILD_TYPE=$target"
-    "-DBUILD_SHARED_LIBS=ON"
     "-DCLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE}"
 )
 
@@ -65,6 +65,10 @@ if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
     cmake_opts+=("-DMOCK=ON")
 fi
 
+if [[ "$linking" == "Dynamic" ]]; then
+    cmake_opts+=("-DBUILD_SHARED_LIBS=ON")
+fi
+
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
 
@@ -83,7 +87,7 @@ else
     exit 1
 fi
 
-echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
+echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target $linking"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")
 if [[ -z "$GITHUB_ACTIONS" ]] && [[ -z "$BUILD_SOURCE_ONLY" ]] && [[ -n "$GIT_BRANCH" ]]; then

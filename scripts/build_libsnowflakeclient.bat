@@ -6,7 +6,7 @@ set scriptdir=%~dp0
 for /f "tokens=3" %%A in ('findstr SF_API_VERSION %scriptdir%..\include\snowflake\version.h') do @set V=%%A
 set libsnowflakeclient_version=%v:"=%
 if "%*"=="" (
-    call :build %platform% %build_type% %vs_version% OFF ON
+    call :build %platform% %build_type% %vs_version% OFF ON %link_type%
 ) else (
     call %*
 )
@@ -24,7 +24,7 @@ set vs_version=%3
 :: for ODBC, dynamic runtime needs to be set to off
 set dynamic_runtime=%4
 set build_tests=%5
-set share_lib=%6
+set link_type=%6
 
 set msvc_runtime_library=MultiThreaded
 
@@ -44,10 +44,12 @@ if not "%build_tests%"=="ON" (
 )
 echo === build_tests: %build_tests%
 
-if not "%share_lib%"=="ON" (
-	set share_lib=OFF
+if /I "%link_type%"=="Dynamic" (
+	set build_shared_lib=ON
+) else (
+	set build_shared_lib=OFF
 )
-echo === share_lib: %share_lib%
+echo === build_shared_lib: %build_shared_lib%
 
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
@@ -69,7 +71,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 cmake -G "%cmake_generator%" -A %cmake_architecture% ^
     -DCMAKE_MSVC_RUNTIME_LIBRARY=%msvc_runtime_library% ^
-    -DBUILD_SHARED_LIBS=%share_lib% ^
+    -DBUILD_SHARED_LIBS=%build_shared_lib% ^
     -DBUILD_TESTS=%build_tests% ^
     -DCMAKE_BUILD_TYPE=%build_type% ^
     -DVSDIR:STRING=%vsdir% ..

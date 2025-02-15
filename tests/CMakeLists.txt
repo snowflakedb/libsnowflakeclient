@@ -168,41 +168,42 @@ if (LINUX)
 endif ()
 message("valgrind suppression file is located at " ${VALGRIND_SUPPRESSION})
 
-if (LINUX)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
-            -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
-            pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
-endif ()
-if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load
-            ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load ${CURL_LIB}
-            ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
-endif()
-if (WIN32)
-    if (WIN32_DEBUG)
-        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-            set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
-            set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
-        endif()
-    else()
-        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
-        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
-    endif()
-endif()
-set(TESTLIB_OPTS_C_UNIT ${TESTLIB_OPTS_C})
-if (BUILD_SHARED_LIBS)
+if (NOT BUILD_SHARED_LIBS)
     if (LINUX)
-        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient_dynamic.so)
+        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+                -Wl,--no-whole-archive pthread -Wl,--as-needed -static-libgcc -static-libstdc++)
+        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} -Wl,--whole-archive telemetry curl ssl crypto uuid
+                pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
+    endif ()
+    if (APPLE)
+        set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load
+                ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
+        set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework security" -all_load ${CURL_LIB}
+                ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
+    endif()
+    if (WIN32)
+        if (WIN32_DEBUG)
+            if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+                set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+                        Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+                set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
+                        Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+            endif()
+        else()
+            set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+            set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
+                    Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+        endif()
+    endif()
+    set(TESTLIB_OPTS_C_UNIT ${TESTLIB_OPTS_C})
+else()
+    if (LINUX)
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient.so)
     elseif (APPLE)
-        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient_dynamic.dylib)
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/libsnowflakeclient.dylib)
     else()
-        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/snowflakeclient_dynamic.lib)
+        set(TESTLIB_OPTS_C_DYNAMIC ${CMOCKA_LIB} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/snowflakeclient.lib)
     endif()
 endif()
 
@@ -238,6 +239,39 @@ if (MOCK)
         FOREACH (MTD ${MOCK_TEST_DATA})
             configure_file("mock/test_data/${MTD}" "mock/test_data/${MTD}" COPYONLY)
         ENDFOREACH ()
+    ENDFOREACH ()
+elseif (BUILD_SHARED_LIBS)
+    FOREACH (T ${TESTS_C})
+        add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
+        if (WIN32)
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
+            )
+        else()
+            target_include_directories(
+                    ${T}_dynamic PUBLIC
+                    ../deps-build/${PLATFORM}/cmocka/include
+            )
+            if (APPLE)
+                set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
+            endif()
+        endif()
+        target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
+        target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
+        add_test(${T}_dynamic ${T}_dynamic)
+        # Removed to suppress false alarm: "--run-libc-freeres=no"
+        if (LINUX)
+          if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
+            add_test(valgrind_${T}_dynamic
+                valgrind
+                --tool=memcheck
+                --leak-check=full
+                --error-exitcode=1
+                --suppressions=${VALGRIND_SUPPRESSION}
+                ./${T}_dynamic)
+          endif()
+        endif()
     ENDFOREACH ()
 else()
     FOREACH (T ${TESTS_C})
@@ -299,41 +333,6 @@ else()
           endif()
         endif()
     ENDFOREACH ()
-
-    if (BUILD_SHARED_LIBS)
-        FOREACH (T ${TESTS_C})
-            add_executable(${T}_dynamic ${SOURCE_UTILS} ${T}.c)
-            if (WIN32)
-                target_include_directories(
-                        ${T}_dynamic PUBLIC
-                        ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
-                )
-            else()
-                target_include_directories(
-                        ${T}_dynamic PUBLIC
-                        ../deps-build/${PLATFORM}/cmocka/include
-                )
-                if (APPLE)
-                    set_target_properties(${T}_dynamic PROPERTIES LINK_FLAGS "-Wl,-rpath,${CMAKE_BINARY_DIR}")
-                endif()
-            endif()
-            target_compile_definitions(${T}_dynamic PUBLIC _LARGEFILE64_SOURCE)
-            target_link_libraries(${T}_dynamic ${TESTLIB_OPTS_C_DYNAMIC})
-            add_test(${T}_dynamic ${T}_dynamic)
-            # Removed to suppress false alarm: "--run-libc-freeres=no"
-            if (LINUX)
-              if ("$(CMAKE_OS_ARCH)" STREQUAL "x86_64")
-                add_test(valgrind_${T}_dynamic
-                    valgrind
-                    --tool=memcheck
-                    --leak-check=full
-                    --error-exitcode=1
-                    --suppressions=${VALGRIND_SUPPRESSION}
-                    ./${T}_dynamic)
-              endif()
-            endif()
-        ENDFOREACH ()
-    endif()
 
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
@@ -397,7 +396,9 @@ else()
 
 endif()
 
-if (UNIX)
-    add_subdirectory(unit_test_ocsp)
+if (NOT BUILD_SHARED_LIBS)
+    if (UNIX)
+        add_subdirectory(unit_test_ocsp)
+    endif()
+    add_subdirectory(test_bind_datastructures)
 endif()
-add_subdirectory(test_bind_datastructures)

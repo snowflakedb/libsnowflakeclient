@@ -42,6 +42,7 @@ goto :EOF
     set build_type=%~2
     set vs_version=%~3
     set dynamic_runtime=%~4
+
     call "%scriptdir%..\scripts\_init.bat" %platform% %build_type% %vs_version%
     if %ERRORLEVEL% NEQ 0 goto :error
     call :download_build_component zlib "%zlib_build_script%" "%dynamic_runtime%"
@@ -65,6 +66,7 @@ goto :EOF
     if defined GITHUB_ACTIONS (
         rd /S /Q %scriptdir%\..\deps
     )
+
     call :build_component libsnowflakeclient "%libsnowflakeclient_build_script%" "%dynamic_runtime%"
     if %ERRORLEVEL% NEQ 0 goto :error
     if defined GITHUB_ACTIONS (
@@ -137,7 +139,7 @@ goto :EOF
     set dynamic_runtime=%~3
 
     echo === build: %component_name% ===
-    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON ON
+    call %build_script% :build %platform% %build_type% %vs_version% %dynamic_runtime% ON %link_type%
     if %ERRORLEVEL% NEQ 0 goto :error
 
     call %build_script% :get_version

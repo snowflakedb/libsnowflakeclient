@@ -9,8 +9,9 @@ CI_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
+[[ -z "$LINK_TYPE" ]] && export LINK_TYPE=Static
 
-source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE "$@"
+source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE -l $LINK_TYPE "$@"
 source $SCRIPTS_DIR/utils.sh
 init_git_variables
 
@@ -68,10 +69,11 @@ function build_component()
     local component_name=$1
     local component_script=$2
     local build_type=$3
-    local other_args="$4"
+    local link_type=$4
+    local other_args="$5"
 
     echo "=== build: $component_name ==="
-    "$component_script" -t "$build_type" "$other_args"
+    "$component_script" -t "$build_type" -l "$link_type" "$other_args"
     local component_version=$("$component_script" -v)
 
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
@@ -100,6 +102,6 @@ if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $SCRIPTS_DIR/../deps/*
 fi
 
-build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target" "$@"
+build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target" "$linking" "$@"
 
 
