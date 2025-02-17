@@ -76,15 +76,18 @@ BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
-cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
-if [[ "$PLATFORM" == "linux" ]]; then
-    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient_dynamic.so $BUILD_DIR/lib
-elif [[ "$PLATFORM" == "darwin" ]]; then
-    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient_dynamic.dylib $BUILD_DIR/lib
+if [[ "$linking" == "Static" ]]; then
+    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 else
-    echo "[ERROR] Unknown platform: $PLATFORM"
-    exit 1
+    if [[ "$PLATFORM" == "linux" ]]; then
+        cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.so $BUILD_DIR/lib
+    elif [[ "$PLATFORM" == "darwin" ]]; then
+        cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.dylib $BUILD_DIR/lib
+    else
+        echo "[ERROR] Unknown platform: $PLATFORM"
+        exit 1
+    fi
 fi
 
 echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target $linking"
