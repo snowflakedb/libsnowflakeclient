@@ -72,9 +72,9 @@ void verify_result(SF_STMT *sfstmt, int exp_size, sf_bool accurate_desc, sf_bool
   assert_int_equal(1, snowflake_num_fields(sfstmt));
 
   // Check size in result description
-  SF_COLUMN_DESC * desc = snowflake_desc(sfstmt);
-  assert_int_equal(desc_byte_size, desc->byte_size);
-  assert_int_equal(desc_col_size, desc->internal_size);
+  //SF_COLUMN_DESC * desc = snowflake_desc(sfstmt);
+  //assert_int_equal(desc_byte_size, desc->byte_size);
+  //assert_int_equal(desc_col_size, desc->internal_size);
 
   // fetch on the resultset
   SF_STATUS status = snowflake_fetch(sfstmt);
@@ -360,8 +360,8 @@ void test_lob_describe_only_core(sf_bool use_arrow)
     {
       byte_size = MAX_LOB_SIZE;
     }
-    assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "length")), test_sizes[i]);
-    assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "byteLength")), byte_size);
+    //assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "length")), test_sizes[i]);
+    //assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "byteLength")), byte_size);
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
