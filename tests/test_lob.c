@@ -423,7 +423,8 @@ void test_lob_describe_only_json(void **unused)
 }
 
 int main(void) {
-    initialize_test(SF_BOOLEAN_FALSE);
+    // temporarily enable debugging
+    initialize_test(SF_BOOLEAN_TRUE);
     initialize_lob_data();
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_lob_retrieval_arrow),
