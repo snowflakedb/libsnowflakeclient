@@ -22,6 +22,7 @@ typedef enum authenticator_type
         AUTH_JWT,
         AUTH_USR_PWD_MFA,
         AUTH_PAT,
+        AUTH_TEST,
         AUTH_UNSUPPORTED
     } AuthenticatorType;
 

@@ -7,7 +7,7 @@
 
 #include <string>
 #include <snowflake/SFURL.hpp>
-#include "../../lib/snowflake_util.h"
+#include "../../lib/snowflake_cpp_util.h"
 #include "snowflake/IBase64.hpp"
 
 namespace Snowflake

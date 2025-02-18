@@ -43,6 +43,7 @@ SET(TESTS_C
         test_stmt_functions
         test_unit_oauth
         test_unit_pat
+        test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open
         test_unit_privatelink
@@ -79,7 +80,9 @@ SET(TESTS_CXX
         test_unit_snowflake_types_to_string
         test_unit_azure_client
         test_unit_query_context_cache
-        test_unit_sfurl)
+        test_unit_sfurl
+        test_unit_secure_storage
+)
 
 SET(TESTS_PUTGET
         test_include_aws
@@ -93,7 +96,9 @@ SET(TESTS_PERF
 
 SET(TESTS_MOCK
         test_mock_service_name
-        test_mock_session_gone)
+        test_mock_session_gone
+        test_mock_mfa_token_caching
+)
 
 set(SOURCE_UTILS
         utils/test_setup.c
@@ -280,6 +285,14 @@ if (MOCK)
                 --error-exitcode=1
                 --suppressions=${VALGRIND_SUPPRESSION}
                 ./${T})
+        set(MOCK_TEST_DATA
+                expected_first_mfa_request.json
+                expected_second_mfa_request.json
+                first_mfa_response.json
+        )
+        FOREACH (MTD ${MOCK_TEST_DATA})
+            configure_file("mock/test_data/${MTD}" "mock/test_data/${MTD}" COPYONLY)
+        ENDFOREACH ()
     ENDFOREACH ()
 else()
     FOREACH (T ${TESTS_C})

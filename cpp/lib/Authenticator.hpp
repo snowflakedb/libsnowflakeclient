@@ -16,7 +16,7 @@
 #include "snowflake/IBase64.hpp"
 #include "authenticator.h"
 #include "snowflake/SFURL.hpp"
-#include "../../lib/snowflake_util.h"
+#include "../../lib/snowflake_cpp_util.h"
 #include "../include/snowflake/IAuth.hpp"
 #include "picojson.h"
 
@@ -98,6 +98,22 @@ namespace Client
 
   private:
       SF_CONNECT* m_connection;
+  };
+
+  class AuthenticatorTest : public IAuthenticatorOKTA
+  {
+  public:
+      AuthenticatorTest(SF_CONNECT* conn);
+
+      ~AuthenticatorTest();
+
+      void authenticate();
+
+      void updateDataMap(jsonObject_t& dataMap);
+
+  private:
+      SF_CONNECT* m_connection;
+      double count = 0;
   };
 } // namespace Client
 } // namespace Snowflake
