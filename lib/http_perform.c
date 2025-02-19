@@ -109,6 +109,8 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
         case CURLINFO_DATA_OUT:
             text = "=> Send data";
+            // temporarily disable dump send data
+            return 0;
             break;
         case CURLINFO_SSL_DATA_OUT:
             text = "=> Send SSL data";
