@@ -118,6 +118,8 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
         case CURLINFO_DATA_IN:
             text = "<= Recv data";
+            // temporarily disable dump recv data
+            return 0;
             break;
         case CURLINFO_SSL_DATA_IN:
             text = "<= Recv SSL data";
