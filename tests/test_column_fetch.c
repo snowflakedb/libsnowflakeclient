@@ -3,6 +3,7 @@
  */
 #include <assert.h>
 #include "utils/test_setup.h"
+#include "memory.h"
 
 void test_column_as_boolean_helper(sf_bool use_arrow) {
     SF_STATUS status;
@@ -1310,8 +1311,7 @@ void test_column_as_str_helper(sf_bool use_arrow) {
         assert_int_equal(status, SF_STATUS_ERROR_OUT_OF_BOUNDS);
     }
 
-    free(out);
-    out = NULL;
+    SF_FREE(out);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
