@@ -34,7 +34,46 @@ void test_log_str_to_level() {
 }
 
 /**
- * Test standard logging without client config
+ * Test null log path
+ */
+void test_null_log_path() {
+  char LOG_PATH[MAX_PATH] = { 0 };
+  char LOG_LEVEL[64] = { 0 };
+
+  // Pass in empty log path
+  snowflake_global_init(NULL, SF_LOG_WARN, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  char log_path_dir[6];
+  strncpy(log_path_dir, LOG_PATH, 5);
+  log_path_dir[5] = '\0';
+  assert_string_equal(log_path_dir, "logs/");
+
+  // Get the log level determined by libsnowflakeclient and ensure that it's correctly set
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_LEVEL, LOG_LEVEL, 64);
+  assert_string_equal(LOG_LEVEL, "WARN");
+
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+  assert_int_not_equal(access(LOG_PATH, F_OK), 0);
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
+  log_close();
+
+  // Cleanup
+  remove(LOG_PATH);
+  remove(LOG_LEVEL);
+  remove(log_path_dir);
+}
+
+/**
+ * Test default log path
  */
 void test_default_log_path() {
   char LOG_PATH[MAX_PATH] = { 0 };
@@ -526,6 +565,7 @@ void test_mask_secret_log() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_null_log_path),
         cmocka_unit_test(test_default_log_path),
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
