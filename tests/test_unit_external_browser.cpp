@@ -15,6 +15,7 @@
 #define REF_SSO_URL "https://sso.com/"
 #define REF_PROOF_KEY "MOCK_PROOF_KEY"
 #define REF_SAML_TOKEN "MOCK_SAML_TOKEN"
+#define CACHE_SERVER_URL_ENV "SF_OCSP_RESPONSE_CACHE_SERVER_URL"
 
 using namespace Snowflake::Client;
 
@@ -283,13 +284,9 @@ void test_external_browser_error(void**)
     snowflake_term(sf);
 }
 
-void unit_authenticator_external_browser_privatelink_core(const std::string& topDomain = "com")
-{
-    static const char* CACHE_SERVER_URL_ENV = "SF_OCSP_RESPONSE_CACHE_SERVER_URL";
 
-    // Helper class to show/validate environment variable SF_OCSP_RESPONSE_CACHE_SERVER_URL
-    // It also restore the original value after test.
-    // note: function is not allowed in a function scope, but a class is.
+void unit_authenticator_external_browser_privatelink(const std::string& topDomain = "com")
+{
     class EnvVar
     {
     public:
@@ -300,18 +297,13 @@ void unit_authenticator_external_browser_privatelink_core(const std::string& top
                 original_value_ = std::string(cache_server_url_env);
                 exist_ = true;
             }
-            else {
-                //printf("original, %s no exists\n", CACHE_SERVER_URL_ENV);
-            }
         }
         ~EnvVar()
         {
             if (exist_) {
-                //printf("restore CACHE_SERVER_URL_ENV to\n, %s ", original_value_.c_str());
                 sf_setenv(CACHE_SERVER_URL_ENV, original_value_.c_str());
             }
             else {
-                //printf("remove\n");
                 sf_unsetenv(CACHE_SERVER_URL_ENV);
             }
         }
@@ -320,15 +312,10 @@ void unit_authenticator_external_browser_privatelink_core(const std::string& top
         {
             char* cache_server_url_env = getenv(CACHE_SERVER_URL_ENV);
             const std::string cache_server_url(cache_server_url_env ? cache_server_url_env : "");
-            //std::cout << std::endl << std::endl
-            //    << prompt
-            //    << "  env: " << CACHE_SERVER_URL_ENV << "="
-            //    << (cache_server_url_env ? cache_server_url_env : "(null)")
-            //    << std::endl << std::endl;
             return std::string(cache_server_url_env ? cache_server_url_env : "");
         }
 
-        static void validate(const std::string& prompt = "", const std::string& topDomain = "com")
+        static void validate(const std::string& prompt = "",const std::string& topDomain = "com")
         {
             const std::string PRIVATELINK_URL_SUFFIX = std::string(".privatelink.snowflakecomputing.") + topDomain + "/ocsp_response_cache.json";
             const std::string cache_server_url(get(prompt));
@@ -338,23 +325,6 @@ void unit_authenticator_external_browser_privatelink_core(const std::string& top
     private:
         std::string original_value_;
         bool exist_;
-
-    };
-
-    class FakeAuthenticatorInstance : public IAuthenticator
-    {
-    public:
-        FakeAuthenticatorInstance()
-        {}
-
-        ~FakeAuthenticatorInstance()
-        {}
-
-        inline void authenticate()
-        {}
-
-        inline void updateDataMap(jsonObject_t& dataMap)
-        {}
 
     };
 
@@ -424,12 +394,16 @@ void unit_authenticator_external_browser_privatelink_core(const std::string& top
         inline void authenticate()
         {
             EnvVar::validate("MockAuthenticatorExternalBrowser::authenticate", m_topDomain);
-            AuthenticatorExternalBrowser::authenticate();
         }
 
     private:
         std::string m_topDomain;
     };
+
+    // Helper class to show/validate environment variable SF_OCSP_RESPONSE_CACHE_SERVER_URL
+    // It also restore the original value after test.
+    // note: function is not allowed in a function scope, but a class is.
+    
 
     EnvVar original_env_value; // load now and restore when test ends
 
@@ -437,34 +411,35 @@ void unit_authenticator_external_browser_privatelink_core(const std::string& top
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
-    snowflake_set_attribute(sf, SF_CON_HOST, "testaccount.privatelink.snowflakecomputing.com");
+    std::string host = "testaccount.privatelink.snowflakecomputing." + topDomain;
+    snowflake_set_attribute(sf, SF_CON_HOST, host.c_str());
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
-    auth_initialize(sf);
+    _snowflake_check_connection_parameters(sf);
 
     FakeAuthWebServer* webSever = new FakeAuthWebServer();
     sf->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
-        new Snowflake::Client::AuthenticatorExternalBrowser(sf, webSever));
+        new MockAuthenticatorExternalBrowser(sf, webSever, topDomain));
     jsonObject_t dataMap;
-    assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), REF_PROOF_KEY);
-    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(),REF_SAML_TOKEN);
-    assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
-    delete webSever;
+    static_cast<Snowflake::Client::IAuthenticator*>(sf->auth_object)->authenticate();
+
     snowflake_term(sf);
 }
 
-void test_unit_authenticator_external_browser_privatelink(void **unused)
+void test_unit_authenticator_external_browser_privatelink(void** unused)
 {
-    unit_authenticator_external_browser_privatelink_core();
+    unit_authenticator_external_browser_privatelink();
+
 }
 
 void test_authenticator_external_browser_privatelink_with_china_domain(void** unused)
 {
-    unit_authenticator_external_browser_privatelink_core("cn");
+
+    unit_authenticator_external_browser_privatelink("cn");
 }
 
 int main(void) {
