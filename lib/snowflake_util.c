@@ -1,4 +1,4 @@
-#include "util.h"
+#include "snowflake_util.h"
 #include <string.h>
 #ifndef _WIN32
 #include <unistd.h>
