@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
+#include <snowflake/client_config_parser.h>
 #include "constants.h"
 #include "client_int.h"
 #include "connection.h"
@@ -37,6 +38,7 @@ sf_bool DEBUG;
 sf_bool SF_OCSP_CHECK;
 char *SF_HEADER_USER_AGENT = NULL;
 
+static char* CLIENT_CONFIG_FILE = NULL;
 static char *LOG_PATH = NULL;
 static FILE *LOG_FP = NULL;
 
@@ -315,18 +317,44 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
+    client_config clientConfig;
+    if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
+    {
+      char client_config_file[MAX_PATH] = { 0 };
+      snowflake_global_get_attribute(
+        SF_GLOBAL_CLIENT_CONFIG_FILE, client_config_file, sizeof(client_config_file));
+      load_client_config(client_config_file, &clientConfig);
+    }
+
     size_t log_path_size = 1; //Start with 1 to include null terminator
     log_path_size += strlen(time_str);
 
-    /* The environment variables takes precedence over the specified parameters */
+    /* The environment variables takes precedence over the specified parameters.
+       Specified parameters takes precedence over client config */
+    // Check environment variable
     sf_log_path = sf_getenv_s("SNOWFLAKE_LOG_PATH", log_path_buf, sizeof(log_path_buf));
-    if (sf_log_path == NULL && log_path) {
+    if (sf_log_path == NULL) {
+      // Check specified parameters
+      if (log_path && strlen(log_path) != 0) {
         sf_log_path = log_path;
+        // Check client config
+      } else if (strlen(clientConfig.logPath) != 0) {
+        sf_log_path = clientConfig.logPath;
+      }
     }
 
+    // Check environment variable
     sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
-        sf_log_level = log_from_str_to_level(sf_log_level_str);
+      sf_log_level = log_from_str_to_level(sf_log_level_str);
+      // Check specified parameters
+    } else if (sf_log_level == SF_LOG_DEFAULT) {
+      // Check client config
+      if (strlen(clientConfig.logLevel) != 0) {
+        sf_log_level = log_from_str_to_level(clientConfig.logLevel);
+      } else {
+        sf_log_level = SF_LOG_FATAL;
+      }
     }
 
     // Set logging level
@@ -340,29 +368,34 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
 
     // If log path is specified, use absolute path. Otherwise set logging dir to be relative to current directory
     log_path_size += 30; // Size of static format characters
-    if (sf_log_path) {
+    if (sf_log_path && (strlen(sf_log_path) != 0)) {
+      if (strcasecmp(sf_log_path, "STDOUT") != 0) {
         log_path_size += strlen(sf_log_path);
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "%s/snowflake_%s.txt", sf_log_path,
                  (char *) time_str);
+      } else { LOG_PATH = ""; }
     } else {
         LOG_PATH = (char *) SF_CALLOC(1, log_path_size);
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
     }
     if (LOG_PATH != NULL) {
+      if (strlen(LOG_PATH) != 0) {
         // Set the log path only, the log file will be created when actual log output is needed.
         log_set_path(LOG_PATH);
+      } else {
+        log_set_quiet(0);
+      }
     } else {
         sf_fprintf(stderr,
                 "Log path is NULL. Was there an error during path construction?\n");
-        goto cleanup;
+        return ret;
     }
 
-    ret = SF_BOOLEAN_TRUE;
+    snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));
 
-cleanup:
-    return ret;
+    return SF_BOOLEAN_TRUE;
 }
 
 /**
@@ -688,6 +721,9 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
         case SF_GLOBAL_OCSP_CHECK:
             SF_OCSP_CHECK = *(sf_bool *) value;
             break;
+        case SF_GLOBAL_CLIENT_CONFIG_FILE:
+            alloc_buffer_and_copy(&CLIENT_CONFIG_FILE, value);
+            break;
         default:
             break;
     }
@@ -716,6 +752,30 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
             break;
         case SF_GLOBAL_OCSP_CHECK:
             *((sf_bool *) value) = SF_OCSP_CHECK;
+            break;
+        case SF_GLOBAL_CLIENT_CONFIG_FILE:
+            if (CLIENT_CONFIG_FILE) {
+              if (strlen(CLIENT_CONFIG_FILE) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, CLIENT_CONFIG_FILE, size);
+            }
+            break;
+        case SF_GLOBAL_LOG_LEVEL:
+            {
+              if (strlen(log_from_level_to_str(log_get_level())) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, log_from_level_to_str(log_get_level()), size);
+              break;
+            }
+        case SF_GLOBAL_LOG_PATH:
+            if (LOG_PATH) {
+              if (strlen(LOG_PATH) > size - 1) {
+                return SF_STATUS_ERROR_BUFFER_TOO_SMALL;
+              }
+              sf_strncpy(value, size, LOG_PATH, size);
+            }
             break;
         default:
             break;

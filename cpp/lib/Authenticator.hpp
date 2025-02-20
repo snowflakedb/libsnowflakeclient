@@ -100,7 +100,7 @@ namespace Client
       SF_CONNECT* m_connection;
   };
 
-  class AuthenticatorTest : public IAuthenticatorOKTA
+  class AuthenticatorTest : public IAuthenticator
   {
   public:
       AuthenticatorTest(SF_CONNECT* conn);

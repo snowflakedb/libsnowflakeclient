@@ -32,6 +32,7 @@ set(SOURCE_FILES
         include/snowflake/version.h
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
+	include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -184,6 +185,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientBindUploader.cpp
         cpp/lib/CacheFile.cpp
         cpp/lib/CacheFile.hpp
+        cpp/lib/client_config_parser.cpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorageApple.cpp
