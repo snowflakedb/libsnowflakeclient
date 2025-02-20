@@ -33,9 +33,78 @@ void test_log_str_to_level() {
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
 }
 
-/**
- * Tests log settings with invalid client config filepath
- */
+void test_null_log_path() {
+  char LOG_PATH[MAX_PATH] = { 0 };
+  char LOG_LEVEL[64] = { 0 };
+
+  // Pass in empty log path
+  snowflake_global_init(NULL, SF_LOG_WARN, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  char log_path_dir[6];
+  strncpy(log_path_dir, LOG_PATH, 5);
+  log_path_dir[5] = '\0';
+  assert_string_equal(log_path_dir, "logs/");
+
+  // Get the log level determined by libsnowflakeclient and ensure that it's correctly set
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_LEVEL, LOG_LEVEL, 64);
+  assert_string_equal(LOG_LEVEL, "WARN");
+
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+  assert_int_not_equal(access(LOG_PATH, F_OK), 0);
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
+  log_close();
+
+  // Cleanup
+  remove(LOG_PATH);
+  remove(LOG_LEVEL);
+  remove(log_path_dir);
+}
+
+void test_default_log_path() {
+  char LOG_PATH[MAX_PATH] = { 0 };
+  char LOG_LEVEL[64] = { 0 };
+
+  // Pass in empty log path
+  snowflake_global_init("", SF_LOG_WARN, NULL);
+
+  // Get the log path determined by libsnowflakeclient
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  char log_path_dir[6];
+  strncpy(log_path_dir, LOG_PATH, 5);
+  log_path_dir[5] = '\0';
+  assert_string_equal(log_path_dir, "logs/");
+
+  // Get the log level determined by libsnowflakeclient and ensure that it's correctly set
+  snowflake_global_get_attribute(SF_GLOBAL_LOG_LEVEL, LOG_LEVEL, 64);
+  assert_string_equal(LOG_LEVEL, "WARN");
+
+  // Ensure the log file doesn't exist at the beginning
+  remove(LOG_PATH);
+
+  // Info log won't trigger the log file creation since log level is set to warn in config
+  log_info("dummy info log");
+  assert_int_not_equal(access(LOG_PATH, F_OK), 0);
+
+  // Warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(LOG_PATH, F_OK), 0);
+  log_close();
+
+  // Cleanup
+  remove(LOG_PATH);
+  remove(LOG_LEVEL);
+  remove(log_path_dir);
+}
+
 void test_invalid_client_config_path() {
   char configFilePath[] = "fakePath.json";
 
@@ -45,9 +114,6 @@ void test_invalid_client_config_path() {
   assert_false(result);
 }
 
-/**
- * Tests log settings from client config file with invalid json
- */
 void test_client_config_log_invalid_json() {
   char clientConfigJSON[] = "{{{\"invalid json\"}";
   char configFilePath[] = "sf_client_config.json";
@@ -65,9 +131,6 @@ void test_client_config_log_invalid_json() {
   remove(configFilePath);
 }
 
-/**
- * Tests log settings from client config file with malformed json
- */
 void test_client_config_log_malformed_json() {
   char clientConfigJSON[] = "[]";
   char configFilePath[] = "sf_client_config.json";
@@ -85,9 +148,6 @@ void test_client_config_log_malformed_json() {
   remove(configFilePath);
 }
 
-/**
- * Tests log settings from client config file
- */
 void test_client_config_log() {
     char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
     char configFilePath[] = "sf_client_config.json";
@@ -128,9 +188,6 @@ void test_client_config_log() {
     SF_FREE(LOG_PATH);
 }
 
-/**
- * Tests log unknown entries
- */
 void test_client_config_log_unknown_entries() {
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\",\"unknownEntry\":\"fakeValue\"}}";
   char configFilePath[] = "sf_client_config.json";
@@ -180,9 +237,6 @@ void test_client_config_log_unknown_entries() {
   SF_FREE(LOG_PATH);
 }
 
-/**
- * Tests log settings from client config file via global init
- */
 void test_client_config_log_init() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_LEVEL[64] = { 0 };
@@ -218,9 +272,6 @@ void test_client_config_log_init() {
   remove(LOG_PATH);
 }
 
-/**
- * Tests log settings from client config file via global init in home dir
- */
 void test_client_config_log_init_home_config() {
   char LOG_PATH[MAX_PATH] = { 0 };
 
@@ -265,9 +316,6 @@ void test_client_config_log_init_home_config() {
   SF_FREE(configFilePath);
 }
 
-/**
- * Tests log settings from client config file without log_path
- */
 void test_client_config_log_no_level() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_path\":\"./test/\"}}";
@@ -303,9 +351,6 @@ void test_client_config_log_no_level() {
   remove(LOG_PATH);
 }
 
-/**
- * Tests log settings from client config file without log_level
- */
 void test_client_config_log_no_path() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_SUBPATH[MAX_PATH] = { 0 };
@@ -340,9 +385,6 @@ void test_client_config_log_no_path() {
   remove(LOG_PATH);
 }
 
-/**
- * Tests STDOUT log
- */
 void test_client_config_stdout() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"STDOUT\"}}";
@@ -371,9 +413,6 @@ void test_client_config_stdout() {
   remove(configFilePath);
 }
 
-/**
- * Tests timing of log file creation
- */
 void test_log_creation() {
     char logname[] = "dummy.log";
 
@@ -487,6 +526,8 @@ void test_mask_secret_log() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_null_log_path),
+        cmocka_unit_test(test_default_log_path),
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
         cmocka_unit_test(test_client_config_log_invalid_json),

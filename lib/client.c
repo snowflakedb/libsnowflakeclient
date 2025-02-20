@@ -20,7 +20,7 @@
 #include "chunk_downloader.h"
 #include "authenticator.h"
 #include "query_context_cache.h"
-#include "util.h"
+#include "snowflake_util.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -317,7 +317,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
-    client_config clientConfig;
+    client_config clientConfig = { 0 };
     if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
     {
       char client_config_file[MAX_PATH] = { 0 };
@@ -1313,6 +1313,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_INCLUDE_RETRY_REASON:
             sf->include_retry_reason = value ? *((sf_bool *)value) : SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            sf->disable_saml_url_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_PUT_TEMPDIR:
             alloc_buffer_and_copy(&sf->put_temp_dir, value);
             break;
@@ -1518,6 +1521,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_MAX_VARIANT_SIZE:
             *value = &sf->max_variant_size;
+            break;
+        case SF_CON_DISABLE_SAML_URL_CHECK:
+            *value = &sf->disable_saml_url_check;
             break;
         case SF_CON_PUT_TEMPDIR:
             *value = sf->put_temp_dir;

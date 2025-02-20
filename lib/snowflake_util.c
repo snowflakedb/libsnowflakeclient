@@ -1,4 +1,4 @@
-#include "util.h"
+#include "snowflake_util.h"
 #include <string.h>
 
 sf_bool ends_with(char* str, char* suffix)
