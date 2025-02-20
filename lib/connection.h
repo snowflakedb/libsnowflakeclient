@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
+ * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
 #ifndef SNOWFLAKE_CONNECTION_H
@@ -250,6 +250,9 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
  *                        reached and the caller can renew the credentials and
  *                        then go back to the retry by calling curl_post_call() again.
  *                        0 means no renew timeout needed.
+ *                        For Okta Authentication, whenever the authentication failed, the connector
+ *                        should update the onetime token. In this case, the renew timeout < 0, which means
+ *                        the request should be renewed for each request.
  * @param retry_max_count The max number of retry attempts. 0 means no limit.
  * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
  * @param elapsed_time    The in/out paramter to record the elapsed time before
@@ -278,10 +281,26 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
  * @param header Header passed to cURL for use in the request
  * @param json Reference to a cJSON pointer that is used to store the JSON response upon a successful request
  * @param error Reference to the Snowflake Error object to set an error if one occurs
+ * @param renew_timeout   For key pair authentication. Credentials could expire
+ *                        during the connection retry. Set renew timeout in such
+ *                        case so http_perform will return when renew_timeout is
+ *                        reached and the caller can renew the credentials and
+ *                        then go back to the retry by calling curl_get_call() again.
+ *                        0 means no renew timeout needed.
+ *                        For Okta Authentication, whenever the authentication failed, the connector
+ *                        should update the onetime token. In this case, the renew timeout < 0, which means
+ *                        the request should be renewed for each request.
+ * @param retry_max_count The max number of retry attempts. 0 means no limit.
+ * @param retry_timeout   The timeout for retry. Will stop retry when it's exceeded. 0 means no limit.
+ * @param elapsed_time    The in/out paramter to record the elapsed time before
+ *                        curl_get_call() returned due to renew timeout last time
+ * @param retried_count   The in/out paramter to record the number of retry attempts
+ *                        has been done before http_perform() returned due to renew
+ *                        timeout last time.
  * @return Success/failure status of get call. 1 = Success; 0 = Failure
  */
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, cJSON **json,
-                              SF_ERROR_STRUCT *error);
+                              SF_ERROR_STRUCT *error, int64 renew_timeout, int8 retry_max_count, int64 retry_timeout, int64* elapsed_time, int8* retried_count);
 
 /**
  * Used to determine the sleep time during the next backoff caused by request failure.
@@ -644,6 +663,16 @@ int64 get_retry_timeout(SF_CONNECT *sf);
 * Get current time since epoch in milliseconds
 */
 uint64 sf_get_current_time_millis();
+
+/*
+* A function to check that this request is whether the one time token request.
+*/
+sf_bool is_one_time_token_request(cJSON *resp);
+
+/*
+* A write callback function to use to write the response text received from the cURL response with non_json_resp
+*/
+size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 #ifdef __cplusplus
 }
 #endif
