@@ -27,7 +27,7 @@
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <ApplicationServices/ApplicationServices.h>
-#endif"
+#endif
 
 namespace Snowflake
 {
