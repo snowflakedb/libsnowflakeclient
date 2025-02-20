@@ -5,6 +5,7 @@
 #include <string>
 #include <regex>
 #include "cJSON.h"
+#include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"
 #include "../../lib/authenticator.h"

@@ -69,8 +69,7 @@ namespace Client
   private:
       SF_CONNECT* m_connection;
   };
-
-
+  
   class AuthenticatorExternalBrowser : public IAuthenticatorExternalBrowser
   {
   public:

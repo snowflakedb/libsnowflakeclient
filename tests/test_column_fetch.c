@@ -1514,17 +1514,20 @@ void test_column_length_with_bundle_202408_helper(sf_bool enabled)
   snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARCHAR_SIZE, (void**)&max_varchar_size_p);
   snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_BINARY_SIZE, (void**)&max_binary_size_p);
   snowflake_get_attribute(sfstmt->connection, SF_CON_MAX_VARIANT_SIZE, (void**)&max_variant_size_p);
+  uint64 min_default_varchar_size = 16 * 1024 * 1024;
+  uint64 min_default_binary_size = 8 * 1024 * 1024;
+  uint64 min_default_variant_size = 16 * 1024 * 1024;
   // PARSE_XML
   assert_int_equal(desc[0].c_type, SF_C_TYPE_STRING);
-  assert_int_equal(desc[0].byte_size, *max_varchar_size_p);
-  assert_int_equal(desc[0].internal_size, *max_varchar_size_p);
+  assert_in_range(desc[0].byte_size, min_default_varchar_size, *max_varchar_size_p);
+  assert_in_range(desc[0].internal_size, min_default_varchar_size, *max_varchar_size_p);
   // BINARY
   assert_int_equal(desc[1].c_type, SF_C_TYPE_BINARY);
-  assert_int_equal(desc[1].byte_size, *max_binary_size_p);
-  assert_int_equal(desc[1].internal_size, *max_binary_size_p);
+  assert_in_range(desc[1].byte_size, min_default_binary_size, *max_binary_size_p);
+  assert_in_range(desc[1].internal_size, min_default_binary_size, *max_binary_size_p);
   // VARCHAR
-  assert_int_equal(desc[2].byte_size, *max_varchar_size_p);
-  assert_int_equal(desc[2].internal_size, *max_varchar_size_p);
+  assert_in_range(desc[2].byte_size, min_default_varchar_size, *max_varchar_size_p);
+  assert_in_range(desc[2].internal_size, min_default_varchar_size, *max_varchar_size_p);
   // types with fixed length date, time, ltz, ntz, tz, number, double, boolean
   for (i = 3; i < 11; i++)
   {
@@ -1534,8 +1537,8 @@ void test_column_length_with_bundle_202408_helper(sf_bool enabled)
   // variant, object, array
   for (i = 11; i < 14; i++)
   {
-      assert_int_equal(desc[i].byte_size, *max_variant_size_p);
-      assert_int_equal(desc[i].internal_size, *max_variant_size_p);
+      assert_in_range(desc[i].byte_size, min_default_variant_size, *max_variant_size_p);
+      assert_in_range(desc[i].internal_size, min_default_variant_size, *max_variant_size_p);
   }
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);

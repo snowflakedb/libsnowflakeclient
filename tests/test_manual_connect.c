@@ -279,6 +279,7 @@ void test_okta_connect(void** unused)
   
 void test_external_browser(void** unused)
 {
+    SF_UNUSED(unused);
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
     if (manual_test == NULL || strcmp(manual_test, "test_external_browser") != 0)
     {
@@ -294,7 +295,6 @@ void test_external_browser(void** unused)
         getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         SF_AUTHENTICATOR_EXTERNAL_BROWSER);
-
     char* host, * port, * protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {

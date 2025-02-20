@@ -64,7 +64,7 @@ namespace IAuth
     /**
      * Authenticator
      */
-    class IAuthenticator
+    class IAuthenticator : public AuthErrorHandler
     {
     public:
 
@@ -128,7 +128,7 @@ namespace IAuth
         int64 m_retryTimeout;
     };
 
-    class IAuthenticatorOKTA : public IAuthenticator, public AuthErrorHandler
+    class IAuthenticatorOKTA : public IAuthenticator
     {
     public:
         IAuthenticatorOKTA() {};

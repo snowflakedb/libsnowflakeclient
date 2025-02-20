@@ -11,6 +11,7 @@ extern "C" {
  * Validate str ends with the suffix
  */
 sf_bool ends_with(char* str, char* suffix);
+ 
 #ifdef __cplusplus
 }
 #endif

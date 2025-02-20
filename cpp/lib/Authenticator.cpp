@@ -1136,7 +1136,7 @@ namespace Client
   {
       return m_consent_cache_id_token;
   }
-  
+
   AuthenticatorTest::AuthenticatorTest(SF_CONNECT* conn) : m_connection(conn)
   {
   }
