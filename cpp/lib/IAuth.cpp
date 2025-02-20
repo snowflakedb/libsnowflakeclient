@@ -21,7 +21,7 @@
 
 #include <openssl/rand.h>
 #include "../include/snowflake/entities.hpp"
-#include "../logger/SFLogger.hpp
+#include "../logger/SFLogger.hpp"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
