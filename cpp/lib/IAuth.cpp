@@ -21,7 +21,13 @@
 
 #include <openssl/rand.h>
 #include "../include/snowflake/entities.hpp"
-#include "../logger/SFLogger.hpp"
+#include "../logger/SFLogger.hpp
+
+#ifdef __APPLE__
+#include <CoreFoundation/CFBundle.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <ApplicationServices/ApplicationServices.h>
+#endif"
 
 namespace Snowflake
 {

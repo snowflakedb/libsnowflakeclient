@@ -267,7 +267,6 @@ endif ()
 
 if (APPLE)
     # macOS
-    find_library(CORESERVICES_LIBRARY CoreServices)
     if(ENV{ARCH} STREQUAL "x64")
         find_library(ARROW_ARROW_LIB libarrow.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow/lib64/ REQUIRED NO_DEFAULT_PATH)
     else()
@@ -488,7 +487,6 @@ if (LINUX)
 endif ()
 if (APPLE)
     # OSX. no librt is required.
-    target_link_libraries(snowflakeclient ${CORESERVICES_LIBRARY})
     target_link_libraries(snowflakeclient dl z)
 endif ()
 
