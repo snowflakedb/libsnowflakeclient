@@ -317,7 +317,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
-    client_config clientConfig;
+    client_config clientConfig = { 0 };
     if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
     {
       char client_config_file[MAX_PATH] = { 0 };
