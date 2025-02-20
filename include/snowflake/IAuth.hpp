@@ -41,6 +41,27 @@ namespace IAuth
 #endif
 
     /**
+  * Web Server for external Browser authentication
+  */
+    class IAuthWebServer : public AuthErrorHandler
+    {
+    public:
+        IAuthWebServer(){}
+
+        virtual ~IAuthWebServer()
+        {}
+
+        virtual void start() = 0;
+        virtual void stop() = 0;
+        virtual int getPort() = 0;
+        virtual void startAccept() = 0;
+        virtual bool receive() = 0;
+        virtual std::string getSAMLToken() = 0;
+        virtual bool isConsentCacheIdToken() = 0;
+        virtual void setTimeout(int timeout) = 0;
+    };
+
+    /**
      * Authenticator
      */
     class IAuthenticator
@@ -134,48 +155,6 @@ namespace IAuth
 
         std::string oneTimeToken;
         std::string m_samlResponse;
-    };
-
-    class IAuthWebServer : public AuthErrorHandler
-    {
-    public:
-        IAuthWebServer();
-
-        virtual ~IAuthWebServer();
-
-        virtual void start();
-        virtual void stop();
-        virtual int getPort();
-        virtual void startAccept();
-        virtual bool receive();
-        virtual std::string getSAMLToken();
-        virtual bool isConsentCacheIdToken();
-        virtual void setTimeout(int timeout);
-
-    protected:
-#ifdef _WIN32
-        SOCKET m_socket_descriptor; // socket
-        SOCKET m_socket_desc_web_client; // socket (client)
-#else
-        int m_socket_descriptor; // socket
-        int m_socket_desc_web_client; // socket (client)
-#endif
-
-        int m_port; // port to listen
-        std::string m_saml_token;
-        bool m_consent_cache_id_token;
-        std::string m_origin;
-        int m_timeout;
-
-        virtual void parseAndRespondOptionsRequest(std::string response);
-        virtual  void parseAndRespondPostRequest(std::string response);
-        virtual void parseAndRespondGetRequest(char** rest_mesg);
-        virtual void respond(std::string queryParameters);
-        virtual void respondJson(picojson::value& json);
-
-        std::vector<std::string> splitString(const std::string& s, char delimiter);
-        std::string unquote(std::string src);
-        std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
     };
 
     class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler

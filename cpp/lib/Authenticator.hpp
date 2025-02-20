@@ -115,6 +115,48 @@ namespace Client
       SF_CONNECT* m_connection;
       double count = 0;
   };
+
+  class AuthWebServer : public IAuthWebServer
+  {
+  public:
+      AuthWebServer();
+
+      virtual ~AuthWebServer();
+
+      virtual void start();
+      virtual void stop();
+      virtual int getPort();
+      virtual void startAccept();
+      virtual bool receive();
+      virtual std::string getSAMLToken();
+      virtual bool isConsentCacheIdToken();
+      virtual void setTimeout(int timeout);
+
+  protected:
+#ifdef _WIN32
+      SOCKET m_socket_descriptor; // socket
+      SOCKET m_socket_desc_web_client; // socket (client)
+#else
+      int m_socket_descriptor; // socket
+      int m_socket_desc_web_client; // socket (client)
+#endif
+
+      int m_port; // port to listen
+      std::string m_saml_token;
+      bool m_consent_cache_id_token;
+      std::string m_origin;
+      int m_timeout;
+
+      void parseAndRespondOptionsRequest(std::string response);
+      void parseAndRespondPostRequest(std::string response);
+      void parseAndRespondGetRequest(char** rest_mesg);
+      void respond(std::string queryParameters);
+      void respondJson(picojson::value& json);
+
+      std::vector<std::string> splitString(const std::string& s, char delimiter);
+      std::string unquote(std::string src);
+      std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
+  };
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP
