@@ -4,6 +4,15 @@
 
 #include <string>
 #include <regex>
+#ifdef _WIN32
+#include <WS2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#endif
 #include "cJSON.h"
 #include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
