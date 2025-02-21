@@ -63,10 +63,66 @@ public:
         return true;
     }
 
-    inline int getTimeout() 
+    inline int getTimeout()
     {
         return m_timeout;
     }
+};
+
+class MockIDP : public IDPAuthenticator
+{
+public:
+    MockIDP(SF_CONNECT* connection) : m_connection(connection)
+    {
+        m_account = m_connection->account;
+        m_authenticator = m_connection->authenticator;
+        m_user = m_connection->user;
+        m_port = m_connection->port;
+        m_host = m_connection->host;
+        m_protocol = m_connection->protocol;
+        m_retriedCount = 0;
+        m_retryTimeout = get_retry_timeout(m_connection);
+    }
+
+    ~MockIDP()
+    {
+
+    }
+
+    inline bool curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+    {
+        SF_UNUSED(url);
+        SF_UNUSED(obj);
+
+        bool ret = true;
+        jsonObject_t data;
+        data["tokenUrl"] = jsonValue_t("https://fake.okta.com/tokenurl");
+        data["ssoUrl"] = jsonValue_t("https://fake.okta.com/ssourl");
+        data["proofKey"] = jsonValue_t("MOCK_PROOF_KEY");
+        resp["data"] = jsonValue_t(data);
+        resp["sessionToken"] = jsonValue_t("onetimetoken");
+
+        //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
+        //This code is to test the get onetime token failure
+
+        return ret;
+    }
+
+    inline bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
+    {
+        SF_UNUSED(url);
+        SF_UNUSED(resp);
+        SF_UNUSED(parseJSON);
+        SF_UNUSED(rawData);
+        SF_UNUSED(isRetry);
+        return false;
+    };
+
+    std::string getTokenURL();
+    std::string getSSOURL();
+
+private:
+    SF_CONNECT* m_connection;
 };
 
 void test_external_browser_initialize(void**)
@@ -87,67 +143,12 @@ void test_external_browser_initialize(void**)
     IAuthenticator* auth = static_cast<IAuthenticator*>(sf->auth_object);
     std::string type = typeid(*auth).name();
     assert_true(type.find("AuthenticatorExternalBrowser") != std::string::npos);
+
+    snowflake_term(sf);
 }
 
 void test_external_browser_authenticate(void**)
 {
-    class MockIDP : public IDPAuthenticator
-    {
-    public:
-        MockIDP(SF_CONNECT* connection) : m_connection(connection)
-        {
-            m_account = m_connection->account;
-            m_authenticator = m_connection->authenticator;
-            m_user = m_connection->user;
-            m_port = m_connection->port;
-            m_host = m_connection->host;
-            m_protocol = m_connection->protocol;
-            m_retriedCount = 0;
-            m_retryTimeout = get_retry_timeout(m_connection);
-        }
-
-        ~MockIDP()
-        {
-
-        }
-
-        inline bool curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
-        {
-            SF_UNUSED(url);
-            SF_UNUSED(obj);
-
-            bool ret = true;
-            jsonObject_t data;
-            data["tokenUrl"] = jsonValue_t("https://fake.okta.com/tokenurl");
-            data["ssoUrl"] = jsonValue_t("https://fake.okta.com/ssourl");
-            data["proofKey"] = jsonValue_t("MOCK_PROOF_KEY");
-            resp["data"] = jsonValue_t(data);
-            resp["sessionToken"] = jsonValue_t("onetimetoken");
-
-            //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
-            //This code is to test the get onetime token failure
-
-            return ret;
-        }
-
-        inline bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
-        {
-            SF_UNUSED(url);
-            SF_UNUSED(resp);
-            SF_UNUSED(parseJSON);
-            SF_UNUSED(rawData);
-            SF_UNUSED(isRetry);
-            return false;
-        };
-
-        std::string getTokenURL();
-        std::string getSSOURL();
-
-    private:
-        SF_CONNECT* m_connection;
-    };
-
-
     class MockExternalBrowser : public AuthenticatorExternalBrowser
     {
     public:
@@ -188,8 +189,7 @@ void test_external_browser_authenticate(void**)
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
     IAuthWebServer* authWebServer = new MockAuthWebServer();
-    MockExternalBrowser* authenticatorInstance = new MockExternalBrowser(
-        sf, authWebServer);
+    MockExternalBrowser* authenticatorInstance = new MockExternalBrowser(sf, authWebServer);
     authenticatorInstance->authenticate();
 
     assert_true(authenticatorInstance->getPort() != 0);
@@ -207,8 +207,7 @@ void test_external_browser_authenticate(void**)
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
     authWebServer = new MockAuthWebServer();
-    authenticatorInstance = new MockExternalBrowser(
-        sf, authWebServer);
+    authenticatorInstance = new MockExternalBrowser(sf, authWebServer);
     authenticatorInstance->authenticate();
 
     dataMap.clear();
@@ -217,6 +216,71 @@ void test_external_browser_authenticate(void**)
     assert_true(!dataMap["PROOF_KEY"].get<std::string>().empty());
     assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "MOCK_SAML_TOKEN");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+
+    delete authenticatorInstance;
+
+    snowflake_term(sf);
+}
+
+void test_auth_web_server(void**) 
+{
+    class SimpleAuthWebServer : public AuthWebServer
+    {
+    public:
+        SimpleAuthWebServer()
+        {}
+
+        virtual ~SimpleAuthWebServer()
+        {}
+
+        inline void startAccept()
+        {}
+
+        inline bool receive()
+        {
+            return false;
+        }
+
+        inline std::string getSAMLToken()
+        {
+            m_saml_token = REF_SAML_TOKEN;
+            return AuthWebServer::getSAMLToken();
+        }
+    };
+
+    class MockExternalBrowser : public AuthenticatorExternalBrowser
+    {
+    public:
+        MockExternalBrowser(
+            SF_CONNECT* connection, IAuthWebServer* authWebServer)
+            : AuthenticatorExternalBrowser(connection, authWebServer)
+        {
+            m_idp = new MockIDP(connection);
+        }
+
+        ~MockExternalBrowser()
+        {}
+    };
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    sf_bool disable_console_login = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
+
+    AuthWebServer* webserver = new SimpleAuthWebServer();
+    AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
+    auth->authenticate();
+    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+
+    delete auth;
+
+    snowflake_term(sf);
 }
 
 void test_external_browser_error(void**)
@@ -485,6 +549,7 @@ int main(void) {
     cmocka_unit_test(test_external_browser_initialize),
     cmocka_unit_test(test_external_browser_authenticate),
     cmocka_unit_test(test_external_browser_error),
+    cmocka_unit_test(test_auth_web_server),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
   };
