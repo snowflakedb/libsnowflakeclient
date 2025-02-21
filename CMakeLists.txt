@@ -11,7 +11,7 @@ include(cmake/flags.cmake)
 # we don't need Dart and other tools.
 enable_testing()
 
-add_compile_definitions(LOG_USE_COLOR)
+add_compile_definitions(BUILDING_LIBSFC LOG_USE_COLOR)
 
 option(BUILD_TESTS "True if build tests" on)
 option(MOCK "True if mock should be used" off)
@@ -421,6 +421,7 @@ if (MOCK)
 endif ()
 
 if (NOT BUILD_SHARED_LIBS)
+    add_compile_definitions(LIBSFC_STATICLIB)
     add_library(snowflakeclient STATIC ${SOURCE_FILES} ${SOURCE_FILES_PUT_GET} ${SOURCE_FILES_CPP_WRAPPER})
     target_compile_features(snowflakeclient PUBLIC cxx_std_17)
     target_compile_features(snowflakeclient PUBLIC c_std_99)

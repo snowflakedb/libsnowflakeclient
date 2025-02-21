@@ -59,10 +59,14 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #endif
 
 // For marking functions public for dynamic library
-#ifdef _WIN32
-#define SF_DLL_PUBLIC __declspec(dllexport)
+#if defined(BUILDING_LIBSFC) && !defined(LIBSFC_STATICLIB)
+    #ifdef _WIN32
+        #define SF_DLL_PUBLIC  __declspec(dllexport)
+    #else
+        #define SF_DLL_PUBLIC __attribute__((visibility("default")))
+    #endif
 #else
-#define SF_DLL_PUBLIC __attribute__((visibility("default")))
+    #define SF_DLL_PUBLIC
 #endif
 
 #include "SF_CRTFunctionSafe.h"
