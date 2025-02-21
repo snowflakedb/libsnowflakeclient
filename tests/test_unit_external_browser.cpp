@@ -24,6 +24,72 @@ static bool endsWith(const std::string& a, const std::string& b) {
     return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
 }
 
+class MockAuthWebServer : public AuthWebServer
+{
+public:
+    MockAuthWebServer()
+    {}
+
+    virtual ~MockAuthWebServer()
+    {}
+
+    inline void start()
+    {}
+
+    inline void stop()
+    {}
+
+    inline int getPort()
+    {
+        return REF_PORT;
+    }
+
+    inline void startAccept()
+    {}
+
+    inline bool receive()
+    {
+        return false;
+    }
+
+    inline std::string getSAMLToken()
+    {
+        return std::string(REF_SAML_TOKEN);
+    }
+
+    inline bool isConsentCacheIdToken()
+    {
+        return true;
+    }
+
+    inline int getTimeout() 
+    {
+        return m_timeout;
+    }
+
+
+};
+
+void test_external_browser_initialize(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    sf_bool disable_console_login = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
+   
+    _snowflake_check_connection_parameters(sf);
+    auth_initialize(sf);
+    IAuthenticator* auth = static_cast<IAuthenticator*>(sf->auth_object);
+    std::string type = typeid(*auth).name();
+    assert_true(type.find("AuthenticatorExternalBrowser") != std::string::npos);
+}
+
 void test_external_browser(void**)
 {
     class MockExternalBrowser : public AuthenticatorExternalBrowser
@@ -63,51 +129,6 @@ void test_external_browser(void**)
         bool m_errortesting = false;
     };
 
-    class MockAuthWebServer : public IAuthWebServer
-    {
-    public:
-        MockAuthWebServer()
-        {}
-
-        virtual ~MockAuthWebServer()
-        {}
-
-        inline void start()
-        {}
-
-        inline void stop()
-        {}
-
-        inline int getPort()
-        {
-            return REF_PORT;
-        }
-
-        inline void startAccept()
-        {}
-
-        inline bool receive()
-        {
-            return false;
-        }
-
-        inline std::string getSAMLToken()
-        {
-            return std::string(REF_SAML_TOKEN);
-        }
-
-        inline bool isConsentCacheIdToken()
-        {
-            return true;
-        }
-
-        inline void setTimeout(int timeout)
-        {
-            SF_UNUSED(timeout);
-        }
-
-    };
-
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -116,6 +137,8 @@ void test_external_browser(void**)
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    int64 timeout = 50;
+    snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &timeout);
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
@@ -130,6 +153,8 @@ void test_external_browser(void**)
     assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
     assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "MOCK_SAML_TOKEN");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    assert_int_equal(static_cast<MockAuthWebServer*>(authWebServer)->getTimeout(),50);
+
     delete authenticatorInstance;
 
     snowflake_term(sf);
@@ -250,6 +275,8 @@ void test_external_browser_error(void**)
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    SF_STATUS status = snowflake_connect(sf);
+    assert_int_not_equal(status, SF_STATUS_SUCCESS);
 
     FailMockAuthWebServer* authWebServer = new FailMockAuthWebServer();
     MockExternalBrowser* authenticatorInstance = new MockExternalBrowser(
@@ -308,7 +335,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
             }
         }
 
-        static std::string get(const std::string& prompt = "")
+        static std::string get()
         {
             char* cache_server_url_env = getenv(CACHE_SERVER_URL_ENV);
             const std::string cache_server_url(cache_server_url_env ? cache_server_url_env : "");
@@ -318,56 +345,13 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
         static void validate(const std::string& prompt = "",const std::string& topDomain = "com")
         {
             const std::string PRIVATELINK_URL_SUFFIX = std::string(".privatelink.snowflakecomputing.") + topDomain + "/ocsp_response_cache.json";
-            const std::string cache_server_url(get(prompt));
+            const std::string cache_server_url = get();
             assert_true(endsWith(cache_server_url, PRIVATELINK_URL_SUFFIX));
         }
 
     private:
         std::string original_value_;
         bool exist_;
-
-    };
-
-    class FakeAuthWebServer : public IAuthWebServer
-    {
-    public:
-        FakeAuthWebServer()
-        {}
-
-        virtual ~FakeAuthWebServer()
-        {}
-
-        inline void start()
-        {}
-
-        inline void stop()
-        {}
-
-        inline int getPort()
-        {
-            return REF_PORT;
-        }
-
-        inline void startAccept()
-        {}
-
-        inline bool receive()
-        {
-            return false;
-        }
-
-        inline std::string getSAMLToken()
-        {
-            return std::string(REF_SAML_TOKEN);
-        }
-
-        inline bool isConsentCacheIdToken()
-        {
-            return true;
-        }
-
-        inline void setTimeout(int timeout)
-        {}
 
     };
 
@@ -394,6 +378,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
         inline void authenticate()
         {
             EnvVar::validate("MockAuthenticatorExternalBrowser::authenticate", m_topDomain);
+            AuthenticatorExternalBrowser::authenticate();
         }
 
     private:
@@ -420,7 +405,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
     _snowflake_check_connection_parameters(sf);
 
-    FakeAuthWebServer* webSever = new FakeAuthWebServer();
+    MockAuthWebServer* webSever = new MockAuthWebServer();
     sf->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
         new MockAuthenticatorExternalBrowser(sf, webSever, topDomain));
     jsonObject_t dataMap;
@@ -430,21 +415,21 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
     snowflake_term(sf);
 }
 
-void test_unit_authenticator_external_browser_privatelink(void** unused)
+void test_unit_authenticator_external_browser_privatelink(void**)
 {
     unit_authenticator_external_browser_privatelink();
 
 }
 
-void test_authenticator_external_browser_privatelink_with_china_domain(void** unused)
+void test_authenticator_external_browser_privatelink_with_china_domain(void**)
 {
-
     unit_authenticator_external_browser_privatelink("cn");
 }
 
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
+    cmocka_unit_test(test_external_browser_initialize),
     cmocka_unit_test(test_external_browser),
     cmocka_unit_test(test_external_browser_error),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
