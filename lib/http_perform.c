@@ -28,6 +28,7 @@
 #include "memory.h"
 #include "constants.h"
 #include "client_int.h"
+#include "snowflake_util.h"
 
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
@@ -35,8 +36,6 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
-
-static void my_sleep_ms(uint32 sleepMs);
 
 static
 void dump(const char *text,
@@ -126,16 +125,6 @@ int my_trace(CURL *handle, curl_infotype type,
 
     dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
     return 0;
-}
-
-static
-void my_sleep_ms(uint32 sleepMs)
-{
-#ifdef _WIN32
-  Sleep(sleepMs);
-#else
-  usleep(sleepMs * 1000); // usleep takes sleep time in us (1 millionth of a second)
-#endif
 }
 
 sf_bool STDCALL http_perform(CURL *curl,
@@ -428,7 +417,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         if ((renew_injection) && (renew_timeout > 0) &&
             elapsed_time && (*elapsed_time <= 0))
         {
-            my_sleep_ms(renew_timeout * 1000);
+            sf_sleep_ms(renew_timeout * 1000);
             res = CURLE_OPERATION_TIMEDOUT;
         }
 
@@ -444,7 +433,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                       "will retry after %d second",
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
-              my_sleep_ms(next_sleep_in_secs*1000);
+              sf_sleep_ms(next_sleep_in_secs*1000);
             } else if ((res == CURLE_OPERATION_TIMEDOUT) && (renew_timeout > 0)) {
                retry = SF_BOOLEAN_TRUE;
             } else {
@@ -493,7 +482,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                     "will retry after %d seconds", http_code,
                     curl_retry_ctx.retry_count,
                     next_sleep_in_secs);
-                my_sleep_ms(next_sleep_in_secs * 1000);
+                sf_sleep_ms(next_sleep_in_secs * 1000);
               }
               else {
                 char msg[1024];
