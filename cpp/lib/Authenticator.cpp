@@ -649,10 +649,12 @@ namespace Client
       IAuthenticatorExternalBrowser::authenticate();
       if (m_authWebServer->isError())
       {
+          sf_log_debug("sf", "WebSeverError");
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
       else if (isError())
       {
+          sf_log_debug("sf", "Authenticator Error");
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
 #ifdef _WIN32

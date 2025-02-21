@@ -273,11 +273,12 @@ void test_auth_web_server(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
     sf_bool disable_console_login = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
+    SF_ERROR_STRUCT* sferr = snowflake_error(sf);
+    sferr->error_code = SF_STATUS_SUCCESS;
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
     AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
     auth->authenticate();
-    CXX_LOG_DEBUG("%d", sf->error.error_code);
 
     assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
     delete auth;
