@@ -19,7 +19,8 @@
 
 using namespace Snowflake::Client;
 
-static bool endsWith(const std::string& a, const std::string& b) {
+static bool endsWith(const std::string& a, const std::string& b) 
+{
     if (b.size() > a.size()) return false;
     return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
 }
@@ -66,8 +67,6 @@ public:
     {
         return m_timeout;
     }
-
-
 };
 
 void test_external_browser_initialize(void**)
@@ -90,15 +89,74 @@ void test_external_browser_initialize(void**)
     assert_true(type.find("AuthenticatorExternalBrowser") != std::string::npos);
 }
 
-void test_external_browser(void**)
+void test_external_browser_authenticate(void**)
 {
+    class MockIDP : public IDPAuthenticator
+    {
+    public:
+        MockIDP(SF_CONNECT* connection) : m_connection(connection)
+        {
+            m_account = m_connection->account;
+            m_authenticator = m_connection->authenticator;
+            m_user = m_connection->user;
+            m_port = m_connection->port;
+            m_host = m_connection->host;
+            m_protocol = m_connection->protocol;
+            m_retriedCount = 0;
+            m_retryTimeout = get_retry_timeout(m_connection);
+        }
+
+        ~MockIDP()
+        {
+
+        }
+
+        inline bool curlPostCall(SFURL& url, const jsonObject_t& obj, jsonObject_t& resp)
+        {
+            SF_UNUSED(url);
+            SF_UNUSED(obj);
+
+            bool ret = true;
+            jsonObject_t data;
+            data["tokenUrl"] = jsonValue_t("https://fake.okta.com/tokenurl");
+            data["ssoUrl"] = jsonValue_t("https://fake.okta.com/ssourl");
+            data["proofKey"] = jsonValue_t("MOCK_PROOF_KEY");
+            resp["data"] = jsonValue_t(data);
+            resp["sessionToken"] = jsonValue_t("onetimetoken");
+
+            //The curlPostCall is called twice in authenticator 1. getIDPInfo 2. get onetime token
+            //This code is to test the get onetime token failure
+
+            return ret;
+        }
+
+        inline bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
+        {
+            SF_UNUSED(url);
+            SF_UNUSED(resp);
+            SF_UNUSED(parseJSON);
+            SF_UNUSED(rawData);
+            SF_UNUSED(isRetry);
+            return false;
+        };
+
+        std::string getTokenURL();
+        std::string getSSOURL();
+
+    private:
+        SF_CONNECT* m_connection;
+    };
+
+
     class MockExternalBrowser : public AuthenticatorExternalBrowser
     {
     public:
         MockExternalBrowser(
             SF_CONNECT* connection, IAuthWebServer* authWebServer)
             : AuthenticatorExternalBrowser(connection, authWebServer)
-        {}
+        {
+            m_idp = new MockIDP(connection);
+        }
 
         ~MockExternalBrowser()
         {}
@@ -106,19 +164,6 @@ void test_external_browser(void**)
         inline void startWebBrowser(std::string ssoUrl)
         {
             SF_UNUSED(ssoUrl);
-        }
-
-        inline void getLoginUrl(std::map<std::string, std::string>& out, int port)
-        {
-            SF_UNUSED(port);
-
-            if (m_errortesting)
-            {
-                m_errMsg = "getLoginUrl Error";
-                return;
-            }
-            out[std::string("LOGIN_URL")] = std::string(REF_SSO_URL);
-            out[std::string("PROOF_KEY")] = std::string(REF_PROOF_KEY);
         }
 
         inline void cleanError()
@@ -147,6 +192,7 @@ void test_external_browser(void**)
         sf, authWebServer);
     authenticatorInstance->authenticate();
 
+    assert_true(authenticatorInstance->getPort() != 0);
     jsonObject_t dataMap;
     authenticatorInstance->updateDataMap(dataMap);
 
@@ -156,8 +202,21 @@ void test_external_browser(void**)
     assert_int_equal(static_cast<MockAuthWebServer*>(authWebServer)->getTimeout(),50);
 
     delete authenticatorInstance;
+        
+    disable_console_login = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
-    snowflake_term(sf);
+    authWebServer = new MockAuthWebServer();
+    authenticatorInstance = new MockExternalBrowser(
+        sf, authWebServer);
+    authenticatorInstance->authenticate();
+
+    dataMap.clear();
+    authenticatorInstance->updateDataMap(dataMap);
+
+    assert_true(!dataMap["PROOF_KEY"].get<std::string>().empty());
+    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "MOCK_SAML_TOKEN");
+    assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 }
 
 void test_external_browser_error(void**)
@@ -291,11 +350,6 @@ void test_external_browser_error(void**)
     assert_string_equal(authWebServer->getErrorMessage(), "StartAccept Error");
     authWebServer->cleanError();
 
-    authWebServer->m_startAcceptError = true;
-    authenticatorInstance->authenticate();
-    assert_string_equal(authWebServer->getErrorMessage(), "StartAccept Error");
-    authWebServer->cleanError();
-
     authenticatorInstance->m_errortesting = true;
     authenticatorInstance->authenticate();
     assert_string_equal(authenticatorInstance->getErrorMessage(), "getLoginUrl Error");
@@ -310,7 +364,6 @@ void test_external_browser_error(void**)
 
     snowflake_term(sf);
 }
-
 
 void unit_authenticator_external_browser_privatelink(const std::string& topDomain = "com")
 {
@@ -342,7 +395,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
             return std::string(cache_server_url_env ? cache_server_url_env : "");
         }
 
-        static void validate(const std::string& prompt = "",const std::string& topDomain = "com")
+        static void validate(const std::string& topDomain = "com")
         {
             const std::string PRIVATELINK_URL_SUFFIX = std::string(".privatelink.snowflakecomputing.") + topDomain + "/ocsp_response_cache.json";
             const std::string cache_server_url = get();
@@ -377,7 +430,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
 
         inline void authenticate()
         {
-            EnvVar::validate("MockAuthenticatorExternalBrowser::authenticate", m_topDomain);
+            EnvVar::validate(m_topDomain);
             AuthenticatorExternalBrowser::authenticate();
         }
 
@@ -430,7 +483,7 @@ int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_external_browser_initialize),
-    cmocka_unit_test(test_external_browser),
+    cmocka_unit_test(test_external_browser_authenticate),
     cmocka_unit_test(test_external_browser_error),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
