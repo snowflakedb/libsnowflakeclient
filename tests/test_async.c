@@ -4,7 +4,6 @@
 #include <string.h>
 #include "memory.h"
 #include "utils/test_setup.h"
-#include "util.h"
 
 void test_normal_async_select_query() {
     SF_CONNECT* sf = setup_snowflake_connection();
