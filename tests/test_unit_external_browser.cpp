@@ -281,9 +281,15 @@ void test_auth_web_server(void**)
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
     AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
-    auth->authenticate();
+    webserver->start();
+    assert_false(webserver->isError());
 
-    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+    std::map<std::string, std::string> out;
+    auth->getLoginUrl(out, webserver->getPort());
+    assert_false(auth->isError());
+    webserver->stop();
+    assert_false(webserver->isError());
+
     delete auth;
 
     snowflake_term(sf);
