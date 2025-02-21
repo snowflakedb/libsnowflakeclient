@@ -28,6 +28,7 @@
 #include "memory.h"
 #include "constants.h"
 #include "client_int.h"
+#include "snowflake_util.h"
 
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
