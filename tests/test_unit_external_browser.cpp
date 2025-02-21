@@ -287,6 +287,9 @@ void test_auth_web_server(void**)
     std::map<std::string, std::string> out;
     auth->getLoginUrl(out, webserver->getPort());
     assert_false(auth->isError());
+    webserver->startAccept();
+    assert_false(webserver->isError());
+
     webserver->stop();
     assert_false(webserver->isError());
 
