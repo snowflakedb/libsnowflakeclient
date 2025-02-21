@@ -224,6 +224,7 @@ void test_external_browser_authenticate(void**)
 
 void test_auth_web_server(void**) 
 {
+    log_set_quiet(0);
     class SimpleAuthWebServer : public AuthWebServer
     {
     public:
@@ -276,11 +277,14 @@ void test_auth_web_server(void**)
     AuthWebServer* webserver = new SimpleAuthWebServer();
     AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
     auth->authenticate();
-    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+    CXX_LOG_DEBUG("%d", sf->error.error_code);
 
+    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
     delete auth;
 
     snowflake_term(sf);
+    log_set_quiet(1);
+
 }
 
 void test_external_browser_error(void**)
