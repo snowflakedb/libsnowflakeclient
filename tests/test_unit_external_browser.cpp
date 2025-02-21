@@ -240,7 +240,9 @@ void test_auth_web_server(void**)
         }
 
         inline void startAccept()
-        {}
+        {
+            accept(m_socket_desc_web_client, NULL, NULL);
+        }
 
         inline bool receive()
         {
@@ -281,17 +283,8 @@ void test_auth_web_server(void**)
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
     AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
-    webserver->start();
-    assert_false(webserver->isError());
-
-    std::map<std::string, std::string> out;
-    auth->getLoginUrl(out, webserver->getPort());
-    assert_false(auth->isError());
-    webserver->startAccept();
-    assert_false(webserver->isError());
-
-    webserver->stop();
-    assert_false(webserver->isError());
+    auth->authenticate();
+    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
 
     delete auth;
 
