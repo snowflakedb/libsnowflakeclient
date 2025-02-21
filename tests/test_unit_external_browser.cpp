@@ -234,11 +234,6 @@ void test_auth_web_server(void**)
         virtual ~SimpleAuthWebServer()
         {}
 
-        inline void startWebBrowser(std::string ssoUrl)
-        {
-            SF_UNUSED(ssoUrl);
-        }
-
         inline void startAccept()
         {
             accept(m_socket_desc_web_client, NULL, NULL);
@@ -268,6 +263,12 @@ void test_auth_web_server(void**)
 
         ~MockExternalBrowser()
         {}
+
+
+        inline void startWebBrowser(std::string ssoUrl)
+        {
+            SF_UNUSED(ssoUrl);
+        }
     };
 
     SF_CONNECT* sf = snowflake_init();
@@ -282,7 +283,7 @@ void test_auth_web_server(void**)
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
-    AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
     auth->authenticate();
     assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
 
