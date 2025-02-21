@@ -234,6 +234,11 @@ void test_auth_web_server(void**)
         virtual ~SimpleAuthWebServer()
         {}
 
+        inline void startWebBrowser(std::string ssoUrl)
+        {
+            SF_UNUSED(ssoUrl);
+        }
+
         inline void startAccept()
         {}
 
@@ -273,8 +278,6 @@ void test_auth_web_server(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
     sf_bool disable_console_login = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
-    SF_ERROR_STRUCT* sferr = snowflake_error(sf);
-    sferr->error_code = SF_STATUS_SUCCESS;
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
     AuthenticatorExternalBrowser* auth = new AuthenticatorExternalBrowser(sf, webserver);
