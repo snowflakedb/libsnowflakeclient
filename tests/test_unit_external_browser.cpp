@@ -284,8 +284,14 @@ void test_auth_web_server(void**)
 
     AuthWebServer* webserver = new SimpleAuthWebServer();
     MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
-    auth->authenticate();
-    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+    webserver->start();
+    assert_false(webserver->isError());
+    std::map<std::string, std::string> out;
+    auth->getLoginUrl(out, webserver->getPort());
+    assert_false(auth->isError());
+
+    webserver->startAccept();
+    assert_false(webserver->isError());
 
     delete auth;
 
