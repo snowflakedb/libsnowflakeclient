@@ -292,6 +292,7 @@ void test_auth_web_server(void**)
 
     webserver->startAccept();
     assert_false(webserver->isError());
+    webserver->stop();
 
     delete auth;
 
