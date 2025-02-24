@@ -14,6 +14,12 @@
 #include "utils/TestSetup.hpp"
 #include "../cpp/logger/SFLogger.hpp"
 
+#ifdef __APPLE__
+#include <CoreFoundation/CFBundle.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
 #define REF_PORT 12345
 #define REF_SSO_URL "https://sso.com/"
 #define REF_PROOF_KEY "MOCK_PROOF_KEY"
