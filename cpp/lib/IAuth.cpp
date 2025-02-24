@@ -145,6 +145,7 @@ namespace Client
             {
                 // nop
             }
+
             m_authWebServer->stop();
             if (m_authWebServer->isError())
             {
