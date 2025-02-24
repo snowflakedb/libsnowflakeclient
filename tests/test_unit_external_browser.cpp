@@ -13,11 +13,14 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "../cpp/logger/SFLogger.hpp"
-
-#ifdef __APPLE__
-#include <CoreFoundation/CFBundle.h>
-#include <CoreFoundation/CoreFoundation.h>
-#include <ApplicationServices/ApplicationServices.h>
+#ifdef _WIN32
+#include <WS2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #endif
 
 #define REF_PORT 12345
