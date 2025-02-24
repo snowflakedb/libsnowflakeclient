@@ -23,6 +23,21 @@
 #include <unistd.h>
 #endif
 
+#define MOCK_RESPONSE "GET /?token=Snowflake-token-12345 HTTP/1.1 \
+Host : localhost : 59162 \
+Connection : keep - alive \
+sec - ch - ua : \"Not(A:Brand\"; v = \"99\", \"Google Chrome\"; v = \"133\", \"Chromium\"; v = \"133\" \
+sec - ch - ua - mobile: ? 0 \
+sec - ch - ua - platform : \"Windows\" \
+Upgrade - Insecure - Requests : 1 \
+User - Agent : Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 133.0.0.0 Safari / 537.36 \
+Accept : text / html, application / xhtml + xml, application / xml; q = 0.9, image / avif, image / webp, image / apng, */*;q=0.8,application/signed-exchange;v=b3;q=0.7 \
+Sec-Fetch-Site: cross-site \
+Sec-Fetch-Mode: navigate \
+Sec-Fetch-Dest: document \
+Accept-Encoding: gzip, deflate, br, zstd \
+Accept-Language: en-US,en;q=0.9,ko;q=0.8" 
+
 #define REF_PORT 12345
 #define REF_SSO_URL "https://sso.com/"
 #define REF_PROOF_KEY "MOCK_PROOF_KEY"
@@ -237,7 +252,7 @@ void test_external_browser_authenticate(void**)
 
 void mockResponseSender(int port) {
 #ifdef _WIN32
-    Sleep(2000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+    Sleep(2000);
 #else
     std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(2000)));
 #endif
@@ -254,8 +269,7 @@ void mockResponseSender(int port) {
         return;
     }
 
-    const char* mockData = "Mock Response\n";
-    send(sock, mockData, strlen(mockData), 0);
+    send(sock, MOCK_RESPONSE, strlen(MOCK_RESPONSE), 0);
 #ifndef _WIN32
     int ret = close(sock);
 #else
@@ -265,23 +279,6 @@ void mockResponseSender(int port) {
 
 void test_auth_web_server(void**) 
 {
-    log_set_quiet(0);
-    class SimpleAuthWebServer : public AuthWebServer
-    {
-    public:
-        SimpleAuthWebServer()
-        {}
-
-        virtual ~SimpleAuthWebServer()
-        {}
-
-        inline std::string getSAMLToken()
-        {
-            m_saml_token = REF_SAML_TOKEN;
-            return AuthWebServer::getSAMLToken();
-        }
-    };
-
     class MockExternalBrowser : public AuthenticatorExternalBrowser
     {
     public:
@@ -312,20 +309,22 @@ void test_auth_web_server(void**)
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
-    sf_bool disable_console_login = SF_BOOLEAN_FALSE;
-    snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
-    AuthWebServer* webserver = new SimpleAuthWebServer();
-    MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
 
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "SFAuthWebBrowserFailed: Not HTTP request");
+    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+
+    jsonObject_t dataMap;
+    auth->updateDataMap(dataMap);
+
+    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "Snowflake-token-12345");
+    assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOFKEY");
+    assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     delete auth;
 
     snowflake_term(sf);
-    log_set_quiet(1);
-
 }
 
 void test_external_browser_error(void**)
@@ -591,12 +590,12 @@ void test_authenticator_external_browser_privatelink_with_china_domain(void**)
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-    //cmocka_unit_test(test_external_browser_initialize),
-    //cmocka_unit_test(test_external_browser_authenticate),
-    //cmocka_unit_test(test_external_browser_error),
+    cmocka_unit_test(test_external_browser_initialize),
+    cmocka_unit_test(test_external_browser_authenticate),
+    cmocka_unit_test(test_external_browser_error),
     cmocka_unit_test(test_auth_web_server),
-    //cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
-    //cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
+    cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
+    cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
