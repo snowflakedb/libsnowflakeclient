@@ -319,7 +319,7 @@ void test_auth_web_server(void**)
     auth->updateDataMap(dataMap);
 
     assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "Snowflake-token-12345");
-    assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOFKEY");
+    assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     delete auth;
