@@ -244,7 +244,7 @@ void test_external_browser_authenticate(void**)
     snowflake_term(sf);
 }
 
-void mockResponseSender(int port, const char* response) {
+void createMockClient(int port, const char* response) {
 #ifdef _WIN32
     Sleep(2000);
 #else
@@ -288,7 +288,7 @@ public:
     inline void startWebBrowser(std::string ssoUrl)
     {
         SF_UNUSED(ssoUrl);
-        std::thread mockServerThread(mockResponseSender, getPort(), m_response.c_str());
+        std::thread mockServerThread(createMockClient, getPort(), m_response.c_str());
         mockServerThread.detach();
     }
 
@@ -297,6 +297,7 @@ public:
 
 void test_auth_web_server_success(void**) 
 {
+    log_set_quiet(0);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -332,10 +333,11 @@ void test_auth_web_server_success(void**)
     auth->m_response = MOCK_OPTIONS_RESPONSE;
     auth->authenticate();
     assert_string_equal(sf->error.msg, "SFAuthWebBrowserFailed: Failed to receive SAML token. Could not receive a request.");
-
     delete auth;
 
     snowflake_term(sf);
+    log_set_quiet(1);
+
 }
 
 void test_auth_web_server_fail(void**)
