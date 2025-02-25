@@ -848,6 +848,7 @@ namespace Client
 
   bool AuthWebServer::receive()
   {
+      sf_log_debug("sf", "AuthWebServer:receive");
       bool is_options = false;
 
       char mesg[20000];
@@ -855,6 +856,8 @@ namespace Client
       char* rest_mesg;
       int recvlen;
       memset((void*)mesg, (int)'\0', sizeof(mesg));
+      sf_log_debug("sf", "reset msg");
+
       if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, sizeof(mesg), 0)) < 0)
       {
           CXX_LOG_ERROR(
@@ -866,14 +869,18 @@ namespace Client
       reqline = sf_strtok(mesg, " \t\n", &rest_mesg);
       if (strncmp(reqline, "GET\0", 4) == 0)
       {
+          sf_log_debug("sf", "parse get");
+
           parseAndRespondGetRequest(&rest_mesg);
       }
       else if (strncmp(reqline, "POST\0", 5) == 0)
       {
+          sf_log_debug("sf", "parse post");
           parseAndRespondPostRequest(std::string(rest_mesg, (unsigned long)recvlen));
       }
       else if (strncmp(reqline, "OPTIONS\0", 8) == 0)
       {
+          sf_log_debug("sf", "parse optiont");
           is_options = parseAndRespondOptionsRequest(std::string(rest_mesg, (unsigned long)recvlen));
       }
       else
