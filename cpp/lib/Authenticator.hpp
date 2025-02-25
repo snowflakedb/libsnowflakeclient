@@ -146,7 +146,7 @@ namespace Client
       std::string m_origin;
       int m_timeout;
 
-      void parseAndRespondOptionsRequest(std::string response);
+      bool parseAndRespondOptionsRequest(std::string response);
       void parseAndRespondPostRequest(std::string response);
       void parseAndRespondGetRequest(char** rest_mesg);
       void respond(std::string queryParameters);

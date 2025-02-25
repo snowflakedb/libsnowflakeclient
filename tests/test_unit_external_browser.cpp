@@ -23,20 +23,14 @@
 #include <unistd.h>
 #endif
 
-#define MOCK_RESPONSE "GET /?token=Snowflake-token-12345 HTTP/1.1 \
-Host : localhost : 59162 \
-Connection : keep - alive \
-sec - ch - ua : \"Not(A:Brand\"; v = \"99\", \"Google Chrome\"; v = \"133\", \"Chromium\"; v = \"133\" \
-sec - ch - ua - mobile: ? 0 \
-sec - ch - ua - platform : \"Windows\" \
-Upgrade - Insecure - Requests : 1 \
-User - Agent : Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 133.0.0.0 Safari / 537.36 \
-Accept : text / html, application / xhtml + xml, application / xml; q = 0.9, image / avif, image / webp, image / apng, */*;q=0.8,application/signed-exchange;v=b3;q=0.7 \
-Sec-Fetch-Site: cross-site \
-Sec-Fetch-Mode: navigate \
-Sec-Fetch-Dest: document \
-Accept-Encoding: gzip, deflate, br, zstd \
-Accept-Language: en-US,en;q=0.9,ko;q=0.8" 
+#define MOCK_GET_RESPONSE "GET /?token=Snowflake-token-12345 HTTP/1.1"
+
+#define MOCK_POST_RESPONSE "POST token=Snowflake-token-12345"
+#define MOCK_OPTIONS_RESPONSE "OPTIONS /api/data HTTP/1.1 \n \
+Host: api.example.com \n \
+Origin : https://client.example.com \n\
+Access-Control-Request-Method : POST \n \
+Access-Control-Request-Headers : Content - Type, Authorization \n" 
 
 #define REF_PORT 12345
 #define REF_SSO_URL "https://sso.com/"
@@ -250,57 +244,59 @@ void test_external_browser_authenticate(void**)
     snowflake_term(sf);
 }
 
-void mockResponseSender(int port) {
+void mockResponseSender(int port, const char* response) {
 #ifdef _WIN32
     Sleep(2000);
 #else
     std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(2000)));
 #endif
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int mock_client = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
 
-    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (connect(mock_client, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         std::cerr << "Mock server connection failed\n";
         return;
     }
 
-    send(sock, MOCK_RESPONSE, strlen(MOCK_RESPONSE), 0);
+    send(mock_client, response, strlen(response), 0);
 #ifndef _WIN32
-    int ret = close(sock);
+     close(mock_client);
 #else
-    int ret = closesocket(sock);
+     closesocket(mock_client);
 #endif
 }
 
-void test_auth_web_server(void**) 
+class MockExternalBrowser : public AuthenticatorExternalBrowser
 {
-    class MockExternalBrowser : public AuthenticatorExternalBrowser
+public:
+    MockExternalBrowser(
+        SF_CONNECT* connection, IAuthWebServer* authWebServer)
+        : AuthenticatorExternalBrowser(connection, authWebServer)
     {
-    public:
-        MockExternalBrowser(
-            SF_CONNECT* connection, IAuthWebServer* authWebServer)
-            : AuthenticatorExternalBrowser(connection, authWebServer)
-        {
-            m_idp = new MockIDP(connection);
-        }
+        m_idp = new MockIDP(connection);
+    }
 
-        ~MockExternalBrowser()
-        {}
+    ~MockExternalBrowser()
+    {}
 
 
-        inline void startWebBrowser(std::string ssoUrl)
-        {
-            SF_UNUSED(ssoUrl);
-            std::thread mockServerThread(mockResponseSender, getPort());
-            mockServerThread.detach();
-        }
-    };
+    inline void startWebBrowser(std::string ssoUrl)
+    {
+        SF_UNUSED(ssoUrl);
+        std::thread mockServerThread(mockResponseSender, getPort(), m_response.c_str());
+        mockServerThread.detach();
+    }
 
+    std::string m_response;
+};
+
+void test_auth_web_server_success(void**) 
+{
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -311,7 +307,7 @@ void test_auth_web_server(void**)
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
 
     MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
-
+    auth->m_response = MOCK_GET_RESPONSE;
     auth->authenticate();
     assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
 
@@ -322,6 +318,65 @@ void test_auth_web_server(void**)
     assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
+    auth->m_response = MOCK_POST_RESPONSE;
+    auth->authenticate();
+    assert_int_equal(sf->error.error_code, SF_STATUS_SUCCESS);
+
+    dataMap.clear();
+    auth->updateDataMap(dataMap);
+    assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "Snowflake-token-12345");
+    assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
+    assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+
+    //This case only test when the request is OPTIONS. The mock client only works one time, so it should be failed.
+    auth->m_response = MOCK_OPTIONS_RESPONSE;
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "SFAuthWebBrowserFailed: Failed to receive SAML token. Could not receive a request.");
+
+    delete auth;
+
+    snowflake_term(sf);
+}
+
+void test_auth_web_server_fail(void**)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_response = "wrong request";
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "SFAuthWebBrowserFailed: Not HTTP request.");
+    delete auth;
+
+    auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_response = "GET /?token=Snowflake-token-12345 HTTP/1.3";
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.");
+    delete auth;
+
+    auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_response = "GET /!token=Snowflake-token-12345 HTTP/1.1";
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondGetRequest:No token parameter is found.");
+    delete auth;
+
+    auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_response = "OPTIONS ";
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.");
+    delete auth;
+
+    auth = new MockExternalBrowser(sf, nullptr);
+    auth->m_response = "OPTIONS / api / data HTTP / 1.1 \n Host: api.example.com \n Origin : https ://client.example.com \nAccess-Control-Request-Method : GET";
+    auth->authenticate();
+    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested");
     delete auth;
 
     snowflake_term(sf);
@@ -593,7 +648,8 @@ int main(void) {
     cmocka_unit_test(test_external_browser_initialize),
     cmocka_unit_test(test_external_browser_authenticate),
     cmocka_unit_test(test_external_browser_error),
-    cmocka_unit_test(test_auth_web_server),
+    cmocka_unit_test(test_auth_web_server_success),
+    cmocka_unit_test(test_auth_web_server_fail),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
   };

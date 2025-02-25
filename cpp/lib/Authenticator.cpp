@@ -861,6 +861,7 @@ namespace Client
               "sf", "AuthWebServer", "receive",
               "Failed to receive SAML token. Could not receive a request.");
           m_errMsg = "SFAuthWebBrowserFailed: Failed to receive SAML token. Could not receive a request.";
+          return false;
       }
       reqline = sf_strtok(mesg, " \t\n", &rest_mesg);
       if (strncmp(reqline, "GET\0", 4) == 0)
@@ -869,12 +870,11 @@ namespace Client
       }
       else if (strncmp(reqline, "POST\0", 5) == 0)
       {
-          parseAndRespondPostRequest(std::string(mesg, (unsigned long)recvlen));
+          parseAndRespondPostRequest(std::string(rest_mesg, (unsigned long)recvlen));
       }
       else if (strncmp(reqline, "OPTIONS\0", 8) == 0)
       {
-          parseAndRespondOptionsRequest(std::string(mesg, (unsigned long)recvlen));
-          is_options = true;
+          is_options = parseAndRespondOptionsRequest(std::string(rest_mesg, (unsigned long)recvlen));
       }
       else
       {
@@ -882,7 +882,7 @@ namespace Client
               "sf", "AuthWebServer", "receive",
               "Failed to receive SAML token. Could not get HTTP request. err: %s",
               reqline);
-          m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request";
+          m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request.";
       }
       return is_options;
   }
@@ -890,13 +890,14 @@ namespace Client
   void AuthWebServer::parseAndRespondPostRequest(std::string response)
   {
       auto ret = splitString(response, '\n');
-      if (ret.empty())
+      if (ret.empty()) 
       {
           CXX_LOG_ERROR(
               "sf", "AuthWebServer",
               "parseAndRespondPostRequest", "No token parameter is found. %s",
               response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
+          m_errMsg = "AuthWebServer:parseAndRespondPostRequest:No token parameter is found.";
           return;
       }
       if (m_origin.empty())
@@ -916,13 +917,14 @@ namespace Client
                   "AuthWebServer",
                   "parseAndRespondPostRequest",
                   "Error in parsing JSON: %s, err: %s", payload.c_str(), err.c_str());
+              m_errMsg = "AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON";
               return;
           }
           respondJson(json);
       }
   }
 
-  void AuthWebServer::parseAndRespondOptionsRequest(std::string response)
+  bool AuthWebServer::parseAndRespondOptionsRequest(std::string response)
   {
       std::string requested_header;
       auto ret = splitString(response, '\n');
@@ -933,7 +935,9 @@ namespace Client
               "parseAndRespondOptionsRequest", "No token parameter is found. %s",
               response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          return;
+          m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:No token parameter is found";
+
+          return false;
       }
 
       for (auto const& value : ret)
@@ -949,7 +953,9 @@ namespace Client
                       "parseAndRespondOptionsRequest", "POST method is not requested. %s",
                       value.c_str());
                   send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-                  return;
+                  m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested";
+
+                  return false;
               }
           }
           else if (value.find("Access-Control-Request-Headers") != std::string::npos)
@@ -971,7 +977,9 @@ namespace Client
               "no Access-Control-Request-Headers or Origin header. %s",
               response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          return;
+          m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.";
+
+          return false;
       }
       std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now().time_since_epoch()
@@ -990,6 +998,7 @@ namespace Client
           << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
           << "\r\n\r\n";
       send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
+      return true;
   }
 
   std::vector<std::string> AuthWebServer::splitString(const std::string& s, char delimiter)
@@ -1014,6 +1023,7 @@ namespace Client
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "receive", "Not HTTP request. %s", "");
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
+          m_errMsg = "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.";
           return;
       }
 
@@ -1023,6 +1033,7 @@ namespace Client
               "sf", "AuthWebServer", "receive", "No token parameter is found. %s",
               path);
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
+          m_errMsg = "AuthWebServer:parseAndRespondGetRequest:No token parameter is found.";
           return;
       }
       respond(std::string(&path[2]));
