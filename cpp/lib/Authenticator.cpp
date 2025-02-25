@@ -998,6 +998,7 @@ namespace Client
           << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
           << "\r\n\r\n";
       send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
+      sf_log_debug("sf","Success on Option call");
       return true;
   }
 

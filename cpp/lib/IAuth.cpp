@@ -151,6 +151,8 @@ namespace Client
             {
                 return;
             }
+            sf_log_debug("sf", "Success on stop");
+
             m_token = m_authWebServer->getSAMLToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();
         }
