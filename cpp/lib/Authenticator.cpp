@@ -849,7 +849,7 @@ namespace Client
   bool AuthWebServer::receive()
   {
       bool is_options = false;
-      char* = new char[SOCKET_BUFFER_SIZE]();
+      char* mesg = new char[SOCKET_BUFFER_SIZE]();
       char* reqline;
       char* rest_mesg;
       int recvlen;
