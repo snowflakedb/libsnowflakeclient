@@ -850,15 +850,17 @@ namespace Client
   {
       sf_log_debug("sf", "AuthWebServer:receive");
       bool is_options = false;
+      int buffer_size = 20000;
 
-      char mesg[20000];
+      char* mesg = new char[buffer_size]();
+      //char mesg[20000];
       char* reqline;
       char* rest_mesg;
       int recvlen;
-      memset((void*)mesg, (int)'\0', sizeof(mesg));
+      //memset((void*)mesg, (int)'\0', sizeof(mesg));
       sf_log_debug("sf", "reset msg");
 
-      if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, sizeof(mesg), 0)) < 0)
+      if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, buffer_size, 0)) < 0)
       {
           CXX_LOG_ERROR(
               "sf", "AuthWebServer", "receive",
@@ -880,7 +882,7 @@ namespace Client
       }
       else if (strncmp(reqline, "OPTIONS\0", 8) == 0)
       {
-          sf_log_debug("sf", "parse optiont");
+          sf_log_debug("sf", "parse t");
           is_options = parseAndRespondOptionsRequest(std::string(rest_mesg, (unsigned long)recvlen));
       }
       else
@@ -891,6 +893,7 @@ namespace Client
               reqline);
           m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request.";
       }
+      delete[] mesg;
       return is_options;
   }
 
