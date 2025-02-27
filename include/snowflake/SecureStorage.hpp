@@ -26,7 +26,7 @@ namespace Client {
       case SecureStorageKeyType::MFA_TOKEN:
         return "MFA_TOKEN";
       case SecureStorageKeyType::SSO_TOKEN:
-        return "SSO_TOKEN";
+        return "ID_TOKEN";
       case SecureStorageKeyType::OAUTH_REFRESH_TOKEN:
         return "OAUTH_REFRESH_TOKEN";
       case SecureStorageKeyType::OAUTH_ACCESS_TOKEN:

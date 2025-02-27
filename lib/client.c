@@ -605,6 +605,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (AUTH_PAT == auth_type) {
         log_debug("programmatic_access_token: %s", sf->programmatic_access_token ? "provided" : "not provided");
     }
+    if (AUTH_EXTERNALBROWSER == auth_type) {
+        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
+        log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
+    }
+    if (AUTH_OKTA == auth_type) {
+        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
+        log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
+    }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
     log_debug("account: %s", sf->account);
@@ -809,8 +817,10 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
+        sf->client_store_temporary_credential = SF_BOOLEAN_TRUE;
 #else
         sf->client_request_mfa_token = SF_BOOLEAN_FALSE;
+        sf->client_store_temporary_credential = SF_BOOLEAN_FALSE;
 #endif
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->include_retry_reason = SF_BOOLEAN_TRUE;
@@ -861,6 +871,7 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->oauth_token = NULL;
         sf->disable_console_login = SF_BOOLEAN_TRUE;
+        sf->disable_saml_url_check = SF_BOOLEAN_FALSE;
         sf->programmatic_access_token = NULL;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
@@ -910,10 +921,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
-    // SNOW-715510: TODO Enable token cache
-/*
-    cred_cache_term(sf->token_cache);
-*/
+    secure_storage_term(sf->token_cache);
     qcc_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
@@ -1014,14 +1022,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    ret = auth_authenticate(sf);
-    if (ret != SF_STATUS_SUCCESS) {
-        goto cleanup;
+    // TODO delete password before printing
+    if (DEBUG) {
+        log_debug("body:\n%s", s_body);
     }
-
-    ret = SF_STATUS_ERROR_GENERAL; // reset to the error
-
-    uuid4_generate(sf->request_id);// request id
 
     // Create body
     body = create_auth_json_body(
@@ -1032,11 +1036,25 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->timezone,
         sf->autocommit);
     log_trace("Created body");
-    s_body = snowflake_cJSON_Print(body);
-    // TODO delete password before printing
-    if (DEBUG) {
-        log_debug("body:\n%s", s_body);
+
+    if (!is_id_token_authentication(sf, body)) {
+        //Skip external browser authenticate if the connector uses the SSO token
+        ret = auth_authenticate(sf);
+        if (ret != SF_STATUS_SUCCESS) {
+            goto cleanup;
+        }
     }
+
+    // update authentication information to body
+    auth_update_json_body(sf, body);
+    s_body = snowflake_cJSON_Print(body);
+
+    log_trace("Here is JSON request:\n%s", s_body);
+
+
+    ret = SF_STATUS_ERROR_GENERAL; // reset to the error
+
+    uuid4_generate(sf->request_id);// request id
 
     // Send request and get data
     // For authentication(JWT) needs renew credentials during retry
@@ -1082,6 +1100,13 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     log_debug("no code element.");
                 }
 
+                if (code == 390195) 
+                {
+                    auth_renew_json_body(sf, body);
+                    s_body = snowflake_cJSON_Print(body);
+                    continue;
+                }
+
                 SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
                                     message ? message : "Query was not successful",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -1100,6 +1125,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
               cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, mfa_token);
             }
 */
+            char* id_token = NULL;
+            if (json_copy_string(&id_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, id_token);
+            }
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
@@ -1366,6 +1395,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_CLIENT_REQUEST_MFA_TOKEN:
             sf->client_request_mfa_token = value ? *((sf_bool *) value): SF_BOOLEAN_TRUE;
             break;
+        case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+            sf->client_store_temporary_credential = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+            break;
         case SF_CON_STAGE_BIND_THRESHOLD:
             if (value)
             {
@@ -1566,6 +1598,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           *value = &sf->stage_binding_disabled;
           break;
+        case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+            *value = &sf->client_store_temporary_credential;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",

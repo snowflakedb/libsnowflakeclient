@@ -149,7 +149,7 @@ void test_external_browser_initialize(void**)
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
    
@@ -197,7 +197,7 @@ void test_external_browser_authenticate(void**)
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     int64 timeout = 50;
     snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &timeout);
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
@@ -290,7 +290,6 @@ public:
 
 void test_auth_web_server_success(void**) 
 {
-    log_set_quiet(0);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -298,7 +297,7 @@ void test_auth_web_server_success(void**)
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = MOCK_GET_RESPONSE;
@@ -336,7 +335,7 @@ void test_auth_web_server_fail(void**)
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "wrong request";
@@ -485,6 +484,89 @@ void test_authenticator_external_browser_privatelink_with_china_domain(void**)
     unit_authenticator_external_browser_privatelink("cn");
 }
 
+void test_sso_token_cache(void**)
+{
+    class MockExternalBrowser : public AuthenticatorExternalBrowser
+    {
+    public:
+        MockExternalBrowser(
+            SF_CONNECT* connection, IAuthWebServer* authWebServer)
+            : AuthenticatorExternalBrowser(connection, authWebServer)
+        {
+            m_idp = new MockIDP(connection);
+            m_proofKey = "RENEW_PROOF_KEY";
+            m_token = "RENEW_SAML_TOKEN";
+        }
+
+        ~MockExternalBrowser()
+        {}
+
+        inline void authenticate()
+        {
+            if (!isRenew) {
+                assert_true(SF_BOOLEAN_FALSE);
+            }
+        }
+
+        bool isRenew = false;
+    };
+
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "test");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    sf_bool client_store_temporary_credential = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &client_store_temporary_credential);
+
+    sf->token_cache = secure_storage_init();
+    char* original_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    if (original_token != NULL)
+    {
+        secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    }
+    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, "mock_sso_token");
+
+    IAuthWebServer* webserver = new MockAuthWebServer();
+    MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
+    sf->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(auth);
+
+    cJSON* body = NULL;
+    body = create_auth_json_body(
+        sf,
+        sf->application,
+        sf->application_name,
+        sf->application_version,
+        sf->timezone,
+        sf->autocommit);
+
+    auth_update_json_body(sf, body);
+    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_SSO_TOKEN);
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "TOKEN")), "mock_sso_token");
+
+    auth->isRenew = true;
+    auth_renew_json_body(sf, body);
+    data = snowflake_cJSON_GetObjectItem(body, "data");
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "TOKEN")), "RENEW_SAML_TOKEN");
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "PROOF_KEY")), "RENEW_PROOF_KEY");
+
+    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    if (original_token != NULL) 
+    {
+        secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, original_token);
+    }
+    
+    snowflake_cJSON_Delete(body);
+    snowflake_term(sf);
+}
+
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
@@ -494,6 +576,8 @@ int main(void) {
     cmocka_unit_test(test_auth_web_server_fail),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
+    cmocka_unit_test(test_sso_token_cache),
+
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
