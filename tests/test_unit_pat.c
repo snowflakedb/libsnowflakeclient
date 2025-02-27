@@ -7,6 +7,7 @@
 #include "connection.h"
 #include "error.h"
 #include "memory.h"
+#include "authenticator.h"
 
 /*
  * Test auth connection when the token was not provided.
