@@ -563,6 +563,7 @@ void test_sso_token_cache(void**)
         secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, original_token);
     }
     
+    secure_storage_term(sf->token);
     snowflake_cJSON_Delete(body);
     snowflake_term(sf);
 }

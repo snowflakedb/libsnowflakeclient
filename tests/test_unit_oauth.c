@@ -51,14 +51,9 @@ void test_json_data_in_oauth(void** unused)
         sf->application_version,
         sf->timezone,
         sf->autocommit);
+    auth_update_json_body(sf, body);
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
 
-    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "authenticator")), "oauth");
-    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "token")), "mock_token");
-
-    body = snowflake_cJSON_CreateObject();
-    auth_update_json_body(sf, body);
-    data = snowflake_cJSON_GetObjectItem(body, "data");
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "authenticator")), "oauth");
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "token")), "mock_token");
 }

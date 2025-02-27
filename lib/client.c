@@ -921,7 +921,10 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
-    secure_storage_term(sf->token_cache);
+    if (sf->token_cache != NULL) 
+    {
+        secure_storage_term(sf->token_cache);
+    }
     qcc_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
