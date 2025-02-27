@@ -5,8 +5,8 @@
 #ifndef SNOWFLAKE_CLIENT_VERSION_H
 #define SNOWFLAKE_CLIENT_VERSION_H
 
-//#define SF_API_VERSION "2.0.1"
-#define SF_API_VERSION "3.4.1"
+#define SF_API_VERSION "2.0.1"
+//#define SF_API_VERSION "3.4.1"
 
 
 
