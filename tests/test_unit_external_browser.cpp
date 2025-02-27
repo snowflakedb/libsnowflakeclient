@@ -458,7 +458,7 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
     snowflake_set_attribute(sf, SF_CON_HOST, host.c_str());
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "externalbrowser");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     sf_bool disable_console_login = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
     _snowflake_check_connection_parameters(sf);
