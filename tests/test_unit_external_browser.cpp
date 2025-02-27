@@ -290,7 +290,6 @@ public:
 
 void test_auth_web_server_success(void**) 
 {
-    log_set_quiet(0);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");

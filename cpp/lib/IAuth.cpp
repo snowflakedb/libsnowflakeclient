@@ -320,9 +320,7 @@ namespace Client
                 m_errMsg = "SFAuthWebBrowserFailed: Could not find a usable version of Winsock.dll";
             }
 
-            CXX_LOG_INFO("sf::AuthWinSock::constructor::Winsock %s.%s DLL was found");
-            std::to_string(LOBYTE(wsaData.wVersion)).c_str(),
-            std::to_string(HIBYTE(wsaData.wVersion)).c_str());
+            CXX_LOG_INFO("sf::AuthWinSock::constructor::Winsock %s.%s DLL was found", std::to_string(LOBYTE(wsaData.wVersion)).c_str(), std::to_string(HIBYTE(wsaData.wVersion)).c_str());
         }
 
         AuthWinSock::~AuthWinSock()
