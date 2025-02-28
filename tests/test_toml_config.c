@@ -21,6 +21,7 @@ void test_valid_toml_file() {
 
   char* connectionParams = NULL;
   load_toml_config(&connectionParams);
+  assert_non_null(connectionParams);
   assert_string_equal(connectionParams, "key1=value1;key2=value2;");
 
   // Cleanup
@@ -112,6 +113,7 @@ void test_use_default_location_env() {
 
   char* connectionParams = NULL;
   load_toml_config(&connectionParams);
+  assert_non_null(connectionParams);
   assert_string_equal(connectionParams, "key1=value1;key2=value2;");
 
   // Cleanup
@@ -140,6 +142,7 @@ void test_use_snowflake_default_connection_var() {
 
   char* connectionParams = NULL;
   load_toml_config(&connectionParams);
+  assert_non_null(connectionParams);
   assert_string_equal(connectionParams, "key3=value3;key4=value4;");
 
   // Cleanup
@@ -194,12 +197,14 @@ void test_client_config_log_invalid_config_name() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_valid_toml_file),
         cmocka_unit_test(test_missing_toml_file),
         cmocka_unit_test(test_invalid_toml_file),
+        cmocka_unit_test(test_client_config_log_invalid_config_name),
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
+        cmocka_unit_test(test_valid_toml_file),
         cmocka_unit_test(test_use_default_location_env),
         cmocka_unit_test(test_use_snowflake_default_connection_var),
-        cmocka_unit_test(test_client_config_log_invalid_config_name),
+#endif
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

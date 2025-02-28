@@ -6,9 +6,7 @@
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
 #include <toml++/toml.hpp>
-
-#undef snprintf
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace
 {
@@ -30,8 +28,8 @@ namespace
     return "";
   }
 
-  boost::filesystem::path resolveTomlPath() {
-    boost::filesystem::path tomlFilePath;
+  std::filesystem::path resolveTomlPath() {
+    std::filesystem::path tomlFilePath;
     // Check in SNOWFLAKE_HOME
     std::string snowflakeHomeEnv = getEnvironmentVariableValue(ENV_SNOWFLAKE_HOME);
     if (!snowflakeHomeEnv.empty()) {
@@ -68,7 +66,7 @@ namespace
   }
 
   void parseTomlFile(
-    const boost::filesystem::path& filePath,
+    const std::filesystem::path& filePath,
     char **connectionParams) {
     if (connectionParams == NULL) {
       CXX_LOG_ERROR("NULL pointer passed into parse toml file.");
@@ -104,9 +102,13 @@ namespace
 
 void load_toml_config(char** connectionParams)
 {
-  boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
+// Disable toml config parsing for 32-bit windows debug build due to linking issues
+// with _osfile causing hanging/assertions until dynamic linking is available
+#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
+  std::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
     parseTomlFile(derivedTomlFilePath, connectionParams);
   }
+#endif
 }
