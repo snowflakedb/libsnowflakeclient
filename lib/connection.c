@@ -63,9 +63,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();
-    //TODO: SNOW-715528 Enable server.
     snowflake_cJSON_AddStringToObject(data, CLIENT_APP_ID_KEY, int_app_name);
-    //snowflake_cJSON_AddStringToObject(data, CLIENT_APP_ID_KEY, "ODBC");
 #ifdef MOCK_ENABLED
     snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, "0.0.0");
 #else

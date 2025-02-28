@@ -608,10 +608,11 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (AUTH_EXTERNALBROWSER == auth_type) {
         log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
         log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
+        log_debug("browser_response_timeout: %d", sf->browser_response_timeout);
+
     }
     if (AUTH_OKTA == auth_type) {
-        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
-        log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
+        log_debug("disable_saml_url_check: %s", sf->disable_saml_url_check ? "true" : "false");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
@@ -1041,7 +1042,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     log_trace("Created body");
 
     if (!is_id_token_authentication(sf, body)) {
-        //Skip external browser authenticate if the connector uses the SSO token
+        //Skip external browser authenticate if the connector uses the SSO token auth.
         ret = auth_authenticate(sf);
         if (ret != SF_STATUS_SUCCESS) {
             goto cleanup;
@@ -1051,9 +1052,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     // update authentication information to body
     auth_update_json_body(sf, body);
     s_body = snowflake_cJSON_Print(body);
-
     log_trace("Here is JSON request:\n%s", s_body);
-
 
     ret = SF_STATUS_ERROR_GENERAL; // reset to the error
 
@@ -1103,7 +1102,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     log_debug("no code element.");
                 }
 
-                if (code == 390195) 
+                if (code == SF_GS_ERROR_CODE_ID_TOKEN_INVALID)
                 {
                     auth_renew_json_body(sf, body);
                     s_body = snowflake_cJSON_Print(body);
@@ -1121,17 +1120,19 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 goto cleanup;
             }
 
+            //TODO: SNOW-715528 Enable server.
+
+            char* auth_token = NULL;
+            if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, auth_token);
+            }
+
             // SNOW-715510: TODO Enable token cache
 /*
-            char* mfa_token = NULL;
-            if (json_copy_string(&mfa_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, mfa_token);
+            else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+              cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
             }
 */
-            char* id_token = NULL;
-            if (json_copy_string(&id_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, id_token);
-            }
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
