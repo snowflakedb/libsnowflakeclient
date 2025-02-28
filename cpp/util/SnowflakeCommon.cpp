@@ -12,6 +12,7 @@
 #include "../logger/SFLogger.hpp"
 #include <stdexcept>
 #include "SnowflakeCommon.hpp"
+#include <chrono>
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
