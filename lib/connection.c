@@ -124,7 +124,6 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         if (token != NULL)
         {
             snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-
             snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
             snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_SSO_TOKEN);
             secure_storage_free_credential(token);

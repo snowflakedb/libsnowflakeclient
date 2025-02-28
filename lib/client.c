@@ -609,7 +609,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
         log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
         log_debug("browser_response_timeout: %d", sf->browser_response_timeout);
-
     }
     if (AUTH_OKTA == auth_type) {
         log_debug("disable_saml_url_check: %s", sf->disable_saml_url_check ? "true" : "false");
@@ -1104,7 +1103,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
                 if (code == SF_GS_ERROR_CODE_ID_TOKEN_INVALID)
                 { 
-                    log_error("The id token was expired or invalid. Need to reauthenticate");
+                    log_error("ID token expired or invalid. Reauthenticate.");
                     auth_renew_json_body(sf, body);
                     s_body = snowflake_cJSON_Print(body);
                     retried_count++;
