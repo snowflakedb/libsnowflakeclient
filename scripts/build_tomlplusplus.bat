@@ -1,3 +1,4 @@
+
 set tomlplusplus_version=3.4.0
 call %*
 
@@ -15,6 +16,8 @@ set dynamic_runtime=%4
 set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
+set currdir=%cd%
+
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
@@ -22,7 +25,7 @@ set DEPS_DIR=%scriptdir%..\deps
 set TOMLPLUSPLUS_SOURCE_DIR=%DEPS_DIR%\tomlplusplus
 set TOMLPLUSPLUS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\tomlplusplus
 
-cd "%tomlplusplus_SOURCE_DIR%"
+cd "%TOMLPLUSPLUS_SOURCE_DIR%"
 
 rd /S /Q %TOMLPLUSPLUS_INSTALL_DIR%
 md %TOMLPLUSPLUS_INSTALL_DIR%
