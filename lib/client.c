@@ -1103,9 +1103,11 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 }
 
                 if (code == SF_GS_ERROR_CODE_ID_TOKEN_INVALID)
-                {
+                { 
+                    log_error("The id token was expired or invalid. Need to reauthenticate");
                     auth_renew_json_body(sf, body);
                     s_body = snowflake_cJSON_Print(body);
+                    retried_count++;
                     continue;
                 }
 
@@ -1133,7 +1135,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
               cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
             }
 */
-
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
