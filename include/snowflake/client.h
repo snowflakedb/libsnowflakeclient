@@ -634,7 +634,6 @@ typedef struct SF_TIMESTAMP {
 typedef struct SF_QUERY_METADATA {
   SF_QUERY_STATUS status;
   char *qid;
-  char *stats;
 } SF_QUERY_METADATA;
 
 /**
