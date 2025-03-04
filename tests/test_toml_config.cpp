@@ -7,6 +7,7 @@
 #include "utils/TestSetup.hpp"
 
 void test_valid_toml_file(void** unused) {
+  SF_UNUSED(unused);
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char tomlFilePath[] = "./connections.toml";
@@ -32,6 +33,7 @@ void test_valid_toml_file(void** unused) {
 }
 
 void test_missing_toml_file(void** unused) {
+  SF_UNUSED(unused);
   char envbuf[MAX_PATH + 1];
   char* snowflakeHome = sf_getenv_s("SNOWFLAKE_HOME", envbuf, sizeof(envbuf));
   sf_setenv("SNOWFLAKE_HOME", "./");
@@ -48,6 +50,7 @@ void test_missing_toml_file(void** unused) {
 }
 
 void test_invalid_toml_file(void** unused) {
+  SF_UNUSED(unused);
   // Create toml file
   char tomlConfig[] = "Some fake toml data";
   char tomlFilePath[] = "./connections.toml";
@@ -73,6 +76,7 @@ void test_invalid_toml_file(void** unused) {
 }
 
 void test_use_default_location_env(void** unused) {
+  SF_UNUSED(unused);
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char envbuf[MAX_PATH + 1];
 #ifdef _WIN32
@@ -111,6 +115,7 @@ void test_use_default_location_env(void** unused) {
 }
 
 void test_use_snowflake_default_connection_var(void** unused) {
+  SF_UNUSED(unused);
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"\n\n[test]\nkey3 = \"value3\"\nkey4 = \"value4\"";
   char tomlFilePath[] = "./connections.toml";
@@ -146,6 +151,7 @@ void test_use_snowflake_default_connection_var(void** unused) {
 }
 
 void test_client_config_log_invalid_config_name(void** unused) {
+  SF_UNUSED(unused);
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char tomlFilePath[] = "./connections.toml";
