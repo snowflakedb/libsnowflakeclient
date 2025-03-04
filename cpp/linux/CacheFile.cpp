@@ -81,10 +81,27 @@ namespace {
 
   bool ensurePermissions(const FileDescriptor& fd, mode_t mode)
   {
-    if (fchmod(fd, mode) == -1)
+    struct stat s = {};
+    int err = fstat(fd, &s);
+    if (err == -1)
     {
-      CXX_LOG_ERROR("Cannot ensure permissions. fchmod(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
+      CXX_LOG_ERROR("Cannot ensure permissions. fstat(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
       return false;
+    }
+
+    if (s.st_uid != geteuid())
+    {
+      CXX_LOG_ERROR("Cannot ensure permissions. Cache file is not owned by effective user.");
+      return false;
+    }
+
+    if ((s.st_mode & 0777) != 0600)
+    {
+      if (fchmod(fd, mode) == -1)
+      {
+        CXX_LOG_ERROR("Cannot ensure permissions. fchmod(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
+        return false;
+      }
     }
 
     return true;
