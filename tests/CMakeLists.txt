@@ -48,7 +48,6 @@ SET(TESTS_C
         test_ocsp_fail_open
         test_unit_privatelink
         test_multiple_statements
-        test_toml_config
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
@@ -82,6 +81,7 @@ SET(TESTS_CXX
         test_unit_query_context_cache
         test_unit_sfurl
         test_unit_secure_storage
+        test_toml_config
 )
 
 SET(TESTS_PUTGET

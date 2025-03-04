@@ -2,11 +2,13 @@
  * Copyright (c) 2025 Snowflake Computing
  */
 
-#include "snowflake/toml_config_parser.h"
+#include "snowflake/TomlConfigParser.hpp"
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
 #include <toml++/toml.hpp>
-#include <filesystem>
+
+#undef snprintf
+#include <boost/filesystem.hpp>
 
 namespace
 {
@@ -28,8 +30,8 @@ namespace
     return "";
   }
 
-  std::filesystem::path resolveTomlPath() {
-    std::filesystem::path tomlFilePath;
+  boost::filesystem::path resolveTomlPath() {
+    boost::filesystem::path tomlFilePath;
     // Check in SNOWFLAKE_HOME
     std::string snowflakeHomeEnv = getEnvironmentVariableValue(ENV_SNOWFLAKE_HOME);
     if (!snowflakeHomeEnv.empty()) {
@@ -65,13 +67,9 @@ namespace
     return tomlFilePath;
   }
 
-  void parseTomlFile(
-    const std::filesystem::path& filePath,
-    char **connectionParams) {
-    if (connectionParams == NULL) {
-      CXX_LOG_ERROR("NULL pointer passed into parse toml file.");
-      return;
-    }
+  std::map<std::string, std::string> parseTomlFile(
+    const boost::filesystem::path& filePath) {
+    std::map<std::string, std::string> connectionParams;
     try {
       toml::table table;
       table = toml::parse_file(filePath.c_str());
@@ -82,33 +80,28 @@ namespace
       toml::node_view config = table[configurationName];
       if (!config) {
         CXX_LOG_ERROR("Could not find connection configuration name %s in toml file.", configurationName.c_str());
-        return;
+        return connectionParams;
       }
-      size_t paramSize = config.as_table()->size();
-      int i = 0;
-      std::string connStr;
       for (auto [key, val] : *config.as_table()) {
-        std::string keystr = key.data();
-        connStr += keystr + "=" + val.as_string()->get() + ";";
+        connectionParams[key.data()] = val.as_string()->get();
       }
-      *connectionParams = (char*)SF_MALLOC(connStr.size() + 1);
-      sf_strcpy(*connectionParams, connStr.size() + 1, connStr.c_str());
     }
     catch (const toml::parse_error& err) {
       CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), err.what());
     }
+    return connectionParams;
   }
 }
 
-void load_toml_config(char** connectionParams)
+std::map<std::string, std::string> load_toml_config()
 {
 // Disable toml config parsing for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-  std::filesystem::path derivedTomlFilePath = resolveTomlPath();
+  boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
-    parseTomlFile(derivedTomlFilePath, connectionParams);
+    return parseTomlFile(derivedTomlFilePath);
   }
 #endif
 }

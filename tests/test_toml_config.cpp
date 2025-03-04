@@ -2,11 +2,11 @@
  * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
  */
 
+#include <snowflake/TomlConfigParser.hpp>
 #include "utils/test_setup.h"
-#include <snowflake/toml_config_parser.h>
-#include "memory.h"
+#include "utils/TestSetup.hpp"
 
-void test_valid_toml_file() {
+void test_valid_toml_file(void** unused) {
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char tomlFilePath[] = "./connections.toml";
@@ -19,10 +19,8 @@ void test_valid_toml_file() {
   char* snowflakeHome = sf_getenv_s("SNOWFLAKE_HOME", envbuf, sizeof(envbuf));
   sf_setenv("SNOWFLAKE_HOME", "./");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_non_null(connectionParams);
-  assert_string_equal(connectionParams, "key1=value1;key2=value2;");
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
 
   // Cleanup
   if (snowflakeHome) {
@@ -30,18 +28,16 @@ void test_valid_toml_file() {
   } else {
     sf_unsetenv("SNOWFLAKE_HOME");
   }
-  SF_FREE(connectionParams);
   remove(tomlFilePath);
 }
 
-void test_missing_toml_file() {
+void test_missing_toml_file(void** unused) {
   char envbuf[MAX_PATH + 1];
   char* snowflakeHome = sf_getenv_s("SNOWFLAKE_HOME", envbuf, sizeof(envbuf));
   sf_setenv("SNOWFLAKE_HOME", "./");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_null(connectionParams);
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_true(connectionParams.empty());
 
   // Cleanup
   if (snowflakeHome) {
@@ -49,10 +45,9 @@ void test_missing_toml_file() {
   } else {
     sf_unsetenv("SNOWFLAKE_HOME");
   }
-  SF_FREE(connectionParams);
 }
 
-void test_invalid_toml_file() {
+void test_invalid_toml_file(void** unused) {
   // Create toml file
   char tomlConfig[] = "Some fake toml data";
   char tomlFilePath[] = "./connections.toml";
@@ -65,9 +60,8 @@ void test_invalid_toml_file() {
   char* snowflakeHome = sf_getenv_s("SNOWFLAKE_HOME", envbuf, sizeof(envbuf));
   sf_setenv("SNOWFLAKE_HOME", "./");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_null(connectionParams);
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_true(connectionParams.empty());
 
   // Cleanup
   if (snowflakeHome) {
@@ -75,11 +69,10 @@ void test_invalid_toml_file() {
   } else {
     sf_unsetenv("SNOWFLAKE_HOME");
   }
-  SF_FREE(connectionParams);
   remove(tomlFilePath);
 }
 
-void test_use_default_location_env() {
+void test_use_default_location_env(void** unused) {
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char envbuf[MAX_PATH + 1];
 #ifdef _WIN32
@@ -87,23 +80,17 @@ void test_use_default_location_env() {
 #else
   char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf));
 #endif
-  char snowflakeDir[] = "/.snowflake";
-  char tomlFile[] = "/.snowflake/connections.toml";
+  std::string snowflakeDir = "/.snowflake";
+  std::string tomlFile = "/.snowflake/connections.toml";
   // Create .snowflake dir
-  size_t tomlDirSize = strlen(homeDir) + strlen(tomlFile) + 1;
-  char* tomlDir = (char*)SF_CALLOC(1, tomlDirSize);
-  sf_strcat(tomlDir, tomlDirSize, homeDir);
-  sf_strcat(tomlDir, tomlDirSize, snowflakeDir);
-  if (!sf_is_directory_exist(tomlDir)) {
-    sf_mkdir(tomlDir);
+  std::string tomlDir = homeDir + snowflakeDir;
+  if (!sf_is_directory_exist(tomlDir.c_str())) {
+    sf_mkdir(tomlDir.c_str());
   }
   // Create toml file
-  size_t tomlPathSize = strlen(homeDir) + strlen(tomlFile) + 1;
-  char* tomlFilePath = (char*)SF_CALLOC(1, tomlPathSize);
-  sf_strcat(tomlFilePath, tomlPathSize, homeDir);
-  sf_strcat(tomlFilePath, tomlPathSize, tomlFile);
+  std::string tomlFilePath = homeDir + tomlFile;
   FILE* file;
-  file = fopen(tomlFilePath, "w");
+  file = fopen(tomlFilePath.c_str(), "w");
   fprintf(file, "%s", tomlConfig);
   fclose(file);
 
@@ -111,20 +98,19 @@ void test_use_default_location_env() {
   char* snowflakeHome = sf_getenv_s("SNOWFLAKE_HOME", shbuf, sizeof(shbuf));
   sf_unsetenv("SNOWFLAKE_HOME");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_non_null(connectionParams);
-  assert_string_equal(connectionParams, "key1=value1;key2=value2;");
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(connectionParams["key1"].c_str(), "value1");
+  assert_string_equal(connectionParams["key2"].c_str(), "value2");
 
   // Cleanup
   if (snowflakeHome) {
     sf_setenv("SNOWFLAKE_HOME", snowflakeHome);
   }
-  SF_FREE(connectionParams);
-  remove(tomlFilePath);
+  remove(tomlFilePath.c_str());
 }
 
-void test_use_snowflake_default_connection_var() {
+void test_use_snowflake_default_connection_var(void** unused) {
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"\n\n[test]\nkey3 = \"value3\"\nkey4 = \"value4\"";
   char tomlFilePath[] = "./connections.toml";
@@ -140,10 +126,10 @@ void test_use_snowflake_default_connection_var() {
   char* snowflakeDefaultConnName = sf_getenv_s("SNOWFLAKE_DEFAULT_CONNECTION_NAME", sdcnbuf, sizeof(sdcnbuf));
   sf_setenv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "test");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_non_null(connectionParams);
-  assert_string_equal(connectionParams, "key3=value3;key4=value4;");
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(connectionParams["key3"].c_str(), "value3");
+  assert_string_equal(connectionParams["key4"].c_str(), "value4");
 
   // Cleanup
   if (snowflakeHome) {
@@ -156,11 +142,10 @@ void test_use_snowflake_default_connection_var() {
   } else {
     sf_unsetenv("SNOWFLAKE_DEFAULT_CONNECTION_NAME");
   }
-  SF_FREE(connectionParams);
   remove(tomlFilePath);
 }
 
-void test_client_config_log_invalid_config_name() {
+void test_client_config_log_invalid_config_name(void** unused) {
   // Create toml file
   char tomlConfig[] = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char tomlFilePath[] = "./connections.toml";
@@ -176,9 +161,8 @@ void test_client_config_log_invalid_config_name() {
   char* snowflakeDefaultConnName = sf_getenv_s("SNOWFLAKE_DEFAULT_CONNECTION_NAME", sdcnbuf, sizeof(sdcnbuf));
   sf_setenv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "test");
 
-  char* connectionParams = NULL;
-  load_toml_config(&connectionParams);
-  assert_null(connectionParams);
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_true(connectionParams.empty());
 
   // Cleanup
   if (snowflakeHome) {
@@ -191,20 +175,20 @@ void test_client_config_log_invalid_config_name() {
   } else {
     sf_unsetenv("SNOWFLAKE_DEFAULT_CONNECTION_NAME");
   }
-  SF_FREE(connectionParams);
   remove(tomlFilePath);
 }
 
 int main(void) {
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_missing_toml_file),
-        cmocka_unit_test(test_invalid_toml_file),
-        cmocka_unit_test(test_client_config_log_invalid_config_name),
+  initialize_test(SF_BOOLEAN_FALSE);
+  const struct CMUnitTest tests[] = {
+      cmocka_unit_test(test_missing_toml_file),
+      cmocka_unit_test(test_invalid_toml_file),
+      cmocka_unit_test(test_client_config_log_invalid_config_name),
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-        cmocka_unit_test(test_valid_toml_file),
-        cmocka_unit_test(test_use_default_location_env),
-        cmocka_unit_test(test_use_snowflake_default_connection_var),
+      cmocka_unit_test(test_valid_toml_file),
+      cmocka_unit_test(test_use_default_location_env),
+      cmocka_unit_test(test_use_snowflake_default_connection_var),
 #endif
-    };
-    return cmocka_run_group_tests(tests, NULL, NULL);
+  };
+  return cmocka_run_group_tests(tests, NULL, NULL);
 }
