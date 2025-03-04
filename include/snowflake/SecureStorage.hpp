@@ -9,6 +9,7 @@
 #include <string>
 
 #include "snowflake/secure_storage.h"
+#include <boost/optional.hpp>
 
 namespace Snowflake {
 
@@ -49,7 +50,7 @@ namespace Client {
   {
 
   public:
-    static std::string convertTarget(const SecureStorageKey& key);
+    static boost::optional<std::string> convertTarget(const SecureStorageKey& key);
 
     /**
      * storeToken
