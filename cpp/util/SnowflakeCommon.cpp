@@ -10,7 +10,7 @@
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
-#include <stdexcept>
+#include <chrono>
 #include "SnowflakeCommon.hpp"
 #include <chrono>
 
