@@ -95,13 +95,15 @@ namespace
 
 std::map<std::string, std::string> load_toml_config()
 {
+  std::map<std::string, std::string> params;
 // Disable toml config parsing for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
-    return parseTomlFile(derivedTomlFilePath);
+    params = parseTomlFile(derivedTomlFilePath);
   }
 #endif
+  return params;
 }
