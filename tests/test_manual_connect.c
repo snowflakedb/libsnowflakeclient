@@ -360,7 +360,7 @@ void test_sso_token_auth(void** unused)
 
         if (i != 1) {
             sf->token_cache = secure_storage_init();
-            secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+            secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
         }
        
         SF_STATUS status = snowflake_connect(sf);
@@ -408,8 +408,8 @@ void test_sso_token_auth_renew(void** unused)
     }
 
     sf->token_cache = secure_storage_init();
-    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
-    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, "wrong token");
+    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "wrong token");
 
 
     SF_STATUS status = snowflake_connect(sf);
