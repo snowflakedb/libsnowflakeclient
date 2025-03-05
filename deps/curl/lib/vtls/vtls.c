@@ -388,6 +388,9 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
     dest->verifyhost = src->verifyhost;
     dest->verifypeer = src->verifypeer;
     dest->verifystatus = src->verifystatus;
+    dest->sf_ocsp_check = src->sf_ocsp_check;
+    dest->sf_ocsp_failopen = src->sf_ocsp_failopen;
+    dest->sf_oob_enable = src->sf_oob_enable;
   }
 }
 
