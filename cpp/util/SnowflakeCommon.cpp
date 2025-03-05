@@ -3,7 +3,6 @@
 */
 #define CURL_STATICLIB
 #include <string.h>
-#include <chrono>
 #include <curl/curl.h>
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
