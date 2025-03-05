@@ -524,12 +524,12 @@ void test_sso_token_cache(void**)
     snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &client_store_temporary_credential);
 
     sf->token_cache = secure_storage_init();
-    char* original_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    char* original_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     if (original_token != NULL)
     {
-        secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+        secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     }
-    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, "mock_sso_token");
+    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "mock_sso_token");
 
     IAuthWebServer* webserver = new MockAuthWebServer();
     MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
@@ -547,7 +547,7 @@ void test_sso_token_cache(void**)
     auth_update_json_body(sf, body);
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
 
-    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_SSO_TOKEN);
+    assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_ID_TOKEN);
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "TOKEN")), "mock_sso_token");
 
     auth->isRenew = true;
@@ -557,10 +557,10 @@ void test_sso_token_cache(void**)
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "TOKEN")), "RENEW_SAML_TOKEN");
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "PROOF_KEY")), "RENEW_PROOF_KEY");
 
-    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     if (original_token != NULL) 
     {
-        secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, original_token);
+        secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, original_token);
     }
     
     secure_storage_term(sf->token);

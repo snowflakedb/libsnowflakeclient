@@ -1041,7 +1041,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     log_trace("Created body");
 
     if (!is_id_token_authentication(sf, body)) {
-        //Skip external browser authenticate if the connector uses the SSO token auth.
+        //Skip external browser authenticate if the connector uses the ID(SSO) token auth.
         ret = auth_authenticate(sf);
         if (ret != SF_STATUS_SUCCESS) {
             goto cleanup;
@@ -1125,7 +1125,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             char* auth_token = NULL;
             if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, auth_token);
+                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
             }
 
             // SNOW-715510: TODO Enable token cache

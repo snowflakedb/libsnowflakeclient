@@ -52,7 +52,7 @@ extern "C" {
  /**
  * Authenticator, SSO token
  */
-#define SF_AUTHENTICATOR_SSO_TOKEN "ID_TOKEN"
+#define SF_AUTHENTICATOR_ID_TOKEN "ID_TOKEN"
 
 /**
  * UUID4 length

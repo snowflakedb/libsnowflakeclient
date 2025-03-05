@@ -120,12 +120,12 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
             sf->token_cache = secure_storage_init();
         }
 
-        char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+        char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
         if (token != NULL)
         {
             snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
             snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-            snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_SSO_TOKEN);
+            snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
             secure_storage_free_credential(token);
         }
     }
@@ -1330,7 +1330,7 @@ sf_bool is_id_token_authentication(SF_CONNECT* sf, cJSON* body) {
     else if (!snowflake_cJSON_HasObjectItem(data, "AUTHENTICATOR")) {
         is_id_token_auth = SF_BOOLEAN_FALSE;
     }
-    else if (strcmp(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_SSO_TOKEN) != 0) {
+    else if (strcmp(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_ID_TOKEN) != 0) {
         is_id_token_auth = SF_BOOLEAN_FALSE;
     }
     return is_id_token_auth;
