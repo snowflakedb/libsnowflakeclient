@@ -82,8 +82,11 @@ SET(TESTS_CXX
         test_unit_azure_client
         test_unit_query_context_cache
         test_unit_sfurl
-        test_unit_secure_storage
 )
+
+if (LINUX)
+    SET(TESTS_CXX ${TESTS_CXX} test_unit_secure_storage_linux)
+endif()
 
 SET(TESTS_PUTGET
         test_include_aws
