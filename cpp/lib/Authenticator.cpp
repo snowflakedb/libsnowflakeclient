@@ -193,7 +193,7 @@ extern "C" {
         }
     }
 
-    if (!conn || !conn->auth_object)
+    if (!conn || !conn->auth_object || is_id_token_authentication(conn, body))
     {
       return;
     }
