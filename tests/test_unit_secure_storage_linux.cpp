@@ -9,7 +9,7 @@
 #include <boost/filesystem.hpp>
 
 #include "snowflake/SecureStorage.hpp"
-#include "lib/CacheFile.hpp"
+#include "linux/CacheFile.hpp"
 
 #include "utils/test_setup.h"
 
@@ -289,9 +289,6 @@ void test_get_cache_dir_not_a_dir(void **)
 
 int main(void) {
   /* Testing only file based credential cache, available on linux */
-#ifndef __linux__
-  return 0;
-#endif
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_secure_storage_simple),
       cmocka_unit_test(test_secure_storage_malformed_cache),

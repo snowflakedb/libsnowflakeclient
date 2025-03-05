@@ -13,7 +13,7 @@
 
 #include <picojson.h>
 
-#include "../lib/CacheFile.hpp"
+#include "../linux/CacheFile.hpp"
 #include "../logger/SFLogger.hpp"
 #include "../platform/FileLock.hpp"
 
