@@ -115,7 +115,8 @@ set(SOURCE_UTILS_CXX
         utils/TestSetup.hpp
         utils/mock_endpoints.h
         utils/mock_setup.h
-        utils/mock_setup.c)
+        utils/mock_setup.c
+        utils/EnvOverride.hpp)
 
 set(AWS_ALL_LIBS
         ${AWS_S3_LIB}

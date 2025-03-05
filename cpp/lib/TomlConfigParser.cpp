@@ -1,10 +1,8 @@
-/**
- * Copyright (c) 2025 Snowflake Computing
- */
-
 #include "snowflake/TomlConfigParser.hpp"
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
+
+#define TOML_EXCEPTIONS 0
 #include <toml++/toml.hpp>
 
 #undef snprintf
@@ -70,24 +68,24 @@ namespace
   std::map<std::string, std::string> parseTomlFile(
     const boost::filesystem::path& filePath) {
     std::map<std::string, std::string> connectionParams;
-    try {
-      toml::table table;
-      table = toml::parse_file(filePath.c_str());
-      std::string configurationName = getEnvironmentVariableValue(ENV_SNOWFLAKE_DEF_CONN_NAME);
-      if (configurationName.empty()) {
-        configurationName = "default";
-      }
-      toml::node_view config = table[configurationName];
-      if (!config) {
-        CXX_LOG_ERROR("Could not find connection configuration name %s in toml file.", configurationName.c_str());
-        return connectionParams;
-      }
-      for (auto [key, val] : *config.as_table()) {
-        connectionParams[key.data()] = val.as_string()->get();
-      }
+    toml::parse_result result = toml::parse_file(filePath.c_str());
+    if (!result)
+    {
+      CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), result.error());
+      return connectionParams;
     }
-    catch (const toml::parse_error& err) {
-      CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), err.what());
+    toml::table table = std::move(result).table();
+    std::string configurationName = getEnvironmentVariableValue(ENV_SNOWFLAKE_DEF_CONN_NAME);
+    if (configurationName.empty()) {
+      configurationName = "default";
+    }
+    toml::node_view config = table[configurationName];
+    if (!config) {
+      CXX_LOG_ERROR("Could not find connection configuration name %s in toml file.", configurationName.c_str());
+      return connectionParams;
+    }
+    for (auto [key, val] : *config.as_table()) {
+      connectionParams[key.data()] = val.as_string()->get();
     }
     return connectionParams;
   }
