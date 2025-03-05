@@ -95,7 +95,7 @@ if "%dynamic_runtime%"=="" (
 
 set build_dir=%arcdir%\%vsdir%\%build_type%
 
-echo Building with platform: %platform%, build type: %build_type%, visual studio version: %vs_version%, cmake generator: %cmake_generator%
+echo Building with platform: %platform%, build type: %build_type%, visual studio version: %vs_version%, cmake generator: %cmake_generator%, link type: %link_type%
 
 cd "%curdir%"
 exit /b 0

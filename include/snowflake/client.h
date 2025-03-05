@@ -642,14 +642,14 @@ typedef struct SF_QUERY_METADATA {
  *
  * @param input pointer to an uninitialized SF_QUERY_RESULT_CAPTURE struct pointer.
  */
-void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
+SF_DLL_PUBLIC void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
 
 /**
  * Global Snowflake initialization.
  *
  * @return 0 if successful, errno otherwise
  */
-SF_STATUS STDCALL
+SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_HOOKS *hooks);
 
 /**
@@ -657,7 +657,7 @@ snowflake_global_init(const char *log_path, SF_LOG_LEVEL log_level, SF_USER_MEM_
  *
  * @return 0 if successful, errno otherwise
  */
-SF_STATUS STDCALL snowflake_global_term();
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_global_term();
 
 /**
  * Set a global attribute
@@ -665,7 +665,7 @@ SF_STATUS STDCALL snowflake_global_term();
  * @param value a pointer to value
  * @return 0 if successful, errno otherise.
  */
-SF_STATUS STDCALL snowflake_global_set_attribute(
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_global_set_attribute(
     SF_GLOBAL_ATTRIBUTE type, const void *value);
 
 /**
@@ -675,7 +675,7 @@ SF_STATUS STDCALL snowflake_global_set_attribute(
  * @param buffer size
  * @return 0 if successful, errno otherise.
  */
-SF_STATUS STDCALL snowflake_global_get_attribute(
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_global_get_attribute(
     SF_GLOBAL_ATTRIBUTE type, void *value, size_t size);
 
 /**
@@ -683,7 +683,7 @@ SF_STATUS STDCALL snowflake_global_get_attribute(
  *
  * @return SNOWFLAKE context if success
  */
-SF_CONNECT *STDCALL snowflake_init();
+SF_DLL_PUBLIC SF_CONNECT *STDCALL snowflake_init();
 
 /**
  * Purge a SNOWFLAKE connection context
@@ -691,7 +691,7 @@ SF_CONNECT *STDCALL snowflake_init();
  * @param sf SNOWFLAKE context. The data will be freed from memory.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf);
 
 /**
  * Creates a new session and connects to Snowflake database.
@@ -699,7 +699,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf);
  * @param sf SNOWFLAKE context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf);
 
 /**
  * Sets the attribute to the session.
@@ -709,7 +709,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf);
  * @param value pointer to the attribute value
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_set_attribute(
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_set_attribute(
     SF_CONNECT *sf, SF_ATTRIBUTE type, const void *value);
 
 /**
@@ -720,7 +720,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
  * @param value pointer to the attribute value buffer
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_get_attribute(
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_get_attribute(
     SF_CONNECT *sf, SF_ATTRIBUTE type, void **value);
 
 /**
@@ -728,7 +728,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
  *
  * @param sfstmt SNOWFLAKE_STMT context.
  */
-SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
 
 /**
  * Creates sf SNOWFLAKE_STMT context for async queries.
@@ -757,14 +757,14 @@ SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
  * @param capture SF_QUERY_RESULT_CAPTURE pointer whose memory to clear.
  *
  */
- void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture);
+SF_DLL_PUBLIC void STDCALL snowflake_query_result_capture_term(SF_QUERY_RESULT_CAPTURE *capture);
 
 /**
  * Closes and terminates a statement context
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return 0 if success, otherwise an errno is returned.
  */
-void STDCALL snowflake_stmt_term(SF_STMT *sfstmt);
+SF_DLL_PUBLIC void STDCALL snowflake_stmt_term(SF_STMT *sfstmt);
 
 /**
  * Begins a new transaction.
@@ -772,7 +772,7 @@ void STDCALL snowflake_stmt_term(SF_STMT *sfstmt);
  * @param sf SNOWFLAKE context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_trans_begin(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_trans_begin(SF_CONNECT *sf);
 
 /**
  * Commits a current transaction.
@@ -780,7 +780,7 @@ SF_STATUS STDCALL snowflake_trans_begin(SF_CONNECT *sf);
  * @param sf SNOWFLAKE context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_trans_commit(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_trans_commit(SF_CONNECT *sf);
 
 /**
  * Rollbacks a current transaction.
@@ -788,7 +788,7 @@ SF_STATUS STDCALL snowflake_trans_commit(SF_CONNECT *sf);
  * @param sf SNOWFLAKE context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_trans_rollback(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_trans_rollback(SF_CONNECT *sf);
 
 /**
  * Returns an error context for the SNOWFLAKE_STMT context.
@@ -796,7 +796,7 @@ SF_STATUS STDCALL snowflake_trans_rollback(SF_CONNECT *sf);
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return error context
  */
-SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt);
 
 /**
  * Returns an error context for the SNOWFLAKE context.
@@ -804,7 +804,7 @@ SF_ERROR_STRUCT *STDCALL snowflake_stmt_error(SF_STMT *sfstmt);
  * @param sf SNOWFLAKE context.
  * @return error context
  */
-SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf);
+SF_DLL_PUBLIC SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf);
 
 /**
  * Propagate SF_STMT error to SF_CONNECT so that the latest statement
@@ -814,7 +814,7 @@ SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf);
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt);
 
 /**
  * Executes a query and returns result set. This function works only for
@@ -825,7 +825,7 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt);
  * @param command a query or command that returns results.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL
+SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_query(SF_STMT *sfstmt, const char *command, size_t command_size);
 
 /**
@@ -836,7 +836,7 @@ snowflake_query(SF_STMT *sfstmt, const char *command, size_t command_size);
  * @param sf SNOWFLAKE_STMT context.
  * @return the number of affected rows
  */
-int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt);
+SF_DLL_PUBLIC int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt);
 
 /**
  * Returns the number of rows can be fetched from the result set.
@@ -844,7 +844,7 @@ int64 STDCALL snowflake_affected_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of rows.
  */
-int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
+SF_DLL_PUBLIC int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
 
 /**
  * Returns the number of fields in the result set.
@@ -852,7 +852,7 @@ int64 STDCALL snowflake_num_rows(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return the number of fields.
  */
-int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
+SF_DLL_PUBLIC int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
 
 /**
  * Returns a SQLState for the result set.
@@ -860,7 +860,7 @@ int64 STDCALL snowflake_num_fields(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return SQL State
  */
-const char *STDCALL snowflake_sqlstate(SF_STMT *sfstmt);
+SF_DLL_PUBLIC const char *STDCALL snowflake_sqlstate(SF_STMT *sfstmt);
 
 /**
  * Gets an array of column metadata. The value returned by snowflake_num_fields is the size of the column metadata array
@@ -868,7 +868,7 @@ const char *STDCALL snowflake_sqlstate(SF_STMT *sfstmt);
  * @param sf SNOWFLAKE_STMT context.
  * @return SF_COLUMN_DESC if success or NULL
  */
-SF_COLUMN_DESC *STDCALL snowflake_desc(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_COLUMN_DESC *STDCALL snowflake_desc(SF_STMT *sfstmt);
 
 /**
  * Prepares a statement.
@@ -877,7 +877,7 @@ SF_COLUMN_DESC *STDCALL snowflake_desc(SF_STMT *sfstmt);
  * @param command a query or command that returns results.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL
+SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size);
 
 /**
@@ -888,7 +888,7 @@ snowflake_prepare(SF_STMT *sfstmt, const char *command, size_t command_size);
  * @param value pointer to the attribute value
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL
+SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_stmt_set_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type,
                         const void *value);
 
@@ -900,7 +900,7 @@ snowflake_stmt_set_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type,
  * @param value pointer to the attribute value buffer
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL
+SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
 
 /**
@@ -909,7 +909,7 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
  *
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
 
 /**
  * Executes a statement asynchronously.
@@ -925,7 +925,7 @@ SF_STATUS STDCALL snowflake_async_execute(SF_STMT *sfstmt);
  * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
         SF_QUERY_RESULT_CAPTURE* result_capture);
 
 /**
@@ -934,7 +934,7 @@ SF_STATUS STDCALL snowflake_execute_with_capture(SF_STMT *sfstmt,
  * @param result_capture pointer to a SF_QUERY_RESULT_CAPTURE
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
                                                   SF_QUERY_RESULT_CAPTURE *result_capture);
 
 /**
@@ -944,7 +944,7 @@ SF_STATUS STDCALL snowflake_describe_with_capture(SF_STMT *sfstmt,
  *
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
 
 /**
  * Fetches the next row for the statement and stores on the bound buffer
@@ -953,7 +953,7 @@ SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt);
  * @param sfstmt SNOWFLAKE_RESULTSET context.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt);
 
 /**
  * Returns the number of binding parameters in the statement.
@@ -961,7 +961,7 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt);
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return the number of binding parameters in the statement.
  */
-uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt);
+SF_DLL_PUBLIC uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt);
 
 
 /**
@@ -982,7 +982,7 @@ uint64 STDCALL snowflake_num_params(SF_STMT *sfstmt);
  * @param input preallocated SF_BIND_INPUT instance
  * @return void
  */
-void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input);
+SF_DLL_PUBLIC void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input);
 
 /**
  * Binds parameters with the statement for execution.
@@ -991,7 +991,7 @@ void STDCALL snowflake_bind_input_init(SF_BIND_INPUT * input);
  * @param sfbind SNOWFLAKE_BIND_INPUT context array.
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_bind_param(
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_bind_param(
     SF_STMT *sfstmt, SF_BIND_INPUT *sfbind);
 
 /**
@@ -1002,7 +1002,7 @@ SF_STATUS STDCALL snowflake_bind_param(
  * @param size size_t size of the parameter array (sfbind_array).
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS snowflake_bind_param_array(
+SF_DLL_PUBLIC SF_STATUS snowflake_bind_param_array(
     SF_STMT *sfstmt, SF_BIND_INPUT *sfbind_array, size_t size);
 
 /**
@@ -1012,21 +1012,21 @@ SF_STATUS snowflake_bind_param_array(
  * @param sfstmt SNOWFLAKE_STMT context.
  * @return query id associated with the statement.
  */
-const char *STDCALL snowflake_sfqid(SF_STMT *sfstmt);
+SF_DLL_PUBLIC const char *STDCALL snowflake_sfqid(SF_STMT *sfstmt);
 
 /**
  * Converts Snowflake Type enum value to a string representation
  * @param type SF_TYPE enum
  * @return a string representation of Snowflake Type
  */
-const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type);
+SF_DLL_PUBLIC const char *STDCALL snowflake_type_to_string(SF_DB_TYPE type);
 
 /**
  * Converts Snowflake C Type enum value to a string representation
  * @param type SF_C_TYPE
  * @return a string representation of Snowflake C Type
  */
-const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
+SF_DLL_PUBLIC const char *STDCALL snowflake_c_type_to_string(SF_C_TYPE type);
 
 
 /**
@@ -1057,7 +1057,7 @@ SF_STATUS STDCALL _snowflake_next(SF_STMT *sfstmt);
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
 
 /**
  * Stores the first character of the column in a uint8 variable. A NULL column will evaluate to 0
@@ -1067,7 +1067,7 @@ SF_STATUS STDCALL snowflake_column_as_boolean(SF_STMT *sfstmt, int idx, sf_bool 
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *value_ptr);
 
 /**
  * Converts a column in the current row into a uint32 value (if a valid conversion exists).
@@ -1078,7 +1078,7 @@ SF_STATUS STDCALL snowflake_column_as_uint8(SF_STMT *sfstmt, int idx, uint8 *val
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *value_ptr);
 
 /**
  * Converts a column in the current row into a uint64 value (if a valid conversion exists).
@@ -1089,7 +1089,7 @@ SF_STATUS STDCALL snowflake_column_as_uint32(SF_STMT *sfstmt, int idx, uint32 *v
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *value_ptr);
 
 /**
  * Stores the first character of the column in a int8 variable. A NULL column will evaluate to 0
@@ -1099,7 +1099,7 @@ SF_STATUS STDCALL snowflake_column_as_uint64(SF_STMT *sfstmt, int idx, uint64 *v
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value_ptr);
 
 /**
  * Converts a column in the current row into a int32 value (if a valid conversion exists).
@@ -1110,7 +1110,7 @@ SF_STATUS STDCALL snowflake_column_as_int8(SF_STMT *sfstmt, int idx, int8 *value
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *value_ptr);
 
 /**
  * Converts a column in the current row into a int64 value (if a valid conversion exists).
@@ -1121,7 +1121,7 @@ SF_STATUS STDCALL snowflake_column_as_int32(SF_STMT *sfstmt, int idx, int32 *val
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *value_ptr);
 
 /**
  * Converts a column in the current row into a float32 value (if a valid conversion exists).
@@ -1132,7 +1132,7 @@ SF_STATUS STDCALL snowflake_column_as_int64(SF_STMT *sfstmt, int idx, int64 *val
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 *value_ptr);
 
 /**
  * Converts a column in the current row into a float64 value (if a valid conversion exists).
@@ -1143,7 +1143,7 @@ SF_STATUS STDCALL snowflake_column_as_float32(SF_STMT *sfstmt, int idx, float32 
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 *value_ptr);
 
 /**
  * Converts a column in the current row into a SF_TIMESTAMP value (if a valid conversion exists).
@@ -1154,7 +1154,7 @@ SF_STATUS STDCALL snowflake_column_as_float64(SF_STMT *sfstmt, int idx, float64 
  * @param value_ptr Coverted column data is stored in this pointer (if conversion was successful)
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIMESTAMP *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIMESTAMP *value_ptr);
 
 /**
  * Returns the raw column data in the form of a const char pointer that the user can then use
@@ -1165,7 +1165,7 @@ SF_STATUS STDCALL snowflake_column_as_timestamp(SF_STMT *sfstmt, int idx, SF_TIM
  * @param value_ptr Raw column data is stored in this pointer
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const char **value_ptr);
 
 /**
  * Given the raw value as a string, returns the string representation
@@ -1184,7 +1184,7 @@ SF_STATUS STDCALL snowflake_column_as_const_str(SF_STMT *sfstmt, int idx, const 
  * @return 0 if success, otherwise an errno is returned
  * @return
  */
-SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt,
                                                  const char *const_str_val,
                                                  const SF_DB_TYPE type,
                                                  const char *connection_timezone,
@@ -1208,7 +1208,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt,
  *        large, then this ptr will hold the value of the new buffer size.
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value_ptr, size_t *value_len_ptr, size_t *max_value_size_ptr);
 
 /**
  * Returns the length of the raw column data
@@ -1218,7 +1218,7 @@ SF_STATUS STDCALL snowflake_column_as_str(SF_STMT *sfstmt, int idx, char **value
  * @param value_ptr Pointer to the length of the raw column data
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *value_ptr);
 
 /**
  * Returns whether or not the column data is null
@@ -1228,7 +1228,7 @@ SF_STATUS STDCALL snowflake_column_strlen(SF_STMT *sfstmt, int idx, size_t *valu
  * @param value_ptr Column's NULL status is stored in this pointer
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *value_ptr);
 
 /**
  *
@@ -1254,7 +1254,7 @@ SF_STATUS STDCALL snowflake_column_is_null(SF_STMT *sfstmt, int idx, sf_bool *va
  * @param tzoffset Timezone offset from UTC in minutes (0-1439)
  * @return
  */
-SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanoseconds, int32 seconds,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanoseconds, int32 seconds,
                                                  int32 minutes, int32 hours, int32 mday, int32 months,
                                                  int32 year, int32 tzoffset, int32 scale, SF_DB_TYPE ts_type);
 
@@ -1267,7 +1267,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_parts(SF_TIMESTAMP *ts, int32 nanosec
  * @param ts_type
  * @return
  */
-SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const char *str, const char *timezone,
                                                          int32 scale, SF_DB_TYPE ts_type);
 
 /**
@@ -1280,7 +1280,7 @@ SF_STATUS STDCALL snowflake_timestamp_from_epoch_seconds(SF_TIMESTAMP *ts, const
  * @param reallocate
  * @return
  */
-SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fmt, char **buffer_ptr,
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fmt, char **buffer_ptr,
                                                 size_t buf_size, size_t *bytes_written,
                                                 sf_bool reallocate);
 /**
@@ -1290,7 +1290,7 @@ SF_STATUS STDCALL snowflake_timestamp_to_string(SF_TIMESTAMP *ts, const char *fm
  * @param epoch_time Pointer to store the number of seconds since the epoch
  * @return 0 if success, otherwise an errno is returned
  */
-SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, time_t *epoch_time);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, time_t *epoch_time);
 
 /**
  * Extracts the part of the timestamp that contains the number of nanoseconds
@@ -1298,7 +1298,7 @@ SF_STATUS STDCALL snowflake_timestamp_get_epoch_seconds(SF_TIMESTAMP *ts, time_t
  * @param ts Timestamp to get nanoseconds from
  * @return Returns -1 if ts is NULL, otherwise number of nanoseconds
  */
-int32 STDCALL snowflake_timestamp_get_nanoseconds(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_nanoseconds(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the number of seconds
@@ -1306,7 +1306,7 @@ int32 STDCALL snowflake_timestamp_get_nanoseconds(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get seconds from
  * @return Returns -1 if ts is NULL, otherwise number of seconds
  */
-int32 STDCALL snowflake_timestamp_get_seconds(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_seconds(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the number of minutes
@@ -1314,7 +1314,7 @@ int32 STDCALL snowflake_timestamp_get_seconds(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get minutes from
  * @return Returns -1 if ts is NULL, otherwise number of minutes
  */
-int32 STDCALL snowflake_timestamp_get_minutes(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_minutes(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the number of hours
@@ -1322,7 +1322,7 @@ int32 STDCALL snowflake_timestamp_get_minutes(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get hours from
  * @return Returns -1 if ts is NULL, otherwise number of hours
  */
-int32 STDCALL snowflake_timestamp_get_hours(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_hours(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the day of the week since Sunday
@@ -1330,7 +1330,7 @@ int32 STDCALL snowflake_timestamp_get_hours(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get day of the week from
  * @return Returns -1 if ts is NULL, otherwise day of the week since Sunday (0-6)
  */
-int32 STDCALL snowflake_timestamp_get_wday(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_wday(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the day of the month
@@ -1338,7 +1338,7 @@ int32 STDCALL snowflake_timestamp_get_wday(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get day of the month from
  * @return Returns -1 if ts is NULL, otherwise day of the month (1-31)
  */
-int32 STDCALL snowflake_timestamp_get_mday(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_mday(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the day of the year since January 1
@@ -1346,7 +1346,7 @@ int32 STDCALL snowflake_timestamp_get_mday(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get day of the year from
  * @return Returns -1 if ts is NULL, otherwise the day of the year since January 1 (0-365)
  */
-int32 STDCALL snowflake_timestamp_get_yday(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_yday(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the month of the year
@@ -1354,7 +1354,7 @@ int32 STDCALL snowflake_timestamp_get_yday(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get month of the year from
  * @return Returns -1 if ts is NULL, otherwise month of the year (1-12)
  */
-int32 STDCALL snowflake_timestamp_get_month(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_month(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the year
@@ -1362,7 +1362,7 @@ int32 STDCALL snowflake_timestamp_get_month(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get the year from
  * @return Returns -100000 if ts is NULL, otherwise the year
  */
-int32 STDCALL snowflake_timestamp_get_year(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_year(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the timezone offset
@@ -1370,7 +1370,7 @@ int32 STDCALL snowflake_timestamp_get_year(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get timezone offset from
  * @return Returns -1 if ts is NULL, otherwise the timezone offset (0-1439)
  */
-int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
 
 /**
  * Extracts the part of the timestamp that contains the scale
@@ -1378,7 +1378,7 @@ int32 STDCALL snowflake_timestamp_get_tzoffset(SF_TIMESTAMP *ts);
  * @param ts Timestamp to get month of the year from
  * @return Returns -1 if ts is NULL, otherwise scale from timestamp (0-9)
  */
-int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
+SF_DLL_PUBLIC int32 STDCALL snowflake_timestamp_get_scale(SF_TIMESTAMP *ts);
 
 #ifdef  __cplusplus
 }

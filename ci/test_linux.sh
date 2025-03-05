@@ -58,6 +58,7 @@ docker run \
         -e GITHUB_SHA \
         -e RUNNER_TRACKING_ID \
         -e CLIENT_CODE_COVERAGE \
+        -e LINK_TYPE \
         -w /mnt/host \
         "${TEST_IMAGE_NAME}" \
         "/mnt/host/ci/test/test.sh"
