@@ -29,7 +29,13 @@ namespace Client
 
   SecureStorageStatus SecureStorage::storeToken(const SecureStorageKey& key, const std::string& cred)
   {
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot store token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
     bool first_try = true;
 
     do {
@@ -71,7 +77,13 @@ namespace Client
 
   SecureStorageStatus SecureStorage::retrieveToken(const SecureStorageKey& key, std::string& cred)
   {
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot retrieve token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
 
     CFTypeRef keys[5];
     keys[0] = kSecClass;
@@ -116,7 +128,13 @@ namespace Client
   {
     CFTypeRef keys[4];
     CFTypeRef values[4];
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot remove token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
 
     keys[0] = kSecClass;
     keys[1] = kSecAttrServer;
