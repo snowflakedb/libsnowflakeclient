@@ -71,7 +71,7 @@ namespace
     toml::parse_result result = toml::parse_file(filePath.c_str());
     if (!result)
     {
-      CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), result.error());
+      CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), result.error().description().data());
       return connectionParams;
     }
     toml::table table = std::move(result).table();
