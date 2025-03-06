@@ -15,7 +15,6 @@ Snowflake Connector for C/C++
 Prerequisites
 ================================================================================
 
-Operating system
 For a list of the operating systems supported by Snowflake clients, see `Operating system support <https://docs.snowflake.com/en/release-notes/requirements#label-client-operating-system-support>`_.
 
 To build libsnowflakeclient, the following software must be installed:
