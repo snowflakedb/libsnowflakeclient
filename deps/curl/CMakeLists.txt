@@ -902,6 +902,9 @@ if(CURL_DEFAULT_SSL_BACKEND AND NOT _valid_default_ssl_backend)
   message(FATAL_ERROR "CURL_DEFAULT_SSL_BACKEND '${CURL_DEFAULT_SSL_BACKEND}' not enabled.")
 endif()
 
+if(WIN32)
+  list(APPEND CURL_LIBS ${OOB_LIBRARY})
+endif()
 # Keep ZLIB detection after TLS detection,
 # and before calling curl_openssl_check_symbol_exists().
 
@@ -2473,6 +2476,10 @@ if(NOT CURL_DISABLE_INSTALL)
   string(REGEX REPLACE "([0-9]+\.[0-9]+)\.([0-9]+.*)" "\\2" CPACK_PACKAGE_VERSION_PATCH "${_curl_version}")
   set(CPACK_GENERATOR "TGZ")
   include(CPack)
+endif()
+
+if(WIN32)
+  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl")
 endif()
 
 # Save build info for test runner to pick up and log
