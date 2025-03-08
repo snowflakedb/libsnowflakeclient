@@ -44,6 +44,7 @@
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
 #define QUERY_RESULT_URL_FORMAT "/queries/%s/result"
+#define QUERY_MONITOR_URL "/monitoring/queries/%s"
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 #define HEART_BEAT_URL "/session/heartbeat"
 
@@ -168,8 +169,9 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
  * @param sfstmt SNOWFLAKE_STMT context.
  * @param is_put_get_command type true if this is a put/get command
  * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
- * @param is_describe_only should the statement be executed in describe only mode
  * if the query response is to be captured.
+ * @param is_describe_only should the statement be executed in describe only mode
+ * @param is_async_exec should it execute asynchronously
  *
  * @return 0 if success, otherwise an errno is returned.
  */
@@ -177,7 +179,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         sf_bool is_native_put_get,
                                         struct SF_QUERY_RESULT_CAPTURE* result_capture,
-                                        sf_bool is_describe_only);
+                                        sf_bool is_describe_only,
+                                        sf_bool is_async_exec);
 
 /**
  * @return true if this is a put/get command, otherwise false
