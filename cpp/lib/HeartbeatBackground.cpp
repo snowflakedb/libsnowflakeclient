@@ -9,6 +9,7 @@
 #include "../logger/SFLogger.hpp"
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
+#include <vector>
 
 extern "C" {
     using namespace Snowflake::Client;
