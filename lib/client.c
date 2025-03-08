@@ -21,6 +21,7 @@
 #include "authenticator.h"
 #include "query_context_cache.h"
 #include "snowflake_util.h"
+#include "heart_beat_background.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -192,6 +193,14 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if ((strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) &&
                      !sf->binding_threshold_overridden) {
                 sf->stage_binding_threshold = snowflake_cJSON_GetUint64Value(value);
+            }
+            else if (strcmp(name->valuestring, "CLIENT_SESSION_KEEP_ALIVE") == 0)
+            {
+                sf->client_session_keep_alive = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            }
+            else if (strcmp(name->valuestring, "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY") == 0)
+            {
+                sf->client_session_keep_alive_heartbeat_frequency = snowflake_cJSON_GetUint64Value(value);
             }
         }
     }
@@ -874,6 +883,11 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+        sf->client_session_keep_alive = SF_BOOLEAN_TRUE;
+        sf->client_session_keep_alive_heartbeat_frequency = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+        _mutex_init(&sf->mutex_heart_beat);
+        sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
+        sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
     }
 
     return sf;
@@ -917,6 +931,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
     _mutex_term(&sf->mutex_stage_bind);
+    _mutex_term(&sf->mutex_heart_beat);
+
     SF_FREE(sf->host);
     SF_FREE(sf->port);
     SF_FREE(sf->user);
@@ -1091,6 +1107,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 goto cleanup;
             }
 
+            json_copy_int(&sf->master_token_validation_time, data, "masterValidityInSeconds");
+
+            cJSON* sessionIDJson = NULL;
+            sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
+            if (sessionIDJson) {
+                alloc_buffer_and_copy(&sf->session_id, snowflake_cJSON_Print(sessionIDJson));
+            }
+
             // SNOW-715510: TODO Enable token cache
 /*
             char* mfa_token = NULL;
@@ -1101,6 +1125,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
+            if (sf->client_session_keep_alive)
+            {
+                start_heart_beat_for_this_session(sf);
+            }
+            else
+            {
+                stop_heart_beat_for_this_session(sf);
+            }
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
             _mutex_unlock(&sf->mutex_parameters);
             if (ret > 0) {
@@ -1373,6 +1405,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           sf->stage_binding_disabled = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE:
+            sf->client_session_keep_alive = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
+            sf->client_session_keep_alive_heartbeat_frequency = value ? validate_client_session_keep_alive_heart_beat_frequency(*((uint64*)value)) : SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1555,6 +1593,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           *value = &sf->stage_binding_disabled;
           break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE:
+            *value = &sf->client_session_keep_alive;
+            break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
+            *value = &sf->client_session_keep_alive_heartbeat_frequency;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",

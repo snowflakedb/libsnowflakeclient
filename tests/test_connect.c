@@ -49,6 +49,8 @@ void test_connect_with_minimum_parameters(void **unused) {
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
+    uint64 heartbeat_interval = 900;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &heartbeat_interval);
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -230,6 +232,37 @@ void test_connect_with_proxy(void **unused) {
 
   sf_unsetenv("https_proxy");
   sf_unsetenv("http_proxy");
+}
+
+void test_connect_with_client_session_keep_alive_disable(void** unused) {
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    sf_bool client_session_keep_alive = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
 }
 
 int main(void) {

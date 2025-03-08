@@ -290,7 +290,9 @@ typedef enum SF_ATTRIBUTE {
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_QUERY_RESULT_TYPE,
     SF_CON_OAUTH_TOKEN,
-    SF_CON_PAT
+    SF_CON_PAT,
+    SF_CON_CLIENT_SESSION_KEEP_ALIVE,
+    SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY,
 } SF_ATTRIBUTE;
 
 /**
@@ -457,6 +459,15 @@ typedef struct SF_CONNECT {
     // by the setting from connection attribute
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
+
+    // Heartbeat
+    SF_MUTEX_HANDLE mutex_heart_beat;
+    uint64 master_token_validation_time;
+    sf_bool is_heart_beat_on;
+    char* session_id;
+    sf_bool client_session_keep_alive;
+    uint64 client_session_keep_alive_heartbeat_frequency;
+    
 } SF_CONNECT;
 
 /**

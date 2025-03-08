@@ -11,6 +11,7 @@
 #include <list>
 #include "snowflake/BaseClasses.hpp"
 #include "snowflake/Proxy.hpp"
+#include "client.h"
 
 /**
  * Delegate class to modify url
@@ -420,6 +421,16 @@ public:
   inline const Snowflake::Client::Util::Proxy & getProxy() const
   {
     return m_proxy;
+  }
+
+  inline static SFURL getServerURLSync(std::string& protocol, std::string& host, std::string& port)
+  {
+     return SFURL().scheme(protocol).host(host).port(port);
+  }
+
+  inline static SFURL getServerURLSync(SF_CONNECT* sf)
+  {
+      return SFURL().scheme(sf->protocol).host(sf->host).port(sf->port);
   }
 
 private:

@@ -8,6 +8,7 @@
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"
 #include "../../lib/authenticator.h"
+#include "client_int.h"
 
 namespace Snowflake
 {
@@ -36,7 +37,7 @@ namespace Client
         bool IDPAuthenticator::getIDPInfo(jsonObject_t& dataMap)
         {
             bool ret = true;
-            SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
+            SFURL connectURL = getServerURLSync().path(AUTHENTICATOR_URL);
             dataMap["ACCOUNT_NAME"] = value(m_account);
             dataMap["AUTHENTICATOR"] = value(m_authenticator);
             dataMap["LOGIN_NAME"] = value(m_user);
@@ -70,11 +71,7 @@ namespace Client
 
         SFURL IDPAuthenticator::getServerURLSync()
         {
-            SFURL url = SFURL().scheme(m_protocol)
-                .host(m_host)
-                .port(m_port);
-
-            return url;
+            return SFURL::getServerURLSync(m_protocol, m_host, m_port);
         }
 
         void IAuthenticatorOKTA::authenticate() 

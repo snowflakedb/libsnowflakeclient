@@ -36,14 +36,16 @@
 #define SF_DEFAULT_GET_MAX_RETRIES 5
 #define SF_MAX_GET_MAX_RETRIES 100
 #define SF_DEFAULT_GET_THRESHOLD 5
+#define SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY 3600
+#define SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME 14400
 
 #define SESSION_URL "/session/v1/login-request"
 #define QUERY_URL "/queries/v1/query-request"
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
 #define QUERY_RESULT_URL_FORMAT "/queries/%s/result"
-// not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
+#define HEART_BEAT_URL "/session/heartbeat"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
@@ -80,10 +82,14 @@
  * Maximum one-directional range of offset-based timezones (24 hours)
  */
 #define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 int uuid4_generate_non_terminated(char *dst);
 int uuid4_generate(char *dst);
-
+#ifdef __cplusplus
+} // extern "C"
+#endif
 /**
  * Encryption material
  */
