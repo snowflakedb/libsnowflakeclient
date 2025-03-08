@@ -1,26 +1,31 @@
-/*
- * File:   CacheFile.cpp *
- * Copyright (c) 2025 Snowflake Computing
- */
-
 #include "CacheFile.hpp"
 
-#if defined(__linux__) || defined(__APPLE__)
 #include <sys/stat.h>
-#endif
+#include <fcntl.h>
 
-#include <fstream>
 #include <string>
-#include <sstream>
 
 #include <picojson.h>
 #include <boost/filesystem.hpp>
 
-#include "snowflake/platform.h"
 #include "../logger/SFLogger.hpp"
 #include "../util/Sha256.hpp"
 
 namespace {
+  class FileDescriptor {
+  public:
+    FileDescriptor(const FileDescriptor&) = delete;
+    FileDescriptor operator=(const FileDescriptor&) = delete;
+    explicit FileDescriptor(int fd) : m_fd(fd) {}
+
+    ~FileDescriptor() {
+      close(m_fd);
+    }
+    operator int() const { return m_fd; }
+  private:
+    int m_fd;
+  };
+
   using namespace Snowflake::Client;
   const char* CREDENTIAL_FILE_NAME = "credential_cache_v1.json";
 
@@ -74,24 +79,33 @@ namespace {
     return tokens.get<picojson::object>();
   }
 
-#if defined(__linux__) || defined(__APPLE__)
-  bool ensurePermissions(const std::string& path, mode_t mode)
+  bool ensurePermissions(const FileDescriptor& fd, mode_t mode)
   {
-    if (chmod(path.c_str(), mode) == -1)
+    struct stat s = {};
+    int err = fstat(fd, &s);
+    if (err == -1)
     {
-      CXX_LOG_ERROR("Cannot ensure permissions. chmod(%s, %o) failed with errno=%d", path.c_str(), mode, errno);
+      CXX_LOG_ERROR("Cannot ensure permissions. fstat(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
       return false;
+    }
+
+    if (s.st_uid != geteuid())
+    {
+      CXX_LOG_ERROR("Cannot ensure permissions. Cache file is not owned by effective user.");
+      return false;
+    }
+
+    if ((s.st_mode & 0777) != 0600)
+    {
+      if (fchmod(fd, mode) == -1)
+      {
+        CXX_LOG_ERROR("Cannot ensure permissions. fchmod(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
+        return false;
+      }
     }
 
     return true;
   }
-#else
-  bool ensurePermissions(const std::string& path, unsigned mode)
-  {
-    CXX_LOG_ERROR("Cannot ensure permissions on current platform");
-    return false;
-  }
-#endif
 }
 
 namespace Snowflake {
@@ -99,7 +113,6 @@ namespace Snowflake {
 namespace Client {
   boost::optional<std::string> getCacheDir(const std::string& envVar, const std::vector<std::string>& subPathSegments)
   {
-#ifdef __linux__
     auto envVarValueOpt = getEnv(envVar);
     if (!envVarValueOpt)
     {
@@ -161,10 +174,6 @@ namespace Client {
       }
     }
     return cacheDir;
-#else
-    CXX_LOG_FATAL("Using NOOP implementation. This function is implemented only for linux.");
-    return {};
-#endif
   }
 
   boost::optional<std::string> getCredentialFilePath()
@@ -172,9 +181,7 @@ namespace Client {
     std::vector<std::function<boost::optional<std::string>()>> lookupFunctions =
     {
         []() { return getCacheDir("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", {}); },
-#ifdef __linux__
         [](){ return getCacheDir("XDG_CACHE_HOME", {"snowflake"}); },
-#endif
         [](){ return getCacheDir("HOME", {".cache", "snowflake"}); },
     };
 
@@ -192,19 +199,39 @@ namespace Client {
   };
 
   std::string readFile(const std::string &path, picojson::value &result) {
-    if (!boost::filesystem::exists(path))
-    {
-      result = picojson::value(picojson::object());
-      return {};
+    FileDescriptor fd{open(path.c_str(), O_RDONLY)};
+    if (fd == -1) {
+      if (errno == ENOENT) {
+        result = picojson::value(picojson::object());
+        return {};
+      }
+      else {
+        return "Failed to open " + path + " errno=" + std::to_string(errno);
+      }
     }
 
-    std::ifstream cacheFile(path);
-    if (!cacheFile.is_open())
+    if (!ensurePermissions(fd, 0600))
     {
-      return "Failed to open the file(path=" + path + ")";
+      return "Failed to ensure permissions for file(path=" + path + ")";
     }
 
-    std::string error = picojson::parse(result, cacheFile);
+    off_t fileSize = lseek(fd, 0, SEEK_END);
+    if (fileSize == -1) {
+      return "Failed to seek end of file(path=" + path + ")";
+    }
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      return "Failed to seek start of file(path=" + path + ")";
+    }
+
+    std::string fileContents;
+    fileContents.resize(fileSize);
+    ssize_t bytesRead = read(fd, fileContents.data(), fileSize);
+    if (bytesRead == -1) {
+      return "Failed to read file(path=" + path + ", errno=" + std::to_string(errno) + ")";
+    }
+    fileContents.resize(bytesRead);
+
+    std::string error = picojson::parse(result, fileContents);
     if (!error.empty())
     {
       return "Failed to parse the file: " + error;
@@ -213,18 +240,22 @@ namespace Client {
   }
 
   std::string writeFile(const std::string &path, const picojson::value &result) {
-    std::ofstream cacheFile(path, std::ios_base::trunc);
-    if (!cacheFile.is_open())
+    FileDescriptor fd{open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC)};
+    if (fd == -1)
     {
-      return "Failed to open the file";
+      return "Failed to open the file(path=" + path + ")";
     }
 
-    if (!ensurePermissions(path, 0600))
+    if (!ensurePermissions(fd, 0600))
     {
       return "Cannot ensure correct permissions on a file";
     }
 
-    cacheFile << result.serialize(true);
+    std::string buf = result.serialize();
+    int bytesWritten = write(fd, buf.data(), buf.size());
+    if (bytesWritten == -1) {
+      return "Failed to write to a file(path=" + path + ", errno=" + std::to_string(errno) + ")";
+    }
     return {};
   }
 

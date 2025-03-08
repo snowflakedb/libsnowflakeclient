@@ -321,6 +321,26 @@ typedef enum SF_STMT_ATTRIBUTE {
 #define SF_MULTI_STMT_COUNT_UNLIMITED 0
 
 /**
+ * The query status
+ */
+typedef enum SF_QUERY_STATUS {
+    SF_QUERY_STATUS_ABORTED,
+    SF_QUERY_STATUS_ABORTING,
+    SF_QUERY_STATUS_BLOCKED,
+    SF_QUERY_STATUS_DISCONNECTED,
+    SF_QUERY_STATUS_FAILED_WITH_ERROR,
+    SF_QUERY_STATUS_FAILED_WITH_INCIDENT,
+    SF_QUERY_STATUS_NO_DATA,
+    SF_QUERY_STATUS_RUNNING,
+    SF_QUERY_STATUS_QUEUED,
+    SF_QUERY_STATUS_QUEUED_REPAIRING_WAREHOUSE,
+    SF_QUERY_STATUS_RESTARTED,
+    SF_QUERY_STATUS_RESUMING_WAREHOUSE,
+    SF_QUERY_STATUS_SUCCESS,
+    SF_QUERY_STATUS_UNKNOWN
+} SF_QUERY_STATUS;
+
+/**
  * Snowflake Error
  */
 typedef struct SF_ERROR_STRUCT {
@@ -556,6 +576,8 @@ typedef struct SF_STMT {
     int64 paramset_size;
     sf_bool array_bind_supported;
     int64 affected_rows;
+    sf_bool is_async; // whether the query is async
+    sf_bool is_async_results_fetched;
 
     /**
      * User realloc function used in snowflake_fetch
@@ -616,6 +638,14 @@ typedef struct SF_TIMESTAMP {
     int32 scale;
     SF_DB_TYPE ts_type;
 } SF_TIMESTAMP;
+
+/**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+} SF_QUERY_METADATA;
 
 /**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
@@ -710,6 +740,25 @@ SF_STATUS STDCALL snowflake_get_attribute(
  * @param sfstmt SNOWFLAKE_STMT context.
  */
 SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
+
+/**
+ * Creates sf SNOWFLAKE_STMT context for async queries.
+ *
+ * @param sf The SF_CONNECT context.
+ * @param query_id the query id of the async query.
+ *
+ * @return sfstmt SNOWFLAKE_STMT context for async queries.
+ */
+SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *query_id);
+
+/**
+ * Get the status of a query
+ * 
+ * @param sfstmt The SF_STMT context.
+ * 
+ * @return The query status.
+ */
+SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
@@ -872,6 +921,14 @@ snowflake_stmt_get_attr(SF_STMT *sfstmt, SF_STMT_ATTRIBUTE type, void **value);
  * @return 0 if success, otherwise an errno is returned.
  */
 SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
+
+/**
+ * Executes a statement asynchronously.
+ * @param sfstmt SNOWFLAKE_STMT context.
+ *
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_async_execute(SF_STMT *sfstmt);
 
 /**
  * Executes a statement with capture.

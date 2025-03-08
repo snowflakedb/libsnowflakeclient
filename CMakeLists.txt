@@ -67,7 +67,6 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
-        cpp/lib/CacheFile.cpp
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -183,8 +182,6 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
-        cpp/lib/CacheFile.cpp
-        cpp/lib/CacheFile.hpp
         cpp/lib/client_config_parser.cpp
         cpp/lib/HeartbeatBackground.cpp
         cpp/lib/HeartbeatBackground.hpp
@@ -211,6 +208,14 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/authenticator.h
         lib/heart_beat_background.h
 )
+
+if (LINUX)
+    set(SOURCE_FILES_CPP_WRAPPER
+        ${SOURCE_FILES_CPP_WRAPPER}
+            cpp/linux/CacheFile.cpp
+            cpp/linux/CacheFile.hpp
+    )
+endif()
 
 if (UNIX)
     if (LINUX)
