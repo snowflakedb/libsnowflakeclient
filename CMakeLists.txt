@@ -183,6 +183,10 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
         cpp/lib/client_config_parser.cpp
+        cpp/lib/HeartbeatBackground.cpp
+        cpp/lib/HeartbeatBackground.hpp
+        cpp/lib/Mutex.cpp
+        cpp/lib/Mutex.hpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorageApple.cpp
@@ -202,6 +206,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
+        lib/heart_beat_background.h
 )
 
 if (LINUX)
