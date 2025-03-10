@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <iomanip>
 
 #include <string>
 
@@ -215,22 +216,37 @@ namespace Client {
       return "Failed to ensure permissions for file(path=" + path + ")";
     }
 
+    CXX_LOG_INFO("Reading file path=%s fd=%d", path.c_str(), static_cast<int>(fd));
     off_t fileSize = lseek(fd, 0, SEEK_END);
+    CXX_LOG_INFO("Seeking the end of the file, fileSize=%d", fileSize);
     if (fileSize == -1) {
       return "Failed to seek end of file(path=" + path + ")";
     }
-    if (lseek(fd, 0, SEEK_SET) == -1) {
+    off_t offset = lseek(fd, 0, SEEK_SET);
+    if (offset == -1) {
       return "Failed to seek start of file(path=" + path + ")";
     }
+
+    CXX_LOG_INFO("Seeking beginning of file, offset=%d", offset);
 
     std::string fileContents;
     fileContents.resize(fileSize);
     ssize_t bytesRead = read(fd, fileContents.data(), fileSize);
+    CXX_LOG_INFO("bytesRead=%d", bytesRead);
     if (bytesRead == -1) {
       return "Failed to read file(path=" + path + ", errno=" + std::to_string(errno) + ")";
     }
     fileContents.resize(bytesRead);
-
+    for (size_t i = 0; i < fileContents.size(); i += 16)
+    {
+      std::stringstream ss;
+      for (size_t j = i; j < fileContents.size() && j < i + 16; j++)
+      {
+        ss << std::hex << std::setw(2) << (short)fileContents[j] << " ";
+      }
+      CXX_LOG_INFO("%s", ss.str().c_str());
+    }
+    CXX_LOG_INFO("Parsing picojson");
     std::string error = picojson::parse(result, fileContents);
     if (!error.empty())
     {
@@ -262,7 +278,7 @@ namespace Client {
   void cacheFileUpdate(picojson::value &cache, const std::string &key, const std::string &credential)
   {
     picojson::object& tokens = getTokens(cache);
-    tokens.emplace(key, credential);
+    tokens[key] = picojson::value(credential);
   }
 
   void cacheFileRemove(picojson::value &cache, const std::string &key)
