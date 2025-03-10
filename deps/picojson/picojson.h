@@ -39,6 +39,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 // for isnan/isinf
 #if __cplusplus>=201103L
@@ -745,6 +746,7 @@ namespace picojson {
   template <typename Context, typename Iter> inline bool _parse(Context& ctx, input<Iter>& in) {
     in.skip_ws();
     int ch = in.getc();
+    std::cout << "Parsing '" << ch << "'=" << std::hex << std::setw(2) << (short)ch;
     switch (ch) {
 #define IS(ch, text, op) case ch: \
       if (in.match(text) && op) { \
