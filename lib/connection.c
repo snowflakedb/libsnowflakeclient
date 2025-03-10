@@ -156,7 +156,6 @@ cJSON *STDCALL create_query_json_body(const char *sql_text,
 #endif
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
-    snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
     snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", submission_time);
     snowflake_cJSON_AddBoolToObject(body, "describeOnly", is_describe_only);
@@ -373,8 +372,18 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             break;
         }
 
-        while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
-               strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0) {
+        sf_bool isAsyncExec = SF_BOOLEAN_FALSE;
+        cJSON *json_body = snowflake_cJSON_Parse(body);
+        if (json_body && snowflake_cJSON_IsObject(json_body)) {
+          cJSON* async = snowflake_cJSON_GetObjectItem(json_body, "asyncExec");
+          if (async && snowflake_cJSON_IsBool(async)) {
+            isAsyncExec = snowflake_cJSON_IsTrue(async);
+          }
+        }
+
+        if (!isAsyncExec) {
+          while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
+            strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0) {
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
             memset(query_code, 0, QUERYCODE_LEN);
@@ -408,6 +417,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
                 break;
             }
+          }
         }
 
         if (stop) {
