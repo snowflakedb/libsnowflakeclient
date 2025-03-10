@@ -91,6 +91,7 @@ copy /v /y .\deps-build\%build_dir%\oob\include\*.h %curl_dep%\include
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === building curl
+cd "%currdir%\deps\%CURL_DIR%"
 cmake ^
 . -G %vc_version% ^
 -A %arch% ^
