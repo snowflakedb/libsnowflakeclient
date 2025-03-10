@@ -48,7 +48,7 @@ namespace Snowflake
             /** Queue of connections that need to heartbeat, mapped by session Id*/
             std::map<std::string, SF_CONNECT*> m_connections;
 
-            uint64 m_master_token_validation_time;
+            int64 m_master_token_validation_time;
             long m_heart_beat_interval;
 
 

@@ -482,7 +482,7 @@ typedef struct SF_CONNECT {
 
     // Heartbeat
     SF_MUTEX_HANDLE mutex_heart_beat;
-    uint64 master_token_validation_time;
+    int64 master_token_validation_time;
     sf_bool is_heart_beat_on;
     char* session_id;
     sf_bool client_session_keep_alive;
