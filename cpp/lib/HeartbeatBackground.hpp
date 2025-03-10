@@ -9,6 +9,7 @@
 #include <thread>
 #include <condition_variable>
 #include <list>
+#include <vector>
 #include <map>
 #include "Mutex.hpp"
 #include "../include/snowflake/client.h"
@@ -47,7 +48,7 @@ namespace Snowflake
             /** Queue of connections that need to heartbeat, mapped by session Id*/
             std::map<std::string, SF_CONNECT*> m_connections;
 
-            long m_master_token_validation_time;
+            uint64 m_master_token_validation_time;
             long m_heart_beat_interval;
 
 
