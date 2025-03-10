@@ -1102,6 +1102,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     cred_cache_term(sf->token_cache);
 */
     qcc_terminate(sf);
+    stop_heart_beat_for_this_session(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
