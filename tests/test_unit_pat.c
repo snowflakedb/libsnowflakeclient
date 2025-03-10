@@ -7,6 +7,7 @@
 #include "connection.h"
 #include "error.h"
 #include "memory.h"
+#include "authenticator.h"
 
 /*
  * Test auth connection when the token was not provided.
@@ -51,6 +52,7 @@ void test_json_data_in_pat(void **unused) {
         sf->application_version,
         sf->timezone,
         sf->autocommit);
+    auth_update_json_body(sf, body);
     cJSON *data = snowflake_cJSON_GetObjectItem(body, "data");
 
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "authenticator")),
