@@ -276,6 +276,17 @@ void test_get_cache_dir_bad_path(void **)
   assert_false(getCacheDir("ENV_VAR", {}).is_initialized());
 }
 
+//void test_get_cache_multiline_token(void**)
+//{
+//  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+//  auto ss = SecureStorage();
+////  ss.storeToken(SecureStorageKey{"host", "user", SecureStorageKeyType::OAUTH_ACCESS_TOKEN}, "ver:1-hint:4144646295562-ETMsDgAAAZVrUacTABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEH72WGmZatJjq/d6/iTF4TEAAACg0Rlcd0kmZKeY6PDFWyWeJu0pQ7ew4oUmJ7UoDisQViZnGmqW9e5cwZqrnASn3ac2S/ADOK0qSl76xo17qMKWxMvWsNMTGZaFAyuSsHOmWxICamWZuOOXpN+edLCHq5Kvbvr2jUx5OAHgWv8rbJyM9JC9/aBZXo38VGV6aDazErQVwpiRoaut2UeK0TygPfh8DLZENllVrmTnkstRtwEzPAAURZGRFYwpc/j4L5LhohwOZm97a7M=");
+//  std::string token;
+//  ss.retrieveToken(SecureStorageKey{"hy99805.preprod5.us-west-2.aws.snowflakecomputing.com", "odbc@snowflake.com", SecureStorageKeyType::ID_TOKEN}, token);
+//  std::cout << token << std::endl;
+//  assert_true("ver:1-hint:4144646295562-ETMsDgAAAZVr/uj+ABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFyPiF5W2MiMvMnzHvZd25MAAACg3c5jNfEBdZfm+b9Qm+VwRNcUKEEMIvvXu11OY64neiaMaCT3R7fut08hVvCg9OQztUoHM9OUWtLPOl8Gr3bI/2iDje6ewpcAFWRD5y7KIdTzfg6Imj1+ky/ZTdKSkqHqjK5cCS0/xfRwY9F5g0OYPeCCu9STnzTtz8gmlDbjobkUycvCL+Zan2eIC+paMlundt7etBTSJomsSjUQ4YXUmwAUJljyxd3qjx6lNZqGNrlzWS7RdQM=" == token);
+//}
+
 void test_get_cache_dir_not_a_dir(void **)
 {
   EnvOverride override("ENV_VAR", "file");
@@ -299,7 +310,8 @@ int main(void) {
       cmocka_unit_test(test_secure_storage_fails_to_lock),
       cmocka_unit_test(test_secure_storage_fails_to_find_cache_path),
       cmocka_unit_test(test_get_cache_dir_bad_path),
-      cmocka_unit_test(test_get_cache_dir_not_a_dir)
+      cmocka_unit_test(test_get_cache_dir_not_a_dir),
+//      cmocka_unit_test(test_get_cache_multiline_token)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -47,7 +47,7 @@ function download_build_component()
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
+                if [[ "$component_name" == "picojson" ]]; then
                     echo "=== upload $component_name"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
                 else
@@ -76,9 +76,9 @@ function build_component()
 
     if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
-        if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
+#        if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
-        fi
+#        fi
     fi
 }
 
