@@ -3,6 +3,9 @@
 #include "memory.h"
 
 #define TOML_EXCEPTIONS 0
+#if defined(__linux__)
+#define TOML_RETURN_BOOL_FROM_FOR_EACH_BROKEN_ACKNOWLEDGED
+#endif
 #include <toml++/toml.hpp>
 
 #undef snprintf
