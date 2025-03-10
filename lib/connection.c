@@ -1314,7 +1314,7 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
   return char_resp_cb(ptr, size, nmemb, userdata);
 }
 
-uint64 validate_client_session_keep_alive_heart_beat_frequency(uint64 heart_beat_frequency)
+uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_frequency)
 {
     int64 max = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
     int64 min = max / 4;
