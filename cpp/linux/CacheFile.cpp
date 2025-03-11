@@ -162,6 +162,12 @@ namespace Client {
       return {};
     }
 
+    if (s.st_uid != geteuid())
+    {
+      CXX_LOG_INFO("%s is not owned by effective user. Skipping it in cache file location lookup.", cacheDir.c_str());
+      return {};
+    }
+
     if ((s.st_mode & 0777) != 0700)
     {
       CXX_LOG_INFO("%s has incorrect permissions. Skipping it in cache file location lookup.", cacheDir.c_str());
