@@ -483,7 +483,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
           CXX_LOG_TRACE("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
-          m_errMsg = "OktaConnectionFailed: failed to create the header";
+          m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
 
@@ -495,7 +495,7 @@ namespace Client
           {
               CXX_LOG_INFO("sf::CIDPAuthenticator::post_curl_call::post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-              m_errMsg = "SFConnectionFailed: Fail to get one time token";
+              m_errMsg = "SFConnectionFailed: Fail to get one time token.";
               ret = false;
           }
           else
@@ -506,10 +506,10 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_WARN("sf::Authenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
-          m_errMsg = "OktaConnectionFailed: timeout reached";
+          m_errMsg = "OktaConnectionFailed: timeout reached.";
           ret = false;
       }
 
@@ -548,8 +548,8 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::get_curl_call::Failed to create the header for the request to get onetime token");
-          m_errMsg = "OktaConnectionFailed: failed to create the header";
+          CXX_LOG_TRACE("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
+          m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
 
@@ -598,7 +598,7 @@ namespace Client
           CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
-          m_errMsg = "OktaConnectionFailed: timeout reached";
+          m_errMsg = "OktaConnectionFailed: timeout reached.";
           ret = false;
       }
 
@@ -686,13 +686,9 @@ namespace Client
   void AuthWebServer::start()
   {
       m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-      // TODO: On Windows, socket functions don't set errno and the error code
-      // should be retrieved by WSAGetLastError(). Therefore for now the error
-      // message won't be logged correctly on Windows.
-      // Leave it for now since it won't affect the functionality.
       if ((int)m_socket_descriptor < 0)
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket");
+          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket.");
           m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not create a socket.";
           return;
       }
@@ -706,13 +702,13 @@ namespace Client
           sizeof(struct sockaddr_in)) < 0)
       {
           CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Failed to start web server. Could not bind a port.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not bind a port";
+          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not bind a port.";
           return;
       }
       if (listen(m_socket_descriptor, 0) < 0)
       {
           CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Failed to start web server. Could not listen a port.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not listen a port";
+          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not listen a port.";
           return;
       }
       socklen_t len = sizeof(recv_server);
@@ -724,7 +720,7 @@ namespace Client
           return;
       }
       m_port = ntohs(recv_server.sin_port);
-      CXX_LOG_INFO("sf::AuthWebServer::start::Web Server successfully started with port %d", m_port);
+      CXX_LOG_INFO("sf::AuthWebServer::start::Web Server successfully started with port %d.", m_port);
   }
 
   /**
@@ -743,8 +739,8 @@ namespace Client
 #endif
           if (ret < 0)
           {
-              CXX_LOG_ERROR("sf::AuthWebServer::stop::Failed to accept the SAML token");
-              m_errMsg = "SFAuthWebBrowserFailed:Failed to accept the SAML token";
+              CXX_LOG_ERROR("sf::AuthWebServer::stop::Failed to accept the SAML token.");
+              m_errMsg = "SFAuthWebBrowserFailed:Failed to accept the SAML token.";
               return;
           }
       }
@@ -759,9 +755,9 @@ namespace Client
 #endif
           if (ret < 0)
           {
-             CXX_LOG_ERROR("sf::AuthWebServer::stop:Failed to stop web server");
+             CXX_LOG_ERROR("sf::AuthWebServer::stop:Failed to stop web server.");
              m_socket_descriptor = 0;
-             m_errMsg = "SFAuthWebBrowserFailed";
+             m_errMsg = "SFAuthWebBrowserFailed.";
              return;
           }
       }
@@ -817,7 +813,7 @@ namespace Client
       else
       {
           CXX_LOG_ERROR("sf::AuthWebServer::startAccept::Failed to determine status of auth web server.");
-          m_errMsg = "SFAuthWebBrowserFailed. Failed to determine status of auth web server..";
+          m_errMsg = "SFAuthWebBrowserFailed. Failed to determine status of auth web server.";
       }
   }
 
@@ -850,7 +846,7 @@ namespace Client
       }
       else
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::receive::Failed to receive SAML token. Could not get HTTP request. err: %s", reqline);
+          CXX_LOG_ERROR("sf::AuthWebServer::receive::Failed to receive SAML token. Could not get HTTP request. err: %s.", reqline);
           m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request.";
       }
       delete[] mesg;
@@ -862,7 +858,7 @@ namespace Client
       auto ret = splitString(response, '\n');
       if (ret.empty()) 
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:No token parameter is found. %s",response.c_str());
+          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:No token parameter is found %s.",response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
           m_errMsg = "AuthWebServer:parseAndRespondPostRequest:No token parameter is found.";
           return;
@@ -879,7 +875,7 @@ namespace Client
           picojson::parse(json, payload.begin(), payload.end(), &err);
           if (!err.empty())
           {
-              CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:Error in parsing JSON : % s, err : % s", payload.c_str(), err.c_str());
+              CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:Error in parsing JSON : % s, err : % s.", payload.c_str(), err.c_str());
               m_errMsg = "AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON.";
               return;
           }
@@ -893,7 +889,7 @@ namespace Client
       auto ret = splitString(response, '\n');
       if (ret.empty())
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:No token parameter is found. % s",response.c_str());
+          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:No token parameter is found. %s.",response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
           m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:No token parameter is found.";
 
@@ -908,7 +904,7 @@ namespace Client
               trim(v, ' ');
               if (v != "POST")
               {
-                  CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:POST method is not requested. %s",value.c_str());
+                  CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:POST method is not requested. %s.",value.c_str());
                   send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
                   m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested.";
 
@@ -928,7 +924,7 @@ namespace Client
       }
       if (requested_header.empty() || m_origin.empty())
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header. %s",response.c_str());
+          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header. %s.",response.c_str());
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
           m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.";
 
@@ -973,7 +969,7 @@ namespace Client
       if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
           strncmp(protocol, "HTTP/1.1", 8) != 0)
       {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:Not HTTP request");
+          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:Not HTTP request.");
 
           send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
           m_errMsg = "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.";

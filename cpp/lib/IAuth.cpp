@@ -80,8 +80,8 @@ namespace Client
                 }
             }
             else {
-                CXX_LOG_INFO("sf::IDPAuthenticator::getIdpInfo::Fail to get authenticator info");
-                m_errMsg = "Fail to get authenticator info";
+                CXX_LOG_INFO("sf::IDPAuthenticator::getIDPInfo::Fail to get authenticator info.");
+                m_errMsg = "Fail to get authenticator info.";
                 ret = false;
             }
             return ret;
@@ -196,7 +196,7 @@ namespace Client
                 out[std::string("LOGIN_URL")] = m_idp->ssoURLStr;
                 out[std::string("PROOF_KEY")] = proofKey;
             }
-            CXX_LOG_DEBUG("sf::AuthenticatorExternalBrowser::getSSOUrl::SSO URL: %s", m_idp->ssoURLStr.c_str());
+            CXX_LOG_DEBUG("sf::IAuthenticatorExternalBrowser::getLoginUrl::SSO URL: %s.", m_idp->ssoURLStr.c_str());
         }
 
         std::string IAuthenticatorExternalBrowser::generateProofKey()
@@ -217,8 +217,8 @@ namespace Client
             char regexStr[] = "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
             if (!std::regex_match(ssoUrl, std::regex(regexStr)))
             {
-                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. %s", "Invalid SSO URL.");
-                m_errMsg = "SFAuthWebBrowserFailed: Invalid SSO URL";
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL.");
+                m_errMsg = "SFAuthWebBrowserFailed: Invalid SSO URL.";
             }
 
             std::cout << "Initiating login request with your identity provider. A "
@@ -237,8 +237,8 @@ namespace Client
                 // success
                 return;
             }
-            CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. err: %d", (int)(unsigned long long)ret);
-            m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser";
+            CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. err: %d.", (int)(unsigned long long)ret);
+            m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser.";
 
 #else
             // use fork to avoid using system() call and prevent command injection
@@ -253,8 +253,8 @@ namespace Client
             if (child_pid < 0)
             {
                 // fork failed
-                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork.");
-                m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on fork";
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork.");
+                m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on fork.";
             }
             else if (child_pid == 0)
             {
@@ -268,16 +268,16 @@ namespace Client
                 // This is run by the parent. Wait for the child to terminate.
                 if (waitpid(child_pid, &child_status, 0) < 0)
                 {
-                    CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on waitpid.");
-                    m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on waitpid";
+                    CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on waitpid.");
+                    m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on waitpid.";
                 }
 
                 if (WIFEXITED(child_status)) {
                     const int es = WEXITSTATUS(child_status);
                     if (es != 0)
                     {
-                        CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. xdg-open returned %d", es);
-                        m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser. xdg-open returned";
+                        CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. xdg-open returned %d.", es);
+                        m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser. xdg-open returned.";
                     }
                 }
             }
@@ -308,8 +308,8 @@ namespace Client
             err = WSAStartup(wVersionRequested, &wsaData);
             if (err != 0)
             {
-                CXX_LOG_ERROR("sf::AuthWinSock::constructor::Failed to call WSAStartup: %d", err);
-                m_errMsg = "SFAuthWebBrowserFailed: Failed to call WSAStartup";
+                CXX_LOG_ERROR("sf::AuthWinSock::constructor::Failed to call WSAStartup: %d.", err);
+                m_errMsg = "SFAuthWebBrowserFailed: Failed to call WSAStartup.";
             }
             if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
             {
@@ -317,7 +317,7 @@ namespace Client
                 /* WinSock DLL.                                  */
                 WSACleanup();
                 CXX_LOG_ERROR("sf::AuthWinSock::constructor::Could not find a usable version of Winsock.dll");
-                m_errMsg = "SFAuthWebBrowserFailed: Could not find a usable version of Winsock.dll";
+                m_errMsg = "SFAuthWebBrowserFailed: Could not find a usable version of Winsock.dll.";
             }
 
             CXX_LOG_INFO("sf::AuthWinSock::constructor::Winsock %s.%s DLL was found", std::to_string(LOBYTE(wsaData.wVersion)).c_str(), std::to_string(HIBYTE(wsaData.wVersion)).c_str());
@@ -329,7 +329,7 @@ namespace Client
         }
 #endif
 
-        void IAuthenticatorOKTA::authenticate() 
+        void IAuthenticatorOKTA::authenticate()
         {
             // 1. get authenticator info
             jsonObject_t dataMap;
@@ -343,9 +343,9 @@ namespace Client
             if (!urlHasSamePrefix(m_idp->tokenURLStr, m_idp->m_authenticator))
 
             {
-                CXX_LOG_ERROR("sf::AuthenticatorOKTA::authenticate::The specified authenticator is not supported, authenticator=%s, token url=%s, sso url=%s",
+                CXX_LOG_ERROR("sf::IAuthenticatorOKTA::authenticate::The specified authenticator is not supported, authenticator=%s, token url=%s, sso url=%s.",
                     m_idp->m_authenticator.c_str(), m_idp->tokenURLStr.c_str(), m_idp->ssoURLStr.c_str());
-                m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator";
+                m_errMsg = "SFAuthenticatorVerificationFailed: ssoUrl or tokenUrl does not contains same prefix with the authenticator.";
                 return;
             }
 
@@ -360,7 +360,7 @@ namespace Client
 
                 if (!m_idp->curlPostCall(tokenURL, dataMap, respData))
                 {
-                    CXX_LOG_WARN("sf::AuthenticatorOKTA::authenticate::Fail to get one time token response, response body=%s",
+                    CXX_LOG_WARN("sf::IAuthenticatorOKTA::authenticate::Fail to get one time token response, response body=%s.",
                         picojson::value(respData).serialize().c_str());
                     return;
                 }
@@ -378,7 +378,7 @@ namespace Client
                 {
                     if (isRetry)
                     {
-                        CXX_LOG_TRACE("sf::AuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d",
+                        CXX_LOG_TRACE("sf::IAuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d.",
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
@@ -394,10 +394,10 @@ namespace Client
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {
-                CXX_LOG_ERROR("sf","AuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s",
+                CXX_LOG_ERROR("sf","IAuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s.",
                     server_url.c_str(),
                     post_back_url.c_str());
-                m_errMsg = "SFSamlResponseVerificationFailed";
+                m_errMsg = "SFSamlResponseVerificationFailed.";
             }
         }
 
@@ -415,10 +415,10 @@ namespace Client
 
             std::string post_back_url = html.substr(post_back_start,
                 post_back_end - post_back_start);
-            CXX_LOG_TRACE("sf::AuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s", post_back_url.c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
             char unescaped_url[200];
             decode_html_entities_utf8(unescaped_url, post_back_url.c_str());
-            CXX_LOG_TRACE("sf::AuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s", unescaped_url);
+            CXX_LOG_TRACE("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
             return std::string(unescaped_url);
         }
     }// namespace IAuth
