@@ -3,8 +3,9 @@
 //
 
 #include "utils/test_setup.h"
-#include <thread>
-
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 /**
  * Test connection with null context
  */
@@ -304,9 +305,9 @@ void test_connect_with_client_session_keep_alive(void** unused) {
         dump_error(&(sf->error));
     }
 #ifdef _WIN32
-    Sleep(5000);
+    Sleep(10000);
 #else
-    std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+    sleep(10000);
 #endif
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
