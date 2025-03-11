@@ -235,7 +235,7 @@ namespace Snowflake
 #ifdef _WIN32
                 Sleep(3000);
 #else
-                sleep(3000);
+                sleep(3);
 #endif
 #endif
 
