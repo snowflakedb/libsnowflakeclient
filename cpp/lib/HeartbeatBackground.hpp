@@ -51,7 +51,6 @@ namespace Snowflake
             int64 m_master_token_validation_time;
             long m_heart_beat_interval;
 
-
             /** global lock */
             Mutex m_lock;
 

@@ -34,7 +34,7 @@ extern "C" {
     void stop_heart_beat_for_this_session(SF_CONNECT* sf)
     {
         _mutex_lock(&sf->mutex_heart_beat);
-        if (!sf->is_heart_beat_on)
+        if (sf->is_heart_beat_on)
         {
             CXX_LOG_TRACE("sf::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
             HeartbeatBackground& bg = HeartbeatBackground::getInstance();
