@@ -1,12 +1,4 @@
-//
-// Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
-//
-
 #include "utils/test_setup.h"
-#define HEARTBEAT_DEBUG
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 void test_connect_with_client_session_keep_alive_disable(void** unused) {
     SF_UNUSED(unused);
@@ -61,17 +53,14 @@ void test_connect_with_client_session_keep_alive(void** unused) {
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
+    sf->is_heart_beat_debug_mode = SF_BOOLEAN_TRUE;
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
 
-#ifdef _WIN32
-    Sleep(10000);
-#else
-    sleep(10);
-#endif
+    sf_sleep_ms(10000);
 
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);

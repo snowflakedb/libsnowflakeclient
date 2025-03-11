@@ -41,6 +41,8 @@ namespace Snowflake
              */
             void removeConnection(SF_CONNECT* connection);
 
+            void enableDebugMode();
+
         private:
             /** worker thread that is doing heartbeat*/
             std::thread* m_worker = NULL;
@@ -67,6 +69,8 @@ namespace Snowflake
 
             /** flags indicating whether worker thread should end or not */
             bool m_workerEnded = false;
+
+            bool m_isDebug = false;
         };
     }
 }

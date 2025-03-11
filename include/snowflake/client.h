@@ -487,7 +487,9 @@ typedef struct SF_CONNECT {
     char* session_id;
     sf_bool client_session_keep_alive;
     uint64 client_session_keep_alive_heartbeat_frequency;
-    
+
+    //Heartbeat testing purpose
+    sf_bool is_heart_beat_debug_mode;
 } SF_CONNECT;
 
 /**

@@ -9,9 +9,7 @@
 #include "../logger/SFLogger.hpp"
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include "../lib/snowflake_util.h"
 
 extern "C" {
     using namespace Snowflake::Client;
@@ -23,6 +21,10 @@ extern "C" {
         {
             CXX_LOG_TRACE("sf::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
             HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+            if (sf->is_heart_beat_debug_mode) 
+            {
+                bg.enableDebugMode();
+            }
             bg.addConnection(sf);
             sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
         }
@@ -183,6 +185,11 @@ namespace Snowflake
             }
         }
 
+        void HeartbeatBackground::enableDebugMode()
+        {
+            m_isDebug = true;
+        }
+
         void HeartbeatBackground::heartBeatAll()
         {
             while (true)
@@ -203,12 +210,12 @@ namespace Snowflake
                 // be closed and destroyed during that
                 {
                     MutexUnique guard(m_lock);
-
                     // For debug purpose only force heartbeat iterval to 1 second
                     // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
-#ifdef HEARTBEAT_DEBUG
-                    m_heart_beat_interval = 1;
-#endif
+                    if (m_isDebug)
+                    {
+                        m_heart_beat_interval = 1;
+                    }
                     CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", m_heart_beat_interval);
                     std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(m_heart_beat_interval);
                     // wait on either being notified by main thread or timeout(which is the desired heartbeatSync interval)
@@ -231,23 +238,21 @@ namespace Snowflake
                 // For debug purpose only sleep before sending heartbeat so the test case
                 // (Concurrent Connection in ConnectionLatestTest) can get chance to close
                 // connections
-#ifdef HEARTBEAT_DEBUG
-#ifdef _WIN32
-                Sleep(3000);
-#else
-                sleep(3);
-#endif
-#endif
+                if (m_isDebug)
+                {
+                    sf_sleep_ms(3000);
+                }
 
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::Worker thread start heartbeating.");
                 sendQueuedHeartBeatReq(HeartBeatQueue, &renewQueue);
 
                 // For debug purpose only forcely renew session each time and resend
                 // heartbeat as well
-#ifdef HEARTBEAT_DEBUG
-                renewQueue.clear();
-                renewQueue.insert(renewQueue.begin(), HeartBeatQueue.begin(), HeartBeatQueue.end());
-#endif
+                if (m_isDebug)
+                {
+                    renewQueue.clear();
+                    renewQueue.insert(renewQueue.begin(), HeartBeatQueue.begin(), HeartBeatQueue.end());
+                }
 
                 // renew session
                 if (renewQueue.size() > 0)

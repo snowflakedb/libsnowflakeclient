@@ -1063,6 +1063,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_heart_beat);
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
+        sf->is_heart_beat_debug_mode = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1139,6 +1140,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
     SF_FREE(sf->oauth_token);
+    SF_FREE(sf->session_id);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
