@@ -70,7 +70,7 @@ void test_connect_with_client_session_keep_alive(void** unused) {
 #ifdef _WIN32
     Sleep(10000);
 #else
-    sleep(10000);
+    sleep(10);
 #endif
 
     assert_int_equal(status, SF_STATUS_SUCCESS);
