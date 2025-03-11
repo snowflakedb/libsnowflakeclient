@@ -1,7 +1,3 @@
-//
-// Created by hyu on 12/22/16.
-//
-
 #include "HeartbeatBackground.hpp"
 #include "../lib/heart_beat_background.h"
 #include "../lib/client_int.h"
@@ -235,10 +231,7 @@ namespace Snowflake
                     }
                 }
 
-                // For debug purpose only sleep before sending heartbeat so the test case
-                // (Concurrent Connection in ConnectionLatestTest) can get chance to close
-                // connections
-                if (m_isDebug)
+                // For debug purpose only sleep before sending heartbeat.
                 {
                     sf_sleep_ms(3000);
                 }
@@ -246,8 +239,7 @@ namespace Snowflake
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::Worker thread start heartbeating.");
                 sendQueuedHeartBeatReq(HeartBeatQueue, &renewQueue);
 
-                // For debug purpose only forcely renew session each time and resend
-                // heartbeat as well
+                // For debug purpose only forcely renew session each time and resend heartbeat as well
                 if (m_isDebug)
                 {
                     renewQueue.clear();

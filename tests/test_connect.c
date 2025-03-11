@@ -320,6 +320,8 @@ int main(void) {
       cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
+      cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
+      cmocka_unit_test(test_connect_with_client_session_keep_alive),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
