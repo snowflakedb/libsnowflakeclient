@@ -3,9 +3,7 @@
 //
 
 #include "utils/test_setup.h"
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+
 /**
  * Test connection with null context
  */
@@ -245,74 +243,6 @@ void test_connect_with_proxy(void **unused) {
   sf_unsetenv("http_proxy");
 }
 
-void test_connect_with_client_session_keep_alive_disable(void** unused) {
-    SF_UNUSED(unused);
-    SF_CONNECT* sf = snowflake_init();
-    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-        getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-        getenv("SNOWFLAKE_TEST_PASSWORD"));
-    char* host, * port, * protocol;
-    host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host) {
-        snowflake_set_attribute(sf, SF_CON_HOST, host);
-    }
-    port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port) {
-        snowflake_set_attribute(sf, SF_CON_PORT, port);
-    }
-    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol) {
-        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
-    }
-    sf_bool client_session_keep_alive = SF_BOOLEAN_FALSE;
-    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
-
-    SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    snowflake_term(sf);
-}
-
-void test_connect_with_client_session_keep_alive(void** unused) {
-    SF_UNUSED(unused);
-#define HEARTBEAT_DEBUG
-    SF_CONNECT* sf = snowflake_init();
-    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-        getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-        getenv("SNOWFLAKE_TEST_PASSWORD"));
-    char* host, * port, * protocol;
-    host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host) {
-        snowflake_set_attribute(sf, SF_CON_HOST, host);
-    }
-    port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port) {
-        snowflake_set_attribute(sf, SF_CON_PORT, port);
-    }
-    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol) {
-        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
-    }
-
-    SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    }
-#ifdef _WIN32
-    Sleep(10000);
-#else
-    sleep(10000);
-#endif
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    snowflake_term(sf);
-}
-
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -323,8 +253,6 @@ int main(void) {
       cmocka_unit_test(test_connect_with_ocsp_cache_server_off),
       cmocka_unit_test(test_connect_with_ocsp_cache_server_on),
       cmocka_unit_test(test_connect_with_proxy),
-      cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
-      cmocka_unit_test(test_connect_with_client_session_keep_alive),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

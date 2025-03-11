@@ -9,6 +9,9 @@
 #include "../logger/SFLogger.hpp"
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 extern "C" {
     using namespace Snowflake::Client;
@@ -229,7 +232,11 @@ namespace Snowflake
                 // (Concurrent Connection in ConnectionLatestTest) can get chance to close
                 // connections
 #ifdef HEARTBEAT_DEBUG
-                simba_sleep(3000);
+#ifdef _WIN32
+                Sleep(3000);
+#else
+                sleep(3000);
+#endif
 #endif
 
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::Worker thread start heartbeating.");
