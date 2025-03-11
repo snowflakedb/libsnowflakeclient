@@ -28,7 +28,6 @@ extern "C" {
             CXX_LOG_TRACE("sf::Connection::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
-
     }
 
     void stop_heart_beat_for_this_session(SF_CONNECT* sf)
@@ -47,6 +46,7 @@ extern "C" {
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
+
 } // extern "C"
 
 
