@@ -33,8 +33,9 @@ void assert_permissions(const std::string& path, boost::filesystem::perms permis
 
 void test_secure_storage_simple(void **)
 {
-  remove_file_if_exists(CACHE_FILENAME);
-  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
   SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
@@ -43,8 +44,8 @@ void test_secure_storage_simple(void **)
   assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
   assert_true(retrievedToken == token);
-  assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
-  assert_permissions(".", boost::filesystem::owner_all);
+  assert_permissions(std::string("sf_cache_dir/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
+  assert_permissions("sf_cache_dir", boost::filesystem::owner_all);
 
   assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::NotFound);
@@ -52,8 +53,9 @@ void test_secure_storage_simple(void **)
 
 void test_secure_storage_malformed_cache(void **)
 {
-  remove_file_if_exists(CACHE_FILENAME);
-  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
   SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
@@ -62,11 +64,11 @@ void test_secure_storage_malformed_cache(void **)
   assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
   assert_true(retrievedToken == token);
-  assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
-  assert_permissions(".", boost::filesystem::owner_all);
+  assert_permissions(std::string("sf_cache_dir/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
+  assert_permissions("sf_cache_dir", boost::filesystem::owner_all);
 
   {
-    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    std::ofstream fs(std::string("sf_cache_dir/") + CACHE_FILENAME, std::ios_base::trunc);
     assert_true(fs.is_open());
     fs << "[]";
   }
@@ -77,7 +79,7 @@ void test_secure_storage_malformed_cache(void **)
   assert_true(retrievedToken == token);
 
   {
-    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    std::ofstream fs(std::string("sf_cache_dir/") + CACHE_FILENAME, std::ios_base::trunc);
     assert_true(fs.is_open());
     fs << "{]";
   }
@@ -88,7 +90,7 @@ void test_secure_storage_malformed_cache(void **)
   assert_true(retrievedToken == token);
 
   {
-    std::ofstream fs(CACHE_FILENAME, std::ios_base::trunc);
+    std::ofstream fs(std::string("sf_cache_dir/") + CACHE_FILENAME, std::ios_base::trunc);
     assert_true(fs.is_open());
     fs << "{ \"random field\": []}";
   }
@@ -101,8 +103,9 @@ void test_secure_storage_malformed_cache(void **)
 
 void test_secure_storage_two_keys(void **)
 {
-  remove_file_if_exists(CACHE_FILENAME);
-  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
   SecureStorageKey key1 { "host", "user1", SecureStorageKeyType::MFA_TOKEN };
   SecureStorageKey key2 { "host", "user2", SecureStorageKeyType::MFA_TOKEN };
@@ -113,8 +116,8 @@ void test_secure_storage_two_keys(void **)
   assert_true(ss.storeToken(key1, token1) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key1, retrievedToken) == SecureStorageStatus::Success);
   assert_true(retrievedToken == token1);
-  assert_permissions(CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
-  assert_permissions(".", boost::filesystem::owner_all);
+  assert_permissions(std::string("sf_cache_dir/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
+  assert_permissions("sf_cache_dir", boost::filesystem::owner_all);
 
   assert_true(ss.storeToken(key2, token2) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key2, retrievedToken) == SecureStorageStatus::Success);
@@ -154,7 +157,8 @@ void test_secure_storage_xdg_cache_home(void **)
 {
   boost::filesystem::remove_all("cache_dir");
   boost::filesystem::create_directory("cache_dir");
-  EnvOverride override("XDG_CACHE_HOME", "cache_dir");
+  EnvOverride override1("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", boost::none);
+  EnvOverride override2("XDG_CACHE_HOME", "cache_dir");
   SecureStorage ss;
   SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
@@ -171,13 +175,15 @@ void test_secure_storage_xdg_cache_home(void **)
 
 void test_secure_storage_fails_to_lock(void **)
 {
-  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
   SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
-  boost::filesystem::create_directory(std::string(CACHE_FILENAME) + ".lck");
+  boost::filesystem::create_directory(std::string("sf_cache_dir/") + CACHE_FILENAME + ".lck");
   assert_true(ss.storeToken(key, token) == SecureStorageStatus::Error);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Error);
   assert_true(ss.removeToken(key) == SecureStorageStatus::Error);
@@ -193,17 +199,16 @@ void test_secure_storage_fails_to_find_cache_path(void **)
 
   std::string token = "example_token";
   std::string retrievedToken;
-  std::string lockPath = std::string(CACHE_FILENAME) + ".lck";
-  boost::filesystem::create_directory(lockPath);
   assert_true(ss.storeToken(key, token) == SecureStorageStatus::Error);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Error);
   assert_true(ss.removeToken(key) == SecureStorageStatus::Error);
-  boost::filesystem::remove(lockPath);
 }
 
 void test_secure_storage_c_api(void **)
 {
-  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", ".");
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
   std::string token = "example_token";
 
