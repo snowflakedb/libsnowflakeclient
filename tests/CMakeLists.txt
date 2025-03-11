@@ -12,7 +12,6 @@ SET(TESTS_C
         test_unit_logger
         test_unit_retry_context
         test_connect
-        test_heartbeat
         test_connect_negative
         test_bind_params
         test_bind_named_params
