@@ -3,6 +3,7 @@
 //
 
 #include "utils/test_setup.h"
+#include <thread>
 
 /**
  * Test connection with null context
