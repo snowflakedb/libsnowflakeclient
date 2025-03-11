@@ -22,6 +22,7 @@ namespace {
       close(m_fd);
     }
     operator int() const { return m_fd; }
+    int get() const { return m_fd; }
   private:
     int m_fd;
   };
@@ -29,9 +30,9 @@ namespace {
   using namespace Snowflake::Client;
   const char* CREDENTIAL_FILE_NAME = "credential_cache_v1.json";
 
-  bool mkdirIfNotExists(const std::string& dir)
+  bool mkdirIfNotExists(const std::string& dir, mode_t mode)
   {
-    int result = sf_mkdir(dir.c_str());
+    int result = mkdir(dir.c_str(), mode);
     if (result == 0)
     {
       CXX_LOG_DEBUG("Created %s directory.", dir.c_str());
@@ -85,7 +86,7 @@ namespace {
     int err = fstat(fd, &s);
     if (err == -1)
     {
-      CXX_LOG_ERROR("Cannot ensure permissions. fstat(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
+      CXX_LOG_ERROR("Cannot ensure permissions. fstat(%d, %o) failed with errno=%d", fd.get(), mode, errno);
       return false;
     }
 
@@ -95,13 +96,10 @@ namespace {
       return false;
     }
 
-    if ((s.st_mode & 0777) != 0600)
+    if ((s.st_mode & 0777) != mode)
     {
-      if (fchmod(fd, mode) == -1)
-      {
-        CXX_LOG_ERROR("Cannot ensure permissions. fchmod(%d, %o) failed with errno=%d", static_cast<int>(fd), mode, errno);
-        return false;
-      }
+      CXX_LOG_ERROR("Cannot ensure permissions. Cache file permissions are %o != %o", s.st_mode & 0777, mode);
+      return false;
     }
 
     return true;
@@ -137,42 +135,39 @@ namespace Client {
     }
 
     auto cacheDir = envVarValue;
-    for (const auto& segment: subPathSegments)
-    {
-      cacheDir.append(PATH_SEP + segment);
-      if (!mkdirIfNotExists(cacheDir))
-      {
+    for (const auto &segment: subPathSegments) {
+      if (!mkdirIfNotExists(cacheDir, 0755)) {
         CXX_LOG_INFO("Could not create cache dir=%s. Skipping it in cache file location lookup.", cacheDir.c_str());
         return {};
       }
+      cacheDir.append(PATH_SEP + segment);
     }
 
-    if (!subPathSegments.empty())
-    {
-      err = stat(cacheDir.c_str(), &s);
-      if (err != 0)
-      {
-        CXX_LOG_INFO("Failed to stat %s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
-        return {};
-      }
-    }
-
-    if (s.st_uid != geteuid())
-    {
-      CXX_LOG_INFO("%s=%s is not owned by current user. Skipping it in cache file location lookup.", envVar.c_str(), envVarValue.c_str());
+    if (!mkdirIfNotExists(cacheDir, 0700)) {
+      CXX_LOG_INFO("Could not create cache dir=%s. Skipping it in cache file location lookup.", cacheDir.c_str());
       return {};
     }
 
-    unsigned permissions = s.st_mode & 0777;
-    if (permissions != 0700)
+    err = stat(cacheDir.c_str(), &s);
+
+    if (err != 0)
     {
-      CXX_LOG_INFO("Incorrect permissions=%o for cache dir %s. Changing permissions to 700.", permissions, cacheDir.c_str())
-      if (chmod(cacheDir.c_str(), 0700) != 0)
-      {
-        CXX_LOG_WARN("Failed to change permissions for a cache dir %s, errno=%d. Skipping it in cache file location lookup.", cacheDir.c_str(), errno);
-        return {};
-      }
+      CXX_LOG_INFO("Failed to stat %s, errno=%d. Skipping it in cache file location lookup.", envVar.c_str(), errno);
+      return {};
     }
+
+    if (!S_ISDIR(s.st_mode))
+    {
+      CXX_LOG_INFO("%s is not a directory. Skipping it in cache file location lookup.", cacheDir.c_str());
+      return {};
+    }
+
+    if ((s.st_mode & 0777) != 0700)
+    {
+      CXX_LOG_INFO("%s has incorrect permissions. Skipping it in cache file location lookup.", cacheDir.c_str());
+      return {};
+    }
+
     return cacheDir;
   }
 
@@ -240,7 +235,7 @@ namespace Client {
   }
 
   std::string writeFile(const std::string &path, const picojson::value &result) {
-    FileDescriptor fd{open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC)};
+    FileDescriptor fd{open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600)};
     if (fd == -1)
     {
       return "Failed to open the file(path=" + path + ")";
