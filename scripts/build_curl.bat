@@ -32,12 +32,10 @@ set currdir=%cd%
 if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
     set engine_dir=Program Files
-    set arch=x64
 )
 if /I "%platform%"=="x86" (
     set openssl_target=VC-WIN32
     set engine_dir=Program Files (x86^)
-    set arch=Win32
 )
 
 if "%build_type%"=="Debug" (
@@ -51,8 +49,14 @@ if "%build_type%"=="Release" (
     set LIBDEBUG=
 )
 set rtlibcfg=dynamic
+set staticcrt=OFF
+set staticlibs=OFF
+set sharedlibs=ON
 if "%dynamic_runtime%"=="OFF" (
     set rtlibcfg=static
+	set staticcrt=ON
+	set staticlibs=ON
+	set sharedlibs=OFF
 )
 
 if "%vs_version%"=="VS17" (
@@ -94,11 +98,11 @@ echo === building curl
 cd "%currdir%\deps\%CURL_DIR%"
 cmake ^
 . -G %vc_version% ^
--A %arch% ^
+-A %cmake_architecture% ^
 -DCMAKE_BUILD_TYPE=%build_type% ^
--DBUILD_SHARED_LIBS=OFF ^
--DBUILD_STATIC_LIBS=ON ^
--DCURL_STATIC_CRT=ON ^
+-DBUILD_SHARED_LIBS=%sharedlibs% ^
+-DBUILD_STATIC_LIBS=%staticlibs% ^
+-DCURL_STATIC_CRT=%staticcrt% ^
 -DBUILD_EXAMPLES=OFF ^
 -DBUILD_LIBCURL_DOCS=OFF ^
 -DBUILD_MISC_DOCS=OFF ^
