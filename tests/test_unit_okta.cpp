@@ -19,7 +19,6 @@ public:
     {
         m_account = m_connection->account;
         m_authenticator = m_connection->authenticator;
-        m_user = m_connection->user;
         m_port = m_connection->port;
         m_host = m_connection->host;
         m_protocol = m_connection->protocol;
