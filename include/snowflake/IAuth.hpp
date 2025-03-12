@@ -120,7 +120,6 @@ namespace IAuth
         //These fields should be definied in the child class.
         std::string m_authenticator;
         std::string m_account;
-        std::string m_user;
         std::string m_port;
         std::string m_host;
         std::string m_protocol;
@@ -148,6 +147,7 @@ namespace IAuth
 
     protected:
         //These fields should be definied in the child class.
+        std::string m_user;
         std::string m_password;
         std::string m_appID;
         std::string m_appVersion;
@@ -200,6 +200,7 @@ namespace IAuth
         IDPAuthenticator* m_idp;
         std::string m_proofKey;
         std::string m_token;
+        std::string m_user;
         bool m_consentCacheIdToken;
         bool m_disable_console_login;
         std::string m_origin;

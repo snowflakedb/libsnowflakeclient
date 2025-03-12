@@ -10,7 +10,6 @@
 #include "client_int.h"
 #include "constants.h"
 #include "error.h"
-#include "authenticator.h"
 #include "curl_desc_pool.h"
 #include "../include/snowflake/secure_storage.h"
 
@@ -1331,7 +1330,13 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
   return char_resp_cb(ptr, size, nmemb, userdata);
 }
 
-sf_bool is_id_token_authentication(SF_CONNECT* sf, cJSON* body) {
+sf_bool is_password_required(AuthenticatorType auth)
+{
+    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
+}
+
+sf_bool is_id_token_authentication(SF_CONNECT* sf, cJSON* body) 
+{
     sf_bool is_id_token_auth = SF_BOOLEAN_TRUE;
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
     if (!sf->client_store_temporary_credential) {
