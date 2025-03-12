@@ -533,7 +533,8 @@ am__objects_13 = libcurlu_la-altsvc.lo libcurlu_la-amigaos.lo \
 	libcurlu_la-transfer.lo libcurlu_la-url.lo \
 	libcurlu_la-urlapi.lo libcurlu_la-version.lo \
 	libcurlu_la-version_win32.lo libcurlu_la-warnless.lo \
-	libcurlu_la-ws.lo
+	libcurlu_la-ws.lo \
+	vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_cJSON.lo
 am__objects_14 = vauth/libcurlu_la-cleartext.lo \
 	vauth/libcurlu_la-cram.lo vauth/libcurlu_la-digest.lo \
 	vauth/libcurlu_la-digest_sspi.lo vauth/libcurlu_la-gsasl.lo \
