@@ -17,10 +17,6 @@ extern "C" {
         {
             CXX_LOG_TRACE("sf::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
             HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-            if (sf->is_heart_beat_debug_mode) 
-            {
-                bg.enableDebugMode();
-            }
             bg.addConnection(sf);
             sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
         }
@@ -47,7 +43,6 @@ extern "C" {
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
-
 } // extern "C"
 
 
@@ -87,6 +82,10 @@ namespace Snowflake
                 {
                     this->m_master_token_validation_time = connection->master_token_validation_time;
                     this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
+                    if (connection->is_heart_beat_debug_mode)
+                    {
+                        this->m_isDebug = true;
+                    }
                     CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
                     m_worker = new std::thread(&HeartbeatBackground::heartBeatAll, this);
                 }
@@ -126,7 +125,7 @@ namespace Snowflake
                 char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
                 uuid4_generate(requestid);
                 uuid4_generate(requestgid);
-                SFURL& url = SFURL::getServerURLSync(conn).path(HEART_BEAT_URL).addQueryParam("requestId", requestid).addQueryParam("request_guid", requestgid);
+                SFURL url = SFURL::getServerURLSync(conn).path(HEART_BEAT_URL).addQueryParam("requestId", requestid).addQueryParam("request_guid", requestgid);
                 int maxRetryCount = get_login_retry_count(conn);
                 int8 retried_count = 0;
                 int64 elapsedTime = 0;
@@ -179,11 +178,6 @@ namespace Snowflake
                 free_curl_desc(curl_desc);
                 snowflake_cJSON_Delete(resp_data);
             }
-        }
-
-        void HeartbeatBackground::enableDebugMode()
-        {
-            m_isDebug = true;
         }
 
         void HeartbeatBackground::heartBeatAll()
