@@ -38,7 +38,6 @@ void test_connect_with_client_session_keep_alive_disable(void** unused) {
 }
 
 void test_connect_with_client_session_keep_alive(void** unused) {
-    log_set_quiet(0);
     SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,

@@ -129,6 +129,7 @@ namespace Snowflake
                 int maxRetryCount = get_login_retry_count(conn);
                 int8 retried_count = 0;
                 int64 elapsedTime = 0;
+                int64 retrytimeout = get_retry_timeout(conn);
 
                 std::string destination = url.toString();
                 void* curl_desc;
@@ -138,7 +139,6 @@ namespace Snowflake
 
                 CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", sid.c_str());
                 SF_HEADER* httpExtraHeaders = sf_header_create();
-                httpExtraHeaders->renew_session = SF_BOOLEAN_TRUE;
                 httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
                 if (!create_header(conn, httpExtraHeaders, &conn->error)) {
                     CXX_LOG_TRACE("sf::HeartBeatBackground::sendQueuedHeartBeatReq::Failed to create the header for the request HeartBeat");
@@ -146,14 +146,13 @@ namespace Snowflake
                 }
 
                 cJSON* resp_data = NULL;
-                    if (ret && curl_post_call(conn, curl, (char*)destination.c_str(), httpExtraHeaders, NULL,
-                        &resp_data, &conn->error, 0, maxRetryCount, get_retry_timeout(conn), &elapsedTime,
-                        &retried_count, NULL, SF_BOOLEAN_TRUE))
+                    if (ret && curl_post_call(conn, curl, (char*)destination.c_str(), httpExtraHeaders, "",
+                        &resp_data, &conn->error, 0, maxRetryCount, retrytimeout, &elapsedTime,
+                        &retried_count, NULL, SF_BOOLEAN_FALSE))
                     {
                        sf_bool success = SF_BOOLEAN_FALSE;
-                       if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE) {
-                           cJSON* data = snowflake_cJSON_GetObjectItem(resp_data, "data");
-                           char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(data, "code"));
+                       if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
+                           char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "code"));
                            if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
                            {
                                CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token expired will retry later sessionId: %s", sid.c_str());
