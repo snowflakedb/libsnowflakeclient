@@ -3,10 +3,6 @@
 #include "memory.h"
 
 #define TOML_EXCEPTIONS 0
-#define TOML_IMPLEMENTATION 0
-#if defined(__linux__)
-#define TOML_RETURN_BOOL_FROM_FOR_EACH_BROKEN_ACKNOWLEDGED
-#endif
 #include <toml++/toml.hpp>
 
 #undef snprintf
@@ -69,8 +65,7 @@ namespace
     return tomlFilePath;
   }
 
-  std::map<std::string, std::string> parseTomlFile(
-    const boost::filesystem::path& filePath) {
+  std::map<std::string, std::string> parseTomlFile(const boost::filesystem::path& filePath) {
     std::map<std::string, std::string> connectionParams;
     toml::parse_result result = toml::parse_file(filePath.c_str());
     if (!result)
@@ -78,7 +73,7 @@ namespace
       CXX_LOG_ERROR("Failed to parse toml file: %s. Error: %s", filePath.c_str(), result.error().description().data());
       return connectionParams;
     }
-    toml::table table = std::move(result).table();
+    toml::table table = result.table();
     std::string configurationName = getEnvironmentVariableValue(ENV_SNOWFLAKE_DEF_CONN_NAME);
     if (configurationName.empty()) {
       configurationName = "default";
@@ -98,14 +93,10 @@ namespace
 std::map<std::string, std::string> load_toml_config()
 {
   std::map<std::string, std::string> params;
-// Disable toml config parsing for 32-bit windows debug build due to linking issues
-// with _osfile causing hanging/assertions until dynamic linking is available
-#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
   boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
     params = parseTomlFile(derivedTomlFilePath);
   }
-#endif
   return params;
 }

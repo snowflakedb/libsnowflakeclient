@@ -137,11 +137,9 @@ int main(void) {
       cmocka_unit_test(test_missing_toml_file),
       cmocka_unit_test(test_invalid_toml_file),
       cmocka_unit_test(test_client_config_log_invalid_config_name),
-#if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
       cmocka_unit_test(test_valid_toml_file),
       cmocka_unit_test(test_use_default_location_env),
       cmocka_unit_test(test_use_snowflake_default_connection_var),
-#endif
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

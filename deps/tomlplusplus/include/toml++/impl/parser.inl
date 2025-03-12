@@ -33,7 +33,7 @@ TOML_DISABLE_WARNINGS;
 #if !TOML_INT_CHARCONV
 #include <iomanip>
 #endif
-
+TOML_ENABLE_WARNINGS;
 #include "header_start.hpp"
 
 //#---------------------------------------------------------------------------------------------------------------------
@@ -3914,5 +3914,4 @@ TOML_NAMESPACE_END;
 
 #undef TOML_OVERALIGNED
 #include "header_end.hpp"
-TOML_ENABLE_WARNINGS;
 #endif // TOML_ENABLE_PARSER
