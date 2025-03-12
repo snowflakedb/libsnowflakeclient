@@ -5,7 +5,8 @@
 #include "utils/test_setup.h"
 #include "../lib/snowflake_util.h"
 
-void test_connect_with_client_session_keep_alive_disable(void** unused) {
+void test_connect_with_client_session_keep_alive_disable(void** unused) 
+{
     SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
@@ -37,7 +38,8 @@ void test_connect_with_client_session_keep_alive_disable(void** unused) {
     snowflake_term(sf);
 }
 
-void test_connect_with_client_session_keep_alive(void** unused) {
+void test_connect_with_client_session_keep_alive(void** unused) 
+{
     SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
@@ -70,7 +72,6 @@ void test_connect_with_client_session_keep_alive(void** unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
-
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);

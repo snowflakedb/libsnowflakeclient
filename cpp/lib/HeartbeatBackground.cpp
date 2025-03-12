@@ -280,6 +280,3 @@ namespace Snowflake
         }
     }
 }
-
-
-

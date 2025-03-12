@@ -4,8 +4,6 @@
 
 #include <mutex>
 
-//#include "BasicTypes.hpp"
-
 namespace Snowflake
 {
     namespace Client

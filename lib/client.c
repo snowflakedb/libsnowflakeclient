@@ -1290,7 +1290,8 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             cJSON* sessionIDJson = NULL;
             sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
-            if (sessionIDJson) {
+            if (sessionIDJson) 
+            {
                 alloc_buffer_and_copy(&sf->session_id, snowflake_cJSON_Print(sessionIDJson));
             }
 

@@ -1,7 +1,3 @@
-//
-// Created by hyu on 12/22/16.
-//
-
 #ifndef SNOWFLAKE_HEARTBEATBACKGROUND_HPP
 #define SNOWFLAKE_HEARTBEATBACKGROUND_HPP
 
