@@ -91,7 +91,6 @@ public:
     {
         m_account = m_connection->account;
         m_authenticator = m_connection->authenticator;
-        m_user = m_connection->user;
         m_port = m_connection->port;
         m_host = m_connection->host;
         m_protocol = m_connection->protocol;
@@ -144,8 +143,6 @@ void test_external_browser_initialize(void**)
 {
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
-    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
@@ -159,6 +156,12 @@ void test_external_browser_initialize(void**)
     std::string type = typeid(*auth).name();
     assert_true(type.find("AuthenticatorExternalBrowser") != std::string::npos);
 
+    //If disable_console_login is false, the username is required.
+    disable_console_login = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
+
+    _snowflake_check_connection_parameters(sf);
+    assert_int_equal(sf->error.error_code, SF_STATUS_ERROR_BAD_CONNECTION_PARAMS);
     snowflake_term(sf);
 }
 
@@ -192,8 +195,6 @@ void test_external_browser_authenticate(void**)
 
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
-    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
@@ -219,6 +220,7 @@ void test_external_browser_authenticate(void**)
     delete authenticatorInstance;
         
     disable_console_login = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
     snowflake_set_attribute(sf, SF_CON_DISABLE_CONSOLE_LOGIN, &disable_console_login);
 
     authWebServer = new MockAuthWebServer();
@@ -292,8 +294,6 @@ void test_auth_web_server_success(void**)
 {
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
-    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
@@ -330,8 +330,6 @@ void test_auth_web_server_fail(void**)
 {
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
-    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
     snowflake_set_attribute(sf, SF_CON_PORT, "443");
     snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
@@ -452,8 +450,6 @@ void unit_authenticator_external_browser_privatelink(const std::string& topDomai
 
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
-    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
     std::string host = "testaccount.privatelink.snowflakecomputing." + topDomain;
     snowflake_set_attribute(sf, SF_CON_HOST, host.c_str());
     snowflake_set_attribute(sf, SF_CON_PORT, "443");

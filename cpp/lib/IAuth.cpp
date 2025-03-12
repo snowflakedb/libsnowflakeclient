@@ -22,6 +22,7 @@
 #include <openssl/rand.h>
 #include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
+#include "../lib/client_int.h"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -59,7 +60,6 @@ namespace Client
             SFURL connectURL = getServerURLSync().path("/session/authenticator-request");
             dataMap["ACCOUNT_NAME"] = value(m_account);
             dataMap["AUTHENTICATOR"] = value(m_authenticator);
-            dataMap["LOGIN_NAME"] = value(m_user);
             dataMap["PORT"] = value(m_port);
             dataMap["PROTOCOL"] = value(m_protocol);
 
@@ -188,7 +188,7 @@ namespace Client
             {
                 std::string proofKey = generateProofKey();
                 SFURL connectURL = m_idp->getServerURLSync().path("/console/login");
-                connectURL.addQueryParam("login_name", m_idp->m_user);
+                connectURL.addQueryParam("login_name", m_user);
                 connectURL.addQueryParam("browser_mode_redirect_port", std::to_string(m_authWebServer->getPort()));
                 connectURL.addQueryParam("proof_key", proofKey);
 
@@ -355,7 +355,8 @@ namespace Client
                 SFURL tokenURL = SFURL::parse(m_idp->tokenURLStr);
 
                 jsonObject_t dataMap, respData;
-                dataMap["username"] = picojson::value(m_idp->m_user);
+                //dataMap["username"] = picojson::value(m_idp->m_user);
+                dataMap["username"] = picojson::value(m_user);
                 dataMap["password"] = picojson::value(m_password);
 
                 if (!m_idp->curlPostCall(tokenURL, dataMap, respData))

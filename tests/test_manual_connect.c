@@ -290,7 +290,6 @@ void test_external_browser(void** unused)
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     char* host, * port, * protocol;

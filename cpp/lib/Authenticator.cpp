@@ -412,7 +412,7 @@ namespace Client
       SF_CONNECT* connection) : m_connection(connection)
   {
       m_idp = new CIDPAuthenticator(connection);
-
+      m_user = m_connection->user;
       m_password = m_connection->password;
       m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
       m_appID = m_connection->application_name;
@@ -449,7 +449,6 @@ namespace Client
   {
       m_account = m_connection->account;
       m_authenticator = m_connection->authenticator;
-      m_user = m_connection->user;
       m_port = m_connection->port;
       m_host = m_connection->host;
       m_protocol = m_connection->protocol;
@@ -623,6 +622,7 @@ namespace Client
       }
       m_idp = new CIDPAuthenticator(m_connection);
 
+      m_connection->disable_console_login ?  m_user = "" : m_user = m_connection->user;
       m_browser_response_timeout = connection->browser_response_timeout;
       m_disable_console_login = connection->disable_console_login;
   };
