@@ -146,7 +146,7 @@ namespace Snowflake
                 }
 
                 cJSON* resp_data = NULL;
-                    if (ret && curl_post_call(conn, curl, (char*)destination.c_str(), httpExtraHeaders, "",
+                    if (ret && curl_post_call(conn, curl, (char*)destination.c_str(), httpExtraHeaders, NULL,
                         &resp_data, &conn->error, 0, maxRetryCount, retrytimeout, &elapsedTime,
                         &retried_count, NULL, SF_BOOLEAN_FALSE))
                     {
