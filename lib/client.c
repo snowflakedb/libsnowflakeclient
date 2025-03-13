@@ -30,6 +30,7 @@
 #include <unistd.h>
 #endif
 
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
 // Define internal constants
@@ -46,6 +47,8 @@ static FILE *LOG_FP = NULL;
 
 static SF_MUTEX_HANDLE log_lock;
 static SF_MUTEX_HANDLE gmlocaltime_lock;
+
+static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc, calloc};
 
 static SF_STATUS STDCALL
 _snowflake_internal_query(SF_CONNECT *sf, const char *sql);
@@ -610,11 +613,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING,
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
-    }
-
-    if (auth_type == AUTH_EXTERNALBROWSER)
-    {
-        
     }
 
     if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && is_string_empty(sf->user)) {
