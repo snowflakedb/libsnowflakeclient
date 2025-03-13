@@ -290,6 +290,9 @@ void test_external_browser(void** unused)
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     char* host, * port, * protocol;
@@ -357,7 +360,7 @@ void test_sso_token_auth(void** unused)
 
         if (i != 1) {
             sf->token_cache = secure_storage_init();
-            secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+            secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
         }
        
         SF_STATUS status = snowflake_connect(sf);
@@ -405,8 +408,8 @@ void test_sso_token_auth_renew(void** unused)
     }
 
     sf->token_cache = secure_storage_init();
-    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
-    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "wrong token");
+    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN);
+    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, SSO_TOKEN, "wrong token");
 
 
     SF_STATUS status = snowflake_connect(sf);

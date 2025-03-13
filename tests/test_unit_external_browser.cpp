@@ -574,7 +574,6 @@ int main(void) {
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
     cmocka_unit_test(test_sso_token_cache),
-
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
