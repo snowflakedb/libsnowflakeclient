@@ -37,6 +37,7 @@ extern "C" {
 #include "snowflake/platform.h"
 #include "cJSON.h"
 #include "arraylist.h"
+#include "authenticator.h"
 
 /**
  * Request type
@@ -673,6 +674,8 @@ sf_bool is_one_time_token_request(cJSON *resp);
 * A write callback function to use to write the response text received from the cURL response with non_json_resp
 */
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
+
+sf_bool is_password_required(AuthenticatorType auth);
 #ifdef __cplusplus
 }
 #endif
