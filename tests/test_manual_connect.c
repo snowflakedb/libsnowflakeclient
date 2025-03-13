@@ -320,7 +320,6 @@ void test_external_browser(void** unused)
 
 void test_sso_token_auth(void** unused)
 {
-
     SF_UNUSED(unused);
     const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
     if (manual_test == NULL || strcmp(manual_test, "test_sso_token_auth") != 0)
@@ -328,7 +327,7 @@ void test_sso_token_auth(void** unused)
         printf("This test was skipped.\n");
         return;
     }
-    /*
+ /*
  * Should trigger external browser auth at the first time
  * Make sure ALLOW_ID_TOKEN is set to true
  * For more details refer to: https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview
@@ -411,7 +410,6 @@ void test_sso_token_auth_renew(void** unused)
     secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "wrong token");
 
-
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
@@ -433,7 +431,6 @@ int main(void)
         cmocka_unit_test(test_okta_connect),
         cmocka_unit_test(test_sso_token_auth),
         cmocka_unit_test(test_sso_token_auth_renew),
-
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

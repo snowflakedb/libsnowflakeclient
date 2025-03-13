@@ -507,7 +507,6 @@ void test_sso_token_cache(void**)
         bool isRenew = false;
     };
 
-
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");

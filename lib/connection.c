@@ -40,7 +40,6 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     //Create Client Environment JSON blob
     client_env = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
-
     snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
 #ifdef MOCK_ENABLED
     os_version[0] = '0';
