@@ -30,6 +30,7 @@
 #include <unistd.h>
 #endif
 
+
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 
 // Define internal constants
@@ -46,6 +47,8 @@ static FILE *LOG_FP = NULL;
 
 static SF_MUTEX_HANDLE log_lock;
 static SF_MUTEX_HANDLE gmlocaltime_lock;
+
+static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc, calloc};
 
 static SF_STATUS STDCALL
 _snowflake_internal_query(SF_CONNECT *sf, const char *sql);
