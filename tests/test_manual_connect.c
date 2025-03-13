@@ -276,8 +276,42 @@ void test_okta_connect(void** unused)
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
+  
+void test_external_browser(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_external_browser") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
 
-
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
 
 int main(void)
 {
@@ -287,10 +321,10 @@ int main(void)
         cmocka_unit_test(test_mfa_connect_with_duo_passcode),
         cmocka_unit_test(test_mfa_connect_with_duo_push),
         cmocka_unit_test(test_mfa_connect_with_duo_passcodeInPassword),
+        cmocka_unit_test(test_external_browser),
         cmocka_unit_test(test_okta_connect),
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
     return ret;
 }
-
