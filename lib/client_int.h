@@ -47,6 +47,7 @@
 #define QUERY_MONITOR_URL "/monitoring/queries/%s"
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 #define HEART_BEAT_URL "/session/heartbeat"
+#define EXTERNALBROWSER_CONSOLE_URL "/console/login"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
