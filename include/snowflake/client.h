@@ -49,6 +49,11 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_PAT "programmatic_access_token"
 
+ /**
+ * Authenticator, SSO token
+ */
+#define SF_AUTHENTICATOR_ID_TOKEN "ID_TOKEN"
+
 /**
  * UUID4 length
  */
@@ -235,6 +240,8 @@ typedef enum SF_STATUS {
 #define SF_QCC_CONTEXT_KEY         "context"
 #define SF_QCC_CONTEXT_VALUE_KEY   "base64Data"
 
+#define SF_GS_ERROR_CODE_ID_TOKEN_INVALID 390195
+
 /**
  * Attributes for Snowflake database session context.
  */
@@ -273,6 +280,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_INCLUDE_RETRY_REASON,
     SF_CON_RETRY_TIMEOUT,
     SF_CON_CLIENT_REQUEST_MFA_TOKEN,
+    SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL,
     SF_CON_MAX_RETRY,
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
@@ -486,6 +494,7 @@ typedef struct SF_CONNECT {
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
     sf_bool disable_console_login;
+    sf_bool client_store_temporary_credential;
 } SF_CONNECT;
 
 /**
