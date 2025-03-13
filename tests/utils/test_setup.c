@@ -102,6 +102,15 @@ void dump_error(SF_ERROR_STRUCT *error) {
             error->line);
 }
 
+void sf_sleep_ms(int sleep_ms)
+{
+#ifdef _WIN32
+    Sleep(sleep_ms);
+#else
+    usleep(sleep_ms * 1000); // usleep takes sleep time in us (1 millionth of a second)
+#endif
+}
+
 void setup_and_run_query(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char *query) {
     SF_STATUS status;
     SF_CONNECT *sf;

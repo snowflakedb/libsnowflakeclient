@@ -738,7 +738,7 @@ SF_DLL_PUBLIC SF_STMT *STDCALL snowflake_stmt(SF_CONNECT *sf);
  *
  * @return sfstmt SNOWFLAKE_STMT context for async queries.
  */
-SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *query_id);
+SF_DLL_PUBLIC SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *query_id);
 
 /**
  * Get the status of a query
@@ -747,7 +747,7 @@ SF_STMT* STDCALL snowflake_init_async_query_result(SF_CONNECT *sf, const char *q
  * 
  * @return The query status.
  */
-SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_QUERY_STATUS STDCALL snowflake_get_query_status(SF_STMT *sfstmt);
 
 /**
  * Frees the memory used by a SF_QUERY_RESULT_CAPTURE struct.
@@ -917,7 +917,7 @@ SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_execute(SF_STMT *sfstmt);
  *
  * @return 0 if success, otherwise an errno is returned.
  */
-SF_STATUS STDCALL snowflake_async_execute(SF_STMT *sfstmt);
+SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_async_execute(SF_STMT *sfstmt);
 
 /**
  * Executes a statement with capture.

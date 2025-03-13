@@ -55,6 +55,12 @@ void drop_random_database();
  */
 void dump_error(SF_ERROR_STRUCT *error);
 
+/**
+ * Helper sleep function
+ * @param sleep_ms sleep time in ms
+ */
+void sf_sleep_ms(int sleep_ms);
+
 #ifdef __cplusplus
 }
 #endif
