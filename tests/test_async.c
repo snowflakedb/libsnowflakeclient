@@ -68,7 +68,7 @@ void test_long_query_get_query_status() {
   int retries = 0;
   while (query_status != SF_QUERY_STATUS_SUCCESS || retries > 5) {
     query_status = snowflake_get_query_status(sfstmt);
-    sf_sleep_ms(2000);
+    sleep_for_ms(2000);
     retries++;
   }
 

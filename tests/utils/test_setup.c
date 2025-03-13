@@ -105,7 +105,7 @@ void dump_error(SF_ERROR_STRUCT *error) {
             error->line);
 }
 
-void sf_sleep_ms(int sleep_ms)
+void sleep_for_ms(int sleep_ms)
 {
 #ifdef _WIN32
     Sleep(sleep_ms);
