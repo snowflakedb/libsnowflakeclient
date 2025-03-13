@@ -8,6 +8,9 @@
 #include "test_setup.h"
 #include <stdlib.h>
 #include <time.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 // Long path space
 char PERFORMANCE_TEST_RESULTS_PATH[5000];
