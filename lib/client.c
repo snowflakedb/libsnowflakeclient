@@ -612,11 +612,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (auth_type == AUTH_EXTERNALBROWSER)
-    {
-        
-    }
-
     if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && is_string_empty(sf->user)) {
         // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
