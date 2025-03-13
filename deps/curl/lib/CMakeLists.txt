@@ -135,6 +135,7 @@ if(BUILD_STATIC_LIBS)
   if(WIN32)
     set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
   endif()
+  list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
   target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
   # Remove the "lib" prefix since the library is already named "libcurl".
   set_target_properties(${LIB_STATIC} PROPERTIES
@@ -152,6 +153,13 @@ if(BUILD_STATIC_LIBS)
   target_include_directories(${LIB_STATIC} INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+  if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} crypt32.lib ws2_32.lib msvcrt.lib ole32.lib")
+    else()
+      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} crypt32.lib ws2_32.lib ole32.lib")
+    endif()
+  endif()
 endif()
 
 if(BUILD_SHARED_LIBS)
