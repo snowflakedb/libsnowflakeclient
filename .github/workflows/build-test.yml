@@ -24,6 +24,7 @@ jobs:
             matrix:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+                link_type: [ 'Dynamic', 'Static' ]
         steps:
             - uses: actions/checkout@v4
             - name: Restore cached deps
@@ -37,6 +38,7 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
+                  LINK_TYPE: ${{ matrix.link_type }}
               run: ci/build_linux.sh
             - name: Cache deps
               id: cache-save-deps
@@ -54,6 +56,7 @@ jobs:
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  LINK_TYPE: ${{ matrix.link_type }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
 
@@ -67,6 +70,7 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 vs_version: [ 'VS16' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+                link_type: [ 'Dynamic', 'Static' ]
         steps:
             - uses: actions/checkout@v4
             - name: Restore cached deps
@@ -82,6 +86,7 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
+                  LINK_TYPE: ${{ matrix.link_type }}
               run: ci\build_win.bat
             - name: Cache deps
               id: cache-save-deps
@@ -100,6 +105,7 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
+                  LINK_TYPE: ${{ matrix.link_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci\test_win.bat
@@ -113,6 +119,7 @@ jobs:
                 build_type: [ 'Debug', 'Release' ]
                 vs_version: [ 'VS17' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+                link_type: [ 'Dynamic', 'Static' ]
         steps:
             - uses: actions/checkout@v4
             - name: Restore cached deps
@@ -128,6 +135,7 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
+                  LINK_TYPE: ${{ matrix.link_type }}
               run: ci\build_win.bat
             - name: Cache deps
               id: cache-save-deps
@@ -146,6 +154,7 @@ jobs:
                   PLATFORM: ${{ matrix.platform }}
                   BUILD_TYPE: ${{ matrix.build_type }}
                   VS_VERSION: ${{ matrix.vs_version }}
+                  LINK_TYPE: ${{ matrix.link_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci\test_win.bat
@@ -157,6 +166,7 @@ jobs:
             matrix:
                 build_type: [ 'Debug', 'Release' ]
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
+                link_type: [ 'Dynamic', 'Static' ]
         steps:
             - uses: actions/checkout@v4
             - name: Install Homebrew Bash
@@ -173,6 +183,7 @@ jobs:
               shell: bash
               env:
                 BUILD_TYPE: ${{ matrix.build_type }}
+                LINK_TYPE: ${{ matrix.link_type }}
               run: ./ci/build_mac.sh
             - name: Cache deps
               id: cache-save-deps
@@ -186,6 +197,7 @@ jobs:
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+                  LINK_TYPE: ${{ matrix.link_type }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_mac.sh
     build-test-codecov-aws:

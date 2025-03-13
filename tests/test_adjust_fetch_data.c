@@ -3,6 +3,7 @@
  */
 #include <string.h>
 #include "utils/test_setup.h"
+#include "memory.h"
 
 /**
  * Test SF_STMT_USER_REALLOC_FUNC, which reallocates a larger memory
@@ -45,8 +46,7 @@ void test_select_long_data_with_small_initial_buffer(void **unused) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_EOF);
-    free(value);
-    value = NULL;
+    SF_FREE(value);
 
     // Verify the value of SF_STMT_USER_REALLOC_FUNC
     void* attrValue = NULL;
