@@ -37,7 +37,7 @@ appropriate options, the application can change libcurl's behavior. All
 options are set with an *option* followed by a *parameter*. That parameter can
 be a **long**, a **function pointer**, an **object pointer** or a
 **curl_off_t**, depending on what the specific option expects. Read this
-manual carefully as bad input values may cause libcurl to behave badly! You
+manual carefully as bad input values may cause libcurl to behave badly. You
 can only set one option in each function call. A typical application uses many
 curl_easy_setopt(3) calls in the setup phase.
 
@@ -1348,9 +1348,12 @@ int main(void)
 
 # RETURN VALUE
 
-*CURLE_OK* (zero) means that the option was set properly, non-zero means an
-error occurred as *\<curl/curl.h\>* defines. See the libcurl-errors(3) man
-page for the full list with descriptions.
+This function returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3). If CURLOPT_ERRORBUFFER(3) was set with curl_easy_setopt(3)
+there can be an error message stored in the error buffer when non-zero is
+returned.
 
 Strings passed on to libcurl must be shorter than 8000000 bytes, otherwise
 curl_easy_setopt(3) returns **CURLE_BAD_FUNCTION_ARGUMENT** (added in 7.65.0).

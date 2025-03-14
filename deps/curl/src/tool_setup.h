@@ -53,8 +53,8 @@ extern FILE *tool_stderr;
 #  define main(x,y) curl_main(x,y)
 #endif
 
-#ifndef OS
-#  define OS "unknown"
+#ifndef CURL_OS
+#  define CURL_OS "unknown"
 #endif
 
 #ifndef UNPRINTABLE_CHAR
@@ -64,6 +64,21 @@ extern FILE *tool_stderr;
 
 #ifndef HAVE_STRDUP
 #  include "tool_strdup.h"
+#endif
+
+#if defined(_WIN32)
+#  define CURL_STRICMP(p1, p2)  _stricmp(p1, p2)
+#elif defined(HAVE_STRCASECMP)
+#  ifdef HAVE_STRINGS_H
+#    include <strings.h>
+#  endif
+#  define CURL_STRICMP(p1, p2)  strcasecmp(p1, p2)
+#elif defined(HAVE_STRCMPI)
+#  define CURL_STRICMP(p1, p2)  strcmpi(p1, p2)
+#elif defined(HAVE_STRICMP)
+#  define CURL_STRICMP(p1, p2)  stricmp(p1, p2)
+#else
+#  define CURL_STRICMP(p1, p2)  strcmp(p1, p2)
 #endif
 
 #if defined(_WIN32)

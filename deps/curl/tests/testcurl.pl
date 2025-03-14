@@ -77,7 +77,7 @@ use vars qw($name $email $desc $confopts $runtestopts $setupfile $mktarball
             $timestamp $notes);
 
 # version of this script
-$version='2024-08-07';
+$version='2024-11-28';
 $fixed=0;
 
 # Determine if we're running from git or a canned copy of curl,
@@ -245,7 +245,7 @@ sub get_host_triplet {
 
   if(-f $configfile && -s $configfile && open(my $libconfigh, "<", "$configfile")) {
     while(<$libconfigh>) {
-      if($_ =~ /^\#define\s+OS\s+"*([^"][^"]*)"*\s*/) {
+      if($_ =~ /^\#define\s+CURL_OS\s+"*([^"][^"]*)"*\s*/) {
         $triplet = $1;
         last;
       }
@@ -566,17 +566,6 @@ if ($configurebuild) {
   logit "copying files to build dir ...";
   if ($^O eq 'MSWin32') {
     system("xcopy /s /q \"$CURLDIR\" .");
-    system("buildconf.bat");
-  }
-  elsif ($^O eq 'linux') {
-    system("cp -afr $CURLDIR/* .");
-    system("cp -af $CURLDIR/Makefile.dist Makefile");
-    system("$make -i -C lib -f Makefile.$targetos prebuild");
-    system("$make -i -C src -f Makefile.$targetos prebuild");
-    if (-d "$CURLDIR/ares") {
-      system("cp -af $CURLDIR/ares/ares_build.h.dist ./ares/ares_build.h");
-      system("$make -i -C ares -f Makefile.$targetos prebuild");
-    }
   }
 }
 
@@ -793,5 +782,6 @@ if (($mktarball ne '') && (-x $mktarball)) {
   system($mktarball);
 }
 
+logit "enddate = ".scalar(gmtime)." UTC";  # When the run ends
 # mydie to cleanup
 mydie "ending nicely";

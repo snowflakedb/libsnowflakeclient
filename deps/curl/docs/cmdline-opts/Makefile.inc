@@ -269,6 +269,7 @@ DPAGES = \
   ssl-no-revoke.md \
   ssl-reqd.md \
   ssl-revoke-best-effort.md \
+  ssl-sessions.md \
   ssl.md \
   sslv2.md \
   sslv3.md \
@@ -281,6 +282,7 @@ DPAGES = \
   tftp-blksize.md \
   tftp-no-options.md \
   time-cond.md \
+  tls-earlydata.md \
   tls-max.md \
   tls13-ciphers.md \
   tlsauthtype.md \

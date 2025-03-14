@@ -42,16 +42,16 @@ When CURLOPT_DOH_SSL_VERIFYHOST(3) is 2, the SSL certificate provided by
 the DoH server must indicate that the server name is the same as the server
 name to which you meant to connect to, or the connection fails.
 
-Curl considers the DoH server the intended one when the Common Name field or a
+curl considers the DoH server the intended one when the Common Name field or a
 Subject Alternate Name field in the certificate matches the hostname in the
-DoH URL to which you told Curl to connect.
+DoH URL to which you told curl to connect.
 
 When the *verify* value is set to 1L it is treated the same as 2L. However
 for consistency with the other *VERIFYHOST* options we suggest use 2 and
 not 1.
 
 When the *verify* value is set to 0L, the connection succeeds regardless of
-the names used in the certificate. Use that ability with caution!
+the names used in the certificate. Use that ability with caution.
 
 See also CURLOPT_DOH_SSL_VERIFYPEER(3) to verify the digital signature
 of the DoH server certificate.
@@ -86,4 +86,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).
