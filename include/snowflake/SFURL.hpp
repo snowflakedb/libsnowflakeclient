@@ -11,7 +11,6 @@
 #include <list>
 #include "snowflake/BaseClasses.hpp"
 #include "snowflake/Proxy.hpp"
-#include "client.h"
 
 /**
  * Delegate class to modify url
