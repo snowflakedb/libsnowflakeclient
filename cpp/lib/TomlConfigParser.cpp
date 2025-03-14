@@ -5,7 +5,6 @@
 #define TOML_EXCEPTIONS 0
 #include <toml++/toml.hpp>
 
-#undef snprintf
 #include <boost/filesystem.hpp>
 
 namespace
@@ -96,6 +95,7 @@ std::map<std::string, std::string> load_toml_config()
   boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
+    CXX_LOG_INFO("Using toml file path: %s", derivedTomlFilePath.c_str());
     params = parseTomlFile(derivedTomlFilePath);
   }
   return params;
