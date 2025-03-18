@@ -134,8 +134,8 @@ if(BUILD_STATIC_LIBS)
   add_library(${PROJECT_NAME}::${LIB_STATIC} ALIAS ${LIB_STATIC})
   if(WIN32)
     set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
+    list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
   endif()
-  list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
   target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
   # Remove the "lib" prefix since the library is already named "libcurl".
   set_target_properties(${LIB_STATIC} PROPERTIES
