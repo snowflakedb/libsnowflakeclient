@@ -83,7 +83,7 @@ int main(void)
     /* Set the size of the file to upload */
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)fsize);
 
-    /* Now run off and do what you have been told! */
+    /* Now run off and do what you have been told */
     curl_easy_perform(curl);
   }
 }
@@ -93,4 +93,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

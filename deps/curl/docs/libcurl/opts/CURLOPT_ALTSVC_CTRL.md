@@ -35,7 +35,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_ALTSVC_CTRL, long bitmask);
 Populate the long *bitmask* with the correct set of features to instruct
 libcurl how to handle Alt-Svc for the transfers using this handle.
 
-libcurl only accepts Alt-Svc headers over a secure transport, meaning
+libcurl only accepts Alt-Svc headers over a Secure Transport, meaning
 HTTPS. It also only completes a request to an alternative origin if that
 origin is properly hosted over HTTPS. These requirements are there to make
 sure both the source and the destination are legitimate.
@@ -95,4 +95,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

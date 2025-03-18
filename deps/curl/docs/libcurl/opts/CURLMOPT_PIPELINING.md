@@ -38,7 +38,7 @@ same connection when doing parallel transfers to the same hosts.
 
 ## CURLPIPE_NOTHING (0)
 
-Default, which means doing no attempts at multiplexing.
+Make no attempts at multiplexing.
 
 ## CURLPIPE_HTTP1 (1)
 
@@ -79,4 +79,7 @@ Before that, default was **CURLPIPE_NOTHING**.
 
 # RETURN VALUE
 
-Returns CURLM_OK if the option is supported, and CURLM_UNKNOWN_OPTION if not.
+curl_multi_setopt(3) returns a CURLMcode indicating success or error.
+
+CURLM_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

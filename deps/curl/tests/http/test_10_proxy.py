@@ -51,15 +51,15 @@ class TestProxy:
         httpd.reload()
 
     def get_tunnel_proto_used(self, r: ExecResult):
-        for l in r.trace_lines:
-            m = re.match(r'.* CONNECT tunnel: (\S+) negotiated$', l)
+        for line in r.trace_lines:
+            m = re.match(r'.* CONNECT tunnel: (\S+) negotiated$', line)
             if m:
                 return m.group(1)
         assert False, f'tunnel protocol not found in:\n{"".join(r.trace_lines)}'
         return None
 
     # download via http: proxy (no tunnel)
-    def test_10_01_proxy_http(self, env: Env, httpd, repeat):
+    def test_10_01_proxy_http(self, env: Env, httpd):
         curl = CurlClient(env=env)
         url = f'http://localhost:{env.http_port}/data.json'
         r = curl.http_download(urls=[url], alpn_proto='http/1.1', with_stats=True,
@@ -70,7 +70,7 @@ class TestProxy:
     @pytest.mark.skipif(condition=not Env.curl_has_feature('HTTPS-proxy'),
                         reason='curl lacks HTTPS-proxy support')
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
-    def test_10_02_proxys_down(self, env: Env, httpd, proto, repeat):
+    def test_10_02_proxys_down(self, env: Env, httpd, proto):
         if proto == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         curl = CurlClient(env=env)
@@ -82,7 +82,7 @@ class TestProxy:
                          protocol='HTTP/2' if proto == 'h2' else 'HTTP/1.1')
 
     # upload via https: with proto (no tunnel)
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("fname, fcount", [
         ['data.json', 5],
@@ -92,7 +92,7 @@ class TestProxy:
     @pytest.mark.skipif(condition=not Env.have_nghttpx(),
                         reason="no nghttpx available")
     def test_10_02_proxys_up(self, env: Env, httpd, nghttpx, proto,
-                             fname, fcount, repeat):
+                             fname, fcount):
         if proto == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         count = fcount
@@ -110,7 +110,7 @@ class TestProxy:
             assert respdata == indata
 
     # download http: via http: proxytunnel
-    def test_10_03_proxytunnel_http(self, env: Env, httpd, repeat):
+    def test_10_03_proxytunnel_http(self, env: Env, httpd):
         curl = CurlClient(env=env)
         url = f'http://localhost:{env.http_port}/data.json'
         xargs = curl.get_proxy_args(proxys=False, tunnel=True)
@@ -122,7 +122,7 @@ class TestProxy:
     @pytest.mark.skipif(condition=not Env.curl_has_feature('HTTPS-proxy'),
                         reason='curl lacks HTTPS-proxy support')
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
-    def test_10_04_proxy_https(self, env: Env, httpd, nghttpx_fwd, repeat):
+    def test_10_04_proxy_https(self, env: Env, httpd, nghttpx_fwd):
         curl = CurlClient(env=env)
         url = f'http://localhost:{env.http_port}/data.json'
         xargs = curl.get_proxy_args(tunnel=True)
@@ -132,8 +132,8 @@ class TestProxy:
 
     # download https: with proto via http: proxytunnel
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
-    def test_10_05_proxytunnel_http(self, env: Env, httpd, proto, repeat):
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
+    def test_10_05_proxytunnel_http(self, env: Env, httpd, proto):
         curl = CurlClient(env=env)
         url = f'https://localhost:{env.https_port}/data.json'
         xargs = curl.get_proxy_args(proxys=False, tunnel=True)
@@ -148,7 +148,7 @@ class TestProxy:
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
-    def test_10_06_proxytunnel_https(self, env: Env, httpd, nghttpx_fwd, proto, tunnel, repeat):
+    def test_10_06_proxytunnel_https(self, env: Env, httpd, nghttpx_fwd, proto, tunnel):
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         curl = CurlClient(env=env)
@@ -165,7 +165,7 @@ class TestProxy:
         assert filecmp.cmp(srcfile, dfile, shallow=False)
 
     # download many https: with proto via https: proxytunnel
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("fname, fcount", [
@@ -175,7 +175,7 @@ class TestProxy:
     ])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
     def test_10_07_pts_down_small(self, env: Env, httpd, nghttpx_fwd, proto,
-                                  tunnel, fname, fcount, repeat):
+                                  tunnel, fname, fcount):
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         count = fcount
@@ -195,7 +195,7 @@ class TestProxy:
         assert r.total_connects == 1, r.dump_logs()
 
     # upload many https: with proto via https: proxytunnel
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("fname, fcount", [
@@ -205,7 +205,7 @@ class TestProxy:
     ])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
     def test_10_08_upload_seq_large(self, env: Env, httpd, nghttpx, proto,
-                                    tunnel, fname, fcount, repeat):
+                                    tunnel, fname, fcount):
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         count = fcount
@@ -224,10 +224,10 @@ class TestProxy:
             assert respdata == indata, f'resonse {i} differs'
         assert r.total_connects == 1, r.dump_logs()
 
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
-    def test_10_09_reuse_ser(self, env: Env, httpd, nghttpx_fwd, tunnel, repeat):
+    def test_10_09_reuse_ser(self, env: Env, httpd, nghttpx_fwd, tunnel):
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         curl = CurlClient(env=env)
@@ -247,10 +247,10 @@ class TestProxy:
         else:
             assert r.total_connects == 2
 
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
-    def test_10_10_reuse_proxy(self, env: Env, httpd, nghttpx_fwd, tunnel, repeat):
+    def test_10_10_reuse_proxy(self, env: Env, httpd, nghttpx_fwd, tunnel):
         # url twice via https: proxy separated with '--next', will reuse
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
@@ -271,11 +271,11 @@ class TestProxy:
         r2.check_response(count=2, http_status=200)
         assert r2.total_connects == 1
 
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
     @pytest.mark.skipif(condition=not Env.curl_uses_lib('openssl'), reason="tls13-ciphers not supported")
-    def test_10_11_noreuse_proxy_https(self, env: Env, httpd, nghttpx_fwd, tunnel, repeat):
+    def test_10_11_noreuse_proxy_https(self, env: Env, httpd, nghttpx_fwd, tunnel):
         # different --proxy-tls13-ciphers, no reuse of connection for https:
         curl = CurlClient(env=env)
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
@@ -297,11 +297,11 @@ class TestProxy:
         r2.check_response(count=2, http_status=200)
         assert r2.total_connects == 2
 
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
     @pytest.mark.skipif(condition=not Env.curl_uses_lib('openssl'), reason="tls13-ciphers not supported")
-    def test_10_12_noreuse_proxy_http(self, env: Env, httpd, nghttpx_fwd, tunnel, repeat):
+    def test_10_12_noreuse_proxy_http(self, env: Env, httpd, nghttpx_fwd, tunnel):
         # different --proxy-tls13-ciphers, no reuse of connection for http:
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
@@ -323,11 +323,11 @@ class TestProxy:
         r2.check_response(count=2, http_status=200)
         assert r2.total_connects == 2
 
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
     @pytest.mark.parametrize("tunnel", ['http/1.1', 'h2'])
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx available")
     @pytest.mark.skipif(condition=not Env.curl_uses_lib('openssl'), reason="tls13-ciphers not supported")
-    def test_10_13_noreuse_https(self, env: Env, httpd, nghttpx_fwd, tunnel, repeat):
+    def test_10_13_noreuse_https(self, env: Env, httpd, nghttpx_fwd, tunnel):
         # different --tls13-ciphers on https: same proxy config
         if tunnel == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
@@ -354,7 +354,7 @@ class TestProxy:
                         reason='curl lacks HTTPS-proxy support')
     @pytest.mark.skipif(condition=Env.curl_uses_lib('bearssl'), reason="ip address cert verification not supported")
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
-    def test_10_14_proxys_ip_addr(self, env: Env, httpd, proto, repeat):
+    def test_10_14_proxys_ip_addr(self, env: Env, httpd, proto):
         if proto == 'h2' and not env.curl_uses_lib('nghttp2'):
             pytest.skip('only supported with nghttp2')
         curl = CurlClient(env=env)

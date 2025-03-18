@@ -53,7 +53,7 @@ int main(void)
   if(curl) {
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-    /* ask for OCSP stapling! */
+    /* ask for OCSP stapling */
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYSTATUS, 1L);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
@@ -65,5 +65,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if OCSP stapling is supported by the SSL backend, otherwise
-returns CURLE_NOT_BUILT_IN.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

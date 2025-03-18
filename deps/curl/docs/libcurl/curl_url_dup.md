@@ -45,7 +45,7 @@ int main(void)
   CURLU *url2;
   rc = curl_url_set(url, CURLUPART_URL, "https://example.com", 0);
   if(!rc) {
-    url2 = curl_url_dup(url); /* clone it! */
+    url2 = curl_url_dup(url); /* clone it */
     curl_url_cleanup(url2);
   }
   curl_url_cleanup(url);
@@ -56,4 +56,4 @@ int main(void)
 
 # RETURN VALUE
 
-Returns a new handle or NULL if out of memory.
+Returns a pointer to a new `CURLU` handle or NULL if out of memory.

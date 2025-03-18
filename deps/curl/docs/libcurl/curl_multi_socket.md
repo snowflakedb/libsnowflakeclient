@@ -29,8 +29,8 @@ CURLMcode curl_multi_socket(CURLM *multi_handle, curl_socket_t sockfd,
 
 # DESCRIPTION
 
-This function is deprecated. Do not use. See curl_multi_socket_action(3)
-instead.
+This function is deprecated. Use curl_multi_socket_action(3) instead with
+**ev_bitmask** set to 0.
 
 At return, the integer **running_handles** points to contains the number of
 still running easy handles within the multi handle. When this number reaches
@@ -54,9 +54,6 @@ to CURL_SOCKET_TIMEOUT. You can also use the curl_multi_timeout(3) function to
 poll the value at any given time, but for an event-based system using the
 callback is far better than relying on polling the timeout value.
 
-Usage of curl_multi_socket(3) is deprecated, whereas the function is
-equivalent to curl_multi_socket_action(3) with **ev_bitmask** set to 0.
-
 # %PROTOCOLS%
 
 # EXAMPLE
@@ -76,13 +73,16 @@ int main(void)
 
 # DEPRECATED
 
-curl_multi_socket(3) is deprecated, use curl_multi_socket_action(3) instead!
+curl_multi_socket(3) is deprecated, use curl_multi_socket_action(3) instead.
 
 # %AVAILABILITY%
 
 # RETURN VALUE
 
-CURLMcode type, general libcurl multi interface error code.
+This function returns a CURLMcode indicating success or error.
+
+CURLM_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).
 
 The return code is for the whole multi stack. Problems still might have
 occurred on individual transfers even when one of these functions return OK.

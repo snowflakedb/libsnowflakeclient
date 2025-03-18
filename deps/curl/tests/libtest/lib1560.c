@@ -274,7 +274,7 @@ static const struct testcase get_parts_list[] ={
   {"https://user@example.net",
    "https | user | [12] | [13] | example.net | [15] | / | [16] | [17]",
    0, 0, CURLUE_OK},
-#ifdef USE_WEBSOCKETS
+#ifndef CURL_DISABLE_WEBSOCKETS
   {"ws://example.com/color/?green",
    "ws | [11] | [12] | [13] | example.com | [15] | /color/ | green |"
    " [17]",
@@ -564,6 +564,10 @@ static const struct urltestcase get_url_list[] = {
    0, 0, CURLUE_OK},
   {"https://[fe80:0:0:0:409b::]:80/moo",
    "https://[fe80::409b:0:0:0]:80/moo",
+   0, 0, CURLUE_OK},
+  /* normalize to lower case */
+  {"https://[FE80:0:A:0:409B:0:0:0]:80/moo",
+   "https://[fe80:0:a:0:409b::]:80/moo",
    0, 0, CURLUE_OK},
   {"https://[::%25fakeit];80/moo",
    "",
@@ -1139,6 +1143,38 @@ static CURLUcode updateurl(CURLU *u, const char *cmd, unsigned int setflags)
 }
 
 static const struct redircase set_url_list[] = {
+  {"http://example.org#withs/ash", "/moo#frag",
+   "http://example.org/moo#frag",
+   0, 0, CURLUE_OK},
+  {"http://example.org/", "../path/././../././../moo",
+   "http://example.org/moo",
+   0, 0, CURLUE_OK},
+
+  {"http://example.org?bar/moo", "?weird",
+   "http://example.org/?weird", 0, 0, CURLUE_OK},
+  {"http://example.org/foo?bar", "?weird",
+   "http://example.org/foo?weird", 0, 0, CURLUE_OK},
+  {"http://example.org/foo", "?weird",
+   "http://example.org/foo?weird", 0, 0, CURLUE_OK},
+  {"http://example.org", "?weird",
+   "http://example.org/?weird", 0, 0, CURLUE_OK},
+  {"http://example.org/#original", "?weird#moo",
+   "http://example.org/?weird#moo", 0, 0, CURLUE_OK},
+
+  {"http://example.org?bar/moo#yes/path", "#new/slash",
+   "http://example.org/?bar/moo#new/slash", 0, 0, CURLUE_OK},
+  {"http://example.org/foo?bar", "#weird",
+   "http://example.org/foo?bar#weird", 0, 0, CURLUE_OK},
+  {"http://example.org/foo?bar#original", "#weird",
+   "http://example.org/foo?bar#weird", 0, 0, CURLUE_OK},
+  {"http://example.org/foo#original", "#weird",
+   "http://example.org/foo#weird", 0, 0, CURLUE_OK},
+  {"http://example.org/#original", "#weird",
+   "http://example.org/#weird", 0, 0, CURLUE_OK},
+  {"http://example.org#original", "#weird",
+   "http://example.org/#weird", 0, 0, CURLUE_OK},
+  {"http://example.org/foo?bar", "moo?hey#weird",
+   "http://example.org/moo?hey#weird", 0, 0, CURLUE_OK},
   {"http://example.org/",
    "../path/././../../moo",
    "http://example.org/moo",
@@ -1769,13 +1805,13 @@ static int huge(void)
     char *partp;
     msnprintf(total, sizeof(total),
               "%s://%s:%s@%s/%s?%s#%s",
-              (i == 0)? &bigpart[1] : smallpart,
-              (i == 1)? &bigpart[1] : smallpart,
-              (i == 2)? &bigpart[1] : smallpart,
-              (i == 3)? &bigpart[1] : smallpart,
-              (i == 4)? &bigpart[1] : smallpart,
-              (i == 5)? &bigpart[1] : smallpart,
-              (i == 6)? &bigpart[1] : smallpart);
+              (i == 0) ? &bigpart[1] : smallpart,
+              (i == 1) ? &bigpart[1] : smallpart,
+              (i == 2) ? &bigpart[1] : smallpart,
+              (i == 3) ? &bigpart[1] : smallpart,
+              (i == 4) ? &bigpart[1] : smallpart,
+              (i == 5) ? &bigpart[1] : smallpart,
+              (i == 6) ? &bigpart[1] : smallpart);
     rc = curl_url_set(urlp, CURLUPART_URL, total, CURLU_NON_SUPPORT_SCHEME);
     if((!i && (rc != CURLUE_BAD_SCHEME)) ||
        (i && rc)) {
