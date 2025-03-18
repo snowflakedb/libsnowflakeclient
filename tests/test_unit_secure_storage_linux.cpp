@@ -12,52 +12,7 @@
 #include "linux/CacheFile.hpp"
 
 #include "utils/test_setup.h"
-
-class EnvOverride
-{
-public:
-  EnvOverride(const EnvOverride&) = delete;
-  void operator=(const EnvOverride&) = delete;
-  EnvOverride(std::string envVar_, const boost::optional<std::string>& newValue_)
-    : envVar{std::move(envVar_)}
-    , oldValue{}
-  {
-    char buf[BUF_SIZE];
-    char* oldValueCstr = sf_getenv_s(envVar.c_str(), buf, BUF_SIZE);
-    if (oldValueCstr != nullptr)
-    {
-      oldValue = oldValueCstr;
-    }
-    if (newValue_)
-    {
-      sf_setenv(envVar.c_str(), newValue_.get().c_str());
-    }
-    else
-    {
-      sf_unsetenv(envVar.c_str());
-    }
-  }
-
-  EnvOverride(std::string envVar_, const std::string& newValue_)
-    : EnvOverride(std::move(envVar_), boost::make_optional(newValue_)) {}
-
-  ~EnvOverride()
-  {
-    if (oldValue)
-    {
-      sf_setenv(envVar.c_str(), oldValue->c_str());
-    }
-    else
-    {
-      sf_unsetenv(envVar.c_str());
-    }
-  }
-
-private:
-  constexpr static size_t BUF_SIZE = 1024;
-  std::string envVar;
-  boost::optional<std::string> oldValue;
-};
+#include "utils/EnvOverride.hpp"
 
 constexpr const char* CACHE_FILENAME = "credential_cache_v1.json";
 
@@ -218,6 +173,26 @@ void test_secure_storage_xdg_cache_home(void **)
   assert_permissions(std::string("cache_dir/snowflake/") + CACHE_FILENAME, boost::filesystem::owner_read | boost::filesystem::owner_write);
 }
 
+void test_secure_storage_update_key(void **)
+{
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
+
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
+
+  std::string token = "example_token";
+  std::string newToken = "new_token";
+  std::string retrievedToken;
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(token == retrievedToken);
+  assert_true(ss.storeToken(key, newToken) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(newToken == retrievedToken);
+}
+
 void test_secure_storage_fails_to_lock(void **)
 {
   boost::filesystem::remove_all("sf_cache_dir");
@@ -302,6 +277,7 @@ int main(void) {
       cmocka_unit_test(test_secure_storage_home_dir),
       cmocka_unit_test(test_secure_storage_c_api),
       cmocka_unit_test(test_secure_storage_fails_to_lock),
+      cmocka_unit_test(test_secure_storage_update_key),
       cmocka_unit_test(test_secure_storage_fails_to_find_cache_path),
       cmocka_unit_test(test_get_cache_dir_bad_path),
       cmocka_unit_test(test_get_cache_dir_not_a_dir)

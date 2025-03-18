@@ -263,7 +263,7 @@ namespace Client {
   void cacheFileUpdate(picojson::value &cache, const std::string &key, const std::string &credential)
   {
     picojson::object& tokens = getTokens(cache);
-    tokens.emplace(key, credential);
+    tokens[key] = picojson::value(credential);
   }
 
   void cacheFileRemove(picojson::value &cache, const std::string &key)
