@@ -313,10 +313,27 @@ void test_external_browser(void** unused)
     snowflake_term(sf);
 }
 
+void test_secure_storage_manual(void** unused) {
+    snowflake_global_init("Y:\\libsnowflakeclient\\", SF_LOG_TRACE, NULL);
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_secure_storage_manual") != 0) {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    secure_storage_ptr ss = secure_storage_init();
+    secure_storage_save_credential(ss, "abc.xd", "aa", ID_TOKEN, "kredki");
+    char* creds = secure_storage_get_credential(ss, "abc.xd", "aa", ID_TOKEN);
+    assert_string_equal(creds, "kredki");
+    secure_storage_free_credential(creds);
+}
+
 int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
     struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_secure_storage_manual),
         cmocka_unit_test(test_oauth_connect),
         cmocka_unit_test(test_mfa_connect_with_duo_passcode),
         cmocka_unit_test(test_mfa_connect_with_duo_push),

@@ -325,7 +325,7 @@ static void log_lock_func(void *udata, int lock) {
 
 /**
  * Reset the connection parameters with the returned parameteres
- * @param sf SF_CONNECT object
+ * @param sf SF_CONNECT [object]
  * @param parameters the returned parameters
  */
 static SF_STATUS STDCALL _reset_connection_parameters(

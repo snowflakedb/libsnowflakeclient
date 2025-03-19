@@ -31,6 +31,8 @@ namespace Client
   SecureStorageStatus SecureStorage::storeToken(const SecureStorageKey& key, const std::string& token)
   {
     auto targetOpt = convertTarget(key);
+    CXX_LOG_DEBUG("Storing token");
+
     if (!targetOpt)
     {
       CXX_LOG_ERROR("Cannot store token. Failed to convert key to string.");
@@ -61,6 +63,8 @@ namespace Client
 
   SecureStorageStatus SecureStorage::retrieveToken(const SecureStorageKey& key, std::string& token)
   {
+    CXX_LOG_DEBUG("Retrieving token");
+
     auto targetOpt = convertTarget(key);
     if (!targetOpt)
     {
@@ -101,6 +105,8 @@ namespace Client
 
   SecureStorageStatus SecureStorage::removeToken(const SecureStorageKey& key)
   {
+    CXX_LOG_DEBUG("Removing token");
+
     auto targetOpt = convertTarget(key);
     if (!targetOpt)
     {
