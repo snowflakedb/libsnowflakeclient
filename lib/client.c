@@ -22,6 +22,7 @@
 #include "query_context_cache.h"
 #include "snowflake_util.h"
 #include "heart_beat_background.h"
+#include "mutex.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -820,6 +821,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
     log_debug("get_maxretries: %d", sf->get_maxretries);
     log_debug("get_threshold: %d", sf->get_threshold);
+    log_debug("client_session_keep_alive: %s", sf->client_session_keep_alive ? "true" : "false");
+    log_debug("client_session_keep_alive: %d", sf->client_session_keep_alive_heartbeat_frequency);
 
     return SF_STATUS_SUCCESS;
 }
@@ -1068,7 +1071,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_heart_beat);
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
-        sf->is_heart_beat_debug_mode = SF_BOOLEAN_FALSE;
+
+        create_recursive_mutex(&sf->mutex_tokens, sf);
     }
 
     return sf;
@@ -1115,6 +1119,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     _mutex_term(&sf->mutex_parameters);
     _mutex_term(&sf->mutex_stage_bind);
     _mutex_term(&sf->mutex_heart_beat);
+    free_recursive_mutex(&sf->mutex_tokens);
 
     SF_FREE(sf->host);
     SF_FREE(sf->port);

@@ -32,6 +32,40 @@ namespace Snowflake
         private:
         };
 
+
+        /**
+         * Thin wrapper on regular mutex
+         */
+        class RecursiveMutex : public std::recursive_mutex
+        {
+        public:
+
+            /**
+             * Constructor
+             *
+             * @param klass
+             *   mutex class
+             *
+             * @param info
+             *   info about this mutex
+             *
+             * @param id
+             *   mutex unique id
+             */
+            RecursiveMutex(uint64_t id);
+
+            /**
+             * Create thin wrapper on top of the lock to capture thread contention
+             * when profiling
+             */
+            void lock();
+
+        private:
+
+            /** id of this mutex when it is not unique within the wait class */
+            uint64_t                m_id;
+        };
+
 #if defined(WIN32) || defined(_WIN64)
         /**
          * Mutex guard
@@ -43,6 +77,15 @@ namespace Snowflake
          */
         typedef std::unique_lock<Mutex> MutexUnique;
 
+        /**
+         * Recursive mutex guard
+         */
+        typedef std::lock_guard<RecursiveMutex> RecursiveMutexGuard;
+
+        /**
+         * Recursive mutex unique
+         */
+        typedef std::unique_lock<RecursiveMutex> RecursiveMutexUnique;
 #else
         /**
          * Lock guard
@@ -66,6 +109,15 @@ namespace Snowflake
          */
         typedef UniqueLock<Mutex> MutexUnique;
 
+        /**
+         * Recursive mutex guard
+         */
+        typedef LockGuard<RecursiveMutex> RecursiveMutexGuard;
+
+        /**
+         * Recursive mutex unique
+         */
+        typedef UniqueLock<RecursiveMutex> RecursiveMutexUnique;
 #endif
 
     } // namespace Client

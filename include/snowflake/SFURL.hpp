@@ -427,11 +427,6 @@ public:
      return SFURL().scheme(protocol).host(host).port(port);
   }
 
-  inline static SFURL getServerURLSync(SF_CONNECT* sf)
-  {
-      return SFURL().scheme(sf->protocol).host(sf->host).port(sf->port);
-  }
-
 private:
 
   /**

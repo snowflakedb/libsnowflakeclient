@@ -1333,3 +1333,80 @@ uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_
     }
     return floor(heart_beat_frequency);
 }
+
+sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type)
+{
+    sf_bool ret = SF_BOOLEAN_TRUE;
+    char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
+    uuid4_generate(requestid);
+
+    URL_KEY_VALUE url_params[] = {
+        {.key = "request_id=", .value = requestid, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+    };
+
+    void* curl_desc = get_curl_desc_from_pool(RENEW_SESSION_URL, sf->proxy, sf->no_proxy);
+    CURL* curl = get_curl_from_desc(curl_desc);
+    char* encoded_url = NULL;
+
+    cJSON* renew_info = snowflake_cJSON_CreateObject();
+    snowflake_cJSON_AddStringToObject(renew_info, "oldSessionToken", sf->token);
+    snowflake_cJSON_AddNumberToObject(renew_info, "requestType", request_type);
+    char* renew_body = snowflake_cJSON_Print(renew_info);
+
+    cJSON* resp = NULL;
+    cJSON* codeJson = NULL;
+    char* s_resp = NULL;
+    SF_HEADER* my_header = NULL;
+    SF_ERROR_STRUCT* err = &sf->error;
+
+    int64 renew_timeout = auth_get_renew_timeout(sf);
+    int64 elapsed_time = 0;
+    int8 retried_count = 0;
+    sf_bool is_renew = SF_BOOLEAN_FALSE;
+    sf_bool renew_injection = SF_BOOLEAN_FALSE;
+
+    my_header = sf_header_create();
+    my_header->use_application_json_accept_type = SF_BOOLEAN_TRUE;
+    my_header->renew_session = SF_BOOLEAN_TRUE;
+    if (!create_header(sf, my_header, err)) {
+    }
+
+    encoded_url = encode_url(curl, sf->protocol, sf->host,
+        sf->port, RENEW_SESSION_URL, url_params, sizeof(url_params) / sizeof(URL_KEY_VALUE),
+        err, NULL);
+
+    if (curl_post_call(sf, curl, encoded_url, my_header, renew_body, &resp,
+        err, renew_timeout, get_login_retry_count(sf), get_retry_timeout(sf),
+        elapsed_time, retried_count, is_renew,
+        renew_injection))
+    {
+        sf_bool success = SF_BOOLEAN_FALSE;
+        if (json_copy_bool(&success, resp, "success") == SF_JSON_ERROR_NONE && !success)
+        {
+            char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp, "code"));
+
+            if (strcmp(code, MASTER_TOKEN_EXPIRED_CODE) == 0 ||
+                strcmp(code, MASTER_TOKEN_NOT_FOUND) == 0 ||
+                strcmp(code, GONE_SESSION_CODE) == 0 ||
+                strcmp(code, ID_TOKEN_EXPIRE_CODE) == 0 ||
+                strcmp(code, MASTER_TOKEN_INVALID_CODE) == 0)
+            {
+                log_trace("sf::Connection::tokenRequest::Token Expired. Reauthenticating...: %d", code);
+                SF_STATUS status = snowflake_connect(sf);
+                ret == SF_STATUS_SUCCESS ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            }
+        }
+
+        cJSON* data = snowflake_cJSON_GetObjectItem(resp, "data");
+        ret = set_tokens(sf, data, "sessionToken", "masterToken", &sf->error) || set_tokens(sf, data, "token", "masterToken", &sf->error);
+    }
+    else
+    {
+        log_trace("sf::HeartbeatBackground::heartBeatAll::Encountered error when heartbeat sync");
+        ret = SF_BOOLEAN_FALSE;
+    }
+    sf_header_destroy(my_header);
+    free_curl_desc(curl_desc);
+    SF_FREE(encoded_url);
+    return ret;
+}

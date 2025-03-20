@@ -9,12 +9,42 @@
 #include <map>
 #include "Mutex.hpp"
 #include "../include/snowflake/client.h"
+#include "../lib/connection.h"
 #include "../include/snowflake/SFURL.hpp"
 
 namespace Snowflake
 {
     namespace Client
     {
+        typedef struct _heartbeatreq_s
+        {
+            _heartbeatreq_s(SF_CONNECT* sf, const std::string& url,
+                SF_HEADER* header)
+                : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header),
+                networkTimeout(sf->network_timeout), isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode),
+                retryCurlCount(sf->retry_on_curle_couldnt_connect_count),maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_retry_timeout(sf)) {
+                if (sf->proxy)
+                {
+                    proxy = sf->proxy;
+                }
+                if (sf->no_proxy)
+                {
+                    noProxy = sf->no_proxy;
+                }
+            }
+            std::string sessionId;
+            std::string heartBeatURL;
+            SF_HEADER* httpExtraHeaders;
+            std::string proxy;
+            std::string noProxy;
+            int8 maxRetryCount;
+            int64 retryTimeout;
+            int64 networkTimeout;
+            sf_bool isOcspOpen;
+            sf_bool isInsecuremode;
+            sf_bool retryCurlCount;
+        } heartbeatReq;
+
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy
         {
@@ -38,6 +68,10 @@ namespace Snowflake
             void removeConnection(SF_CONNECT* connection);
 
         private:
+            heartbeatReq genHeartBeatReq(SF_CONNECT* connection);
+
+            void HeartbeatBackground::freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue);
+
             /** worker thread that is doing heartbeat*/
             std::thread* m_worker = NULL;
 
@@ -58,8 +92,8 @@ namespace Snowflake
 
             // send out queued heartbeat request, put request needs session renew
             // into renew queue.
-            void sendQueuedHeartBeatReq(std::vector<SF_CONNECT*>& heartBeatQueue,
-                std::vector<SF_CONNECT*>* renewQueue);
+            void sendQueuedHeartBeatReq(std::vector<heartbeatReq>& heartBeatQueue,
+                std::vector<heartbeatReq>* renewQueue);
 
             /** flags indicating whether worker thread should end or not */
             bool m_workerEnded = false;
