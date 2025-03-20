@@ -1377,7 +1377,7 @@ sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type)
 
     if (curl_post_call(sf, curl, encoded_url, my_header, renew_body, &resp,
         err, renew_timeout, get_login_retry_count(sf), get_retry_timeout(sf),
-        elapsed_time, retried_count, is_renew,
+        &elapsed_time, &retried_count, &is_renew,
         renew_injection))
     {
         sf_bool success = SF_BOOLEAN_FALSE;
