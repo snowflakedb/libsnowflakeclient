@@ -33,7 +33,7 @@ set(SOURCE_FILES
         include/snowflake/version.h
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
-	include/snowflake/client_config_parser.h
+        include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -160,6 +160,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/IAuth.hpp
         include/snowflake/BindUploader.hpp
         include/snowflake/SecureStorage.hpp
+        include/snowflake/TomlConfigParser.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -189,6 +190,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/HeartbeatBackground.hpp
         cpp/lib/Mutex.cpp
         cpp/lib/Mutex.hpp
+        cpp/lib/TomlConfigParser.cpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorageApple.cpp
@@ -378,6 +380,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
 endif()
@@ -394,6 +397,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
 endif()
@@ -409,6 +413,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
