@@ -1072,7 +1072,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
 
-        create_recursive_mutex(&sf->mutex_tokens, sf);
+        create_recursive_mutex(&sf->mutex_tokens, (uint64_t)&sf);
     }
 
     return sf;
