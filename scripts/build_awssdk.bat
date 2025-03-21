@@ -44,6 +44,7 @@ set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
 rd /S /Q %AWS_SOURCE_DIR%
 git clone --depth 1 --recurse-submodules --branch %aws_src_version% https://github.com/aws/aws-sdk-cpp.git %AWS_SOURCE_DIR%
+:: Remove patch in SNOW-1999220
 xcopy /s /y %AWS_PATCH_DIR% %AWS_SOURCE_DIR%
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
