@@ -4,7 +4,7 @@
 ::
 @echo off
 set aws_src_version=1.11.283
-set aws_build_version=8
+set aws_build_version=9
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -38,8 +38,14 @@ if /I "%platform%"=="x86" (
 )
 
 set AWS_SOURCE_DIR=%scriptdir%..\deps\%aws_dir%\
+set AWS_PATCH_DIR=%scriptdir%..\deps\patches\%aws_dir%\
 set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
 set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
+
+rd /S /Q %AWS_SOURCE_DIR%
+git clone --depth 1 --recurse-submodules --branch %aws_src_version% https://github.com/aws/aws-sdk-cpp.git %AWS_SOURCE_DIR%
+:: Remove patch in SNOW-1999220
+xcopy /s /y %AWS_PATCH_DIR% %AWS_SOURCE_DIR%
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
 md %AWS_CMAKE_BUILD_DIR%
@@ -56,7 +62,7 @@ set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
--DBUILD_ONLY=s3 ^
+-DBUILD_ONLY="s3;sts" ^
 -DFORCE_CURL=on ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
 -DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
@@ -65,6 +71,7 @@ cmake %AWS_SOURCE_DIR% ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
 -DCMAKE_C_FLAGS="/D CURL_STATICLIB /Z7 /W3 /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
 -DCMAKE_CXX_FLAGS="/D WIN32 /D _WINDOWS /D CURL_STATICLIB /EHsc /GR /Z7 /W3 /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
+-DAWS_SDK_WARNINGS_ARE_ERRORS=OFF ^
 -DBUILD_SHARED_LIBS=off ^
 -DSTATIC_LINKING=on ^
 -DENABLE_UNITY_BUILD=on ^

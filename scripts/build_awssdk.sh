@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 AWS_SRC_VERSION=1.11.283
-AWS_BUILD_VERSION=8
+AWS_BUILD_VERSION=9
 AWS_DIR=aws-sdk-cpp-$AWS_SRC_VERSION
 AWS_VERSION=$AWS_SRC_VERSION.$AWS_BUILD_VERSION
 
@@ -29,6 +29,10 @@ AWS_SOURCE_DIR=$DEPS_DIR/${AWS_DIR}
 AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 
+# Download aws sdk
+rm -rf $AWS_SOURCE_DIR
+git clone --depth 1 --recurse-submodules --branch $AWS_SRC_VERSION https://github.com/aws/aws-sdk-cpp.git $AWS_SOURCE_DIR
+
 aws_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     aws_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
@@ -39,7 +43,7 @@ aws_configure_opts+=(
     "-DCMAKE_C_COMPILER=$GCC"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
     "-DCMAKE_CXX_COMPILER=$GXX"
-    "-DBUILD_ONLY=s3"
+    "-DBUILD_ONLY=s3;sts"
     "-DCMAKE_INSTALL_PREFIX=$AWS_BUILD_DIR"
     "-DBUILD_SHARED_LIBS=OFF"
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
