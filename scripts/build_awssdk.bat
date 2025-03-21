@@ -38,12 +38,13 @@ if /I "%platform%"=="x86" (
 )
 
 set AWS_SOURCE_DIR=%scriptdir%..\deps\%aws_dir%\
+set AWS_PATCH_DIR=%scriptdir%..\deps\patches\%aws_dir%\
 set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%build_type%
 set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
-# Download aws sdk
 rd /S /Q %AWS_SOURCE_DIR%
 git clone --depth 1 --recurse-submodules --branch %aws_src_version% https://github.com/aws/aws-sdk-cpp.git %AWS_SOURCE_DIR%
+xcopy /s /y %AWS_PATCH_DIR% %AWS_SOURCE_DIR%
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
 md %AWS_CMAKE_BUILD_DIR%
