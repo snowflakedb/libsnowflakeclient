@@ -135,8 +135,8 @@ void test_connect_with_client_session_keep_alive(void** unused)
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      //cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
-      //cmocka_unit_test(test_connect_with_token_request),
+      cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
+      cmocka_unit_test(test_connect_with_token_request),
       cmocka_unit_test(test_connect_with_client_session_keep_alive),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
