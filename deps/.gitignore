@@ -1,2 +1,3 @@
 azure-storage-cpplite/
 util-linux/
+deps/aws-sdk-cpp*
