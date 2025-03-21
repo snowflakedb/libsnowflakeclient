@@ -70,7 +70,7 @@ namespace Snowflake
         private:
             heartbeatReq genHeartBeatReq(SF_CONNECT* connection);
 
-            void HeartbeatBackground::freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue);
+            void freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue);
 
             /** worker thread that is doing heartbeat*/
             std::thread* m_worker = NULL;
