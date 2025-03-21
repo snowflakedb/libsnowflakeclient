@@ -1393,7 +1393,7 @@ sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type)
             {
                 log_trace("sf::Connection::tokenRequest::Token Expired. Reauthenticating...: %d", code);
                 SF_STATUS status = snowflake_connect(sf);
-                ret == SF_STATUS_SUCCESS ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+                ret = status == SF_STATUS_SUCCESS ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
             }
         }
 
