@@ -15,11 +15,14 @@ add_compile_definitions(LOG_USE_COLOR)
 
 option(BUILD_TESTS "True if build tests" on)
 option(MOCK "True if mock should be used" off)
+option(HEARTBEAT "True if HEARTBEAT_DEBUG should be used" off)
 
 set(OPENSSL_VERSION_NUMBER  0x11100000L)
 
 # Developers can uncomment this to enable mock builds on their local VMs
 #set(MOCK TRUE)
+# Developers can uncomment this to enable HEARTBEAT_DEBUG builds on their local VMs
+#set(HEARTBEAT TRUE)
 
 # Generates compile_commands.json file for clangd to parse.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
