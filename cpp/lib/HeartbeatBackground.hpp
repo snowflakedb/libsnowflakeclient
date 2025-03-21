@@ -44,7 +44,6 @@ namespace Snowflake
             sf_bool retryCurlCount;
         } heartbeatReq;
 
-
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy
         {
         public:
@@ -99,7 +98,7 @@ namespace Snowflake
 
             bool m_isDebug = false;
         };
-    }
-}
+    } // namespace Client
+} // namespace Snowflake
 
 #endif //SNOWFLAKE_HEARTBEATBACKGROUND_HPP

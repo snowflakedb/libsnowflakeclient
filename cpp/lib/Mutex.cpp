@@ -12,7 +12,7 @@ extern "C" {
     {
         delete static_cast<Snowflake::Client::RecursiveMutex*>(*mutex);
     }
-}
+} // extern "C"
 
 namespace Snowflake
 {
@@ -54,5 +54,5 @@ namespace Snowflake
             std::recursive_mutex::lock();
         }
 
-    }
-}
+    } // namespace Client
+} // namespace Snowflak

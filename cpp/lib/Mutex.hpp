@@ -121,5 +121,5 @@ namespace Snowflake
 #endif
 
     } // namespace Client
-}// namespace Snowflake
+} // namespace Snowflake
 #endif  // SNOWFLAKE_MUTEX_HPP

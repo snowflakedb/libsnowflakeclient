@@ -56,7 +56,6 @@ extern "C" {
 
 } // extern "C"
 
-
 namespace Snowflake
 {
     namespace Client
@@ -314,5 +313,5 @@ namespace Snowflake
             HeartBeatQueue.clear();
         }
 
-    }
-}
+    } // namespace Client
+} // namespace Snowflake
