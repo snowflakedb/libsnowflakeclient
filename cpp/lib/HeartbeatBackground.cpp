@@ -129,7 +129,6 @@ namespace Snowflake
                 heartbeatReq conn = HeartBeatQueue[i];
                 const std::string& sid = conn.sessionId;
                 int maxRetryCount = conn.maxRetryCount;
-                int64 retrytimeout = conn.retryTimeout;
                 std::string destination = conn.heartBeatURL;
                 SF_HEADER* httpExtraHeaders = conn.httpExtraHeaders;
 
