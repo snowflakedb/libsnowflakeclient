@@ -12,6 +12,7 @@ SET(TESTS_C
         test_unit_logger
         test_unit_retry_context
         test_connect
+        test_heartbeat
         test_connect_negative
         test_bind_params
         test_bind_named_params
@@ -317,6 +318,10 @@ else()
             )
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
+        if (HEARTBEAT)
+            target_compile_definitions(${T} PRIVATE HEARTBEAT_DEBUG)
+            target_compile_definitions(snowflakeclient PRIVATE HEARTBEAT_DEBUG)
+        endif()
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
         if (LINUX)
