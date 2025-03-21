@@ -21,8 +21,8 @@ namespace Snowflake
             _heartbeatreq_s(SF_CONNECT* sf, const std::string& url,
                 SF_HEADER* header)
                 : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header),
-                networkTimeout(sf->network_timeout), isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode),
-                retryCurlCount(sf->retry_on_curle_couldnt_connect_count),maxRetryCount(get_login_retry_count(sf)) {
+                maxRetryCount(get_login_retry_count(sf)), networkTimeout(sf->network_timeout), 
+                isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count) {
                 if (sf->proxy)
                 {
                     proxy = sf->proxy;
@@ -35,13 +35,13 @@ namespace Snowflake
             std::string sessionId;
             std::string heartBeatURL;
             SF_HEADER* httpExtraHeaders;
-            std::string proxy;
-            std::string noProxy;
             int8 maxRetryCount;
             int64 networkTimeout;
             sf_bool isOcspOpen;
             sf_bool isInsecuremode;
             sf_bool retryCurlCount;
+            std::string proxy;
+            std::string noProxy;
         } heartbeatReq;
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy

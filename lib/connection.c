@@ -1337,7 +1337,7 @@ uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_
 sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type)
 {
     sf_bool ret = SF_BOOLEAN_TRUE;
-    char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
+    char requestid[SF_UUID4_LEN];
     uuid4_generate(requestid);
 
     URL_KEY_VALUE url_params[] = {
@@ -1354,8 +1354,6 @@ sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type)
     char* renew_body = snowflake_cJSON_Print(renew_info);
 
     cJSON* resp = NULL;
-    cJSON* codeJson = NULL;
-    char* s_resp = NULL;
     SF_HEADER* my_header = NULL;
     SF_ERROR_STRUCT* err = &sf->error;
 
