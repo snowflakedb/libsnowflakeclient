@@ -1,0 +1,130 @@
+---
+name: Linters
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
+jobs:
+  cppcheck:
+    # ubuntu-latest introduced a newer gcc version that cannot compile cppcheck 2.3
+    # TODO: upgrade to latest cppcheck and revert to ubuntu-latest
+    #       see https://github.com/aws/s2n-tls/issues/3656
+    runs-on: ubuntu-20.04
+    env:
+      CPPCHECK_INSTALL_DIR: test-deps/cppcheck
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup
+        run: source ./codebuild/bin/s2n_setup_env.sh
+
+      - name: Cache
+        id: cache
+        uses: actions/cache@v2.1.4
+        continue-on-error: true
+        with:
+          path: ${{ env.CPPCHECK_INSTALL_DIR }}
+          key: cppcheck-2.3-${{ env.CPPCHECK_INSTALL_DIR }}
+
+      - name: Install
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: ./codebuild/bin/install_cppcheck.sh "$CPPCHECK_INSTALL_DIR"
+
+      - name: Check
+        run: ./codebuild/bin/run_cppcheck.sh "$CPPCHECK_INSTALL_DIR"
+
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup
+        run: source ./codebuild/bin/s2n_setup_env.sh
+
+      - name: Check
+        run: ./codebuild/bin/copyright_mistake_scanner.sh
+
+  simple-mistakes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup
+        run: source ./codebuild/bin/s2n_setup_env.sh
+
+      - name: Check
+        run: ./codebuild/bin/grep_simple_mistakes.sh
+
+  comments:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup
+        run: source ./codebuild/bin/s2n_setup_env.sh
+
+      - name: Install
+        run: sudo apt update && sudo apt install -y kwstyle
+
+      - name: Check
+        run: |
+          ./codebuild/bin/run_kwstyle.sh
+          ./codebuild/bin/cpp_style_comment_linter.sh
+  pepeight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Run autopep8
+        id: autopep8
+        uses: peter-evans/autopep8@v2
+        with:
+          args: --diff --exit-code .
+      - name: Check exit code
+        if: steps.autopep8.outputs.exit-code != 0
+        run: |
+            echo "Run 'autopep8 --in-place .' to fix"
+            exit 1
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: clang-format check
+        uses: harrisonkaiser/clang-format-action@verbose
+        with:
+          clang-format-version: '15'
+          include-regex: '^(\.\/)?(api|bin|crypto|stuffer|error|tls|utils|tests\/unit|tests\/testlib|docs\/examples).*\.(c|h)$'
+  nixflake:
+    # The nix develop changes contain broken nixpkg dependenecies; the allow/impure flags workaround this.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: nixbuild/nix-quick-install-action@v21
+        with:
+          nix_conf: experimental-features = nix-command flakes
+      - name: nix flake check
+        run: NIXPKGS_ALLOW_BROKEN=1 NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1 nix flake check --impure
+  nixfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: nixbuild/nix-quick-install-action@v21
+        with:
+          nix_conf: experimental-features = nix-command flakes
+      - name: nix fmt
+        run: nix fmt $(find . -name \*nix -type f -not -path "./.git/*")
+      - name: Changed files
+        id: dirty
+        run: |
+          echo "Checking nix files with: nix fmt ..."
+          git diff --exit-code
+        continue-on-error: true
+      - name: Failure case
+        if: steps.dirty.outcome != 'success'
+        run: |
+          echo "Please fix formatting with nix fmt (file)"
+          exit 1
+      - name: Success
+        run: echo "All nix files passed format check"

@@ -1,0 +1,23 @@
+name: Lint
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+      - 'docs'
+
+jobs:
+  clang-format:
+
+    runs-on: ubuntu-22.04 # latest
+
+    steps:
+    - name: Checkout Sources
+      uses: actions/checkout@v1
+
+    - name: clang-format lint
+      uses: DoozyX/clang-format-lint-action@v0.13
+      with:
+        source: './include ./source ./tests'
+        exclude: './include/aws/crt/external ./source/external'
+        clangFormatVersion: 11.1.0

@@ -1,0 +1,204 @@
+---
+name: Rust Bindings
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
+
+env:
+  # Pin the nightly toolchain to prevent breakage.
+  # This should be occasionally updated.
+  RUST_NIGHTLY_TOOLCHAIN: nightly-2022-08-03
+  ROOT_PATH: bindings/rust
+
+jobs:
+  generate:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          toolchain: stable
+          override: true
+
+      - uses: camshaft/rust-cache@v1
+
+      - name: Generate
+        run: ${{env.ROOT_PATH}}/generate.sh
+
+      - name: Tests
+        working-directory: ${{env.ROOT_PATH}}
+        run: cargo test --all-features
+
+      - name: Test external build
+        # if this test is failing, make sure that api headers are appropriately
+        # included. For a symbol to be visible in a shared lib, the
+        # __attribute__((visibility("default"))) label must be on a declaration
+        # in the same unit of compilation as the definition. Generally this just
+        # means that if the linker can't resolve foo_method in tls/foo.c, you
+        # forgot to include api/unstable/foo.h in tls/foo.c
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          cmake . -Bbuild -DBUILD_SHARED_LIBS=on -DBUILD_TESTING=off
+          cmake --build build -- -j $(nproc)
+
+          export S2N_TLS_LIB_DIR=`pwd`/build/lib
+          export S2N_TLS_INCLUDE_DIR=`pwd`/api
+          export LD_LIBRARY_PATH=$S2N_TLS_LIB_DIR:$LD_LIBRARY_PATH
+
+          cd ${{env.ROOT_PATH}}
+          ./generate.sh
+          ldd target/debug/integration | grep libs2n.so
+
+  # our benchmark testing includes interop tests between s2n-tls, rustls, and
+  # openssl
+  harness-interop-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          toolchain: stable
+          override: true
+
+      - name: generate bindings
+        run: ${{env.ROOT_PATH}}/generate.sh --skip-tests
+
+      - name: bench tests
+        working-directory: ${{env.ROOT_PATH}}/bench
+        run: cargo test
+
+  generate-openssl-102:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          toolchain: stable
+          override: true
+
+      - uses: camshaft/rust-cache@v1
+
+      - name: Cache OpenSSL 1.0.2
+        id: cache-openssl
+        uses: actions/cache@v3
+        with:
+          path: ~/openssl-102/install
+          key: ${{ runner.os }}-openssl-102
+
+      - if: ${{ steps.cache-openssl.outputs.cache-hit != 'true' }}
+        name: Install OpenSSL 1.0.2
+        run: |
+          mkdir ~/openssl-102
+          pushd ~/openssl-102
+
+          mkdir install
+          install_dir="$(pwd)"/install
+
+          wget https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz
+          tar -xzvf openssl-1.0.2u.tar.gz
+
+          pushd openssl-1.0.2u
+          ./config --prefix="${install_dir}" --openssldir="${install_dir}"/openssl
+          make
+          make install
+          popd
+
+          popd
+
+      - name: Generate
+        run: OPENSSL_DIR=~/openssl-102/install ${{env.ROOT_PATH}}/generate.sh
+
+      - name: Tests
+        working-directory: ${{env.ROOT_PATH}}
+        run: cargo test --all-features
+
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - uses: actions-rs/toolchain@v1.0.7
+        id: toolchain
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_TOOLCHAIN }}
+          profile: minimal
+          override: true
+          components: rustfmt
+
+      - uses: camshaft/rust-cache@v1
+
+      # We don't need to format the generated files,
+      # but if they don't exist other code breaks.
+      - name: Generate
+        run: ./${{env.ROOT_PATH}}/generate.sh
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: fmt
+          args: --manifest-path ${{env.ROOT_PATH}}/Cargo.toml --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - uses: actions-rs/toolchain@v1.0.7
+        id: toolchain
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: clippy
+
+      - uses: camshaft/rust-cache@v1
+
+      # Enforce that clippy's msrv matches rust-toolchain
+      - name: Check MSRV
+        run: grep $(cat ${{env.ROOT_PATH}}/rust-toolchain) ${{env.ROOT_PATH}}/.clippy.toml
+
+      # We don't need to format the generated files,
+      # but if they don't exist other code breaks.
+      - name: Generate
+        run: ${{env.ROOT_PATH}}/generate.sh
+
+      # TODO translate json reports to in-action warnings
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: clippy
+          args: --manifest-path ${{env.ROOT_PATH}}/Cargo.toml --all-targets -- -D warnings
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      # Enforce crate msrv matches rust-toolchain
+      - name: Check MSRV of s2n-tls
+        run: grep "rust-version = \"$(cat ${{env.ROOT_PATH}}/rust-toolchain)\"" ${{env.ROOT_PATH}}/s2n-tls/Cargo.toml
+
+      - name: Check MSRV of s2n-tls-sys
+        run: grep "rust-version = \"$(cat ${{env.ROOT_PATH}}/rust-toolchain)\"" ${{env.ROOT_PATH}}/s2n-tls-sys/templates/Cargo.template
+
+      - name: Check MSRV of s2n-tokio
+        run: grep "rust-version = \"$(cat ${{env.ROOT_PATH}}/rust-toolchain)\"" ${{env.ROOT_PATH}}/s2n-tls-tokio/Cargo.toml
+

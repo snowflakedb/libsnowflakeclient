@@ -1,0 +1,116 @@
+#if(($serviceNamespace == "S3Crt" && $operation.s3CrtEnabled) || $operation.getRequest().getShape().hasEventStreamMembers())
+#set($meterNeeded = true)
+#set($indent = "")
+#else
+#set($meterNeeded = false)
+#set($indent = "    ")
+#end
+#if($meterNeeded)
+${indent}  auto meter = m_telemetryProvider->getMeter(this->GetServiceClientName(), {});
+#end
+#if(!$operation.hasEndpointDiscoveryTrait)
+${indent}  auto endpointResolutionOutcome = TracingUtils::MakeCallWithTiming<ResolveEndpointOutcome>(
+${indent}      [&]() -> ResolveEndpointOutcome { return m_endpointProvider->ResolveEndpoint(request.GetEndpointContextParams()); },
+${indent}      TracingUtils::SMITHY_CLIENT_ENDPOINT_RESOLUTION_METRIC,
+${indent}      *meter,
+${indent}      {{TracingUtils::SMITHY_METHOD_DIMENSION, request.GetServiceRequestName()}, {TracingUtils::SMITHY_SERVICE_DIMENSION, this->GetServiceClientName()}});
+#else
+${indent}  if (!enableEndpointDiscovery || !endpointResolutionOutcome.IsSuccess() || endpointResolutionOutcome.GetResult().GetURL().empty()) {
+${indent}      endpointResolutionOutcome = TracingUtils::MakeCallWithTiming<ResolveEndpointOutcome>(
+${indent}          [&]() -> ResolveEndpointOutcome { return m_endpointProvider->ResolveEndpoint(request.GetEndpointContextParams()); },
+${indent}          TracingUtils::SMITHY_CLIENT_ENDPOINT_RESOLUTION_METRIC,
+${indent}          *meter,
+${indent}          {{TracingUtils::SMITHY_METHOD_DIMENSION, request.GetServiceRequestName()}, {TracingUtils::SMITHY_SERVICE_DIMENSION, this->GetServiceClientName()}});
+${indent}  }
+#end
+#if(!$operation.request.shape.hasEventStreamMembers() && !($serviceNamespace == "S3Crt" && $operation.s3CrtEnabled))
+${indent}  AWS_OPERATION_CHECK_SUCCESS(endpointResolutionOutcome, ${operation.name}, CoreErrors, CoreErrors::ENDPOINT_RESOLUTION_FAILURE, endpointResolutionOutcome.GetError().GetMessage());
+#if($operation.hasEndpointTrait)## Note: EndpointDiscovery Trait is not Endpoint Trait
+${indent}  auto addPrefixErr = endpointResolutionOutcome.GetResult().AddPrefixIfMissing(${operation.endpoint.constructHostPrefixString("request")});
+${indent}  AWS_CHECK(SERVICE_NAME, !addPrefixErr, addPrefixErr->GetMessage(), ${operation.name}Outcome(addPrefixErr.value()));
+#end
+#else
+${indent}  if (!endpointResolutionOutcome.IsSuccess()) {
+${indent}      handler(this, request, ${operation.name}Outcome(Aws::Client::AWSError<CoreErrors>(
+${indent}          CoreErrors::ENDPOINT_RESOLUTION_FAILURE, "ENDPOINT_RESOLUTION_FAILURE", endpointResolutionOutcome.GetError().GetMessage(), false)), handlerContext);
+${indent}      return;
+${indent}  }
+#end
+#if($operation.http.requestUri.contains("?"))
+${indent}  Aws::StringStream ss;
+#end
+#set($uriParts = $operation.http.requestUriParts)
+#set($uriVars = $operation.http.requestParameters)
+#if(!$startIndex)
+#set($startIndex = 0)
+#end
+#set($partIndex = 1)
+#set($queryStart = false)
+#if($uriParts.size() > $startIndex)
+#set($uriPartString = ${uriParts.get($startIndex)})
+#if($uriPartString.contains("?"))## if (request uri contains query) ----------
+#set($queryStart = true)
+#set($pathAndQuery = $operation.http.splitUriPartIntoPathAndQuery($uriPartString))
+#if(!$pathAndQuery.get(0).isEmpty())
+#if($pathAndQuery.get(0).toLowerCase().contains("resourcearn"))
+${indent}  endpointResolutionOutcome.GetResult().SetRfc3986Encoded(true);
+#end
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegments("${pathAndQuery.get(0)}");
+#end
+${indent}  ss.str("${pathAndQuery.get(1)}");
+#elseif(!$uriPartString.equals("/"))
+#if($uriPartString.get(0).toLowerCase().contains("resourcearn"))
+${indent}  endpointResolutionOutcome.GetResult().SetRfc3986Encoded(true);
+#end
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegments("$uriPartString");
+#end## ---------------------------- if (request uri contains query) end ------
+#foreach($var in $uriVars)## for (parameter in request uri parameters) -------
+#set($varIndex = $partIndex - 1)
+#set($uriVar = $uriVars.get($varIndex).replace('+', ''))
+#set($greedySyntax = $uriVars.get($varIndex).contains("+"))
+#if(!$skipFirst)
+#set($partShapeMember = $operation.request.shape.getMemberByLocationName($uriVar))
+#if($partShapeMember.shape.enum)
+#set($parameter = "${partShapeMember.shape.name}Mapper::GetNameFor${partShapeMember.shape.name}(request.Get${CppViewHelper.convertToUpperCamel($operation.request.shape.getMemberNameByLocationName($uriVar))}())")
+#else
+#set($parameter = "request.Get${CppViewHelper.convertToUpperCamel($operation.request.shape.getMemberNameByLocationName($uriVar))}()")
+#end
+#if($queryStart)
+${indent}  ss << $parameter;
+#else
+#if($greedySyntax)
+#if($parameter.toLowerCase().contains("resourcearn"))
+${indent}  endpointResolutionOutcome.GetResult().SetRfc3986Encoded(true);
+#end
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegments($parameter);
+#else
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegment($parameter);
+#end
+#end
+#if($uriParts.size() > $partIndex)
+#set($uriPartString = "${uriParts.get($partIndex)}")
+#if(!$queryStart && $uriPartString.contains("?"))
+#set($queryStart = true)
+#set($pathAndQuery = $operation.http.splitUriPartIntoPathAndQuery($uriPartString))
+#if(!$pathAndQuery.get(0).isEmpty())
+#if($pathAndQuery.get(0).toLowerCase().contains("resourcearn"))
+${indent}  endpointResolutionOutcome.GetResult().SetRfc3986Encoded(true);
+#end
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegments("${pathAndQuery.get(0)}");
+#end
+${indent}  ss.str("${pathAndQuery.get(1)}");
+#elseif(!$uriPartString.equals("/"))
+#if($uriPartString.toLowerCase().contains("resourcearn"))
+${indent}  endpointResolutionOutcome.GetResult().SetRfc3986Encoded(true);
+#end
+${indent}  endpointResolutionOutcome.GetResult().AddPathSegments("$uriPartString");
+#end
+#end
+#end## --------------------- if !skipFirst end ---
+#set($partIndex = $partIndex + 1)
+#set($skipFirst = false)
+#end## --------------------- if uriParts.size() > startIndex end ---
+#end## --------------------- for (parameter in request uri parameters) end ---
+#if($queryStart)
+${indent}  endpointResolutionOutcome.GetResult().SetQueryString(ss.str());
+#end

@@ -1,0 +1,21 @@
+name: cspell
+
+on: [push]
+
+jobs:
+  cspell:
+    name: cspell
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      with:
+        path: aws-sdk-cpp
+    - name: Install Dependencies
+      run: |
+        sudo npm install -g cspell
+    - name: cspell
+      run: |
+        cd aws-sdk-cpp
+        sudo cspell --silent --fail-fast "src/**/*.txt" "*.txt" "src/aws-cpp-sdk-core/**/*.h" "src/aws-cpp-sdk-core/**/*.cpp"
+        if [ $? -ne 0  ]; then sudo cspell "src/**/*.txt" "*.txt" "src/aws-cpp-sdk-core/**/*.h" "src/aws-cpp-sdk-core/**/*.cpp"; exit 1; fi;

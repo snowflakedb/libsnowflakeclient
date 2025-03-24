@@ -1,0 +1,13 @@
+TAGS
+cbmc.log
+coverage.xml
+gotos
+html
+logs
+property.xml
+
+proofs/output
+
+.litani_cache_dir
+.ninja_log
+.ninja_deps
