@@ -150,10 +150,6 @@ void test_multiple_statements() {
   snowflake_term(sf);
 }
 
-void bind_param_thread(SF_STMT *sfstmt, SF_BIND_INPUT *input_array) {
-  snowflake_bind_param_array(sfstmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
-}
-
 void test_bind_params() {
   int array_size = 100000;
   int64 *int64_array = NULL;
