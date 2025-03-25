@@ -643,6 +643,7 @@ typedef struct SF_TIMESTAMP {
 typedef struct SF_QUERY_METADATA {
   SF_QUERY_STATUS status;
   char *qid;
+  SF_ERROR_STRUCT error;
 } SF_QUERY_METADATA;
 
 /**
@@ -836,6 +837,14 @@ SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STMT *sfstmt);
  */
 SF_STATUS STDCALL
 snowflake_query(SF_STMT *sfstmt, const char *command, size_t command_size);
+
+/**
+ * Cancels a query given the statement.
+ *
+ * @param sf SNOWFLAKE_STMT context.
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_cancel_query(SF_STMT* sfstmt);
 
 /**
  * Returns the number of affected rows in the last execution.  This function
