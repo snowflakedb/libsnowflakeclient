@@ -20,12 +20,12 @@ void test_basic_cancel() {
   status = snowflake_prepare(sfstmt, "select count(*)%1 from table(generator(timeLimit => 3600))", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  SF_THREAD_HANDLE *execute_thread;
-  SF_THREAD_HANDLE *cancel_thread;
-  _thread_init(&execute_thread, *snowflake_execute, (void *)sfstmt);
+  SF_THREAD_HANDLE execute_thread;
+  SF_THREAD_HANDLE cancel_thread;
+  _thread_init(&execute_thread, snowflake_execute, (void *)sfstmt);
   // Give time for query to init
   sf_sleep_ms(1000);
-  _thread_init(&cancel_thread, *snowflake_cancel_query, (void *)sfstmt);
+  _thread_init(&cancel_thread, snowflake_cancel_query, (void *)sfstmt);
 
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
@@ -132,12 +132,12 @@ void test_multiple_statements() {
   status = snowflake_prepare(sfstmt, "select 1; select count(*)%1 from table(generator(timeLimit => 3600)); select 3", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  SF_THREAD_HANDLE *execute_thread;
-  SF_THREAD_HANDLE *cancel_thread;
-  _thread_init(&execute_thread, *snowflake_execute, (void *)sfstmt);
+  SF_THREAD_HANDLE execute_thread;
+  SF_THREAD_HANDLE cancel_thread;
+  _thread_init(&execute_thread, snowflake_execute, (void *)sfstmt);
   // Give time for query to init
   sf_sleep_ms(1000);
-  _thread_init(&cancel_thread, *snowflake_cancel_query, (void *)sfstmt);
+  _thread_init(&cancel_thread, snowflake_cancel_query, (void *)sfstmt);
 
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
