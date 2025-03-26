@@ -83,7 +83,17 @@ namespace
       return connectionParams;
     }
     for (auto [key, val] : *config.as_table()) {
-      connectionParams[key.data()] = val.as_string()->get();
+      if (val.is_string()) {
+        connectionParams[key.data()] = val.as_string()->get();
+      } else if (val.is_boolean()) {
+        connectionParams[key.data()] = val.as_boolean()->get() ? "true" : "false";
+      } else if (val.is_integer()) {
+        connectionParams[key.data()] = std::to_string(val.as_integer()->get());
+      } else if (val.is_floating_point()) {
+        connectionParams[key.data()] = std::to_string(val.as_floating_point()->get());
+      } else {
+        CXX_LOG_TRACE("Ignoring key in toml file due to unsupported data type: %s", key.data());
+      }
     }
     return connectionParams;
   }

@@ -131,6 +131,25 @@ void test_client_config_log_invalid_config_name(void** unused) {
   remove(tomlFilePath.c_str());
 }
 
+void test_data_types(void **unused) {
+  SF_UNUSED(unused);
+  // Create toml file
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = true\nkey3 = 3\nkey4 = 4.4\nkey5 = []";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  std::map<std::string, std::string> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 4);
+
+  // Cleanup
+  remove(tomlFilePath.c_str());
+}
+
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
@@ -140,6 +159,7 @@ int main(void) {
       cmocka_unit_test(test_valid_toml_file),
       cmocka_unit_test(test_use_default_location_env),
       cmocka_unit_test(test_use_snowflake_default_connection_var),
+      cmocka_unit_test(test_data_types),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
