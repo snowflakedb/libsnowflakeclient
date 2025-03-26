@@ -35,6 +35,8 @@ pushd $AWS_SOURCE_DIR
   git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
 popd
 
+[[ -n "$DOWNLOAD_ONLY" ]] && exit 0
+
 aws_configure_opts=()
 if [[ "$target" != "Release" ]]; then
     aws_configure_opts+=("-DCMAKE_BUILD_TYPE=Debug")
