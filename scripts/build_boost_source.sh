@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 BOOST_SRC_VERSION=1.81.0
-BOOST_BUILD_VERSION=1
+BOOST_BUILD_VERSION=2
 BOOST_VERSION=${BOOST_SRC_VERSION}.${BOOST_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
