@@ -64,8 +64,8 @@ namespace
     return tomlFilePath;
   }
 
-  std::map<std::string, std::string> parseTomlFile(const boost::filesystem::path& filePath) {
-    std::map<std::string, std::string> connectionParams;
+  std::map<std::string, boost::variant<std::string, int, bool, double>> parseTomlFile(const boost::filesystem::path& filePath) {
+    std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
     toml::parse_result result = toml::parse_file(filePath.c_str());
     if (!result)
     {
@@ -86,11 +86,11 @@ namespace
       if (val.is_string()) {
         connectionParams[key.data()] = val.as_string()->get();
       } else if (val.is_boolean()) {
-        connectionParams[key.data()] = val.as_boolean()->get() ? "true" : "false";
+        connectionParams[key.data()] = val.as_boolean()->get();
       } else if (val.is_integer()) {
-        connectionParams[key.data()] = std::to_string(val.as_integer()->get());
+        connectionParams[key.data()] = (int)val.as_integer()->get();
       } else if (val.is_floating_point()) {
-        connectionParams[key.data()] = std::to_string(val.as_floating_point()->get());
+        connectionParams[key.data()] = val.as_floating_point()->get();
       } else {
         CXX_LOG_TRACE("Ignoring key in toml file due to unsupported data type: %s", key.data());
       }
@@ -99,9 +99,9 @@ namespace
   }
 }
 
-std::map<std::string, std::string> load_toml_config()
+std::map<std::string, boost::variant<std::string, int, bool, double>> load_toml_config()
 {
-  std::map<std::string, std::string> params;
+  std::map<std::string, boost::variant<std::string, int, bool, double>> params;
   boost::filesystem::path derivedTomlFilePath = resolveTomlPath();
 
   if (!derivedTomlFilePath.empty()) {
