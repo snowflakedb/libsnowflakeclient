@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 OPENSSL_SRC_VERSION=3.0.15
-OPENSSL_BUILD_VERSION=1
+OPENSSL_BUILD_VERSION=2
 OPENSSL_VERSION=$OPENSSL_SRC_VERSION.$OPENSSL_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -44,11 +44,7 @@ cd $OPENSSL_SOURCE_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
     # Linux 64 bit
     make distclean clean &> /dev/null || true
-    ARCH=$(uname -p)
-    if [[ -z "$ARCH" || "$ARCH" == "unknown" ]]; then
-      ARCH=$(uname -m)
-    fi
-    perl ./Configure linux-$ARCH "${openssl_config_opts[@]}"
+    perl ./Configure linux-$(uname -m) "${openssl_config_opts[@]}"
     make depend > /dev/null
     make -j 4 > /dev/null
     make install_sw install_ssldirs install_fips > /dev/null

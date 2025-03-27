@@ -7,7 +7,7 @@ eval $(jq -r ".authtestparams | to_entries | map(\"export \(.key)=\(.value)\") |
 export SNOWFLAKE_TEST_CA_BUNDLE_FILE=$THIS_DIR/../../cacert.pem
 
 BUILD_TYPE=Release
-SKIP_UPLOAD=true source $THIS_DIR/../build/build.sh
+UPLOAD_TO_S3=true source $THIS_DIR/../build/build.sh
 
 echo "CMAKE: $CMAKE, CTEST: $CTEST"
 
