@@ -145,7 +145,7 @@ export GET_VERSION=
 target=Release
 linking=Static
 OPTIND=1
-while getopts ":hvpt:sl:" opt; do
+while getopts ":hvpdt:sl:" opt; do
   case $opt in
     t) target=$OPTARG ;;
     l) linking=$OPTARG ;;
@@ -153,6 +153,7 @@ while getopts ":hvpt:sl:" opt; do
     h) usage;;
     s) export BUILD_SOURCE_ONLY=true ;;
     v) export GET_VERSION=true ;;
+    d) export DOWNLOAD_ONLY=true ;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
   esac
