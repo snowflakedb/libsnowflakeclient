@@ -74,7 +74,7 @@ function build_component()
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
 
-    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]] && [[ "$SKIP_UPLOAD" != "true" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
         if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type

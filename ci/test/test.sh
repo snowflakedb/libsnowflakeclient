@@ -46,7 +46,7 @@ function test_component()
     fi
     pushd $CI_TEST_DIR/../..
         cd $cmake_dir
-        $CTEST -V -E "valgrind.*"
+        $CTEST -V -E "(valgrind.*|test_auth)"
     popd
 }
 

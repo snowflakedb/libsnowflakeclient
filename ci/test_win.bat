@@ -75,7 +75,7 @@ exit /b 0
     pushd %cmake_dir%
         :: test cases would need this to find data files
         set APPVEYOR_BUILD_FOLDER=%scriptdir%..
-        ctest -V -E "valgrind.*"
+        ctest -V -E "(valgrind.*|test_auth)"
         if %ERRORLEVEL% NEQ 0 (
             call :drop_schema
             goto :error
