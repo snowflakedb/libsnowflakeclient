@@ -143,10 +143,12 @@ export BUILD_WITH_PROFILE_OPTION=
 export BUILD_SOURCE_ONLY=
 export GET_VERSION=
 target=Release
+linking=Static
 OPTIND=1
-while getopts ":hvpdt:s" opt; do
+while getopts ":hvpdt:sl:" opt; do
   case $opt in
     t) target=$OPTARG ;;
+    l) linking=$OPTARG ;;
     p) export BUILD_WITH_PROFILE_OPTION=true ;;
     h) usage;;
     s) export BUILD_SOURCE_ONLY=true ;;
@@ -160,9 +162,14 @@ done
 [[ "$target" != "Debug" && "$target" != "Release" ]] && \
     echo "target must be either Debug/Release." && usage
 
+[[ "$linking" != "Dynamic" && "$linking" != "Static" ]] && \
+    echo "linking will be default to Static." && \
+    linking=Static
+
 if [[ -z "$GET_VERSION" ]]; then
     echo "Options:"
     echo "  target       = $target"
+    echo "  linking      = $linking"
     echo "PATH="$PATH
 fi
 
