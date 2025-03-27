@@ -1,3 +1,5 @@
+#ifndef HEADER_CURL_TEST_H
+#define HEADER_CURL_TEST_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -42,8 +44,15 @@
 
 #include "curl_printf.h"
 
+/* GCC <4.6 does not support '#pragma GCC diagnostic push' and
+   does not support 'pragma GCC diagnostic' inside functions. */
+#if (defined(__GNUC__) && \
+  ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))))
+#define CURL_GNUC_DIAG
+#endif
+
 #ifdef _WIN32
-#define sleep(sec) Sleep ((sec)*1000)
+#define sleep(sec) Sleep((sec)*1000)
 #endif
 
 #define test_setopt(A,B,C)                                      \
@@ -68,8 +77,10 @@ extern int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
 
 extern void wait_ms(int ms); /* wait this many milliseconds */
 
+#ifndef CURLTESTS_BUNDLED_TEST_H
 extern CURLcode test(char *URL); /* the actual test function provided by each
                                     individual libXXX.c file */
+#endif
 
 extern char *hexdump(const unsigned char *buffer, size_t len);
 
@@ -489,6 +500,7 @@ extern int unitfail;
 #define global_init(A) \
   chk_global_init((A), (__FILE__), (__LINE__))
 
+#ifndef CURLTESTS_BUNDLED_TEST_H
 #define NO_SUPPORT_BUILT_IN                     \
   CURLcode test(char *URL)                      \
   {                                             \
@@ -496,5 +508,22 @@ extern int unitfail;
     fprintf(stderr, "Missing support\n");       \
     return (CURLcode)1;                         \
   }
+#endif
 
 /* ---------------------------------------------------------------- */
+
+#endif /* HEADER_CURL_TEST_H */
+
+#ifdef CURLTESTS_BUNDLED_TEST_H
+extern CURLcode test(char *URL); /* the actual test function provided by each
+                                    individual libXXX.c file */
+
+#undef NO_SUPPORT_BUILT_IN
+#define NO_SUPPORT_BUILT_IN                     \
+  CURLcode test(char *URL)                      \
+  {                                             \
+    (void)URL;                                  \
+    fprintf(stderr, "Missing support\n");       \
+    return (CURLcode)1;                         \
+  }
+#endif

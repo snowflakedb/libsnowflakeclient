@@ -25,7 +25,6 @@
 ###########################################################################
 #
 import logging
-import os
 from typing import Tuple, List, Dict
 import pytest
 
@@ -48,8 +47,7 @@ class TestStuttered:
 
     # download 1 file, check that delayed response works in general
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2', 'h3'])
-    def test_04_01_download_1(self, env: Env, httpd, nghttpx, repeat,
-                              proto):
+    def test_04_01_download_1(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 1
@@ -64,8 +62,7 @@ class TestStuttered:
     # prepend 100 file requests to warm up connection processing limits
     # (Apache2 increases # of parallel processed requests after successes)
     @pytest.mark.parametrize("proto", ['h2', 'h3'])
-    def test_04_02_100_100_10(self, env: Env,
-                                httpd, nghttpx, repeat, proto):
+    def test_04_02_100_100_10(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 50
@@ -87,7 +84,7 @@ class TestStuttered:
     # prepend 100 file requests to warm up connection processing limits
     # (Apache2 increases # of parallel processed requests after successes)
     @pytest.mark.parametrize("proto", ['h2', 'h3'])
-    def test_04_03_1000_10_1(self, env: Env, httpd, nghttpx, repeat, proto):
+    def test_04_03_1000_10_1(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 50
@@ -109,7 +106,7 @@ class TestStuttered:
     # prepend 100 file requests to warm up connection processing limits
     # (Apache2 increases # of parallel processed requests after successes)
     @pytest.mark.parametrize("proto", ['h2', 'h3'])
-    def test_04_04_1000_10_1(self, env: Env, httpd, nghttpx, repeat, proto):
+    def test_04_04_1000_10_1(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 50

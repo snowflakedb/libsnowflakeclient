@@ -218,7 +218,7 @@ static int checkday(const char *check, size_t len)
     what = &Curl_wkday[0];
   else
     return -1; /* too short */
-  for(i = 0; i<7; i++) {
+  for(i = 0; i < 7; i++) {
     size_t ilen = strlen(what[0]);
     if((ilen == len) &&
        strncasecompare(check, what[0], len))
@@ -235,7 +235,7 @@ static int checkmonth(const char *check, size_t len)
   if(len != 3)
     return -1; /* not a month */
 
-  for(i = 0; i<12; i++) {
+  for(i = 0; i < 12; i++) {
     if(strncasecompare(check, what[0], 3))
       return i;
     what++;
@@ -253,7 +253,7 @@ static int checktz(const char *check, size_t len)
   if(len > 4) /* longer than any valid timezone */
     return -1;
 
-  for(i = 0; i< sizeof(tz)/sizeof(tz[0]); i++) {
+  for(i = 0; i < sizeof(tz)/sizeof(tz[0]); i++) {
     size_t ilen = strlen(what->name);
     if((ilen == len) &&
        strncasecompare(check, what->name, len))
@@ -441,7 +441,7 @@ static int parsedate(const char *date, time_t *output)
         if((tzoff == -1) &&
            ((end - date) == 4) &&
            (val <= 1400) &&
-           (indate< date) &&
+           (indate < date) &&
            ((date[-1] == '+' || date[-1] == '-'))) {
           /* four digits and a value less than or equal to 1400 (to take into
              account all sorts of funny time zone diffs) and it is preceded
@@ -456,7 +456,7 @@ static int parsedate(const char *date, time_t *output)
 
           /* the + and - prefix indicates the local time compared to GMT,
              this we need their reversed math to get what we want */
-          tzoff = date[-1]=='+'?-tzoff:tzoff;
+          tzoff = date[-1]=='+' ? -tzoff : tzoff;
         }
 
         if(((end - date) == 8) &&
@@ -471,7 +471,7 @@ static int parsedate(const char *date, time_t *output)
         }
 
         if(!found && (dignext == DATE_MDAY) && (mdaynum == -1)) {
-          if((val > 0) && (val<32)) {
+          if((val > 0) && (val < 32)) {
             mdaynum = val;
             found = TRUE;
           }
@@ -558,7 +558,7 @@ static int parsedate(const char *date, time_t *output)
   if(tzoff == -1)
     tzoff = 0;
 
-  if((tzoff > 0) && (t > TIME_T_MAX - tzoff)) {
+  if((tzoff > 0) && (t > (time_t)(TIME_T_MAX - tzoff))) {
     *output = TIME_T_MAX;
     return PARSEDATE_LATER; /* time_t overflow */
   }
@@ -586,7 +586,7 @@ time_t curl_getdate(const char *p, const time_t *now)
   (void)now; /* legacy argument from the past that we ignore */
 
   if(rc == PARSEDATE_OK) {
-    if(parsed == -1)
+    if(parsed == (time_t)-1)
       /* avoid returning -1 for a working scenario */
       parsed++;
     return parsed;
@@ -606,7 +606,7 @@ time_t Curl_getdate_capped(const char *p)
 
   switch(rc) {
   case PARSEDATE_OK:
-    if(parsed == -1)
+    if(parsed == (time_t)-1)
       /* avoid returning -1 for a working scenario */
       parsed++;
     return parsed;

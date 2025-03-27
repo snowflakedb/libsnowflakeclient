@@ -203,13 +203,13 @@ $! Now the DCL builds usually say xxx-HP-VMS and configure scripts
 $! may put DEC or COMPAQ or HP for the middle part.
 $!
 $write cvh "#if defined(__alpha)"
-$write cvh "#define OS ""ALPHA-HP-VMS"""
+$write cvh "#define CURL_OS ""ALPHA-HP-VMS"""
 $write cvh "#elif defined(__vax)"
-$write cvh "#define OS ""VAX-HP-VMS"""
+$write cvh "#define CURL_OS ""VAX-HP-VMS"""
 $write cvh "#elif defined(__ia64)"
-$write cvh "#define OS ""IA64-HP-VMS""
+$write cvh "#define CURL_OS ""IA64-HP-VMS""
 $write cvh "#else"
-$write cvh "#define OS ""UNKNOWN-HP-VMS""
+$write cvh "#define CURL_OS ""UNKNOWN-HP-VMS""
 $write cvh "#endif"
 $write cvh ""
 $!
@@ -217,15 +217,6 @@ $! We are now setting this on the GNV build, so also do this
 $! for compatibility.
 $write cvh "/* Location of default ca path */"
 $write cvh "#define curl_ca_path ""gnv$curl_ca_path"""
-$!
-$! NTLM_WB_ENABLED requires fork() but configure does not know this
-$! We have to disable this in the configure command line.
-$! config_h.com finds that configure defaults to it being enabled so
-$! reports it.  So we need to turn it off here.
-$!
-$write cvh "#ifdef NTLM_WB_ENABLED"
-$write cvh "#undef NTLM_WB_ENABLED"
-$write cvh "#endif"
 $!
 $! The config_h.com finds a bunch of default disable commands in
 $! configure and will incorrectly disable these options.  The config_h.com
