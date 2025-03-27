@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "error.h"
 #include "curl_desc_pool.h"
+#include "../include/snowflake/secure_storage.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
@@ -108,15 +109,31 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 */
         }
     }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER)
+    {
+        snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_STORE_TEMPORARY_CREDENTIAL", sf->client_store_temporary_credential);
+
+        if (sf->token_cache == NULL) {
+            sf->token_cache = secure_storage_init();
+        }
+
+        char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        if (token != NULL)
+        {
+            snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+            snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
+            snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
+            secure_storage_free_credential(token);
+        }
+    }
+
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
 
     //Create body
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddItemToObject(body, "data", data);
-
-    // update authentication information to body
-    auth_update_json_body(sf, body);
 
     return body;
 }
@@ -1315,4 +1332,20 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 sf_bool is_password_required(AuthenticatorType auth)
 {
     return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
+}
+
+sf_bool is_id_token_authentication(SF_CONNECT* sf, cJSON* body) 
+{
+    sf_bool is_id_token_auth = SF_BOOLEAN_TRUE;
+    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    if (!sf->client_store_temporary_credential) {
+        is_id_token_auth = SF_BOOLEAN_FALSE;
+    }
+    else if (!snowflake_cJSON_HasObjectItem(data, "AUTHENTICATOR")) {
+        is_id_token_auth = SF_BOOLEAN_FALSE;
+    }
+    else if (strcmp(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_ID_TOKEN) != 0) {
+        is_id_token_auth = SF_BOOLEAN_FALSE;
+    }
+    return is_id_token_auth;
 }
