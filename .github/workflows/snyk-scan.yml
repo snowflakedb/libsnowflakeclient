@@ -1,0 +1,20 @@
+name: Snyk Scan
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+
+jobs:
+  snyk-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Download deps
+        run: ./scripts/build_awssdk.sh -d
+      - uses: snyk/actions/setup@master
+      - name: Snyk monitor
+        run: snyk monitor --unmanaged --project-name=snowflakedb/libsnowflakeclient --target-reference=libsnowflakeclient --org=${{ secrets.SNYK_ORG_ID_PUBLIC_REPO }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_GITHUB_INTEGRATION_TOKEN_PUBLIC_REPO }}
