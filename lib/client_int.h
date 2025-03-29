@@ -151,6 +151,14 @@ typedef struct NAMED_PARAMS
 }NamedParams;
 
 /**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+} SF_QUERY_METADATA;
+
+/**
  * Allocate memory for put get response struct
  */
 void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response);
