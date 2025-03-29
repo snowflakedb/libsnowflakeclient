@@ -18,6 +18,7 @@ testenv.ini
 gmon.out
 callgrind.out.*
 **/*.o
+deps/aws-sdk-cpp-1.11.283
 deps/curl-7.54.1/**/*.o
 deps/curl-7.54.1/**/.dirstamp
 deps/openssl-1.1.1b/**

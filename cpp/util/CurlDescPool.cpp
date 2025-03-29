@@ -421,8 +421,16 @@ namespace Client
     // no-op if unique ptr is "null"
     if (curlDescPt)
     {
-      // reset descriptor so that it could be reused next time around
-      (*curlDescPt).reset();
+      if (getenv("SF_OCSP_TEST_MODE") != NULL)
+      {
+        // in OCSP test mode we have to force descriptor cleanup
+        (*curlDescPt).reset(true);
+      }
+      else
+      {
+        // reset descriptor so that it could be reused next time around
+        (*curlDescPt).reset();
+      }
 
       // trace
       CXX_LOG_TRACE("CurlDescPool::freeCurlDesc(): Free curl descriptor %p(curl=%p) back to subpool %p",
