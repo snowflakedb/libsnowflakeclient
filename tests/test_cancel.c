@@ -251,7 +251,7 @@ void test_bind_params() {
   snowflake_term(sf);
 }
 
-test_array_binding() {
+void test_array_binding() {
   SF_STATUS status;
   char bind_data_b[5][4] = { "2.3", "3.4", "4.5", "5.6", "6.7"};
   char bind_data_a[5][2] = { "2", "3", "4", "5", "6"};
@@ -316,10 +316,12 @@ test_array_binding() {
   _thread_init(&execute_thread, (void *)snowflake_execute, (void *)sfstmt);
   sf_sleep_ms(100);
   status = snowflake_cancel_query(sfstmt);
-  // Cannot cancel array binding queries
-  assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
-  assert_int_equal(sfstmt->error.error_code, 605);
-
+  bool isCancelSucceed = true;
+  if (status == SF_STATUS_ERROR_GENERAL)
+  {
+    assert_int_equal(sfstmt->error.error_code, 605);
+    isCancelSucceed = false;
+  }
   _thread_join(execute_thread);
 
   status = snowflake_query(sfstmt, "select * from foo1", 0);
@@ -340,7 +342,11 @@ test_array_binding() {
     snowflake_column_as_str(sfstmt, 1, &result, &value_len, &max_value_size);
     assert_string_equal(result, bind_data_a[i]);
     snowflake_column_as_str(sfstmt, 2, &result, &value_len, &max_value_size);
-    assert_string_equal(result, bind_data_b[i]);
+    // Only test if cancel failed. If succeeded, unsure at which update it cancelled.
+    if (!isCancelSucceed)
+    {
+      assert_string_equal(result, bind_data_b[i]);
+    }
 
     free(result);
   }

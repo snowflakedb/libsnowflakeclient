@@ -2734,7 +2734,8 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     if (strlen(sfstmt->sfqid) != 0) {
         SF_QUERY_METADATA *metadata = get_query_metadata(sfstmt);
         if (!is_query_still_running(metadata->status) &&
-            sfstmt->error.error_code == SF_STATUS_SUCCESS) {
+            (metadata->status != SF_QUERY_STATUS_UNKNOWN) &&
+            (sfstmt->error.error_code == SF_STATUS_SUCCESS)) {
             log_trace("Query is no longer running.");
             return SF_STATUS_SUCCESS;
         }
