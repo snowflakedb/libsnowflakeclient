@@ -57,7 +57,7 @@ function download_build_component()
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
+                if [[ "$UPLOAD_TO_S3" == "true" && ("$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master") ]]; then
                     echo "=== upload $component_name"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
                 else
