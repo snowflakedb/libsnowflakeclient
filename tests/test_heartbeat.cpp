@@ -46,7 +46,6 @@ void test_connect_with_client_session_keep_alive_disable(void** unused)
 static int MAX_RETRIES = 5;
 void connection_thread(SF_CONNECT* sf ,sf_bool* result)
 {
-
     const int LOOPCOUNT = 10;
     int retry = 0;
     for (int i = 0; i < LOOPCOUNT; ++i)
@@ -70,11 +69,9 @@ void connection_thread(SF_CONNECT* sf ,sf_bool* result)
 
 void test_connect_with_client_session_keep_alive_current(void** unused)
 {
-
     SF_UNUSED(unused);
     const int THREADS = 10;
     sf_bool results[THREADS];
-
 
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
@@ -117,10 +114,7 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
         assert_true(results[i]);
     }
     snowflake_term(sf);
-
 }
-
-
 
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);

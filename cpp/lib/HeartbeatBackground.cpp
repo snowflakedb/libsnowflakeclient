@@ -59,7 +59,6 @@ extern "C" {
         }
         free_curl_desc(curl_desc);
         return SF_BOOLEAN_TRUE;
-
     }
 
 } // extern "C"
@@ -68,9 +67,7 @@ namespace Snowflake
 {
     namespace Client
     {
-        HeartbeatBackground::HeartbeatBackground()
-        {
-        }
+        HeartbeatBackground::HeartbeatBackground(){}
 
         HeartbeatBackground::~HeartbeatBackground()
         {
