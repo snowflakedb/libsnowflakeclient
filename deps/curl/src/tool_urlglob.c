@@ -191,6 +191,7 @@ static CURLcode glob_range(struct URLGlob *glob, char **patternp,
      expression is checked for well-formedness and collected until the next ']'
   */
   struct URLPattern *pat;
+  int rc;
   char *pattern = *patternp;
   char *c;
 
@@ -199,20 +200,16 @@ static CURLcode glob_range(struct URLGlob *glob, char **patternp,
 
   if(ISALPHA(*pattern)) {
     /* character range detected */
-    bool pmatch = FALSE;
-    char min_c = 0;
-    char max_c = 0;
-    char end_c = 0;
+    char min_c;
+    char max_c;
+    char end_c;
     unsigned long step = 1;
 
     pat->type = UPTCharRange;
 
-    if((pattern[1] == '-') && pattern[2] && pattern[3]) {
-      min_c = pattern[0];
-      max_c = pattern[2];
-      end_c = pattern[3];
-      pmatch = TRUE;
+    rc = sscanf(pattern, "%c-%c%c", &min_c, &max_c, &end_c);
 
+    if(rc == 3) {
       if(end_c == ':') {
         char *endp;
         errno = 0;
@@ -224,7 +221,7 @@ static CURLcode glob_range(struct URLGlob *glob, char **patternp,
       }
       else if(end_c != ']')
         /* then this is wrong */
-        pmatch = FALSE;
+        rc = 0;
       else
         /* end_c == ']' */
         pattern += 4;
@@ -232,7 +229,7 @@ static CURLcode glob_range(struct URLGlob *glob, char **patternp,
 
     *posp += (pattern - *patternp);
 
-    if(!pmatch || !step || step > (unsigned)INT_MAX ||
+    if(rc != 3 || !step || step > (unsigned)INT_MAX ||
        (min_c == max_c && step != 1) ||
        (min_c != max_c && (min_c > max_c || step > (unsigned)(max_c - min_c) ||
                            (max_c - min_c) > ('z' - 'a'))))
@@ -496,7 +493,7 @@ CURLcode glob_url(struct URLGlob **glob, char *url, curl_off_t *urlnum,
       fprintf(error, "curl: (%d) %s\n", res, t);
     }
     /* it failed, we cleanup */
-    glob_cleanup(&glob_expand);
+    glob_cleanup(glob_expand);
     *urlnum = 1;
     return res;
   }
@@ -505,11 +502,10 @@ CURLcode glob_url(struct URLGlob **glob, char *url, curl_off_t *urlnum,
   return CURLE_OK;
 }
 
-void glob_cleanup(struct URLGlob **globp)
+void glob_cleanup(struct URLGlob *glob)
 {
   size_t i;
   curl_off_t elem;
-  struct URLGlob *glob = *globp;
 
   if(!glob)
     return;
@@ -527,7 +523,6 @@ void glob_cleanup(struct URLGlob **globp)
   }
   Curl_safefree(glob->glob_buffer);
   Curl_safefree(glob);
-  *globp = NULL;
 }
 
 CURLcode glob_next_url(char **globbed, struct URLGlob *glob)
@@ -650,7 +645,7 @@ CURLcode glob_match_url(char **result, char *filename, struct URLGlob *glob)
         unsigned long i;
         num--; /* make it zero based */
         /* find the correct glob entry */
-        for(i = 0; i < glob->size; i++) {
+        for(i = 0; i<glob->size; i++) {
           if(glob->pattern[i].globindex == (int)num) {
             pat = &glob->pattern[i];
             break;

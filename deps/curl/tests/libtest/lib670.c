@@ -21,6 +21,11 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
+
+#if !defined(LIB670) && !defined(LIB671)
+#define CURL_DISABLE_DEPRECATION  /* Using and testing the form api */
+#endif
+
 #include "test.h"
 
 #include <time.h>
@@ -30,7 +35,7 @@
 #define PAUSE_TIME      5
 
 
-static const char testname[] = "field";
+static const char name[] = "field";
 
 struct ReadThis {
   CURL *easy;
@@ -56,7 +61,7 @@ static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
     return CURL_READFUNC_PAUSE;
   case 2:
     delta = time(NULL) - pooh->origin;
-    *ptr = delta >= PAUSE_TIME ? '\x42' : '\x41'; /* ASCII A or B. */
+    *ptr = delta >= PAUSE_TIME? '\x42': '\x41'; /* ASCII A or B. */
     return 1;
   case 3:
     return 0;
@@ -139,7 +144,7 @@ CURLcode test(char *URL)
   /* Build the mime tree. */
   mime = curl_mime_init(pooh.easy);
   part = curl_mime_addpart(mime);
-  res = curl_mime_name(part, testname);
+  res = curl_mime_name(part, name);
   if(res != CURLE_OK) {
     fprintf(stderr,
             "Something went wrong when building the mime structure: %d\n",
@@ -154,14 +159,12 @@ CURLcode test(char *URL)
   if(res == CURLE_OK)
     test_setopt(pooh.easy, CURLOPT_MIMEPOST, mime);
 #else
-  CURL_IGNORE_DEPRECATION(
-    /* Build the form. */
-    formrc = curl_formadd(&formpost, &lastptr,
-                          CURLFORM_COPYNAME, testname,
-                          CURLFORM_STREAM, &pooh,
-                          CURLFORM_CONTENTLEN, (curl_off_t) 2,
-                          CURLFORM_END);
-  )
+  /* Build the form. */
+  formrc = curl_formadd(&formpost, &lastptr,
+                        CURLFORM_COPYNAME, name,
+                        CURLFORM_STREAM, &pooh,
+                        CURLFORM_CONTENTLEN, (curl_off_t) 2,
+                        CURLFORM_END);
   if(formrc) {
     fprintf(stderr, "curl_formadd() = %d\n", (int) formrc);
     goto test_cleanup;
@@ -170,10 +173,8 @@ CURLcode test(char *URL)
   /* We want to use our own read function. */
   test_setopt(pooh.easy, CURLOPT_READFUNCTION, read_callback);
 
-  CURL_IGNORE_DEPRECATION(
-    /* Send a multi-part formpost. */
-    test_setopt(pooh.easy, CURLOPT_HTTPPOST, formpost);
-  )
+  /* Send a multi-part formpost. */
+  test_setopt(pooh.easy, CURLOPT_HTTPPOST, formpost);
 #endif
 
 #if defined(LIB670) || defined(LIB672)
@@ -252,9 +253,7 @@ test_cleanup:
 #if defined(LIB670) || defined(LIB671)
   curl_mime_free(mime);
 #else
-  CURL_IGNORE_DEPRECATION(
-    curl_formfree(formpost);
-  )
+  curl_formfree(formpost);
 #endif
 
   curl_global_cleanup();

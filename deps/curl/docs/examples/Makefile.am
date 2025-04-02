@@ -24,7 +24,7 @@
 
 AUTOMAKE_OPTIONS = foreign nostdinc
 
-EXTRA_DIST = README.md Makefile.example CMakeLists.txt \
+EXTRA_DIST = README.md Makefile.example Makefile.mk CMakeLists.txt \
   $(COMPLICATED_EXAMPLES) .checksrc
 
 # Specify our include paths here, and do it relative to $(top_srcdir) and
@@ -34,7 +34,8 @@ EXTRA_DIST = README.md Makefile.example CMakeLists.txt \
 #
 # $(top_srcdir)/include is for libcurl's external include files
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include   \
+              -DCURL_DISABLE_DEPRECATION
 
 LIBDIR = $(top_builddir)/lib
 

@@ -40,6 +40,7 @@ testenv/ws_echo_server.py
 
 EXTRA_DIST =           \
 CMakeLists.txt         \
+config.ini.in          \
 conftest.py            \
 requirements.txt       \
 scorecard.py           \

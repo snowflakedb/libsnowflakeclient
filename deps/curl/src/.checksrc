@@ -1,3 +1,1 @@
 enable STDERR
-banfunc strncpy
-banfunc sscanf

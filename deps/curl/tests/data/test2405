@@ -29,6 +29,7 @@ Funny-head: yesyes
 # Client-side
 <client>
 <server>
+http
 http/2
 </server>
 <tool>

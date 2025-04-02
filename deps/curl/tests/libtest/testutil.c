@@ -133,7 +133,7 @@ double tutil_tvdiff_secs(struct timeval newer, struct timeval older)
 #ifdef _WIN32
 HMODULE win32_load_system_library(const TCHAR *filename)
 {
-#ifdef CURL_WINDOWS_UWP
+#ifdef CURL_WINDOWS_APP
   (void)filename;
   return NULL;
 #else

@@ -44,10 +44,20 @@ static const char *hms_for_sec(time_t tv_sec)
 {
   static time_t cached_tv_sec;
   static char hms_buf[12];
+  static time_t epoch_offset;
+  static int known_epoch;
 
   if(tv_sec != cached_tv_sec) {
+    struct tm *now;
+    time_t secs;
+    /* recalculate */
+    if(!known_epoch) {
+      epoch_offset = time(NULL) - tv_sec;
+      known_epoch = 1;
+    }
+    secs = epoch_offset + tv_sec;
     /* !checksrc! disable BANNEDFUNC 1 */
-    struct tm *now = localtime(&tv_sec);  /* not thread safe either */
+    now = localtime(&secs);  /* not thread safe but we do not care */
     msnprintf(hms_buf, sizeof(hms_buf), "%02d:%02d:%02d",
               now->tm_hour, now->tm_min, now->tm_sec);
     cached_tv_sec = tv_sec;
@@ -98,7 +108,7 @@ int tool_debug_cb(CURL *handle, curl_infotype type,
   (void)handle; /* not used */
 
   if(config->tracetime) {
-    tv = tvrealnow();
+    tv = tvnow();
     msnprintf(timebuf, sizeof(timebuf), "%s.%06ld ",
               hms_for_sec(tv.tv_sec), (long)tv.tv_usec);
   }
@@ -163,7 +173,7 @@ int tool_debug_cb(CURL *handle, curl_infotype type,
           log_line_start(output, timebuf, idsbuf, type);
         (void)fwrite(data + st, i - st + 1, 1, output);
       }
-      newl = (size && (data[size - 1] != '\n'));
+      newl = (size && (data[size - 1] != '\n')) ? TRUE : FALSE;
       traced_data = FALSE;
       break;
     case CURLINFO_TEXT:
@@ -171,7 +181,7 @@ int tool_debug_cb(CURL *handle, curl_infotype type,
       if(!newl)
         log_line_start(output, timebuf, idsbuf, type);
       (void)fwrite(data, size, 1, output);
-      newl = (size && (data[size - 1] != '\n'));
+      newl = (size && (data[size - 1] != '\n')) ? TRUE : FALSE;
       traced_data = FALSE;
       break;
     case CURLINFO_DATA_OUT:

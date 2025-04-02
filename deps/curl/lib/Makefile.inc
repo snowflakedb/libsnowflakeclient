@@ -56,8 +56,6 @@ LIB_VTLS_CFILES =           \
   vtls/schannel_verify.c    \
   vtls/sectransp.c          \
   vtls/vtls.c               \
-  vtls/vtls_scache.c        \
-  vtls/vtls_spack.c         \
   vtls/wolfssl.c            \
   vtls/x509asn1.c           \
   vtls/sf_ocsp.c            \
@@ -78,8 +76,6 @@ LIB_VTLS_HFILES =           \
   vtls/sectransp.h          \
   vtls/vtls.h               \
   vtls/vtls_int.h           \
-  vtls/vtls_scache.h        \
-  vtls/vtls_spack.h         \
   vtls/wolfssl.h            \
   vtls/x509asn1.h           \
   vtls/sf_ocsp.h            \
@@ -105,11 +101,9 @@ LIB_VQUIC_HFILES = \
 LIB_VSSH_CFILES =  \
   vssh/libssh.c    \
   vssh/libssh2.c   \
-  vssh/curl_path.c \
   vssh/wolfssh.c
 
-LIB_VSSH_HFILES =    \
-  vssh/curl_path.h   \
+LIB_VSSH_HFILES =  \
   vssh/ssh.h
 
 LIB_CFILES =         \
@@ -120,6 +114,7 @@ LIB_CFILES =         \
   base64.c           \
   bufq.c             \
   bufref.c           \
+  c-hyper.c          \
   cf-h1-proxy.c      \
   cf-h2-proxy.c      \
   cf-haproxy.c       \
@@ -140,6 +135,7 @@ LIB_CFILES =         \
   curl_memrchr.c     \
   curl_multibyte.c   \
   curl_ntlm_core.c   \
+  curl_path.c        \
   curl_range.c       \
   curl_rtmp.c        \
   curl_sasl.c        \
@@ -184,7 +180,6 @@ LIB_CFILES =         \
   http_negotiate.c   \
   http_ntlm.c        \
   http_proxy.c       \
-  httpsrr.c          \
   idn.c              \
   if2ip.c            \
   imap.c             \
@@ -231,7 +226,6 @@ LIB_CFILES =         \
   strcase.c          \
   strdup.c           \
   strerror.c         \
-  strparse.c         \
   strtok.c           \
   strtoofft.c        \
   system_win32.c     \
@@ -254,6 +248,7 @@ LIB_HFILES =         \
   asyn.h             \
   bufq.h             \
   bufref.h           \
+  c-hyper.h          \
   cf-h1-proxy.h      \
   cf-h2-proxy.h      \
   cf-haproxy.h       \
@@ -282,6 +277,7 @@ LIB_HFILES =         \
   curl_memrchr.h     \
   curl_multibyte.h   \
   curl_ntlm_core.h   \
+  curl_path.h        \
   curl_printf.h      \
   curl_range.h       \
   curl_rtmp.h        \
@@ -325,7 +321,6 @@ LIB_HFILES =         \
   http_negotiate.h   \
   http_ntlm.h        \
   http_proxy.h       \
-  httpsrr.h          \
   idn.h              \
   if2ip.h            \
   imap.h             \
@@ -353,9 +348,7 @@ LIB_HFILES =         \
   select.h           \
   sendf.h            \
   setopt.h           \
-  setup-os400.h      \
   setup-vms.h        \
-  setup-win32.h      \
   share.h            \
   sigpipe.h          \
   slist.h            \
@@ -369,7 +362,6 @@ LIB_HFILES =         \
   strcase.h          \
   strdup.h           \
   strerror.h         \
-  strparse.h         \
   strtok.h           \
   strtoofft.h        \
   system_win32.h     \

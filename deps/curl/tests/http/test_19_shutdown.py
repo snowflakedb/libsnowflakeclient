@@ -24,8 +24,12 @@
 #
 ###########################################################################
 #
+import difflib
+import filecmp
 import logging
+import os
 import re
+from datetime import timedelta
 import pytest
 
 from testenv import Env, CurlClient, LocalClient
@@ -53,7 +57,7 @@ class TestShutdown:
     # check with `tcpdump` that we see curl TCP RST packets
     @pytest.mark.skipif(condition=not Env.tcpdump(), reason="tcpdump not available")
     @pytest.mark.parametrize("proto", ['http/1.1'])
-    def test_19_01_check_tcp_rst(self, env: Env, httpd, proto):
+    def test_19_01_check_tcp_rst(self, env: Env, httpd, repeat, proto):
         if env.ci_run:
             pytest.skip("seems not to work in CI")
         curl = CurlClient(env=env)
@@ -68,12 +72,12 @@ class TestShutdown:
     # check with `tcpdump` that we do NOT see TCP RST when CURL_GRACEFUL_SHUTDOWN set
     @pytest.mark.skipif(condition=not Env.tcpdump(), reason="tcpdump not available")
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
-    def test_19_02_check_shutdown(self, env: Env, httpd, proto):
+    def test_19_02_check_shutdown(self, env: Env, httpd, repeat, proto):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
         curl = CurlClient(env=env, run_env={
             'CURL_GRACEFUL_SHUTDOWN': '2000',
-            'CURL_DEBUG': 'ssl,tcp'
+            'CURL_DEBUG': 'ssl'
         })
         url = f'https://{env.authority_for(env.domain1, proto)}/data.json?[0-1]'
         r = curl.http_download(urls=[url], alpn_proto=proto, with_tcpdump=True, extra_args=[
@@ -81,11 +85,11 @@ class TestShutdown:
         ])
         r.check_response(http_status=200, count=2)
         assert r.tcpdump
-        assert len(r.tcpdump.stats) == 0, 'Unexpected TCP RSTs packets'
+        assert len(r.tcpdump.stats) == 0, f'Unexpected TCP RSTs packets'
 
     # run downloads where the server closes the connection after each request
     @pytest.mark.parametrize("proto", ['http/1.1'])
-    def test_19_03_shutdown_by_server(self, env: Env, httpd, proto):
+    def test_19_03_shutdown_by_server(self, env: Env, httpd, repeat, proto):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
         count = 10
@@ -97,14 +101,13 @@ class TestShutdown:
             f'id=[0-{count-1}]&with_cl&close'
         r = curl.http_download(urls=[url], alpn_proto=proto)
         r.check_response(http_status=200, count=count)
-        shutdowns = [line for line in r.trace_lines
-                     if re.match(r'.*CCACHE\] shutdown #\d+, done=1', line)]
+        shutdowns = [l for l in r.trace_lines if re.match(r'.*CCACHE\] shutdown #\d+, done=1', l)]
         assert len(shutdowns) == count, f'{shutdowns}'
 
     # run downloads with CURLOPT_FORBID_REUSE set, meaning *we* close
     # the connection after each request
     @pytest.mark.parametrize("proto", ['http/1.1'])
-    def test_19_04_shutdown_by_curl(self, env: Env, httpd, proto):
+    def test_19_04_shutdown_by_curl(self, env: Env, httpd, proto, repeat):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
         count = 10
@@ -120,14 +123,13 @@ class TestShutdown:
              '-n', f'{count}', '-f', '-V', proto, url
         ])
         r.check_exit_code(0)
-        shutdowns = [line for line in r.trace_lines
-                     if re.match(r'.*CCACHE\] shutdown #\d+, done=1', line)]
+        shutdowns = [l for l in r.trace_lines if re.match(r'.*CCACHE\] shutdown #\d+, done=1', l)]
         assert len(shutdowns) == count, f'{shutdowns}'
 
     # run event-based downloads with CURLOPT_FORBID_REUSE set, meaning *we* close
     # the connection after each request
     @pytest.mark.parametrize("proto", ['http/1.1'])
-    def test_19_05_event_shutdown_by_server(self, env: Env, httpd, proto):
+    def test_19_05_event_shutdown_by_server(self, env: Env, httpd, proto, repeat):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
         count = 10
@@ -145,17 +147,15 @@ class TestShutdown:
         ])
         r.check_response(http_status=200, count=count)
         # check that we closed all connections
-        closings = [line for line in r.trace_lines
-                    if re.match(r'.*CCACHE\] closing #\d+', line)]
+        closings = [l for l in r.trace_lines if re.match(r'.*CCACHE\] closing #\d+', l)]
         assert len(closings) == count, f'{closings}'
         # check that all connection sockets were removed from event
-        removes = [line for line in r.trace_lines
-                   if re.match(r'.*socket cb: socket \d+ REMOVED', line)]
+        removes = [l for l in r.trace_lines if re.match(r'.*socket cb: socket \d+ REMOVED', l)]
         assert len(removes) == count, f'{removes}'
 
     # check graceful shutdown on multiplexed http
     @pytest.mark.parametrize("proto", ['h2', 'h3'])
-    def test_19_06_check_shutdown(self, env: Env, httpd, nghttpx, proto):
+    def test_19_06_check_shutdown(self, env: Env, httpd, nghttpx, repeat, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         if not env.curl_is_debug():
@@ -170,6 +170,5 @@ class TestShutdown:
         ])
         r.check_response(http_status=200, count=2)
         # check connection cache closings
-        shutdowns = [line for line in r.trace_lines
-                     if re.match(r'.*CCACHE\] shutdown #\d+, done=1', line)]
+        shutdowns = [l for l in r.trace_lines if re.match(r'.*CCACHE\] shutdown #\d+, done=1', l)]
         assert len(shutdowns) == 1, f'{shutdowns}'

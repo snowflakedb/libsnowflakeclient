@@ -103,11 +103,6 @@ CURL_RESFLAGS = /i../include
 LIBCURL_SRC_DIR = ..\lib
 CURL_SRC_DIR = ..\src
 
-!IF EXISTS($(CURL_SRC_DIR)\tool_hugehelp.c)
-USE_MANUAL   = true
-CFLAGS       = $(CFLAGS) /DUSE_MANUAL
-!ENDIF
-
 !IFNDEF WITH_DEVEL
 WITH_DEVEL   = ../../deps
 !ENDIF
@@ -150,8 +145,8 @@ SSL_CFLAGS   = $(SSL_CFLAGS) /DCURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG
 !ENDIF
 !ENDIF
 
-!IF "$(DISABLE_WEBSOCKETS)"=="true"
-CFLAGS  = $(CFLAGS) /DCURL_DISABLE_WEBSOCKETS=1
+!IF "$(ENABLE_WEBSOCKETS)"=="true"
+CFLAGS  = $(CFLAGS) /DUSE_WEBSOCKETS=1
 !ENDIF
 
 !IFDEF NGHTTP2_PATH
@@ -210,22 +205,6 @@ USE_MBEDTLS    = true
 MBEDTLS        = $(WITH_MBEDTLS)
 MBEDTLS_CFLAGS = /DUSE_MBEDTLS /I"$(MBEDTLS_INC_DIR)"
 MBEDTLS_LIBS   = mbedtls.lib mbedcrypto.lib mbedx509.lib
-!ENDIF
-
-!IFDEF WOLFSSL_PATH
-WOLFSSL_INC_DIR  = $(WOLFSSL_PATH)\include
-WOLFSSL_LIB_DIR  = $(WOLFSSL_PATH)\lib
-WOLFSSL_LFLAGS   = $(WOLFSSL_LFLAGS) "/LIBPATH:$(WOLFSSL_LIB_DIR)"
-!ELSE
-WOLFSSL_INC_DIR  = $(DEVEL_INCLUDE)
-WOLFSSL_LIB_DIR  = $(DEVEL_LIB)
-!ENDIF
-
-!IF "$(WITH_WOLFSSL)"=="dll" || "$(WITH_WOLFSSL)"=="static"
-USE_WOLFSSL    = true
-WOLFSSL        = $(WITH_WOLFSSL)
-WOLFSSL_CFLAGS = /DUSE_WOLFSSL /I"$(WOLFSSL_INC_DIR)"
-WOLFSSL_LIBS   = wolfssl.lib
 !ENDIF
 
 
@@ -512,11 +491,6 @@ CFLAGS = $(CFLAGS) $(MBEDTLS_CFLAGS)
 LFLAGS = $(LFLAGS) $(MBEDTLS_LFLAGS) $(MBEDTLS_LIBS)
 !ENDIF
 
-!IF "$(USE_WOLFSSL)"=="true"
-CFLAGS = $(CFLAGS) $(WOLFSSL_CFLAGS)
-LFLAGS = $(LFLAGS) $(WOLFSSL_LFLAGS) $(WOLFSSL_LIBS)
-!ENDIF
-
 !IF "$(USE_CARES)"=="true"
 CFLAGS = $(CFLAGS) $(CARES_CFLAGS)
 LFLAGS = $(LFLAGS) $(CARES_LFLAGS) $(CARES_LIBS)
@@ -566,10 +540,7 @@ LFLAGS = $(LFLAGS) $(LFLAGS_PDB)
 
 !IF ( "$(USE_SSL)"=="true" && "$(USE_SCHANNEL)"=="true" ) \
  || ( "$(USE_SSL)"=="true" && "$(USE_MBEDTLS)"=="true" ) \
- || ( "$(USE_SSL)"=="true" && "$(USE_WOLFSSL)"=="true" ) \
- || ( "$(USE_MBEDTLS)"=="true" && "$(USE_WOLFSSL)"=="true" ) \
- || ( "$(USE_MBEDTLS)"=="true" && "$(USE_SCHANNEL)"=="true" ) \
- || ( "$(USE_WOLFSSL)"=="true" && "$(USE_SCHANNEL)"=="true" )
+ || ( "$(USE_MBEDTLS)"=="true" && "$(USE_SCHANNEL)"=="true" )
 CFLAGS = $(CFLAGS) /DCURL_WITH_MULTI_SSL
 !ENDIF
 
@@ -701,19 +672,14 @@ CURL_LIBCURL_LIBNAME=$(LIB_NAME_IMP)
 !ENDIF
 !ENDIF
 
-CURL_FROM_LIBCURL=\
+CURL_FROM_LIBCURL=$(CURL_DIROBJ)\tool_hugehelp.obj \
  $(CURL_DIROBJ)\nonblock.obj \
  $(CURL_DIROBJ)\strtoofft.obj \
  $(CURL_DIROBJ)\warnless.obj \
- $(CURL_DIROBJ)\curl_get_line.obj \
  $(CURL_DIROBJ)\curl_multibyte.obj \
  $(CURL_DIROBJ)\version_win32.obj \
  $(CURL_DIROBJ)\dynbuf.obj \
  $(CURL_DIROBJ)\base64.obj
-
-!IFDEF USE_MANUAL
-CURL_FROM_LIBCURL = $(CURL_FROM_LIBCURL) $(CURL_DIROBJ)\tool_hugehelp.obj
-!ENDIF
 
 $(PROGRAM_NAME): $(CURL_DIROBJ) $(CURL_FROM_LIBCURL) $(EXE_OBJS)
 	$(CURL_LINK) $(CURL_LFLAGS) $(CURL_LIBCURL_LIBNAME) $(WIN_LIBS) $(CURL_FROM_LIBCURL) $(EXE_OBJS)
@@ -722,18 +688,14 @@ $(PROGRAM_NAME): $(CURL_DIROBJ) $(CURL_FROM_LIBCURL) $(EXE_OBJS)
 {$(CURL_SRC_DIR)\}.c{$(CURL_DIROBJ)\}.obj::
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$(CURL_DIROBJ)\\"  $<
 
-!IFDEF USE_MANUAL
 $(CURL_DIROBJ)\tool_hugehelp.obj: $(CURL_SRC_DIR)\tool_hugehelp.c
 	$(CURL_CC) $(CURL_CFLAGS) /Zm200 /Fo"$@" $(CURL_SRC_DIR)\tool_hugehelp.c
-!ENDIF
 $(CURL_DIROBJ)\nonblock.obj: ../lib/nonblock.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/nonblock.c
 $(CURL_DIROBJ)\strtoofft.obj: ../lib/strtoofft.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/strtoofft.c
 $(CURL_DIROBJ)\warnless.obj: ../lib/warnless.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/warnless.c
-$(CURL_DIROBJ)\curl_get_line.obj: ../lib/curl_get_line.c
-	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/curl_get_line.c
 $(CURL_DIROBJ)\curl_multibyte.obj: ../lib/curl_multibyte.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/curl_multibyte.c
 $(CURL_DIROBJ)\version_win32.obj: ../lib/version_win32.c

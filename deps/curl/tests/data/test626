@@ -35,5 +35,8 @@ Test file for rename test
 <errorcode>
 21
 </errorcode>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

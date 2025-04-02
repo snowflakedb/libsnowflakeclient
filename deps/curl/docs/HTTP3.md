@@ -245,9 +245,9 @@ You can build curl with cmake:
      % cd ..
      % git clone https://github.com/curl/curl
      % cd curl
-     % cmake . -B bld -DCURL_USE_OPENSSL=ON -DUSE_OPENSSL_QUIC=ON
-     % cmake --build bld
-     % cmake --install bld
+     % cmake . -B build -DCURL_USE_OPENSSL=ON -DUSE_OPENSSL_QUIC=ON
+     % cmake --build build
+     % cmake --install build
 
  If `make install` results in `Permission denied` error, you need to prepend
  it with `sudo`.
@@ -302,6 +302,10 @@ prompt](../winbuild/README.md#open-a-command-prompt)):
      % git clone https://github.com/curl/curl
      % cd curl/winbuild
      % nmake /f Makefile.vc mode=dll WITH_MSH3=dll MSH3_PATH="C:/Program Files/msh3" MACHINE=x64
+
+**Note** - If you encounter a build error with `tool_hugehelp.c` being
+missing, rename `tool_hugehelp.c.cvs` in the same directory to
+`tool_hugehelp.c` and then run `nmake` again.
 
 Run in the `C:/Program Files/msh3/lib` directory, copy `curl.exe` to that
 directory, or copy `msquic.dll` and `msh3.dll` from that directory to the
@@ -400,7 +404,7 @@ Get, build and install nghttp2:
      % git clone https://github.com/nghttp2/nghttp2.git
      % cd nghttp2
      % autoreconf -fi
-     % PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/daniel/build-quictls/lib/pkgconfig:/home/daniel/build-nghttp3/lib/pkgconfig:/home/daniel/build-ngtcp2/lib/pkgconfig LDFLAGS=-L/home/daniel/build-quictls/lib CFLAGS=-I/home/daniel/build-quictls/include ./configure --enable-maintainer-mode --prefix=/home/daniel/build-nghttp2 --disable-shared --enable-app --enable-http3 --without-jemalloc --without-libxml2 --without-systemd
+     % PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/daniel/build-quictls/lib/pkgconfig:/home/daniel/build-nghttp3/lib/pkgconfig:/home/daniel/build-ngtcp2/lib/pkgconfig  LDFLAGS=-L/home/daniel/build-quictls/lib CFLAGS=-I/home/daniel/build-quictls/include ./configure --enable-maintainer-mode --prefix=/home/daniel/build-nghttp2 --disable-shared --enable-app --enable-http3 --without-jemalloc --without-libxml2 --without-systemd
      % make && make install
 
 Run the local h3 server on port 9443, make it proxy all traffic through to

@@ -26,5 +26,8 @@ SCP invalid user login
 <errorcode>
 67
 </errorcode>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

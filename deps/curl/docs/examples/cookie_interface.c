@@ -32,7 +32,6 @@
 #include <time.h>
 
 #include <curl/curl.h>
-#include <curl/mprintf.h>
 
 static void
 print_cookies(CURL *curl)
@@ -91,11 +90,14 @@ main(void)
 
     printf("-----------------------------------------------\n"
            "Setting a cookie \"PREF\" via cookie interface:\n");
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
     /* Netscape format cookie */
-    curl_msnprintf(nline, sizeof(nline), "%s\t%s\t%s\t%s\t%.0f\t%s\t%s",
-                   ".example.com", "TRUE", "/", "FALSE",
-                   difftime(time(NULL) + 31337, (time_t)0),
-                   "PREF", "hello example, i like you!");
+    snprintf(nline, sizeof(nline), "%s\t%s\t%s\t%s\t%.0f\t%s\t%s",
+             ".example.com", "TRUE", "/", "FALSE",
+             difftime(time(NULL) + 31337, (time_t)0),
+             "PREF", "hello example, i like you!");
     res = curl_easy_setopt(curl, CURLOPT_COOKIELIST, nline);
     if(res != CURLE_OK) {
       fprintf(stderr, "Curl curl_easy_setopt failed: %s\n",
@@ -108,7 +110,7 @@ main(void)
        modified, likely not what you intended. For more information refer to
        the CURLOPT_COOKIELIST documentation.
     */
-    curl_msnprintf(nline, sizeof(nline),
+    snprintf(nline, sizeof(nline),
       "Set-Cookie: OLD_PREF=3d141414bf4209321; "
       "expires=Sun, 17-Jan-2038 19:14:07 GMT; path=/; domain=.example.com");
     res = curl_easy_setopt(curl, CURLOPT_COOKIELIST, nline);

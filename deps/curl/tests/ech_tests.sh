@@ -93,13 +93,13 @@ declare -A neither_targets=(
 # Top of curl test tree, assume we're there
 : "${CTOP:=.}"
 
-# Place to put test log output
+# Plase to put test log output
 : "${LTOP:=$CTOP/tests/ech-log/}"
 
-# Place to stash outputs when things go wrong
+# place to stash outputs when things go wrong
 : "${BTOP:=$LTOP}"
 
-# Time to wait for a remote access to work, 10 seconds
+# time to wait for a remote access to work, 10 seconds
 : "${tout:=10s}"
 
 # Where we find OpenSSL .so's

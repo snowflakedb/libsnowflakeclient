@@ -26,5 +26,8 @@ SCP retrieval of nonexistent file
 <errorcode>
 78
 </errorcode>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

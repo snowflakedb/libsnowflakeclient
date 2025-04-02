@@ -48,7 +48,7 @@ It is often better to use CURLOPT_HEADERFUNCTION(3) to get the header
 data separately.
 
 While named confusingly similar, CURLOPT_HTTPHEADER(3) is used to set
-custom HTTP headers.
+custom HTTP headers!
 
 # DEFAULT
 
@@ -76,7 +76,4 @@ int main(void)
 
 # RETURN VALUE
 
-curl_easy_setopt(3) returns a CURLcode indicating success or error.
-
-CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
-libcurl-errors(3).
+Returns CURLE_OK.

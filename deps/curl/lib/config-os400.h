@@ -30,9 +30,14 @@
 
 #pragma enum(int)
 
+#undef PACKAGE
+
+/* Version number of this archive. */
+#undef VERSION
+
 /* Define cpu-machine-OS */
-#ifndef CURL_OS
-#define CURL_OS "OS/400"
+#ifndef OS
+#define OS "OS/400"
 #endif
 
 /* OS400 supports a 3-argument ASCII version of gethostbyaddr_r(), but its
@@ -104,6 +109,9 @@
 
 /* Define if you have the GNU gssapi libraries */
 #undef HAVE_GSSGNU
+
+/* Define if you need the malloc.h header file even with stdlib.h  */
+/* #define NEED_MALLOC_H 1 */
 
 /* Define if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H
@@ -193,6 +201,9 @@
 
 /* Define if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H
+
+/* Name of package */
+#undef PACKAGE
 
 /* The size of `int', as computed by sizeof. */
 #define SIZEOF_INT              4

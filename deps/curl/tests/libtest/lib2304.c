@@ -24,9 +24,9 @@
 
 #include "test.h"
 
-#ifndef CURL_DISABLE_WEBSOCKETS
+#ifdef USE_WEBSOCKETS
 
-static CURLcode send_ping(CURL *curl, const char *send_payload)
+static CURLcode ping(CURL *curl, const char *send_payload)
 {
   size_t sent;
   CURLcode result =
@@ -98,7 +98,7 @@ static void websocket(CURL *curl)
   do {
     recv_any(curl);
     fprintf(stderr, "Send ping\n");
-    if(send_ping(curl, "foobar"))
+    if(ping(curl, "foobar"))
       return;
     fprintf(stderr, "Receive pong\n");
     if(recv_pong(curl, "foobar")) {

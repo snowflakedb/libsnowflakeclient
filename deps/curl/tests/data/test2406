@@ -28,14 +28,15 @@ Funny-head: yesyes
 <client>
 <features>
 Debug
-http/2
+h2c
 SSL
 </features>
 <server>
+http
 http/2
 </server>
 <name>
-HTTP/2 over HTTPS with -f
+HTTP/2 with -f
 </name>
 <setenv>
 </setenv>

@@ -53,6 +53,10 @@
 #include "curl_memory.h"
 #include "memdebug.h"
 
+#ifndef ARRAYSIZE
+#define ARRAYSIZE(A) (sizeof(A)/sizeof((A)[0]))
+#endif
+
 void Curl_debug(struct Curl_easy *data, curl_infotype type,
                 char *ptr, size_t size)
 {
@@ -61,7 +65,7 @@ void Curl_debug(struct Curl_easy *data, curl_infotype type,
       "* ", "< ", "> ", "{ ", "} ", "{ ", "} " };
     if(data->set.fdebug) {
       bool inCallback = Curl_is_in_callback(data);
-      Curl_set_in_callback(data, TRUE);
+      Curl_set_in_callback(data, true);
       (void)(*data->set.fdebug)(data, type, ptr, size, data->set.debugdata);
       Curl_set_in_callback(data, inCallback);
     }
@@ -235,25 +239,7 @@ void Curl_trc_smtp(struct Curl_easy *data, const char *fmt, ...)
 }
 #endif /* !CURL_DISABLE_SMTP */
 
-#ifdef USE_SSL
-struct curl_trc_feat Curl_trc_feat_ssls = {
-  "SSLS",
-  CURL_LOG_LVL_NONE,
-};
-
-void Curl_trc_ssls(struct Curl_easy *data, const char *fmt, ...)
-{
-  DEBUGASSERT(!strchr(fmt, '\n'));
-  if(Curl_trc_ft_is_verbose(data, &Curl_trc_feat_ssls)) {
-    va_list ap;
-    va_start(ap, fmt);
-    trc_infof(data, &Curl_trc_feat_ssls, fmt, ap);
-    va_end(ap);
-  }
-}
-#endif /* USE_SSL */
-
-#if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
+#if defined(USE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
 struct curl_trc_feat Curl_trc_feat_ws = {
   "WS",
   CURL_LOG_LVL_NONE,
@@ -269,7 +255,7 @@ void Curl_trc_ws(struct Curl_easy *data, const char *fmt, ...)
     va_end(ap);
   }
 }
-#endif /* !CURL_DISABLE_WEBSOCKETS && !CURL_DISABLE_HTTP */
+#endif /* USE_WEBSOCKETS && !CURL_DISABLE_HTTP */
 
 #define TRC_CT_NONE        (0)
 #define TRC_CT_PROTOCOL    (1<<(0))
@@ -293,10 +279,7 @@ static struct trc_feat_def trc_feats[] = {
 #ifndef CURL_DISABLE_SMTP
   { &Curl_trc_feat_smtp,      TRC_CT_PROTOCOL },
 #endif
-#ifdef USE_SSL
-  { &Curl_trc_feat_ssls,      TRC_CT_NETWORK },
-#endif
-#if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
+#if defined(USE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
   { &Curl_trc_feat_ws,        TRC_CT_PROTOCOL },
 #endif
 };
@@ -336,7 +319,7 @@ static struct trc_cft_def trc_cfts[] = {
 #ifdef USE_HTTP3
   { &Curl_cft_http3,          TRC_CT_PROTOCOL },
 #endif
-#if !defined(CURL_DISABLE_HTTP)
+#if !defined(CURL_DISABLE_HTTP) && !defined(USE_HYPER)
   { &Curl_cft_http_connect,   TRC_CT_PROTOCOL },
 #endif
 };
@@ -345,13 +328,13 @@ static void trc_apply_level_by_name(const char * const token, int lvl)
 {
   size_t i;
 
-  for(i = 0; i < CURL_ARRAYSIZE(trc_cfts); ++i) {
+  for(i = 0; i < ARRAYSIZE(trc_cfts); ++i) {
     if(strcasecompare(token, trc_cfts[i].cft->name)) {
       trc_cfts[i].cft->log_level = lvl;
       break;
     }
   }
-  for(i = 0; i < CURL_ARRAYSIZE(trc_feats); ++i) {
+  for(i = 0; i < ARRAYSIZE(trc_feats); ++i) {
     if(strcasecompare(token, trc_feats[i].feat->name)) {
       trc_feats[i].feat->log_level = lvl;
       break;
@@ -363,11 +346,11 @@ static void trc_apply_level_by_category(int category, int lvl)
 {
   size_t i;
 
-  for(i = 0; i < CURL_ARRAYSIZE(trc_cfts); ++i) {
+  for(i = 0; i < ARRAYSIZE(trc_cfts); ++i) {
     if(!category || (trc_cfts[i].category & category))
       trc_cfts[i].cft->log_level = lvl;
   }
-  for(i = 0; i < CURL_ARRAYSIZE(trc_feats); ++i) {
+  for(i = 0; i < ARRAYSIZE(trc_feats); ++i) {
     if(!category || (trc_feats[i].category & category))
       trc_feats[i].feat->log_level = lvl;
   }
@@ -382,7 +365,7 @@ static CURLcode trc_opt(const char *config)
   if(!tmp)
     return CURLE_OUT_OF_MEMORY;
 
-  token = Curl_strtok_r(tmp, ", ", &tok_buf);
+  token = strtok_r(tmp, ", ", &tok_buf);
   while(token) {
     switch(*token) {
       case '-':
@@ -408,7 +391,7 @@ static CURLcode trc_opt(const char *config)
     else
       trc_apply_level_by_name(token, lvl);
 
-    token = Curl_strtok_r(NULL, ", ", &tok_buf);
+    token = strtok_r(NULL, ", ", &tok_buf);
   }
   free(tmp);
   return CURLE_OK;
@@ -416,7 +399,7 @@ static CURLcode trc_opt(const char *config)
 
 CURLcode Curl_trc_opt(const char *config)
 {
-  CURLcode result = config ? trc_opt(config) : CURLE_OK;
+  CURLcode result = config? trc_opt(config) : CURLE_OK;
 #ifdef DEBUGBUILD
   /* CURL_DEBUG can override anything */
   if(!result) {
@@ -442,55 +425,6 @@ CURLcode Curl_trc_init(void)
 CURLcode Curl_trc_init(void)
 {
   return CURLE_OK;
-}
-
-void Curl_infof(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-
-void Curl_trc_cf_infof(struct Curl_easy *data,
-                       struct Curl_cfilter *cf,
-                       const char *fmt, ...)
-{
-  (void)data; (void)cf; (void)fmt;
-}
-
-struct curl_trc_feat;
-
-void Curl_trc_write(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-
-void Curl_trc_read(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-
-#ifndef CURL_DISABLE_FTP
-void Curl_trc_ftp(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-#endif
-#ifndef CURL_DISABLE_SMTP
-void Curl_trc_smtp(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-#endif
-#if !defined(CURL_DISABLE_WEBSOCKETS) || !defined(CURL_DISABLE_HTTP)
-void Curl_trc_ws(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data; (void)fmt;
-}
-#endif
-
-void Curl_trc_ssls(struct Curl_easy *data, const char *fmt, ...)
-{
-  (void)data;
-  (void)fmt;
 }
 
 #endif /* !defined(CURL_DISABLE_VERBOSE_STRINGS) */

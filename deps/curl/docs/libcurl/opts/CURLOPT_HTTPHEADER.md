@@ -35,7 +35,7 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTPHEADER,
 
 Pass a pointer to a linked list of HTTP headers to pass to the server and/or
 proxy in your HTTP request. The same list can be used for both host and proxy
-requests.
+requests!
 
 When used within an IMAP or SMTP request to upload a MIME mail, the given
 header list establishes the document-level MIME headers to prepend to the
@@ -184,7 +184,4 @@ Use for MIME mail added in 7.56.0.
 
 # RETURN VALUE
 
-curl_easy_setopt(3) returns a CURLcode indicating success or error.
-
-CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
-libcurl-errors(3).
+Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not.

@@ -7,7 +7,6 @@ Source: libcurl
 See-also:
   - CURLOPT_SSH_AUTH_TYPES (3)
   - CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 (3)
-  - CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256 (3)
 Protocol:
   - SFTP
   - SCP
@@ -30,14 +29,10 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSH_KNOWNHOSTS, char *fname);
 
 Pass a pointer to a null-terminated string holding the filename of the
 known_host file to use. The known_hosts file should use the OpenSSH file
-format. If this file is specified, libcurl only accepts connections with hosts
-that are known and present in that file, with a matching public key. Use
-CURLOPT_SSH_KEYFUNCTION(3) to alter the default behavior on host and key
-matches and mismatches.
-
-We strongly suggest users doing SCP or SFTP transfers to set this option to
-make sure that the network communication is done with the intended server and
-not an impostor.
+format as supported by libssh2. If this file is specified, libcurl only
+accepts connections with hosts that are known and present in that file, with a
+matching public key. Use CURLOPT_SSH_KEYFUNCTION(3) to alter the default
+behavior on host and key matches and mismatches.
 
 The application does not have to keep the string around after setting this
 option.
@@ -72,7 +67,5 @@ int main(void)
 
 # RETURN VALUE
 
-curl_easy_setopt(3) returns a CURLcode indicating success or error.
-
-CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
-libcurl-errors(3).
+Returns CURLE_OK if the option is supported, CURLE_UNKNOWN_OPTION if not, or
+CURLE_OUT_OF_MEMORY if there was insufficient heap space.

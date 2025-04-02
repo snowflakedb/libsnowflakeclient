@@ -70,9 +70,8 @@ static const struct detail scheme[] = {
   {"smtps", "#if defined(USE_SSL) && !defined(CURL_DISABLE_SMTP)" },
   {"telnet", "#ifndef CURL_DISABLE_TELNET" },
   {"tftp", "#ifndef CURL_DISABLE_TFTP" },
-  {"ws",
-   "#if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)" },
-  {"wss", "#if !defined(CURL_DISABLE_WEBSOCKETS) && \\\n"
+  {"ws", "#if defined(USE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)" },
+  {"wss", "#if defined(USE_WEBSOCKETS) && \\\n"
    "  defined(USE_SSL) && !defined(CURL_DISABLE_HTTP)" },
   { NULL, NULL }
 };
@@ -129,7 +128,7 @@ static void showtable(int try, int init, int shift)
       }
     }
     if(!match) {
-      if(!nulls || (nulls > 10)) {
+      if(!nulls || (nulls>10)) {
         printf("\n   ");
         nulls = 0;
       }

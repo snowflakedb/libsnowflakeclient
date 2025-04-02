@@ -42,13 +42,6 @@
 #include "curl_memory.h"
 #include "memdebug.h"
 
-#if defined(__GNUC__) && defined(__APPLE__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-#define MAX_GSS_LEN 1024
-
 static gss_ctx_id_t gss_context = GSS_C_NO_CONTEXT;
 
 /*
@@ -63,9 +56,10 @@ static int check_gss_err(struct Curl_easy *data,
     OM_uint32 maj_stat, min_stat;
     OM_uint32 msg_ctx = 0;
     gss_buffer_desc status_string = GSS_C_EMPTY_BUFFER;
-    struct dynbuf dbuf;
+    char buf[1024];
+    size_t len;
 
-    Curl_dyn_init(&dbuf, MAX_GSS_LEN);
+    len = 0;
     msg_ctx = 0;
     while(!msg_ctx) {
       /* convert major status code (GSS-API error) to text */
@@ -74,16 +68,19 @@ static int check_gss_err(struct Curl_easy *data,
                                     GSS_C_NULL_OID,
                                     &msg_ctx, &status_string);
       if(maj_stat == GSS_S_COMPLETE) {
-        if(Curl_dyn_addn(&dbuf, status_string.value,
-                         status_string.length))
-          return 1; /* error */
+        if(sizeof(buf) > len + status_string.length + 1) {
+          strcpy(buf + len, (char *) status_string.value);
+          len += status_string.length;
+        }
         gss_release_buffer(&min_stat, &status_string);
         break;
       }
       gss_release_buffer(&min_stat, &status_string);
     }
-    if(Curl_dyn_addn(&dbuf, ".\n", 2))
-      return 1; /* error */
+    if(sizeof(buf) > len + 3) {
+      strcpy(buf + len, ".\n");
+      len += 2;
+    }
     msg_ctx = 0;
     while(!msg_ctx) {
       /* convert minor status code (underlying routine error) to text */
@@ -92,16 +89,14 @@ static int check_gss_err(struct Curl_easy *data,
                                     GSS_C_NULL_OID,
                                     &msg_ctx, &status_string);
       if(maj_stat == GSS_S_COMPLETE) {
-        if(Curl_dyn_addn(&dbuf, status_string.value,
-                         status_string.length))
-          return 1; /* error */
+        if(sizeof(buf) > len + status_string.length)
+          strcpy(buf + len, (char *) status_string.value);
         gss_release_buffer(&min_stat, &status_string);
         break;
       }
       gss_release_buffer(&min_stat, &status_string);
     }
-    failf(data, "GSS-API error: %s failed: %s", function, Curl_dyn_ptr(&dbuf));
-    Curl_dyn_free(&dbuf);
+    failf(data, "GSS-API error: %s failed: %s", function, buf);
     return 1;
   }
 
@@ -354,8 +349,7 @@ CURLcode Curl_SOCKS5_gssapi_negotiate(struct Curl_cfilter *cf,
     gss_enc = 1;
 
   infof(data, "SOCKS5 server supports GSS-API %s data protection.",
-        (gss_enc == 0) ? "no" :
-        ((gss_enc == 1) ? "integrity" : "confidentiality"));
+        (gss_enc == 0)?"no":((gss_enc==1)?"integrity":"confidentiality"));
   /* force for the moment to no data protection */
   gss_enc = 0;
   /*
@@ -531,9 +525,8 @@ CURLcode Curl_SOCKS5_gssapi_negotiate(struct Curl_cfilter *cf,
   (void)curlx_nonblock(sock, TRUE);
 
   infof(data, "SOCKS5 access with%s protection granted.",
-        (socksreq[0] == 0) ? "out GSS-API data":
-        ((socksreq[0] == 1) ? " GSS-API integrity" :
-         " GSS-API confidentiality"));
+        (socksreq[0] == 0)?"out GSS-API data":
+        ((socksreq[0] == 1)?" GSS-API integrity":" GSS-API confidentiality"));
 
   conn->socks5_gssapi_enctype = socksreq[0];
   if(socksreq[0] == 0)
@@ -541,9 +534,5 @@ CURLcode Curl_SOCKS5_gssapi_negotiate(struct Curl_cfilter *cf,
 
   return CURLE_OK;
 }
-
-#if defined(__GNUC__) && defined(__APPLE__)
-#pragma GCC diagnostic pop
-#endif
 
 #endif /* HAVE_GSSAPI && !CURL_DISABLE_PROXY */

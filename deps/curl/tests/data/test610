@@ -21,14 +21,17 @@ Dummy test file for rmdir test
 sftp
 </server>
 <precheck>
-%PERL %SRCDIR/libtest/test%TESTNUMBER.pl mkdir %PWD/%LOGDIR/test%TESTNUMBER.dir
+perl %SRCDIR/libtest/test%TESTNUMBER.pl mkdir %PWD/%LOGDIR/test%TESTNUMBER.dir
 </precheck>
 <name>
 SFTP post-quote rmdir
 </name>
 <command>
---key %LOGDIR/server/curl_client_key --pubkey %LOGDIR/server/curl_client_key.pub -u %USER: -Q "-rmdir %SSH_PWD/%LOGDIR/test%TESTNUMBER.dir" sftp://%HOSTIP:%SSHPORT%SSH_PWD/%LOGDIR/file%TESTNUMBER.txt --insecure
+--key %LOGDIR/server/curl_client_key --pubkey %LOGDIR/server/curl_client_key.pub -u %USER: -Q "-rmdir %PWD/%LOGDIR/test%TESTNUMBER.dir" sftp://%HOSTIP:%SSHPORT%SSH_PWD/%LOGDIR/file%TESTNUMBER.txt --insecure
 </command>
+<postcheck>
+perl %SRCDIR/libtest/test%TESTNUMBER.pl gone %PWD/%LOGDIR/test%TESTNUMBER.dir
+</postcheck>
 <file name="%LOGDIR/file%TESTNUMBER.txt">
 Dummy test file for rmdir test
 </file>
@@ -37,8 +40,8 @@ Dummy test file for rmdir test
 #
 # Verify data after the test has been "shot"
 <verify>
-<postcheck>
-%PERL %SRCDIR/libtest/test%TESTNUMBER.pl gone %PWD/%LOGDIR/test%TESTNUMBER.dir
-</postcheck>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

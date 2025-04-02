@@ -26,15 +26,12 @@
 #include "curl_setup.h"
 
 #ifdef USE_WOLFSSL
+#include <wolfssl/version.h>
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+#include <wolfssl/error-ssl.h>
 
 #include "urldata.h"
-
-struct WOLFSSL;
-typedef struct WOLFSSL WOLFSSL;
-struct WOLFSSL_CTX;
-typedef struct WOLFSSL_CTX WOLFSSL_CTX;
-struct WOLFSSL_SESSION;
-typedef struct WOLFSSL_SESSION WOLFSSL_SESSION;
 
 extern const struct Curl_ssl Curl_ssl_wolfssl;
 
@@ -47,24 +44,9 @@ struct wolfssl_ctx {
   BIT(shutting_down);      /* TLS is being shut down */
 };
 
-size_t Curl_wssl_version(char *buffer, size_t size);
-
 CURLcode Curl_wssl_setup_x509_store(struct Curl_cfilter *cf,
                                     struct Curl_easy *data,
                                     struct wolfssl_ctx *wssl);
-
-CURLcode Curl_wssl_setup_session(struct Curl_cfilter *cf,
-                                 struct Curl_easy *data,
-                                 struct wolfssl_ctx *wss,
-                                 const char *ssl_peer_key);
-
-CURLcode Curl_wssl_cache_session(struct Curl_cfilter *cf,
-                                 struct Curl_easy *data,
-                                 const char *ssl_peer_key,
-                                 WOLFSSL_SESSION *session,
-                                 int ietf_tls_id,
-                                 const char *alpn);
-
 
 #endif /* USE_WOLFSSL */
 #endif /* HEADER_CURL_WOLFSSL_H */

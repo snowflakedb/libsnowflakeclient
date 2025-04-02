@@ -35,7 +35,6 @@ if test "x$OPT_OPENSSL" != xno; then
 
   dnl backup the pre-ssl variables
   CLEANLDFLAGS="$LDFLAGS"
-  CLEANLDFLAGSPC="$LDFLAGSPC"
   CLEANCPPFLAGS="$CPPFLAGS"
   CLEANLIBS="$LIBS"
 
@@ -120,6 +119,7 @@ if test "x$OPT_OPENSSL" != xno; then
       SSL_CPPFLAGS=`CURL_EXPORT_PCDIR([$OPENSSL_PCDIR]) dnl
         $PKGCONFIG --cflags-only-I openssl 2>/dev/null`
 
+      AC_SUBST(SSL_LIBS)
       AC_MSG_NOTICE([pkg-config: SSL_LIBS: "$SSL_LIBS"])
       AC_MSG_NOTICE([pkg-config: SSL_LDFLAGS: "$SSL_LDFLAGS"])
       AC_MSG_NOTICE([pkg-config: SSL_CPPFLAGS: "$SSL_CPPFLAGS"])
@@ -139,7 +139,6 @@ if test "x$OPT_OPENSSL" != xno; then
   dnl finally, set flags to use SSL
   CPPFLAGS="$CPPFLAGS $SSL_CPPFLAGS"
   LDFLAGS="$LDFLAGS $SSL_LDFLAGS"
-  LDFLAGSPC="$LDFLAGSPC $SSL_LDFLAGS"
 
   AC_CHECK_LIB(crypto, HMAC_Update,[
     HAVECRYPTO="yes"
@@ -147,7 +146,6 @@ if test "x$OPT_OPENSSL" != xno; then
     ],[
     if test -n "$LIB_OPENSSL" ; then
       LDFLAGS="$CLEANLDFLAGS -L$LIB_OPENSSL"
-      LDFLAGSPC="$CLEANLDFLAGSPC -L$LIB_OPENSSL"
     fi
     if test "$PKGCONFIG" = "no" -a -n "$PREFIX_OPENSSL" ; then
       # only set this if pkg-config wasn't used
@@ -192,7 +190,6 @@ if test "x$OPT_OPENSSL" != xno; then
         [
           AC_MSG_RESULT(no)
           LDFLAGS="$CLEANLDFLAGS"
-          LDFLAGSPC="$CLEANLDFLAGSPC"
           CPPFLAGS="$CLEANCPPFLAGS"
           LIBS="$CLEANLIBS"
         ])
@@ -229,6 +226,21 @@ if test "x$OPT_OPENSSL" != xno; then
         test openssl != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
         OPENSSL_ENABLED=1
         AC_DEFINE(USE_OPENSSL, 1, [if OpenSSL is in use]))
+
+      if test $ac_cv_header_openssl_x509_h = no; then
+        dnl we don't use the "action" part of the AC_CHECK_HEADERS macro
+        dnl since 'err.h' might in fact find a krb4 header with the same
+        dnl name
+        AC_CHECK_HEADERS(x509.h rsa.h crypto.h pem.h ssl.h err.h)
+
+        if test $ac_cv_header_x509_h = yes &&
+           test $ac_cv_header_crypto_h = yes &&
+           test $ac_cv_header_ssl_h = yes; then
+          dnl three matches
+          ssl_msg="OpenSSL"
+          OPENSSL_ENABLED=1
+        fi
+      fi
     fi
 
     if test X"$OPENSSL_ENABLED" != X"1"; then
@@ -287,6 +299,8 @@ if test "x$OPT_OPENSSL" != xno; then
       ]])
     ],[
       AC_MSG_RESULT([yes])
+      AC_DEFINE_UNQUOTED(HAVE_LIBRESSL, 1,
+        [Define to 1 if using LibreSSL.])
       ssl_msg="LibreSSL"
     ],[
       AC_MSG_RESULT([no])
@@ -360,7 +374,7 @@ if test "$OPENSSL_ENABLED" = "1"; then
   ],[
     AC_MSG_RESULT([yes])
     AC_DEFINE(HAVE_OPENSSL_SRP, 1, [if you have the functions SSL_CTX_set_srp_username and SSL_CTX_set_srp_password])
-    HAVE_OPENSSL_SRP=1
+    AC_SUBST(HAVE_OPENSSL_SRP, [1])
   ],[
     AC_MSG_RESULT([no])
   ])
@@ -370,14 +384,14 @@ dnl ---
 dnl Whether the OpenSSL configuration will be loaded automatically
 dnl ---
 if test X"$OPENSSL_ENABLED" = X"1"; then
-  AC_ARG_ENABLE(openssl-auto-load-config,
+AC_ARG_ENABLE(openssl-auto-load-config,
 AS_HELP_STRING([--enable-openssl-auto-load-config],[Enable automatic loading of OpenSSL configuration])
 AS_HELP_STRING([--disable-openssl-auto-load-config],[Disable automatic loading of OpenSSL configuration]),
-  [ if test X"$enableval" = X"no"; then
-      AC_MSG_NOTICE([automatic loading of OpenSSL configuration disabled])
-      AC_DEFINE(CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG, 1, [if the OpenSSL configuration won't be loaded automatically])
-    fi
-  ])
+[ if test X"$enableval" = X"no"; then
+    AC_MSG_NOTICE([automatic loading of OpenSSL configuration disabled])
+    AC_DEFINE(CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG, 1, [if the OpenSSL configuration won't be loaded automatically])
+  fi
+])
 fi
 
 dnl ---

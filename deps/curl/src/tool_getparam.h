@@ -259,7 +259,6 @@ typedef enum {
   C_SSL_NO_REVOKE,
   C_SSL_REQD,
   C_SSL_REVOKE_BEST_EFFORT,
-  C_SSL_SESSIONS,
   C_SSLV2,
   C_SSLV3,
   C_STDERR,
@@ -268,12 +267,10 @@ typedef enum {
   C_TCP_FASTOPEN,
   C_TCP_NODELAY,
   C_TELNET_OPTION,
-  C_TEST_DUPHANDLE,
   C_TEST_EVENT,
   C_TFTP_BLKSIZE,
   C_TFTP_NO_OPTIONS,
   C_TIME_COND,
-  C_TLS_EARLYDATA,
   C_TLS_MAX,
   C_TLS13_CIPHERS,
   C_TLSAUTHTYPE,
@@ -315,7 +312,6 @@ typedef enum {
 #define ARG_TYPEMASK 0x03
 #define ARGTYPE(x) ((x) & ARG_TYPEMASK)
 
-#define ARG_TLS 0x40 /* requires TLS support */
 #define ARG_NO 0x80 /* set if the option is documented as --no-* */
 
 struct LongShort {
@@ -346,11 +342,11 @@ typedef enum {
   PARAM_NO_PREFIX,
   PARAM_NUMBER_TOO_LARGE,
   PARAM_NO_NOT_BOOLEAN,
+  PARAM_CONTDISP_SHOW_HEADER, /* --include and --remote-header-name */
   PARAM_CONTDISP_RESUME_FROM, /* --continue-at and --remote-header-name */
   PARAM_READ_ERROR,
   PARAM_EXPAND_ERROR, /* --expand problem */
   PARAM_BLANK_STRING,
-  PARAM_VAR_SYNTAX, /* --variable syntax error */
   PARAM_LAST
 } ParameterError;
 

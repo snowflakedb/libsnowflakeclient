@@ -32,5 +32,8 @@ SFTP retrieval of empty file
 #
 # Verify data after the test has been "shot"
 <verify>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

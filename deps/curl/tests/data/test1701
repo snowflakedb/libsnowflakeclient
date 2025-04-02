@@ -33,6 +33,7 @@ Funny-head: yesyes
 h2c
 </features>
 <server>
+http
 http/2
 </server>
 <name>

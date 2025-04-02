@@ -29,7 +29,7 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_PROTOCOL, long *p);
 
 This option is deprecated. We strongly recommend using
 CURLINFO_SCHEME(3) instead, because this option cannot return all
-possible protocols.
+possible protocols!
 
 Pass a pointer to a long to receive the version used in the last http
 connection. The returned value is set to one of the CURLPROTO_* values:
@@ -73,7 +73,4 @@ Deprecated since 7.85.0.
 
 # RETURN VALUE
 
-curl_easy_getinfo(3) returns a CURLcode indicating success or error.
-
-CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
-libcurl-errors(3).
+Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.

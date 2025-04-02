@@ -27,6 +27,9 @@ for ssh test
 #
 # Verify data after the test has been "shot"
 <verify>
+<valgrind>
+disable
+</valgrind>
 <stdout>
 Test data
 for ssh test

@@ -21,7 +21,7 @@
 #
 # SPDX-License-Identifier: curl
 #
-"""A telnet server which negotiates."""
+""" A telnet server which negotiates"""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -31,6 +31,7 @@ import logging
 import os
 import socket
 import sys
+import time
 
 from util import ClosingFileHandler
 
@@ -50,7 +51,10 @@ VERIFIED_RSP = "WE ROOLZ: {pid}"
 
 
 def telnetserver(options):
-    """Start up a TCP server with a telnet handler and serve DICT requests forever."""
+    """
+    Starts up a TCP server with a telnet handler and serves DICT requests
+    forever.
+    """
     if options.pidfile:
         pid = os.getpid()
         # see tests/server/util.c function write_pidfile
@@ -71,10 +75,13 @@ def telnetserver(options):
 
 
 class NegotiatingTelnetHandler(socketserver.BaseRequestHandler):
-    """Handler class for Telnet connections."""
+    """Handler class for Telnet connections.
 
+    """
     def handle(self):
-        """Negotiates options before reading data."""
+        """
+        Negotiates options before reading data.
+        """
         neg = Negotiator(self.request)
 
         try:
@@ -128,7 +135,7 @@ class Negotiator(object):
 
     def recv(self, bytes):
         """
-        Read bytes from TCP, handling negotiation sequences.
+        Read bytes from TCP, handling negotiation sequences
 
         :param bytes: Number of bytes to read
         :return: a buffer of bytes
@@ -250,7 +257,7 @@ class NegBase(object):
 
     @classmethod
     def from_val(cls, val):
-        for k in cls.__dict__:
+        for k in cls.__dict__.keys():
             if getattr(cls, k) == val:
                 return k
 
@@ -308,7 +315,9 @@ def get_options():
 
 
 def setup_logging(options):
-    """Set up logging from the command line options."""
+    """
+    Set up logging from the command line options
+    """
     root_logger = logging.getLogger()
     add_stdout = False
 
@@ -341,11 +350,14 @@ def setup_logging(options):
 
 
 class ScriptRC(object):
-    """Enum for script return codes."""
-
+    """Enum for script return codes"""
     SUCCESS = 0
     FAILURE = 1
     EXCEPTION = 2
+
+
+class ScriptException(Exception):
+    pass
 
 
 if __name__ == '__main__':
@@ -358,8 +370,8 @@ if __name__ == '__main__':
     # Run main script.
     try:
         rc = telnetserver(options)
-    except Exception:
-        log.exception('Error in telnet server')
+    except Exception as e:
+        log.exception(e)
         rc = ScriptRC.EXCEPTION
 
     if options.pidfile and os.path.isfile(options.pidfile):

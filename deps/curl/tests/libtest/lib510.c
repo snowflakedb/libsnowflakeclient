@@ -25,7 +25,7 @@
 
 #include "memdebug.h"
 
-static const char * const testpost[]={
+static const char *post[]={
   "one",
   "two",
   "three",
@@ -46,7 +46,7 @@ static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
   if(size*nmemb < 1)
     return 0;
 
-  data = testpost[pooh->counter];
+  data = post[pooh->counter];
 
   if(data) {
     size_t len = strlen(data);

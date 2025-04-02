@@ -25,7 +25,7 @@
 
 #include "memdebug.h"
 
-static char testdata[]="this is what we post to the silly web server\n";
+static char data[]="this is what we post to the silly web server\n";
 
 struct WriteThis {
   char *readptr;
@@ -56,8 +56,8 @@ CURLcode test(char *URL)
 
   struct WriteThis pooh;
 
-  pooh.readptr = testdata;
-  pooh.sizeleft = strlen(testdata);
+  pooh.readptr = data;
+  pooh.sizeleft = strlen(data);
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed\n");

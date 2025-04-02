@@ -24,5 +24,3 @@ create any file.
 Note that this is the negated option name documented. You can thus use
 --clobber to enforce the clobbering, even if --remote-header-name is
 specified.
-
-The --continue-at option cannot be used together with --no-clobber.

@@ -26,5 +26,8 @@ SFTP invalid user login (password authentication)
 <errorcode>
 67
 </errorcode>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

@@ -33,6 +33,7 @@ http/3
 nghttpx-h3
 </features>
 <server>
+http
 http/3
 </server>
 <name>

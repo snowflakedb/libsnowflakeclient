@@ -40,11 +40,7 @@ Disable support for the negotiate authentication methods.
 
 ## `CURL_DISABLE_AWS`
 
-Disable **aws-sigv4** support.
-
-## `CURL_DISABLE_CA_SEARCH`
-
-Disable unsafe CA bundle search in PATH on Windows.
+Disable **AWS-SIG4** support.
 
 ## `CURL_DISABLE_DICT`
 
@@ -144,11 +140,6 @@ Disable the built-in progress meter
 
 Disable support for proxies
 
-## `CURL_DISABLE_IPFS`
-
-Disable the IPFS/IPNS protocols. This affects the curl tool only, where
-IPFS/IPNS protocol support is implemented.
-
 ## `CURL_DISABLE_RTSP`
 
 Disable the RTSP protocol.
@@ -185,7 +176,3 @@ Disable the TFTP protocol
 ## `CURL_DISABLE_VERBOSE_STRINGS`
 
 Disable verbose strings and error messages.
-
-## `CURL_DISABLE_WEBSOCKETS`
-
-Disable the WebSocket protocols.

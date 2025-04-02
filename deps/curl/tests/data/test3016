@@ -21,7 +21,7 @@ GET a directory using file://
 !win32
 </features>
 <command>
-file://%FILE_PWD/
+file://%PWD/
 </command>
 </client>
 

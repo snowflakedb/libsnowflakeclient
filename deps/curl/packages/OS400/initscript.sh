@@ -189,8 +189,8 @@ make_module()
                 echo "#pragma convert(819)"
                 echo "#line 1"
                 cat "${2}"
-        } > "${1}"__819.c
-        CMD="CRTCMOD MODULE(${TARGETLIB}/${1}) SRCSTMF('${1}__819.c')"
+        } > __tmpsrcf.c
+        CMD="CRTCMOD MODULE(${TARGETLIB}/${1}) SRCSTMF('__tmpsrcf.c')"
         CMD="${CMD} SYSIFCOPT(*IFS64IO *ASYNCSIGNAL)"
 #       CMD="${CMD} OPTION(*INCDIRFIRST *SHOWINC *SHOWSYS)"
         CMD="${CMD} OPTION(*INCDIRFIRST)"
@@ -228,9 +228,7 @@ make_module()
         fi
 
         CLcommand "${CMD}"
-        if [ "${DEBUG}" = "*NONE" ]
-        then    rm -f "${1}"__819.c
-        fi
+        rm -f __tmpsrcf.c
         # shellcheck disable=SC2034
         LINK=YES
 }

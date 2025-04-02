@@ -154,8 +154,8 @@ struct TELNET {
   int himq[256];
   int him_preferred[256];
   int subnegotiation[256];
-  char *subopt_ttype;                /* Set with suboption TTYPE */
-  char *subopt_xdisploc;             /* Set with suboption XDISPLOC */
+  char subopt_ttype[32];             /* Set with suboption TTYPE */
+  char subopt_xdisploc[128];         /* Set with suboption XDISPLOC */
   unsigned short subopt_wsx;         /* Set with suboption NAWS */
   unsigned short subopt_wsy;         /* Set with suboption NAWS */
   TelnetReceive telrcv_state;
@@ -190,7 +190,6 @@ const struct Curl_handler Curl_handler_telnet = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
-  ZERO_NULL,                            /* follow */
   PORT_TELNET,                          /* defport */
   CURLPROTO_TELNET,                     /* protocol */
   CURLPROTO_TELNET,                     /* family */
@@ -672,7 +671,7 @@ static void printsub(struct Curl_easy *data,
   if(data->set.verbose) {
     unsigned int i = 0;
     if(direction) {
-      infof(data, "%s IAC SB ", (direction == '<') ? "RCVD" : "SENT");
+      infof(data, "%s IAC SB ", (direction == '<')? "RCVD":"SENT");
       if(length >= 3) {
         int j;
 
@@ -696,10 +695,7 @@ static void printsub(struct Curl_easy *data,
           infof(data, ", not IAC SE) ");
         }
       }
-      if(length >= 2)
-        length -= 2;
-      else /* bad input */
-        return;
+      length -= 2;
     }
     if(length < 1) {
       infof(data, "(Empty suboption?)");
@@ -725,8 +721,8 @@ static void printsub(struct Curl_easy *data,
     switch(pointer[0]) {
     case CURL_TELOPT_NAWS:
       if(length > 4)
-        infof(data, "Width: %d ; Height: %d", (pointer[1] << 8) | pointer[2],
-              (pointer[3] << 8) | pointer[4]);
+        infof(data, "Width: %d ; Height: %d", (pointer[1]<<8) | pointer[2],
+              (pointer[3]<<8) | pointer[4]);
       break;
     default:
       switch(pointer[1]) {
@@ -777,15 +773,23 @@ static void printsub(struct Curl_easy *data,
   }
 }
 
+#ifdef _MSC_VER
+#pragma warning(push)
+/* warning C4706: assignment within conditional expression */
+#pragma warning(disable:4706)
+#endif
 static bool str_is_nonascii(const char *str)
 {
   char c;
-  while((c = *str++) != 0)
+  while((c = *str++))
     if(c & 0x80)
       return TRUE;
 
   return FALSE;
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 static CURLcode check_telnet_options(struct Curl_easy *data)
 {
@@ -827,9 +831,12 @@ static CURLcode check_telnet_options(struct Curl_easy *data)
       case 5:
         /* Terminal type */
         if(strncasecompare(option, "TTYPE", 5)) {
-          tn->subopt_ttype = arg;
-          tn->us_preferred[CURL_TELOPT_TTYPE] = CURL_YES;
-          break;
+          size_t l = strlen(arg);
+          if(l < sizeof(tn->subopt_ttype)) {
+            strcpy(tn->subopt_ttype, arg);
+            tn->us_preferred[CURL_TELOPT_TTYPE] = CURL_YES;
+            break;
+          }
         }
         result = CURLE_UNKNOWN_OPTION;
         break;
@@ -837,9 +844,12 @@ static CURLcode check_telnet_options(struct Curl_easy *data)
       case 8:
         /* Display variable */
         if(strncasecompare(option, "XDISPLOC", 8)) {
-          tn->subopt_xdisploc = arg;
-          tn->us_preferred[CURL_TELOPT_XDISPLOC] = CURL_YES;
-          break;
+          size_t l = strlen(arg);
+          if(l < sizeof(tn->subopt_xdisploc)) {
+            strcpy(tn->subopt_xdisploc, arg);
+            tn->us_preferred[CURL_TELOPT_XDISPLOC] = CURL_YES;
+            break;
+          }
         }
         result = CURLE_UNKNOWN_OPTION;
         break;
@@ -1552,9 +1562,10 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
         /* returned not-zero, this an error */
         if(result) {
           keepon = FALSE;
-          /* In test 1452, macOS sees a ECONNRESET sometimes? Is this the
-           * telnet test server not shutting down the socket in a clean way?
-           * Seems to be timing related, happens more on slow debug build */
+          /* TODO: in test 1452, macOS sees a ECONNRESET sometimes?
+           * Is this the telnet test server not shutting down the socket
+           * in a clean way? Seems to be timing related, happens more
+           * on slow debug build */
           if(data->state.os_errno == ECONNRESET) {
             DEBUGF(infof(data, "telnet_do, unexpected ECONNRESET on recv"));
           }

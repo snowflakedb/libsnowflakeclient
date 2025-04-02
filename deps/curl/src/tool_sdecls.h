@@ -64,10 +64,10 @@
 
 struct OutStruct {
   char *filename;
-  BIT(alloc_filename);
-  BIT(is_cd_filename);
-  BIT(s_isreg);
-  BIT(fopened);
+  bool alloc_filename;
+  bool is_cd_filename;
+  bool s_isreg;
+  bool fopened;
   FILE *stream;
   curl_off_t bytes;
   curl_off_t init;

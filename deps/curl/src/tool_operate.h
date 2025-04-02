@@ -41,7 +41,7 @@ struct per_transfer {
   long num_retries; /* counts the performed retries */
   struct timeval start; /* start of this transfer */
   struct timeval retrystart;
-  char *url;
+  char *this_url;
   unsigned int urlnum; /* the index of the given URL */
   char *outfile;
   int infd;
@@ -61,22 +61,22 @@ struct per_transfer {
   curl_off_t ulnow;
   curl_off_t uploadfilesize; /* expected total amount */
   curl_off_t uploadedsofar; /* amount delivered from the callback */
-  BIT(dltotal_added); /* if the total has been added from this */
-  BIT(ultotal_added);
+  bool dltotal_added; /* if the total has been added from this */
+  bool ultotal_added;
 
   /* NULL or malloced */
   char *uploadfile;
   char *errorbuffer; /* allocated and assigned while this is used for a
                         transfer */
-  BIT(infdopen); /* TRUE if infd needs closing */
-  BIT(noprogress);
-  BIT(was_last_header_empty);
+  bool infdopen; /* TRUE if infd needs closing */
+  bool noprogress;
+  bool was_last_header_empty;
 
-  BIT(added); /* set TRUE when added to the multi handle */
-  BIT(abort); /* when doing parallel transfers and this is TRUE then a critical
+  bool added; /* set TRUE when added to the multi handle */
+  bool abort; /* when doing parallel transfers and this is TRUE then a critical
                  error (eg --fail-early) has occurred in another transfer and
                  this transfer will be aborted in the progress callback */
-  BIT(skip);  /* considered already done */
+  bool skip;  /* considered already done */
 };
 
 CURLcode operate(struct GlobalConfig *config, int argc, argv_item_t argv[]);

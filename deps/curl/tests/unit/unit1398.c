@@ -21,12 +21,9 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "curlcheck.h"
+#define CURL_NO_FMT_CHECKS
 
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat"
-#endif
+#include "curlcheck.h"
 
 static CURLcode unit_setup(void) {return CURLE_OK;}
 static void unit_stop(void) {}
@@ -185,7 +182,3 @@ rc = curl_msnprintf(output, 129,
 fail_unless(rc == 128, "return code should be 128");
 
 UNITTEST_STOP
-
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif

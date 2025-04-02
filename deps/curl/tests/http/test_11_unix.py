@@ -28,8 +28,6 @@ import logging
 import os
 import socket
 from threading import Thread
-from typing import Generator
-
 import pytest
 
 from testenv import Env, CurlClient
@@ -42,7 +40,6 @@ class UDSFaker:
     def __init__(self, path):
         self._uds_path = path
         self._done = False
-        self._socket = None
 
     @property
     def path(self):
@@ -72,7 +69,7 @@ class UDSFaker:
             try:
                 c, client_address = self._socket.accept()
                 try:
-                    c.recv(16)
+                    data = c.recv(16)
                     c.sendall("""HTTP/1.1 200 Ok
 Server: UdsFaker
 Content-Type: application/json
@@ -91,7 +88,7 @@ Content-Length: 19
 class TestUnix:
 
     @pytest.fixture(scope="class")
-    def uds_faker(self, env: Env) -> Generator[UDSFaker, None, None]:
+    def uds_faker(self, env: Env) -> UDSFaker:
         uds_path = os.path.join(env.gen_dir, 'uds_11.sock')
         faker = UDSFaker(path=uds_path)
         faker.start()
@@ -99,7 +96,7 @@ class TestUnix:
         faker.stop()
 
     # download http: via Unix socket
-    def test_11_01_unix_connect_http(self, env: Env, httpd, uds_faker):
+    def test_11_01_unix_connect_http(self, env: Env, httpd, uds_faker, repeat):
         curl = CurlClient(env=env)
         url = f'http://{env.domain1}:{env.http_port}/data.json'
         r = curl.http_download(urls=[url], with_stats=True,
@@ -109,8 +106,8 @@ class TestUnix:
         r.check_response(count=1, http_status=200)
 
     # download https: via Unix socket
-    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason="curl without SSL")
-    def test_11_02_unix_connect_http(self, env: Env, httpd, uds_faker):
+    @pytest.mark.skipif(condition=not Env.have_ssl_curl(), reason=f"curl without SSL")
+    def test_11_02_unix_connect_http(self, env: Env, httpd, uds_faker, repeat):
         curl = CurlClient(env=env)
         url = f'https://{env.domain1}:{env.https_port}/data.json'
         r = curl.http_download(urls=[url], with_stats=True,
@@ -121,7 +118,7 @@ class TestUnix:
 
     # download HTTP/3 via Unix socket
     @pytest.mark.skipif(condition=not Env.have_h3(), reason='h3 not supported')
-    def test_11_03_unix_connect_quic(self, env: Env, httpd, uds_faker):
+    def test_11_03_unix_connect_quic(self, env: Env, httpd, uds_faker, repeat):
         curl = CurlClient(env=env)
         url = f'https://{env.domain1}:{env.https_port}/data.json'
         r = curl.http_download(urls=[url], with_stats=True,

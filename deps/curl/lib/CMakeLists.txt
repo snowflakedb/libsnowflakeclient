@@ -21,14 +21,14 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-set(LIB_NAME "libcurl")
-set(LIBCURL_OUTPUT_NAME "libcurl" CACHE STRING "Basename of the curl library")
+set(LIB_NAME libcurl)
+set(LIBCURL_OUTPUT_NAME libcurl CACHE STRING "Basename of the curl library")
 add_definitions("-DBUILDING_LIBCURL")
 
 configure_file("curl_config.h.cmake" "${CMAKE_CURRENT_BINARY_DIR}/curl_config.h")
 
 # Get 'CSOURCES', 'HHEADERS' variables
-curl_transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
+transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 include("${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 
 # DllMain is added later for DLL builds only.
@@ -39,14 +39,14 @@ list(APPEND HHEADERS "${CMAKE_CURRENT_BINARY_DIR}/curl_config.h")
 # The rest of the build
 
 include_directories(
-  "${PROJECT_BINARY_DIR}/lib"  # for "curl_config.h"
-  "${PROJECT_SOURCE_DIR}/lib"  # for "curl_setup.h"
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 if(USE_ARES)
-  include_directories(SYSTEM ${CARES_INCLUDE_DIRS})
+  include_directories(${CARES_INCLUDE_DIRS})
 endif()
 
-if(CURL_BUILD_TESTING)
+if(BUILD_TESTING)
   add_library(
     curlu  # special libcurlu library just for unittests
     STATIC
@@ -55,9 +55,6 @@ if(CURL_BUILD_TESTING)
   )
   target_compile_definitions(curlu PUBLIC "UNITTESTS" "CURL_STATICLIB")
   target_link_libraries(curlu PRIVATE ${CURL_LIBS})
-  # There is plenty of parallelism when building the testdeps target.
-  # Override the curlu batch size with the maximum to optimize performance.
-  set_target_properties(curlu PROPERTIES UNITY_BUILD_BATCH_SIZE 0)
 endif()
 
 if(ENABLE_CURLDEBUG)
@@ -67,13 +64,6 @@ if(ENABLE_CURLDEBUG)
 endif()
 
 ## Library definition
-
-if(NOT DEFINED IMPORT_LIB_SUFFIX)
-  set(IMPORT_LIB_SUFFIX "")
-endif()
-if(NOT DEFINED STATIC_LIB_SUFFIX)
-  set(STATIC_LIB_SUFFIX "")
-endif()
 
 # Add "_imp" as a suffix before the extension to avoid conflicting with
 # the statically linked "libcurl.lib" (typically with MSVC)
@@ -115,12 +105,14 @@ if(SHARE_LIB_OBJECT)
     set_property(TARGET ${LIB_OBJECT} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_HIDDEN_SYMBOLS")
   endif()
   if(CURL_HAS_LTO)
-    set_target_properties(${LIB_OBJECT} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_target_properties(${LIB_OBJECT} PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+      INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
   endif()
 
   target_include_directories(${LIB_OBJECT} INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+    "$<BUILD_INTERFACE:${CURL_SOURCE_DIR}/include>")
 
   set(LIB_SOURCE $<TARGET_OBJECTS:${LIB_OBJECT}>)
 else()
@@ -133,8 +125,7 @@ if(BUILD_STATIC_LIBS)
   add_library(${LIB_STATIC} STATIC ${LIB_SOURCE})
   add_library(${PROJECT_NAME}::${LIB_STATIC} ALIAS ${LIB_STATIC})
   if(WIN32)
-    set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
-    list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
+    set_property(TARGET ${LIB_OBJECT} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
   endif()
   target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
   # Remove the "lib" prefix since the library is already named "libcurl".
@@ -147,19 +138,14 @@ if(BUILD_STATIC_LIBS)
     set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_HIDDEN_SYMBOLS")
   endif()
   if(CURL_HAS_LTO)
-    set_target_properties(${LIB_STATIC} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_target_properties(${LIB_STATIC} PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+      INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
   endif()
 
   target_include_directories(${LIB_STATIC} INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
-  if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} crypt32.lib ws2_32.lib msvcrt.lib ole32.lib")
-    else()
-      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} crypt32.lib ws2_32.lib ole32.lib")
-    endif()
-  endif()
+    "$<BUILD_INTERFACE:${CURL_SOURCE_DIR}/include>")
 endif()
 
 if(BUILD_SHARED_LIBS)
@@ -170,14 +156,15 @@ if(BUILD_SHARED_LIBS)
     if(CYGWIN)
       # For Cygwin always compile dllmain.c as a separate unit since it
       # includes windows.h, which should not be included in other units.
-      set_source_files_properties("dllmain.c" PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+      set_source_files_properties("dllmain.c" PROPERTIES
+        SKIP_UNITY_BUILD_INCLUSION ON)
     endif()
     set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES "dllmain.c")
   endif()
   if(WIN32)
     set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES "libcurl.rc")
     if(CURL_HIDES_PRIVATE_SYMBOLS)
-      set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES "${PROJECT_SOURCE_DIR}/lib/libcurl.def")
+      set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES "${CURL_SOURCE_DIR}/lib/libcurl.def")
     endif()
   endif()
   target_link_libraries(${LIB_SHARED} PRIVATE ${CURL_LIBS})
@@ -191,12 +178,14 @@ if(BUILD_SHARED_LIBS)
     set_property(TARGET ${LIB_SHARED} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_HIDDEN_SYMBOLS")
   endif()
   if(CURL_HAS_LTO)
-    set_target_properties(${LIB_SHARED} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_target_properties(${LIB_SHARED} PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+      INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
   endif()
 
   target_include_directories(${LIB_SHARED} INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+    "$<BUILD_INTERFACE:${CURL_SOURCE_DIR}/include>")
 
   if(CMAKE_DLL_NAME_WITH_SOVERSION OR
     CYGWIN OR
@@ -220,7 +209,7 @@ if(BUILD_SHARED_LIBS)
 
   if(CURL_LIBCURL_SOVERSION OR CURL_LIBCURL_VERSIONED_SYMBOLS)
     # Get 'VERSIONCHANGE', 'VERSIONADD', 'VERSIONDEL', 'VERSIONINFO' variables
-    curl_transform_makefile_inc("Makefile.soname" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake")
+    transform_makefile_inc("Makefile.soname" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake")
     include("${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake")
 
     math(EXPR _cmakesoname "${VERSIONCHANGE} - ${VERSIONDEL}")
@@ -249,21 +238,16 @@ if(BUILD_SHARED_LIBS)
         set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX "WOLFSSL_")
       elseif(CURL_USE_GNUTLS)
         set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX "GNUTLS_")
-      elseif(CURL_USE_RUSTLS)
-        set(CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX "RUSTLS_")
       endif()
     endif()
-    # Generate version script for the linker, for versioned symbols.
-    # Consumed variables:
-    #   CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX
-    #   CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME
-    set(CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME ${_cmakesoname})
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/libcurl.vers.in"
-      "${CMAKE_CURRENT_BINARY_DIR}/libcurl.vers" @ONLY)
-    include(CMakePushCheckState)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/libcurl.vers" "
+      HIDDEN {};
+      CURL_${CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX}${_cmakesoname}
+      {
+        global: curl_*;
+        local: *;
+      };")
     include(CheckCSourceCompiles)
-    cmake_push_check_state()
     set(CMAKE_REQUIRED_LINK_OPTIONS "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libcurl.vers")
     check_c_source_compiles("int main(void) { return 0; }" HAVE_VERSIONED_SYMBOLS)
     if(HAVE_VERSIONED_SYMBOLS)
@@ -272,7 +256,7 @@ if(BUILD_SHARED_LIBS)
     else()
       message(WARNING "Versioned symbols requested, but not supported by the toolchain.")
     endif()
-    cmake_pop_check_state()
+    unset(CMAKE_REQUIRED_LINK_OPTIONS)
   endif()
 endif()
 

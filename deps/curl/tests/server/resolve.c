@@ -21,10 +21,6 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#ifndef CURL_NO_GETADDRINFO_OVERRIDE
-#define CURL_NO_GETADDRINFO_OVERRIDE
-#endif
-
 #include "server_setup.h"
 
 /* Purpose
@@ -66,7 +62,7 @@ int main(int argc, char *argv[])
   const char *host = NULL;
   int rc = 0;
 
-  while(argc > arg) {
+  while(argc>arg) {
     if(!strcmp("--version", argv[arg])) {
       printf("resolve IPv4%s\n",
 #if defined(CURLRES_IPV6)
@@ -129,9 +125,11 @@ int main(int argc, char *argv[])
     hints.ai_family = use_ipv6 ? PF_INET6 : PF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = 0;
-    rc = getaddrinfo(host, "80", &hints, &ai);
+    /* Use parenthesis around functions to stop them from being replaced by
+       the macro in memdebug.h */
+    rc = (getaddrinfo)(host, "80", &hints, &ai);
     if(rc == 0)
-      freeaddrinfo(ai);
+      (freeaddrinfo)(ai);
   }
 #else
   if(use_ipv6) {
@@ -142,11 +140,7 @@ int main(int argc, char *argv[])
     /* gethostbyname() resolve */
     struct hostent *he;
 
-#ifdef __AMIGA__
-    he = gethostbyname((unsigned char *)host);
-#else
     he = gethostbyname(host);
-#endif
 
     rc = !he;
   }

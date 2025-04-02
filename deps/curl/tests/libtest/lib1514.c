@@ -30,7 +30,7 @@
 
 #include "memdebug.h"
 
-static char testdata[]="dummy";
+static char data[]="dummy";
 
 struct WriteThis {
   char *readptr;
@@ -59,7 +59,7 @@ CURLcode test(char *URL)
   CURL *curl;
   CURLcode result = CURLE_OK;
   CURLcode res = CURLE_OK;
-  struct WriteThis pooh = { testdata, sizeof(testdata)-1 };
+  struct WriteThis pooh = { data, sizeof(data)-1 };
 
   global_init(CURL_GLOBAL_ALL);
 

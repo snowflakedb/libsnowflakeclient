@@ -21,14 +21,15 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
+#define CURL_DISABLE_DEPRECATION  /* Using and testing the form api */
 #include "test.h"
 
 #include "memdebug.h"
 
-static char testdata[] =
+static char data[] =
   "this is what we post to the silly web server";
 
-static const char testname[] = "fieldname";
+static const char name[] = "fieldname";
 
 
 /* This test attempts to use all form API features that are not
@@ -79,36 +80,34 @@ CURLcode test(char *URL)
     goto test_cleanup;
   }
   headers = headers2;
-  CURL_IGNORE_DEPRECATION(
-    formrc = curl_formadd(&formpost, &lastptr,
-                          CURLFORM_COPYNAME, &testname,
-                          CURLFORM_COPYCONTENTS, &testdata,
-                          CURLFORM_CONTENTHEADER, headers,
-                          CURLFORM_END);
-  )
+  formrc = curl_formadd(&formpost, &lastptr,
+                        CURLFORM_COPYNAME, &name,
+                        CURLFORM_COPYCONTENTS, &data,
+                        CURLFORM_CONTENTHEADER, headers,
+                        CURLFORM_END);
+
   if(formrc) {
     printf("curl_formadd(1) = %d\n", (int) formrc);
     goto test_cleanup;
   }
 
-  contentlength = (long)(strlen(testdata) - 1);
+  contentlength = (long)(strlen(data) - 1);
 
-  CURL_IGNORE_DEPRECATION(
-    /* Use a form array for the non-copy test. */
-    formarray[0].option = CURLFORM_PTRCONTENTS;
-    formarray[0].value = testdata;
-    formarray[1].option = CURLFORM_CONTENTSLENGTH;
-    formarray[1].value = (char *)(size_t)contentlength;
-    formarray[2].option = CURLFORM_END;
-    formarray[2].value = NULL;
-    formrc = curl_formadd(&formpost,
-                          &lastptr,
-                          CURLFORM_PTRNAME, testname,
-                          CURLFORM_NAMELENGTH, strlen(testname) - 1,
-                          CURLFORM_ARRAY, formarray,
-                          CURLFORM_FILENAME, "remotefile.txt",
-                          CURLFORM_END);
-  )
+  /* Use a form array for the non-copy test. */
+  formarray[0].option = CURLFORM_PTRCONTENTS;
+  formarray[0].value = data;
+  formarray[1].option = CURLFORM_CONTENTSLENGTH;
+  formarray[1].value = (char *)(size_t)contentlength;
+  formarray[2].option = CURLFORM_END;
+  formarray[2].value = NULL;
+  formrc = curl_formadd(&formpost,
+                        &lastptr,
+                        CURLFORM_PTRNAME, name,
+                        CURLFORM_NAMELENGTH, strlen(name) - 1,
+                        CURLFORM_ARRAY, formarray,
+                        CURLFORM_FILENAME, "remotefile.txt",
+                        CURLFORM_END);
+
   if(formrc) {
     printf("curl_formadd(2) = %d\n", (int) formrc);
     goto test_cleanup;
@@ -117,67 +116,59 @@ CURLcode test(char *URL)
   /* Now change in-memory data to affect CURLOPT_PTRCONTENTS value.
      Copied values (first field) must not be affected.
      CURLOPT_PTRNAME actually copies the name thus we do not test this here. */
-  testdata[0]++;
+  data[0]++;
 
-  CURL_IGNORE_DEPRECATION(
-    /* Check multi-files and content type propagation. */
-    formrc = curl_formadd(&formpost,
-                          &lastptr,
-                          CURLFORM_COPYNAME, "multifile",
-                          CURLFORM_FILE, libtest_arg2,    /* Set in first.c. */
-                          CURLFORM_FILE, libtest_arg2,
-                          CURLFORM_CONTENTTYPE, "text/whatever",
-                          CURLFORM_FILE, libtest_arg2,
-                          CURLFORM_END);
-  )
+  /* Check multi-files and content type propagation. */
+  formrc = curl_formadd(&formpost,
+                        &lastptr,
+                        CURLFORM_COPYNAME, "multifile",
+                        CURLFORM_FILE, libtest_arg2,    /* Set in first.c. */
+                        CURLFORM_FILE, libtest_arg2,
+                        CURLFORM_CONTENTTYPE, "text/whatever",
+                        CURLFORM_FILE, libtest_arg2,
+                        CURLFORM_END);
+
   if(formrc) {
     printf("curl_formadd(3) = %d\n", (int) formrc);
     goto test_cleanup;
   }
 
-  CURL_IGNORE_DEPRECATION(
-    /* Check data from file content. */
-    formrc = curl_formadd(&formpost,
-                          &lastptr,
-                          CURLFORM_COPYNAME, "filecontents",
-                          CURLFORM_FILECONTENT, libtest_arg2,
-                          CURLFORM_END);
-  )
+  /* Check data from file content. */
+  formrc = curl_formadd(&formpost,
+                        &lastptr,
+                        CURLFORM_COPYNAME, "filecontents",
+                        CURLFORM_FILECONTENT, libtest_arg2,
+                        CURLFORM_END);
+
   if(formrc) {
     printf("curl_formadd(4) = %d\n", (int) formrc);
     goto test_cleanup;
   }
 
-  CURL_IGNORE_DEPRECATION(
-    /* Measure the current form length.
-     * This is done before including stdin data because we want to reuse it
-     * and stdin cannot be rewound.
-     */
-    curl_formget(formpost, (void *) &formlength, count_chars);
-  )
+  /* Measure the current form length.
+   * This is done before including stdin data because we want to reuse it
+   * and stdin cannot be rewound.
+   */
+  curl_formget(formpost, (void *) &formlength, count_chars);
 
   /* Include length in data for external check. */
   curl_msnprintf(flbuf, sizeof(flbuf), "%lu", (unsigned long) formlength);
-  CURL_IGNORE_DEPRECATION(
-    formrc = curl_formadd(&formpost,
-                          &lastptr,
-                          CURLFORM_COPYNAME, "formlength",
-                          CURLFORM_COPYCONTENTS, &flbuf,
-                          CURLFORM_END);
-  )
+  formrc = curl_formadd(&formpost,
+                        &lastptr,
+                        CURLFORM_COPYNAME, "formlength",
+                        CURLFORM_COPYCONTENTS, &flbuf,
+                        CURLFORM_END);
   if(formrc) {
     printf("curl_formadd(5) = %d\n", (int) formrc);
     goto test_cleanup;
   }
 
-  CURL_IGNORE_DEPRECATION(
-    /* Check stdin (may be problematic on some platforms). */
-    formrc = curl_formadd(&formpost,
-                          &lastptr,
-                          CURLFORM_COPYNAME, "standardinput",
-                          CURLFORM_FILE, "-",
-                          CURLFORM_END);
-  )
+  /* Check stdin (may be problematic on some platforms). */
+  formrc = curl_formadd(&formpost,
+                        &lastptr,
+                        CURLFORM_COPYNAME, "standardinput",
+                        CURLFORM_FILE, "-",
+                        CURLFORM_END);
   if(formrc) {
     printf("curl_formadd(6) = %d\n", (int) formrc);
     goto test_cleanup;
@@ -192,10 +183,8 @@ CURLcode test(char *URL)
   /* First set the URL that is about to receive our POST. */
   test_setopt(curl, CURLOPT_URL, URL);
 
-  CURL_IGNORE_DEPRECATION(
-    /* send a multi-part formpost */
-    test_setopt(curl, CURLOPT_HTTPPOST, formpost);
-  )
+  /* send a multi-part formpost */
+  test_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
   /* get verbose debug output please */
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
@@ -214,10 +203,8 @@ test_cleanup:
   /* always cleanup */
   curl_easy_cleanup(curl);
 
-  CURL_IGNORE_DEPRECATION(
-    /* now cleanup the formpost chain */
-    curl_formfree(formpost);
-  )
+  /* now cleanup the formpost chain */
+  curl_formfree(formpost);
   curl_slist_free_all(headers);
 
   curl_global_cleanup();

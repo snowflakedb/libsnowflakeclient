@@ -107,8 +107,6 @@
 #include "timediff.h"
 #include "warnless.h"
 
-#include "tool_binmode.h"
-
 /* include memdebug.h last */
 #include "memdebug.h"
 
@@ -151,7 +149,7 @@ enum sockmode {
   ACTIVE_DISCONNECT  /* as a client, disconnected from server */
 };
 
-#if defined(_WIN32) && !defined(CURL_WINDOWS_UWP)
+#if defined(_WIN32) && !defined(CURL_WINDOWS_APP)
 /*
  * read-wrapper to support reading from stdin on Windows.
  */
@@ -220,10 +218,6 @@ static ssize_t write_wincon(int fd, const void *buf, size_t count)
 #define write(a,b,c) write_wincon(a,b,c)
 #endif
 
-/* On Windows, we sometimes get this for a broken pipe, seemingly
- * when the client just closed stdin? */
-#define CURL_WIN32_EPIPE      109
-
 /*
  * fullread is a wrapper around the read() function. This will repeat the call
  * to read() until it actually has read the complete number of bytes indicated
@@ -249,11 +243,6 @@ static ssize_t fullread(int filedes, void *buffer, size_t nbytes)
       error = errno;
       if((error == EINTR) || (error == EAGAIN))
         continue;
-      if(error == CURL_WIN32_EPIPE) {
-        logmsg("got Windows ERROR_BROKEN_PIPE on fd=%d, treating as close",
-               filedes);
-        return 0;
-      }
       logmsg("reading from file descriptor: %d,", filedes);
       logmsg("unrecoverable read() failure: (%d) %s",
              error, strerror(error));
@@ -364,7 +353,7 @@ static void lograw(unsigned char *buffer, ssize_t len)
   ssize_t width = 0;
   int left = sizeof(data);
 
-  for(i = 0; i < len; i++) {
+  for(i = 0; i<len; i++) {
     switch(ptr[i]) {
     case '\n':
       msnprintf(optr, left, "\\n");
@@ -380,14 +369,14 @@ static void lograw(unsigned char *buffer, ssize_t len)
       break;
     default:
       msnprintf(optr, left, "%c", (ISGRAPH(ptr[i]) ||
-                                   ptr[i] == 0x20) ? ptr[i] : '.');
+                                   ptr[i] == 0x20) ?ptr[i]:'.');
       width++;
       optr++;
       left--;
       break;
     }
 
-    if(width > 60) {
+    if(width>60) {
       logmsg("'%s'", data);
       width = 0;
       optr = data;
@@ -428,7 +417,7 @@ static bool read_data_block(unsigned char *buffer, ssize_t maxlen,
 }
 
 
-#if defined(USE_WINSOCK) && !defined(CURL_WINDOWS_UWP)
+#if defined(USE_WINSOCK) && !defined(CURL_WINDOWS_APP)
 /*
  * Winsock select() does not support standard file descriptors,
  * it can only check SOCKETs. The following function is an attempt
@@ -693,7 +682,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   nth = 0; /* number of internal waiting threads */
   nws = 0; /* number of handled Winsock sockets */
   for(fd = 0; fd < nfds; fd++) {
-    wsasock = (curl_socket_t)fd;
+    wsasock = curlx_sitosk(fd);
     wsaevents.lNetworkEvents = 0;
     handles[nfd] = 0;
 
@@ -820,7 +809,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   for(i = 0; i < nfd; i++) {
     fd = data[i].fd;
     handle = handles[i];
-    wsasock = (curl_socket_t)fd;
+    wsasock = curlx_sitosk(fd);
 
     /* check if the current internal handle was triggered */
     if(wait != WAIT_FAILED && (wait - WAIT_OBJECT_0) <= i &&
@@ -998,14 +987,7 @@ static bool juggle(curl_socket_t *sockfdp,
   FD_ZERO(&fds_write);
   FD_ZERO(&fds_err);
 
-#if defined(__DJGPP__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warith-conversion"
-#endif
   FD_SET((curl_socket_t)fileno(stdin), &fds_read);
-#if defined(__DJGPP__)
-#pragma GCC diagnostic pop
-#endif
 
   switch(*mode) {
 
@@ -1014,14 +996,7 @@ static bool juggle(curl_socket_t *sockfdp,
     /* server mode */
     sockfd = listenfd;
     /* there's always a socket to wait for */
-#if defined(__DJGPP__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warith-conversion"
-#endif
     FD_SET(sockfd, &fds_read);
-#if defined(__DJGPP__)
-#pragma GCC diagnostic pop
-#endif
     maxfd = (int)sockfd;
     break;
 
@@ -1035,14 +1010,7 @@ static bool juggle(curl_socket_t *sockfdp,
     }
     else {
       /* there's always a socket to wait for */
-#if defined(__DJGPP__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warith-conversion"
-#endif
       FD_SET(sockfd, &fds_read);
-#if defined(__DJGPP__)
-#pragma GCC diagnostic pop
-#endif
       maxfd = (int)sockfd;
     }
     break;
@@ -1052,14 +1020,7 @@ static bool juggle(curl_socket_t *sockfdp,
     sockfd = *sockfdp;
     /* sockfd turns CURL_SOCKET_BAD when our connection has been closed */
     if(CURL_SOCKET_BAD != sockfd) {
-#if defined(__DJGPP__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warith-conversion"
-#endif
       FD_SET(sockfd, &fds_read);
-#if defined(__DJGPP__)
-#pragma GCC diagnostic pop
-#endif
       maxfd = (int)sockfd;
     }
     else {
@@ -1396,7 +1357,7 @@ int main(int argc, char *argv[])
   enum sockmode mode = PASSIVE_LISTEN; /* default */
   const char *addr = NULL;
 
-  while(argc > arg) {
+  while(argc>arg) {
     if(!strcmp("--version", argv[arg])) {
       printf("sockfilt IPv4%s\n",
 #ifdef USE_IPV6
@@ -1413,7 +1374,7 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--pidfile", argv[arg])) {
       arg++;
-      if(argc > arg)
+      if(argc>arg)
         pidname = argv[arg++];
     }
     else if(!strcmp("--portfile", argv[arg])) {
@@ -1423,7 +1384,7 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--logfile", argv[arg])) {
       arg++;
-      if(argc > arg)
+      if(argc>arg)
         serverlogfile = argv[arg++];
     }
     else if(!strcmp("--ipv6", argv[arg])) {
@@ -1447,7 +1408,7 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--port", argv[arg])) {
       arg++;
-      if(argc > arg) {
+      if(argc>arg) {
         char *endptr;
         unsigned long ulnum = strtoul(argv[arg], &endptr, 10);
         port = curlx_ultous(ulnum);
@@ -1458,7 +1419,7 @@ int main(int argc, char *argv[])
       /* Asked to actively connect to the specified local port instead of
          doing a passive server-style listening. */
       arg++;
-      if(argc > arg) {
+      if(argc>arg) {
         char *endptr;
         unsigned long ulnum = strtoul(argv[arg], &endptr, 10);
         if((endptr != argv[arg] + strlen(argv[arg])) ||
@@ -1474,7 +1435,7 @@ int main(int argc, char *argv[])
     else if(!strcmp("--addr", argv[arg])) {
       /* Set an IP address to use with --connect; otherwise use localhost */
       arg++;
-      if(argc > arg) {
+      if(argc>arg) {
         addr = argv[arg];
         arg++;
       }
@@ -1499,11 +1460,11 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
   win32_init();
   atexit(win32_cleanup);
-#endif
 
-  CURL_SET_BINMODE(stdin);
-  CURL_SET_BINMODE(stdout);
-  CURL_SET_BINMODE(stderr);
+  setmode(fileno(stdin), O_BINARY);
+  setmode(fileno(stdout), O_BINARY);
+  setmode(fileno(stderr), O_BINARY);
+#endif
 
   install_signal_handlers(false);
 

@@ -37,10 +37,6 @@
 #include <unistd.h>  /* getopt() */
 #endif
 
-#ifdef _WIN32
-#define strdup _strdup
-#endif
-
 #ifndef CURLPIPE_MULTIPLEX
 #error "too old libcurl, cannot do HTTP/2 server push!"
 #endif
@@ -232,10 +228,8 @@ static int my_progress_cb(void *userdata,
 }
 
 static int setup(CURL *hnd, const char *url, struct transfer *t,
-                 int http_version, struct curl_slist *host,
-                 CURLSH *share, int use_earlydata, int fresh_connect)
+                 int http_version)
 {
-  curl_easy_setopt(hnd, CURLOPT_SHARE, share);
   curl_easy_setopt(hnd, CURLOPT_URL, url);
   curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, http_version);
   curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -246,14 +240,8 @@ static int setup(CURL *hnd, const char *url, struct transfer *t,
   curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(hnd, CURLOPT_XFERINFOFUNCTION, my_progress_cb);
   curl_easy_setopt(hnd, CURLOPT_XFERINFODATA, t);
-  if(use_earlydata)
-    curl_easy_setopt(hnd, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_EARLYDATA);
   if(forbid_reuse)
     curl_easy_setopt(hnd, CURLOPT_FORBID_REUSE, 1L);
-  if(host)
-    curl_easy_setopt(hnd, CURLOPT_RESOLVE, host);
-  if(fresh_connect)
-    curl_easy_setopt(hnd, CURLOPT_FRESH_CONNECT, 1L);
 
   /* please be verbose */
   if(verbose) {
@@ -277,16 +265,10 @@ static void usage(const char *msg)
     "  download a url with following options:\n"
     "  -a         abort paused transfer\n"
     "  -m number  max parallel downloads\n"
-    "  -e         use TLS early data when possible\n"
-    "  -f         forbid connection reuse\n"
-    "  -n number  total downloads\n");
-  fprintf(stderr,
+    "  -n number  total downloads\n"
     "  -A number  abort transfer after `number` response bytes\n"
     "  -F number  fail writing response after `number` response bytes\n"
-    "  -M number  max concurrent connections to a host\n"
     "  -P number  pause transfer after `number` response bytes\n"
-    "  -r <host>:<port>:<addr>  resolve information\n"
-    "  -T number  max concurrent connections total\n"
     "  -V http_version (http/1.1, h2, h3) http version to use\n"
   );
 }
@@ -300,35 +282,24 @@ int main(int argc, char *argv[])
 #ifndef _MSC_VER
   CURLM *multi_handle;
   struct CURLMsg *m;
-  CURLSH *share;
   const char *url;
   size_t i, n, max_parallel = 1;
   size_t active_transfers;
   size_t pause_offset = 0;
   size_t abort_offset = 0;
   size_t fail_offset = 0;
-  int abort_paused = 0, use_earlydata = 0;
+  int abort_paused = 0;
   struct transfer *t;
   int http_version = CURL_HTTP_VERSION_2_0;
   int ch;
-  struct curl_slist *host = NULL;
-  char *resolve = NULL;
-  size_t max_host_conns = 0;
-  size_t max_total_conns = 0;
-  int fresh_connect = 0;
-  int result = 0;
 
-  while((ch = getopt(argc, argv, "aefhm:n:xA:F:M:P:r:T:V:")) != -1) {
+  while((ch = getopt(argc, argv, "afhm:n:A:F:P:V:")) != -1) {
     switch(ch) {
     case 'h':
       usage(NULL);
-      result = 2;
-      goto cleanup;
+      return 2;
     case 'a':
       abort_paused = 1;
-      break;
-    case 'e':
-      use_earlydata = 1;
       break;
     case 'f':
       forbid_reuse = 1;
@@ -339,27 +310,14 @@ int main(int argc, char *argv[])
     case 'n':
       transfer_count = (size_t)strtol(optarg, NULL, 10);
       break;
-    case 'x':
-      fresh_connect = 1;
-      break;
     case 'A':
       abort_offset = (size_t)strtol(optarg, NULL, 10);
       break;
     case 'F':
       fail_offset = (size_t)strtol(optarg, NULL, 10);
       break;
-    case 'M':
-      max_host_conns = (size_t)strtol(optarg, NULL, 10);
-      break;
     case 'P':
       pause_offset = (size_t)strtol(optarg, NULL, 10);
-      break;
-    case 'r':
-      free(resolve);
-      resolve = strdup(optarg);
-      break;
-    case 'T':
-      max_total_conns = (size_t)strtol(optarg, NULL, 10);
       break;
     case 'V': {
       if(!strcmp("http/1.1", optarg))
@@ -370,15 +328,13 @@ int main(int argc, char *argv[])
         http_version = CURL_HTTP_VERSION_3ONLY;
       else {
         usage("invalid http version");
-        result = 1;
-        goto cleanup;
+        return 1;
       }
       break;
     }
     default:
-      usage("invalid option");
-      result = 1;
-      goto cleanup;
+     usage("invalid option");
+     return 1;
     }
   }
   argc -= optind;
@@ -389,40 +345,18 @@ int main(int argc, char *argv[])
 
   if(argc != 1) {
     usage("not enough arguments");
-    result = 2;
-    goto cleanup;
+    return 2;
   }
   url = argv[0];
-
-  if(resolve)
-    host = curl_slist_append(NULL, resolve);
-
-  share = curl_share_init();
-  if(!share) {
-    fprintf(stderr, "error allocating share\n");
-    result = 1;
-    goto cleanup;
-  }
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
-  /* curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT); */
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_PSL);
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_HSTS);
 
   transfers = calloc(transfer_count, sizeof(*transfers));
   if(!transfers) {
     fprintf(stderr, "error allocating transfer structs\n");
-    result = 1;
-    goto cleanup;
+    return 1;
   }
 
   multi_handle = curl_multi_init();
   curl_multi_setopt(multi_handle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
-  curl_multi_setopt(multi_handle, CURLMOPT_MAX_TOTAL_CONNECTIONS,
-                    (long)max_total_conns);
-  curl_multi_setopt(multi_handle, CURLMOPT_MAX_HOST_CONNECTIONS,
-                    (long)max_host_conns);
 
   active_transfers = 0;
   for(i = 0; i < transfer_count; ++i) {
@@ -433,16 +367,13 @@ int main(int argc, char *argv[])
     t->pause_at = (curl_off_t)pause_offset;
   }
 
-  n = (max_parallel < transfer_count) ? max_parallel : transfer_count;
+  n = (max_parallel < transfer_count)? max_parallel : transfer_count;
   for(i = 0; i < n; ++i) {
     t = &transfers[i];
     t->easy = curl_easy_init();
-    if(!t->easy ||
-       setup(t->easy, url, t, http_version, host, share, use_earlydata,
-             fresh_connect)) {
+    if(!t->easy || setup(t->easy, url, t, http_version)) {
       fprintf(stderr, "[t-%d] FAILED setup\n", (int)i);
-      result = 1;
-      goto cleanup;
+      return 1;
     }
     curl_multi_add_handle(multi_handle, t->easy);
     t->started = 1;
@@ -473,17 +404,13 @@ int main(int argc, char *argv[])
         if(t) {
           t->done = 1;
           fprintf(stderr, "[t-%d] FINISHED\n", t->idx);
-          if(use_earlydata) {
-            curl_off_t sent;
-            curl_easy_getinfo(e, CURLINFO_EARLYDATA_SENT_T, &sent);
-            fprintf(stderr, "[t-%d] EarlyData: %ld\n", t->idx, (long)sent);
-          }
         }
         else {
           curl_easy_cleanup(e);
           fprintf(stderr, "unknown FINISHED???\n");
         }
       }
+
 
       /* nothing happening, maintenance */
       if(abort_paused) {
@@ -517,12 +444,9 @@ int main(int argc, char *argv[])
           t = &transfers[i];
           if(!t->started) {
             t->easy = curl_easy_init();
-            if(!t->easy ||
-               setup(t->easy, url, t, http_version, host, share,
-                     use_earlydata, fresh_connect)) {
+            if(!t->easy || setup(t->easy, url, t, http_version)) {
               fprintf(stderr, "[t-%d] FAILED setup\n", (int)i);
-              result = 1;
-              goto cleanup;
+              return 1;
             }
             curl_multi_add_handle(multi_handle, t->easy);
             t->started = 1;
@@ -539,8 +463,6 @@ int main(int argc, char *argv[])
 
   } while(active_transfers); /* as long as we have transfers going */
 
-  curl_multi_cleanup(multi_handle);
-
   for(i = 0; i < transfer_count; ++i) {
     t = &transfers[i];
     if(t->out) {
@@ -554,12 +476,9 @@ int main(int argc, char *argv[])
   }
   free(transfers);
 
-  curl_share_cleanup(share);
-  curl_slist_free_all(host);
-cleanup:
-  free(resolve);
+  curl_multi_cleanup(multi_handle);
 
-  return result;
+  return 0;
 #else
   (void)argc;
   (void)argv;

@@ -24,14 +24,16 @@
 #
 ###########################################################################
 #
+import inspect
 import logging
 import os
 import subprocess
+from datetime import timedelta, datetime
+from json import JSONEncoder
 import time
+from typing import List, Union, Optional
 
-from datetime import datetime, timedelta
-
-from .curl import CurlClient
+from .curl import CurlClient, ExecResult
 from .env import Env
 
 
@@ -71,7 +73,7 @@ class VsFTPD:
         return self._docs_dir
 
     @property
-    def port(self) -> int:
+    def port(self) -> str:
         return self._port
 
     def clear_logs(self):
@@ -90,6 +92,9 @@ class VsFTPD:
         if not self.is_running():
             return self.start()
         return True
+
+    def start(self, wait_live=True):
+        pass
 
     def stop_if_running(self):
         if self.is_running():
@@ -152,6 +157,19 @@ class VsFTPD:
         log.error(f"Server still not responding after {timeout}")
         return False
 
+    def _run(self, args, intext=''):
+        env = {}
+        for key, val in os.environ.items():
+            env[key] = val
+        with open(self._error_log, 'w') as cerr:
+            self._process = subprocess.run(args, stderr=cerr, stdout=cerr,
+                                           cwd=self._vsftpd_dir,
+                                           input=intext.encode() if intext else None,
+                                           env=env)
+            start = datetime.now()
+            return ExecResult(args=args, exit_code=self._process.returncode,
+                              duration=datetime.now() - start)
+
     def _rmf(self, path):
         if os.path.exists(path):
             return os.remove(path)
@@ -164,33 +182,32 @@ class VsFTPD:
         self._mkpath(self._docs_dir)
         self._mkpath(self._tmp_dir)
         conf = [  # base server config
-            'listen=YES',
-            'run_as_launching_user=YES',
-            '#listen_address=127.0.0.1',
+            f'listen=YES',
+            f'run_as_launching_user=YES',
+            f'#listen_address=127.0.0.1',
             f'listen_port={self.port}',
-            'local_enable=NO',
-            'anonymous_enable=YES',
+            f'local_enable=NO',
+            f'anonymous_enable=YES',
             f'anon_root={self._docs_dir}',
-            'dirmessage_enable=YES',
-            'write_enable=YES',
-            'anon_upload_enable=YES',
-            'log_ftp_protocol=YES',
-            'xferlog_enable=YES',
-            'xferlog_std_format=NO',
+            f'dirmessage_enable=YES',
+            f'write_enable=YES',
+            f'anon_upload_enable=YES',
+            f'log_ftp_protocol=YES',
+            f'xferlog_enable=YES',
+            f'xferlog_std_format=NO',
             f'vsftpd_log_file={self._error_log}',
-            '\n',
+            f'\n',
         ]
         if self._with_ssl:
             creds = self.env.get_credentials(self.domain)
-            assert creds  # convince pytype this isn't None
             conf.extend([
-                'ssl_enable=YES',
-                'debug_ssl=YES',
-                'allow_anon_ssl=YES',
+                f'ssl_enable=YES',
+                f'debug_ssl=YES',
+                f'allow_anon_ssl=YES',
                 f'rsa_cert_file={creds.cert_file}',
                 f'rsa_private_key_file={creds.pkey_file}',
                 # require_ssl_reuse=YES means ctrl and data connection need to use the same session
-                'require_ssl_reuse=NO',
+                f'require_ssl_reuse=NO',
             ])
 
         with open(self._conf_file, 'w') as fd:

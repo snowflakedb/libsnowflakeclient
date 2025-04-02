@@ -22,8 +22,7 @@
  *
  ***************************************************************************/
 #include "curlcheck.h"
-#include "vssh/curl_path.h"
-#include "memdebug.h"
+#include "curl_path.h"
 
 static CURLcode unit_setup(void)
 {
@@ -46,7 +45,7 @@ struct set {
 UNITTEST_START
 #ifdef USE_SSH
 {
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverlength-strings"
 #endif
@@ -78,7 +77,7 @@ UNITTEST_START
     { NULL, NULL, NULL, NULL, CURLE_OK }
   };
 
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
+#ifdef __GNUC__
 #pragma GCC diagnostic warning "-Woverlength-strings"
 #endif
 
@@ -114,10 +113,6 @@ UNITTEST_START
 
   free((void *)list[0].cp);
 }
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
-
 #endif
 
 UNITTEST_STOP

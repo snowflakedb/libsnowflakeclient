@@ -140,11 +140,11 @@ static int debug_cb(CURL *handle, curl_infotype type,
   return 0;
 }
 
-#define ERR()                                                             \
-  do {                                                                    \
-    fprintf(stderr, "something unexpected went wrong - bailing out!\n");  \
-    exit(2);                                                              \
-  } while(0)
+static int err(void)
+{
+  fprintf(stderr, "something unexpected went wrong - bailing out!\n");
+  exit(2);
+}
 
 static void usage(const char *msg)
 {
@@ -167,7 +167,7 @@ struct handle
   CURL *h;
 };
 
-static size_t cb(char *data, size_t size, size_t nmemb, void *clientp)
+static size_t cb(void *data, size_t size, size_t nmemb, void *clientp)
 {
   size_t realsize = size * nmemb;
   struct handle *handle = (struct handle *) clientp;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
                  host, port);
   resolve = curl_slist_append(resolve, resolve_buf);
 
-  for(i = 0; i < HANDLECOUNT; i++) {
+  for(i = 0; i<HANDLECOUNT; i++) {
     handles[i].idx = i;
     handles[i].paused = 0;
     handles[i].resumed = 0;
@@ -292,29 +292,29 @@ int main(int argc, char *argv[])
       curl_easy_setopt(handles[i].h, CURLOPT_RESOLVE, resolve) != CURLE_OK ||
       curl_easy_setopt(handles[i].h, CURLOPT_PIPEWAIT, 1L) ||
       curl_easy_setopt(handles[i].h, CURLOPT_URL, url) != CURLE_OK) {
-      ERR();
+      err();
     }
     curl_easy_setopt(handles[i].h, CURLOPT_HTTP_VERSION, (long)http_version);
   }
 
   multi_handle = curl_multi_init();
   if(!multi_handle)
-    ERR();
+    err();
 
-  for(i = 0; i < HANDLECOUNT; i++) {
+  for(i = 0; i<HANDLECOUNT; i++) {
     if(curl_multi_add_handle(multi_handle, handles[i].h) != CURLM_OK)
-      ERR();
+      err();
   }
 
   for(rounds = 0;; rounds++) {
     fprintf(stderr, "INFO: multi_perform round %d\n", rounds);
     if(curl_multi_perform(multi_handle, &still_running) != CURLM_OK)
-      ERR();
+      err();
 
     if(!still_running) {
       int as_expected = 1;
       fprintf(stderr, "INFO: no more handles running\n");
-      for(i = 0; i < HANDLECOUNT; i++) {
+      for(i = 0; i<HANDLECOUNT; i++) {
         if(!handles[i].paused) {
           fprintf(stderr, "ERROR: [%d] NOT PAUSED\n", i);
           as_expected = 0;
@@ -343,12 +343,12 @@ int main(int argc, char *argv[])
     }
 
     if(curl_multi_poll(multi_handle, NULL, 0, 100, &numfds) != CURLM_OK)
-      ERR();
+      err();
 
     /* !checksrc! disable EQUALSNULL 1 */
     while((msg = curl_multi_info_read(multi_handle, &msgs_left)) != NULL) {
       if(msg->msg == CURLMSG_DONE) {
-        for(i = 0; i < HANDLECOUNT; i++) {
+        for(i = 0; i<HANDLECOUNT; i++) {
           if(msg->easy_handle == handles[i].h) {
             if(handles[i].paused != 1 || !handles[i].resumed) {
               fprintf(stderr, "ERROR: [%d] done, pauses=%d, resumed=%d, "
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 
     /* Successfully paused? */
     if(!all_paused) {
-      for(i = 0; i < HANDLECOUNT; i++) {
+      for(i = 0; i<HANDLECOUNT; i++) {
         if(!handles[i].paused) {
           break;
         }
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
     }
     if(resume_round > 0 && rounds == resume_round) {
       /* time to resume */
-      for(i = 0; i < HANDLECOUNT; i++) {
+      for(i = 0; i<HANDLECOUNT; i++) {
         fprintf(stderr, "INFO: [%d] resumed\n", i);
         handles[i].resumed = 1;
         curl_easy_pause(handles[i].h, CURLPAUSE_CONT);
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
   }
 
 out:
-  for(i = 0; i < HANDLECOUNT; i++) {
+  for(i = 0; i<HANDLECOUNT; i++) {
     curl_multi_remove_handle(multi_handle, handles[i].h);
     curl_easy_cleanup(handles[i].h);
   }

@@ -27,6 +27,8 @@
  * curl_m*printf formatting capabilities and handling of some data types.
  */
 
+#define CURL_NO_FMT_CHECKS /* disable compiler *printf format checks */
+
 #include "test.h"
 
 #include <limits.h>
@@ -36,15 +38,6 @@
 #endif
 
 #include "memdebug.h"
-
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat"
-#pragma GCC diagnostic ignored "-Wformat-extra-args"
-#if !defined(__clang__) && __GNUC__ >= 7
-#pragma GCC diagnostic ignored "-Wformat-overflow"
-#endif
-#endif
 
 #if (SIZEOF_CURL_OFF_T > SIZEOF_LONG)
 #  define MPRNT_SUFFIX_CURL_OFF_T  LL
@@ -157,7 +150,7 @@ static int test_unsigned_short_formatting(void)
 
   for(i = 1; i <= num_ushort_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       us_test[i].result[j] = 'X';
     us_test[i].result[BUFSZ-1] = '\0';
 
@@ -231,7 +224,7 @@ static int test_signed_short_formatting(void)
 
   for(i = 1; i <= num_sshort_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       ss_test[i].result[j] = 'X';
     ss_test[i].result[BUFSZ-1] = '\0';
 
@@ -381,7 +374,7 @@ static int test_unsigned_int_formatting(void)
 
   for(i = 1; i <= num_uint_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       ui_test[i].result[j] = 'X';
     ui_test[i].result[BUFSZ-1] = '\0';
 
@@ -609,7 +602,7 @@ static int test_signed_int_formatting(void)
 
   for(i = 1; i <= num_sint_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       si_test[i].result[j] = 'X';
     si_test[i].result[BUFSZ-1] = '\0';
 
@@ -758,7 +751,7 @@ static int test_unsigned_long_formatting(void)
 
   for(i = 1; i <= num_ulong_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       ul_test[i].result[j] = 'X';
     ul_test[i].result[BUFSZ-1] = '\0';
 
@@ -986,7 +979,7 @@ static int test_signed_long_formatting(void)
 
   for(i = 1; i <= num_slong_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       sl_test[i].result[j] = 'X';
     sl_test[i].result[BUFSZ-1] = '\0';
 
@@ -1100,7 +1093,7 @@ static int test_curl_off_t_formatting(void)
 
   for(i = 1; i <= num_cofft_tests; i++) {
 
-    for(j = 0; j < BUFSZ; j++)
+    for(j = 0; j<BUFSZ; j++)
       co_test[i].result[j] = 'X';
     co_test[i].result[BUFSZ-1] = '\0';
 
@@ -1206,46 +1199,6 @@ static int test_pos_arguments(void)
 
   return errors;
 }
-
-static int test_width_precision(void)
-{
-  /* 325 is max precision (and width) for a double */
-  char larger[1024];
-#define SPACE60 "                                                            "
-#define SPACE300 SPACE60 SPACE60 SPACE60 SPACE60 SPACE60
-#define OK325 SPACE300 "                        0"
-
-  int rc;
-  int errors = 0;
-  rc = curl_msnprintf(larger, sizeof(larger), "%325.325f", 0.1);
-  if(rc != 325)
-    errors++;
-  errors += string_check(larger, OK325);
-
-  rc = curl_msnprintf(larger, sizeof(larger), "%326.326f", 0.1);
-  if(rc != 325)
-    errors++;
-  errors += string_check(larger, OK325);
-
-  rc = curl_msnprintf(larger, sizeof(larger), "%1000.1000f", 0.1);
-  if(rc != 325)
-    errors++;
-  errors += string_check(larger, OK325);
-
-  rc = curl_msnprintf(larger, sizeof(larger), "%324.324f", 0.1);
-  if(rc != 324)
-    errors++;
-  rc = curl_msnprintf(larger, sizeof(larger), "%324.0f", 0.1);
-  if(rc != 324)
-    errors++;
-  rc = curl_msnprintf(larger, sizeof(larger), "%0.324f", 0.1);
-  if(rc != 325)
-    errors++;
-
-  return errors;
-}
-
-
 
 static int test_weird_arguments(void)
 {
@@ -1360,8 +1313,6 @@ static int test_weird_arguments(void)
 
   errors += string_check(buf, "");
 
-  errors += test_width_precision();
-
   if(errors)
     printf("Some curl_mprintf() weird arguments tests failed!\n");
 
@@ -1438,7 +1389,7 @@ static int test_float_formatting(void)
   /* very large precisions easily turn into system specific outputs so we only
      check the output buffer length here as we know the internal limit */
 
-  curl_msnprintf(buf, sizeof(buf), "%.*f", (1 << 30), 9.2987654);
+  curl_msnprintf(buf, sizeof(buf), "%.*f", (1<<30), 9.2987654);
   errors += strlen_check(buf, 325);
 
   curl_msnprintf(buf, sizeof(buf), "%10000.10000f", 9.2987654);
@@ -1455,7 +1406,7 @@ static int test_float_formatting(void)
 
   /* curl_msnprintf() limits a single float output to 325 bytes maximum
      width */
-  curl_msnprintf(buf, sizeof(buf), "%*f", (1 << 30), 9.1);
+  curl_msnprintf(buf, sizeof(buf), "%*f", (1<<30), 9.1);
   errors += string_check(buf, "                                                                                                                                                                                                                                                                                                                             9.100000");
   curl_msnprintf(buf, sizeof(buf), "%100000f", 9.1);
   errors += string_check(buf, "                                                                                                                                                                                                                                                                                                                             9.100000");
@@ -1478,48 +1429,6 @@ static int test_float_formatting(void)
     printf("All float strings tests OK!\n");
   else
     printf("test_float_formatting Failed!\n");
-
-  return errors;
-}
-
-static int test_oct_hex_formatting(void)
-{
-  int errors = 0;
-  char buf[256];
-
-  curl_msnprintf(buf, sizeof(buf), "%ho %hx %hX", 0xFA10U, 0xFA10U, 0xFA10U);
-  errors += string_check(buf, "175020 fa10 FA10");
-
-#if (SIZEOF_INT == 2)
-  curl_msnprintf(buf, sizeof(buf), "%o %x %X", 0xFA10U, 0xFA10U, 0xFA10U);
-  errors += string_check(buf, "175020 fa10 FA10");
-#elif (SIZEOF_INT == 4)
-  curl_msnprintf(buf, sizeof(buf), "%o %x %X",
-                 0xFABC1230U, 0xFABC1230U, 0xFABC1230U);
-  errors += string_check(buf, "37257011060 fabc1230 FABC1230");
-#elif (SIZEOF_INT == 8)
-  curl_msnprintf(buf, sizeof(buf), "%o %x %X",
-                 0xFABCDEF123456780U, 0xFABCDEF123456780U, 0xFABCDEF123456780U);
-  errors += string_check(buf, "1752746757044321263600 fabcdef123456780 FABCDEF123456780");
-#endif
-
-#if (SIZEOF_LONG == 2)
-  curl_msnprintf(buf, sizeof(buf), "%lo %lx %lX", 0xFA10UL, 0xFA10UL, 0xFA10UL);
-  errors += string_check(buf, "175020 fa10 FA10");
-#elif (SIZEOF_LONG == 4)
-  curl_msnprintf(buf, sizeof(buf), "%lo %lx %lX",
-                 0xFABC1230UL, 0xFABC1230UL, 0xFABC1230UL);
-  errors += string_check(buf, "37257011060 fabc1230 FABC1230");
-#elif (SIZEOF_LONG == 8)
-  curl_msnprintf(buf, sizeof(buf), "%lo %lx %lX",
-                 0xFABCDEF123456780UL, 0xFABCDEF123456780UL, 0xFABCDEF123456780UL);
-  errors += string_check(buf, "1752746757044321263600 fabcdef123456780 FABCDEF123456780");
-#endif
-
-  if(!errors)
-    printf("All curl_mprintf() octal & hexadecimal tests OK!\n");
-  else
-    printf("Some curl_mprintf() octal & hexadecimal tests Failed!\n");
 
   return errors;
 }
@@ -1591,8 +1500,6 @@ CURLcode test(char *URL)
 
   errors += test_float_formatting();
 
-  errors += test_oct_hex_formatting();
-
   errors += test_return_codes();
 
   if(errors)
@@ -1600,7 +1507,3 @@ CURLcode test(char *URL)
   else
     return CURLE_OK;
 }
-
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
