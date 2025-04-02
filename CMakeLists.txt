@@ -22,7 +22,7 @@ set(OPENSSL_VERSION_NUMBER  0x11100000L)
 # Developers can uncomment this to enable mock builds on their local VMs
 #set(MOCK TRUE)
 # Developers can uncomment this to enable HEARTBEAT_DEBUG builds on their local VMs
-set(HEARTBEAT TRUE)
+# set(HEARTBEAT TRUE)
 
 # Generates compile_commands.json file for clangd to parse.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
