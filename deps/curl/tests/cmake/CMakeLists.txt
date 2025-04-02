@@ -22,7 +22,7 @@
 #
 ###########################################################################
 
-cmake_minimum_required(VERSION 3.7...3.16)
+cmake_minimum_required(VERSION 3.1...3.16)
 message(STATUS "Using CMake version ${CMAKE_VERSION}")
 
 project(test-dependent C)
