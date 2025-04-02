@@ -74,15 +74,21 @@ int main(void)
 #endif
 
   headerfile = fopen(pHeaderFile, "wb");
+  if(!headerfile)
+    return 1;
 
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   curl = curl_easy_init();
   if(curl) {
     /* what call to write: */
-    curl_easy_setopt(curl, CURLOPT_URL, "HTTPS://your.favourite.ssl.site");
+    curl_easy_setopt(curl, CURLOPT_URL, "HTTPS://secure.site.example");
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, headerfile);
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4127)  /* conditional expression is constant */
+#endif
     do { /* dummy loop, just to break out from */
       if(pEngine) {
         /* use crypto engine */
@@ -133,11 +139,16 @@ int main(void)
 
       /* we are done... */
     } while(0);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
 
   curl_global_cleanup();
+
+  fclose(headerfile);
 
   return 0;
 }

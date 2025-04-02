@@ -95,6 +95,7 @@ const struct Curl_handler Curl_handler_scp = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
+  ZERO_NULL,                            /* follow */
   PORT_SSH,                             /* defport */
   CURLPROTO_SCP,                        /* protocol */
   PROTOPT_DIRLOCK | PROTOPT_CLOSEACTION
@@ -125,6 +126,7 @@ const struct Curl_handler Curl_handler_sftp = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
+  ZERO_NULL,                            /* follow */
   PORT_SSH,                             /* defport */
   CURLPROTO_SFTP,                       /* protocol */
   CURLPROTO_SFTP,                       /* family */
@@ -256,8 +258,8 @@ static ssize_t wsftp_send(struct Curl_easy *data, int sockindex,
   (void)sockindex;
   (void)eos;
 
-  offset[0] = (word32)sshc->offset&0xFFFFFFFF;
-  offset[1] = (word32)(sshc->offset>>32)&0xFFFFFFFF;
+  offset[0] = (word32)sshc->offset & 0xFFFFFFFF;
+  offset[1] = (word32)(sshc->offset >> 32) & 0xFFFFFFFF;
 
   rc = wolfSSH_SFTP_SendWritePacket(sshc->ssh_session, sshc->handle,
                                     sshc->handleSz,
@@ -300,8 +302,8 @@ static ssize_t wsftp_recv(struct Curl_easy *data, int sockindex,
   word32 offset[2];
   (void)sockindex;
 
-  offset[0] = (word32)sshc->offset&0xFFFFFFFF;
-  offset[1] = (word32)(sshc->offset>>32)&0xFFFFFFFF;
+  offset[0] = (word32)sshc->offset & 0xFFFFFFFF;
+  offset[1] = (word32)(sshc->offset >> 32) & 0xFFFFFFFF;
 
   rc = wolfSSH_SFTP_SendReadPacket(sshc->ssh_session, sshc->handle,
                                    sshc->handleSz,
@@ -629,10 +631,10 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         /* Let's read off the proper amount of bytes from the input. */
         int seekerr = CURL_SEEKFUNC_OK;
         if(data->set.seek_func) {
-          Curl_set_in_callback(data, true);
+          Curl_set_in_callback(data, TRUE);
           seekerr = data->set.seek_func(data->set.seek_client,
                                         data->state.resume_from, SEEK_SET);
-          Curl_set_in_callback(data, false);
+          Curl_set_in_callback(data, FALSE);
         }
 
         if(seekerr != CURL_SEEKFUNC_OK) {
@@ -651,11 +653,11 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
               sizeof(scratch) : curlx_sotouz(data->state.resume_from - passed);
 
             size_t actuallyread;
-            Curl_set_in_callback(data, true);
+            Curl_set_in_callback(data, TRUE);
             actuallyread = data->state.fread_func(scratch, 1,
                                                   readthisamountnow,
                                                   data->state.in);
-            Curl_set_in_callback(data, false);
+            Curl_set_in_callback(data, FALSE);
 
             passed += actuallyread;
             if((actuallyread == 0) || (actuallyread > readthisamountnow)) {
@@ -763,7 +765,7 @@ static CURLcode wssh_statemach_act(struct Curl_easy *data, bool *block)
         return CURLE_SSH;
       }
 
-      size = ((curl_off_t)attrs.sz[1] <<32) | attrs.sz[0];
+      size = ((curl_off_t)attrs.sz[1] << 32) | attrs.sz[0];
 
       data->req.size = size;
       data->req.maxdownload = size;
@@ -908,7 +910,7 @@ static CURLcode wssh_multi_statemach(struct Curl_easy *data, bool *done)
                  implementation */
   do {
     result = wssh_statemach_act(data, &block);
-    *done = (sshc->state == SSH_STOP) ? TRUE : FALSE;
+    *done = (sshc->state == SSH_STOP);
     /* if there is no error, it is not done and it did not EWOULDBLOCK, then
        try again */
     if(*done) {
@@ -962,7 +964,7 @@ CURLcode wsftp_perform(struct Curl_easy *data,
 static CURLcode wssh_do(struct Curl_easy *data, bool *done)
 {
   CURLcode result;
-  bool connected = 0;
+  bool connected = FALSE;
   struct connectdata *conn = data->conn;
   struct ssh_conn *sshc = &conn->proto.sshc;
 
@@ -1028,7 +1030,7 @@ static CURLcode wssh_block_statemach(struct Curl_easy *data,
 
       /* wait for the socket to become ready */
       (void)Curl_socket_check(fd_read, CURL_SOCKET_BAD, fd_write,
-                              left>1000?1000:left); /* ignore result */
+                              left > 1000 ? 1000 : left); /* ignore result */
     }
   }
 

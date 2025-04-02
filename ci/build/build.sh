@@ -10,6 +10,15 @@ SCRIPTS_DIR=$( cd "$CI_BUILD_DIR/../../scripts" && pwd )
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
 
+if [[ -z "$UPLOAD_TO_S3" ]]; then
+    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+        UPLOAD_TO_S3=true
+    else
+        UPLOAD_TO_S3=false
+    fi
+fi
+echo "UPLOAD_TO_S3=${UPLOAD_TO_S3}"
+
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE "$@"
 source $SCRIPTS_DIR/utils.sh
 init_git_variables
@@ -47,7 +56,7 @@ function download_build_component()
             if ! aws s3 cp --only-show-errors $src_path/$zip_file_name $ARTIFACTS_DIR; then
                 echo "=== build: $component_name ==="
                 "$component_script" -t "$build_type"
-                if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
+                if [[ "$UPLOAD_TO_S3" == "true" && ("$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master") ]]; then
                     echo "=== upload $component_name"
                     upload_to_sfc_dev1_data $component_name $component_version $build_type
                 else
@@ -74,7 +83,7 @@ function build_component()
     "$component_script" -t "$build_type" "$other_args"
     local component_version=$("$component_script" -v)
 
-    if [[ -z "$GITHUB_ACTIONS" ]] && [[ -n "$GIT_BRANCH" ]]; then
+    if [[ "$UPLOAD_TO_S3" == "true" ]]; then
         upload_to_sfc_jenkins $component_name $component_version $build_type
         if [[ "$GIT_BRANCH" == "origin/master" || "$GIT_BRANCH" == "master" ]]; then
             upload_to_sfc_dev1_data $component_name $component_version $build_type
