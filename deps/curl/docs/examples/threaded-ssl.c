@@ -45,7 +45,7 @@
 #define NUMT 4
 
 /* List of URLs to fetch.*/
-const char * const urls[]= {
+static const char * const urls[]= {
   "https://www.example.com/",
   "https://www2.example.com/",
   "https://www3.example.com/",
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
   /* Must initialize libcurl before any threads are started */
   curl_global_init(CURL_GLOBAL_ALL);
 
-  for(i = 0; i< NUMT; i++) {
+  for(i = 0; i < NUMT; i++) {
     int error = pthread_create(&tid[i],
                                NULL, /* default attributes please */
                                pull_one_url,
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   }
 
   /* now wait for all threads to terminate */
-  for(i = 0; i< NUMT; i++) {
+  for(i = 0; i < NUMT; i++) {
     pthread_join(tid[i], NULL);
     fprintf(stderr, "Thread %d terminated\n", i);
   }

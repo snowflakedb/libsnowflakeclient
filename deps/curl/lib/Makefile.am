@@ -28,11 +28,9 @@ CMAKE_DIST = CMakeLists.txt curl_config.h.cmake
 CHECKSRC_DIST = .checksrc vauth/.checksrc vquic/.checksrc vssh/.checksrc \
  vtls/.checksrc
 
-EXTRA_DIST = Makefile.mk config-win32.h config-win32ce.h config-plan9.h \
- config-riscos.h config-mac.h curl_config.h.in config-dos.h libcurl.rc  \
- config-amigaos.h config-win32ce.h config-os400.h setup-os400.h         \
- $(CMAKE_DIST) setup-win32.h Makefile.soname optiontable.pl libcurl.def \
- $(CHECKSRC_DIST)
+EXTRA_DIST = config-mac.h config-os400.h config-plan9.h config-riscos.h \
+ config-win32.h curl_config.h.in libcurl.rc libcurl.def                 \
+ $(CMAKE_DIST) Makefile.soname optiontable.pl $(CHECKSRC_DIST)
 
 lib_LTLIBRARIES = libcurl.la
 
@@ -70,8 +68,27 @@ AM_CFLAGS =
 # Makefile.inc provides the CSOURCES and HHEADERS defines
 include Makefile.inc
 
+if USE_UNITY
+# Keep these separate to avoid duplicate definitions when linking libtests
+# in static mode.
+curl_EXCLUDE = curl_threads.c timediff.c warnless.c
+if DEBUGBUILD
+# We must compile these sources separately to avoid memdebug.h redefinitions
+# applying to them.
+curl_EXCLUDE += memdebug.c curl_multibyte.c
+endif
+libcurl_unity.c: $(top_srcdir)/scripts/mk-unity.pl $(CSOURCES)
+	@PERL@ $(top_srcdir)/scripts/mk-unity.pl $(srcdir) $(CSOURCES) --exclude $(curl_EXCLUDE) > libcurl_unity.c
+
+nodist_libcurl_la_SOURCES = libcurl_unity.c
+libcurl_la_SOURCES = $(curl_EXCLUDE)
+nodist_libcurlu_la_SOURCES = libcurl_unity.c
+libcurlu_la_SOURCES = $(curl_EXCLUDE)
+CLEANFILES = libcurl_unity.c
+else
 libcurl_la_SOURCES = $(CSOURCES) $(HHEADERS)
 libcurlu_la_SOURCES = $(CSOURCES) $(HHEADERS)
+endif
 
 libcurl_la_CPPFLAGS_EXTRA =
 libcurl_la_LDFLAGS_EXTRA =
@@ -126,9 +143,10 @@ CS_1 =
 CS_ = $(CS_0)
 
 checksrc:
-	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir)    \
-	-W$(srcdir)/curl_config.h $(srcdir)/*.[ch] $(srcdir)/vauth/*.[ch]   \
-	$(srcdir)/vtls/*.[ch] $(srcdir)/vquic/*.[ch] $(srcdir)/vssh/*.[ch])
+	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir)         \
+	  -W$(srcdir)/libcurl_unity.c -W$(srcdir)/curl_config.h $(srcdir)/*.[ch] \
+	  $(srcdir)/vauth/*.[ch] $(srcdir)/vtls/*.[ch] $(srcdir)/vquic/*.[ch]    \
+	  $(srcdir)/vssh/*.[ch])
 
 if DEBUGBUILD
 # for debug builds, we scan the sources on all regular make invokes
@@ -136,12 +154,15 @@ all-local: checksrc
 endif
 
 # disable the tests that are mostly causing false positives
-TIDYFLAGS=-checks=-clang-analyzer-security.insecureAPI.strcpy,-clang-analyzer-optin.performance.Padding,-clang-analyzer-valist.Uninitialized,-clang-analyzer-core.NonNullParamChecker,-clang-analyzer-core.NullDereference -quiet
+TIDYFLAGS := -checks=-clang-analyzer-security.insecureAPI.strcpy,-clang-analyzer-optin.performance.Padding,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling -quiet
+if CURL_WERROR
+TIDYFLAGS += --warnings-as-errors=*
+endif
 
-TIDY:=clang-tidy
+TIDY := clang-tidy
 
 tidy:
-	$(TIDY) $(CSOURCES) $(TIDYFLAGS) -- $(AM_CPPFLAGS) $(CPPFLAGS) -DHAVE_CONFIG_H
+	$(TIDY) $(CSOURCES) $(TIDYFLAGS) $(CURL_CLANG_TIDYFLAGS) -- $(AM_CPPFLAGS) $(CPPFLAGS) -DHAVE_CONFIG_H
 
 optiontable:
 	perl optiontable.pl < $(top_srcdir)/include/curl/curl.h > easyoptions.c
