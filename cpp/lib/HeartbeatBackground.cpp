@@ -297,7 +297,7 @@ namespace Snowflake
             std::string protocol = connection->protocol;
             std::string host = connection->host;
             std::string port = connection->port;
-            SFURL url = SFURL::SFURL(protocol, host, port).path(HEART_BEAT_URL)
+            SFURL url = SFURL(protocol, host, port).path(HEART_BEAT_URL)
                 .addQueryParam("requestId", requestid).addQueryParam("request_guid", requestgid);
 
             SF_HEADER* httpExtraHeaders = sf_header_create();
