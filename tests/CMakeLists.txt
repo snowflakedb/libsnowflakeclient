@@ -12,7 +12,6 @@ SET(TESTS_C
         test_unit_logger
         test_unit_retry_context
         test_connect
-        test_heartbeat
         test_connect_negative
         test_bind_params
         test_bind_named_params
@@ -49,7 +48,7 @@ SET(TESTS_C
         test_ocsp_fail_open
         test_unit_privatelink
         test_multiple_statements
-	test_async
+        test_async
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
@@ -75,6 +74,7 @@ SET(TESTS_CXX
         test_unit_thread_pool
         test_unit_base64
         test_jwt
+        test_heartbeat
         #test_cpp_select1
         test_unit_proxy
         test_unit_oob

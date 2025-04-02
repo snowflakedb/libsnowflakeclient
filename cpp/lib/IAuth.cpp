@@ -90,7 +90,7 @@ namespace Client
 
         SFURL IDPAuthenticator::getServerURLSync()
         {
-            return SFURL::getServerURLSync(m_protocol, m_host, m_port);
+            return SFURL(m_protocol, m_host, m_port);
         }
 
         int IAuthenticatorExternalBrowser::getPort()

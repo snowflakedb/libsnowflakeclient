@@ -30,7 +30,7 @@ extern "C" {
     *
     * @param sf                 The connection
     */
-    void renew_session_sync(SF_CONNECT* sf);
+    sf_bool renew_session_sync(SF_CONNECT* sf);
 
 #ifdef __cplusplus
 } // extern "C"

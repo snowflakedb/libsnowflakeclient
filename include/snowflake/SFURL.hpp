@@ -195,6 +195,9 @@ public:
    */
   SFURL(const SFURL &copy);
 
+  SFURL(std::string& protocol, std::string& host, std::string& port);
+
+
   /**
    * Assign operator
    * @param copy
@@ -420,11 +423,6 @@ public:
   inline const Snowflake::Client::Util::Proxy & getProxy() const
   {
     return m_proxy;
-  }
-
-  inline static SFURL getServerURLSync(std::string& protocol, std::string& host, std::string& port)
-  {
-     return SFURL().scheme(protocol).host(host).port(port);
   }
 
 private:

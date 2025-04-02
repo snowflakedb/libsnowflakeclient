@@ -44,14 +44,22 @@ extern "C" {
         _mutex_unlock(&sf->mutex_heart_beat);
     }
 
-    void renew_session_sync(SF_CONNECT* sf)
+    sf_bool renew_session_sync(SF_CONNECT* sf)
     {
+        void* curl_desc = get_curl_desc_from_pool(RENEW_SESSION_URL, sf->proxy, sf->no_proxy);
+        CURL* curl = get_curl_from_desc(curl_desc);
+        SF_ERROR_STRUCT* err = &sf->error;
+
         RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(sf->mutex_tokens));
-        if (!token_request(sf, TOKEN_REQUEST_RENEW))
+        if (!renew_session(curl, sf, err))
         {
             CXX_LOG_TRACE("sf::HeartbeatBackrgound::renew_session_sync::Failed to renew session");
             stop_heart_beat_for_this_session(sf);
+            return SF_BOOLEAN_FALSE;
         }
+        free_curl_desc(curl_desc);
+        return SF_BOOLEAN_TRUE;
+
     }
 
 } // extern "C"
@@ -289,7 +297,7 @@ namespace Snowflake
             std::string protocol = connection->protocol;
             std::string host = connection->host;
             std::string port = connection->port;
-            SFURL url = SFURL::getServerURLSync(protocol, host, port).path(HEART_BEAT_URL)
+            SFURL url = SFURL::SFURL(protocol, host, port).path(HEART_BEAT_URL)
                 .addQueryParam("requestId", requestid).addQueryParam("request_guid", requestgid);
 
             SF_HEADER* httpExtraHeaders = sf_header_create();

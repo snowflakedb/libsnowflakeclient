@@ -679,8 +679,6 @@ uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_
 
 sf_bool is_password_required(AuthenticatorType auth);
 
-sf_bool STDCALL token_request(SF_CONNECT* sf, int8 request_type);
-
 #ifdef __cplusplus
 }
 #endif
