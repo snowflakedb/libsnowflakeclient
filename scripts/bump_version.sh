@@ -16,7 +16,7 @@ awk '{sub(/#define SF_API_VERSION ".*"/,"#define SF_API_VERSION \"'"$VERSION"'\"
 git diff | cat
 git add include/snowflake/version.h
 git commit -m "Bump version to $VERSION"
-git push --set-upstream origin bump_version-$VERSION
+git push --set-upstream origin "${BRANCH}"
 
 set +x
 echo "--- Create PR using link below ---"
