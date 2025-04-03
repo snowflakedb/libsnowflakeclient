@@ -123,7 +123,7 @@ int main(void)
   if(curl) {
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, "rtsp://example.com/");
-    /* ask for options! */
+    /* ask for options */
     curl_easy_setopt(curl, CURLOPT_RTSP_REQUEST, CURL_RTSPREQ_OPTIONS);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
@@ -135,4 +135,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

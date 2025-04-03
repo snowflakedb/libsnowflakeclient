@@ -50,7 +50,7 @@ retry the CWD command again if the subsequent **MKD** command fails. This is
 especially useful if you are doing many simultaneous connections against the
 same server and they all have this option enabled, as then CWD may first fail
 but then another connection does **MKD** before this connection and thus
-**MKD** fails but trying CWD works!
+**MKD** fails but trying CWD works.
 
 # DEFAULT
 
@@ -82,5 +82,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if the
-create value is not.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).
