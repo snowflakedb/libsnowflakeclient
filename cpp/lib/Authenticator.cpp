@@ -685,6 +685,7 @@ namespace Client
    */
   void AuthWebServer::start()
   {
+      m_socket_desc_web_client = 0;
       m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       if ((int)m_socket_descriptor < 0)
       {
