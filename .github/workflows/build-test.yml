@@ -75,6 +75,7 @@ jobs:
                 curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
                 tar -xf cmake.zip
                 echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+                cmake --version
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
@@ -121,6 +122,13 @@ jobs:
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v4
+            - name: Install CMake
+              shell: cmd
+              run: |
+                curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
+                tar -xf cmake.zip
+                echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+                cmake --version
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
