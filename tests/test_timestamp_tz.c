@@ -4,7 +4,7 @@
 
 #include <string.h>
 #include "utils/test_setup.h"
-
+#include "memory.h"
 
 typedef struct test_case_to_string {
     const int64 c1in;
@@ -190,8 +190,7 @@ void test_timestamp_tz_helper(sf_bool use_arrow, sf_bool useZeroPrecision){
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    free(c2buf);
-    c2buf = NULL;
+    SF_FREE(c2buf);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
