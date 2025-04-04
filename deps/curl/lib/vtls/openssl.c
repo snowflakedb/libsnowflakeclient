@@ -4731,37 +4731,30 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
   }
 
   /* !!! Starting Snowflake OCSP !!! */
-  struct ssl_connect_data *connssl = cf->ctx;
-  struct ossl_ctx *backend =
-    (struct ossl_ctx *)connssl->backend;
   if (conn_config->sf_ocsp_check)
   {
     STACK_OF(X509) *ch = NULL;
     X509_STORE     *st = NULL;
 
-    ch = SSL_get_peer_cert_chain(backend->ssl);
+    ch = SSL_get_peer_cert_chain(octx->ssl);
     if (!ch)
     {
-      failf(data, "Out of memory. Failed to get certificate chain");
-      X509_free(backend->server_cert);
-      backend->server_cert = NULL;
-      return CURLE_OUT_OF_MEMORY;
+      infof(data, "OCSP validation could not get peer certificate chain");
     }
-    st = SSL_CTX_get_cert_store(backend->ssl_ctx);
+    st = SSL_CTX_get_cert_store(octx->ssl_ctx);
     if (!st)
     {
-      failf(data, "NULL data store");
-      X509_free(backend->server_cert);
-      backend->server_cert = NULL;
-      return CURLE_SSL_INVALIDCERTSTATUS;
+      infof(data, "OCSP validation could not get certificate data store");
     }
 
-    result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
-    if (result)
+    if (ch && st)
     {
-      X509_free(backend->server_cert);
-      backend->server_cert = NULL;
-      return result;
+      result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
+      if (result)
+      {
+        BIO_free(mem);
+        return result;
+      }
     }
   }
   /* !!! End of Snowflake OCSP !!! */
