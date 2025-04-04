@@ -43,36 +43,8 @@ void test_connect_with_client_session_keep_alive_disable(void** unused)
     snowflake_term(sf);
 }
 
-static int MAX_RETRIES = 5;
-void connection_thread(SF_CONNECT* sf ,sf_bool* result)
+void connection_thread(sf_bool* result)
 {
-    const int LOOPCOUNT = 10;
-    int retry = 0;
-    for (int i = 0; i < LOOPCOUNT; ++i)
-    {
-        do
-        {
-            *result = renew_session_sync(sf);
-            if (*result)
-            {
-                if (retry < MAX_RETRIES)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    continue;
-                }
-                return;
-            }
-            
-        } while (++retry < MAX_RETRIES);
-    }
-}
-
-void test_connect_with_client_session_keep_alive_current(void** unused)
-{
-    SF_UNUSED(unused);
-    const int THREADS = 10;
-    sf_bool results[THREADS];
-
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -94,14 +66,26 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
     }
     sf_bool client_session_keep_alive = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
-
-
     snowflake_connect(sf);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+
+    snowflake_term(sf);
+}
+
+// enable keep alive and execute a query takes 1 second
+// this could help on testing heartbeat when the driver built with
+// HEARTBEAT_DEBUG turned on from Cmake when you build libsf.
+// https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
+void test_connect_with_client_session_keep_alive_current(void** unused)
+{
+    const int THREADS = 10;
+    SF_UNUSED(unused);
+    sf_bool results[THREADS];
 
     std::vector<std::thread> threads;
     for (int i = 0; i < THREADS; i++)
     {
-        threads.push_back(std::thread(connection_thread, sf,&(results[i])));
+        threads.push_back(std::thread(connection_thread, &(results[i])));
     }
 
     for (int i = 0; i < THREADS; i++)
@@ -113,7 +97,6 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
     {
         assert_true(results[i]);
     }
-    snowflake_term(sf);
 }
 
 int main(void) {

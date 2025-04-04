@@ -93,6 +93,7 @@ namespace Snowflake
                 MutexGuard m_guard(m_lock);
 
                 m_connections[connection->session_id] = connection;
+
                 if (m_worker == NULL)
                 {
                     this->m_master_token_validation_time = connection->master_token_validation_time;
