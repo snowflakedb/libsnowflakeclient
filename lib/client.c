@@ -368,6 +368,9 @@ static SF_STATUS STDCALL _reset_connection_parameters(
                      !sf->binding_threshold_overridden) {
                 sf->stage_binding_threshold = snowflake_cJSON_GetUint64Value(value);
             }
+            else if (strcmp(name->valuestring, "CLIENT_PREFETCH_THREADS") == 0) {
+                sf->prefetch_threads = snowflake_cJSON_GetUint64Value(value);
+            }
         }
     }
     SF_STATUS ret = SF_STATUS_ERROR_GENERAL;
@@ -1049,6 +1052,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+
+        sf->prefetch_threads = SF_DEFAULT_PREFETCH_THREAD;
     }
 
     return sf;
@@ -1881,8 +1886,8 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
           qrmk,
           chunk_headers,
           chunks,
-          2, // thread count
-          4, // fetch slot
+          sfstmt->connection->prefetch_threads, // thread count
+          sfstmt->connection->prefetch_threads * 2, // fetch slot
           &sfstmt->error,
           sfstmt->connection->insecure_mode,
           sfstmt->connection->ocsp_fail_open,

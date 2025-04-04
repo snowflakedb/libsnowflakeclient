@@ -477,6 +477,8 @@ typedef struct SF_CONNECT {
     // by the setting from connection attribute
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
+
+    uint8 prefetch_threads;
 } SF_CONNECT;
 
 /**
