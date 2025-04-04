@@ -178,8 +178,11 @@ static const char *getASN1Element(struct Curl_asn1Element *elem,
                                   const char *beg, const char *end)
   WARN_UNUSED_RESULT;
 
-static const char *getASN1Element(struct Curl_asn1Element *elem,
-                                  const char *beg, const char *end)
+#define CURL_ASN1_MAX_RECURSIONS    16
+
+static const char *getASN1Element_(struct Curl_asn1Element *elem,
+                                   const char *beg, const char *end,
+                                   size_t lvl)
 {
   unsigned char b;
   size_t len;
@@ -190,7 +193,8 @@ static const char *getASN1Element(struct Curl_asn1Element *elem,
      Returns a pointer in source string after the parsed element, or NULL
      if an error occurs. */
   if(!beg || !end || beg >= end || !*beg ||
-     (size_t)(end - beg) > CURL_ASN1_MAX)
+     ((size_t)(end - beg) > CURL_ASN1_MAX) ||
+     lvl >=  CURL_ASN1_MAX_RECURSIONS)
     return NULL;
 
   /* Process header byte. */
@@ -216,7 +220,7 @@ static const char *getASN1Element(struct Curl_asn1Element *elem,
       return NULL;
     elem->beg = beg;
     while(beg < end && *beg) {
-      beg = getASN1Element(&lelem, beg, end);
+      beg = getASN1Element_(&lelem, beg, end, lvl + 1);
       if(!beg)
         return NULL;
     }
@@ -243,6 +247,12 @@ static const char *getASN1Element(struct Curl_asn1Element *elem,
   return elem->end;
 }
 
+static const char *getASN1Element(struct Curl_asn1Element *elem,
+                                  const char *beg, const char *end)
+{
+  return getASN1Element_(elem, beg, end, 0);
+}
+
 #ifdef WANT_EXTRACT_CERTINFO
 
 /*
@@ -259,6 +269,17 @@ static const struct Curl_OID *searchOID(const char *oid)
   return NULL;
 }
 
+#ifdef UNITTESTS
+/* used by unit1657.c */
+CURLcode Curl_x509_getASN1Element(struct Curl_asn1Element *elem,
+                                  const char *beg, const char *end)
+{
+  if(getASN1Element(elem, beg, end))
+    return CURLE_OK;
+  return CURLE_BAD_FUNCTION_ARGUMENT;
+}
+#endif
+
 /*
  * Convert an ASN.1 Boolean value into its string representation.
  *
@@ -270,7 +291,7 @@ static CURLcode bool2str(struct dynbuf *store,
 {
   if(end - beg != 1)
     return CURLE_BAD_FUNCTION_ARGUMENT;
-  return Curl_dyn_add(store, *beg? "TRUE": "FALSE");
+  return Curl_dyn_add(store, *beg ? "TRUE": "FALSE");
 }
 
 /*
@@ -323,7 +344,7 @@ static CURLcode int2str(struct dynbuf *store,
   do
     val = (val << 8) | *(const unsigned char *) beg++;
   while(beg < end);
-  return Curl_dyn_addf(store, "%s%x", val >= 10? "0x": "", val);
+  return Curl_dyn_addf(store, "%s%x", val >= 10 ? "0x" : "", val);
 }
 
 /*
@@ -551,7 +572,7 @@ static CURLcode GTime2str(struct dynbuf *store,
                        "%.4s-%.2s-%.2s %.2s:%.2s:%c%c%s%.*s%s%.*s",
                        beg, beg + 4, beg + 6,
                        beg + 8, beg + 10, sec1, sec2,
-                       fracl? ".": "", (int)fracl, fracp,
+                       fracl ? ".": "", (int)fracl, fracp,
                        sep, (int)tzl, tzp);
 }
 

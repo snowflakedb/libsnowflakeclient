@@ -235,6 +235,7 @@
 --ssl-no-revoke                      7.44.0
 --ssl-reqd                           7.20.0
 --ssl-revoke-best-effort             7.70.0
+--ssl-sessions                       8.12.0
 --sslv2 (-2)                         5.9
 --sslv3 (-3)                         5.9
 --stderr                             6.2
@@ -246,6 +247,7 @@
 --tftp-blksize                       7.20.0
 --tftp-no-options                    7.48.0
 --time-cond (-z)                     5.8
+--tls-earlydata                      8.11.0
 --tls-max                            7.54.0
 --tls13-ciphers                      7.61.0
 --tlsauthtype                        7.21.4

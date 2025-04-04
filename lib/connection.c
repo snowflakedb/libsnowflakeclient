@@ -10,7 +10,6 @@
 #include "client_int.h"
 #include "constants.h"
 #include "error.h"
-#include "authenticator.h"
 #include "curl_desc_pool.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
@@ -1311,4 +1310,9 @@ sf_bool is_one_time_token_request(cJSON* resp)
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
   return char_resp_cb(ptr, size, nmemb, userdata);
+}
+
+sf_bool is_password_required(AuthenticatorType auth)
+{
+    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
 }
