@@ -68,6 +68,8 @@ void connection_thread(sf_bool* result)
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
     snowflake_connect(sf);
     std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+    //Make sure renew_session_sync work well
+    *result = renew_session_sync(sf);
 
     snowflake_term(sf);
 }
