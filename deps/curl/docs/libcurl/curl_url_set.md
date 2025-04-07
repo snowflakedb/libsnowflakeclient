@@ -13,7 +13,7 @@ See-also:
   - curl_url_strerror (3)
 Protocol:
   - All
-Added-in: 7.78.0
+Added-in: 7.62.0
 ---
 
 # NAME
@@ -90,6 +90,8 @@ it does not recognize.
 
 Unless *CURLU_NO_AUTHORITY* is set, a blank hostname is not allowed in
 the URL.
+
+When a full URL is set (parsed), the hostname component is stored URL decoded.
 
 ## CURLUPART_SCHEME
 

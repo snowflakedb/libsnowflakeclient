@@ -46,6 +46,7 @@
 #define QUERY_MONITOR_URL "/monitoring/queries/%s"
 // not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
+#define EXTERNALBROWSER_CONSOLE_URL "/console/login"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="

@@ -37,6 +37,8 @@ call "%scriptdir%build_azuresdk.bat" :build %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_picojson.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
+call "%scriptdir%build_tomlplusplus.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
+if %ERRORLEVEL% NEQ 0 goto :error
 call "%scriptdir%build_cmocka.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 

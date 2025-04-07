@@ -49,9 +49,9 @@ struct memdebug {
 };
 
 /*
- * Note that these debug functions are very simple and they are meant to
- * remain so. For advanced analysis, record a log file and write perl scripts
- * to analyze them!
+ * Note that these debug functions are simple and they are meant to remain so.
+ * For advanced analysis, record a log file and write perl scripts to analyze
+ * them!
  *
  * Do not use these with multithreaded test programs!
  */
@@ -153,7 +153,7 @@ ALLOC_FUNC void *curl_dbg_malloc(size_t wantedsize,
                  source, line, wantedsize,
                  mem ? (void *)mem->mem : (void *)0);
 
-  return (mem ? mem->mem : NULL);
+  return mem ? mem->mem : NULL;
 }
 
 ALLOC_FUNC void *curl_dbg_calloc(size_t wanted_elements, size_t wanted_size,
@@ -181,7 +181,7 @@ ALLOC_FUNC void *curl_dbg_calloc(size_t wanted_elements, size_t wanted_size,
                  source, line, wanted_elements, wanted_size,
                  mem ? (void *)mem->mem : (void *)0);
 
-  return (mem ? mem->mem : NULL);
+  return mem ? mem->mem : NULL;
 }
 
 ALLOC_FUNC char *curl_dbg_strdup(const char *str,
