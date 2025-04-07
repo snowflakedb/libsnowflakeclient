@@ -24,7 +24,7 @@
  ***************************************************************************/
 
 /*
- * Source file for all iOS and macOS SecureTransport-specific code for the
+ * Source file for all iOS and macOS Secure Transport-specific code for the
  * TLS/SSL layer. No code but vtls.c should ever call or use these functions.
  */
 
@@ -38,6 +38,7 @@
 #include "multiif.h"
 #include "strcase.h"
 #include "x509asn1.h"
+#include "vtls_scache.h"
 #include "strerror.h"
 #include "cipher_suite.h"
 
@@ -49,6 +50,11 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress"
+#endif
+
+#if defined(__GNUC__) && defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 #include <limits.h>
@@ -197,7 +203,7 @@ static const uint16_t default_ciphers[] = {
   TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,      /* 0xCCA8 */
   TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,    /* 0xCCA9 */
 
-  /* TLSv1.3 is not supported by sectransp, but there is also other
+  /* TLSv1.3 is not supported by Secure Transport, but there is also other
    * code referencing TLSv1.3, like: kTLSProtocol13 ? */
   TLS_AES_128_GCM_SHA256,                           /* 0x1301 */
   TLS_AES_256_GCM_SHA384,                           /* 0x1302 */
@@ -278,7 +284,7 @@ static OSStatus sectransp_bio_cf_in_read(SSLConnectionRef connection,
       case CURLE_OK:
       case CURLE_AGAIN:
         rtn = errSSLWouldBlock;
-        backend->ssl_direction = false;
+        backend->ssl_direction = FALSE;
         break;
       default:
         rtn = ioErr;
@@ -317,7 +323,7 @@ static OSStatus sectransp_bio_cf_out_write(SSLConnectionRef connection,
   if(nwritten <= 0) {
     if(result == CURLE_AGAIN) {
       rtn = errSSLWouldBlock;
-      backend->ssl_direction = true;
+      backend->ssl_direction = TRUE;
     }
     else {
       rtn = ioErr;
@@ -354,8 +360,8 @@ CF_INLINE void GetDarwinVersionNumber(int *major, int *minor)
   }
 
   /* Parse the version: */
-  os_version_major = strtok_r(os_version, ".", &tok_buf);
-  os_version_minor = strtok_r(NULL, ".", &tok_buf);
+  os_version_major = Curl_strtok_r(os_version, ".", &tok_buf);
+  os_version_minor = Curl_strtok_r(NULL, ".", &tok_buf);
   *major = atoi(os_version_major);
   *minor = atoi(os_version_minor);
   free(os_version);
@@ -512,7 +518,7 @@ static OSStatus CopyIdentityWithLabel(char *label,
                                     * label matching below worked correctly */
     keys[2] = kSecMatchLimit;
     /* identity searches need a SecPolicyRef in order to work */
-    values[3] = SecPolicyCreateSSL(false, NULL);
+    values[3] = SecPolicyCreateSSL(FALSE, NULL);
     keys[3] = kSecMatchPolicy;
     /* match the name of the certificate (does not work in macOS 10.12.1) */
     values[4] = label_cf;
@@ -532,7 +538,7 @@ static OSStatus CopyIdentityWithLabel(char *label,
       keys_list_count = CFArrayGetCount(keys_list);
       *out_cert_and_key = NULL;
       status = 1;
-      for(i = 0; i<keys_list_count; i++) {
+      for(i = 0; i < keys_list_count; i++) {
         OSStatus err = noErr;
         SecCertificateRef cert = NULL;
         SecIdentityRef identity =
@@ -609,7 +615,7 @@ static OSStatus CopyIdentityFromPKCS12File(const char *cPath,
     pkcs_url =
       CFURLCreateFromFileSystemRepresentation(NULL,
                                               (const UInt8 *)cPath,
-                                              (CFIndex)strlen(cPath), false);
+                                              (CFIndex)strlen(cPath), FALSE);
     resource_imported =
       CFURLCreateDataAndPropertiesFromResource(NULL,
                                                pkcs_url, &pkcs_data,
@@ -711,11 +717,11 @@ CF_INLINE bool is_file(const char *filename)
   struct_stat st;
 
   if(!filename)
-    return false;
+    return FALSE;
 
   if(stat(filename, &st) == 0)
     return S_ISREG(st.st_mode);
-  return false;
+  return FALSE;
 }
 
 static CURLcode
@@ -796,8 +802,8 @@ legacy:
   }
 
   /* only TLS 1.0 is supported, disable SSL 3.0 and SSL 2.0 */
-  SSLSetProtocolVersionEnabled(backend->ssl_ctx, kSSLProtocolAll, false);
-  SSLSetProtocolVersionEnabled(backend->ssl_ctx, kTLSProtocol1, true);
+  SSLSetProtocolVersionEnabled(backend->ssl_ctx, kSSLProtocolAll, FALSE);
+  SSLSetProtocolVersionEnabled(backend->ssl_ctx, kTLSProtocol1, TRUE);
 
   return CURLE_OK;
 #endif
@@ -1015,7 +1021,7 @@ failed:
   return ret;
 }
 
-static void sectransp_session_free(void *sessionid, size_t idsize)
+static void sectransp_session_free(void *sessionid)
 {
   /* ST, as of iOS 5 and Mountain Lion, has no public method of deleting a
      cached session ID inside the Security framework. There is a private
@@ -1023,7 +1029,6 @@ static void sectransp_session_free(void *sessionid, size_t idsize)
      got your application rejected from the App Store due to the use of a
      private API, so the best we can do is free up our own char array that we
      created way back in sectransp_connect_step1... */
-  (void)idsize;
   Curl_safefree(sessionid);
 }
 
@@ -1069,7 +1074,7 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
 #if CURL_SUPPORT_MAC_10_8
     if(backend->ssl_ctx)
       (void)SSLDisposeContext(backend->ssl_ctx);
-    err = SSLNewContext(false, &(backend->ssl_ctx));
+    err = SSLNewContext(FALSE, &(backend->ssl_ctx));
     if(err != noErr) {
       failf(data, "SSL: could not create a context: OSStatus %d", err);
       return CURLE_OUT_OF_MEMORY;
@@ -1079,7 +1084,7 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
 #else
   if(backend->ssl_ctx)
     (void)SSLDisposeContext(backend->ssl_ctx);
-  err = SSLNewContext(false, &(backend->ssl_ctx));
+  err = SSLNewContext(FALSE, &(backend->ssl_ctx));
   if(err != noErr) {
     failf(data, "SSL: could not create a context: OSStatus %d", err);
     return CURLE_OUT_OF_MEMORY;
@@ -1227,8 +1232,7 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
      Mountain Lion.
      So we need to call SSLSetEnableCertVerify() on those older cats in order
      to disable certificate validation if the user turned that off.
-     (SecureTransport will always validate the certificate chain by
-     default.)
+     (Secure Transport always validates the certificate chain by default.)
   Note:
   Darwin 11.x.x is Lion (10.7)
   Darwin 12.x.x is Mountain Lion (10.8)
@@ -1254,7 +1258,7 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
   else {
 #if CURL_SUPPORT_MAC_10_8
     err = SSLSetEnableCertVerify(backend->ssl_ctx,
-                                 conn_config->verifypeer?true:false);
+                                 conn_config->verifypeer ? true : FALSE);
     if(err != noErr) {
       failf(data, "SSL: SSLSetEnableCertVerify() failed: OSStatus %d", err);
       return CURLE_SSL_CONNECT_ERROR;
@@ -1263,7 +1267,7 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
   }
 #else
   err = SSLSetEnableCertVerify(backend->ssl_ctx,
-                               conn_config->verifypeer?true:false);
+                               conn_config->verifypeer ? true : FALSE);
   if(err != noErr) {
     failf(data, "SSL: SSLSetEnableCertVerify() failed: OSStatus %d", err);
     return CURLE_SSL_CONNECT_ERROR;
@@ -1285,8 +1289,8 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
    * Both hostname check and SNI require SSLSetPeerDomainName().
    * Also: the verifyhost setting influences SNI usage */
   if(conn_config->verifyhost) {
-    char *server = connssl->peer.sni?
-                   connssl->peer.sni : connssl->peer.hostname;
+    char *server = connssl->peer.sni ?
+      connssl->peer.sni : connssl->peer.hostname;
     err = SSLSetPeerDomainName(backend->ssl_ctx, server, strlen(server));
 
     if(err != noErr) {
@@ -1333,18 +1337,19 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
     char *ssl_sessionid;
     size_t ssl_sessionid_len;
 
-    Curl_ssl_sessionid_lock(data);
-    if(!Curl_ssl_getsessionid(cf, data, &connssl->peer,
-                              (void **)&ssl_sessionid, &ssl_sessionid_len)) {
+    Curl_ssl_scache_lock(data);
+    if(Curl_ssl_scache_get_obj(cf, data, connssl->peer.scache_key,
+                               (void **)&ssl_sessionid)) {
       /* we got a session id, use it! */
-      err = SSLSetPeerID(backend->ssl_ctx, ssl_sessionid, ssl_sessionid_len);
-      Curl_ssl_sessionid_unlock(data);
+      err = SSLSetPeerID(backend->ssl_ctx, ssl_sessionid,
+                         strlen(ssl_sessionid));
+      Curl_ssl_scache_unlock(data);
       if(err != noErr) {
         failf(data, "SSL: SSLSetPeerID() failed: OSStatus %d", err);
         return CURLE_SSL_CONNECT_ERROR;
       }
-      /* Informational message */
-      infof(data, "SSL reusing session ID");
+      else
+        infof(data, "SSL reusing session ID");
     }
     /* If there is not one, then let's make one up! This has to be done prior
        to starting the handshake. */
@@ -1358,15 +1363,17 @@ static CURLcode sectransp_connect_step1(struct Curl_cfilter *cf,
 
       err = SSLSetPeerID(backend->ssl_ctx, ssl_sessionid, ssl_sessionid_len);
       if(err != noErr) {
-        Curl_ssl_sessionid_unlock(data);
+        Curl_ssl_scache_unlock(data);
         failf(data, "SSL: SSLSetPeerID() failed: OSStatus %d", err);
         return CURLE_SSL_CONNECT_ERROR;
       }
 
-      result = Curl_ssl_set_sessionid(cf, data, &connssl->peer, ssl_sessionid,
-                                      ssl_sessionid_len,
+      /* This is all a bit weird, as we have not handshaked yet.
+       * I hope this backend will go away soon. */
+      result = Curl_ssl_scache_add_obj(cf, data, connssl->peer.scache_key,
+                                      (void *)ssl_sessionid,
                                       sectransp_session_free);
-      Curl_ssl_sessionid_unlock(data);
+      Curl_ssl_scache_unlock(data);
       if(result)
         return result;
     }
@@ -1504,9 +1511,11 @@ static CURLcode append_cert_to_array(struct Curl_easy *data,
       case CURLE_OK:
         break;
       case CURLE_PEER_FAILED_VERIFICATION:
+        CFRelease(cacert);
         return CURLE_SSL_CACERT_BADFILE;
       case CURLE_OUT_OF_MEMORY:
       default:
+        CFRelease(cacert);
         return result;
     }
     free(certp);
@@ -1605,7 +1614,7 @@ static CURLcode verify_cert_buf(struct Curl_cfilter *cf,
     failf(data, "SecTrustSetAnchorCertificates() returned error %d", ret);
     goto out;
   }
-  ret = SecTrustSetAnchorCertificatesOnly(trust, true);
+  ret = SecTrustSetAnchorCertificatesOnly(trust, TRUE);
   if(ret != noErr) {
     failf(data, "SecTrustSetAnchorCertificatesOnly() returned error %d", ret);
     goto out;
@@ -2054,7 +2063,7 @@ check_handshake:
     (void)SSLGetNegotiatedProtocolVersion(backend->ssl_ctx, &protocol);
 
     sectransp_cipher_suite_get_str((uint16_t) cipher, cipher_str,
-                                   sizeof(cipher_str), true);
+                                   sizeof(cipher_str), TRUE);
     switch(protocol) {
       case kSSLProtocol2:
         infof(data, "SSL 2.0 connection using %s", cipher_str);
@@ -2169,7 +2178,7 @@ static CURLcode collect_server_cert(struct Curl_cfilter *cf,
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
   const bool show_verbose_server_cert = data->set.verbose;
 #else
-  const bool show_verbose_server_cert = false;
+  const bool show_verbose_server_cert = FALSE;
 #endif
   struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
   CURLcode result = ssl_config->certinfo ?
@@ -2328,10 +2337,10 @@ sectransp_connect_common(struct Curl_cfilter *cf, struct Curl_easy *data,
     /* if ssl is expecting something, check if it is available. */
     if(connssl->io_need) {
 
-      curl_socket_t writefd = (connssl->io_need & CURL_SSL_IO_NEED_SEND)?
-                              sockfd:CURL_SOCKET_BAD;
-      curl_socket_t readfd = (connssl->io_need & CURL_SSL_IO_NEED_RECV)?
-                             sockfd:CURL_SOCKET_BAD;
+      curl_socket_t writefd = (connssl->io_need & CURL_SSL_IO_NEED_SEND) ?
+        sockfd : CURL_SOCKET_BAD;
+      curl_socket_t readfd = (connssl->io_need & CURL_SSL_IO_NEED_RECV) ?
+        sockfd : CURL_SOCKET_BAD;
 
       what = Curl_socket_check(readfd, CURL_SOCKET_BAD, writefd,
                                nonblocking ? 0 : timeout_ms);
@@ -2424,7 +2433,7 @@ static CURLcode sectransp_shutdown(struct Curl_cfilter *cf,
   struct st_ssl_backend_data *backend =
     (struct st_ssl_backend_data *)connssl->backend;
   CURLcode result = CURLE_OK;
-  ssize_t nread;
+  ssize_t nread = 0;
   char buf[1024];
   size_t i;
 
@@ -2463,7 +2472,7 @@ static CURLcode sectransp_shutdown(struct Curl_cfilter *cf,
     }
     else {
       /* We would like to read the close notify from the server using
-       * secure transport, however SSLRead() no longer works after we
+       * Secure Transport, however SSLRead() no longer works after we
        * sent the notify from our side. So, we just read from the
        * underlying filter and hope it will end. */
       nread = Curl_conn_cf_recv(cf->next, data, buf, sizeof(buf), &result);
@@ -2544,10 +2553,10 @@ static bool sectransp_data_pending(struct Curl_cfilter *cf,
     err = SSLGetBufferedReadSize(backend->ssl_ctx, &buffer);
     if(err == noErr)
       return buffer > 0UL;
-    return false;
+    return FALSE;
   }
   else
-    return false;
+    return FALSE;
 }
 
 static CURLcode sectransp_random(struct Curl_easy *data UNUSED_PARAM,
@@ -2742,31 +2751,32 @@ const struct Curl_ssl Curl_ssl_sectransp = {
 
   sizeof(struct st_ssl_backend_data),
 
-  Curl_none_init,                     /* init */
-  Curl_none_cleanup,                  /* cleanup */
+  NULL,                               /* init */
+  NULL,                               /* cleanup */
   sectransp_version,                  /* version */
-  Curl_none_check_cxn,                /* check_cxn */
   sectransp_shutdown,                 /* shutdown */
   sectransp_data_pending,             /* data_pending */
   sectransp_random,                   /* random */
-  Curl_none_cert_status_request,      /* cert_status_request */
+  NULL,                               /* cert_status_request */
   sectransp_connect,                  /* connect */
   sectransp_connect_nonblocking,      /* connect_nonblocking */
   Curl_ssl_adjust_pollset,            /* adjust_pollset */
   sectransp_get_internals,            /* get_internals */
   sectransp_close,                    /* close_one */
-  Curl_none_close_all,                /* close_all */
-  Curl_none_set_engine,               /* set_engine */
-  Curl_none_set_engine_default,       /* set_engine_default */
-  Curl_none_engines_list,             /* engines_list */
+  NULL,                               /* close_all */
+  NULL,                               /* set_engine */
+  NULL,                               /* set_engine_default */
+  NULL,                               /* engines_list */
   sectransp_false_start,              /* false_start */
   sectransp_sha256sum,                /* sha256sum */
-  NULL,                               /* associate_connection */
-  NULL,                               /* disassociate_connection */
   sectransp_recv,                     /* recv decrypted data */
   sectransp_send,                     /* send data to encrypt */
   NULL,                               /* get_channel_binding */
 };
+
+#if defined(__GNUC__) && defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

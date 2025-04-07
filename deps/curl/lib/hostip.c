@@ -198,7 +198,7 @@ hostcache_entry_is_stale(void *datap, void *hc)
   if(dns->timestamp) {
     /* age in seconds */
     time_t age = prune->now - dns->timestamp;
-    if(age >= prune->max_age_sec)
+    if(age >= (time_t)prune->max_age_sec)
       return TRUE;
     if(age > prune->oldest)
       prune->oldest = age;
@@ -313,7 +313,7 @@ static struct Curl_dns_entry *fetch_addr(struct Curl_easy *data,
   /* See if the returned entry matches the required resolve mode */
   if(dns && data->conn->ip_version != CURL_IPRESOLVE_WHATEVER) {
     int pf = PF_INET;
-    bool found = false;
+    bool found = FALSE;
     struct Curl_addrinfo *addr = dns->addr;
 
 #ifdef PF_INET6
@@ -323,7 +323,7 @@ static struct Curl_dns_entry *fetch_addr(struct Curl_easy *data,
 
     while(addr) {
       if(addr->ai_family == pf) {
-        found = true;
+        found = TRUE;
         break;
       }
       addr = addr->ai_next;
@@ -541,7 +541,9 @@ static struct Curl_addrinfo *get_localhost6(int port, const char *name)
   sa6.sin6_family = AF_INET6;
   sa6.sin6_port = htons(port16);
   sa6.sin6_flowinfo = 0;
+#ifdef HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID
   sa6.sin6_scope_id = 0;
+#endif
 
   (void)Curl_inet_pton(AF_INET6, "::1", ipv6);
   memcpy(&sa6.sin6_addr, ipv6, sizeof(ipv6));
@@ -630,7 +632,7 @@ bool Curl_ipv6works(struct Curl_easy *data)
       ipv6_works = 1;
       sclose(s);
     }
-    return (ipv6_works>0)?TRUE:FALSE;
+    return ipv6_works > 0;
   }
 }
 #endif /* USE_IPV6 */
@@ -739,7 +741,7 @@ enum resolve_t Curl_resolv(struct Curl_easy *data,
     /* notify the resolver start callback */
     if(data->set.resolver_start) {
       int st;
-      Curl_set_in_callback(data, true);
+      Curl_set_in_callback(data, TRUE);
       st = data->set.resolver_start(
 #ifdef USE_CURL_ASYNC
         data->state.async.resolver,
@@ -748,7 +750,7 @@ enum resolve_t Curl_resolv(struct Curl_easy *data,
 #endif
         NULL,
         data->set.resolver_start_client);
-      Curl_set_in_callback(data, false);
+      Curl_set_in_callback(data, FALSE);
       if(st)
         return CURLRESOLV_ERROR;
     }
@@ -798,7 +800,9 @@ enum resolve_t Curl_resolv(struct Curl_easy *data,
         return CURLRESOLV_ERROR;
 
       if(strcasecompare(hostname, "localhost") ||
-         tailmatch(hostname, ".localhost"))
+         strcasecompare(hostname, "localhost.") ||
+         tailmatch(hostname, ".localhost") ||
+         tailmatch(hostname, ".localhost."))
         addr = get_localhost(port, hostname);
 #ifndef CURL_DISABLE_DOH
       else if(allowDOH && data->set.doh && !ipnum)
@@ -1068,25 +1072,17 @@ void Curl_resolv_unlink(struct Curl_easy *data, struct Curl_dns_entry **pdns)
 static void hostcache_unlink_entry(void *entry)
 {
   struct Curl_dns_entry *dns = (struct Curl_dns_entry *) entry;
-  DEBUGASSERT(dns && (dns->refcount>0));
+  DEBUGASSERT(dns && (dns->refcount > 0));
 
   dns->refcount--;
   if(dns->refcount == 0) {
     Curl_freeaddrinfo(dns->addr);
 #ifdef USE_HTTPSRR
     if(dns->hinfo) {
-      if(dns->hinfo->target)
-        free(dns->hinfo->target);
-      if(dns->hinfo->alpns)
-        free(dns->hinfo->alpns);
-      if(dns->hinfo->ipv4hints)
-        free(dns->hinfo->ipv4hints);
-      if(dns->hinfo->echconfiglist)
-        free(dns->hinfo->echconfiglist);
-      if(dns->hinfo->ipv6hints)
-        free(dns->hinfo->ipv6hints);
-      if(dns->hinfo->val)
-        free(dns->hinfo->val);
+      free(dns->hinfo->target);
+      free(dns->hinfo->ipv4hints);
+      free(dns->hinfo->echconfiglist);
+      free(dns->hinfo->ipv6hints);
       free(dns->hinfo);
     }
 #endif
@@ -1129,7 +1125,7 @@ CURLcode Curl_loadhostpairs(struct Curl_easy *data)
   char *host_end;
 
   /* Default is no wildcard found */
-  data->state.wildcard_resolve = false;
+  data->state.wildcard_resolve = FALSE;
 
   for(hostp = data->state.resolve; hostp; hostp = hostp->next) {
     char entry_id[MAX_HOSTCACHE_LEN];
@@ -1179,7 +1175,7 @@ CURLcode Curl_loadhostpairs(struct Curl_easy *data)
       char *end_ptr;
       bool permanent = TRUE;
       unsigned long tmp_port;
-      bool error = true;
+      bool error = TRUE;
       char *host_begin = hostp->data;
       size_t hlen = 0;
 
@@ -1256,7 +1252,7 @@ CURLcode Curl_loadhostpairs(struct Curl_easy *data)
       if(!head)
         goto err;
 
-      error = false;
+      error = FALSE;
 err:
       if(error) {
         failf(data, "Couldn't parse CURLOPT_RESOLVE entry '%s'",
@@ -1316,7 +1312,7 @@ err:
       /* Wildcard hostname */
       if((hlen == 1) && (host_begin[0] == '*')) {
         infof(data, "RESOLVE *:%d using wildcard", port);
-        data->state.wildcard_resolve = true;
+        data->state.wildcard_resolve = TRUE;
       }
     }
   }

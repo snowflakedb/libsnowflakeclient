@@ -31,7 +31,7 @@ CURLcode curl_easy_getinfo(CURL *handle, CURLINFO_RTSP_SERVER_CSEQ,
 Pass a pointer to a long to receive the next CSeq that is expected to be used
 by the application.
 
-Listening for server initiated requests is not implemented!
+Listening for server initiated requests is not implemented.
 
 Applications wishing to resume an RTSP session on another connection should
 retrieve this info before closing the active connection.
@@ -61,4 +61,7 @@ int main(void)
 
 # RETURN VALUE
 
-Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
+curl_easy_getinfo(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).
