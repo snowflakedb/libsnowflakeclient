@@ -811,6 +811,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
     log_debug("get_maxretries: %d", sf->get_maxretries);
     log_debug("get_threshold: %d", sf->get_threshold);
+    log_debug("prefetch_threads: %d", sf->prefetch_threads);
 
     return SF_STATUS_SUCCESS;
 }
