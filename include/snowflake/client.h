@@ -486,6 +486,7 @@ typedef struct SF_CONNECT {
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
     sf_bool disable_console_login;
+    uint8 prefetch_threads;
 } SF_CONNECT;
 
 /**
