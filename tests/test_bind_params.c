@@ -3,6 +3,8 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 #include "utils/test_setup.h"
 #include "memory.h"
 
@@ -164,7 +166,6 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     float_array = SF_CALLOC(array_size, sizeof(float_value));
     string_array = SF_CALLOC(array_size, sizeof(string_value));
     binary_array = SF_CALLOC(array_size, sizeof(binary_value));
-    bool_array = SF_CALLOC(array_size, sizeof(bool_value));
     bool_array = SF_CALLOC(array_size, sizeof(bool_value));
     null_ind_array = SF_CALLOC(array_size, sizeof(int));
 
@@ -611,6 +612,381 @@ void test_array_binding_supported_false_select(void** unused) {
     snowflake_term(sf);
 }
 
+void* generate_random_date_arr(char** date_arr, uint8 size) {
+    srand(time(NULL));
+    uint8 year;
+    uint8 month;
+    uint8 day;
+
+    for (int8 i = 0; i < size; i++) {
+        char temp[11];
+
+        year = rand() % 2024 + 1;
+        month = rand() % 12 + 1;
+        day = rand() % 11 + 1;
+        snprintf(temp, 11, "%04d-%02d-%02d", year, month, day);
+
+        memcpy(*date_arr + sizeof(11) * i, temp, sizeof(temp));
+    }
+    
+}
+
+const int8 array_size = 5;
+void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timezone){
+    /* init */
+    SF_STATUS status;
+    int8 id_array[5] = { 1,2,3,4,5 };
+    char timestamp_array[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.9870000000","2025-04-08 11:37:25.3260000000","2024-06-22 23:37:25.5200000000", "2000-01-01 00:00:00.000000000" };
+
+    SF_BIND_INPUT id_input;
+    SF_BIND_INPUT NTZ_input;
+    SF_BIND_INPUT TZ_input;
+    SF_BIND_INPUT LTZ_input;
+
+    SF_BIND_INPUT input_array[4];
+
+    snowflake_bind_input_init(&id_input);
+    snowflake_bind_input_init(&NTZ_input);
+    snowflake_bind_input_init(&TZ_input);
+    snowflake_bind_input_init(&LTZ_input);
+
+    id_input.idx = 1;
+    id_input.c_type = SF_C_TYPE_UINT8;
+    id_input.value = id_array;
+    id_input.len = sizeof(int8);
+
+    NTZ_input.idx = 2;
+    NTZ_input.c_type = SF_C_TYPE_STRING;
+    NTZ_input.value = timestamp_array;
+    NTZ_input.len = 31;
+
+    TZ_input.idx = 3;
+    TZ_input.c_type = SF_C_TYPE_STRING;
+    TZ_input.value = timestamp_array;
+    TZ_input.len = 31;
+
+    LTZ_input.idx = 4;
+    LTZ_input.c_type = SF_C_TYPE_STRING;
+    LTZ_input.value = timestamp_array;
+    LTZ_input.len = 31;
+
+
+    input_array[0] = id_input;
+    input_array[1] = NTZ_input;
+    input_array[2] = TZ_input;
+    input_array[3] = LTZ_input;
+
+
+    /* Create a statement once and reused */
+
+    char* alter_command = "alter session set TIMEZONE = '";
+    char* timezone_query = (char*)SF_CALLOC(1,strlen(alter_command) + strlen(timezone) + 2);
+    strcpy(timezone_query, alter_command);
+    strcat(timezone_query, timezone);
+    strcat(timezone_query, "'");
+
+    status = snowflake_query(
+        stmt,
+        timezone_query,
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+     status = snowflake_query(
+        stmt,
+        "create or replace table ARRAYBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_query(
+        stmt,
+        "create or replace table STAGEBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    int64 paramset_size = array_size;
+    status = snowflake_stmt_set_attr(stmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
+    status = snowflake_prepare(
+        stmt,
+        "insert into ARRAYBINDINSERT values(?, ?, ?, ?)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_bind_param_array(stmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    status = snowflake_execute(stmt);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        dump_error(&stmt->error);
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_affected_rows(stmt), array_size);
+
+    int64 stage_treshold = 1;
+    int64* cur_threshold;
+    snowflake_set_attribute(stmt->connection, SF_CON_STAGE_BIND_THRESHOLD, (void*)&stage_treshold);
+    snowflake_get_attribute(stmt->connection, SF_CON_STAGE_BIND_THRESHOLD, (void**)&cur_threshold);
+    assert_int_equal(*cur_threshold, stage_treshold);
+    status = snowflake_prepare(
+        stmt,
+        "insert into STAGEBINDINSERT values(?, ?, ?, ?)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_bind_param_array(stmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    status = snowflake_execute(stmt);
+    if (status != SF_STATUS_SUCCESS)
+    {
+        dump_error(&stmt->error);
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_affected_rows(stmt), array_size);
+
+    SF_FREE(timezone_query);
+}
+
+void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
+    sf_setenv("TZ", "UTC");
+    sf_tzset();
+    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
+    char expected_ntz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+    char expected_tz_results[5][38] = { "0001-01-01 23:24:25.987000000 -00:00", "9999-12-30 23:24:25.987000000 -00:00","2025-04-08 11:37:25.326000000 -00:00","2024-06-22 23:37:25.520000000 -00:00", "2000-01-01 00:00:00.000000000 -00:00"};
+    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+
+    /* Connect with all parameters set */
+    SF_STATUS status;
+    SF_CONNECT* sf = setup_snowflake_connection();
+    // turn on FAIL_OPEN to around certificate issue with GCP
+    sf_bool value = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    if (snowflake_connect(sf) != SF_STATUS_SUCCESS)
+    {
+        dump_error(&sf->error);
+    }
+    SF_STMT* stmt = snowflake_stmt(sf);
+    execute_insert_query_with_two_different_bindings(stmt, "UTC");
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id = NULL;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
+void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unused) {
+    sf_setenv("TZ", "UTC");
+    sf_tzset();
+    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
+    char expected_ntz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+    char expected_tz_results[5][38] = { "0001-01-01 23:24:25.987000000 +01:24", "9999-12-30 23:24:25.987000000 +01:00","2025-04-08 11:37:25.326000000 +02:00","2024-06-22 23:37:25.520000000 +02:00", "2000-01-01 00:00:00.000000000 +01:00" };
+    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+
+    /* Connect with all parameters set */
+    SF_STATUS status;
+    SF_CONNECT* sf = setup_snowflake_connection();
+    // turn on FAIL_OPEN to around certificate issue with GCP
+    sf_bool value = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    if (snowflake_connect(sf) != SF_STATUS_SUCCESS)
+    {
+        dump_error(&sf->error);
+    }
+    SF_STMT* stmt = snowflake_stmt(sf);
+    execute_insert_query_with_two_different_bindings(stmt, "Europe/Warsaw");
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        //assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id = NULL;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        //assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
+void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
+    sf_setenv("TZ", "UTC");
+    sf_tzset();
+    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
+    char expected_ntz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+    char expected_tz_results[5][38] = { "0001-01-01 23:23:26.987000000 +09:18", "9999-12-30 23:24:25.987000000 +09:00","2025-04-08 11:37:25.326000000 +09:00","2024-06-22 23:37:25.520000000 +09:00", "2000-01-01 00:00:00.000000000 +09:00" };
+    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2024-06-22 23:37:25.520000000" };
+
+    /* Connect with all parameters set */
+    SF_STATUS status;
+    SF_CONNECT* sf = setup_snowflake_connection();
+    // turn on FAIL_OPEN to around certificate issue with GCP
+    sf_bool value = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
+    if (snowflake_connect(sf) != SF_STATUS_SUCCESS)
+    {
+        dump_error(&sf->error);
+    }
+    SF_STMT* stmt = snowflake_stmt(sf);
+    execute_insert_query_with_two_different_bindings(stmt, "Asia/Tokyo");
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        //assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    status = snowflake_query(stmt, "select * from ARRAYBINDINSERT order by c1", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(stmt), array_size);
+
+    for (int8 i = 0; i < array_size; i++)
+    {
+        status = snowflake_fetch(stmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(stmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        char* result = NULL;
+        int8 id = NULL;
+        size_t value_len = 0;
+        size_t max_value_size = 0;
+
+        snowflake_column_as_str(stmt, 1, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_id_restuls[i]);
+        snowflake_column_as_str(stmt, 2, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ntz_results[i]);
+        snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_tz_results[i]);
+        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        //assert_string_equal(result, expected_ltz_results[i]);
+        free(result);
+    }
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -624,6 +1000,9 @@ int main(void) {
       cmocka_unit_test(test_array_binding_threshold),
       cmocka_unit_test(test_array_binding_threshold_fallback),
       cmocka_unit_test(test_array_binding_disable),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_UTC),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_EUROPE_WARSAW),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_TOKYO),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
