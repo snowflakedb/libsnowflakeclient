@@ -38,11 +38,15 @@ function get_zip_file_name()
     local component_name=$1
     local component_version=$2
     local build_type=$3
+    local dynamic_prefix=""
+    if [[ "$component_name" == "libsnowflakeclient" && "$linking" == "Dynamic" ]]; then
+        local dynamic_prefix="dynamic_"
+    fi
 
     [[ -z "$component_name" ]] && echo "Set component name [zlib, openssl, curl, aws, azure, cmocka, libsnowflakeclient]" && exit 1
     [[ -z "$component_version" ]] && echo "Set component_version" && exit 1
     [[ -z "$build_type" ]] && echo "set build_type" && exit 1
-    echo "${component_name}_${PLATFORM}_${build_type}-${component_version}.tar.gz"
+    echo "${dynamic_prefix}${component_name}_${PLATFORM}_${build_type}-${component_version}.tar.gz"
 }
 
 function get_cmake_file_name()
@@ -50,11 +54,15 @@ function get_cmake_file_name()
     local component_name=$1
     local component_version=$2
     local build_type=$3
+    local dynamic_prefix=""
+    if [[ "$component_name" == "libsnowflakeclient" && "$linking" == "Dynamic" ]]; then
+        local dynamic_prefix="dynamic_"
+    fi
 
     [[ -z "$component_name" ]] && echo "Set component name [zlib, openssl, curl, aws, azure, cmocka, libsnowflakeclient]" && exit 1
     [[ -z "$component_version" ]] && echo "Set component_version" && exit 1
     [[ -z "$build_type" ]] && echo "set build_type" && exit 1
-    echo "${component_name}_cmake_${PLATFORM}_${build_type}-${component_version}.tar.gz"
+    echo "${dynamic_prefix}${component_name}_cmake_${PLATFORM}_${build_type}-${component_version}.tar.gz"
 }
 
 function zip_file()
