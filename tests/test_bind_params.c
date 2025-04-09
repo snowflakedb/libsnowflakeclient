@@ -783,7 +783,6 @@ void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         char* result = NULL;
-        int8 id;
         size_t value_len = 0;
         size_t max_value_size = 0;
 
@@ -810,7 +809,6 @@ void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         char* result = NULL;
-        int8 id = NULL;
         size_t value_len = 0;
         size_t max_value_size = 0;
 
@@ -889,7 +887,6 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         char* result = NULL;
-        int8 id = NULL;
         size_t value_len = 0;
         size_t max_value_size = 0;
 
@@ -941,7 +938,6 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         char* result = NULL;
-        int8 id;
         size_t value_len = 0;
         size_t max_value_size = 0;
 
@@ -968,7 +964,6 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
         char* result = NULL;
-        int8 id = NULL;
         size_t value_len = 0;
         size_t max_value_size = 0;
 
