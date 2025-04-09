@@ -11,8 +11,8 @@ function usage() {
 }
 set -o pipefail
 
-BOOST_SRC_VERSION=1.81.0
-BOOST_BUILD_VERSION=2
+BOOST_SRC_VERSION=1.83.0
+BOOST_BUILD_VERSION=1
 BOOST_VERSION=${BOOST_SRC_VERSION}.${BOOST_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -23,6 +23,18 @@ source $DIR/utils.sh
 
 BOOST_SOURCE_DIR=$DEPS_DIR/boost-${BOOST_SRC_VERSION}
 BOOST_BUILD_DIR=$DEPENDENCY_DIR/boost
+
+rm -rf $BOOST_SOURCE_DIR
+mkdir -p $BOOST_SOURCE_DIR
+pushd $BOOST_SOURCE_DIR
+  git init
+  git remote add origin https://github.com/boostorg/boost.git
+  git fetch --depth 1 origin refs/tags/boost-${BOOST_SRC_VERSION}
+  git checkout FETCH_HEAD
+  git submodule update --init --recursive libs/
+  git submodule update --init --recursive tools/
+popd
+
 rm -rf $BOOST_BUILD_DIR
 mkdir $BOOST_BUILD_DIR
 
