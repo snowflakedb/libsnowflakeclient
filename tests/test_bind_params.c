@@ -612,25 +612,6 @@ void test_array_binding_supported_false_select(void** unused) {
     snowflake_term(sf);
 }
 
-void* generate_random_date_arr(char** date_arr, uint8 size) {
-    srand(time(NULL));
-    uint8 year;
-    uint8 month;
-    uint8 day;
-
-    for (int8 i = 0; i < size; i++) {
-        char temp[11];
-
-        year = rand() % 2024 + 1;
-        month = rand() % 12 + 1;
-        day = rand() % 11 + 1;
-        snprintf(temp, 11, "%04d-%02d-%02d", year, month, day);
-
-        memcpy(*date_arr + sizeof(11) * i, temp, sizeof(temp));
-    }
-    
-}
-
 const int8 array_size = 5;
 void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timezone){
     /* init */
