@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/boostorg/boost.git
 ::
 @echo off
-set boost_src_version=1.86.0
+set boost_src_version=1.83.0
 set boost_build_version=1
 set boost_version=%boost_src_version%.%boost_build_version%
 call %*
@@ -74,7 +74,6 @@ if /I "%dynamic_runtime%"=="on" (
 
 call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
 if %ERRORLEVEL% NEQ 0 goto :error
-b2 --help
 b2 ^
     -a^
     --prefix=%BOOST_INSTALL_DIR%^
