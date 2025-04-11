@@ -80,7 +80,7 @@ b2 ^
     --exec-prefix=%BOOST_INSTALL_DIR%^
     --layout=system^
     --with-system --with-filesystem --with-regex^
-    link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
+    link=static runtime-link=%runtimelink% toolset=msvc-14.3 threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
     cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl"^
     install
 
