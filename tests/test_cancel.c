@@ -252,7 +252,7 @@ void test_bind_params() {
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
+  sf_sleep_ms(2000);
   SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
