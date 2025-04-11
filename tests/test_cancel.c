@@ -59,6 +59,25 @@ void test_no_query() {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 }
 
+void test_prepared_query() {
+  SF_CONNECT *sf = setup_snowflake_connection();
+  SF_STATUS status = snowflake_connect(sf);
+  if (status != SF_STATUS_SUCCESS) {
+    dump_error(&(sf->error));
+  }
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  SF_STMT *sfstmt = snowflake_stmt(sf);
+  status = snowflake_prepare(sfstmt, "select 1;", 0);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  status = snowflake_cancel_query(sfstmt);
+  assert_int_equal(status, SF_STATUS_SUCCESS);
+
+  snowflake_stmt_term(sfstmt);
+  snowflake_term(sf);
+}
+
 void test_async() {
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
@@ -361,6 +380,7 @@ int main(void) {
       cmocka_unit_test(test_basic_cancel),
       cmocka_unit_test(test_no_stmt),
       cmocka_unit_test(test_no_query),
+      cmocka_unit_test(test_prepared_query),
       cmocka_unit_test(test_async),
       cmocka_unit_test(test_finished_query),
       cmocka_unit_test(test_multiple_statements),

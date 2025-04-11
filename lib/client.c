@@ -2726,8 +2726,8 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
-    if (!sfstmt->sql_text) {
-        log_trace("No queries found.");
+    if (!sfstmt->sql_text || (strlen(sfstmt->request_id) == 0)) {
+        log_trace("No queries found or query has not been executed yet.");
         return SF_STATUS_SUCCESS;
     }
     clear_snowflake_error(&sfstmt->error);
@@ -2744,13 +2744,13 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     char urlbuf[sizeof(ABORT_REQUEST_URL)];
     char request_id[SF_UUID4_LEN];
     char request_guid[SF_UUID4_LEN];
-    if (uuid4_generate_non_terminated(request_id)) {
+    if (uuid4_generate(request_id)) {
       SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_GENERAL,
         "Failed to generate new request ID", NULL, sfstmt->sfqid);
       log_error("Failed to generate new request ID");
       return SF_STATUS_ERROR_GENERAL;
     }
-    if (uuid4_generate_non_terminated(request_guid)) {
+    if (uuid4_generate(request_guid)) {
       SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_GENERAL,
         "Failed to generate new request GUID", NULL, sfstmt->sfqid);
         log_error("Failed to generate new request GUID");
@@ -2766,6 +2766,8 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     cJSON *resp = NULL;
     char *s_body = NULL;
     char *s_resp = NULL;
+    const char *error_msg = NULL;
+    SF_JSON_ERROR json_error;
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(body, "sqlText", sfstmt->sql_text);
     snowflake_cJSON_AddStringToObject(body, "requestId", sfstmt->request_id);
@@ -2777,8 +2779,14 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         s_resp = snowflake_cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
 
-        cJSON *success = snowflake_cJSON_GetObjectItem(resp, "success");
-        if (snowflake_cJSON_IsTrue(success)) {
+        //cJSON *success = snowflake_cJSON_GetObjectItem(resp, "success");
+        sf_bool success = SF_BOOLEAN_FALSE;
+        if ((json_error = json_copy_bool(&success, resp, "success"))) {
+          log_error("Error finding success in JSON response for renew session");
+          JSON_ERROR_MSG(json_error, error_msg, "Success");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_BAD_JSON, error_msg,
+            SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
+        } else if (success) {
             snowflake_cJSON_Delete(body);
             snowflake_cJSON_Delete(resp);
             SF_FREE(s_resp);
@@ -2786,9 +2794,24 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
             return SF_STATUS_SUCCESS;
         }
         // Handle error
-        cJSON *code = snowflake_cJSON_GetObjectItem(resp, "code");
-        cJSON *msg = snowflake_cJSON_GetObjectItem(resp, "message");
-        cJSON *data = snowflake_cJSON_GetObjectItem(resp, "data");
+        cJSON *code = NULL;
+        cJSON *msg = NULL;
+        cJSON *data = NULL;
+        if (!(code = snowflake_cJSON_GetObjectItem(resp, "code"))) {
+          log_error("Missing code field in response");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_BAD_JSON,
+            "No code field in JSON response", SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
+        }
+        if (!(msg = snowflake_cJSON_GetObjectItem(resp, "message"))) {
+          log_error("Missing message field in response");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_BAD_JSON,
+            "No message field in JSON response", SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
+        }
+        if (!(data = snowflake_cJSON_GetObjectItem(resp, "data"))) {
+          log_error("Missing data field in response");
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_BAD_JSON,
+            "No data object in JSON response", SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
+        }
         if (!snowflake_cJSON_IsNull(data)) {
             cJSON *sql_state = snowflake_cJSON_GetObjectItem(data, "sqlState");
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, (int64)strtol(code->valuestring, NULL, 10),
@@ -2799,6 +2822,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_resp);
     SF_FREE(s_body);
+    SF_FREE(error_msg);
     return SF_STATUS_ERROR_GENERAL;
 }
 
