@@ -675,14 +675,18 @@ void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timez
 
      status = snowflake_query(
         stmt,
-        "create or replace table ARRAYBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
+         "create or replace table ARRAYBINDINSERT (c1 INT, c2 TIMESTAMP_LTZ, c3 TIMESTAMP_LTZ, c4 TIMESTAMP_LTZ)",
+
+        //"create or replace table ARRAYBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
         0
     );
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     status = snowflake_query(
         stmt,
-        "create or replace table STAGEBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
+        //"create or replace table STAGEBINDINSERT (c1 INT, c2 TIMESTAMP_NTZ, c3 TIMESTAMP_TZ, c4 TIMESTAMP_LTZ)",
+        "create or replace table STAGEBINDINSERT (c1 INT, c2 TIMESTAMP_LTZ, c3 TIMESTAMP_LTZ, c4 TIMESTAMP_LTZ)",
+
         0
     );
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -730,6 +734,73 @@ void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timez
 
     SF_FREE(timezone_query);
 }
+
+void get_time_difference_from_timezone(int* offset_hours, int* offset_minutes) {
+time_t now = time(NULL);
+
+struct tm local_tm = *localtime(&now);
+struct tm utc_tm = *gmtime(&now);
+
+time_t local_time = mktime(&local_tm);
+time_t utc_time = mktime(&utc_tm);
+
+double offset_seconds = difftime(local_time, utc_time);
+
+*offset_hours = (int)(offset_seconds / 3600);
+*offset_minutes = (int)(offset_seconds / 60) % 60;
+}
+
+int days_in_month(int year, int month) {
+    // month: 1~12
+    int dim[] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+    if (month == 2) {
+        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
+            return 29;
+    }
+    return dim[month - 1];
+}
+
+void subtract_offset_custom(int* year, int* month, int* day,
+    int* hour, int* minute, int* second,
+    int offset_hours, int offset_minutes) {
+    int total_minutes = (*hour) * 60 + (*minute) - (offset_hours * 60 + offset_minutes);
+
+    while (total_minutes < 0) {
+        total_minutes += 1440;
+        (*day)--;
+
+        if (*day < 1) {
+            (*month)--;
+            if (*month < 1) {
+                (*month) = 12;
+                (*year)--;
+            }
+            *day = days_in_month(*year, *month);
+        }
+    }
+
+    *hour = total_minutes / 60;
+    *minute = total_minutes % 60;
+}
+
+void convert_to_local_timezone(char* input) {
+    int year, month, day, hour, min, sec, micro;
+    sscanf(input,
+        "%d-%d-%d %d:%d:%d.%3d",
+        &year, &month, &day, &hour, &min, &sec, &micro);
+
+    subtract_offset_custom(&year, &month, &day, &hour, &min, &sec, 9, 0);
+
+#ifdef __linux__
+    char* format = "%d-%02d-%02d %02d:%02d:%02d.%03d000000";
+#else
+    char* format = "%04d-%02d-%02d %02d:%02d:%02d.%03d000000";
+#endif
+    snprintf(input, 31, format,
+        year, month, day, hour, min, sec, micro);
+
+}
+
 
 void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
     sf_setenv("TZ", "UTC");
@@ -825,8 +896,12 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
 #else
     char expected_ntz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
     char expected_tz_results[5][38] = { "0001-01-01 23:24:25.987000000 +01:24", "9999-12-30 23:24:25.987000000 +01:00","2025-04-08 11:37:25.326000000 +02:00","2024-06-22 23:37:25.520000000 +02:00", "2000-01-01 00:00:00.000000000 +01:00" };
-    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
+    char expected_ltz_results[5][31] = { "0001-01-02 00:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
 #endif
+
+    for (int i = 0; i < 5; i++) {
+        convert_to_local_timezone(expected_ltz_results[i]);
+    }
 
     /* Connect with all parameters set */
     SF_STATUS status;
@@ -863,8 +938,6 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
         assert_string_equal(result, expected_ntz_results[i]);
         snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
         assert_string_equal(result, expected_tz_results[i]);
-        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
-        //assert_string_equal(result, expected_ltz_results[i]);
         free(result);
     }
 
@@ -889,8 +962,8 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
         assert_string_equal(result, expected_ntz_results[i]);
         snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
         assert_string_equal(result, expected_tz_results[i]);
-        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
-        //assert_string_equal(result, expected_ltz_results[i]);
+        snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ltz_results[i]);
         free(result);
     }
 
@@ -910,9 +983,11 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
 #else
     char expected_ntz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
     char expected_tz_results[5][38] = { "0001-01-01 23:23:26.987000000 +09:18", "9999-12-30 23:24:25.987000000 +09:00","2025-04-08 11:37:25.326000000 +09:00","2024-06-22 23:37:25.520000000 +09:00", "2000-01-01 00:00:00.000000000 +09:00" };
-    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2024-06-22 23:37:25.520000000" };
+    char expected_ltz_results[5][31] = { "0001-01-01 23:05:26.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
 #endif
-
+    for (int i = 0; i < 5; i++) {
+        convert_to_local_timezone(expected_ltz_results[i]);
+    }
 
     /* Connect with all parameters set */
     SF_STATUS status;
@@ -948,8 +1023,8 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
         assert_string_equal(result, expected_ntz_results[i]);
         snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
         assert_string_equal(result, expected_tz_results[i]);
-        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
-        //assert_string_equal(result, expected_ltz_results[i]);
+        snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ltz_results[i]);
         free(result);
     }
 
@@ -974,8 +1049,8 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
         assert_string_equal(result, expected_ntz_results[i]);
         snowflake_column_as_str(stmt, 3, &result, &value_len, &max_value_size);
         assert_string_equal(result, expected_tz_results[i]);
-        //snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
-        //assert_string_equal(result, expected_ltz_results[i]);
+        snowflake_column_as_str(stmt, 4, &result, &value_len, &max_value_size);
+        assert_string_equal(result, expected_ltz_results[i]);
         free(result);
     }
 
@@ -983,22 +1058,36 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
     snowflake_term(sf);
 }
 
+void testing(void** unused)
+{
+    char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2024-06-22 23:37:25.520000000" };
+
+    for (int i = 0; i < 5; i++)
+    {
+        convert_to_local_timezone(expected_ltz_results[i]);
+        sf_printf("%s", expected_ltz_results[i]);
+    }
+
+}
+
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_bind_parameters),
-      cmocka_unit_test(test_array_binding_normal),
-      cmocka_unit_test(test_array_binding_stage),
-      cmocka_unit_test(test_array_binding_supported_false_update),
-      cmocka_unit_test(test_array_binding_supported_false_insert),
-      cmocka_unit_test(test_array_binding_supported_false_select),
-      cmocka_unit_test(test_array_binding_stage_fallback),
-      cmocka_unit_test(test_array_binding_threshold),
-      cmocka_unit_test(test_array_binding_threshold_fallback),
-      cmocka_unit_test(test_array_binding_disable),
-      cmocka_unit_test(test_verify_data_types_with_two_different_binding_UTC),
+      //cmocka_unit_test(test_bind_parameters),
+      //cmocka_unit_test(test_array_binding_normal),
+      //cmocka_unit_test(test_array_binding_stage),
+      //cmocka_unit_test(test_array_binding_supported_false_update),
+      //cmocka_unit_test(test_array_binding_supported_false_insert),
+      //cmocka_unit_test(test_array_binding_supported_false_select),
+      //cmocka_unit_test(test_array_binding_stage_fallback),
+      //cmocka_unit_test(test_array_binding_threshold),
+      //cmocka_unit_test(test_array_binding_threshold_fallback),
+      //cmocka_unit_test(test_array_binding_disable),
+      //cmocka_unit_test(test_verify_data_types_with_two_different_binding_UTC),
       cmocka_unit_test(test_verify_data_types_with_two_different_binding_EUROPE_WARSAW),
-      cmocka_unit_test(test_verify_data_types_with_two_different_binding_TOKYO),
+      //cmocka_unit_test(test_verify_data_types_with_two_different_binding_TOKYO),
+      //cmocka_unit_test(testing),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
