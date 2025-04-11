@@ -31,6 +31,8 @@ namespace Client {
       case AttestationType::OIDC:
         return "OIDC";
     }
+
+    return "UNKNOWN";
   }
 
   struct Attestation {
