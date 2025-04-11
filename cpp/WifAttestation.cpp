@@ -3,7 +3,7 @@
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
-#include "Logger/SFLogger.hpp"
+#include "logger/SFLogger.hpp"
 #include "jwt/Jwt.hpp"
 
 namespace Snowflake {
