@@ -2822,7 +2822,6 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_resp);
     SF_FREE(s_body);
-    SF_FREE(error_msg);
     return SF_STATUS_ERROR_GENERAL;
 }
 
