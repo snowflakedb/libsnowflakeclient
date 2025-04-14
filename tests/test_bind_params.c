@@ -614,7 +614,6 @@ void test_array_binding_supported_false_select(void** unused) {
 
 const int8 array_size = 5;
 void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timezone){
-    /* init */
     SF_STATUS status;
     int8 id_array[5] = { 1,2,3,4,5 };
     char timestamp_array[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.9870000000","2025-04-08 11:37:25.3260000000","2024-06-22 23:37:25.5200000000", "2000-01-01 00:00:00.000000000" };
@@ -657,8 +656,6 @@ void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timez
     input_array[2] = TZ_input;
     input_array[3] = LTZ_input;
 
-
-    /* Create a statement once and reused */
 
     char* alter_command = "alter session set TIMEZONE = '";
     char* timezone_query = (char*)SF_CALLOC(1,strlen(alter_command) + strlen(timezone) + 2);
@@ -731,6 +728,8 @@ void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timez
     SF_FREE(timezone_query);
 }
 
+char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
+
 //For the TIMESTAMP_LTZ column, if the Snowflake server's timezone is not UTC,
 //the timestamp values may differ depending on the timezone of both the local machine and the Snowflake server.
 //As a result, expected testing outcomes may vary across machines.
@@ -738,9 +737,6 @@ void execute_insert_query_with_two_different_bindings(SF_STMT* stmt, char* timez
 void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
     SF_UNUSED(unused);
 
-    sf_setenv("TZ", "UTC");
-    sf_tzset();
-    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
 #ifdef __linux__
     char expected_ntz_results[5][31] = { "1-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
     char expected_tz_results[5][38] = { "1-01-01 23:24:25.987000000 -00:00", "9999-12-30 23:24:25.987000000 -00:00","2025-04-08 11:37:25.326000000 -00:00","2024-06-22 23:37:25.520000000 -00:00", "2000-01-01 00:00:00.000000000 -00:00" };
@@ -750,7 +746,6 @@ void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
     char expected_tz_results[5][38] = { "0001-01-01 23:24:25.987000000 -00:00", "9999-12-30 23:24:25.987000000 -00:00","2025-04-08 11:37:25.326000000 -00:00","2024-06-22 23:37:25.520000000 -00:00", "2000-01-01 00:00:00.000000000 -00:00"};
     char expected_ltz_results[5][31] = { "0001-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
 #endif
-    /* Connect with all parameters set */
     SF_STATUS status;
     SF_CONNECT* sf = setup_snowflake_connection();
     // turn on FAIL_OPEN to around certificate issue with GCP
@@ -822,10 +817,6 @@ void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
 void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unused) {
     SF_UNUSED(unused);
 
-    sf_setenv("TZ", "UTC");
-    sf_tzset();
-    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
-
 #ifdef __linux__
     char expected_ntz_results[5][31] = { "1-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
     char expected_tz_results[5][38] = { "1-01-01 23:24:25.987000000 +01:24", "9999-12-30 23:24:25.987000000 +01:00","2025-04-08 11:37:25.326000000 +02:00","2024-06-22 23:37:25.520000000 +02:00", "2000-01-01 00:00:00.000000000 +01:00" };
@@ -835,10 +826,8 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
 #endif
     char expected_ltz_array_results[5][38];
 
-    /* Connect with all parameters set */
     SF_STATUS status;
     SF_CONNECT* sf = setup_snowflake_connection();
-    // turn on FAIL_OPEN to around certificate issue with GCP
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     if (snowflake_connect(sf) != SF_STATUS_SUCCESS)
@@ -907,10 +896,6 @@ void test_verify_data_types_with_two_different_binding_EUROPE_WARSAW(void** unus
 void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
     SF_UNUSED(unused);
 
-    sf_setenv("TZ", "UTC");
-    sf_tzset();
-    char expected_id_restuls[5][2] = { "1", "2","3","4", "5" };
-
 #ifdef __linux__
     char expected_ntz_results[5][31] = { "1-01-01 23:24:25.987000000", "9999-12-30 23:24:25.987000000","2025-04-08 11:37:25.326000000","2024-06-22 23:37:25.520000000", "2000-01-01 00:00:00.000000000" };
     char expected_tz_results[5][38] = { "1-01-01 23:23:26.987000000 +09:18", "9999-12-30 23:24:25.987000000 +09:00","2025-04-08 11:37:25.326000000 +09:00","2024-06-22 23:37:25.520000000 +09:00", "2000-01-01 00:00:00.000000000 +09:00" };
@@ -920,11 +905,8 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
 #endif
     char expected_ltz_array_results[5][38];
 
-
-    /* Connect with all parameters set */
     SF_STATUS status;
     SF_CONNECT* sf = setup_snowflake_connection();
-    // turn on FAIL_OPEN to around certificate issue with GCP
     sf_bool value = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
     if (snowflake_connect(sf) != SF_STATUS_SUCCESS)
@@ -989,7 +971,6 @@ void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
     snowflake_stmt_term(stmt);
     snowflake_term(sf);
 }
-
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
