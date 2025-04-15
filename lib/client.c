@@ -2813,9 +2813,17 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
             "No data object in JSON response", SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
         }
         if (!snowflake_cJSON_IsNull(data)) {
-            cJSON *sql_state = snowflake_cJSON_GetObjectItem(data, "sqlState");
-            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, (int64)strtol(code->valuestring, NULL, 10),
-                msg->valuestring, sql_state->valuestring, sfstmt->sfqid);
+          cJSON *sql_state = NULL;
+          if (!(sql_state = snowflake_cJSON_GetObjectItem(data, "sqlState"))) {
+            log_error("Missing sqlState field in response");
+            SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, SF_STATUS_ERROR_BAD_JSON,
+              "No sqlState field in JSON response", SF_SQLSTATE_GENERAL_ERROR, sfstmt->sfqid);
+          }
+          SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error,
+            code ? (int64)strtol(code->valuestring, NULL, 10) : SF_STATUS_ERROR_BAD_JSON,
+            msg ? msg->valuestring : "No message field in JSON response",
+            sql_state ? sql_state->valuestring : SF_SQLSTATE_GENERAL_ERROR,
+            sfstmt->sfqid);
         }
     }
     snowflake_cJSON_Delete(body);
