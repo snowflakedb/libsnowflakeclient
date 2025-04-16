@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "Dependencies/boost/libs/type_index",
+		"source" : "/Users/jszczerbinski/git/boost/libs/type_index"
+	}
+}

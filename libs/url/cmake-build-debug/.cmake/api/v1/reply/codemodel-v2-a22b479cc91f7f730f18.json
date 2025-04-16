@@ -1,0 +1,1545 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						43,
+						47
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-4ebca9eed9d71de380f1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						32
+					]
+				},
+				{
+					"build" : "Dependencies/boost",
+					"childIndexes" : 
+					[
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42
+					],
+					"jsonFile" : "directory-Dependencies.boost-Debug-6fd9c9be4226e041a913.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/Users/jszczerbinski/git/boost"
+				},
+				{
+					"build" : "Dependencies/boost/libs/align",
+					"jsonFile" : "directory-Dependencies.boost.libs.align-Debug-8d938da638752284630e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "/Users/jszczerbinski/git/boost/libs/align"
+				},
+				{
+					"build" : "Dependencies/boost/libs/assert",
+					"jsonFile" : "directory-Dependencies.boost.libs.assert-Debug-00d1776178103065d225.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 3,
+					"source" : "/Users/jszczerbinski/git/boost/libs/assert"
+				},
+				{
+					"build" : "Dependencies/boost/libs/atomic",
+					"jsonFile" : "directory-Dependencies.boost.libs.atomic-Debug-96a038cc41bb10194ee6.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 4,
+					"source" : "/Users/jszczerbinski/git/boost/libs/atomic",
+					"targetIndexes" : 
+					[
+						28
+					]
+				},
+				{
+					"build" : "Dependencies/boost/libs/bind",
+					"jsonFile" : "directory-Dependencies.boost.libs.bind-Debug-8ad810eb615dd52104f4.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 5,
+					"source" : "/Users/jszczerbinski/git/boost/libs/bind"
+				},
+				{
+					"build" : "Dependencies/boost/libs/concept_check",
+					"jsonFile" : "directory-Dependencies.boost.libs.concept_check-Debug-c66eca161c16ec955e12.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 6,
+					"source" : "/Users/jszczerbinski/git/boost/libs/concept_check"
+				},
+				{
+					"build" : "Dependencies/boost/libs/config",
+					"jsonFile" : "directory-Dependencies.boost.libs.config-Debug-5434b74caa5f487fac90.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 7,
+					"source" : "/Users/jszczerbinski/git/boost/libs/config"
+				},
+				{
+					"build" : "Dependencies/boost/libs/container",
+					"jsonFile" : "directory-Dependencies.boost.libs.container-Debug-981c14f9f1bb971f6279.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 8,
+					"source" : "/Users/jszczerbinski/git/boost/libs/container",
+					"targetIndexes" : 
+					[
+						29
+					]
+				},
+				{
+					"build" : "Dependencies/boost/libs/container_hash",
+					"jsonFile" : "directory-Dependencies.boost.libs.container_hash-Debug-333db0386951ec2036d0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 9,
+					"source" : "/Users/jszczerbinski/git/boost/libs/container_hash"
+				},
+				{
+					"build" : "Dependencies/boost/libs/conversion",
+					"jsonFile" : "directory-Dependencies.boost.libs.conversion-Debug-483b535f330c763ac97b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 10,
+					"source" : "/Users/jszczerbinski/git/boost/libs/conversion"
+				},
+				{
+					"build" : "Dependencies/boost/libs/core",
+					"jsonFile" : "directory-Dependencies.boost.libs.core-Debug-cc2854d3a2c54d1b9281.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 11,
+					"source" : "/Users/jszczerbinski/git/boost/libs/core"
+				},
+				{
+					"build" : "Dependencies/boost/libs/describe",
+					"jsonFile" : "directory-Dependencies.boost.libs.describe-Debug-840296d2fdc7665505a8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 12,
+					"source" : "/Users/jszczerbinski/git/boost/libs/describe"
+				},
+				{
+					"build" : "Dependencies/boost/libs/detail",
+					"jsonFile" : "directory-Dependencies.boost.libs.detail-Debug-d2e9ced6c67f34d8f914.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 13,
+					"source" : "/Users/jszczerbinski/git/boost/libs/detail"
+				},
+				{
+					"build" : "Dependencies/boost/libs/filesystem",
+					"jsonFile" : "directory-Dependencies.boost.libs.filesystem-Debug-66638b142819894508c0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 14,
+					"source" : "/Users/jszczerbinski/git/boost/libs/filesystem",
+					"targetIndexes" : 
+					[
+						30
+					]
+				},
+				{
+					"build" : "Dependencies/boost/libs/function",
+					"jsonFile" : "directory-Dependencies.boost.libs.function-Debug-49d42f13ddeb264a5ac0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 15,
+					"source" : "/Users/jszczerbinski/git/boost/libs/function"
+				},
+				{
+					"build" : "Dependencies/boost/libs/function_types",
+					"jsonFile" : "directory-Dependencies.boost.libs.function_types-Debug-06d1713f43a80af3ce0d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 16,
+					"source" : "/Users/jszczerbinski/git/boost/libs/function_types"
+				},
+				{
+					"build" : "Dependencies/boost/libs/functional",
+					"jsonFile" : "directory-Dependencies.boost.libs.functional-Debug-318922085170fc6fd99a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 17,
+					"source" : "/Users/jszczerbinski/git/boost/libs/functional"
+				},
+				{
+					"build" : "Dependencies/boost/libs/fusion",
+					"jsonFile" : "directory-Dependencies.boost.libs.fusion-Debug-219677f03c665939a0fd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 18,
+					"source" : "/Users/jszczerbinski/git/boost/libs/fusion"
+				},
+				{
+					"build" : "Dependencies/boost/libs/integer",
+					"jsonFile" : "directory-Dependencies.boost.libs.integer-Debug-2c5a93712c7e7e1195b7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 19,
+					"source" : "/Users/jszczerbinski/git/boost/libs/integer"
+				},
+				{
+					"build" : "Dependencies/boost/libs/intrusive",
+					"jsonFile" : "directory-Dependencies.boost.libs.intrusive-Debug-567d326b5b1952cc6622.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 20,
+					"source" : "/Users/jszczerbinski/git/boost/libs/intrusive"
+				},
+				{
+					"build" : "Dependencies/boost/libs/io",
+					"jsonFile" : "directory-Dependencies.boost.libs.io-Debug-5be6665fa7ac72234976.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 21,
+					"source" : "/Users/jszczerbinski/git/boost/libs/io"
+				},
+				{
+					"build" : "Dependencies/boost/libs/iterator",
+					"jsonFile" : "directory-Dependencies.boost.libs.iterator-Debug-85689b753dbee6a1aa03.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 22,
+					"source" : "/Users/jszczerbinski/git/boost/libs/iterator"
+				},
+				{
+					"build" : "Dependencies/boost/libs/json",
+					"jsonFile" : "directory-Dependencies.boost.libs.json-Debug-a91286cde31320b27992.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 23,
+					"source" : "/Users/jszczerbinski/git/boost/libs/json",
+					"targetIndexes" : 
+					[
+						31
+					]
+				},
+				{
+					"build" : "Dependencies/boost/libs/move",
+					"jsonFile" : "directory-Dependencies.boost.libs.move-Debug-2d34df1cfaceb6ad616e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 24,
+					"source" : "/Users/jszczerbinski/git/boost/libs/move"
+				},
+				{
+					"build" : "Dependencies/boost/libs/mp11",
+					"jsonFile" : "directory-Dependencies.boost.libs.mp11-Debug-b641aa771dc682d99243.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 25,
+					"source" : "/Users/jszczerbinski/git/boost/libs/mp11"
+				},
+				{
+					"build" : "Dependencies/boost/libs/mpl",
+					"jsonFile" : "directory-Dependencies.boost.libs.mpl-Debug-b6b35b994f3ae301e9fb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 26,
+					"source" : "/Users/jszczerbinski/git/boost/libs/mpl"
+				},
+				{
+					"build" : "Dependencies/boost/libs/optional",
+					"jsonFile" : "directory-Dependencies.boost.libs.optional-Debug-a5ee7ba84a192d43aad4.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 27,
+					"source" : "/Users/jszczerbinski/git/boost/libs/optional"
+				},
+				{
+					"build" : "Dependencies/boost/libs/predef",
+					"jsonFile" : "directory-Dependencies.boost.libs.predef-Debug-68b7977a0a895538a7b7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 28,
+					"source" : "/Users/jszczerbinski/git/boost/libs/predef"
+				},
+				{
+					"build" : "Dependencies/boost/libs/preprocessor",
+					"jsonFile" : "directory-Dependencies.boost.libs.preprocessor-Debug-aaf9547acd0ddffcb535.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 29,
+					"source" : "/Users/jszczerbinski/git/boost/libs/preprocessor"
+				},
+				{
+					"build" : "Dependencies/boost/libs/regex",
+					"jsonFile" : "directory-Dependencies.boost.libs.regex-Debug-f400fb0824963e8f0476.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 30,
+					"source" : "/Users/jszczerbinski/git/boost/libs/regex"
+				},
+				{
+					"build" : "Dependencies/boost/libs/smart_ptr",
+					"jsonFile" : "directory-Dependencies.boost.libs.smart_ptr-Debug-85bb359c8a688f14490a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 31,
+					"source" : "/Users/jszczerbinski/git/boost/libs/smart_ptr"
+				},
+				{
+					"build" : "Dependencies/boost/libs/static_assert",
+					"jsonFile" : "directory-Dependencies.boost.libs.static_assert-Debug-088e2b4a3d0eb4cbc091.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 32,
+					"source" : "/Users/jszczerbinski/git/boost/libs/static_assert"
+				},
+				{
+					"build" : "Dependencies/boost/libs/system",
+					"jsonFile" : "directory-Dependencies.boost.libs.system-Debug-27392f5e89df9225a44a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 33,
+					"source" : "/Users/jszczerbinski/git/boost/libs/system"
+				},
+				{
+					"build" : "Dependencies/boost/libs/throw_exception",
+					"jsonFile" : "directory-Dependencies.boost.libs.throw_exception-Debug-dccf0b10c3494f6adba1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 34,
+					"source" : "/Users/jszczerbinski/git/boost/libs/throw_exception"
+				},
+				{
+					"build" : "Dependencies/boost/libs/tuple",
+					"jsonFile" : "directory-Dependencies.boost.libs.tuple-Debug-5149abdc25404f59ce2c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 35,
+					"source" : "/Users/jszczerbinski/git/boost/libs/tuple"
+				},
+				{
+					"build" : "Dependencies/boost/libs/type_index",
+					"jsonFile" : "directory-Dependencies.boost.libs.type_index-Debug-202bbb768439a13f4c89.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 36,
+					"source" : "/Users/jszczerbinski/git/boost/libs/type_index"
+				},
+				{
+					"build" : "Dependencies/boost/libs/type_traits",
+					"jsonFile" : "directory-Dependencies.boost.libs.type_traits-Debug-73071b463afd16e7a3bf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 37,
+					"source" : "/Users/jszczerbinski/git/boost/libs/type_traits"
+				},
+				{
+					"build" : "Dependencies/boost/libs/typeof",
+					"jsonFile" : "directory-Dependencies.boost.libs.typeof-Debug-f974545bdacf87a3a605.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 38,
+					"source" : "/Users/jszczerbinski/git/boost/libs/typeof"
+				},
+				{
+					"build" : "Dependencies/boost/libs/unordered",
+					"jsonFile" : "directory-Dependencies.boost.libs.unordered-Debug-57e24e1076f8bfed2688.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 39,
+					"source" : "/Users/jszczerbinski/git/boost/libs/unordered"
+				},
+				{
+					"build" : "Dependencies/boost/libs/utility",
+					"jsonFile" : "directory-Dependencies.boost.libs.utility-Debug-db93a130ce4771596a91.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 40,
+					"source" : "/Users/jszczerbinski/git/boost/libs/utility"
+				},
+				{
+					"build" : "Dependencies/boost/libs/variant2",
+					"jsonFile" : "directory-Dependencies.boost.libs.variant2-Debug-7e75a7deb05bab6cd7f2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 41,
+					"source" : "/Users/jszczerbinski/git/boost/libs/variant2"
+				},
+				{
+					"build" : "Dependencies/boost/libs/winapi",
+					"jsonFile" : "directory-Dependencies.boost.libs.winapi-Debug-5be1dc407b5a68cb73ff.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 42,
+					"source" : "/Users/jszczerbinski/git/boost/libs/winapi"
+				},
+				{
+					"build" : "test",
+					"childIndexes" : 
+					[
+						44,
+						45,
+						46
+					],
+					"jsonFile" : "directory-test-Debug-451c0598f41488bb20b9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test",
+					"targetIndexes" : 
+					[
+						33
+					]
+				},
+				{
+					"build" : "test/extra",
+					"jsonFile" : "directory-test.extra-Debug-ff43c71327c55f86bb65.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 43,
+					"projectIndex" : 0,
+					"source" : "test/extra",
+					"targetIndexes" : 
+					[
+						34
+					]
+				},
+				{
+					"build" : "test/limits",
+					"jsonFile" : "directory-test.limits-Debug-aa6fecaba03348a4259c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 43,
+					"projectIndex" : 0,
+					"source" : "test/limits",
+					"targetIndexes" : 
+					[
+						35
+					]
+				},
+				{
+					"build" : "test/unit",
+					"jsonFile" : "directory-test.unit-Debug-95f19909738940399904.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 43,
+					"projectIndex" : 0,
+					"source" : "test/unit",
+					"targetIndexes" : 
+					[
+						36,
+						43
+					]
+				},
+				{
+					"build" : "example",
+					"childIndexes" : 
+					[
+						48,
+						49,
+						50,
+						51,
+						52,
+						53
+					],
+					"jsonFile" : "directory-example-Debug-b6fca4a6d0a37c6ae6b9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "example"
+				},
+				{
+					"build" : "example/qrcode",
+					"jsonFile" : "directory-example.qrcode-Debug-90c7a33e654ff2f344de.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/qrcode",
+					"targetIndexes" : 
+					[
+						40
+					]
+				},
+				{
+					"build" : "example/finicky",
+					"jsonFile" : "directory-example.finicky-Debug-27386eb81aee175a32f9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/finicky",
+					"targetIndexes" : 
+					[
+						37
+					]
+				},
+				{
+					"build" : "example/suffix_list",
+					"jsonFile" : "directory-example.suffix_list-Debug-155c72222c18c6293b23.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/suffix_list",
+					"targetIndexes" : 
+					[
+						42
+					]
+				},
+				{
+					"build" : "example/mailto",
+					"jsonFile" : "directory-example.mailto-Debug-4ad6f04d88732f23fd05.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/mailto",
+					"targetIndexes" : 
+					[
+						39
+					]
+				},
+				{
+					"build" : "example/magnet",
+					"jsonFile" : "directory-example.magnet-Debug-63d29283cc42a03a3f91.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/magnet",
+					"targetIndexes" : 
+					[
+						38
+					]
+				},
+				{
+					"build" : "example/route",
+					"jsonFile" : "directory-example.route-Debug-a0e99f017ea23c59ef45.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 47,
+					"projectIndex" : 0,
+					"source" : "example/route",
+					"targetIndexes" : 
+					[
+						41
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						43,
+						44,
+						45,
+						46,
+						47,
+						48,
+						49,
+						50,
+						51,
+						52,
+						53
+					],
+					"name" : "boost_url",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42,
+						43
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21,
+						22,
+						23,
+						24,
+						25,
+						26,
+						27,
+						28,
+						29,
+						30,
+						31,
+						32,
+						33,
+						34,
+						35,
+						36,
+						37,
+						38,
+						39,
+						40,
+						41,
+						42
+					],
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "Boost",
+					"parentIndex" : 0
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "boost_align",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "boost_assert",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "boost_atomic",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						28
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "boost_bind",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "boost_concept_check",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						7
+					],
+					"name" : "boost_config",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						8
+					],
+					"name" : "boost_container",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						29
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						9
+					],
+					"name" : "boost_container_hash",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						10
+					],
+					"name" : "boost_conversion",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						11
+					],
+					"name" : "boost_core",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						12
+					],
+					"name" : "boost_describe",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						13
+					],
+					"name" : "boost_detail",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						14
+					],
+					"name" : "BoostFilesystem",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						30
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						15
+					],
+					"name" : "boost_function",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						16
+					],
+					"name" : "boost_function_types",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						17
+					],
+					"name" : "boost_functional",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						18
+					],
+					"name" : "boost_fusion",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						19
+					],
+					"name" : "boost_integer",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						20
+					],
+					"name" : "boost_intrusive",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						21
+					],
+					"name" : "boost_io",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						22
+					],
+					"name" : "boost_iterator",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						23
+					],
+					"name" : "boost_json",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						31
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						24
+					],
+					"name" : "boost_move",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						25
+					],
+					"name" : "boost_mp11",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						26
+					],
+					"name" : "boost_mpl",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						27
+					],
+					"name" : "boost_optional",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						28
+					],
+					"name" : "BoostPredef",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						29
+					],
+					"name" : "boost_preprocessor",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						30
+					],
+					"name" : "boost_regex",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						31
+					],
+					"name" : "boost_smart_ptr",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						32
+					],
+					"name" : "boost_static_assert",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						33
+					],
+					"name" : "boost_system",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						34
+					],
+					"name" : "boost_throw_exception",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						35
+					],
+					"name" : "boost_tuple",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						36
+					],
+					"name" : "boost_type_index",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						37
+					],
+					"name" : "boost_type_traits",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						38
+					],
+					"name" : "boost_typeof",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						39
+					],
+					"name" : "boost_unordered",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						40
+					],
+					"name" : "boost_utility",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						41
+					],
+					"name" : "boost_variant2",
+					"parentIndex" : 1
+				},
+				{
+					"directoryIndexes" : 
+					[
+						42
+					],
+					"name" : "boost_winapi",
+					"parentIndex" : 1
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Continuous::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Continuous-Debug-a935c27d39915e6703af.json",
+					"name" : "Continuous",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousBuild::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousBuild-Debug-a0065e841996e3718ef3.json",
+					"name" : "ContinuousBuild",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousConfigure::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousConfigure-Debug-bc696962519230e10e18.json",
+					"name" : "ContinuousConfigure",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousCoverage::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousCoverage-Debug-df9e1067756c2eb77c61.json",
+					"name" : "ContinuousCoverage",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousMemCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousMemCheck-Debug-45a547b93dff1366e9ae.json",
+					"name" : "ContinuousMemCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousStart::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousStart-Debug-b4ba354e7adb1201bdb7.json",
+					"name" : "ContinuousStart",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousSubmit::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousSubmit-Debug-b1ff9278acbe658ba4db.json",
+					"name" : "ContinuousSubmit",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousTest::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousTest-Debug-56a38102193d826ff7c8.json",
+					"name" : "ContinuousTest",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ContinuousUpdate::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ContinuousUpdate-Debug-cda906b7bf5ed01a2fea.json",
+					"name" : "ContinuousUpdate",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Experimental::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Experimental-Debug-3628a668ac6a9d3ef6f0.json",
+					"name" : "Experimental",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalBuild::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalBuild-Debug-e4105cfd02331ec2981d.json",
+					"name" : "ExperimentalBuild",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalConfigure::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalConfigure-Debug-108c210c54f23d7af221.json",
+					"name" : "ExperimentalConfigure",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalCoverage::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalCoverage-Debug-cb29d766690ea19e321a.json",
+					"name" : "ExperimentalCoverage",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalMemCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalMemCheck-Debug-66573a2acf1dea6988c7.json",
+					"name" : "ExperimentalMemCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalStart::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalStart-Debug-c68f996f1e30c8c62384.json",
+					"name" : "ExperimentalStart",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalSubmit::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalSubmit-Debug-d10e98d978d5f6c6352d.json",
+					"name" : "ExperimentalSubmit",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalTest::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalTest-Debug-ae76f1e44857030c7bc1.json",
+					"name" : "ExperimentalTest",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ExperimentalUpdate::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ExperimentalUpdate-Debug-7b2ee882bbfcec7236ed.json",
+					"name" : "ExperimentalUpdate",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Nightly::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Nightly-Debug-b0af48f456a9f448b7a6.json",
+					"name" : "Nightly",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyBuild::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyBuild-Debug-b6571e0aca2c65c27222.json",
+					"name" : "NightlyBuild",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyConfigure::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyConfigure-Debug-74ef81c70a8d402444c0.json",
+					"name" : "NightlyConfigure",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyCoverage::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyCoverage-Debug-999c973ac9bf4d6816a8.json",
+					"name" : "NightlyCoverage",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemCheck-Debug-07ab3932e1b828879d08.json",
+					"name" : "NightlyMemCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyMemoryCheck::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyMemoryCheck-Debug-b0e5755535b3517f68b9.json",
+					"name" : "NightlyMemoryCheck",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyStart::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyStart-Debug-298b0adf9ceb69f031c1.json",
+					"name" : "NightlyStart",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlySubmit::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlySubmit-Debug-ff5d30744e3e4ae70677.json",
+					"name" : "NightlySubmit",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyTest::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyTest-Debug-e412d49bdeab76967d2e.json",
+					"name" : "NightlyTest",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "NightlyUpdate::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-NightlyUpdate-Debug-42c66382770578263abd.json",
+					"name" : "NightlyUpdate",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "boost_atomic::@6eda343865cef85b08c9",
+					"jsonFile" : "target-boost_atomic-Debug-4a82bd7266e2127e0c71.json",
+					"name" : "boost_atomic",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "boost_container::@3b8e17c5748b4a9ca53b",
+					"jsonFile" : "target-boost_container-Debug-8306d18dca2ef60c3cf5.json",
+					"name" : "boost_container",
+					"projectIndex" : 8
+				},
+				{
+					"directoryIndex" : 14,
+					"id" : "boost_filesystem::@4bb240253089e225ee3d",
+					"jsonFile" : "target-boost_filesystem-Debug-7c9af9cd1e900d325542.json",
+					"name" : "boost_filesystem",
+					"projectIndex" : 14
+				},
+				{
+					"directoryIndex" : 23,
+					"id" : "boost_json::@990a8c66a1d0105be817",
+					"jsonFile" : "target-boost_json-Debug-104aa48278d00893cd8a.json",
+					"name" : "boost_json",
+					"projectIndex" : 23
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "boost_url::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-boost_url-Debug-2a4a4d66f94f8b6f7f66.json",
+					"name" : "boost_url",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 43,
+					"id" : "boost_url_all_tests::@36f028580bb02cc8272a",
+					"jsonFile" : "target-boost_url_all_tests-Debug-f7d75c82cfff9454640c.json",
+					"name" : "boost_url_all_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 44,
+					"id" : "boost_url_extra::@d5e997181b81f9c182e3",
+					"jsonFile" : "target-boost_url_extra-Debug-404a6ab79fc0411b982c.json",
+					"name" : "boost_url_extra",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 45,
+					"id" : "boost_url_limits::@d41f54659c99e5632e83",
+					"jsonFile" : "target-boost_url_limits-Debug-b6356c4d657011572e8b.json",
+					"name" : "boost_url_limits",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 46,
+					"id" : "boost_url_tests::@eef10db73b2f22524f92",
+					"jsonFile" : "target-boost_url_tests-Debug-dc941b2255c2e058638c.json",
+					"name" : "boost_url_tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 49,
+					"id" : "finicky::@3035a2f66c1faca4f3a7",
+					"jsonFile" : "target-finicky-Debug-85ebc2c0b1286a9232ae.json",
+					"name" : "finicky",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 52,
+					"id" : "magnet::@95a94d03aa870e4fe8b8",
+					"jsonFile" : "target-magnet-Debug-e3f2e3b476ce27aefa9b.json",
+					"name" : "magnet",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 51,
+					"id" : "mailto::@5fd98cd88433285162a3",
+					"jsonFile" : "target-mailto-Debug-62777ff6a8de00044c1c.json",
+					"name" : "mailto",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 48,
+					"id" : "qrcode::@9f5583b78c9722a5b935",
+					"jsonFile" : "target-qrcode-Debug-1c6f3147f4178228b7a0.json",
+					"name" : "qrcode",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 53,
+					"id" : "route::@26698e3d3ee284fa1936",
+					"jsonFile" : "target-route-Debug-d18ef5a025911906cdf3.json",
+					"name" : "route",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 50,
+					"id" : "suffix_list::@950f9fca1497366ccbbf",
+					"jsonFile" : "target-suffix_list-Debug-2989d8425c0704d3206f.json",
+					"name" : "suffix_list",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 46,
+					"id" : "tests::@eef10db73b2f22524f92",
+					"jsonFile" : "target-tests-Debug-a6eb7bc8878651c68e68.json",
+					"name" : "tests",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug",
+		"source" : "/Users/jszczerbinski/git/boost/libs/url"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

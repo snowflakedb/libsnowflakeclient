@@ -1,0 +1,4119 @@
+{
+	"entries" : 
+	[
+		{
+			"name" : "BOOST_ATOMIC_TARGET_X86",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_ATOMIC_TARGET_X86"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_ARC4RANDOM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of arc4random API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_BCRYPT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of BCrypt API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_COPY_FILE_RANGE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of copy_file_range API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_GETRANDOM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of getrandom API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_SENDFILE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of sendfile API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_DISABLE_STATX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable usage of statx API in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_EMSCRIPTEN_USE_WASI",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Use WASI under emscripten in Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_CXX20_ATOMIC_REF",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_CXX20_ATOMIC_REF"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_FDOPENDIR_NOFOLLOW",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_FDOPENDIR_NOFOLLOW"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_INIT_PRIORITY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_INIT_PRIORITY"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_POSIX_AT_APIS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_POSIX_AT_APIS"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STATX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STATX"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STATX_SYSCALL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STATX_SYSCALL"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMENSEC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMENSEC"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMESPEC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_BIRTHTIMESPEC"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_BLKSIZE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_BLKSIZE"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_MTIM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_MTIM"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_MTIMENSEC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_MTIMENSEC"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_HAS_STAT_ST_MTIMESPEC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test BOOST_FILESYSTEM_HAS_STAT_ST_MTIMESPEC"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "BOOST_FILESYSTEM_NO_DEPRECATED",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Disable deprecated functionality of Boost.Filesystem"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_LIBRARY_INCLUDES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "List of all Boost library include paths"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/git/boost/libs/accumulators/include;/Users/jszczerbinski/git/boost/libs/algorithm/include;/Users/jszczerbinski/git/boost/libs/align/include;/Users/jszczerbinski/git/boost/libs/any/include;/Users/jszczerbinski/git/boost/libs/array/include;/Users/jszczerbinski/git/boost/libs/asio/include;/Users/jszczerbinski/git/boost/libs/assert/include;/Users/jszczerbinski/git/boost/libs/assign/include;/Users/jszczerbinski/git/boost/libs/atomic/include;/Users/jszczerbinski/git/boost/libs/beast/include;/Users/jszczerbinski/git/boost/libs/bimap/include;/Users/jszczerbinski/git/boost/libs/bind/include;/Users/jszczerbinski/git/boost/libs/callable_traits/include;/Users/jszczerbinski/git/boost/libs/chrono/include;/Users/jszczerbinski/git/boost/libs/circular_buffer/include;/Users/jszczerbinski/git/boost/libs/compatibility/include;/Users/jszczerbinski/git/boost/libs/compute/include;/Users/jszczerbinski/git/boost/libs/concept_check/include;/Users/jszczerbinski/git/boost/libs/config/include;/Users/jszczerbinski/git/boost/libs/container/include;/Users/jszczerbinski/git/boost/libs/container_hash/include;/Users/jszczerbinski/git/boost/libs/context/include;/Users/jszczerbinski/git/boost/libs/contract/include;/Users/jszczerbinski/git/boost/libs/conversion/include;/Users/jszczerbinski/git/boost/libs/convert/include;/Users/jszczerbinski/git/boost/libs/core/include;/Users/jszczerbinski/git/boost/libs/coroutine/include;/Users/jszczerbinski/git/boost/libs/coroutine2/include;/Users/jszczerbinski/git/boost/libs/crc/include;/Users/jszczerbinski/git/boost/libs/date_time/include;/Users/jszczerbinski/git/boost/libs/describe/include;/Users/jszczerbinski/git/boost/libs/detail/include;/Users/jszczerbinski/git/boost/libs/dll/include;/Users/jszczerbinski/git/boost/libs/dynamic_bitset/include;/Users/jszczerbinski/git/boost/libs/endian/include;/Users/jszczerbinski/git/boost/libs/exception/include;/Users/jszczerbinski/git/boost/libs/fiber/include;/Users/jszczerbinski/git/boost/libs/filesystem/include;/Users/jszczerbinski/git/boost/libs/flyweight/include;/Users/jszczerbinski/git/boost/libs/foreach/include;/Users/jszczerbinski/git/boost/libs/format/include;/Users/jszczerbinski/git/boost/libs/function/include;/Users/jszczerbinski/git/boost/libs/function_types/include;/Users/jszczerbinski/git/boost/libs/functional/include;/Users/jszczerbinski/git/boost/libs/fusion/include;/Users/jszczerbinski/git/boost/libs/geometry/include;/Users/jszczerbinski/git/boost/libs/gil/include;/Users/jszczerbinski/git/boost/libs/graph/include;/Users/jszczerbinski/git/boost/libs/graph_parallel/include;/Users/jszczerbinski/git/boost/libs/hana/include;/Users/jszczerbinski/git/boost/libs/heap/include;/Users/jszczerbinski/git/boost/libs/histogram/include;/Users/jszczerbinski/git/boost/libs/hof/include;/Users/jszczerbinski/git/boost/libs/icl/include;/Users/jszczerbinski/git/boost/libs/integer/include;/Users/jszczerbinski/git/boost/libs/interprocess/include;/Users/jszczerbinski/git/boost/libs/intrusive/include;/Users/jszczerbinski/git/boost/libs/io/include;/Users/jszczerbinski/git/boost/libs/iostreams/include;/Users/jszczerbinski/git/boost/libs/iterator/include;/Users/jszczerbinski/git/boost/libs/json/include;/Users/jszczerbinski/git/boost/libs/lambda/include;/Users/jszczerbinski/git/boost/libs/lambda2/include;/Users/jszczerbinski/git/boost/libs/leaf/include;/Users/jszczerbinski/git/boost/libs/lexical_cast/include;/Users/jszczerbinski/git/boost/libs/local_function/include;/Users/jszczerbinski/git/boost/libs/locale/include;/Users/jszczerbinski/git/boost/libs/lockfree/include;/Users/jszczerbinski/git/boost/libs/log/include;/Users/jszczerbinski/git/boost/libs/logic/include;/Users/jszczerbinski/git/boost/libs/math/include;/Users/jszczerbinski/git/boost/libs/metaparse/include;/Users/jszczerbinski/git/boost/libs/move/include;/Users/jszczerbinski/git/boost/libs/mp11/include;/Users/jszczerbinski/git/boost/libs/mpi/include;/Users/jszczerbinski/git/boost/libs/mpl/include;/Users/jszczerbinski/git/boost/libs/msm/include;/Users/jszczerbinski/git/boost/libs/multi_array/include;/Users/jszczerbinski/git/boost/libs/multi_index/include;/Users/jszczerbinski/git/boost/libs/multiprecision/include;/Users/jszczerbinski/git/boost/libs/nowide/include;/Users/jszczerbinski/git/boost/libs/optional/include;/Users/jszczerbinski/git/boost/libs/outcome/include;/Users/jszczerbinski/git/boost/libs/parameter/include;/Users/jszczerbinski/git/boost/libs/parameter_python/include;/Users/jszczerbinski/git/boost/libs/pfr/include;/Users/jszczerbinski/git/boost/libs/phoenix/include;/Users/jszczerbinski/git/boost/libs/poly_collection/include;/Users/jszczerbinski/git/boost/libs/polygon/include;/Users/jszczerbinski/git/boost/libs/pool/include;/Users/jszczerbinski/git/boost/libs/predef/include;/Users/jszczerbinski/git/boost/libs/preprocessor/include;/Users/jszczerbinski/git/boost/libs/process/include;/Users/jszczerbinski/git/boost/libs/program_options/include;/Users/jszczerbinski/git/boost/libs/property_map/include;/Users/jszczerbinski/git/boost/libs/property_map_parallel/include;/Users/jszczerbinski/git/boost/libs/property_tree/include;/Users/jszczerbinski/git/boost/libs/proto/include;/Users/jszczerbinski/git/boost/libs/ptr_container/include;/Users/jszczerbinski/git/boost/libs/python/include;/Users/jszczerbinski/git/boost/libs/qvm/include;/Users/jszczerbinski/git/boost/libs/random/include;/Users/jszczerbinski/git/boost/libs/range/include;/Users/jszczerbinski/git/boost/libs/ratio/include;/Users/jszczerbinski/git/boost/libs/rational/include;/Users/jszczerbinski/git/boost/libs/regex/include;/Users/jszczerbinski/git/boost/libs/safe_numerics/include;/Users/jszczerbinski/git/boost/libs/scope_exit/include;/Users/jszczerbinski/git/boost/libs/serialization/include;/Users/jszczerbinski/git/boost/libs/signals2/include;/Users/jszczerbinski/git/boost/libs/smart_ptr/include;/Users/jszczerbinski/git/boost/libs/sort/include;/Users/jszczerbinski/git/boost/libs/spirit/include;/Users/jszczerbinski/git/boost/libs/stacktrace/include;/Users/jszczerbinski/git/boost/libs/statechart/include;/Users/jszczerbinski/git/boost/libs/static_assert/include;/Users/jszczerbinski/git/boost/libs/static_string/include;/Users/jszczerbinski/git/boost/libs/stl_interfaces/include;/Users/jszczerbinski/git/boost/libs/system/include;/Users/jszczerbinski/git/boost/libs/test/include;/Users/jszczerbinski/git/boost/libs/thread/include;/Users/jszczerbinski/git/boost/libs/throw_exception/include;/Users/jszczerbinski/git/boost/libs/timer/include;/Users/jszczerbinski/git/boost/libs/tokenizer/include;/Users/jszczerbinski/git/boost/libs/tti/include;/Users/jszczerbinski/git/boost/libs/tuple/include;/Users/jszczerbinski/git/boost/libs/type_erasure/include;/Users/jszczerbinski/git/boost/libs/type_index/include;/Users/jszczerbinski/git/boost/libs/type_traits/include;/Users/jszczerbinski/git/boost/libs/typeof/include;/Users/jszczerbinski/git/boost/libs/units/include;/Users/jszczerbinski/git/boost/libs/unordered/include;/Users/jszczerbinski/git/boost/libs/url/include;/Users/jszczerbinski/git/boost/libs/utility/include;/Users/jszczerbinski/git/boost/libs/uuid/include;/Users/jszczerbinski/git/boost/libs/variant/include;/Users/jszczerbinski/git/boost/libs/variant2/include;/Users/jszczerbinski/git/boost/libs/vmd/include;/Users/jszczerbinski/git/boost/libs/wave/include;/Users/jszczerbinski/git/boost/libs/winapi/include;/Users/jszczerbinski/git/boost/libs/xpressive/include;/Users/jszczerbinski/git/boost/libs/yap/include"
+		},
+		{
+			"name" : "BOOST_REGEX_STANDALONE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Boost.Regex: Enable Standalone Mode (i.e. no Boost dependencies)"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BOOST_URL_BUILD_EXAMPLES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build boost::url examples"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "BOOST_URL_BUILD_TESTS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build boost::url tests"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "BOOST_URL_INSTALL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Install boost::url files"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "BUILD_TESTING",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build the testing tree."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "BZRCOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "BoostFilesystem_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/filesystem"
+		},
+		{
+			"name" : "BoostFilesystem_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BoostFilesystem_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/filesystem"
+		},
+		{
+			"name" : "BoostPredef_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/predef"
+		},
+		{
+			"name" : "BoostPredef_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "BoostPredef_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/predef"
+		},
+		{
+			"name" : "Boost_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost"
+		},
+		{
+			"name" : "Boost_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "Boost_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost"
+		},
+		{
+			"name" : "CMAKE_ADDR2LINE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "CMAKE_ADDR2LINE-NOTFOUND"
+		},
+		{
+			"name" : "CMAKE_AR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/ar"
+		},
+		{
+			"name" : "CMAKE_BUILD_TYPE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel ..."
+				}
+			],
+			"type" : "STRING",
+			"value" : "Debug"
+		},
+		{
+			"name" : "CMAKE_CACHEFILE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "This is the directory where this CMakeCache.txt was created"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug"
+		},
+		{
+			"name" : "CMAKE_CACHE_MAJOR_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Major version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "3"
+		},
+		{
+			"name" : "CMAKE_CACHE_MINOR_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Minor version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "29"
+		},
+		{
+			"name" : "CMAKE_CACHE_PATCH_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Patch version of cmake used to create the current loaded cache"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "6"
+		},
+		{
+			"name" : "CMAKE_COLOR_DIAGNOSTICS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable colored diagnostics throughout."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
+			"name" : "CMAKE_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to CMake executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
+		},
+		{
+			"name" : "CMAKE_CPACK_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to cpack program executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cpack"
+		},
+		{
+			"name" : "CMAKE_CTEST_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to ctest program executable."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/ctest"
+		},
+		{
+			"name" : "CMAKE_CXX_COMPILER",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "CXX compiler"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/c++"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-g"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-Os -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O3 -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_CXX_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the CXX compiler during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O2 -g -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_C_COMPILER",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "C compiler"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/cc"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-g"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-Os -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O3 -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_C_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the C compiler during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : "-O2 -g -DNDEBUG"
+		},
+		{
+			"name" : "CMAKE_DLLTOOL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "CMAKE_DLLTOOL-NOTFOUND"
+		},
+		{
+			"name" : "CMAKE_EXECUTABLE_FORMAT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Executable file format"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "MACHO"
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXPORT_COMPILE_COMMANDS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable/Disable output of compile commands during generation."
+				}
+			],
+			"type" : "BOOL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_EXTRA_GENERATOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of external makefile project generator."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_FIND_PACKAGE_REDIRECTS_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake."
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/CMakeFiles/pkgRedirects"
+		},
+		{
+			"name" : "CMAKE_GENERATOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "Ninja"
+		},
+		{
+			"name" : "CMAKE_GENERATOR_INSTANCE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Generator instance identifier."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_GENERATOR_PLATFORM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator platform."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_GENERATOR_TOOLSET",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of generator toolset."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_HAVE_LIBC_PTHREAD",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Test CMAKE_HAVE_LIBC_PTHREAD"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "CMAKE_HOME_DIRECTORY",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Source directory with the top level CMakeLists.txt file for this project"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url"
+		},
+		{
+			"name" : "CMAKE_INSTALL_BINDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "User executables (bin)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "bin"
+		},
+		{
+			"name" : "CMAKE_INSTALL_DATADIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only architecture-independent data (DATAROOTDIR)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_DATAROOTDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only architecture-independent data root (share)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "share"
+		},
+		{
+			"name" : "CMAKE_INSTALL_DOCDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Documentation root (DATAROOTDIR/doc/PROJECT_NAME)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_INCLUDEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "C header files (include)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "include"
+		},
+		{
+			"name" : "CMAKE_INSTALL_INFODIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Info documentation (DATAROOTDIR/info)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_LIBDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Object code libraries (lib)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "lib"
+		},
+		{
+			"name" : "CMAKE_INSTALL_LIBEXECDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Program executables (libexec)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "libexec"
+		},
+		{
+			"name" : "CMAKE_INSTALL_LOCALEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Locale-dependent data (DATAROOTDIR/locale)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_LOCALSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Modifiable single-machine data (var)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "var"
+		},
+		{
+			"name" : "CMAKE_INSTALL_MANDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Man documentation (DATAROOTDIR/man)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_NAME_TOOL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/usr/bin/install_name_tool"
+		},
+		{
+			"name" : "CMAKE_INSTALL_OLDINCLUDEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "C header files for non-gcc (/usr/include)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/include"
+		},
+		{
+			"name" : "CMAKE_INSTALL_PREFIX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Install path prefix, prepended onto install directories."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/local"
+		},
+		{
+			"name" : "CMAKE_INSTALL_RUNSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Run-time variable data (LOCALSTATEDIR/run)"
+				}
+			],
+			"type" : "PATH",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_INSTALL_SBINDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "System admin executables (sbin)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "sbin"
+		},
+		{
+			"name" : "CMAKE_INSTALL_SHAREDSTATEDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Modifiable architecture-independent data (com)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "com"
+		},
+		{
+			"name" : "CMAKE_INSTALL_SYSCONFDIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Read-only single-machine data (etc)"
+				}
+			],
+			"type" : "PATH",
+			"value" : "etc"
+		},
+		{
+			"name" : "CMAKE_LINKER",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/ld"
+		},
+		{
+			"name" : "CMAKE_MAKE_PROGRAM",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja"
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of modules during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_NM",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/nm"
+		},
+		{
+			"name" : "CMAKE_NUMBER_OF_MAKEFILES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "number of local generators"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "54"
+		},
+		{
+			"name" : "CMAKE_OBJCOPY",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "CMAKE_OBJCOPY-NOTFOUND"
+		},
+		{
+			"name" : "CMAKE_OBJDUMP",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/objdump"
+		},
+		{
+			"name" : "CMAKE_OSX_ARCHITECTURES",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Build architectures for OSX"
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_OSX_DEPLOYMENT_TARGET",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Minimum OS X version to target for deployment (at runtime); newer APIs weak linked. Set to empty string for default value."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_OSX_SYSROOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The product will be built against the headers and libraries located inside the indicated SDK."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk"
+		},
+		{
+			"name" : "CMAKE_PLATFORM_INFO_INITIALIZED",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Platform information initialized"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
+		},
+		{
+			"name" : "CMAKE_PROJECT_DESCRIPTION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_HOMEPAGE_URL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_NAME",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "boost_url"
+		},
+		{
+			"name" : "CMAKE_PROJECT_VERSION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "2"
+		},
+		{
+			"name" : "CMAKE_PROJECT_VERSION_MAJOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "2"
+		},
+		{
+			"name" : "CMAKE_PROJECT_VERSION_MINOR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_VERSION_PATCH",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_PROJECT_VERSION_TWEAK",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_RANLIB",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/ranlib"
+		},
+		{
+			"name" : "CMAKE_READELF",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "CMAKE_READELF-NOTFOUND"
+		},
+		{
+			"name" : "CMAKE_ROOT",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to CMake installation."
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29"
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of shared libraries during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_SKIP_INSTALL_RPATH",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If set, runtime paths are not added when installing shared libraries, but are added when building."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "NO"
+		},
+		{
+			"name" : "CMAKE_SKIP_RPATH",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If set, runtime paths are not added when using shared libraries."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "NO"
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during all build types."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during DEBUG builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_MINSIZEREL",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during MINSIZEREL builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during RELEASE builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Flags used by the linker during the creation of static libraries during RELWITHDEBINFO builds."
+				}
+			],
+			"type" : "STRING",
+			"value" : ""
+		},
+		{
+			"name" : "CMAKE_STRIP",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/strip"
+		},
+		{
+			"name" : "CMAKE_TAPI",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/Library/Developer/CommandLineTools/usr/bin/tapi"
+		},
+		{
+			"name" : "CMAKE_UNAME",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "uname command"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/bin/uname"
+		},
+		{
+			"name" : "CMAKE_VERBOSE_MAKEFILE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "If this value is on, makefiles will be generated without the .SILENT directive, and all commands will be echoed to the console during the make.  This is useful for debugging only. With Visual Studio IDE projects all commands are done without /nologo."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "FALSE"
+		},
+		{
+			"name" : "COVERAGE_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to the coverage program that CTest uses for performing coverage inspection"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/usr/bin/gcov"
+		},
+		{
+			"name" : "COVERAGE_EXTRA_FLAGS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Extra command line flags to pass to the coverage tool"
+				}
+			],
+			"type" : "STRING",
+			"value" : "-l"
+		},
+		{
+			"name" : "CTEST_SUBMIT_RETRY_COUNT",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "How many times to retry timed-out CTest submissions."
+				}
+			],
+			"type" : "STRING",
+			"value" : "3"
+		},
+		{
+			"name" : "CTEST_SUBMIT_RETRY_DELAY",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "How long to wait between timed-out CTest submissions."
+				}
+			],
+			"type" : "STRING",
+			"value" : "5"
+		},
+		{
+			"name" : "CVSCOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "CVS_UPDATE_OPTIONS",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "DART_TESTING_TIMEOUT",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Maximum time allowed before CTest will kill the test."
+				}
+			],
+			"type" : "STRING",
+			"value" : "1500"
+		},
+		{
+			"name" : "DATA_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Details about finding Threads"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "[TRUE][v()]"
+		},
+		{
+			"name" : "GITCOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a program."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/usr/bin/git"
+		},
+		{
+			"name" : "HGCOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "I18N_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "ICU_DATA_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "ICU_DATA_LIBRARY_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU data library (debug)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_DATA_LIBRARY_DEBUG-NOTFOUND"
+		},
+		{
+			"name" : "ICU_DATA_LIBRARY_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU data library (release)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_DATA_LIBRARY_RELEASE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_DERB_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU derb executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_DERB_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENBRK_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU genbrk executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENBRK_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENCCODE_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU genccode executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENCCODE_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENCFU_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gencfu executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENCFU_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENCMN_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gencmn executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENCMN_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENCNVAL_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gencnval executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENCNVAL_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENDICT_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gendict executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENDICT_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENNORM2_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gennorm2 executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENNORM2_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENRB_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU genrb executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENRB_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_GENSPREP_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU gensprep executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_GENSPREP_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_I18N_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "ICU_I18N_LIBRARY_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU i18n library (debug)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_I18N_LIBRARY_DEBUG-NOTFOUND"
+		},
+		{
+			"name" : "ICU_I18N_LIBRARY_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU i18n library (release)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_I18N_LIBRARY_RELEASE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_ICU-CONFIG_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU icu-config executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_ICU-CONFIG_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_ICUINFO_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU icuinfo executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_ICUINFO_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_ICUPKG_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU icupkg executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_ICUPKG_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_INCLUDE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU include directory"
+				}
+			],
+			"type" : "PATH",
+			"value" : "/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/include"
+		},
+		{
+			"name" : "ICU_MAKECONV_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU makeconv executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_MAKECONV_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_MAKEFILE_INC",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU Makefile.inc data file"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_MAKEFILE_INC-NOTFOUND"
+		},
+		{
+			"name" : "ICU_PKGDATA_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU pkgdata executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_PKGDATA_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_PKGDATA_INC",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU pkgdata.inc data file"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_PKGDATA_INC-NOTFOUND"
+		},
+		{
+			"name" : "ICU_UCONV_EXECUTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU uconv executable"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_UCONV_EXECUTABLE-NOTFOUND"
+		},
+		{
+			"name" : "ICU_UC_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "ICU_UC_LIBRARY_DEBUG",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU uc library (debug)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_UC_LIBRARY_DEBUG-NOTFOUND"
+		},
+		{
+			"name" : "ICU_UC_LIBRARY_RELEASE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "ICU uc library (release)"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "ICU_UC_LIBRARY_RELEASE-NOTFOUND"
+		},
+		{
+			"name" : "MAKECOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Command to build the project"
+				}
+			],
+			"type" : "STRING",
+			"value" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --build . --config \"${CTEST_CONFIGURATION_TYPE}\""
+		},
+		{
+			"name" : "MEMORYCHECK_COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to the memory checking command, used for memory error detection."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "MEMORYCHECK_COMMAND-NOTFOUND"
+		},
+		{
+			"name" : "MEMORYCHECK_SUPPRESSIONS_FILE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "File that contains suppressions for the memory checker"
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : ""
+		},
+		{
+			"name" : "P4COMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "SITE",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Name of the computer/site where compile is being run"
+				}
+			],
+			"type" : "STRING",
+			"value" : "LQ0H246MG0"
+		},
+		{
+			"name" : "SVNCOMMAND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "UC_FOUND",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : ""
+				}
+			],
+			"type" : "UNINITIALIZED",
+			"value" : ""
+		},
+		{
+			"name" : "_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "CMAKE_INSTALL_PREFIX during last run"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "/usr/local"
+		},
+		{
+			"name" : "boost_align_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/align"
+		},
+		{
+			"name" : "boost_align_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_align_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/align"
+		},
+		{
+			"name" : "boost_assert_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/assert"
+		},
+		{
+			"name" : "boost_assert_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_assert_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/assert"
+		},
+		{
+			"name" : "boost_atomic_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/atomic"
+		},
+		{
+			"name" : "boost_atomic_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_atomic_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/atomic"
+		},
+		{
+			"name" : "boost_bind_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/bind"
+		},
+		{
+			"name" : "boost_bind_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_bind_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/bind"
+		},
+		{
+			"name" : "boost_concept_check_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/concept_check"
+		},
+		{
+			"name" : "boost_concept_check_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_concept_check_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/concept_check"
+		},
+		{
+			"name" : "boost_config_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/config"
+		},
+		{
+			"name" : "boost_config_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_config_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/config"
+		},
+		{
+			"name" : "boost_container_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/container"
+		},
+		{
+			"name" : "boost_container_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_container_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/container"
+		},
+		{
+			"name" : "boost_container_hash_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/container_hash"
+		},
+		{
+			"name" : "boost_container_hash_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_container_hash_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/container_hash"
+		},
+		{
+			"name" : "boost_conversion_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/conversion"
+		},
+		{
+			"name" : "boost_conversion_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_conversion_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/conversion"
+		},
+		{
+			"name" : "boost_core_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/core"
+		},
+		{
+			"name" : "boost_core_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_core_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/core"
+		},
+		{
+			"name" : "boost_describe_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/describe"
+		},
+		{
+			"name" : "boost_describe_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_describe_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/describe"
+		},
+		{
+			"name" : "boost_detail_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/detail"
+		},
+		{
+			"name" : "boost_detail_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_detail_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/detail"
+		},
+		{
+			"name" : "boost_filesystem_LIB_DEPENDS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Dependencies for the target"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "general;Boost::io;general;Boost::iterator;general;Boost::smart_ptr;general;Boost::system;general;Boost::type_traits;general;Boost::predef;general;Boost::atomic;"
+		},
+		{
+			"name" : "boost_function_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/function"
+		},
+		{
+			"name" : "boost_function_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_function_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/function"
+		},
+		{
+			"name" : "boost_function_types_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/function_types"
+		},
+		{
+			"name" : "boost_function_types_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_function_types_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/function_types"
+		},
+		{
+			"name" : "boost_functional_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/functional"
+		},
+		{
+			"name" : "boost_functional_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_functional_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/functional"
+		},
+		{
+			"name" : "boost_fusion_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/fusion"
+		},
+		{
+			"name" : "boost_fusion_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_fusion_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/fusion"
+		},
+		{
+			"name" : "boost_integer_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/integer"
+		},
+		{
+			"name" : "boost_integer_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_integer_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/integer"
+		},
+		{
+			"name" : "boost_intrusive_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/intrusive"
+		},
+		{
+			"name" : "boost_intrusive_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_intrusive_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/intrusive"
+		},
+		{
+			"name" : "boost_io_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/io"
+		},
+		{
+			"name" : "boost_io_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_io_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/io"
+		},
+		{
+			"name" : "boost_iterator_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/iterator"
+		},
+		{
+			"name" : "boost_iterator_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_iterator_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/iterator"
+		},
+		{
+			"name" : "boost_json_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/json"
+		},
+		{
+			"name" : "boost_json_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_json_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/json"
+		},
+		{
+			"name" : "boost_move_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/move"
+		},
+		{
+			"name" : "boost_move_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_move_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/move"
+		},
+		{
+			"name" : "boost_mp11_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/mp11"
+		},
+		{
+			"name" : "boost_mp11_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_mp11_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/mp11"
+		},
+		{
+			"name" : "boost_mpl_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/mpl"
+		},
+		{
+			"name" : "boost_mpl_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_mpl_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/mpl"
+		},
+		{
+			"name" : "boost_optional_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/optional"
+		},
+		{
+			"name" : "boost_optional_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_optional_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/optional"
+		},
+		{
+			"name" : "boost_preprocessor_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/preprocessor"
+		},
+		{
+			"name" : "boost_preprocessor_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_preprocessor_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/preprocessor"
+		},
+		{
+			"name" : "boost_regex_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/regex"
+		},
+		{
+			"name" : "boost_regex_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_regex_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/regex"
+		},
+		{
+			"name" : "boost_smart_ptr_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/smart_ptr"
+		},
+		{
+			"name" : "boost_smart_ptr_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_smart_ptr_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/smart_ptr"
+		},
+		{
+			"name" : "boost_static_assert_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/static_assert"
+		},
+		{
+			"name" : "boost_static_assert_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_static_assert_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/static_assert"
+		},
+		{
+			"name" : "boost_system_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/system"
+		},
+		{
+			"name" : "boost_system_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_system_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/system"
+		},
+		{
+			"name" : "boost_throw_exception_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/throw_exception"
+		},
+		{
+			"name" : "boost_throw_exception_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_throw_exception_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/throw_exception"
+		},
+		{
+			"name" : "boost_tuple_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/tuple"
+		},
+		{
+			"name" : "boost_tuple_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_tuple_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/tuple"
+		},
+		{
+			"name" : "boost_type_index_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/type_index"
+		},
+		{
+			"name" : "boost_type_index_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_type_index_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/type_index"
+		},
+		{
+			"name" : "boost_type_traits_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/type_traits"
+		},
+		{
+			"name" : "boost_type_traits_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_type_traits_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/type_traits"
+		},
+		{
+			"name" : "boost_typeof_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/typeof"
+		},
+		{
+			"name" : "boost_typeof_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_typeof_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/typeof"
+		},
+		{
+			"name" : "boost_unordered_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/unordered"
+		},
+		{
+			"name" : "boost_unordered_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_unordered_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/unordered"
+		},
+		{
+			"name" : "boost_url_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug"
+		},
+		{
+			"name" : "boost_url_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "ON"
+		},
+		{
+			"name" : "boost_url_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url"
+		},
+		{
+			"name" : "boost_utility_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/utility"
+		},
+		{
+			"name" : "boost_utility_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_utility_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/utility"
+		},
+		{
+			"name" : "boost_variant2_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/variant2"
+		},
+		{
+			"name" : "boost_variant2_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_variant2_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/variant2"
+		},
+		{
+			"name" : "boost_winapi_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug/Dependencies/boost/libs/winapi"
+		},
+		{
+			"name" : "boost_winapi_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "boost_winapi_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/Users/jszczerbinski/git/boost/libs/winapi"
+		}
+	],
+	"kind" : "cache",
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

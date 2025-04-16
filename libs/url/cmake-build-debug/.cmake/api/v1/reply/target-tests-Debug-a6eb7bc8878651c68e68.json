@@ -1,0 +1,39 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target"
+		],
+		"files" : 
+		[
+			"test/unit/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 12,
+				"parent" : 0
+			}
+		]
+	},
+	"folder" : 
+	{
+		"name" : "Dependencies"
+	},
+	"id" : "tests::@eef10db73b2f22524f92",
+	"name" : "tests",
+	"paths" : 
+	{
+		"build" : "test/unit",
+		"source" : "test/unit"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

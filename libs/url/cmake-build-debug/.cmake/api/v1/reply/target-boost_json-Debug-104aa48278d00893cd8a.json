@@ -1,0 +1,822 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "Dependencies/boost/libs/json/libboost_json.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"boost_json_setup_properties",
+			"target_compile_definitions",
+			"target_compile_features"
+		],
+		"files" : 
+		[
+			"/Users/jszczerbinski/git/boost/libs/json/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 98,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 100,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 69,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 57,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 105,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 56,
+				"parent" : 2
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 3,
+					"define" : "BOOST_CONTAINER_NO_LIB"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "BOOST_CONTAINER_STATIC_LINK"
+				},
+				{
+					"backtrace" : 4,
+					"define" : "BOOST_JSON_NO_LIB=1"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_JSON_STATIC_LINK=1"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 0,
+					"path" : "/Users/jszczerbinski/git/boost/libs/json/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/container/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/intrusive/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/container_hash/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/describe/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mp11/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/move/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/winapi/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/system/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/variant2/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					6,
+					3,
+					3,
+					3,
+					3
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				92
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "boost_container::@3b8e17c5748b4a9ca53b"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Dependencies"
+	},
+	"id" : "boost_json::@990a8c66a1d0105be817",
+	"name" : "boost_json",
+	"nameOnDisk" : "libboost_json.a",
+	"paths" : 
+	{
+		"build" : "Dependencies/boost/libs/json",
+		"source" : "/Users/jszczerbinski/git/boost/libs/json"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0,
+				92
+			]
+		},
+		{
+			"name" : "json",
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				3,
+				4,
+				40,
+				41,
+				67,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84,
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91
+			]
+		},
+		{
+			"name" : "json\\detail",
+			"sourceIndexes" : 
+			[
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				23,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39
+			]
+		},
+		{
+			"name" : "json\\detail\\impl",
+			"sourceIndexes" : 
+			[
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22
+			]
+		},
+		{
+			"name" : "json\\detail\\ryu\\detail",
+			"sourceIndexes" : 
+			[
+				24,
+				25,
+				26,
+				27,
+				28
+			]
+		},
+		{
+			"name" : "json\\detail\\ryu\\impl",
+			"sourceIndexes" : 
+			[
+				29
+			]
+		},
+		{
+			"name" : "json\\detail\\ryu",
+			"sourceIndexes" : 
+			[
+				30
+			]
+		},
+		{
+			"name" : "json\\impl",
+			"sourceIndexes" : 
+			[
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json.hpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/array.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/basic_parser.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/basic_parser_impl.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/conversion.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/align.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/array.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/buffer.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/config.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/default_resource.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/digest.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/except.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/format.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/handler.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/hash_combine.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/array.hpp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/default_resource.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/except.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/format.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/handler.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/shared_resource.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/stack.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/impl/string_impl.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/object.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/detail/common.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/detail/d2s.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/detail/d2s_full_table.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/detail/d2s_intrinsics.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/detail/digit_table.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/impl/d2s.ipp",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/ryu/ryu.hpp",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/shared_resource.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/sse2.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/stack.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/stream.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/string_impl.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/utf8.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/value.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/value_from.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/detail/value_to.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/error.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/fwd.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/array.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/array.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/conversion.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/error.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/error.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/kind.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/monotonic_resource.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/null_resource.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/object.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/object.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/parse.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/parser.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/pointer.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/serialize.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/serializer.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/static_resource.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/stream_parser.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/string.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/string.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/value.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/value.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/value_ref.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/value_ref.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/value_stack.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/impl/visit.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/json.natvis",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/kind.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/memory_resource.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/monotonic_resource.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/null_resource.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/object.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/parse.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/parse_options.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/parser.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/pilfer.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/serialize.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/serializer.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/src.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/static_resource.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/storage_ptr.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/stream_parser.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/string.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/string_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/system_error.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/value.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/value_from.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/value_ref.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/value_stack.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/value_to.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/include/boost/json/visit.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/src/src.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

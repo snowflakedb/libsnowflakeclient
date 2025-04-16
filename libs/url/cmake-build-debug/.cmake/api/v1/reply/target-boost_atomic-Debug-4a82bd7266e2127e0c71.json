@@ -1,0 +1,176 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "Dependencies/boost/libs/atomic/libboost_atomic.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_compile_definitions",
+			"target_include_directories",
+			"target_link_libraries"
+		],
+		"files" : 
+		[
+			"/Users/jszczerbinski/git/boost/libs/atomic/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 86,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 119,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 129,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 89,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 90,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 92,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_ATOMIC_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_ATOMIC_SOURCE"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "BOOST_ATOMIC_STATIC_LINK"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 4,
+					"path" : "/Users/jszczerbinski/git/boost/libs/atomic/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/Users/jszczerbinski/git/boost/libs/atomic/src"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/include"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Dependencies"
+	},
+	"id" : "boost_atomic::@6eda343865cef85b08c9",
+	"name" : "boost_atomic",
+	"nameOnDisk" : "libboost_atomic.a",
+	"paths" : 
+	{
+		"build" : "Dependencies/boost/libs/atomic",
+		"source" : "/Users/jszczerbinski/git/boost/libs/atomic"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "/Users/jszczerbinski/git/boost/libs/atomic/src/lock_pool.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

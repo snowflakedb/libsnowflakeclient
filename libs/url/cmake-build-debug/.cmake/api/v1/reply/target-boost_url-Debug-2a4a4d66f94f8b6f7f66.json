@@ -1,0 +1,1525 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "libboost_url.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"install",
+			"target_compile_definitions",
+			"boost_url_setup_properties",
+			"target_include_directories",
+			"target_link_libraries",
+			"target_compile_features"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 114,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 126,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 116,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 64,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 121,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 69,
+				"parent" : 3
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 82,
+				"parent" : 3
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 63,
+				"parent" : 3
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 4,
+					"define" : "BOOST_URL_NO_LIB=1"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_URL_STATIC_LINK=1"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 6,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mp11/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/optional/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/detail/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/move/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/utility/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/io/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/system/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/variant2/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "/Users/jszczerbinski/git/boost/libs/winapi/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					8,
+					7,
+					7,
+					7,
+					7
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				202
+			]
+		}
+	],
+	"id" : "boost_url::@6890427a1f51a3e7e1df",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "lib"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"name" : "boost_url",
+	"nameOnDisk" : "libboost_url.a",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0,
+				202
+			]
+		},
+		{
+			"name" : "url",
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				31,
+				32,
+				33,
+				34,
+				35,
+				83,
+				84,
+				123,
+				124,
+				125,
+				126,
+				127,
+				128,
+				129,
+				130,
+				131,
+				132,
+				133,
+				134,
+				135,
+				136,
+				185,
+				186,
+				187,
+				188,
+				189,
+				190,
+				191,
+				192,
+				193,
+				194,
+				195,
+				196,
+				197,
+				198,
+				199,
+				200,
+				201
+			]
+		},
+		{
+			"name" : "url\\detail",
+			"sourceIndexes" : 
+			[
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30
+			]
+		},
+		{
+			"name" : "url\\detail\\impl",
+			"sourceIndexes" : 
+			[
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19
+			]
+		},
+		{
+			"name" : "url\\grammar",
+			"sourceIndexes" : 
+			[
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				49,
+				50,
+				51,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82
+			]
+		},
+		{
+			"name" : "url\\grammar\\detail",
+			"sourceIndexes" : 
+			[
+				43,
+				44,
+				47,
+				48
+			]
+		},
+		{
+			"name" : "url\\grammar\\detail\\impl",
+			"sourceIndexes" : 
+			[
+				45,
+				46
+			]
+		},
+		{
+			"name" : "url\\grammar\\impl",
+			"sourceIndexes" : 
+			[
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67
+			]
+		},
+		{
+			"name" : "url\\impl",
+			"sourceIndexes" : 
+			[
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91,
+				92,
+				93,
+				94,
+				95,
+				96,
+				97,
+				98,
+				99,
+				100,
+				101,
+				102,
+				103,
+				104,
+				105,
+				106,
+				107,
+				108,
+				109,
+				110,
+				111,
+				112,
+				113,
+				114,
+				115,
+				116,
+				117,
+				118,
+				119,
+				120,
+				121,
+				122
+			]
+		},
+		{
+			"name" : "url\\rfc",
+			"sourceIndexes" : 
+			[
+				137,
+				138,
+				162,
+				173,
+				174,
+				175,
+				176,
+				177,
+				178,
+				179,
+				180,
+				181,
+				182,
+				183,
+				184
+			]
+		},
+		{
+			"name" : "url\\rfc\\detail",
+			"sourceIndexes" : 
+			[
+				139,
+				140,
+				141,
+				142,
+				143,
+				153,
+				154,
+				155,
+				156,
+				157,
+				158,
+				159,
+				160,
+				161
+			]
+		},
+		{
+			"name" : "url\\rfc\\detail\\impl",
+			"sourceIndexes" : 
+			[
+				144,
+				145,
+				146,
+				147,
+				148,
+				149,
+				150,
+				151,
+				152
+			]
+		},
+		{
+			"name" : "url\\rfc\\impl",
+			"sourceIndexes" : 
+			[
+				163,
+				164,
+				165,
+				166,
+				167,
+				168,
+				169,
+				170,
+				171,
+				172
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url.hpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/authority_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/decode_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/any_params_iter.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/any_segments_iter.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/config.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/decode.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/empty_value.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/encode.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/except.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/any_params_iter.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/any_segments_iter.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/decode.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/except.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/normalize.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/params_iter_impl.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/path.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/pattern.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/segments_iter_impl.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/impl/url_impl.ipp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/move_chars.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/normalize.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/optional_string.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/over_allocator.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/params_iter_impl.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/parts_base.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/path.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/print.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/segments_iter_impl.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/string_view.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/detail/url_impl.hpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/encode.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/encoding_opts.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/error.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/error_types.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/all_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/alnum_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/alpha_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/charset.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/ci_string.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/dec_octet_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/delim_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/charset.hpp",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/ci_string.hpp",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/impl/ci_string.ipp",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/impl/recycled.ipp",
+			"sourceGroupIndex" : 6
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/recycled.hpp",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/detail/tuple.hpp",
+			"sourceGroupIndex" : 5
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/digit_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/error.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/hexdig_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/ci_string.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/dec_octet_rule.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/delim_rule.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/error.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/error.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/literal_rule.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/not_empty_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/optional_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/parse.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/range_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/recycled.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/string_view_base.ipp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/token_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/tuple_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/unsigned_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/impl/variant_rule.hpp",
+			"sourceGroupIndex" : 7
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/literal_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/lut_chars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/not_empty_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/optional_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/parse.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/range_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/recycled.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/string_token.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/string_view_base.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/token_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/tuple_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/type_traits.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/unsigned_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/variant_rule.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/grammar/vchars.hpp",
+			"sourceGroupIndex" : 4
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/host_type.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/ignore_case.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/authority_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/decode_view.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/decode_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/encode.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/error.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/error.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/ipv4_address.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/ipv6_address.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_base.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_encoded_base.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_encoded_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_encoded_ref.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_encoded_ref.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_encoded_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_ref.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_ref.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/params_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/parse.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/parse_path.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/parse_query.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/pct_string_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/scheme.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_base.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_encoded_base.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_encoded_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_encoded_ref.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_encoded_ref.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_encoded_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_ref.hpp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_ref.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/segments_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/static_url.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/url.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/url_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/url_view.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/impl/url_view_base.ipp",
+			"sourceGroupIndex" : 8
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/ipv4_address.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/ipv6_address.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/optional.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/param.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_encoded_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_encoded_ref.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_encoded_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_ref.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/params_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/parse.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/parse_path.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/parse_query.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/pct_string_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/absolute_uri_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/authority_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/charsets.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/fragment_part_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/h16_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/hier_part_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/host_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/h16_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/hier_part_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/host_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/ip_literal_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/ipvfuture_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/port_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/relative_part_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/scheme_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/impl/userinfo_rule.ipp",
+			"sourceGroupIndex" : 11
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/ip_literal_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/ipvfuture_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/path_rules.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/port_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/query_part_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/reg_name_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/relative_part_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/scheme_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/detail/userinfo_rule.hpp",
+			"sourceGroupIndex" : 10
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/gen_delim_chars.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/absolute_uri_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/authority_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/ipv4_address_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/ipv6_address_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/origin_form_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/pct_encoded_rule.hpp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/query_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/relative_ref_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/uri_reference_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/impl/uri_rule.ipp",
+			"sourceGroupIndex" : 12
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/ipv4_address_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/ipv6_address_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/origin_form_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/pchars.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/pct_encoded_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/query_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/relative_ref_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/reserved_chars.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/sub_delim_chars.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/unreserved_chars.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/uri_reference_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/rfc/uri_rule.hpp",
+			"sourceGroupIndex" : 9
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/scheme.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_encoded_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_encoded_ref.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_encoded_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_ref.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/segments_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/src.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/static_url.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/string_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/url.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/url.natvis",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/url_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/url_view.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/url_view_base.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/urls.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/boost/url/variant.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/src.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

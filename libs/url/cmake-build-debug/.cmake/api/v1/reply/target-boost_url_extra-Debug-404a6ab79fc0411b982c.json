@@ -1,0 +1,225 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "test/extra/boost_url_extra"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_include_directories",
+			"target_link_libraries"
+		],
+		"files" : 
+		[
+			"test/extra/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 27,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/test/extra/."
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/test/extra/../../extra"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/optional/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/detail/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/move/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/utility/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/io/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/system/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/variant2/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mp11/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/Users/jszczerbinski/git/boost/libs/winapi/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					3,
+					3,
+					3,
+					3
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"id" : "boost_url_extra::@d5e997181b81f9c182e3",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "boost_url_extra",
+	"nameOnDisk" : "boost_url_extra",
+	"paths" : 
+	{
+		"build" : "test/extra",
+		"source" : "test/extra"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		},
+		{
+			"name" : "_extra",
+			"sourceIndexes" : 
+			[
+				2,
+				3
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"path" : "test/extra/Jamfile",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/extra/test_suite.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "extra/test_main.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "extra/test_suite.hpp",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "EXECUTABLE"
+}
