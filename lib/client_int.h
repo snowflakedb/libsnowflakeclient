@@ -50,11 +50,13 @@
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 #define HEART_BEAT_URL "/session/heartbeat"
 #define EXTERNALBROWSER_CONSOLE_URL "/console/login"
+#define ABORT_REQUEST_URL "/queries/v1/abort-request"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
 #define URL_PARAM_RETRY_REASON "retryReason="
 #define URL_PARAM_CLIENT_START_TIME "clientStartTime="
+#define URL_PARAM_REQUEST_ID "requestId="
 
 #define CLIENT_APP_ID_KEY "CLIENT_APP_ID"
 #define CLIENT_APP_VERSION_KEY "CLIENT_APP_VERSION"
@@ -158,6 +160,14 @@ typedef struct NAMED_PARAMS
     unsigned int used;
     unsigned int allocd;
 }NamedParams;
+
+/**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+} SF_QUERY_METADATA;
 
 /**
  * Allocate memory for put get response struct
