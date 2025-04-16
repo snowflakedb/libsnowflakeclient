@@ -1,0 +1,1050 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "test/unit/boost_url_tests"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"test/unit/CMakeLists.txt",
+			"/Users/jszczerbinski/git/boost/libs/filesystem/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 107,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 112,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 190,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 108,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_CONTAINER_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_CONTAINER_STATIC_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FILESYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FILESYSTEM_STATIC_LINK=1"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_URL_NO_LIB=1"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_URL_STATIC_LINK=1"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 5,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/test/unit/."
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/test/unit/../../extra"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mp11/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/optional/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/detail/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/move/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/utility/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/io/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/system/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/variant2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/winapi/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/container/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/intrusive/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/container_hash/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/describe/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/filesystem/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/iterator/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/concept_check/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/conversion/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/smart_ptr/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/typeof/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/function_types/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mpl/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/fusion/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/tuple/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/functional/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/function/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/bind/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/integer/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_index/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/unordered/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2,
+					2,
+					2,
+					2,
+					2
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "boost_url::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "boost_atomic::@6eda343865cef85b08c9"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "boost_container::@3b8e17c5748b4a9ca53b"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "boost_filesystem::@4bb240253089e225ee3d"
+		}
+	],
+	"id" : "boost_url_tests::@eef10db73b2f22524f92",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "libboost_url.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "Dependencies/boost/libs/container/libboost_container.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "Dependencies/boost/libs/filesystem/libboost_filesystem.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "Dependencies/boost/libs/atomic/libboost_atomic.a",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "boost_url_tests",
+	"nameOnDisk" : "boost_url_tests",
+	"paths" : 
+	{
+		"build" : "test/unit",
+		"source" : "test/unit"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44
+			]
+		},
+		{
+			"name" : "grammar",
+			"sourceIndexes" : 
+			[
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68
+			]
+		},
+		{
+			"name" : "rfc",
+			"sourceIndexes" : 
+			[
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83
+			]
+		},
+		{
+			"name" : "_extra",
+			"sourceIndexes" : 
+			[
+				84,
+				85
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"path" : "test/unit/CMakeLists.txt",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "test/unit/Jamfile",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "test/unit/test_rule.hpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/authority_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/doc_3_urls.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/doc_grammar.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/decode_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/encode.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/encoding_opts.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/error.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/error_types.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/host_type.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/ignore_case.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/ipv4_address.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/ipv6_address.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/natvis.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/optional.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/param.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_encoded_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_encoded_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_encoded_ref.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/params_ref.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/parse.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/parse_path.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/parse_query.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/pct_string_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/scheme.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_encoded_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_encoded_ref.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_encoded_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_ref.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/segments_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/snippets.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/static_url.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/string_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/url.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/url_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/url_view.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/url_view_base.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/urls.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/variant.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/alnum_chars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/alpha_chars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/charset.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/ci_string.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/dec_octet_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/delim_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/digit_chars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/grammar_error.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/grammar_parse.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/hexdig_chars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/literal_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/lut_chars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/not_empty_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/optional_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/range_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/recycled.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/string_token.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/string_view_base.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/token_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/tuple_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/type_traits.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/unsigned_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/variant_rule.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/grammar/vchars.cpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/absolute_uri_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/authority_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/gen_delim_chars.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/ipv4_address_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/ipv6_address_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/origin_form_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/pchars.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/pct_encoded_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/query_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/relative_ref_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/reserved_chars.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/sub_delim_chars.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/unreserved_chars.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/uri_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/rfc/uri_reference_rule.cpp",
+			"sourceGroupIndex" : 2
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "extra/test_main.cpp",
+			"sourceGroupIndex" : 3
+		},
+		{
+			"backtrace" : 1,
+			"path" : "extra/test_suite.hpp",
+			"sourceGroupIndex" : 3
+		}
+	],
+	"type" : "EXECUTABLE"
+}

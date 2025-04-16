@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "Dependencies/boost/libs/tuple",
+		"source" : "/Users/jszczerbinski/git/boost/libs/tuple"
+	}
+}

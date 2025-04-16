@@ -1,0 +1,76 @@
+{
+	"kind" : "toolchains",
+	"toolchains" : 
+	[
+		{
+			"compiler" : 
+			{
+				"implicit" : {},
+				"path" : "/Library/Developer/CommandLineTools/usr/bin/cc"
+			},
+			"language" : "C"
+		},
+		{
+			"compiler" : 
+			{
+				"id" : "AppleClang",
+				"implicit" : 
+				{
+					"includeDirectories" : 
+					[
+						"/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/include/c++/v1",
+						"/Library/Developer/CommandLineTools/usr/lib/clang/16/include",
+						"/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/include",
+						"/Library/Developer/CommandLineTools/usr/include"
+					],
+					"linkDirectories" : 
+					[
+						"/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/lib",
+						"/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/lib/swift"
+					],
+					"linkFrameworkDirectories" : 
+					[
+						"/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/System/Library/Frameworks"
+					],
+					"linkLibraries" : 
+					[
+						"c++"
+					]
+				},
+				"path" : "/Library/Developer/CommandLineTools/usr/bin/c++",
+				"version" : "16.0.0.16000026"
+			},
+			"language" : "CXX",
+			"sourceFileExtensions" : 
+			[
+				"C",
+				"M",
+				"c++",
+				"cc",
+				"cpp",
+				"cxx",
+				"m",
+				"mm",
+				"mpp",
+				"CPP",
+				"ixx",
+				"cppm",
+				"ccm",
+				"cxxm",
+				"c++m"
+			]
+		},
+		{
+			"compiler" : 
+			{
+				"implicit" : {}
+			},
+			"language" : "NONE"
+		}
+	],
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

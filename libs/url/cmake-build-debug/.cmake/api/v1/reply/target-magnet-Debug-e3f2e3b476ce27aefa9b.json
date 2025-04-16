@@ -1,0 +1,222 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "example/magnet/magnet"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries"
+		],
+		"files" : 
+		[
+			"example/magnet/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 15,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 21,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_URL_NO_LIB=1"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_URL_STATIC_LINK=1"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/url/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/align/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/assert/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/config/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/core/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/mp11/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/optional/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/detail/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/move/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/predef/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/utility/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/io/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/system/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/variant2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/jszczerbinski/git/boost/libs/winapi/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2,
+					2,
+					2,
+					2,
+					2
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "boost_url::@6890427a1f51a3e7e1df"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Examples"
+	},
+	"id" : "magnet::@95a94d03aa870e4fe8b8",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "libboost_url.a",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "magnet",
+	"nameOnDisk" : "magnet",
+	"paths" : 
+	{
+		"build" : "example/magnet",
+		"source" : "example/magnet"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "example/magnet/magnet.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "example/magnet/filter_view.hpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

@@ -1,0 +1,1579 @@
+{
+	"inputs" : 
+	[
+		{
+			"path" : "CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeSystem.cmake.in"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/3.29.6/CMakeSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeSystemSpecificInitialize.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Darwin-Initialize.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Darwin-Determine-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCompilerIdDetection.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ADSP-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMCC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Borland-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Cray-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CrayClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Embarcadero-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Fujitsu-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GHS-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/HP-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IAR-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Intel-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/MSVC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVHPC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVIDIA-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OrangeC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PGI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PathScale-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SCO-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TIClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Tasking-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Watcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XL-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ADSP-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMCC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Borland-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Cray-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CrayClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Embarcadero-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Fujitsu-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GHS-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/HP-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IAR-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Intel-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/MSVC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVHPC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVIDIA-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OrangeC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PGI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PathScale-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SCO-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TIClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Tasking-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Watcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XL-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeFindBinUtils.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCXXCompiler.cmake.in"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/3.29.6/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeSystemSpecificInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeGenericSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeInitializeConfigs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Darwin.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/UnixPaths.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCXXInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-AppleClang-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-Clang-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCompilerCommon.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseImplicitIncludeInfo.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseImplicitLinkInfo.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseLibraryArchitecture.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCompilerCommon.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompileFeatures.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Internal/FeatureTesting.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCXXCompiler.cmake.in"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/3.29.6/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CTest.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CTestUseLaunchers.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CTestTargets.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/DartConfiguration.tcl.in"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/GNUInstallDirs.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/tools/cmake/include/BoostRoot.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/tools/cmake/include/BoostMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/tools/cmake/include/BoostInstall.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/tools/cmake/include/BoostMessage.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/GNUInstallDirs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakePackageConfigHelpers.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/WriteBasicConfigVersionFile.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/align/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/assert/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/atomic/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindThreads.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CheckLibraryExists.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CheckIncludeFileCXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/atomic/cmake/BoostLibraryIncludes.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/bind/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/concept_check/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/config/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/container/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCompilerIdDetection.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ADSP-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMCC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Borland-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Bruce-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Compaq-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Cray-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CrayClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Embarcadero-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Fujitsu-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GHS-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GNU-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/HP-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IAR-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Intel-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/LCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/MSVC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVHPC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVIDIA-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OrangeC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PGI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PathScale-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SCO-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SDCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SunPro-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TIClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Tasking-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Watcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XL-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XLClang-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/zOS-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ADSP-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMCC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/ARMClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Borland-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Bruce-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang-DetermineCompilerInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Compaq-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Cray-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/CrayClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Embarcadero-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Fujitsu-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GHS-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/GNU-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/HP-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IAR-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Intel-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/LCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/MSVC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVHPC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/NVIDIA-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/OrangeC-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PGI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/PathScale-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SCO-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SDCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/SunPro-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TI-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TIClang-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Tasking-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Watcom-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XL-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/XLClang-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/zOS-C-DetermineCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeFindBinUtils.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCCompiler.cmake.in"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/3.29.6/CMakeCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/AppleClang-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Compiler/Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-AppleClang-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-Clang-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Platform/Apple-Clang.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCompilerCommon.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseImplicitIncludeInfo.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseImplicitLinkInfo.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeParseLibraryArchitecture.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeTestCompilerCommon.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCCompilerABI.c"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeDetermineCompileFeatures.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/Internal/FeatureTesting.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CMakeCCompiler.cmake.in"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/3.29.6/CMakeCCompiler.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/container_hash/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/conversion/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/core/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/describe/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/detail/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/filesystem/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/filesystem/cmake/BoostLibraryIncludes.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/function/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/function_types/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/functional/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/fusion/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/integer/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/intrusive/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/io/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/iterator/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/json/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/GNUInstallDirs.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/move/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/mp11/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/mpl/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/optional/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/predef/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/preprocessor/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/regex/CMakeLists.txt"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindICU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/SelectLibraryConfigurations.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/SelectLibraryConfigurations.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/SelectLibraryConfigurations.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/share/cmake-3.29/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/smart_ptr/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/static_assert/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/system/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/throw_exception/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/tuple/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/type_index/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/type_traits/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/typeof/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/unordered/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/utility/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/variant2/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/Users/jszczerbinski/git/boost/libs/winapi/CMakeLists.txt"
+		},
+		{
+			"path" : "test/CMakeLists.txt"
+		},
+		{
+			"path" : "test/extra/CMakeLists.txt"
+		},
+		{
+			"path" : "test/limits/CMakeLists.txt"
+		},
+		{
+			"path" : "test/unit/CMakeLists.txt"
+		},
+		{
+			"path" : "example/CMakeLists.txt"
+		},
+		{
+			"path" : "example/qrcode/CMakeLists.txt"
+		},
+		{
+			"path" : "example/finicky/CMakeLists.txt"
+		},
+		{
+			"path" : "example/suffix_list/CMakeLists.txt"
+		},
+		{
+			"path" : "example/mailto/CMakeLists.txt"
+		},
+		{
+			"path" : "example/magnet/CMakeLists.txt"
+		},
+		{
+			"path" : "example/route/CMakeLists.txt"
+		}
+	],
+	"kind" : "cmakeFiles",
+	"paths" : 
+	{
+		"build" : "/Users/jszczerbinski/git/boost/libs/url/cmake-build-debug",
+		"source" : "/Users/jszczerbinski/git/boost/libs/url"
+	},
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

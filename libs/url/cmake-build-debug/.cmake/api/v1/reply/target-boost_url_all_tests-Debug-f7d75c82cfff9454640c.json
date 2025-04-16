@@ -1,0 +1,85 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"add_dependencies"
+		],
+		"files" : 
+		[
+			"test/CMakeLists.txt",
+			"test/extra/CMakeLists.txt",
+			"test/limits/CMakeLists.txt",
+			"test/unit/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 12,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 41,
+				"parent" : 2
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 35,
+				"parent" : 4
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 3,
+				"line" : 118,
+				"parent" : 6
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "boost_url_extra::@d5e997181b81f9c182e3"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "boost_url_limits::@d41f54659c99e5632e83"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "boost_url_tests::@eef10db73b2f22524f92"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Dependencies"
+	},
+	"id" : "boost_url_all_tests::@36f028580bb02cc8272a",
+	"name" : "boost_url_all_tests",
+	"paths" : 
+	{
+		"build" : "test",
+		"source" : "test"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

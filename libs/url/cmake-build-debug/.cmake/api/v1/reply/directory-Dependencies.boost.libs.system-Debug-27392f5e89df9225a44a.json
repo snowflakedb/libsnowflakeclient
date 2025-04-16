@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "Dependencies/boost/libs/system",
+		"source" : "/Users/jszczerbinski/git/boost/libs/system"
+	}
+}

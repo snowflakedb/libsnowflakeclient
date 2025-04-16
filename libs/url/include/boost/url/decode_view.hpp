@@ -212,7 +212,7 @@ public:
         pct_string_view s,
         encoding_opts opt = {}) noexcept
         : decode_view(
-            string_view(s),
+            detail::to_sv(s),
             s.decoded_size(),
             opt)
     {
