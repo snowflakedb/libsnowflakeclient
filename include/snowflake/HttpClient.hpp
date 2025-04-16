@@ -24,7 +24,7 @@ namespace Snowflake {
       enum class Method {
         GET,
         PUT,
-        DELETE,
+        DEL,
         POST,
       } method;
 
@@ -34,7 +34,7 @@ namespace Snowflake {
             return "GET";
           case Method::PUT:
             return "PUT";
-          case Method::DELETE:
+          case Method::DEL:
             return "DELETE";
           case Method::POST:
             return "POST";
