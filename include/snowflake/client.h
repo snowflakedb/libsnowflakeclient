@@ -173,7 +173,8 @@ typedef enum SF_STATUS {
     SF_STATUS_ERROR_BUFFER_TOO_SMALL = 240023,
     SF_STATUS_ERROR_UNSUPPORTED_QUERY_RESULT_FORMAT = 240024,
     SF_STATUS_ERROR_OTHER = 240025,
-    SF_STATUS_ERROR_FILE_TRANSFER = 240026
+    SF_STATUS_ERROR_FILE_TRANSFER = 240026,
+    SF_STATUS_ERROR_QUERY_CANCELLED = 240027
 } SF_STATUS;
 
 /**
@@ -638,14 +639,6 @@ typedef struct SF_TIMESTAMP {
 } SF_TIMESTAMP;
 
 /**
- * Query metadata
- */
-typedef struct SF_QUERY_METADATA {
-  SF_QUERY_STATUS status;
-  char *qid;
-} SF_QUERY_METADATA;
-
-/**
  * Initializes an SF_QUERY_RESPONSE_CAPTURE struct.
  * Note that these need to be released by calling snowflake_query_result_capture_term().
  *
@@ -836,6 +829,14 @@ SF_DLL_PUBLIC SF_STATUS STDCALL snowflake_propagate_error(SF_CONNECT *sf, SF_STM
  */
 SF_DLL_PUBLIC SF_STATUS STDCALL
 snowflake_query(SF_STMT *sfstmt, const char *command, size_t command_size);
+
+/**
+ * Cancels a query given the statement.
+ *
+ * @param sf SNOWFLAKE_STMT context.
+ * @return 0 if success, otherwise an errno is returned.
+ */
+SF_STATUS STDCALL snowflake_cancel_query(SF_STMT* sfstmt);
 
 /**
  * Returns the number of affected rows in the last execution.  This function
