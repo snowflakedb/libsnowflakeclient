@@ -12,6 +12,36 @@
 namespace Snowflake {
   namespace Client {
 
+    std::string getAwsRegion() {
+      auto region = std::getenv("AWS_REGION");
+      if (region) {
+        return region;
+      }
+
+      auto profile_name = Aws::Auth::GetConfigProfileName();
+      if (Aws::Config::HasCachedConfigProfile(profile_name))
+      {
+        auto profile = Aws::Config::GetCachedConfigProfile(profile_name);
+        auto region = profile.GetRegion();
+        if (!region.empty())
+        {
+          return region;
+        }
+      }
+
+      if (Aws::Config::HasCachedCredentialsProfile(profile_name))
+      {
+        auto profile = Aws::Config::GetCachedCredentialsProfile(profile_name);
+        auto region = profile.GetRegion();
+        if (!region.empty())
+        {
+          return region;
+        }
+      }
+
+      return Aws::Region::US_EAST_1;
+    }
+
     boost::optional<Attestation> createAwsAttestation(const AttestationConfig&) {
       Aws::SDKOptions options;
       Aws::InitAPI(options);
@@ -22,19 +52,23 @@ namespace Snowflake {
         return boost::none;
       }
 
+      std::string region = getAwsRegion();
+      std::string host = std::string("sts.") + getAwsRegion() + ".amazonaws.com";
+      std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
+
       auto request = Aws::Http::CreateHttpRequest(
-          Aws::String("https://sts.us-west-2.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15"),
+          Aws::String(url),
           Aws::Http::HttpMethod::HTTP_POST,
           Aws::Utils::Stream::DefaultResponseStreamFactoryMethod
       );
 
-      request->SetHeaderValue("Host", "sts.us-west-2.amazonaws.com");
+      request->SetHeaderValue("Host", host);
       request->SetHeaderValue("X-Snowflake-Audience", "snowflakecomputing.com");
 
       request->AddContentBody(Aws::MakeShared<Aws::StringStream>(""));
 
       Aws::Client::ClientConfiguration clientConfig;
-      Aws::Client::AWSAuthV4Signer signer(credentialsProvider, "sts", Aws::String("us-west-2"));
+      Aws::Client::AWSAuthV4Signer signer(credentialsProvider, "sts", Aws::String(region));
 
       // Sign the request
       if (!signer.SignRequest(*request)) {
@@ -56,7 +90,5 @@ namespace Snowflake {
       Aws::ShutdownAPI(options);
       return Attestation{AttestationType::AWS, base64};
     }
-
-
   }
 }

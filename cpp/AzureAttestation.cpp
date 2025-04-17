@@ -36,13 +36,13 @@ namespace Snowflake {
       std::string err = picojson::parse(json, response_body);
       if (!err.empty()) {
         CXX_LOG_ERROR("Error parsing Azure response: %s", err.c_str());
-        return Attestation{AttestationType::AZURE, ""};
+        return boost::none;
       }
 
       std::string jwtStr = json.get("access_token").get<std::string>();
       if (jwtStr.empty()) {
         CXX_LOG_ERROR("No access token found in Azure response.");
-        return Attestation{AttestationType::AZURE, ""};
+        return boost::none;
       }
 
       Jwt::JWTObject jwt(jwtStr);
@@ -51,12 +51,12 @@ namespace Snowflake {
       std::string subject = claimSet->getClaimInString("sub");
       if (issuer.empty() || subject.empty()) {
         CXX_LOG_ERROR("No issuer or subject found in Azure JWT.");
-        return Attestation{AttestationType::AZURE, ""};
+        return boost::none;
       }
 
       if (issuer.rfind("https://sts.windows.net/", 0) != 0) {
         CXX_LOG_ERROR("Unexpected issuer in Azure JWT: %s", issuer.c_str());
-        return Attestation{AttestationType::AZURE, ""};
+        return boost::none;
       }
 
       return Attestation{AttestationType::AZURE, jwtStr, issuer, subject};
@@ -87,7 +87,8 @@ namespace Snowflake {
     boost::optional<AzureAttestationConfig>
     Snowflake::Client::AzureAttestationConfig::fromConfig(const Snowflake::Client::AttestationConfig &config) {
       if (!config.snowflakeEntraResource) {
-        return {};
+        CXX_LOG_INFO("Failed to create azure attestation config: snowflake entra resource missing");
+        return boost::none;
       }
       AzureAttestationConfig azureConfig;
       azureConfig.snowflakeEntraResource = config.snowflakeEntraResource.get();
@@ -100,12 +101,12 @@ namespace Snowflake {
       auto endpoint = std::getenv("IDENTITY_ENDPOINT");
       auto clientId = std::getenv("MANAGED_IDENTITY_CLIENT_ID");
       if (!header || !endpoint) {
-        return {};
+        return boost::none;
       }
 
       auto parsedEndpointResult = boost::urls::parse_uri(endpoint);
       if (!parsedEndpointResult) {
-        return {};
+        return boost::none;
       }
 
       AzureManagedIdentityConfig config;
