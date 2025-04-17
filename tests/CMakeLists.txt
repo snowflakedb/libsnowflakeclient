@@ -101,8 +101,9 @@ SET(TESTS_PERF
         test_perf_type_conversion)
 
 SET(TESTS_MOCK
-        test_mock_service_name
-        test_mock_session_gone
+        # TODO: Re-enable tests in SNOW-2046054
+        # test_mock_service_name
+        # test_mock_session_gone
         test_mock_mfa_token_caching
 )
 

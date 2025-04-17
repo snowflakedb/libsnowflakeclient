@@ -19,6 +19,10 @@ jobs:
     build-test-mock:
         name: Build-Test-Mock
         runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            build_type: [ 'Debug', 'Release' ]
         steps:
           - uses: actions/checkout@v4
           - name: Restore cached deps
@@ -32,7 +36,7 @@ jobs:
             shell: bash
             env:
               BUILD_TYPE: ${{ matrix.build_type }}
-              ENABLE_MOCK_OBJECTS: true
+              ENABLE_MOCK_OBJECTS: 'true'
             run: ci/build_linux.sh
           - uses: actions/setup-python@v5
             with:
@@ -42,7 +46,7 @@ jobs:
             shell: bash
             env:
               BUILD_TYPE: ${{ matrix.build_type }}
-              CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+              CLOUD_PROVIDER: 'AWS'
               PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
             run: ci/test_linux.sh
 
