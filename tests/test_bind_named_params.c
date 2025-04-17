@@ -3,8 +3,7 @@
 
 #define INPUT_ARRAY_SIZE 3
 
-void test_bind_named_parameters(void **unused)
-{
+void test_bind_named_parameters(void **unused) {
     /* init */
     SF_STATUS status;
     SF_BIND_INPUT input_array[INPUT_ARRAY_SIZE];
@@ -30,19 +29,21 @@ void test_bind_named_parameters(void **unused)
     /* NOTE: the numeric type here should fit into int64 otherwise
      * it is taken as a float */
     status = snowflake_query(
-        stmt,
-        "create or replace table t (c1 number(10,0) not null, c2 string, c3 double)",
-        0);
+            stmt,
+            "create or replace table t (c1 number(10,0) not null, c2 string, c3 double)",
+            0
+    );
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Initialize bad bind inputs to test
     // mixing of named and positional parameters
 
     SF_BIND_INPUT string_input = {
-        .idx = 2,
-        .c_type = SF_C_TYPE_STRING,
-        .value = &str,
-        .len = sizeof(str)};
+            .idx= 2,
+            .c_type = SF_C_TYPE_STRING,
+            .value = &str,
+            .len = sizeof(str)
+    };
 
     for (iter = 0; iter < 3; iter++)
     {
@@ -65,9 +66,10 @@ void test_bind_named_parameters(void **unused)
     input_array[2].len = sizeof(input3);
 
     status = snowflake_prepare(
-        stmt,
-        "insert into t values(:NUMBER, :STRING, :DOUBLE)",
-        0);
+            stmt,
+            "insert into t values(:NUMBER, :STRING, :DOUBLE)",
+            0
+    );
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     status = snowflake_bind_param_array(stmt, input_array, INPUT_ARRAY_SIZE);
@@ -100,9 +102,10 @@ void test_bind_named_parameters(void **unused)
 
     // test with parameters more than 8
     status = snowflake_prepare(
-        stmt,
-        "select :v1,:v2,:v3,:v4,:v5,:v6,:v7,:v8,:v9",
-        0);
+      stmt,
+      "select :v1,:v2,:v3,:v4,:v5,:v6,:v7,:v8,:v9",
+      0
+    );
 
     string_input.idx = 0;
     string_input.name = "v1";
@@ -150,11 +153,10 @@ done:
     snowflake_term(sf);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_bind_named_parameters),
+            cmocka_unit_test(test_bind_named_parameters),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -1,11 +1,9 @@
 #include "utils/test_setup.h"
 
-void test_syntax_error(void **unused)
-{
+void test_syntax_error(void **unused) {
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -14,8 +12,7 @@ void test_syntax_error(void **unused)
     status = snowflake_query(sfstmt, "select 1 frooom dual", 0);
     assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
     SF_ERROR_STRUCT *error = snowflake_stmt_error(sfstmt);
-    if (error->error_code != 1003)
-    {
+    if (error->error_code != 1003) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(error->error_code, 1003);
@@ -23,7 +20,7 @@ void test_syntax_error(void **unused)
     // Propagate SF_STMT error to SF_CONNECT
     error = snowflake_error(sf);
     assert_int_equal(error->error_code, 0);
-    status = snowflake_propagate_error(sf, sfstmt);
+    status  = snowflake_propagate_error(sf, sfstmt);
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(error->error_code, 1003);
 
@@ -31,33 +28,31 @@ void test_syntax_error(void **unused)
     snowflake_term(sf);
 }
 
-void test_incorrect_password(void **unused)
-{
+void test_incorrect_password(void **unused) {
     SF_CONNECT *sf = setup_snowflake_connection();
     snowflake_set_attribute(sf, SF_CON_USER, "HIHIHI");
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "HAHAHA");
     SF_STATUS status = snowflake_connect(sf);
     assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
 
-    /* SNOW-1639914: Currently getting error of IP address not allowed
-     * instead of incorrect user/password, likely due to change on test
-     * account. Temporarily disable the checking until the issue solved
-     * on server side.
-        SF_ERROR_STRUCT *error = snowflake_error(sf);
-        if (error->error_code != (SF_STATUS)390100) {
-            dump_error(&(sf->error));
-        }
-        assert_int_equal(error->error_code, (SF_STATUS)390100);
-    */
+/* SNOW-1639914: Currently getting error of IP address not allowed
+ * instead of incorrect user/password, likely due to change on test
+ * account. Temporarily disable the checking until the issue solved
+ * on server side.
+    SF_ERROR_STRUCT *error = snowflake_error(sf);
+    if (error->error_code != (SF_STATUS)390100) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(error->error_code, (SF_STATUS)390100);
+*/
     snowflake_term(sf); // purge snowflake context
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_syntax_error),
-        cmocka_unit_test(test_incorrect_password),
+      cmocka_unit_test(test_syntax_error),
+      cmocka_unit_test(test_incorrect_password),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -5,11 +5,10 @@
 #include "cJSON.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-    typedef enum authenticator_type
+typedef enum authenticator_type
     {
         AUTH_SNOWFLAKE,
         AUTH_OAUTH,
@@ -30,7 +29,7 @@ extern "C"
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    AuthenticatorType getAuthenticatorType(const char *authenticator);
+    AuthenticatorType getAuthenticatorType(const char* authenticator);
 
     /**
      * Initialize authenticator
@@ -39,7 +38,7 @@ extern "C"
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL auth_initialize(SF_CONNECT *conn);
+    SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn);
 
     /**
      * Retrieve renew timeout for authentication
@@ -49,7 +48,7 @@ extern "C"
      * @return The renew timeout for authentication in seconds if needed,
      *         0 means no renew timeout.
      */
-    int64 auth_get_renew_timeout(SF_CONNECT *conn);
+    int64 auth_get_renew_timeout(SF_CONNECT * conn);
 
     /**
      * do autentication
@@ -58,7 +57,7 @@ extern "C"
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-    SF_STATUS STDCALL auth_authenticate(SF_CONNECT *conn);
+    SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn);
 
     /**
      * update autentication information in json body of the connection request
@@ -66,7 +65,7 @@ extern "C"
      * @param conn                 The connection
      * @param body                 The json body for connection request
      */
-    void auth_update_json_body(SF_CONNECT *conn, cJSON *body);
+    void auth_update_json_body(SF_CONNECT * conn, cJSON* body);
 
     /**
      * renew autentication information in json body when renew timeout reached
@@ -74,14 +73,14 @@ extern "C"
      * @param conn                 The connection
      * @param body                 The json body for connection request
      */
-    void auth_renew_json_body(SF_CONNECT *conn, cJSON *body);
+    void auth_renew_json_body(SF_CONNECT * conn, cJSON* body);
 
     /**
-     * Terminate authenticator
-     *
-     * @param conn                 The connection
-     */
-    void STDCALL auth_terminate(SF_CONNECT *conn);
+    * Terminate authenticator
+    *
+    * @param conn                 The connection
+    */
+    void STDCALL auth_terminate(SF_CONNECT * conn);
 
 #ifdef __cplusplus
 } // extern "C"

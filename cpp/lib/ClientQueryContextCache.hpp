@@ -12,40 +12,40 @@
 
 namespace Snowflake
 {
-  namespace Client
-  {
+namespace Client
+{
 
-    class ClientQueryContextCache : public QueryContextCache
-    {
-    public:
-      // constructor
-      ClientQueryContextCache(size_t capacity) : QueryContextCache(capacity) {}
+class ClientQueryContextCache : public QueryContextCache
+{
+public:
+  // constructor
+  ClientQueryContextCache(size_t capacity) : QueryContextCache(capacity) {}
 
-      /**
-       * @param data: the JSON value of QueryContext Object
-       */
-      void deserializeQueryContext(cJSON *data);
+  /**
+  * @param data: the JSON value of QueryContext Object
+  */
+  void deserializeQueryContext(cJSON * data);
 
-      cJSON *serializeQueryContext();
+  cJSON * serializeQueryContext();
 
-      /**
-       * for test purpose only, deserialize from JSON value serialized from cache
-       * for sending request
-       * @param data: the JSON value of QueryContext Object
-       */
-      void deserializeQueryContextReq(cJSON *data);
+  /**
+  * for test purpose only, deserialize from JSON value serialized from cache
+  * for sending request
+  * @param data: the JSON value of QueryContext Object
+  */
+  void deserializeQueryContextReq(cJSON * data);
 
-    private:
-      bool deserializeQueryContextElement(cJSON *entryNode,
-                                          QueryContextElement &contextElement);
+private:
+  bool deserializeQueryContextElement(cJSON * entryNode,
+                                      QueryContextElement & contextElement);
 
-      // for test purpose only, deserializeQueryContextElement from serialized
-      // JSON value for request
-      bool deserializeQueryContextElementReq(cJSON *entryNode,
-                                             QueryContextElement &contextElement);
-    };
+  // for test purpose only, deserializeQueryContextElement from serialized
+  // JSON value for request
+  bool deserializeQueryContextElementReq(cJSON * entryNode,
+                                         QueryContextElement & contextElement);
+};
 
-  } // namespace Client
+} // namespace Client
 } // namespace Snowflake
 
-#endif // QUERY_CONTEXT_CACHE_HPP
+#endif  // QUERY_CONTEXT_CACHE_HPP

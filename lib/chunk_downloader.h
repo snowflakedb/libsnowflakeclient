@@ -2,101 +2,98 @@
 #define SNOWFLAKE_CHUNK_DOWNLOADER_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#pragma comment(lib, "wldap32.lib")
-#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
 #pragma comment(lib, "Ws2_32.lib")
 
-#define CURL_STATICLIB
+#define CURL_STATICLIB 
 #include <curl/curl.h>
 #include <snowflake/client.h>
 #include "snowflake/platform.h"
 #include "cJSON.h"
 #include "connection.h"
 
-    typedef struct SF_QUEUE_ITEM
-    {
-        char *url;
-        int64 row_count;
-        void *chunk; // make it void * to allow arrow format
-    } SF_QUEUE_ITEM;
+typedef struct SF_QUEUE_ITEM {
+    char *url;
+    int64 row_count;
+    void *chunk; //make it void * to allow arrow format
+} SF_QUEUE_ITEM;
 
-    struct SF_CHUNK_DOWNLOADER
-    {
-        uint64 thread_count;
+struct SF_CHUNK_DOWNLOADER {
+    uint64 thread_count;
 
-        // Threads
-        SF_THREAD_HANDLE *threads;
+    // Threads
+    SF_THREAD_HANDLE *threads;
 
-        // Queue
-        SF_CRITICAL_SECTION_HANDLE queue_lock;
-        SF_CONDITION_HANDLE producer_cond;
-        SF_CONDITION_HANDLE consumer_cond;
+    // Queue
+    SF_CRITICAL_SECTION_HANDLE queue_lock;
+    SF_CONDITION_HANDLE producer_cond;
+    SF_CONDITION_HANDLE consumer_cond;
 
-        // A "queue" that is actually just a locked array
-        SF_QUEUE_ITEM *queue;
+    // A "queue" that is actually just a locked array
+    SF_QUEUE_ITEM* queue;
 
-        // Queue attributes
-        uint64 producer_head;
-        uint64 consumer_head;
-        uint64 queue_size;
+    // Queue attributes
+    uint64 producer_head;
+    uint64 consumer_head;
+    uint64 queue_size;
 
-        // Chunk downloader connection attributes
-        char *qrmk;
-        SF_HEADER *chunk_headers;
+    // Chunk downloader connection attributes
+    char *qrmk;
+    SF_HEADER *chunk_headers;
 
-        // Error/shutdown flags
-        sf_bool is_shutdown;
-        sf_bool has_error;
+    // Error/shutdown flags
+    sf_bool is_shutdown;
+    sf_bool has_error;
 
-        // Chunk downloader attribute read-write lock. If you need to acquire both the queue_lock and attr_lock,
-        // ALWAYS acquire the queue_lock first, otherwise we can deadlock
-        SF_RWLOCK_HANDLE attr_lock;
+    // Chunk downloader attribute read-write lock. If you need to acquire both the queue_lock and attr_lock,
+    // ALWAYS acquire the queue_lock first, otherwise we can deadlock
+    SF_RWLOCK_HANDLE attr_lock;
 
-        // Snowflake statement error
-        SF_ERROR_STRUCT *sf_error;
+    // Snowflake statement error
+    SF_ERROR_STRUCT *sf_error;
 
-        // Snowflake connection insecure mode flag
-        sf_bool insecure_mode;
+    // Snowflake connection insecure mode flag
+    sf_bool insecure_mode;
 
-        // OCSP fail open flag
-        sf_bool fail_open;
+    // OCSP fail open flag
+    sf_bool fail_open;
 
-        // callback function to create non-json response buffer. Json format will be used if this is set to NULL.
-        NON_JSON_RESP *(*callback_create_resp)(void);
+    // callback function to create non-json response buffer. Json format will be used if this is set to NULL.
+    NON_JSON_RESP* (*callback_create_resp)(void);
 
-        // proxy settings
-        char *proxy;
-        char *no_proxy;
+    // proxy settings
+    char *proxy;
+    char *no_proxy;
 
-        // retry settings
-        int64 network_timeout;
-        int8 retry_max_count;
-    };
+    // retry settings
+    int64 network_timeout;
+    int8 retry_max_count;
+};
 
-    SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
-                                                       cJSON *chunk_headers,
-                                                       cJSON *chunks,
-                                                       uint64 thread_count,
-                                                       uint64 fetch_slots,
-                                                       SF_ERROR_STRUCT *sf_error,
-                                                       sf_bool insecure_mode,
-                                                       sf_bool fail_open,
-                                                       NON_JSON_RESP *(*callback_create_resp)(void),
-                                                       const char *proxy,
-                                                       const char *no_proxy,
-                                                       int64 network_timeout,
-                                                       int8 retry_max_count);
-    sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
-    sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
-    sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
-    sf_bool STDCALL get_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
+SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
+                                                   cJSON* chunk_headers,
+                                                   cJSON *chunks,
+                                                   uint64 thread_count,
+                                                   uint64 fetch_slots,
+                                                   SF_ERROR_STRUCT *sf_error,
+                                                   sf_bool insecure_mode,
+                                                   sf_bool fail_open,
+                                                   NON_JSON_RESP* (*callback_create_resp)(void),
+                                                   const char *proxy,
+                                                   const char *no_proxy,
+                                                   int64 network_timeout,
+                                                   int8 retry_max_count);
+sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_shutdown_or_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_shutdown(SF_CHUNK_DOWNLOADER *chunk_downloader);
+sf_bool STDCALL get_error(SF_CHUNK_DOWNLOADER *chunk_downloader);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // SNOWFLAKE_CHUNK_DOWNLOADER_H
+#endif //SNOWFLAKE_CHUNK_DOWNLOADER_H

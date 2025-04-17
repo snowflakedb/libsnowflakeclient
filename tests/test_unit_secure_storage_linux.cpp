@@ -13,20 +13,20 @@
 #include "utils/test_setup.h"
 #include "utils/EnvOverride.hpp"
 
-constexpr const char *CACHE_FILENAME = "credential_cache_v1.json";
+constexpr const char* CACHE_FILENAME = "credential_cache_v1.json";
 
 using namespace Snowflake::Client;
 
-void remove_file_if_exists(const std::string &path)
+void remove_file_if_exists(const std::string& path)
 {
   boost::system::error_code ec;
   boost::filesystem::remove_all(path, ec);
   assert_true(!ec);
 }
 
-void assert_permissions(const std::string &path, boost::filesystem::perms permissions)
+void assert_permissions(const std::string& path, boost::filesystem::perms permissions)
 {
-  boost::filesystem::file_status s = boost::filesystem::status(path);
+  boost::filesystem::file_status s = boost::filesystem::status( path );
   assert_true((s.permissions() & boost::filesystem::perms_mask) == permissions);
 }
 
@@ -36,7 +36,7 @@ void test_secure_storage_simple(void **)
   mkdir("sf_cache_dir", 0700);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -56,7 +56,7 @@ void test_secure_storage_malformed_cache(void **)
   mkdir("sf_cache_dir", 0700);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -106,8 +106,8 @@ void test_secure_storage_two_keys(void **)
   mkdir("sf_cache_dir", 0700);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
-  SecureStorageKey key1{"host", "user1", SecureStorageKeyType::MFA_TOKEN};
-  SecureStorageKey key2{"host", "user2", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key1 { "host", "user1", SecureStorageKeyType::MFA_TOKEN };
+  SecureStorageKey key2 { "host", "user2", SecureStorageKeyType::MFA_TOKEN };
   std::string token1 = "example_token";
   std::string token2 = "example_token";
   std::string retrievedToken;
@@ -139,7 +139,7 @@ void test_secure_storage_home_dir(void **)
   EnvOverride override1("XDG_CACHE_HOME", boost::none);
   EnvOverride override2("HOME", "home");
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -159,7 +159,7 @@ void test_secure_storage_xdg_cache_home(void **)
   EnvOverride override1("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", boost::none);
   EnvOverride override2("XDG_CACHE_HOME", "cache_dir");
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -179,7 +179,7 @@ void test_secure_storage_update_key(void **)
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
 
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string newToken = "new_token";
@@ -198,7 +198,7 @@ void test_secure_storage_fails_to_lock(void **)
   mkdir("sf_cache_dir", 0700);
   EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -214,7 +214,7 @@ void test_secure_storage_fails_to_find_cache_path(void **)
   EnvOverride override2("XDG_CACHE_HOME", boost::none);
   EnvOverride override3("HOME", boost::none);
   SecureStorage ss;
-  SecureStorageKey key{"host", "user", SecureStorageKeyType::MFA_TOKEN};
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
 
   std::string token = "example_token";
   std::string retrievedToken;
@@ -235,7 +235,7 @@ void test_secure_storage_c_api(void **)
 
   assert_true(secure_storage_save_credential(ss, key.host.c_str(), key.user.c_str(), key.type, token.c_str()));
 
-  char *cred = secure_storage_get_credential(ss, key.host.c_str(), key.user.c_str(), key.type);
+  char* cred = secure_storage_get_credential(ss, key.host.c_str(), key.user.c_str(), key.type);
   assert_true(cred != nullptr);
   assert_true(strcmp(cred, "example_token") == 0);
   secure_storage_free_credential(cred);
@@ -266,8 +266,7 @@ void test_get_cache_dir_not_a_dir(void **)
   boost::filesystem::remove("file");
 }
 
-int main(void)
-{
+int main(void) {
   /* Testing only file based credential cache, available on linux */
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_secure_storage_simple),
@@ -280,6 +279,7 @@ int main(void)
       cmocka_unit_test(test_secure_storage_update_key),
       cmocka_unit_test(test_secure_storage_fails_to_find_cache_path),
       cmocka_unit_test(test_get_cache_dir_bad_path),
-      cmocka_unit_test(test_get_cache_dir_not_a_dir)};
+      cmocka_unit_test(test_get_cache_dir_not_a_dir)
+  };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

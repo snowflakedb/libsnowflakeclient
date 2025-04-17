@@ -1,37 +1,32 @@
 #include "auth_utils.h"
 
-typedef struct
-{
+
+typedef struct {
     int status;
     SF_ERROR_STRUCT error;
 } threadConnectResult;
 
-typedef struct
-{
+typedef struct {
     SF_CONNECT *sf;
     int timeout;
 } threadConnectArg;
 
-void runCommand(const char *scriptPath, const char *args)
-{
+void runCommand(const char *scriptPath, const char *args) {
     char command[1024];
     const char *arguments = (args != NULL) ? args : "";
 
     int n = snprintf(command, sizeof(command), "node %s %s", scriptPath, arguments);
-    if (n < 0 || n >= (int)sizeof(command))
-    {
+    if (n < 0 || n >= (int)sizeof(command)) {
         fprintf(stderr, "Failed to build command string\n");
         return;
     }
     int result = system(command);
-    if (result != 0)
-    {
+    if (result != 0) {
         fprintf(stderr, "Failed to execute script: %s\n", scriptPath);
     }
 }
 
-void *provideCredentials(void *arg)
-{
+void *provideCredentials(void *arg) {
     char **creds = (char **)arg;
     const char *scenario = creds[0];
     const char *login = creds[1];
@@ -43,14 +38,12 @@ void *provideCredentials(void *arg)
     return NULL;
 }
 
-void *threadConnect(void *arg)
-{
+void *threadConnect(void *arg) {
     threadConnectArg *connectArg = (threadConnectArg *)arg;
     SF_CONNECT *sf = connectArg->sf;
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_EXTERNAL_BROWSER);
-    if (connectArg->timeout > 0)
-    {
+    if (connectArg->timeout > 0) {
         snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &connectArg->timeout);
     }
 
@@ -61,14 +54,12 @@ void *threadConnect(void *arg)
     return result;
 }
 
-void cleanBrowserProcesses(void)
-{
+void cleanBrowserProcesses(void) {
     const char *cleanBrowserProcessesPath = "/externalbrowser/cleanBrowserProcesses.js";
     runCommand(cleanBrowserProcessesPath, "");
 }
 
-void test_external_browser_successful_connection(void **unused)
-{
+void test_external_browser_successful_connection(void **unused) {
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
@@ -77,15 +68,16 @@ void test_external_browser_successful_connection(void **unused)
     connectArg.sf = sf;
     void *connect_result;
     char *args[] = {
-        "success",
-        getenv("SNOWFLAKE_AUTH_TEST_BROWSER_USER"),
-        getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")};
+            "success",
+            getenv("SNOWFLAKE_AUTH_TEST_BROWSER_USER"),
+            getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")
+    };
 
     pthread_create(&connect_thread, NULL, threadConnect, &connectArg);
     pthread_create(&provide_credentials_thread, NULL, provideCredentials, args);
     pthread_join(provide_credentials_thread, NULL);
     pthread_join(connect_thread, &connect_result);
-
+    
     int status = *((int *)connect_result);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
@@ -96,8 +88,7 @@ void test_external_browser_successful_connection(void **unused)
     cleanBrowserProcesses();
 }
 
-void test_external_browser_mismatched_username(void **unused)
-{
+void test_external_browser_mismatched_username(void **unused) {
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
@@ -107,9 +98,10 @@ void test_external_browser_mismatched_username(void **unused)
     connectArg.sf = sf;
     void *connect_result;
     char *args[] = {
-        "success",
-        getenv("SNOWFLAKE_AUTH_TEST_BROWSER_USER"),
-        getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")};
+            "success",
+            getenv("SNOWFLAKE_AUTH_TEST_BROWSER_USER"),
+            getenv("SNOWFLAKE_AUTH_TEST_OKTA_PASS")
+    };
 
     pthread_create(&connect_thread, NULL, threadConnect, &connectArg);
     pthread_create(&provide_credentials_thread, NULL, provideCredentials, args);
@@ -129,9 +121,8 @@ void test_external_browser_mismatched_username(void **unused)
     cleanBrowserProcesses();
 }
 
-// todo SNOW-2004277 return more descriptive error message
-void test_external_browser_wrong_credentials(void **unused)
-{
+//todo SNOW-2004277 return more descriptive error message
+void test_external_browser_wrong_credentials(void **unused) {
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
@@ -142,9 +133,10 @@ void test_external_browser_wrong_credentials(void **unused)
     pthread_t connect_thread, provide_credentials_thread;
     void *connect_result;
     char *args[] = {
-        "fail",
-        "itsnotanaccount.com",
-        "fakepassword"};
+            "fail",
+            "itsnotanaccount.com",
+            "fakepassword"
+    };
 
     pthread_create(&connect_thread, NULL, threadConnect, &connectArg);
     pthread_create(&provide_credentials_thread, NULL, provideCredentials, args);

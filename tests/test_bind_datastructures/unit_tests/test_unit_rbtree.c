@@ -1,4 +1,3 @@
-
 #include <string.h>
 #include "rbtree.h"
 #include "memory.h"
@@ -9,9 +8,9 @@
 #include <cmocka.h>
 #include <stdio.h>
 
-void test_init(void **unused)
+void test_init( void **unused)
 {
-    RedBlackTree *test_tree = rbtree_init();
+    RedBlackTree * test_tree = rbtree_init();
     assert_non_null(test_tree);
     assert_null(test_tree->key);
     assert_null(test_tree->elem);
@@ -24,7 +23,7 @@ void test_init(void **unused)
 
 void test_insert()
 {
-    char *test_param = "Test Param";
+    char * test_param = "Test Param";
     RedBlackTree *test_tree = rbtree_init();
     assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_INT_RET_CODE_SUCCESS);
     assert_int_equal(rbtree_insert(&test_tree, test_param, "test_node"), SF_INT_RET_CODE_DUPLICATES);
@@ -37,27 +36,27 @@ void test_insert()
 void test_multi_insert()
 {
     int i = 0;
-    char **test_param = NULL;
+    char **test_param= NULL;
     char **test_node = NULL;
     char *temp_node = NULL;
     RedBlackTree *test_tree = rbtree_init();
     test_param = (char **)SF_CALLOC(10000, sizeof(char *));
-    test_node = (char **)SF_CALLOC(10000, sizeof(char *));
+    test_node = (char **)SF_CALLOC(10000,sizeof(char *));
 
     for (i = 0; i < 10000; i++)
     {
-        test_param[i] = (char *)SF_CALLOC(1, sizeof("TEST_PARAM") + sizeof(i));
-        test_node[i] = (char *)SF_CALLOC(1, sizeof("TEST_NODE") + sizeof(i));
-        sprintf(test_param[i], "%s%d", "TEST_PARAM", i);
-        sprintf(test_node[i], "%s%d", "TEST_NODE", i);
-        assert_int_equal(rbtree_insert(&test_tree, test_param[i], test_node[i]),
-                         SF_INT_RET_CODE_SUCCESS);
+        test_param[i] = (char *)SF_CALLOC(1,sizeof("TEST_PARAM")+sizeof(i));
+        test_node[i] = (char *)SF_CALLOC(1,sizeof("TEST_NODE")+sizeof(i));
+        sprintf(test_param[i],"%s%d","TEST_PARAM",i);
+        sprintf(test_node[i],"%s%d","TEST_NODE",i);
+        assert_int_equal(rbtree_insert(&test_tree,test_param[i],test_node[i]),
+                SF_INT_RET_CODE_SUCCESS);
     }
     for (i = 0; i < 10000; i++)
     {
         temp_node = (char *)rbtree_search_node(test_tree, test_node[i]);
         assert_non_null(temp_node);
-        assert_string_equal(temp_node, test_param[i]);
+        assert_string_equal(temp_node,test_param[i]);
     }
     for (i = 0; i < 10000; i++)
     {
@@ -71,11 +70,11 @@ void test_multi_insert()
 
 void test_search()
 {
-    char *test_param = "Test Param";
+    char * test_param = "Test Param";
     RedBlackTree *test_tree = rbtree_init();
     char *test_node = NULL;
     rbtree_insert(&test_tree, test_param, "test_node");
-    test_node = (char *)rbtree_search_node(test_tree, "test_node");
+    test_node = (char *)rbtree_search_node(test_tree,"test_node");
     assert_non_null(test_node);
     assert_string_equal(test_node, test_param);
     assert_null(rbtree_search_node(test_tree, "absent_node"));
@@ -84,13 +83,13 @@ void test_search()
     rbtree_deallocate(test_tree);
 }
 
-int main(void)
-{
+int main (void) {
     const struct CMUnitTest tests[] =
-        {
-            cmocka_unit_test(test_init),
-            cmocka_unit_test(test_insert),
-            cmocka_unit_test(test_multi_insert),
-            cmocka_unit_test(test_search)};
+            {
+                cmocka_unit_test(test_init),
+                cmocka_unit_test(test_insert),
+                cmocka_unit_test(test_multi_insert),
+                cmocka_unit_test(test_search)
+            };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
 }

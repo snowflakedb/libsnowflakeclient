@@ -1,12 +1,10 @@
 #include <string.h>
 #include "utils/test_setup.h"
 
-void test_issue_76(void **unused)
-{
+void test_issue_76(void **unused) {
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -14,14 +12,12 @@ void test_issue_76(void **unused)
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
     status = snowflake_prepare(sfstmt, "CREATE OR REPLACE TABLE obfuscated_table_name (daily_input number(38,6))", 0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
 
     status = snowflake_execute(sfstmt);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -31,11 +27,10 @@ void test_issue_76(void **unused)
     snowflake_term(sf);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_issue_76),
+      cmocka_unit_test(test_issue_76),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

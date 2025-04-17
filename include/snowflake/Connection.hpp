@@ -4,15 +4,12 @@
 #include <string>
 #include "client.h"
 
-namespace Snowflake
-{
-    namespace Client
-    {
-        class Connection
-        {
+namespace Snowflake {
+    namespace Client {
+        class Connection {
             friend class Statement;
-
         public:
+
             /* Construct a blank Snowflake Connection */
             Connection(void);
 
@@ -21,7 +18,7 @@ namespace Snowflake
             void connect();
 
             void setAttribute(SF_ATTRIBUTE type_,
-                              const void *value_);
+                const void *value_);
 
         private:
             SF_CONNECT *m_connection;
@@ -29,4 +26,4 @@ namespace Snowflake
     }
 }
 
-#endif // SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP
+#endif //SNOWFLAKECLIENT_SNOWFLAKECONNECTION_HPP

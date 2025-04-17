@@ -6,6 +6,7 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 
+
 /**
  * Helper class to generate and serialize private/public key pair
  */
@@ -19,17 +20,15 @@ public:
   KeyPairHolder()
   {
     EVP_PKEY *key = nullptr;
-    std::unique_ptr<EVP_PKEY_CTX, std::function<void(EVP_PKEY_CTX *)>> kct{EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), [](EVP_PKEY_CTX *ctx)
-                                                                           { if (ctx) EVP_PKEY_CTX_free(ctx); }};
+    std::unique_ptr<EVP_PKEY_CTX, std::function<void(EVP_PKEY_CTX *)>> kct
+        {EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), [](EVP_PKEY_CTX *ctx)
+        { if (ctx) EVP_PKEY_CTX_free(ctx); }};
 
-    if (EVP_PKEY_keygen_init(kct.get()) <= 0)
-      throw std::exception();
+    if (EVP_PKEY_keygen_init(kct.get()) <= 0) throw std::exception();
 
-    if (EVP_PKEY_CTX_set_rsa_keygen_bits(kct.get(), 2048) <= 0)
-      throw std::exception();
+    if (EVP_PKEY_CTX_set_rsa_keygen_bits(kct.get(), 2048) <= 0) throw std::exception();
 
-    if (EVP_PKEY_keygen(kct.get(), &key) <= 0)
-      throw std::exception();
+    if (EVP_PKEY_keygen(kct.get(), &key) <= 0) throw std::exception();
 
     m_key = {key, EVP_PKEY_deletor};
   }
@@ -47,8 +46,7 @@ public:
 
     EVP_PKEY *privKey = PEM_read_PrivateKey(file, nullptr, nullptr, (void *)passcode.c_str());
 
-    if (privKey == nullptr)
-    {
+    if (privKey == nullptr) {
       fclose(file);
       throw std::exception();
     }
@@ -62,8 +60,7 @@ public:
   {
     unsigned char *out = nullptr;
     int size = i2d_PUBKEY(m_key.get(), &out);
-    if (size < 0)
-      throw std::exception();
+    if (size < 0) throw std::exception();
 
     std::vector<char> pubKeyBytes(out, out + size);
     OPENSSL_free(out);
@@ -77,8 +74,7 @@ public:
   {
     unsigned char *out = nullptr;
     int size = i2d_PrivateKey(m_key.get(), &out);
-    if (size < 0)
-      throw std::exception();
+    if (size < 0) throw std::exception();
 
     std::vector<char> privKeyBytes(out, out + size);
     OPENSSL_free(out);
@@ -86,20 +82,17 @@ public:
   }
 
   inline EVP_PKEY *getEvpKey()
-  {
-    return m_key.get();
-  }
+  { return m_key.get(); }
 
   /**
    * Get the generated key pair
    * @return
    */
-  inline EVP_PKEY *getKeyPair()
-  {
+  inline EVP_PKEY *getKeyPair() {
     return m_key.get();
   }
 
-  void saveUnencryptedPrivateKey(const std::string &path)
+  void saveUnencryptedPrivateKey(const std::string& path)
   {
     FILE *f;
     f = fopen(path.c_str(), "w+");
@@ -111,7 +104,7 @@ public:
     fclose(f);
   }
 
-  void saveEncryptedPrivateKey(const std::string &path, const std::string &pwd)
+  void saveEncryptedPrivateKey(const std::string& path, const std::string& pwd)
   {
     FILE *f;
     f = fopen(path.c_str(), "w+");
@@ -119,28 +112,26 @@ public:
     {
       return;
     }
-    PEM_write_PrivateKey(f, m_key.get(), EVP_des_ede3_cbc(), (unsigned char *)pwd.c_str(), pwd.length(), NULL, NULL);
+    PEM_write_PrivateKey(f, m_key.get(), EVP_des_ede3_cbc(), (unsigned char*)pwd.c_str(), pwd.length(), NULL, NULL);
     fclose(f);
   }
 
-  typedef std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> EVP_PKEY_uptr;
+typedef std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> EVP_PKEY_uptr;
 
 private:
   static inline void EVP_PKEY_deletor(EVP_PKEY *key)
   {
-    if (key)
-      EVP_PKEY_free(key);
+    if (key)  EVP_PKEY_free(key);
   }
   EVP_PKEY_uptr m_key;
+
 };
 
-static bool loadPublicKey(KeyPairHolder &keyPairHolder)
-{
+static bool loadPublicKey(KeyPairHolder &keyPairHolder) {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -149,24 +140,21 @@ static bool loadPublicKey(KeyPairHolder &keyPairHolder)
 
   SF_STMT *sfstmt = snowflake_stmt(sf);
   status = snowflake_query(sfstmt, "use role accountadmin;", 0);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
     // can't use accoutadmin, return false to skip the test
     return false;
   }
 
   status = snowflake_query(sfstmt, "set username=CURRENT_USER();", 0);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   std::string load_stmt(std::string("ALTER USER identifier($username) SET rsa_public_key='") + pubKey + "';");
   status = snowflake_query(sfstmt, load_stmt.c_str(), 0);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -176,8 +164,7 @@ static bool loadPublicKey(KeyPairHolder &keyPairHolder)
   return true;
 }
 
-void test_missing_private_key(void **unused)
-{
+void test_missing_private_key(void **unused) {
   SF_CONNECT *sf = setup_snowflake_connection();
   snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_JWT);
 
@@ -198,14 +185,12 @@ void test_missing_private_key(void **unused)
   snowflake_term(sf);
 }
 
-void test_unencrypted_pem(void **unused)
-{
+void test_unencrypted_pem(void **unused) {
   std::string dataDir = TestSetup::getDataDir();
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveUnencryptedPrivateKey(keyFilePath);
-  if (!loadPublicKey(keypairHolder))
-  {
+  if (!loadPublicKey(keypairHolder)) {
     return;
   }
 
@@ -217,8 +202,7 @@ void test_unencrypted_pem(void **unused)
   snowflake_set_attribute(sf, SF_CON_PASSWORD, "");
 
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -226,14 +210,12 @@ void test_unencrypted_pem(void **unused)
   remove(keyFilePath.c_str());
 }
 
-void test_encrypted_pem(void **unused)
-{
+void test_encrypted_pem(void **unused) {
   std::string dataDir = TestSetup::getDataDir();
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveEncryptedPrivateKey(keyFilePath, "test");
-  if (!loadPublicKey(keypairHolder))
-  {
+  if (!loadPublicKey(keypairHolder)) {
     return;
   }
 
@@ -247,8 +229,7 @@ void test_encrypted_pem(void **unused)
   snowflake_set_attribute(sf, SF_CON_PASSWORD, NULL);
 
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -291,14 +272,12 @@ void test_encrypted_pem(void **unused)
   remove(keyFilePath.c_str());
 }
 
-void test_renew(void **unused)
-{
+void test_renew(void **unused) {
   std::string dataDir = TestSetup::getDataDir();
   std::string keyFilePath = dataDir + "p1.pem";
   KeyPairHolder keypairHolder;
   keypairHolder.saveUnencryptedPrivateKey(keyFilePath);
-  if (!loadPublicKey(keypairHolder))
-  {
+  if (!loadPublicKey(keypairHolder)) {
     return;
   }
 
@@ -312,8 +291,7 @@ void test_renew(void **unused)
   snowflake_set_attribute(sf, SF_CON_PASSWORD, "renew injection");
 
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS)
-  {
+  if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -321,8 +299,7 @@ void test_renew(void **unused)
   remove(keyFilePath.c_str());
 }
 
-int main(void)
-{
+int main(void) {
 // accountadmin is required for jwt test and it's available in test account only for Linux
 // Since we need to change the user settings the test can't be run in parallel, limit it to Linux x86_64, AWS and Release
 #ifndef __linux__
@@ -330,30 +307,28 @@ int main(void)
   return 0;
 #endif
 #ifndef __x86_64__
-  printf("Skipping - not build on x86_64\n");
-  return 0;
+    printf("Skipping - not build on x86_64\n");
+    return 0;
 #endif
 
   char *cenv = getenv("CLOUD_PROVIDER");
-  if ((!cenv) || strncmp(cenv, "AWS", 4))
-  {
+  if ((!cenv) || strncmp(cenv, "AWS", 4)) {
     printf("Skipping - not build with AWS\n");
     return 0;
   }
 
   char *benv = getenv("BUILD_TYPE");
-  if ((!benv) || strncmp(benv, "Release", 8))
-  {
+  if ((!benv) || strncmp(benv, "Release", 8)) {
     printf("Skipping - not Release build\n");
     return 0;
   }
 
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_missing_private_key),
-      cmocka_unit_test(test_unencrypted_pem),
-      cmocka_unit_test(test_encrypted_pem),
-      cmocka_unit_test(test_renew),
+    cmocka_unit_test(test_missing_private_key),
+    cmocka_unit_test(test_unencrypted_pem),
+    cmocka_unit_test(test_encrypted_pem),
+    cmocka_unit_test(test_renew),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   snowflake_global_term();

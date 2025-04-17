@@ -1,28 +1,26 @@
-
-
 #include "SFLogger.hpp"
 #include "SecretDetector.hpp"
 
 Snowflake::Client::ISFLogger *
-    Snowflake::Client::SFLogger::m_externalLogger = nullptr;
+  Snowflake::Client::SFLogger::m_externalLogger = nullptr;
 
 void Snowflake::Client::SFLogger::init(ISFLogger *logger)
 {
   m_externalLogger = logger;
 }
 
-Snowflake::Client::ISFLogger *Snowflake::Client::SFLogger::getExternalLogger()
+Snowflake::Client::ISFLogger * Snowflake::Client::SFLogger::getExternalLogger()
 {
   return m_externalLogger;
 }
 
-void log_masked_va_list(FILE *fp, const char *fmt, va_list args)
+void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
 {
   std::string maskedMsg = Snowflake::Client::SFLogger::getMaskedMsgVA(fmt, args);
   sf_fprintf(fp, "%s", maskedMsg.c_str());
 }
 
-std::string Snowflake::Client::SFLogger::getMaskedMsg(const char *fmt, ...)
+std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -32,7 +30,7 @@ std::string Snowflake::Client::SFLogger::getMaskedMsg(const char *fmt, ...)
   return maskedMsg;
 }
 
-std::string Snowflake::Client::SFLogger::getMaskedMsgVA(const char *fmt, va_list args)
+std::string Snowflake::Client::SFLogger::getMaskedMsgVA(const char* fmt, va_list args)
 {
   size_t bufLen = 4096;
   // Just in case not to fall into dead loop. 8MB would be large enough for

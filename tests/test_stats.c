@@ -1,14 +1,12 @@
 #include <assert.h>
 #include "utils/test_setup.h"
 
-void test_stats(void **unused)
-{
+void test_stats(void **unused) {
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
 
     status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -18,9 +16,9 @@ void test_stats(void **unused)
     status = snowflake_query(
         sfstmt,
         "create or replace table t (c1 number, c2 number)",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -29,9 +27,9 @@ void test_stats(void **unused)
     status = snowflake_query(
         sfstmt,
         "insert into t values (1, 2), (3, 4)",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -48,9 +46,9 @@ void test_stats(void **unused)
         "update t set c2 = src.c2\n"
         "  from (select $1 as c1, $2 as c2 from values (1, 10), (1, 5), (2, 6)) src\n"
         "  where t.c1 = src.c1",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -65,9 +63,9 @@ void test_stats(void **unused)
     status = snowflake_query(
         sfstmt,
         "delete from t",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -80,8 +78,7 @@ void test_stats(void **unused)
     assert_int_equal(sfstmt->stats->num_duplicate_rows_updated, 0);
 
     status = snowflake_query(sfstmt, "drop table if exists t", 0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -91,8 +88,7 @@ void test_stats(void **unused)
     snowflake_term(sf);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_stats),

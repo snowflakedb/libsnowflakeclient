@@ -1,10 +1,8 @@
-
-
 #include "snowflake/ISFLogger.hpp"
 
 void Snowflake::Client::ISFLogger::logLine(SF_LOG_LEVEL logLevel,
-                                           const char *fileName,
-                                           const char *msgFmt,
+                                           const char * fileName,
+                                           const char * msgFmt,
                                            ...)
 {
   va_list args;

@@ -3,4 +3,5 @@
 
 #define SF_API_VERSION "2.1.1"
 
+
 #endif /* SNOWFLAKE_CLIENT_VERSION_H */

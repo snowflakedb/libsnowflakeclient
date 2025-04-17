@@ -4,14 +4,12 @@
 #include <string>
 #include "client.h"
 
-namespace Snowflake
-{
-    namespace Client
-    {
-        class Column
-        {
+namespace Snowflake {
+    namespace Client {
+        class Column {
         public:
-            Column(SF_COLUMN_DESC *column_desc_);
+
+            Column(SF_COLUMN_DESC* column_desc_);
 
             ~Column();
 
@@ -64,4 +62,4 @@ namespace Snowflake
     }
 }
 
-#endif // SNOWFLAKECLIENT_COLUMN_HPP
+#endif //SNOWFLAKECLIENT_COLUMN_HPP

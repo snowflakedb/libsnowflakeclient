@@ -6,9 +6,8 @@
 /**
  * Test default port
  */
-void test_connection_parameters_default_port(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_default_port(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
     sf->user = "testuser";
@@ -22,9 +21,8 @@ void test_connection_parameters_default_port(void **unused)
 /**
  * Test no host
  */
-void test_connection_parameters_no_host(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_no_host(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -38,9 +36,8 @@ void test_connection_parameters_no_host(void **unused)
 /**
  * Test with region
  */
-void test_connection_parameters_with_region(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_with_region(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -56,9 +53,8 @@ void test_connection_parameters_with_region(void **unused)
 /**
  * Test with cn region
  */
-void test_connection_parameters_with_cn_region(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_with_cn_region(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -74,12 +70,11 @@ void test_connection_parameters_with_cn_region(void **unused)
 /**
  * Test account including region
  */
-void test_connection_parameters_including_region(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_including_region(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
     // allocate here, because it will be rewritten
-    sf->account = (char *)SF_CALLOC(1, 128);
+    sf->account = (char *) SF_CALLOC(1, 128);
     strcpy(sf->account, "testaccount.somewhere");
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -96,12 +91,11 @@ void test_connection_parameters_including_region(void **unused)
 /**
  * Test account including region including dots
  */
-void test_connection_parameters_including_region_including_dot(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_including_region_including_dot(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
     // allocate here, because it will be rewritten
-    sf->account = (char *)SF_CALLOC(1, 128);
+    sf->account = (char *) SF_CALLOC(1, 128);
     strcpy(sf->account, "testaccount.somewhere.here.there");
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -115,17 +109,16 @@ void test_connection_parameters_including_region_including_dot(void **unused)
     SF_FREE(sf);
 }
 
-void test_connection_parameters_for_global_url_basic(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_for_global_url_basic(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
     // allocate here, because it will be rewritten
-    sf->account = (char *)SF_CALLOC(1, 128);
+    sf->account = (char *) SF_CALLOC(1, 128);
     strcpy(sf->account, "testaccount-hfdw89q748ew9gqf48w9qgf.global");
     sf->user = "testuser";
     sf->password = "testpassword";
     assert_int_equal(
-        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+      _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
     assert_string_equal(sf->host,
                         "testaccount-hfdw89q748ew9gqf48w9qgf.global.snowflakecomputing.com");
     assert_string_equal(sf->account, "testaccount");
@@ -134,19 +127,18 @@ void test_connection_parameters_for_global_url_basic(void **unused)
     SF_FREE(sf);
 }
 
-void test_connection_parameters_for_global_url_full(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_for_global_url_full(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
     // allocate here, because it will be rewritten
-    sf->account = (char *)SF_CALLOC(1, 128);
-    sf->host = (char *)SF_CALLOC(1, 128);
+    sf->account = (char *) SF_CALLOC(1, 128);
+    sf->host = (char *) SF_CALLOC(1, 128);
     strcpy(sf->account, "testaccount");
     strcpy(sf->host, "testaccount-hfdw89q748ew9gqf48w9qgf.global.snowflakecomputing.com");
     sf->user = "testuser";
     sf->password = "testpassword";
     assert_int_equal(
-        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+      _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
     assert_string_equal(sf->host,
                         "testaccount-hfdw89q748ew9gqf48w9qgf.global.snowflakecomputing.com");
     assert_string_equal(sf->account, "testaccount");
@@ -156,17 +148,16 @@ void test_connection_parameters_for_global_url_full(void **unused)
     SF_FREE(sf);
 }
 
-void test_connection_parameters_for_global_with_account_dashes(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_for_global_with_account_dashes(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
 
     // allocate here, because it will be rewritten
-    sf->account = (char *)SF_CALLOC(1, 128);
+    sf->account = (char *) SF_CALLOC(1, 128);
     strcpy(sf->account, "test-account-hfdw89q748ew9gqf48w9qgf.global");
     sf->user = "testuser";
     sf->password = "testpassword";
     assert_int_equal(
-        _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
+      _snowflake_check_connection_parameters(sf), SF_STATUS_SUCCESS);
     assert_string_equal(sf->host,
                         "test-account-hfdw89q748ew9gqf48w9qgf.global.snowflakecomputing.com");
     assert_string_equal(sf->account, "test-account");
@@ -178,9 +169,8 @@ void test_connection_parameters_for_global_with_account_dashes(void **unused)
 /**
  * Test no host
  */
-void test_connection_parameters_application(void **unused)
-{
-    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
+void test_connection_parameters_application(void **unused) {
+    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
     memset(sf, 0, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->user = "testuser";
@@ -229,23 +219,22 @@ void test_connection_parameters_application(void **unused)
 }
 
 /**
- * Test connection with session token renew
- */
+* Test connection with session token renew
+*/
 
-extern sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error);
-void test_connect_with_renew(void **unused)
-{
+extern sf_bool STDCALL renew_session(CURL* curl, SF_CONNECT* sf, SF_ERROR_STRUCT* error);
+void test_connect_with_renew(void** unused) {
     SF_UNUSED(unused);
 
-    SF_CONNECT *sf = setup_snowflake_connection();
+    SF_CONNECT* sf = setup_snowflake_connection();
 
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_STMT *sfstmt = snowflake_stmt(sf);
+    SF_STMT* sfstmt = snowflake_stmt(sf);
 
     // renew session
-    CURL *curl = curl_easy_init();
+    CURL* curl = curl_easy_init();
     sf_bool debug = SF_BOOLEAN_TRUE;
     // turn on DEBUG mode to test with debug mode logging as well
     snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
@@ -267,8 +256,7 @@ void test_connect_with_renew(void **unused)
     snowflake_term(sf);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_connection_parameters_default_port),

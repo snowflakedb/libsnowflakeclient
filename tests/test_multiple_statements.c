@@ -5,8 +5,7 @@ void test_multi_stmt_transaction(void **unused)
 {
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -27,8 +26,7 @@ void test_multi_stmt_transaction(void **unused)
                              "commit;\n"
                              "select count(*) from test_multi_txn",
                              0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -58,8 +56,7 @@ void test_multi_stmt_transaction(void **unused)
 
     int counter = 0;
     int64 out;
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
-    {
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &out);
         assert_int_equal(out, 2);
         ++counter;
@@ -78,8 +75,7 @@ void test_multi_stmt_transaction_rollback(void **unused)
 {
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -100,8 +96,7 @@ void test_multi_stmt_transaction_rollback(void **unused)
                              "rollback;\n"
                              "select count(*) from test_multi_txn",
                              0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -131,8 +126,7 @@ void test_multi_stmt_transaction_rollback(void **unused)
 
     int counter = 0;
     int64 out;
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
-    {
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &out);
         assert_int_equal(out, 1);
         ++counter;
@@ -160,15 +154,13 @@ void test_multi_stmt_with_large_result(void **unused)
     // Will remove this code when adding support for FAIL_OPEN (which is
     // the default behavior for all other drivers)
     char *cenv = getenv("CLOUD_PROVIDER");
-    if (cenv && !strncmp(cenv, "GCP", 4))
-    {
+    if (cenv && !strncmp(cenv, "GCP", 4)) {
         sf_bool insecure_mode = SF_BOOLEAN_TRUE;
         snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &insecure_mode);
     }
 
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -184,8 +176,7 @@ void test_multi_stmt_with_large_result(void **unused)
                              "insert into test_multi_large select seq4(), TO_VARCHAR(seq4()) from table(generator(rowcount => 100000));\n"
                              "select * from test_multi_large",
                              0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -205,10 +196,9 @@ void test_multi_stmt_with_large_result(void **unused)
 
     int counter = 0;
     int64 intout;
-    const char *strout;
+    const char* strout;
     char strexp[64];
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
-    {
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &intout);
         assert_int_equal(intout, counter);
         snowflake_column_as_const_str(sfstmt, 2, &strout);
@@ -237,13 +227,12 @@ sf_bool test_multi_stmt_core(sf_bool use_session_param, int count)
 {
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    SF_STMT *sfstmt = snowflake_stmt(sf);
+    SF_STMT* sfstmt = snowflake_stmt(sf);
 
     char query[1024];
     int64 multi_stmt_count = count;
@@ -256,8 +245,7 @@ sf_bool test_multi_stmt_core(sf_bool use_session_param, int count)
     {
         status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
     }
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -271,36 +259,35 @@ sf_bool test_multi_stmt_core(sf_bool use_session_param, int count)
     return (status == SF_STATUS_SUCCESS) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 
-void test_multi_stmt_count_session_param_off(void **unused)
+void test_multi_stmt_count_session_param_off(void** unused)
 {
     // disable multiple statements by setting session parameter to 1
     // the query is expected to fail
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_TRUE, 1), SF_BOOLEAN_FALSE);
 }
 
-void test_multi_stmt_count_session_param_on(void **unused)
+void test_multi_stmt_count_session_param_on(void** unused)
 {
     // enable multiple statements by setting session parameter to 0
     // the query should work
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_TRUE, 0), SF_BOOLEAN_TRUE);
 }
 
-void test_multi_stmt_count_stmt_attr_match(void **unused)
+void test_multi_stmt_count_stmt_attr_match(void** unused)
 {
     // set statement attribute with match number
     // the query should work
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_FALSE, 3), SF_BOOLEAN_TRUE);
 }
 
-void test_multi_stmt_count_stmt_attr_mismatch(void **unused)
+void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
 {
     // set statement attribute with mismatch number
     // the query is expected to fail
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_FALSE, 2), SF_BOOLEAN_FALSE);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_multi_stmt_transaction),

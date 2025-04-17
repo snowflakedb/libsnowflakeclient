@@ -28,14 +28,13 @@ public:
     qcc.setCapacity(MAX_CAPACITY);
   }
 
-  void initCacheWithDataWithContext(const std::string &context)
+  void initCacheWithDataWithContext(const std::string& context)
   {
     initCache();
     expectedIDs.resize(MAX_CAPACITY);
     expectedReadTimestamp.resize(MAX_CAPACITY);
     expectedPriority.resize(MAX_CAPACITY);
-    for (int i = 0; i < MAX_CAPACITY; i++)
-    {
+    for (int i = 0; i < MAX_CAPACITY; i++) {
       expectedIDs[i] = BASE_ID + i;
       expectedReadTimestamp[i] = BASE_READ_TIMESTAMP + i;
       expectedPriority[i] = BASE_PRIORITY + i;
@@ -55,8 +54,7 @@ public:
     expectedIDs.resize(MAX_CAPACITY);
     expectedReadTimestamp.resize(MAX_CAPACITY);
     expectedPriority.resize(MAX_CAPACITY);
-    for (int i = 0; i < MAX_CAPACITY; i++)
-    {
+    for (int i = 0; i < MAX_CAPACITY; i++) {
       expectedIDs[i] = BASE_ID + i;
       expectedReadTimestamp[i] = BASE_READ_TIMESTAMP + i;
       expectedPriority[i] = BASE_PRIORITY + i;
@@ -70,7 +68,7 @@ public:
     qcc.syncPriorityMap();
   }
 
-  void assertCacheDataWithContext(const std::string &context)
+  void assertCacheDataWithContext(const std::string& context)
   {
     std::vector<uint64> ids;
     std::vector<uint64> readTimestamps;
@@ -80,8 +78,7 @@ public:
     // Compare elements
     size_t size = qcc.getElements(ids, readTimestamps, priorities, contexts);
     assert_int_equal(size, MAX_CAPACITY);
-    for (size_t i = 0; i < size; i++)
-    {
+    for (size_t i = 0; i < size; i++) {
       assert_int_equal(expectedIDs[i], ids[i]);
       assert_int_equal(expectedReadTimestamp[i], readTimestamps[i]);
       assert_int_equal(expectedPriority[i], priorities[i]);
@@ -95,14 +92,14 @@ public:
   }
 };
 
-void test_is_empty(void **unused)
+void test_is_empty(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCache();
   assert_int_equal(helper.qcc.getSize(), 0);
 }
 
-void test_with_some_data(void **unused)
+void test_with_some_data(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -110,7 +107,7 @@ void test_with_some_data(void **unused)
   helper.assertCacheData();
 }
 
-void test_with_some_data_in_random_order(void **unused)
+void test_with_some_data_in_random_order(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithDataInRandomOrder();
@@ -118,7 +115,7 @@ void test_with_some_data_in_random_order(void **unused)
   helper.assertCacheData();
 }
 
-void test_more_than_capacity(void **unused)
+void test_more_than_capacity(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -133,7 +130,7 @@ void test_more_than_capacity(void **unused)
   helper.assertCacheData();
 }
 
-void test_update_timestamp(void **unused)
+void test_update_timestamp(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -152,7 +149,7 @@ void test_update_timestamp(void **unused)
   helper.assertCacheData();
 }
 
-void test_update_priority(void **unused)
+void test_update_priority(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -169,8 +166,7 @@ void test_update_priority(void **unused)
   helper.qcc.syncPriorityMap();
   helper.qcc.checkCacheCapacity();
 
-  for (int i = updatedID; i < MAX_CAPACITY - 1; i++)
-  {
+  for (int i = updatedID; i < MAX_CAPACITY - 1; i++) {
     helper.expectedIDs[i] = helper.expectedIDs[i + 1];
     helper.expectedReadTimestamp[i] = helper.expectedReadTimestamp[i + 1];
     helper.expectedPriority[i] = helper.expectedPriority[i + 1];
@@ -184,7 +180,7 @@ void test_update_priority(void **unused)
   helper.assertCacheData();
 }
 
-void test_add_same_priority(void **unused)
+void test_add_same_priority(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -202,7 +198,7 @@ void test_add_same_priority(void **unused)
   helper.assertCacheData();
 }
 
-void test_add_same_id_but_stale_timestamp(void **unused)
+void test_add_same_id_but_stale_timestamp(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
@@ -217,35 +213,35 @@ void test_add_same_id_but_stale_timestamp(void **unused)
   helper.assertCacheData();
 }
 
-void test_empty_cache_with_null_data(void **unused)
+void test_empty_cache_with_null_data(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
 
-  cJSON *nullData = NULL;
+  cJSON * nullData = NULL;
   helper.qcc.deserializeQueryContext(nullData);
 
   assert_int_equal(helper.qcc.getSize(), 0);
 }
 
-void test_empty_cache_with_empty_response_data(void **unused)
+void test_empty_cache_with_empty_response_data(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
 
-  cJSON *emptyData = snowflake_cJSON_Parse("");
+  cJSON * emptyData = snowflake_cJSON_Parse("");
   helper.qcc.deserializeQueryContext(emptyData);
 
   assert_int_equal(helper.qcc.getSize(), 0);
 }
 
-void test_serialize_request_and_deserialize_response_data(void **unused)
+void test_serialize_request_and_deserialize_response_data(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   helper.initCacheWithData();
   helper.assertCacheData();
 
-  cJSON *cacheData = helper.qcc.serializeQueryContext();
+  cJSON* cacheData = helper.qcc.serializeQueryContext();
 
   // Clear qcc
   helper.qcc.clearCache();
@@ -257,14 +253,14 @@ void test_serialize_request_and_deserialize_response_data(void **unused)
   helper.assertCacheData();
 }
 
-void test_serialize_request_and_deserialize_response_data_with_empty_context(void **unused)
+void test_serialize_request_and_deserialize_response_data_with_empty_context(void ** unused)
 {
   QueryContextCacheTestHelper helper;
   // Init qcc
   helper.initCacheWithDataWithContext("");
   helper.assertCacheDataWithContext("");
 
-  cJSON *cacheData = helper.qcc.serializeQueryContext();
+  cJSON * cacheData = helper.qcc.serializeQueryContext();
 
   // Clear qcc
   helper.qcc.clearCache();
@@ -280,21 +276,20 @@ static int gr_setup(void **unused)
   return 0;
 }
 
-int main(void)
-{
+int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_is_empty),
-      cmocka_unit_test(test_with_some_data),
-      cmocka_unit_test(test_with_some_data_in_random_order),
-      cmocka_unit_test(test_more_than_capacity),
-      cmocka_unit_test(test_update_timestamp),
-      cmocka_unit_test(test_update_priority),
-      cmocka_unit_test(test_add_same_priority),
-      cmocka_unit_test(test_add_same_id_but_stale_timestamp),
-      cmocka_unit_test(test_empty_cache_with_null_data),
-      cmocka_unit_test(test_empty_cache_with_empty_response_data),
-      cmocka_unit_test(test_serialize_request_and_deserialize_response_data),
-      cmocka_unit_test(test_serialize_request_and_deserialize_response_data_with_empty_context),
+    cmocka_unit_test(test_is_empty),
+    cmocka_unit_test(test_with_some_data),
+    cmocka_unit_test(test_with_some_data_in_random_order),
+    cmocka_unit_test(test_more_than_capacity),
+    cmocka_unit_test(test_update_timestamp),
+    cmocka_unit_test(test_update_priority),
+    cmocka_unit_test(test_add_same_priority),
+    cmocka_unit_test(test_add_same_id_but_stale_timestamp),
+    cmocka_unit_test(test_empty_cache_with_null_data),
+    cmocka_unit_test(test_empty_cache_with_empty_response_data),
+    cmocka_unit_test(test_serialize_request_and_deserialize_response_data),
+    cmocka_unit_test(test_serialize_request_and_deserialize_response_data_with_empty_context),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;

@@ -16,18 +16,22 @@
 #include <fnmatch.h>
 #endif
 
+
+
 Snowflake::Client::FileMetadataInitializer::FileMetadataInitializer(
-    std::vector<FileMetadata> &smallFileMetadata,
-    std::vector<FileMetadata> &largeFileMetadata,
-    IStatementPutGet *stmtPutGet) : m_smallFileMetadata(smallFileMetadata),
-                                    m_largeFileMetadata(largeFileMetadata),
-                                    m_autoCompress(true),
-                                    m_stmtPutGet(stmtPutGet)
+  std::vector<FileMetadata> &smallFileMetadata,
+  std::vector<FileMetadata> &largeFileMetadata,
+  IStatementPutGet *stmtPutGet) :
+  m_smallFileMetadata(smallFileMetadata),
+  m_largeFileMetadata(largeFileMetadata),
+  m_autoCompress(true),
+  m_stmtPutGet(stmtPutGet)
 {
 }
 
-void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileDir, const char *fileName,
-                                                                        size_t fileSize, size_t threshold)
+void
+Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const std::string &fileDir, const char *fileName,
+                                                                   size_t fileSize, size_t threshold)
 {
   std::string fileNameFull = fileDir;
   fileNameFull += fileName;
@@ -40,7 +44,8 @@ void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const st
   initCompressionMetadata(fileMetadata);
 
   fileMetadata.isLarge = fileSize > threshold;
-  std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ? m_largeFileMetadata : m_smallFileMetadata;
+  std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ?
+    m_largeFileMetadata : m_smallFileMetadata;
 
   metaListToPush.push_back(fileMetadata);
 }
@@ -48,7 +53,7 @@ void Snowflake::Client::FileMetadataInitializer::initUploadFileMetadata(const st
 void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(std::string &sourceLocation,
                                                                               size_t putThreshold)
 {
-  // looking for files on disk.
+// looking for files on disk. 
   std::string srcLocationPlatform = m_stmtPutGet->UTF8ToPlatformString(sourceLocation);
 
 #ifdef _WIN32
@@ -60,8 +65,8 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     if (dwError == ERROR_NO_MORE_FILES || dwError == ERROR_FILE_NOT_FOUND ||
         dwError == ERROR_PATH_NOT_FOUND)
     {
-      CXX_LOG_ERROR("No file matching pattern %s has been found. Error: %d",
-                    sourceLocation.c_str(), dwError);
+      CXX_LOG_ERROR("No file matching pattern %s has been found. Error: %d", 
+        sourceLocation.c_str(), dwError);
       FindClose(hFind);
       return;
     }
@@ -69,21 +74,20 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
     {
       CXX_LOG_ERROR("Failed on FindFirstFile. Error: %d", dwError);
       throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
-                                       srcLocationPlatform.c_str(), dwError);
+        srcLocationPlatform.c_str(), dwError);
     }
   }
 
-  do
-  {
-    if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+  do {
+    if (!(fdd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
     {
       std::string fileFullPath = std::string(fdd.cFileName);
       size_t dirSep = srcLocationPlatform.find_last_of(PATH_SEP);
-      if (dirSep == std::string::npos)
+      if (dirSep == std::string::npos) 
       {
         dirSep = sourceLocation.find_last_of(ALTER_PATH_SEP);
       }
-      if (dirSep != std::string::npos)
+      if (dirSep != std::string::npos) 
       {
         std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
         LARGE_INTEGER fileSize;
@@ -99,7 +103,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   {
     CXX_LOG_ERROR("Failed on FindNextFile. Error: %d", dwError);
     throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
-                                     srcLocationPlatform.c_str(), dwError);
+      srcLocationPlatform.c_str(), dwError);
   }
   FindClose(hFind);
 
@@ -108,11 +112,11 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   std::string dirPath = srcLocationPlatform.substr(0, dirSep + 1);
   std::string filePattern = srcLocationPlatform.substr(dirSep + 1);
 
-  DIR *dir = nullptr;
-  struct dirent *dir_entry;
+  DIR * dir = nullptr;
+  struct dirent * dir_entry;
   if ((dir = opendir(dirPath.c_str())) != NULL)
   {
-    while ((dir_entry = readdir(dir)) != NULL)
+    while((dir_entry = readdir(dir)) != NULL)
     {
       if (!fnmatch(filePattern.c_str(), dir_entry->d_name, 0))
       {
@@ -121,10 +125,9 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
         int ret = stat(srcFileName.c_str(), &fileStatus);
         if (!ret)
         {
-          if (S_ISREG(fileStatus.st_mode))
-          {
+          if (S_ISREG(fileStatus.st_mode)) {
             initUploadFileMetadata(dirPath, dir_entry->d_name,
-                                   (size_t)fileStatus.st_size, putThreshold);
+                                   (size_t) fileStatus.st_size, putThreshold);
           }
         }
         else
@@ -141,7 +144,7 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
   {
     // open dir failed
     CXX_LOG_ERROR("Cannot open directory %s, errno(%d)",
-                  dirPath.c_str(), errno);
+      dirPath.c_str(), errno);
     throw SnowflakeTransferException(TransferError::DIR_OPEN_ERROR,
                                      dirPath.c_str(), errno);
   }
@@ -149,23 +152,23 @@ void Snowflake::Client::FileMetadataInitializer::populateSrcLocUploadMetadata(st
 }
 
 void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
-    FileMetadata &fileMetadata)
+  FileMetadata &fileMetadata)
 {
   CXX_LOG_DEBUG("Init compression metadata for file %s",
                 fileMetadata.srcFileName.c_str());
 
-  if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT,
-                      sizeof(COMPRESSION_AUTO_DETECT)) ||
-      !sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO,
-                      sizeof(COMPRESSION_AUTO)))
+  if(!sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO_DETECT, 
+                  sizeof(COMPRESSION_AUTO_DETECT)) ||
+     !sf_strncasecmp(m_sourceCompression, COMPRESSION_AUTO, 
+                  sizeof(COMPRESSION_AUTO)))
   {
     // guess
     CXX_LOG_INFO("Auto detect on compression type");
     fileMetadata.sourceCompression = FileCompressionType::guessCompressionType(
-        fileMetadata.srcFileName);
+      fileMetadata.srcFileName);
   }
-  else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE,
-                           sizeof(COMPRESSION_NONE)))
+  else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
+                        sizeof(COMPRESSION_NONE)))
   {
     CXX_LOG_INFO("No compression in source file");
     fileMetadata.sourceCompression = &FileCompressionType::NONE;
@@ -175,22 +178,26 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
     // look up
     CXX_LOG_INFO("Compression type lookup by name.");
     fileMetadata.sourceCompression = FileCompressionType::lookUpByName(
-        m_sourceCompression);
+      m_sourceCompression);
 
     if (!fileMetadata.sourceCompression)
     {
       // no compression found
       CXX_LOG_INFO("Compression type %s not found.", m_sourceCompression);
       throw SnowflakeTransferException(TransferError::COMPRESSION_NOT_SUPPORTED,
-                                       m_sourceCompression);
+        m_sourceCompression);
     }
   }
 
   if (fileMetadata.sourceCompression == &FileCompressionType::NONE)
   {
-    fileMetadata.targetCompression = m_autoCompress ? &FileCompressionType::GZIP : &FileCompressionType::NONE;
+    fileMetadata.targetCompression = m_autoCompress ?
+      &FileCompressionType::GZIP : &FileCompressionType::NONE;
     fileMetadata.requireCompress = m_autoCompress;
-    fileMetadata.destFileName = m_autoCompress ? fileMetadata.destFileName + fileMetadata.targetCompression->getFileExtension() : fileMetadata.destFileName;
+    fileMetadata.destFileName = m_autoCompress ?
+      fileMetadata.destFileName + fileMetadata.targetCompression->
+        getFileExtension() :
+      fileMetadata.destFileName;
   }
   else
   {
@@ -205,7 +212,7 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
 }
 
 void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
-    FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata)
 {
   if (m_encMat->empty())
   {
@@ -216,7 +223,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
     return;
   }
 
-  std::string randDev = (getRandomDev() == Crypto::CryptoRandomDevice::DEV_RANDOM) ? "DEV_RANDOM" : "DEV_URANDOM";
+  std::string randDev = (getRandomDev() == Crypto::CryptoRandomDevice::DEV_RANDOM)? "DEV_RANDOM" : "DEV_URANDOM";
   CXX_LOG_INFO("Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata using random device %s.", randDev.c_str());
   EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)), getRandomDev());
   EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)), getRandomDev());
@@ -224,21 +231,22 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
 
   // update encrypted stream size
   size_t encryptionBlockSize = Crypto::cryptoAlgoBlockSize(
-      Crypto::CryptoAlgo::AES);
+    Crypto::CryptoAlgo::AES);
 
-  fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
-                                                                      encryptionBlockSize * encryptionBlockSize);
+  fileMetadata->encryptionMetadata.cipherStreamSize = (long long int)
+    ((fileMetadata->srcFileToUploadSize + encryptionBlockSize) /
+    encryptionBlockSize * encryptionBlockSize);
   fileMetadata->destFileSize = (size_t)(fileMetadata->encryptionMetadata.cipherStreamSize);
 }
 
 Snowflake::Client::RemoteStorageRequestOutcome
 Snowflake::Client::FileMetadataInitializer::
-    populateSrcLocDownloadMetadata(std::string &sourceLocation,
-                                   std::string *remoteLocation,
-                                   IStorageClient *storageClient,
-                                   EncryptionMaterial *encMat,
-                                   std::string const &presignedUrl,
-                                   size_t getThreshold)
+populateSrcLocDownloadMetadata(std::string &sourceLocation,
+                               std::string *remoteLocation,
+                               IStorageClient *storageClient,
+                               EncryptionMaterial *encMat,
+                               std::string const& presignedUrl,
+                               size_t getThreshold)
 {
   std::string fullPath = *remoteLocation + sourceLocation;
   size_t dirSep = fullPath.find_last_of('/');
@@ -247,13 +255,14 @@ Snowflake::Client::FileMetadataInitializer::
   FileMetadata fileMetadata;
   fileMetadata.presignedUrl = presignedUrl;
   RemoteStorageRequestOutcome outcome = storageClient->GetRemoteFileMetadata(
-      &fullPath, &fileMetadata);
+    &fullPath, &fileMetadata);
 
   if (outcome == RemoteStorageRequestOutcome::SUCCESS)
   {
     CXX_LOG_DEBUG("Success on getting remote file metadata");
     fileMetadata.isLarge = fileMetadata.srcFileSize > getThreshold;
-    std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ? m_largeFileMetadata : m_smallFileMetadata;
+    std::vector<FileMetadata> &metaListToPush = fileMetadata.isLarge ?
+      m_largeFileMetadata : m_smallFileMetadata;
 
     metaListToPush.push_back(fileMetadata);
     metaListToPush.back().srcFileName = fullPath;
@@ -270,3 +279,5 @@ Snowflake::Client::FileMetadataInitializer::
 
   return outcome;
 }
+
+

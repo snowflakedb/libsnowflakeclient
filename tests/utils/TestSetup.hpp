@@ -5,9 +5,9 @@
 #include <snowflake/Connection.hpp>
 #include <snowflake/Statement.hpp>
 
-class TestSetup
-{
+class TestSetup {
 public:
+
     // Used by put/get tests to get <workspace>/test/data/ directory
     static std::string getDataDir();
 
@@ -15,4 +15,5 @@ private:
     TestSetup() {};
 };
 
-#endif // SNOWFLAKECLIENT_TESTSETUP_HPP
+
+#endif //SNOWFLAKECLIENT_TESTSETUP_HPP

@@ -5,39 +5,42 @@
 
 namespace Snowflake
 {
-  namespace Client
-  {
+namespace Client
+{
 
-    enum TransferError
-    {
-      INTERNAL_ERROR,
-      COMPRESSION_ERROR,
-      MKDIR_ERROR,
-      UNSUPPORTED_FEATURE,
-      COLUMN_INDEX_OUT_OF_RANGE,
-      DIR_OPEN_ERROR,
-      COMPRESSION_NOT_SUPPORTED,
-      FILE_OPEN_ERROR,
-      FAILED_TO_TRANSFER,
-      FAST_FAIL_ENABLED_SKIP_UPLOADS,
-      FAST_FAIL_ENABLED_SKIP_DOWNLOADS
-    };
+enum TransferError
+{
+  INTERNAL_ERROR,
+  COMPRESSION_ERROR,
+  MKDIR_ERROR,
+  UNSUPPORTED_FEATURE,
+  COLUMN_INDEX_OUT_OF_RANGE,
+  DIR_OPEN_ERROR,
+  COMPRESSION_NOT_SUPPORTED,
+  FILE_OPEN_ERROR,
+  FAILED_TO_TRANSFER,
+  FAST_FAIL_ENABLED_SKIP_UPLOADS,
+  FAST_FAIL_ENABLED_SKIP_DOWNLOADS
+};
 
-    class SnowflakeTransferException : public std::exception
-    {
-    public:
-      SnowflakeTransferException(TransferError transferError, ...);
+class SnowflakeTransferException : public std::exception
+{
+public:
+  SnowflakeTransferException(TransferError transferError, ...);
 
-      int getCode();
+  int getCode();
 
-      virtual const char *what() const noexcept;
+  virtual const char* what() const noexcept;
 
-    private:
-      int m_code;
+private:
+  int m_code;
 
-      char m_msg[1000];
-    };
-  }
+  char m_msg[1000];
+};
+}
 }
 
-#endif // SNOWFLAKECLIENT_SNOWFLAKETRANSFEREXCEPTION_HPP
+
+
+
+#endif //SNOWFLAKECLIENT_SNOWFLAKETRANSFEREXCEPTION_HPP

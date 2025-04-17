@@ -2,8 +2,7 @@
 #define SNOWFLAKE_ERROR_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include <snowflake/client.h>
@@ -12,19 +11,19 @@ extern "C"
 #define SET_SNOWFLAKE_ERROR(e, ec, m, sqlstate) set_snowflake_error(e, ec, m, sqlstate, "", __FILE__, __LINE__)
 #define SET_SNOWFLAKE_STMT_ERROR(e, ec, m, sqlstate, uuid) set_snowflake_error(e, ec, m, sqlstate, uuid, __FILE__, __LINE__)
 
-    void STDCALL sf_error_init();
-    void STDCALL sf_error_term();
-    void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
-                                     SF_STATUS error_code,
-                                     const char *msg,
-                                     const char *sqlstate,
-                                     const char *sfqid,
-                                     const char *file,
-                                     int line);
+void STDCALL sf_error_init();
+void STDCALL sf_error_term();
+void STDCALL set_snowflake_error(SF_ERROR_STRUCT *error,
+                                 SF_STATUS error_code,
+                                 const char *msg,
+                                 const char *sqlstate,
+                                 const char *sfqid,
+                                 const char *file,
+                                 int line);
 
-    void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error);
+void STDCALL clear_snowflake_error(SF_ERROR_STRUCT *error);
 
-    void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
+void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 
 #define ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING "account parameter is missing"
 #define ERR_MSG_USER_PARAMETER_IS_MISSING "user parameter is missing"
@@ -42,4 +41,4 @@ extern "C"
 }
 #endif
 
-#endif // SNOWFLAKE_ERROR_H
+#endif //SNOWFLAKE_ERROR_H

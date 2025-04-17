@@ -2,8 +2,8 @@
 #include <assert.h>
 #include "utils/test_setup.h"
 
-typedef struct test_case_to_string
-{
+
+typedef struct test_case_to_string {
     const int64 c1in;
     const char *c2in;
     const int64 *c3in;
@@ -20,17 +20,21 @@ typedef struct test_case_to_string
     const sf_bool c5_is_null;
 } TEST_CASE_TO_STRING;
 
-void test_null_helper(sf_bool use_arrow)
-{
+
+void test_null_helper(sf_bool use_arrow) {
 
     TEST_CASE_TO_STRING test_cases[] = {
-        {.c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c5in = NULL, .c2out = "", .c2_is_null = SF_BOOLEAN_TRUE, .c3out = "", .c3_is_null = SF_BOOLEAN_TRUE, .c4out = "", .c4_is_null = SF_BOOLEAN_TRUE, .c5out = "", .c5_is_null = SF_BOOLEAN_TRUE}};
+      {
+          .c1in = 1, .c2in = NULL, .c3in = NULL, .c4in = NULL, .c5in = NULL, .c2out = "",
+          .c2_is_null = SF_BOOLEAN_TRUE, .c3out="", .c3_is_null=SF_BOOLEAN_TRUE, .c4out= "",
+          .c4_is_null = SF_BOOLEAN_TRUE, .c5out= "", .c5_is_null = SF_BOOLEAN_TRUE
+      }
+    };
 
     SF_CONNECT *sf = setup_snowflake_connection();
 
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -39,33 +43,31 @@ void test_null_helper(sf_bool use_arrow)
     SF_STMT *sfstmt = snowflake_stmt(sf);
 
     status = snowflake_query(sfstmt,
-                             use_arrow == SF_BOOLEAN_TRUE
-                                 ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
-                                 : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
-                             0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+                    use_arrow == SF_BOOLEAN_TRUE
+                    ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                    : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+                    0);
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     status = snowflake_query(
-        sfstmt,
-        "create or replace table t (c1 int, c2 string, c3 number(18,0), c4 boolean)",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+      sfstmt,
+      "create or replace table t (c1 int, c2 string, c3 number(18,0), c4 boolean)",
+      0
+    );
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     /* insert data */
     status = snowflake_prepare(
-        sfstmt,
-        "insert into t(c1,c2,c3,c4) values(?,?,?,?)",
-        0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+      sfstmt,
+      "insert into t(c1,c2,c3,c4) values(?,?,?,?)",
+      0);
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -73,18 +75,16 @@ void test_null_helper(sf_bool use_arrow)
     size_t i;
     size_t len;
     for (i = 0, len = sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING);
-         i < len; i++)
-    {
+         i < len; i++) {
         TEST_CASE_TO_STRING v = test_cases[i];
         SF_BIND_INPUT ic1;
         ic1.idx = 1;
         ic1.name = NULL;
         ic1.c_type = SF_C_TYPE_INT64;
-        ic1.value = (void *)&v.c1in;
+        ic1.value = (void *) &v.c1in;
         ic1.len = sizeof(v.c1in);
         status = snowflake_bind_param(sfstmt, &ic1);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -94,10 +94,9 @@ void test_null_helper(sf_bool use_arrow)
         ic2.name = NULL;
         ic2.c_type = SF_C_TYPE_STRING;
         ic2.value = NULL;
-        ic2.len = (size_t)0;
+        ic2.len = (size_t) 0;
         status = snowflake_bind_param(sfstmt, &ic2);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -107,10 +106,9 @@ void test_null_helper(sf_bool use_arrow)
         ic3.name = NULL;
         ic3.c_type = SF_C_TYPE_INT64;
         ic3.value = NULL;
-        ic3.len = (size_t)0;
+        ic3.len = (size_t) 0;
         status = snowflake_bind_param(sfstmt, &ic3);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -120,10 +118,9 @@ void test_null_helper(sf_bool use_arrow)
         ic4.name = NULL;
         ic4.c_type = SF_C_TYPE_BOOLEAN;
         ic4.value = NULL;
-        ic4.len = (size_t)0;
+        ic4.len = (size_t) 0;
         status = snowflake_bind_param(sfstmt, &ic4);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -133,26 +130,24 @@ void test_null_helper(sf_bool use_arrow)
         ic5.name = NULL;
         ic5.c_type = SF_C_TYPE_NULL;
         ic5.value = NULL;
-        ic5.len = (size_t)0;
+        ic5.len = (size_t) 0;
         status = snowflake_bind_param(sfstmt, &ic5);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
         status = snowflake_execute(sfstmt);
-        if (status != SF_STATUS_SUCCESS)
-        {
+        if (status != SF_STATUS_SUCCESS) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
     }
 
+
     /* query */
     status = snowflake_query(sfstmt, "select * from t", 0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -164,8 +159,7 @@ void test_null_helper(sf_bool use_arrow)
     char *null_val = NULL;
     size_t null_val_len = 0;
     size_t max_null_val_len = 0;
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
-    {
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         TEST_CASE_TO_STRING v = test_cases[c1 - 1];
         snowflake_column_is_null(sfstmt, 2, &is_null);
@@ -185,15 +179,13 @@ void test_null_helper(sf_bool use_arrow)
         assert_true(v.c5_is_null == is_null);
         assert_string_equal(v.c5out, null_val);
     }
-    if (status != SF_STATUS_EOF)
-    {
+    if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_EOF);
 
     status = snowflake_query(sfstmt, "drop table if exists t", 0);
-    if (status != SF_STATUS_SUCCESS)
-    {
+    if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -204,22 +196,19 @@ void test_null_helper(sf_bool use_arrow)
     snowflake_term(sf);
 }
 
-void test_null_arrow(void **unused)
-{
+void test_null_arrow(void **unused) {
     test_null_helper(SF_BOOLEAN_TRUE);
 }
 
-void test_null_json(void **unused)
-{
+void test_null_json(void **unused) {
     test_null_helper(SF_BOOLEAN_FALSE);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_null_arrow),
-        cmocka_unit_test(test_null_json),
+      cmocka_unit_test(test_null_arrow),
+      cmocka_unit_test(test_null_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

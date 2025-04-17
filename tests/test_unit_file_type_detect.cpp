@@ -5,12 +5,13 @@
 typedef ::Snowflake::Client::FileCompressionType FileCompressionType;
 
 void test_file_type_detect_core(const FileCompressionType *expected_type,
-                                const char *file_name)
+                                const char * file_name)
 {
   std::string full_file_path = TestSetup::getDataDir();
   full_file_path += file_name;
 
-  const FileCompressionType *actual_type = FileCompressionType ::guessCompressionType(full_file_path);
+  const FileCompressionType * actual_type = FileCompressionType
+    ::guessCompressionType(full_file_path);
 
   assert_memory_equal(expected_type, actual_type, sizeof(FileCompressionType));
 }
@@ -65,19 +66,18 @@ void test_detect_noextension(void **unused)
   test_file_type_detect_core(&FileCompressionType::NONE, "small_file");
 }
 
-int main(void)
-{
+int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_detect_gzip),
-      cmocka_unit_test(test_detect_none),
-      cmocka_unit_test(test_detect_bz2),
-      cmocka_unit_test(test_detect_zst),
-      cmocka_unit_test(test_detect_zero),
-      cmocka_unit_test(test_detect_one),
-      cmocka_unit_test(test_detect_brotli),
-      cmocka_unit_test(test_detect_parquet),
-      cmocka_unit_test(test_detect_orc),
-      cmocka_unit_test(test_detect_noextension),
+    cmocka_unit_test(test_detect_gzip),
+    cmocka_unit_test(test_detect_none),
+    cmocka_unit_test(test_detect_bz2),
+    cmocka_unit_test(test_detect_zst),
+    cmocka_unit_test(test_detect_zero),
+    cmocka_unit_test(test_detect_one),
+    cmocka_unit_test(test_detect_brotli),
+    cmocka_unit_test(test_detect_parquet),
+    cmocka_unit_test(test_detect_orc),
+    cmocka_unit_test(test_detect_noextension),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

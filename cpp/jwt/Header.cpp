@@ -2,55 +2,53 @@
 
 namespace Snowflake
 {
-  namespace Client
+namespace Client
+{
+namespace Jwt
+{
+
+IHeader *IHeader::buildHeader()
+{
+  return new CJSONHeader();
+}
+
+IHeader *IHeader::parseHeader(const std::string &text)
+{
+  return new CJSONHeader(text);
+}
+
+CJSONHeader::CJSONHeader()
+{
+  json_root_ = {snowflake_cJSON_CreateObject(), CJSONOperation::cJSONDeleter};
+  if (json_root_ == nullptr)
   {
-    namespace Jwt
-    {
+    throw std::bad_alloc();
+  }
 
-      IHeader *IHeader::buildHeader()
-      {
-        return new CJSONHeader();
-      }
+  // Add the typ field to be token
+  std::string default_token_type = DEFAULT_TOKEN_TYPE;
+  cJSON *item = snowflake_cJSON_CreateString(default_token_type.c_str());
+  if (!item)
+  {
+    throw std::bad_alloc();
+  }
+  CJSONOperation::addOrReplaceJSON(json_root_.get(), TOKEN_TYPE, item);
+}
 
-      IHeader *IHeader::parseHeader(const std::string &text)
-      {
-        return new CJSONHeader(text);
-      }
+AlgorithmType CJSONHeader::getAlgorithmType()
+{
+  cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), ALGORITHM);
+  if (!item || (item->type != cJSON_String)) return AlgorithmType::UNKNOWN;
+  return AlgorithmTypeMapper::toAlgorithmType(std::string(item->valuestring));
+}
 
-      CJSONHeader::CJSONHeader()
-      {
-        json_root_ = {snowflake_cJSON_CreateObject(), CJSONOperation::cJSONDeleter};
-        if (json_root_ == nullptr)
-        {
-          throw std::bad_alloc();
-        }
+std::string CJSONHeader::getCustomHeaderEntry(const std::string header_type)
+{
+  cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), header_type.c_str());
+  if (!item || (item->type != cJSON_String)) return UNSUPPORTED;
+  return std::string(item->valuestring);
+}
 
-        // Add the typ field to be token
-        std::string default_token_type = DEFAULT_TOKEN_TYPE;
-        cJSON *item = snowflake_cJSON_CreateString(default_token_type.c_str());
-        if (!item)
-        {
-          throw std::bad_alloc();
-        }
-        CJSONOperation::addOrReplaceJSON(json_root_.get(), TOKEN_TYPE, item);
-      }
-
-      AlgorithmType CJSONHeader::getAlgorithmType()
-      {
-        cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), ALGORITHM);
-        if (!item || (item->type != cJSON_String))
-          return AlgorithmType::UNKNOWN;
-        return AlgorithmTypeMapper::toAlgorithmType(std::string(item->valuestring));
-      }
-
-      std::string CJSONHeader::getCustomHeaderEntry(const std::string header_type)
-      {
-        cJSON *item = snowflake_cJSON_GetObjectItem(json_root_.get(), header_type.c_str());
-        if (!item || (item->type != cJSON_String))
-          return UNSUPPORTED;
-        return std::string(item->valuestring);
-      }
-
-    }
-  } // namespace Client
+}
+} // namespace Client
 }

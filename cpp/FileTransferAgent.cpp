@@ -25,9 +25,9 @@
 #else
 #include <unistd.h>
 #endif
-using ::Snowflake::Client::RemoteStorageRequestOutcome;
 using ::std::string;
 using ::std::vector;
+using ::Snowflake::Client::RemoteStorageRequestOutcome;
 using namespace Snowflake::Client::Util;
 
 namespace
@@ -36,20 +36,21 @@ namespace
 }
 
 Snowflake::Client::FileTransferAgent::FileTransferAgent(
-    IStatementPutGet *statement,
-    TransferConfig *transferConfig) : m_stmtPutGet(statement),
-                                      m_FileMetadataInitializer(m_smallFilesMeta, m_largeFilesMeta, statement),
-                                      m_executionResults(nullptr),
-                                      m_storageClient(nullptr),
-                                      m_lastRefreshTokenSec(0),
-                                      m_transferConfig(transferConfig),
-                                      m_uploadStream(nullptr),
-                                      m_uploadStreamSize(0),
-                                      m_useDevUrand(false),
-                                      m_maxPutRetries(5),
-                                      m_putFastFail(false),
-                                      m_maxGetRetries(5),
-                                      m_getFastFail(false)
+  IStatementPutGet *statement,
+  TransferConfig *transferConfig) :
+  m_stmtPutGet(statement),
+  m_FileMetadataInitializer(m_smallFilesMeta, m_largeFilesMeta, statement),
+  m_executionResults(nullptr),
+  m_storageClient(nullptr),
+  m_lastRefreshTokenSec(0),
+  m_transferConfig(transferConfig),
+  m_uploadStream(nullptr),
+  m_uploadStreamSize(0),
+  m_useDevUrand(false),
+  m_maxPutRetries(5),
+  m_putFastFail(false),
+  m_maxGetRetries(5),
+  m_getFastFail(false)
 {
   _mutex_init(&m_parallelTokRenewMutex);
   _mutex_init(&m_parallelFailedMsgMutex);
@@ -90,13 +91,13 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
   if (!m_stmtPutGet->parsePutGetCommand(command, &response))
   {
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                     "Failed to parse response.");
+      "Failed to parse response.");
   }
   CXX_LOG_INFO("Parse response succeed");
 
   // init storage client
   m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
-                                                    (unsigned int)response.parallel,
+                                                    (unsigned int) response.parallel,
                                                     response.threshold,
                                                     m_transferConfig,
                                                     m_stmtPutGet);
@@ -107,22 +108,21 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
 
   switch (response.command)
   {
-  case CommandType::UPLOAD:
-  {
-    auto putStart = std::chrono::steady_clock::now();
-    upload(command);
-    auto putEnd = std::chrono::steady_clock::now();
-    auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
-    CXX_LOG_DEBUG("Time took to upload %s: %ld milli seconds.", command->c_str(), totalTime);
-    break;
-  }
-  case CommandType::DOWNLOAD:
-    download(command);
-    break;
+    case CommandType::UPLOAD: {
+      auto putStart = std::chrono::steady_clock::now();
+      upload(command);
+      auto putEnd = std::chrono::steady_clock::now();
+      auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
+      CXX_LOG_DEBUG("Time took to upload %s: %ld milli seconds.", command->c_str(), totalTime);
+      break;
+    }
+    case CommandType::DOWNLOAD:
+      download(command);
+      break;
 
-  default:
-    throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                     "Invalid command type.");
+    default:
+      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+        "Invalid command type.");
   }
 
   return m_executionResults;
@@ -144,7 +144,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
     {
       CXX_LOG_FATAL(CXX_LOG_NS, "Invalid stream uploading.");
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                       "Invalid stream uploading.");
+        "Invalid stream uploading.");
     }
 
     FileMetadata fileMeta;
@@ -164,53 +164,55 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
   {
     switch (response.command)
     {
-    case CommandType::UPLOAD:
-      m_FileMetadataInitializer.populateSrcLocUploadMetadata(
-          sourceLocations->at(i), response.threshold);
-      break;
-    case CommandType::DOWNLOAD:
-    {
-      std::string presignedUrl =
-          (m_storageClient->requirePresignedUrl() && (response.presignedUrls.size() > i)) ? response.presignedUrls.at(i) : "";
-      EncryptionMaterial *encMat = (response.encryptionMaterials.size() > i) ? &response.encryptionMaterials.at(i) : NULL;
-      size_t getThreshold = DOWNLOAD_DATA_SIZE_THRESHOLD;
-      if (m_transferConfig &&
-          (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
-      {
-        CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
-        getThreshold = m_transferConfig->getSizeThreshold;
-      }
-      RemoteStorageRequestOutcome outcome =
-          m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
+      case CommandType::UPLOAD:
+        m_FileMetadataInitializer.populateSrcLocUploadMetadata(
+            sourceLocations->at(i), response.threshold);
+        break;
+      case CommandType::DOWNLOAD:
+        {
+          std::string presignedUrl =
+            (m_storageClient->requirePresignedUrl() && (response.presignedUrls.size() > i)) ?
+              response.presignedUrls.at(i) : "";
+          EncryptionMaterial *encMat = (response.encryptionMaterials.size() > i) ?
+                                 &response.encryptionMaterials.at(i) : NULL;
+          size_t getThreshold = DOWNLOAD_DATA_SIZE_THRESHOLD;
+          if (m_transferConfig &&
+            (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
+          {
+            CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
+            getThreshold = m_transferConfig->getSizeThreshold;
+          }
+          RemoteStorageRequestOutcome outcome =
+            m_FileMetadataInitializer.populateSrcLocDownloadMetadata(
               sourceLocations->at(i), &response.stageInfo.location,
               m_storageClient, encMat, presignedUrl, getThreshold);
 
-      if (outcome == TOKEN_EXPIRED)
-      {
-        CXX_LOG_DEBUG("Token expired when getting download metadata");
-        this->renewToken(command);
-        i--;
-      }
-      break;
-    }
-    default:
-      CXX_LOG_FATAL(CXX_LOG_NS, "Invalid command type");
-      throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                       "Invalid command type.");
+          if (outcome == TOKEN_EXPIRED)
+          {
+            CXX_LOG_DEBUG("Token expired when getting download metadata");
+            this->renewToken(command);
+            i--;
+          }
+          break;
+        }
+      default:
+        CXX_LOG_FATAL(CXX_LOG_NS, "Invalid command type");
+        throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
+                                         "Invalid command type.");
     }
   }
 }
 
 void Snowflake::Client::FileTransferAgent::upload(string *command)
 {
-  // If source file does not exist then we need at least one m_executionResults.m_outcomes to save the outcome.
+	//If source file does not exist then we need at least one m_executionResults.m_outcomes to save the outcome.
   int numFiles = m_largeFilesMeta.size() + m_smallFilesMeta.size();
   numFiles = (numFiles > 0) ? numFiles : 1;
   m_executionResults = new FileTransferExecutionResult(CommandType::UPLOAD, numFiles);
 
   if (m_largeFilesMeta.size() > 0)
   {
-    for (size_t i = 0; i < m_largeFilesMeta.size(); i++)
+    for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
       m_largeFilesMeta[i].overWrite = response.overwrite;
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
@@ -227,7 +229,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
         getPresignedUrlForUploading(m_largeFilesMeta[i], *command);
       }
       RemoteStorageRequestOutcome outcome = uploadSingleFile(m_storageClient,
-                                                             &m_largeFilesMeta[i], i);
+                                                 &m_largeFilesMeta[i], i);
       m_executionResults->SetTransferOutCome(outcome, i);
 
       if (outcome == RemoteStorageRequestOutcome::TOKEN_EXPIRED)
@@ -236,27 +238,27 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
         renewToken(command);
         i--;
       }
-      else if (outcome == RemoteStorageRequestOutcome::FAILED)
+      else if( outcome == RemoteStorageRequestOutcome::FAILED)
       {
         m_failedTransfers += m_largeFilesMeta[i].srcFileName + ", ";
-        // Fast fail, return when the first file fails to upload.
+        //Fast fail, return when the first file fails to upload.
         if (isPutFastFailEnabled())
         {
           CXX_LOG_DEBUG("Putget serial large file upload, %s file upload FAILED.",
-                        m_largeFilesMeta[i].srcFileName.c_str());
+                  m_largeFilesMeta[i].srcFileName.c_str());
         }
       }
-      else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
+      else if( outcome == RemoteStorageRequestOutcome::SUCCESS)
       {
         CXX_LOG_DEBUG("Putget serial large file upload, %s file upload SUCCESS.",
-                      m_largeFilesMeta[i].srcFileName.c_str());
+                m_largeFilesMeta[i].srcFileName.c_str());
       }
     }
   }
 
   if (m_smallFilesMeta.size() > 0)
   {
-    // skip getting presigned url if fast fail is enabled and failed already
+    //skip getting presigned url if fast fail is enabled and failed already
     if ((!isPutFastFailEnabled()) || m_failedTransfers.empty())
     {
       if (m_storageClient->requirePresignedUrl())
@@ -270,7 +272,7 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
     }
     uploadFilesInParallel(command);
   }
-  if (m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
+  if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
   {
     CXX_LOG_DEBUG("No files to upload, source files do not exist. put command %s FAILED.", command->c_str());
     m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, 0);
@@ -291,10 +293,10 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
 void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *command)
 {
   Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
-  for (size_t i = 0; i < m_smallFilesMeta.size(); i++)
+  for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
     size_t resultIndex = i + m_largeFilesMeta.size();
-    FileMetadata *metadata = &m_smallFilesMeta[i];
+    FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
     metadata->overWrite = response.overwrite;
 
@@ -306,7 +308,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
       do
       {
         RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
-        if (isPutFastFailEnabled() && !m_failedTransfers.empty())
+        if(isPutFastFailEnabled() && !m_failedTransfers.empty())
         {
           m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::SKIP_UPLOAD_FILE, resultIndex);
           CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Skipping file.");
@@ -322,18 +324,16 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
         }
         else
         {
-          if (outcome == RemoteStorageRequestOutcome::FAILED)
-          {
+          if (outcome == RemoteStorageRequestOutcome::FAILED) {
             CXX_LOG_DEBUG("Sequential upload %s FAILED.", metadata->srcFileName.c_str());
             m_failedTransfers += metadata->srcFileName + ", ";
-            // Fast fail, return when the first file fails to upload.
-            if (isPutFastFailEnabled())
+            //Fast fail, return when the first file fails to upload.
+            if(isPutFastFailEnabled())
             {
               CXX_LOG_DEBUG("Sequential upload, put fast fail enabled, Skip uploading rest of the files.");
             }
           }
-          else if (outcome == RemoteStorageRequestOutcome::SUCCESS)
-          {
+          else if (outcome == RemoteStorageRequestOutcome::SUCCESS) {
             CXX_LOG_DEBUG("Sequential upload %d th file %s SUCCESS.", i, metadata->srcFileName.c_str());
           }
           break;
@@ -343,8 +343,7 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
       continue;
     }
 
-    tp.AddJob([metadata, resultIndex, command, this]() -> void
-              {
+    tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
           RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
@@ -389,7 +388,8 @@ void Snowflake::Client::FileTransferAgent::uploadFilesInParallel(std::string *co
             CXX_LOG_DEBUG("Putget Parallel upload %s SUCCESS.", metadata->srcFileName.c_str());
           }
           break;
-        } while (true); });
+        } while (true);
+    });
   }
 
   // wait till all jobs have been finished
@@ -418,7 +418,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
                                        "Failed to parse response.");
     }
     m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
-                                                      (unsigned int)response.parallel,
+                                                      (unsigned int) response.parallel,
                                                       response.threshold,
                                                       m_transferConfig,
                                                       m_stmtPutGet);
@@ -427,9 +427,9 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
 }
 
 RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFile(
-    IStorageClient *client,
-    FileMetadata *fileMetadata,
-    size_t resultIndex)
+  IStorageClient *client,
+  FileMetadata *fileMetadata,
+  size_t resultIndex)
 {
   // compress if required
   CXX_LOG_DEBUG("Entrance uploadSingleFile");
@@ -438,8 +438,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->recordPutGetTimestamp(FileMetadata::COMP_START);
     compressSourceFile(fileMetadata);
     fileMetadata->recordPutGetTimestamp(FileMetadata::COMP_END);
-  }
-  else
+  } else
   {
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
@@ -456,25 +455,20 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
   RetryContext putRetryCtx(fileMetadata->srcFileName, m_maxPutRetries);
   do
   {
-    // Sleeps only when its a retry
+    //Sleeps only when its a retry
     putRetryCtx.waitForNextRetry();
     std::basic_iostream<char> *srcFileStream;
     ::std::fstream fs;
 
-    if (m_uploadStream)
-    {
+    if (m_uploadStream) {
       srcFileStream = m_uploadStream;
-    }
-    else
-    {
-      try
-      {
+    } else {
+      try {
         fs = ::std::fstream(m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileToUpload).c_str(),
                             ::std::ios_base::in |
-                                ::std::ios_base::binary);
+                            ::std::ios_base::binary);
       }
-      catch (...)
-      {
+      catch (...) {
         std::string err = "Could not open source file " + fileMetadata->srcFileToUpload;
         throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, err.c_str());
       }
@@ -516,7 +510,7 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
 }
 
 void Snowflake::Client::FileTransferAgent::updateFileDigest(
-    FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata)
 {
   const int CHUNK_SIZE = 16 * 4 * 1024;
 
@@ -530,16 +524,16 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   else
   {
     fs = ::std::fstream(fileMetadata->srcFileToUpload,
-                        ::std::ios_base::in | ::std::ios_base::binary);
+      ::std::ios_base::in | ::std::ios_base::binary);
     srcFileStream = &fs;
   }
 
   Crypto::HashContext hashContext(Crypto::Cryptor::getInstance()
-                                      .createHashContext(
-                                          Crypto::CryptoHashFunc::SHA256));
+                                    .createHashContext(
+                                      Crypto::CryptoHashFunc::SHA256));
 
   const size_t digestSize = Crypto::cryptoHashDigestSize(
-      Crypto::CryptoHashFunc::SHA256);
+    Crypto::CryptoHashFunc::SHA256);
   char digest[digestSize];
 
   hashContext.initialize();
@@ -554,7 +548,7 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
   {
     fs.close();
   }
-
+  
   if (m_uploadStream)
   {
     m_uploadStream->clear();
@@ -571,11 +565,11 @@ void Snowflake::Client::FileTransferAgent::updateFileDigest(
 }
 
 void Snowflake::Client::FileTransferAgent::compressSourceFile(
-    FileMetadata *fileMetadata)
+  FileMetadata *fileMetadata)
 {
   CXX_LOG_DEBUG("Starting file compression");
-
-  char tempDir[MAX_PATH] = {0};
+  
+  char tempDir[MAX_PATH]={0};
   int level = -1;
   if (m_transferConfig)
   {
@@ -599,14 +593,12 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   std::string srcFileNamePlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->srcFileName);
 
   FILE *sourceFile = NULL;
-  if (sf_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL)
-  {
+  if (sf_fopen(&sourceFile, srcFileNamePlatform.c_str(), "r") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileName %s. Errno: %d", fileMetadata->srcFileName.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, srcFileNamePlatform.c_str(), -1);
   }
   FILE *destFile = NULL;
-  if (sf_fopen(&destFile, stagingFile.c_str(), "w") == NULL)
-  {
+  if (sf_fopen(&destFile, stagingFile.c_str(), "w") == NULL) {
     CXX_LOG_ERROR("Failed to open srcFileToUpload file %s. Errno: %d", stagingFile.c_str(), errno);
     throw SnowflakeTransferException(TransferError::FILE_OPEN_ERROR, stagingFile.c_str(), -1);
   }
@@ -614,7 +606,7 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
   fileMetadata->srcFileToUpload = m_stmtPutGet->platformStringToUTF8(stagingFile);
 
   int ret = Util::CompressionUtil::compressWithGzip(sourceFile, destFile,
-                                                    fileMetadata->srcFileToUploadSize, level);
+                                          fileMetadata->srcFileToUploadSize, level);
   fclose(sourceFile);
   fclose(destFile);
 
@@ -628,19 +620,19 @@ void Snowflake::Client::FileTransferAgent::compressSourceFile(
 void Snowflake::Client::FileTransferAgent::download(string *command)
 {
   m_executionResults = new FileTransferExecutionResult(CommandType::DOWNLOAD,
-                                                       m_largeFilesMeta.size() + m_smallFilesMeta.size());
+    m_largeFilesMeta.size() + m_smallFilesMeta.size());
 
   int ret = sf_create_directory_if_not_exists((const char *)response.localLocation);
   if (ret != 0)
   {
     CXX_LOG_ERROR("Filed to create directory %s", response.localLocation);
-    throw SnowflakeTransferException(TransferError::MKDIR_ERROR,
-                                     response.localLocation, ret);
+    throw SnowflakeTransferException(TransferError::MKDIR_ERROR, 
+      response.localLocation, ret);
   }
 
   if (m_largeFilesMeta.size() > 0)
   {
-    for (size_t i = 0; i < m_largeFilesMeta.size(); i++)
+    for (size_t i=0; i<m_largeFilesMeta.size(); i++)
     {
       m_executionResults->SetFileMetadata(&m_largeFilesMeta[i], i);
       CXX_LOG_DEBUG("Putget serial large file download, %s file",
@@ -666,7 +658,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
         CXX_LOG_DEBUG("Putget serial large file download, %s file download FAILED.",
                       m_largeFilesMeta[i].srcFileName.c_str());
         m_failedTransfers += m_largeFilesMeta[i].srcFileName + ", ";
-        // Fast fail, return when the first file fails to download.
+        //Fast fail, return when the first file fails to download.
         if (isGetFastFailEnabled())
         {
           CXX_LOG_DEBUG("Sequential download, get fast fail enabled, Skip downloading rest of the files.");
@@ -698,10 +690,10 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
 void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *command)
 {
   Snowflake::Client::Util::ThreadPool tp((unsigned int)response.parallel);
-  for (size_t i = 0; i < m_smallFilesMeta.size(); i++)
+  for (size_t i=0; i<m_smallFilesMeta.size(); i++)
   {
     size_t resultIndex = i + m_largeFilesMeta.size();
-    FileMetadata *metadata = &m_smallFilesMeta[i];
+    FileMetadata * metadata = &m_smallFilesMeta[i];
     m_executionResults->SetFileMetadata(&m_smallFilesMeta[i], resultIndex);
 
     // workaround for incident 00212627
@@ -732,7 +724,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
         {
           CXX_LOG_DEBUG("Sequential download %s FAILED.", metadata->srcFileName.c_str());
           m_failedTransfers += metadata->srcFileName + ", ";
-          // Fast fail, return when the first file fails to download.
+          //Fast fail, return when the first file fails to download.
           if (isGetFastFailEnabled())
           {
             CXX_LOG_DEBUG("Sequential download, get fast fail enabled, Skip downloading rest of the files.");
@@ -749,8 +741,7 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
       continue;
     }
 
-    tp.AddJob([metadata, resultIndex, command, this]() -> void
-              {
+    tp.AddJob([metadata, resultIndex, command, this]()->void {
         do
         {
           // SNOW-218025: Upload and download is not exception safe, catch exception
@@ -799,7 +790,8 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
           }
 
           break;
-        } while (true); });
+        } while (true);
+    });
   }
 
   // wait till all jobs have been finished
@@ -808,73 +800,71 @@ void Snowflake::Client::FileTransferAgent::downloadFilesInParallel(std::string *
 }
 
 RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::downloadSingleFile(
-    IStorageClient *client,
-    FileMetadata *fileMetadata,
-    size_t resultIndex)
+  IStorageClient *client,
+  FileMetadata *fileMetadata,
+  size_t resultIndex)
 {
-  char strerr_buf[SF_ERROR_BUFSIZE];
+   char strerr_buf[SF_ERROR_BUFSIZE];
 
-  fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
-                           fileMetadata->destFileName;
-  std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
+   fileMetadata->destPath = std::string(response.localLocation) + PATH_SEP +
+    fileMetadata->destFileName;
+   std::string destPathPlatform = m_stmtPutGet->UTF8ToPlatformString(fileMetadata->destPath);
 
-  RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::FAILED;
-  RetryContext getRetryCtx(fileMetadata->srcFileName, m_maxGetRetries);
-  do
-  {
-    // Sleeps only when its a retry
-    getRetryCtx.waitForNextRetry();
+   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::FAILED;
+   RetryContext getRetryCtx(fileMetadata->srcFileName, m_maxGetRetries);
+   do
+   {
+     //Sleeps only when its a retry
+     getRetryCtx.waitForNextRetry();
 
-    std::basic_fstream<char> dstFile;
-    try
-    {
-      dstFile = std::basic_fstream<char>(destPathPlatform.c_str(),
-                                         std::ios_base::out | std::ios_base::binary);
-    }
-    catch (...)
-    {
-      std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-      char *str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
-      CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                    fileMetadata->destPath.c_str(), str_error);
-      m_executionResults->SetTransferOutCome(outcome, resultIndex);
-      break;
-    }
-    if (!dstFile.is_open())
-    {
-      std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
-      char *str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
-      CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
-                    fileMetadata->destPath.c_str(), str_error);
-      m_executionResults->SetTransferOutCome(outcome, resultIndex);
-      break;
-    }
-    if (fileMetadata->encryptionMetadata.fileKey.nbBits > 0)
-    {
-      Crypto::CipherIOStream decryptOutputStream(
-          dstFile,
-          Crypto::CryptoOperation::DECRYPT,
-          fileMetadata->encryptionMetadata.fileKey,
-          fileMetadata->encryptionMetadata.iv,
-          FILE_ENCRYPTION_BLOCK_SIZE);
+     std::basic_fstream<char> dstFile;
+     try {
+       dstFile = std::basic_fstream<char>(destPathPlatform.c_str(),
+                                          std::ios_base::out | std::ios_base::binary);
+     }
+     catch (...) {
+       std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
+       char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
+       CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
+                     fileMetadata->destPath.c_str(), str_error);
+       m_executionResults->SetTransferOutCome(outcome, resultIndex);
+       break;
+     }
+     if (!dstFile.is_open())
+     {
+       std::string err = "Could not open file " + fileMetadata->destPath + " to downoad";
+       char* str_error = sf_strerror_s(errno, strerr_buf, sizeof(strerr_buf));
+       CXX_LOG_DEBUG("Could not open file %s to downoad: %s",
+                     fileMetadata->destPath.c_str(), str_error);
+       m_executionResults->SetTransferOutCome(outcome, resultIndex);
+       break;
+     }
+     if (fileMetadata->encryptionMetadata.fileKey.nbBits > 0)
+     {
+       Crypto::CipherIOStream decryptOutputStream(
+         dstFile,
+         Crypto::CryptoOperation::DECRYPT,
+         fileMetadata->encryptionMetadata.fileKey,
+         fileMetadata->encryptionMetadata.iv,
+         FILE_ENCRYPTION_BLOCK_SIZE);
 
-      outcome = client->download(fileMetadata, &decryptOutputStream);
-    }
-    else
-    {
-      // server side encryption
-      outcome = client->download(fileMetadata, &dstFile);
-    }
-    dstFile.close();
-    m_executionResults->SetTransferOutCome(outcome, resultIndex);
-  } while (getRetryCtx.isRetryable(outcome));
+       outcome = client->download(fileMetadata, &decryptOutputStream);
+     }
+     else
+     {
+       // server side encryption
+       outcome = client->download(fileMetadata, &dstFile);
+     }
+     dstFile.close();
+     m_executionResults->SetTransferOutCome(outcome, resultIndex);
+   } while (getRetryCtx.isRetryable(outcome));
 
   return outcome;
 }
 
 void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
-    FileMetadata &fileMetadata,
-    const std::string &command)
+                               FileMetadata& fileMetadata,
+                               const std::string& command)
 {
   // need to replace file://mypath/myfile?.csv with file://mypath/myfile1.csv.gz
   std::string presignedUrlCommand = command;
@@ -885,7 +875,7 @@ void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
   if (!m_stmtPutGet->parsePutGetCommand(&presignedUrlCommand, &rsp))
   {
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                     "Failed to parse response.");
+      "Failed to parse response.");
   }
   CXX_LOG_INFO("Parse response succeed");
 
@@ -893,21 +883,21 @@ void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
 }
 
 std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
-    std::string const &command,
-    bool unescape)
+                               std::string const& command,
+                               bool unescape)
 {
   if (std::string::npos == command.find(FILE_PROTOCOL))
   {
     CXX_LOG_ERROR("file:// prefix not found in command %s", command.c_str());
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
-                                     "file:// prefix not found in command.");
+      "file:// prefix not found in command.");
   }
 
   int localFilePathBeginIdx = command.find(FILE_PROTOCOL) +
-                              FILE_PROTOCOL.length();
+    FILE_PROTOCOL.length();
   bool isLocalFilePathQuoted =
-      (localFilePathBeginIdx > FILE_PROTOCOL.length()) &&
-      (command.at(localFilePathBeginIdx - 1 - FILE_PROTOCOL.length()) == '\'');
+    (localFilePathBeginIdx > FILE_PROTOCOL.length()) &&
+    (command.at(localFilePathBeginIdx - 1 - FILE_PROTOCOL.length()) == '\'');
 
   // the ending index is exclusive
   int localFilePathEndIdx = 0;
@@ -920,7 +910,7 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
     if (localFilePathEndIdx > localFilePathBeginIdx)
     {
       localFilePath = command.substr(localFilePathBeginIdx,
-                                     localFilePathEndIdx - localFilePathBeginIdx);
+        localFilePathEndIdx - localFilePathBeginIdx);
     }
     // unescape backslashes to match the file name from GS
     if (unescape)
@@ -936,7 +926,7 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
     if (localFilePathEndIdx > localFilePathBeginIdx)
     {
       localFilePath = command.substr(localFilePathBeginIdx,
-                                     localFilePathEndIdx - localFilePathBeginIdx);
+        localFilePathEndIdx - localFilePathBeginIdx);
     }
     else if (std::string::npos == localFilePathEndIdx)
     {
@@ -948,20 +938,19 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
 }
 
 using namespace Snowflake::Client;
-extern "C"
-{
+extern "C" {
   SF_STATUS STDCALL _snowflake_execute_put_get_native(
-      SF_STMT *sfstmt,
-      void *upload_stream,
-      size_t stream_size,
-      int stream_upload_max_retries,
-      struct SF_QUERY_RESULT_CAPTURE *result_capture)
+                        SF_STMT* sfstmt,
+                        void* upload_stream,
+                        size_t stream_size,
+                        int stream_upload_max_retries,
+                        struct SF_QUERY_RESULT_CAPTURE* result_capture)
   {
     if (!sfstmt)
     {
       return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
-    SF_CONNECT *sfconn = sfstmt->connection;
+    SF_CONNECT* sfconn = sfstmt->connection;
     if (!sfconn)
     {
       return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
@@ -985,16 +974,16 @@ extern "C"
 
     if (upload_stream)
     {
-      agent.setUploadStream((std::basic_iostream<char> *)upload_stream, stream_size);
+      agent.setUploadStream((std::basic_iostream<char>*)upload_stream, stream_size);
       agent.setPutMaxRetries(stream_upload_max_retries);
     }
 
-    ITransferResult *result;
+    ITransferResult* result;
     try
     {
       result = agent.execute(&command);
     }
-    catch (std::exception &e)
+    catch (std::exception& e)
     {
       std::string errmsg("File transfer failed: ");
       errmsg += e.what();
@@ -1010,12 +999,12 @@ extern "C"
       return SF_STATUS_ERROR_FILE_TRANSFER;
     }
 
-    ResultSetPutGet *resultset = new Snowflake::Client::ResultSetPutGet(result);
+    ResultSetPutGet * resultset = new Snowflake::Client::ResultSetPutGet(result);
     if (!resultset)
     {
       std::string errmsg("Failed to allocate put get result set.");
       SET_SNOWFLAKE_ERROR(&sfstmt->error, SF_STATUS_ERROR_OUT_OF_MEMORY,
-                          errmsg.c_str(), SF_SQLSTATE_MEMORY_ALLOCATION_ERROR);
+        errmsg.c_str(), SF_SQLSTATE_MEMORY_ALLOCATION_ERROR);
       return SF_STATUS_ERROR_OUT_OF_MEMORY;
     }
 

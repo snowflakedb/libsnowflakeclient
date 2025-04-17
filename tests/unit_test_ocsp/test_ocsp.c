@@ -12,11 +12,11 @@
 
 extern CURLcode checkTelemetryHosts(char *hostname);
 
-extern void get_cache_server_url(char *buf, size_t bufsize);
+extern void get_cache_server_url(char* buf, size_t bufsize);
 
-extern void get_cache_retry_url_pattern(char *buf, size_t bufsize);
+extern void get_cache_retry_url_pattern(char* buf, size_t bufsize);
 
-extern CURLcode encodeUrlData(const char *url_data, size_t data_size, char **outptr, size_t *outlen);
+extern CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen);
 
 struct configData
 {
@@ -30,13 +30,14 @@ static void usage(char *program)
 
 static size_t writefunction(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-    fwrite(ptr, size, nmemb, (FILE *)stream);
+    fwrite(ptr, size, nmemb, (FILE *) stream);
     return (nmemb * size);
 }
 
-static void dump(const char *text,
-                 FILE *stream, unsigned char *ptr, size_t size,
-                 char nohex)
+static
+void dump(const char *text,
+          FILE *stream, unsigned char *ptr, size_t size,
+          char nohex)
 {
     size_t i;
     size_t c;
@@ -48,12 +49,12 @@ static void dump(const char *text,
         width = 0x40;
 
     fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
-            text, (long)size, (long)size);
+            text, (long) size, (long) size);
 
     for (i = 0; i < size; i += width)
     {
 
-        fprintf(stream, "%4.4lx: ", (long)i);
+        fprintf(stream, "%4.4lx: ", (long) i);
 
         if (!nohex)
         {
@@ -90,45 +91,46 @@ static void dump(const char *text,
     fflush(stream);
 }
 
-static int my_trace(CURL *handle, curl_infotype type,
-                    char *data, size_t size,
-                    void *userp)
+static
+int my_trace(CURL *handle, curl_infotype type,
+             char *data, size_t size,
+             void *userp)
 {
-    struct configData *config = (struct configData *)userp;
+    struct configData *config = (struct configData *) userp;
     const char *text = NULL;
-    (void)handle; /* prevent compiler warning */
+    (void) handle; /* prevent compiler warning */
 
     switch (type)
     {
-    case CURLINFO_TEXT:
-        fprintf(stderr, "== Info: %s", data);
-        /* FALLTHROUGH */
-    default: /* in case a new one is introduced to shock us */
-        return 0;
+        case CURLINFO_TEXT:
+            fprintf(stderr, "== Info: %s", data);
+            /* FALLTHROUGH */
+        default: /* in case a new one is introduced to shock us */
+            return 0;
 
-    case CURLINFO_HEADER_OUT:
-        // text = "=> Send header";
-        break;
-    case CURLINFO_DATA_OUT:
-        // text = "=> Send data";
-        break;
-    case CURLINFO_SSL_DATA_OUT:
-        // text = "=> Send SSL data";
-        break;
-    case CURLINFO_HEADER_IN:
-        // text = "<= Recv header";
-        break;
-    case CURLINFO_DATA_IN:
-        // text = "<= Recv data";
-        break;
-    case CURLINFO_SSL_DATA_IN:
-        // text = "<= Recv SSL data";
-        break;
+        case CURLINFO_HEADER_OUT:
+            //text = "=> Send header";
+            break;
+        case CURLINFO_DATA_OUT:
+            // text = "=> Send data";
+            break;
+        case CURLINFO_SSL_DATA_OUT:
+            // text = "=> Send SSL data";
+            break;
+        case CURLINFO_HEADER_IN:
+            //text = "<= Recv header";
+            break;
+        case CURLINFO_DATA_IN:
+            // text = "<= Recv data";
+            break;
+        case CURLINFO_SSL_DATA_IN:
+            // text = "<= Recv SSL data";
+            break;
     }
 
     if (text != NULL)
     {
-        dump(text, stderr, (unsigned char *)data, size, config->trace_ascii);
+        dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
     }
     return 0;
 }
@@ -211,7 +213,7 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
         {
             fprintf(stderr, "FAILED!\n");
             exit(1);
-        }
+        }        
     }
 
     curl_easy_cleanup(ch);
@@ -251,7 +253,7 @@ checkDefaultURLDomain(char *host, char *port, char *cacert)
     // test default URL being used when ACTIVATE_SSD is on
     setenv("SF_OCSP_ACTIVATE_SSD", "true", 1);
 
-    char *domain = strrchr(host, '.') + 1;
+    char * domain = strrchr(host, '.') + 1;
     sprintf(expectedCacheServerURL, "http://ocsp.snowflakecomputing.%s/ocsp_response_cache.json", domain);
     sprintf(expectedRetryURL, "http://ocsp.snowflakecomputing.%s/retry", domain);
 
@@ -286,7 +288,7 @@ int main(int argc, char **argv)
 
     char cache_file[4096];
 
-    host[0] = (char)0;
+    host[0] = (char) 0;
     if (getenv("SNOWFLAKE_TEST_HOST"))
     {
         strcpy(host, getenv("SNOWFLAKE_TEST_HOST"));
@@ -295,7 +297,7 @@ int main(int argc, char **argv)
     {
         sprintf(host, "%s.snowflakecomputing.com", getenv("SNOWFLAKE_TEST_ACCOUNT"));
     }
-    cacert[0] = (char)0;
+    cacert[0] = (char) 0;
     if (getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"))
     {
         strcpy(cacert, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
@@ -305,17 +307,17 @@ int main(int argc, char **argv)
     {
         switch (c)
         {
-        case 'h':
-            strcpy(host, optarg);
-            break;
-        case 'c':
-            strcpy(cacert, optarg);
-            break;
-        case 'p':
-            strcpy(port, optarg);
-            break;
-        default:
-            break;
+            case 'h':
+                strcpy(host, optarg);
+                break;
+            case 'c':
+                strcpy(cacert, optarg);
+                break;
+            case 'p':
+                strcpy(port, optarg);
+                break;
+            default:
+                break;
         }
     }
     if (strlen(host) == 0 || strlen(cacert) == 0)

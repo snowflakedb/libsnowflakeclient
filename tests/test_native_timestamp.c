@@ -1,8 +1,7 @@
 #include <string.h>
 #include "utils/test_setup.h"
 
-void test_native_timestamp_helper(sf_bool use_arrow)
-{
+void test_native_timestamp_helper(sf_bool use_arrow) {
 
     SF_STATUS status;
     SF_CONNECT *sf = NULL;
@@ -11,24 +10,21 @@ void test_native_timestamp_helper(sf_bool use_arrow)
     // Setup connection, run query, and get results back
     setup_and_run_query(&sf, &sfstmt,
                         use_arrow == SF_BOOLEAN_TRUE
-                            ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
-                            : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
+                        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+                        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON");
 
     snowflake_query(sfstmt, "select to_time('12:34:56'),"
                             "date_from_parts(2018, 09, 14), "
                             "timestamp_ltz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
                             "timestamp_ntz_from_parts(2014, 03, 20, 15, 30, 45, 493679329), "
-                            "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')",
-                    0);
+                            "timestamp_tz_from_parts(2014, 03, 20, 15, 30, 45, 493679329, 'America/Los_Angeles')", 0);
 
     // Stores the result from the fetch operation
     SF_TIMESTAMP ts;
 
-    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS)
-    {
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         // Converting a TIME type into a SF_TIMESTAMP
-        if (snowflake_column_as_timestamp(sfstmt, 1, &ts))
-        {
+        if (snowflake_column_as_timestamp(sfstmt, 1, &ts)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(12, snowflake_timestamp_get_hours(&ts));
@@ -37,8 +33,7 @@ void test_native_timestamp_helper(sf_bool use_arrow)
         assert_int_equal(0, snowflake_timestamp_get_nanoseconds(&ts));
 
         // Converting a DATE type into a SF_TIMESTAMP
-        if (snowflake_column_as_timestamp(sfstmt, 2, &ts))
-        {
+        if (snowflake_column_as_timestamp(sfstmt, 2, &ts)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(14, snowflake_timestamp_get_mday(&ts));
@@ -50,8 +45,7 @@ void test_native_timestamp_helper(sf_bool use_arrow)
         assert_int_equal(0, snowflake_timestamp_get_nanoseconds(&ts));
 
         // Converting a TIMESTAMP_LTZ type into a SF_TIMESTAMP
-        if (snowflake_column_as_timestamp(sfstmt, 3, &ts))
-        {
+        if (snowflake_column_as_timestamp(sfstmt, 3, &ts)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
@@ -63,8 +57,7 @@ void test_native_timestamp_helper(sf_bool use_arrow)
         assert_int_equal(493679329, snowflake_timestamp_get_nanoseconds(&ts));
 
         // Converting a TIMESTAMP_NTZ type into a SF_TIMESTAMP
-        if (snowflake_column_as_timestamp(sfstmt, 4, &ts))
-        {
+        if (snowflake_column_as_timestamp(sfstmt, 4, &ts)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
@@ -76,8 +69,7 @@ void test_native_timestamp_helper(sf_bool use_arrow)
         assert_int_equal(493679329, snowflake_timestamp_get_nanoseconds(&ts));
 
         // Converting a TIMESTAMP_TZ type into a SF_TIMESTAMP
-        if (snowflake_column_as_timestamp(sfstmt, 5, &ts))
-        {
+        if (snowflake_column_as_timestamp(sfstmt, 5, &ts)) {
             dump_error(&(sfstmt->error));
         }
         assert_int_equal(20, snowflake_timestamp_get_mday(&ts));
@@ -93,22 +85,19 @@ void test_native_timestamp_helper(sf_bool use_arrow)
     snowflake_term(sf);
 }
 
-void test_native_timestamp_arrow(void **unused)
-{
+void test_native_timestamp_arrow(void **unused) {
     test_native_timestamp_helper(SF_BOOLEAN_TRUE);
 }
 
-void test_native_timestamp_json(void **unused)
-{
+void test_native_timestamp_json(void **unused) {
     test_native_timestamp_helper(SF_BOOLEAN_FALSE);
 }
 
-int main(void)
-{
+int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_native_timestamp_arrow),
-        cmocka_unit_test(test_native_timestamp_json),
+      cmocka_unit_test(test_native_timestamp_arrow),
+      cmocka_unit_test(test_native_timestamp_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

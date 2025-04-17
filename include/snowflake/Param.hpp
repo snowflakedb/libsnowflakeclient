@@ -3,12 +3,9 @@
 
 #include "client.h"
 
-namespace Snowflake
-{
-    namespace Client
-    {
-        class Param
-        {
+namespace Snowflake {
+    namespace Client {
+        class Param {
         public:
             Param();
 
@@ -26,8 +23,8 @@ namespace Snowflake
 
             void setCDataType(SF_C_TYPE type_);
 
-            void *value();
-
+            void* value();
+            
             void setValue(void *value_, SF_C_TYPE type_);
 
         private:
@@ -36,4 +33,4 @@ namespace Snowflake
     }
 }
 
-#endif // SNOWFLAKECLIENT_PARAM_HPP
+#endif //SNOWFLAKECLIENT_PARAM_HPP

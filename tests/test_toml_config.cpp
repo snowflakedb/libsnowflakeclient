@@ -6,8 +6,7 @@
 #include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
 
-void test_valid_toml_file(void **unused)
-{
+void test_valid_toml_file(void** unused) {
   SF_UNUSED(unused);
   // Create toml file
   std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
@@ -26,8 +25,7 @@ void test_valid_toml_file(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-void test_missing_toml_file(void **unused)
-{
+void test_missing_toml_file(void** unused) {
   SF_UNUSED(unused);
   EnvOverride override("SNOWFLAKE_HOME", "./");
 
@@ -35,8 +33,7 @@ void test_missing_toml_file(void **unused)
   assert_true(connectionParams.empty());
 }
 
-void test_invalid_toml_file(void **unused)
-{
+void test_invalid_toml_file(void** unused) {
   SF_UNUSED(unused);
   // Create toml file
   std::string tomlConfig = "Some fake toml data";
@@ -55,22 +52,20 @@ void test_invalid_toml_file(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-void test_use_default_location_env(void **unused)
-{
+void test_use_default_location_env(void** unused) {
   SF_UNUSED(unused);
   std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
   char envbuf[MAX_PATH + 1];
 #ifdef _WIN32
-  char *homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf));
+  char* homeDir = sf_getenv_s("USERPROFILE", envbuf, sizeof(envbuf));
 #else
-  char *homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf));
+  char* homeDir = sf_getenv_s("HOME", envbuf, sizeof(envbuf));
 #endif
   std::string snowflakeDir = "/.snowflake";
   std::string tomlFile = "/.snowflake/connections.toml";
   // Create .snowflake dir
   std::string tomlDir = homeDir + snowflakeDir;
-  if (!sf_is_directory_exist(tomlDir.c_str()))
-  {
+  if (!sf_is_directory_exist(tomlDir.c_str())) {
     sf_mkdir(tomlDir.c_str());
   }
   // Create toml file
@@ -91,8 +86,7 @@ void test_use_default_location_env(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-void test_use_snowflake_default_connection_var(void **unused)
-{
+void test_use_snowflake_default_connection_var(void** unused) {
   SF_UNUSED(unused);
   // Create toml file
   std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"\n\n[test]\nkey3 = \"value3\"\nkey4 = \"value4\"";
@@ -114,8 +108,7 @@ void test_use_snowflake_default_connection_var(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-void test_client_config_log_invalid_config_name(void **unused)
-{
+void test_client_config_log_invalid_config_name(void** unused) {
   SF_UNUSED(unused);
   // Create toml file
   std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
@@ -135,8 +128,7 @@ void test_client_config_log_invalid_config_name(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-void test_data_types(void **unused)
-{
+void test_data_types(void **unused) {
   SF_UNUSED(unused);
   // Create toml file
   std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = true\nkey3 = 3\nkey4 = 4.4\nkey5 = []";
@@ -159,8 +151,7 @@ void test_data_types(void **unused)
   remove(tomlFilePath.c_str());
 }
 
-int main(void)
-{
+int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_missing_toml_file),

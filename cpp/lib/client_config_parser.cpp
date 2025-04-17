@@ -11,7 +11,7 @@
 #undef snprintf
 #include <boost/filesystem.hpp>
 
-#ifndef _WIN32
+#ifndef _WIN32 
 #include <dlfcn.h>
 #endif
 
@@ -22,7 +22,7 @@ namespace
   // constants
   const std::string SF_CLIENT_CONFIG_FILE_NAME("sf_client_config.json");
   const std::string SF_CLIENT_CONFIG_ENV_NAME("SF_CLIENT_CONFIG_FILE");
-  const std::initializer_list<const std::string> KnownCommonEntries{"log_level", "log_path"};
+  const std::initializer_list<const std::string> KnownCommonEntries{ "log_level", "log_path" };
 
   // helpers
 #if defined(_WIN32) || defined(_WIN64)
@@ -34,12 +34,9 @@ namespace
 #else
     char path[MAX_PATH];
 #endif
-    if (auto pathLen = GetModuleFileName(NULL, path, MAX_PATH); pathLen < MAX_PATH + 1)
-    {
+    if (auto pathLen = GetModuleFileName(NULL, path, MAX_PATH); pathLen < MAX_PATH + 1) {
       binaryFullPath = std::string(path, path + pathLen);
-    }
-    else
-    {
+    } else {
       std::string message = std::system_category().message(GetLastError());
       CXX_LOG_ERROR("Error getting binary path: %s", message.c_str());
     }
@@ -50,7 +47,7 @@ namespace
   {
     boost::filesystem::path binaryFullPath;
     Dl_info info;
-    int result = dladdr((void *)load_client_config, &info);
+    int result = dladdr((void*)load_client_config, &info);
     if (result)
     {
       binaryFullPath = info.dli_fname;
@@ -59,11 +56,11 @@ namespace
   }
 #endif
 
-  std::string getEnvironmentVariableValue(const std::string &envVarName)
+  std::string getEnvironmentVariableValue(const std::string& envVarName)
   {
     // Environment variables being checked point to file paths, hence MAX_PATH is used
     char envbuf[MAX_PATH + 1];
-    if (char *value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
+    if (char* value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
     {
       return std::string(value);
     }
@@ -79,9 +76,7 @@ namespace
     {
       homeDirFilePath = homeDir;
       homeDirFilePath.append(SF_CLIENT_CONFIG_FILE_NAME);
-    }
-    else
-    {
+    } else {
       // USERPROFILE is empty, try HOMEDRIVE and HOMEPATH
       std::string homeDriveEnv = getEnvironmentVariableValue("HOMEDRIVE");
       std::string homePathEnv = getEnvironmentVariableValue("HOMEPATH");
@@ -117,7 +112,7 @@ namespace
 #endif
 
   boost::filesystem::path resolveClientConfigPath(
-      const boost::filesystem::path &configFilePath)
+    const boost::filesystem::path& configFilePath)
   {
     // 1. Try config file if it was passed in
     if (!configFilePath.empty())
@@ -146,47 +141,41 @@ namespace
     return resolveHomeDirConfigPath();
   }
 
-  bool isKnownCommonEntry(const std::string &entry)
-  {
+  bool isKnownCommonEntry(const std::string& entry) {
     return std::any_of(KnownCommonEntries.begin(), KnownCommonEntries.end(),
-                       [&entry](auto &knownEntry)
-                       {
-                         return sf_strncasecmp(entry.c_str(), knownEntry.c_str(), knownEntry.length()) == 0;
-                       });
+      [&entry](auto& knownEntry) {
+        return sf_strncasecmp(entry.c_str(), knownEntry.c_str(), knownEntry.length()) == 0;
+    });
   }
 
-  void checkUnknownEntries(picojson::value &config)
-  {
-    if (config.is<picojson::object>())
-    {
-      for (auto &kv : config.get<picojson::object>())
-      {
-        if (!isKnownCommonEntry(kv.first))
-        {
+  void checkUnknownEntries(picojson::value& config) {
+    if (config.is<picojson::object>()) {
+      for (auto& kv : config.get<picojson::object>()) {
+        if (!isKnownCommonEntry(kv.first)) {
           CXX_LOG_WARN("Unknown configuration entry: %s with value: %s",
-                       kv.first.c_str(), kv.second.to_str().c_str());
+            kv.first.c_str(), kv.second.to_str().c_str());
         }
       }
     }
   }
 
-  sf_bool checkIfValidPermissions(const boost::filesystem::path &filePath)
+  sf_bool checkIfValidPermissions(const boost::filesystem::path& filePath)
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
     if (permissions & boost::filesystem::group_write ||
-        permissions & boost::filesystem::others_write)
+      permissions & boost::filesystem::others_write)
     {
       CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
-                    filePath.c_str());
+        filePath.c_str());
       return false;
     }
     return true;
   }
 
   sf_bool parseConfigFile(
-      const boost::filesystem::path &filePath,
-      client_config &clientConfig)
+    const boost::filesystem::path& filePath,
+    client_config& clientConfig)
   {
     picojson::value jsonConfig;
     std::string err;
@@ -195,7 +184,7 @@ namespace
     if (!configFile)
     {
       CXX_LOG_INFO("Could not open a file. The file may not exist: %s",
-                   filePath.c_str());
+        filePath.c_str());
       return false;
     }
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -220,26 +209,20 @@ namespace
         checkUnknownEntries(commonProps);
         if (commonProps.contains("log_level") && commonProps.get("log_level").is<std::string>())
         {
-          const char *logLevel = commonProps.get("log_level").get<std::string>().c_str();
-          if (strlen(logLevel) < 64)
-          {
+          const char* logLevel = commonProps.get("log_level").get<std::string>().c_str();
+          if (strlen(logLevel) < 64) {
             sf_strcpy(clientConfig.logLevel, strlen(logLevel) + 1, logLevel);
-          }
-          else
-          {
+          } else {
             CXX_LOG_ERROR("Error: The maximum length for log level is 64.");
             return false;
           }
         }
         if (commonProps.contains("log_path") && commonProps.get("log_path").is<std::string>())
         {
-          const char *logPath = commonProps.get("log_path").get<std::string>().c_str();
-          if (strlen(logPath) < MAX_PATH)
-          {
+          const char* logPath = commonProps.get("log_path").get<std::string>().c_str();
+          if (strlen(logPath) < MAX_PATH) {
             sf_strcpy(clientConfig.logPath, strlen(logPath) + 1, logPath);
-          }
-          else
-          {
+          } else {
             CXX_LOG_ERROR("Error: The maximum length for log path is %d", MAX_PATH);
             return false;
           }
@@ -252,8 +235,8 @@ namespace
   }
 
   sf_bool loadClientConfig(
-      const boost::filesystem::path &configFilePath,
-      client_config &clientConfig)
+    const boost::filesystem::path& configFilePath,
+    client_config& clientConfig)
   {
     boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
 
@@ -266,8 +249,8 @@ namespace
 }
 
 sf_bool load_client_config(
-    const char *configFilePath,
-    client_config *clientConfig)
+  const char* configFilePath,
+  client_config* clientConfig)
 {
 // Disable easy logging for 32-bit windows debug build due to linking issues
 // with _osfile causing hanging/assertions until dynamic linking is available

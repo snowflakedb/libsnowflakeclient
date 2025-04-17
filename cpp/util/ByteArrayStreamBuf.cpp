@@ -1,15 +1,14 @@
-
-
 #include "snowflake/logger.h"
 #include "ByteArrayStreamBuf.hpp"
 #include <cstring>
 
 Snowflake::Client::Util::ByteArrayStreamBuf::ByteArrayStreamBuf(
-    unsigned int capacity) : m_capacity(capacity)
+  unsigned int capacity) :
+  m_capacity(capacity)
 {
   m_dataBuffer = new char[capacity];
   memset(m_dataBuffer, 0, capacity);
-  setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + capacity);
+  setg(m_dataBuffer, m_dataBuffer, m_dataBuffer+capacity);
   setp(m_dataBuffer, m_dataBuffer + capacity);
 }
 
@@ -25,8 +24,8 @@ void Snowflake::Client::Util::ByteArrayStreamBuf::reset()
   setp(m_dataBuffer, m_dataBuffer + m_capacity);
 }
 
-void *Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
-    long updatedSize)
+void * Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
+  long updatedSize)
 {
   this->setg(m_dataBuffer, m_dataBuffer, m_dataBuffer + updatedSize);
   this->setp(m_dataBuffer, m_dataBuffer + updatedSize);
@@ -35,29 +34,30 @@ void *Snowflake::Client::Util::ByteArrayStreamBuf::updateSize(
 }
 
 Snowflake::Client::Util::StreamSplitter::StreamSplitter(
-    std::basic_iostream<char> *inputStream,
-    unsigned int numOfBuffer,
-    unsigned int partMaxSize) : m_inputStream(inputStream),
-                                m_partMaxSize(partMaxSize),
-                                m_currentPartIndex(-1)
+  std::basic_iostream<char> *inputStream,
+  unsigned int numOfBuffer,
+  unsigned int partMaxSize) :
+  m_inputStream(inputStream),
+  m_partMaxSize(partMaxSize),
+  m_currentPartIndex(-1)
 {
   _critical_section_init(&streamMutex);
-  for (unsigned int i = 0; i < numOfBuffer; i++)
+  for (unsigned int i=0; i<numOfBuffer; i++)
   {
     buffers.push_back(new ByteArrayStreamBuf(partMaxSize));
   }
 }
 
-Snowflake::Client::Util::ByteArrayStreamBuf *
+Snowflake::Client::Util::ByteArrayStreamBuf*
 Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(
-    int bufIndex, int &partIndex)
+  int bufIndex, int &partIndex)
 {
   _critical_section_lock(&streamMutex);
-  ByteArrayStreamBuf *buf = buffers[bufIndex];
+  ByteArrayStreamBuf * buf = buffers[bufIndex];
   memset(buf->getDataBuffer(), 0, m_partMaxSize);
   m_inputStream->read(buf->getDataBuffer(), m_partMaxSize);
   buf->updateSize((long)m_inputStream->gcount());
-  m_currentPartIndex++;
+  m_currentPartIndex ++;
   partIndex = m_currentPartIndex;
   _critical_section_unlock(&streamMutex);
   return buf;
@@ -66,28 +66,28 @@ Snowflake::Client::Util::StreamSplitter::FillAndGetBuf(
 Snowflake::Client::Util::StreamSplitter::~StreamSplitter()
 {
   _critical_section_term(&streamMutex);
-  for (unsigned int i = 0; i < buffers.size(); i++)
+  for (unsigned int i=0; i<buffers.size(); i++)
   {
     delete buffers[i];
   }
 }
 
 unsigned int Snowflake::Client::Util::StreamSplitter::getTotalParts(
-    long long int streamSize)
+  long long int streamSize)
 {
-  return (unsigned int)(streamSize / m_partMaxSize + 1);
+  return (unsigned int)(streamSize/m_partMaxSize + 1);
 }
 
 Snowflake::Client::Util::StreamAppender::StreamAppender(
-    std::basic_iostream<char> *outputStream, int totalPartNum, int parallel,
-    int partSize)
-    : m_outputStream(outputStream),
-      m_totalPartNum(totalPartNum),
-      m_parallel(parallel),
-      m_partSize(partSize),
-      m_currentPartIndex(0)
+  std::basic_iostream<char> *outputStream, int totalPartNum, int parallel,
+  int partSize)
+  : m_outputStream(outputStream),
+    m_totalPartNum(totalPartNum),
+    m_parallel(parallel),
+    m_partSize(partSize),
+    m_currentPartIndex(0)
 {
-  m_buffers = new ByteArrayStreamBuf *[parallel];
+  m_buffers = new ByteArrayStreamBuf*[parallel];
   for (int i = 0; i < m_parallel; i++)
   {
     m_buffers[i] = nullptr;
@@ -110,9 +110,9 @@ Snowflake::Client::Util::StreamAppender::~StreamAppender()
   delete[] m_buffers;
 }
 
-Snowflake::Client::Util::ByteArrayStreamBuf *Snowflake::Client::Util::
-    StreamAppender::GetBuffer(
-        int threadId)
+Snowflake::Client::Util::ByteArrayStreamBuf * Snowflake::Client::Util::
+StreamAppender::GetBuffer(
+  int threadId)
 {
   if (m_buffers[threadId] == nullptr)
   {
@@ -122,17 +122,17 @@ Snowflake::Client::Util::ByteArrayStreamBuf *Snowflake::Client::Util::
 }
 
 void Snowflake::Client::Util::StreamAppender::WritePartToOutputStream(
-    int threadId, int partIndex)
+  int threadId, int partIndex)
 {
   _critical_section_lock(&m_streamMutex);
-  while (partIndex > m_currentPartIndex)
+  while(partIndex > m_currentPartIndex)
   {
     _cond_wait(&m_streamCv, &m_streamMutex);
   }
   m_outputStream->write(m_buffers[threadId]->getDataBuffer(),
                         m_buffers[threadId]->getSize());
 
-  m_currentPartIndex++;
+  m_currentPartIndex ++;
 
   if (partIndex == m_totalPartNum - 1)
   {

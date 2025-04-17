@@ -1,8 +1,7 @@
 #include <snowflake/logger.h>
 #include "example_setup.h"
 
-void initialize_snowflake_example(sf_bool debug)
-{
+void initialize_snowflake_example(sf_bool debug) {
     // default location and the maximum logging
     snowflake_global_init(NULL, SF_LOG_TRACE);
 
@@ -10,15 +9,13 @@ void initialize_snowflake_example(sf_bool debug)
     snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
 }
 
-SF_CONNECT *setup_snowflake_connection()
-{
+SF_CONNECT *setup_snowflake_connection() {
     return setup_snowflake_connection_with_autocommit(
-        "UTC", SF_BOOLEAN_TRUE);
+      "UTC", SF_BOOLEAN_TRUE);
 }
 
 SF_CONNECT *setup_snowflake_connection_with_autocommit(
-    const char *timezone, sf_bool autocommit)
-{
+  const char* timezone, sf_bool autocommit) {
     SF_CONNECT *sf = snowflake_init();
 
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
@@ -36,18 +33,15 @@ SF_CONNECT *setup_snowflake_connection_with_autocommit(
     snowflake_set_attribute(sf, SF_CON_TIMEZONE, timezone);
     char *host, *port, *protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host)
-    {
+    if (host) {
         snowflake_set_attribute(sf, SF_CON_HOST, host);
     }
     port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port)
-    {
+    if (port) {
         snowflake_set_attribute(sf, SF_CON_PORT, port);
     }
     protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol)
-    {
+    if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
     return sf;
