@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string>
 #include "snowflake/SFURL.hpp"
 #include "utils/test_setup.h"
@@ -9,7 +5,7 @@
 
 using namespace Snowflake::Client;
 
-void test_parse_basic(void ** unused)
+void test_parse_basic(void **unused)
 {
   SFURL url;
 
@@ -62,11 +58,11 @@ void test_parse_basic(void ** unused)
   assert_string_equal(url.getQueryParam("key2").c_str(), "val2");
 }
 
-void test_parse_authority(void ** unused)
+void test_parse_authority(void **unused)
 {
   SFURL url;
 
-   // Test authority with host and port
+  // Test authority with host and port
   url = SFURL::parse("http://snowflake.com:8080/request_path");
   assert_string_equal(url.scheme().c_str(), "http");
   assert_string_equal(url.userInfo().c_str(), "");
@@ -91,7 +87,7 @@ void test_parse_authority(void ** unused)
   assert_string_equal(url.port().c_str(), "");
 }
 
-void test_construct(void ** unused)
+void test_construct(void **unused)
 {
   SFURL url;
   url.scheme("ftp").userInfo("u").host("github.com").port("8082").path("/path/to/test").fragment("frag");
@@ -119,14 +115,21 @@ void test_construct(void ** unused)
   assert_string_equal(url.toString().c_str(), "ftp://github.com/path/to/test?key1=val1&key2=valSnow&key3=val3#frag");
 }
 
-#define REQUIRE_THROWS(test_code)     \
-{ bool has_throws = false;            \
-  try { test_code;}                   \
-  catch (...) { has_throws = true; }  \
-  assert_true(has_throws);            \
-}
+#define REQUIRE_THROWS(test_code) \
+  {                               \
+    bool has_throws = false;      \
+    try                           \
+    {                             \
+      test_code;                  \
+    }                             \
+    catch (...)                   \
+    {                             \
+      has_throws = true;          \
+    }                             \
+    assert_true(has_throws);      \
+  }
 
-void test_error_parse(void ** unused)
+void test_error_parse(void **unused)
 {
   // Invalid scheme format
   REQUIRE_THROWS(SFURL::parse("ftp:/github.com"));
@@ -146,12 +149,13 @@ static int gr_setup(void **unused)
   return 0;
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_parse_basic),
-    cmocka_unit_test(test_parse_authority),
-    cmocka_unit_test(test_construct),
-    cmocka_unit_test(test_error_parse),
+      cmocka_unit_test(test_parse_basic),
+      cmocka_unit_test(test_parse_authority),
+      cmocka_unit_test(test_construct),
+      cmocka_unit_test(test_error_parse),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;

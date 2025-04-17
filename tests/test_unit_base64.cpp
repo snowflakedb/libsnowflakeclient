@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include <iterator>
 #include <algorithm>
 #include <memory>
@@ -21,7 +18,6 @@ struct Base64TestcaseI
 {
 public:
   virtual std::vector<char> getDecodeVec() = 0;
-
 
   virtual std::string getEncodeStr() = 0;
 
@@ -49,7 +45,7 @@ struct AbstractBase64TestCase : Base64TestcaseI
 {
 
 public:
-   virtual std::string getEncodeUrlStr() final
+  virtual std::string getEncodeUrlStr() final
   {
     auto encode = this->getEncodeStr();
     std::replace(encode.begin(), encode.end(), '+', '-');
@@ -69,10 +65,9 @@ public:
     std::replace(encode.begin(), encode.end(), '/', '_');
     return encode;
   }
+
 protected:
-
   virtual ~AbstractBase64TestCase() {};
-
 
   static std::string truncatePadding(const std::string &origin)
   {
@@ -81,12 +76,12 @@ protected:
       return origin;
     }
     size_t end = origin.length() - 1;
-    while (origin[end] == '=') end--;
+    while (origin[end] == '=')
+      end--;
     return std::string(origin.begin(), origin.begin() + end + 1);
   }
 
   AbstractBase64TestCase() = default;
-
 };
 
 /**
@@ -104,13 +99,11 @@ struct Base64TestcaseStr : AbstractBase64TestCase
     return encode_;
   }
 
-  Base64TestcaseStr(std::string decode, std::string encode) :
-    decode_(decode), encode_(encode) {}
+  Base64TestcaseStr(std::string decode, std::string encode) : decode_(decode), encode_(encode) {}
 
 private:
   std::string decode_;
   std::string encode_;
-
 };
 
 /**
@@ -128,7 +121,8 @@ struct Base64TestcaseFile : AbstractBase64TestCase
     return std::string(encode_.begin(), encode_.end());
   }
 
-  Base64TestcaseFile(std::string decode_file_name, std::string encode_file_name) {
+  Base64TestcaseFile(std::string decode_file_name, std::string encode_file_name)
+  {
     decode_ = readAllBytes(decode_file_name);
     encode_ = readAllBytes(encode_file_name);
   }
@@ -152,18 +146,18 @@ private:
 };
 
 static std::shared_ptr<Base64TestcaseI> testcasesPadding[] = {
-  std::make_shared<Base64TestcaseStr>("eoqwiroiqnweropiqnweorinqwoepir",
-                                      "ZW9xd2lyb2lxbndlcm9waXFud2VvcmlucXdvZXBpcg=="),
-  std::make_shared<Base64TestcaseStr>("32421bjbsaf", "MzI0MjFiamJzYWY="),
-  std::make_shared<Base64TestcaseStr>("nfainwerq", "bmZhaW53ZXJx"),
-  std::make_shared<Base64TestcaseStr>("Snowflake is fxxkin great!!!", "U25vd2ZsYWtlIGlzIGZ4eGtpbiBncmVhdCEhIQ=="),
-  std::make_shared<Base64TestcaseStr>("asdfwerqewrsfasxc2312saDSFADF", "YXNkZndlcnFld3JzZmFzeGMyMzEyc2FEU0ZBREY="),
-  std::make_shared<Base64TestcaseFile>("decode", "encode"),
-  std::make_shared<Base64TestcaseFile>("decode2", "encode2"),
+    std::make_shared<Base64TestcaseStr>("eoqwiroiqnweropiqnweorinqwoepir",
+                                        "ZW9xd2lyb2lxbndlcm9waXFud2VvcmlucXdvZXBpcg=="),
+    std::make_shared<Base64TestcaseStr>("32421bjbsaf", "MzI0MjFiamJzYWY="),
+    std::make_shared<Base64TestcaseStr>("nfainwerq", "bmZhaW53ZXJx"),
+    std::make_shared<Base64TestcaseStr>("Snowflake is fxxkin great!!!", "U25vd2ZsYWtlIGlzIGZ4eGtpbiBncmVhdCEhIQ=="),
+    std::make_shared<Base64TestcaseStr>("asdfwerqewrsfasxc2312saDSFADF", "YXNkZndlcnFld3JzZmFzeGMyMzEyc2FEU0ZBREY="),
+    std::make_shared<Base64TestcaseFile>("decode", "encode"),
+    std::make_shared<Base64TestcaseFile>("decode2", "encode2"),
 };
 
 /**
- * Test the encode/decode function of base 64 
+ * Test the encode/decode function of base 64
  * @param unused
  */
 void test_base64_coding(void **unused)
@@ -229,15 +223,15 @@ void test_base64_url_cpp_coding(void **)
         output_file << decodeActual[i];
     }
 
-//    assert_string_equal(encodeActual.c_str(), encodeExpect.c_str());
-//    assert_int_equal(decodeActual.size(), decodeExpect.size());
-//    assert_memory_equal(decodeActual.data(), decodeExpect.data(), decodeActual.size());
+    //    assert_string_equal(encodeActual.c_str(), encodeExpect.c_str());
+    //    assert_int_equal(decodeActual.size(), decodeExpect.size());
+    //    assert_memory_equal(decodeActual.data(), decodeExpect.data(), decodeActual.size());
   }
 }
 
 /**
  * Test the encode/decode function of base 64 url
- * @param unused 
+ * @param unused
  */
 void test_base64_url_coding(void **unused)
 {
@@ -260,12 +254,13 @@ void test_base64_url_coding(void **unused)
   }
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_base64_coding),
-    cmocka_unit_test(test_base64_cpp_coding),
-    cmocka_unit_test(test_base64_url_coding),
-    cmocka_unit_test(test_base64_url_cpp_coding),
+      cmocka_unit_test(test_base64_coding),
+      cmocka_unit_test(test_base64_cpp_coding),
+      cmocka_unit_test(test_base64_url_coding),
+      cmocka_unit_test(test_base64_url_cpp_coding),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

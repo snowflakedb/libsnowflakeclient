@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2020 Snowflake Computing, Inc. All rights reserved.
- */
 #include "utils/test_setup.h"
 #include <cJSON.h>
 #include <string.h>
@@ -12,11 +9,13 @@
  * Tests fetching the query result response directly from SFSTMT
  * @param unused
  */
-void test_get_query_result_response(void **unused) {
+void test_get_query_result_response(void **unused)
+{
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
 
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -44,10 +43,10 @@ void test_get_query_result_response(void **unused) {
     assert_int_equal(success, SF_BOOLEAN_TRUE);
 
     cJSON *data = snowflake_cJSON_GetObjectItem(
-            parsedJSON, "data");
+        parsedJSON, "data");
     assert_int_equal(
-            strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
-            SF_UUID4_LEN);
+        strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
+        SF_UUID4_LEN);
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
@@ -59,11 +58,13 @@ void test_get_query_result_response(void **unused) {
  * Tests fetching the query result response with failed query
  * @param unused
  */
-void test_get_query_result_response_failed(void **unused) {
+void test_get_query_result_response_failed(void **unused)
+{
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
 
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -88,11 +89,12 @@ void test_get_query_result_response_failed(void **unused) {
     snowflake_term(sf);
 }
 
-int main(void) {
+int main(void)
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-            cmocka_unit_test(test_get_query_result_response),
-            cmocka_unit_test(test_get_query_result_response_failed),
+        cmocka_unit_test(test_get_query_result_response),
+        cmocka_unit_test(test_get_query_result_response_failed),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
 #include <iostream>
 
 #include <ostream>
@@ -13,14 +10,16 @@
 
 using namespace Snowflake::Client::Crypto;
 
-void log_base_64_value(const char *input, const int input_len, const std::string& message) {
+void log_base_64_value(const char *input, const int input_len, const std::string &message)
+{
     auto input_base64 = std::unique_ptr<char[]>(new char[128]);
     size_t encoded_len = Snowflake::Client::Util::Base64::encode(input, input_len, input_base64.get());
     input_base64[encoded_len] = '\0';
     printf("%s Base 64 %s", message.c_str(), input_base64.get());
 }
 
-std::unique_ptr<char[]> concat_and_encode_base64(char* input1, int input1_len, char* input2, int input2_len) {
+std::unique_ptr<char[]> concat_and_encode_base64(char *input1, int input1_len, char *input2, int input2_len)
+{
     const auto concatenated_input = std::unique_ptr<char[]>(new char[input1_len + input2_len + 1]);
     auto encoded_str = std::unique_ptr<char[]>(new char[128]);
     memcpy(concatenated_input.get(), input1, input1_len);
@@ -31,17 +30,19 @@ std::unique_ptr<char[]> concat_and_encode_base64(char* input1, int input1_len, c
     return encoded_str;
 }
 
-CryptoKey create_key(const std::string& key_str, int nbBits) {
+CryptoKey create_key(const std::string &key_str, int nbBits)
+{
     CryptoKey key;
     key.nbBits = nbBits;
-    key_str.copy(key.data, nbBits/8);
+    key_str.copy(key.data, nbBits / 8);
 
     return key;
 }
 
-CryptoIV create_iv(const std::string& iv_str) {
+CryptoIV create_iv(const std::string &iv_str)
+{
     CryptoIV iv;
-    iv_str.copy(iv.data, SF_CRYPTO_IV_NBITS/8);
+    iv_str.copy(iv.data, SF_CRYPTO_IV_NBITS / 8);
 
     return iv;
 }
@@ -49,7 +50,8 @@ CryptoIV create_iv(const std::string& iv_str) {
 /**
  * Test AES CBC encryption
  */
-void test_aes_cbc_mode_encryption(void **unused) {
+void test_aes_cbc_mode_encryption(void **unused)
+{
     const std::string plaintext = "abc";
     // pragma: allowlist nextline secret
     const CryptoKey key = create_key("1234567890abcdef", 128);
@@ -75,7 +77,8 @@ void test_aes_cbc_mode_encryption(void **unused) {
     assert_string_equal(plaintext_decrypted.get(), plaintext.c_str());
 }
 
-void test_aes_gcm_mode_encryption(void **unused) {
+void test_aes_gcm_mode_encryption(void **unused)
+{
     const std::string plaintext = "abc";
     // pragma: allowlist nextline secret
     const CryptoKey key = create_key("1234567890abcdef", 128);
@@ -106,7 +109,8 @@ void test_aes_gcm_mode_encryption(void **unused) {
     assert_string_equal(concat_and_encode_base64(ciphertext.get(), len, reinterpret_cast<char *>(tag.get()), 16).get(), expected_ciphertext_base64.c_str());
 }
 
-int main() {
+int main()
+{
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_aes_cbc_mode_encryption),
         cmocka_unit_test(test_aes_gcm_mode_encryption),

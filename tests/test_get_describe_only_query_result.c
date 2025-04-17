@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2020 Snowflake Computing, Inc. All rights reserved.
- */
 #include "utils/test_setup.h"
 #include <cJSON.h>
 #include <string.h>
@@ -12,11 +9,13 @@
  * Tests fetching the describe only query result response directly from SFSTMT
  * @param unused
  */
-void test_get_describe_only_query_result(void **unused) {
+void test_get_describe_only_query_result(void **unused)
+{
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
 
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -45,8 +44,8 @@ void test_get_describe_only_query_result(void **unused) {
 
     cJSON *data = snowflake_cJSON_GetObjectItem(parsedJSON, "data");
     assert_int_equal(
-            strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
-            SF_UUID4_LEN);
+        strlen(snowflake_cJSON_GetObjectItem(data, "queryID")->valuestring) + 1,
+        SF_UUID4_LEN);
 
     // Make sure that the query is run in describe only mode and the actual result is empty
     assert_int_equal(snowflake_cJSON_GetArraySize(snowflake_cJSON_GetObjectItem(data, "rowset")), 0);
@@ -60,10 +59,11 @@ void test_get_describe_only_query_result(void **unused) {
     snowflake_term(sf);
 }
 
-int main(void) {
+int main(void)
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-            cmocka_unit_test(test_get_describe_only_query_result),
+        cmocka_unit_test(test_get_describe_only_query_result),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

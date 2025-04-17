@@ -1,26 +1,21 @@
-/*
-** Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
-*/
-
 #include <string.h>
 #include "treemap.h"
 #include "memory.h"
 
-
-TREE_MAP * STDCALL sf_treemap_init()
+TREE_MAP *STDCALL sf_treemap_init()
 {
     TREE_MAP *tree_map = (TREE_MAP *)SF_CALLOC(TREE_MAP_MAX_SIZE, sizeof(TREE_MAP));
     if (!tree_map)
     {
         log_error("sf_treemap_init: Memory Allocation failed\n");
     }
-    
+
     return tree_map;
 }
 
 /*
 ** The hash fxn used by the treemap
-** should follow horner's rule 
+** should follow horner's rule
 ** to generate index
 ** @return an index in the treemap
 */
@@ -34,12 +29,12 @@ unsigned long STDCALL sf_treemap_hash_fxn(char *key)
 
     for (iter = 0; iter < len; iter++)
     {
-        hash = (HASH_CONSTANT*hash)+key[iter];
+        hash = (HASH_CONSTANT * hash) + key[iter];
     }
     return hash;
 }
 
-/* 
+/*
 ** Retrieves an index from the tree map
 ** to store a bind param at.
 ** @return - unsigned long
@@ -118,7 +113,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *ke
 
     if (!tree_map || !param || !key)
     {
-        /* Handle error 
+        /* Handle error
         ** return or goto done;
         */
         log_error("sf_treemap_set: Tree Map || Param || key passed is NULL\n");
@@ -128,7 +123,7 @@ SF_INT_RET_CODE STDCALL sf_treemap_set(TREE_MAP *tree_map, void *param, char *ke
     return sf_treemap_insert_node(sf_treemap_get_index(key), tree_map, param, key);
 }
 
-void * STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
+void *STDCALL sf_treemap_get(TREE_MAP *tree_map, char *key)
 {
     void *param = NULL;
     if (!tree_map || !key)

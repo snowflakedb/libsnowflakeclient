@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_CLIENT_INT_H
 #define SNOWFLAKE_CLIENT_INT_H
 
@@ -83,7 +79,7 @@
 /**
  * Maximum one-directional range of offset-based timezones (24 hours)
  */
-#define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
+#define TIMEZONE_OFFSET_RANGE (int64)(24 * 60);
 
 int uuid4_generate_non_terminated(char *dst);
 int uuid4_generate(char *dst);
@@ -91,41 +87,45 @@ int uuid4_generate(char *dst);
 /**
  * Encryption material
  */
-typedef struct SF_ENC_MAT {
+typedef struct SF_ENC_MAT
+{
   char *query_stage_master_key;
   char query_id[SF_UUID4_LEN];
   int64 smk_id;
 } SF_ENC_MAT;
 
-typedef struct SF_STAGE_CRED {
+typedef struct SF_STAGE_CRED
+{
   char *aws_key_id;
   char *aws_secret_key;
   char *aws_token;
   char *azure_sas_token;
-  char* gcs_access_token;
+  char *gcs_access_token;
 } SF_STAGE_CRED;
 
-typedef struct SF_STAGE_INFO {
+typedef struct SF_STAGE_INFO
+{
   char *location_type;
   char *location;
   char *path;
   char *region;
   // An endpoint (Azure, AWS FIPS and GCS custom endpoint override)
-  char *endPoint; //For FIPS and Azure support
+  char *endPoint; // For FIPS and Azure support
   // whether to use s3 regional URL (AWS Only)
   // TODO SNOW-1818804: this field will be deprecated when the server returns {@link
   // #useRegionalUrl}
   sf_bool useS3RegionalUrl;
   // whether to use regional URL (AWS and GCS only)
   sf_bool useRegionalUrl;
-  char* storageAccount; // For Azure only
-  SF_STAGE_CRED * stage_cred;
+  char *storageAccount; // For Azure only
+  SF_STAGE_CRED *stage_cred;
 } SF_STAGE_INFO;
 
 /**
  * Put/Get command parse response
  */
-struct SF_PUT_GET_RESPONSE {
+struct SF_PUT_GET_RESPONSE
+{
   void *src_list;
   int64 parallel;
   // put threshold only
@@ -138,22 +138,23 @@ struct SF_PUT_GET_RESPONSE {
   // for put command, encMat is a single object while for get, it is a list of
   // enc_mat
   SF_ENC_MAT *enc_mat_put;
-  void * enc_mat_get;
+  void *enc_mat_get;
   SF_STAGE_INFO *stage_info;
   char *localLocation;
 };
 
 typedef struct NAMED_PARAMS
 {
-    void ** name_list;
-    unsigned int used;
-    unsigned int allocd;
-}NamedParams;
+  void **name_list;
+  unsigned int used;
+  unsigned int allocd;
+} NamedParams;
 
 /**
  * Query metadata
  */
-typedef struct SF_QUERY_METADATA {
+typedef struct SF_QUERY_METADATA
+{
   SF_QUERY_STATUS status;
   char *qid;
 } SF_QUERY_METADATA;
@@ -162,7 +163,6 @@ typedef struct SF_QUERY_METADATA {
  * Allocate memory for put get response struct
  */
 void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response);
-
 
 /**
  * Deallocate memory for put get response struct
@@ -183,14 +183,14 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
 SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         sf_bool is_native_put_get,
-                                        struct SF_QUERY_RESULT_CAPTURE* result_capture,
+                                        struct SF_QUERY_RESULT_CAPTURE *result_capture,
                                         sf_bool is_describe_only,
                                         sf_bool is_async_exec);
 
 /**
  * @return true if this is a put/get command, otherwise false
  */
-sf_bool STDCALL _is_put_get_command(char* sql_text);
+sf_bool STDCALL _is_put_get_command(char *sql_text);
 
 /**
  * @return POSITIONAL or NAMED based on the type of params
@@ -203,77 +203,78 @@ PARAM_TYPE STDCALL _snowflake_get_param_style(const SF_BIND_INPUT *input);
  *        parameter sets (non-batch execution)
  * @return parameter bindings in cJSON.
  */
-cJSON* STDCALL _snowflake_get_binding_json(SF_STMT *sfstmt, int64 index);
+cJSON *STDCALL _snowflake_get_binding_json(SF_STMT *sfstmt, int64 index);
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-/**
- * Legacy approach of Executing a query, not to execute put/get natively.
- * Should only be called internally for put/get queries.
- *
- * @param sf SNOWFLAKE_STMT context.
- * @param command a query or command that returns results.
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL
-_snowflake_query_put_get_legacy(SF_STMT* sfstmt, const char* command, size_t command_size);
+  /**
+   * Legacy approach of Executing a query, not to execute put/get natively.
+   * Should only be called internally for put/get queries.
+   *
+   * @param sf SNOWFLAKE_STMT context.
+   * @param command a query or command that returns results.
+   * @return 0 if success, otherwise an errno is returned.
+   */
+  SF_STATUS STDCALL
+  _snowflake_query_put_get_legacy(SF_STMT *sfstmt, const char *command, size_t command_size);
 
-/**
- * Executes put get command natively.
- * @param sfstmt SNOWFLAKE_STMT context.
- * @param upload_stream Internal support for bind uploading, pointer to std::basic_iostream<char>.
- * @param stream_size The data size of upload_stream.
- * @param stream_upload_max_retries The max number of retries for stream uploading.
- *                                  Internal support for bind uploading so we can disable retry
- *                                  and fallback to regular binding directly.
- * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
- *
- * @return 0 if success, otherwise an errno is returned.
- */
-SF_STATUS STDCALL _snowflake_execute_put_get_native(
-                      SF_STMT *sfstmt,
-                      void* upload_stream,
-                      size_t stream_size,
-                      int stream_upload_max_retries,
-                      struct SF_QUERY_RESULT_CAPTURE* result_capture);
+  /**
+   * Executes put get command natively.
+   * @param sfstmt SNOWFLAKE_STMT context.
+   * @param upload_stream Internal support for bind uploading, pointer to std::basic_iostream<char>.
+   * @param stream_size The data size of upload_stream.
+   * @param stream_upload_max_retries The max number of retries for stream uploading.
+   *                                  Internal support for bind uploading so we can disable retry
+   *                                  and fallback to regular binding directly.
+   * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
+   *
+   * @return 0 if success, otherwise an errno is returned.
+   */
+  SF_STATUS STDCALL _snowflake_execute_put_get_native(
+      SF_STMT *sfstmt,
+      void *upload_stream,
+      size_t stream_size,
+      int stream_upload_max_retries,
+      struct SF_QUERY_RESULT_CAPTURE *result_capture);
 
-/*
- * @return size of single binding value per data type.
- */
-size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT* bind);
+  /*
+   * @return size of single binding value per data type.
+   */
+  size_t STDCALL _snowflake_get_binding_value_size(SF_BIND_INPUT *bind);
 
 #define SF_PARAM_NAME_BUF_LEN 20
-/**
- * Get parameter binding by index for both POSITIONAL and NAMED cases.
- * @param sfstmt SNOWFLAKE_STMT context.
- * @param index The 0 based index of parameter binding to get.
- * @param name Output the name of binding.
- * @param name_buf The buffer to store name.
-                   Used for POSITIONAL and name will point to this buffer in such case.
- * @param name_buf_len The size of name_buf.
- * @return parameter binding with specified index.
- */
-SF_BIND_INPUT* STDCALL _snowflake_get_binding_by_index(SF_STMT* sfstmt,
-  size_t index,
-  char** name,
-  char* name_buf,
-  size_t name_buf_len);
+  /**
+   * Get parameter binding by index for both POSITIONAL and NAMED cases.
+   * @param sfstmt SNOWFLAKE_STMT context.
+   * @param index The 0 based index of parameter binding to get.
+   * @param name Output the name of binding.
+   * @param name_buf The buffer to store name.
+                     Used for POSITIONAL and name will point to this buffer in such case.
+   * @param name_buf_len The size of name_buf.
+   * @return parameter binding with specified index.
+   */
+  SF_BIND_INPUT *STDCALL _snowflake_get_binding_by_index(SF_STMT *sfstmt,
+                                                         size_t index,
+                                                         char **name,
+                                                         char *name_buf,
+                                                         size_t name_buf_len);
 
-sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT* sfstmt);
+  sf_bool STDCALL _snowflake_needs_stage_binding(SF_STMT *sfstmt);
 
-/**
- * Upload parameter bindings through internal stage.
- * @param sfstmt SNOWFLAKE_STMT context.
- *
- * @return Stage path for uploaded bindings if success,
- *         otherwise NULL is returned and error is put in sfstmt->error.
- */
-char* STDCALL
-_snowflake_stage_bind_upload(SF_STMT* sfstmt);
+  /**
+   * Upload parameter bindings through internal stage.
+   * @param sfstmt SNOWFLAKE_STMT context.
+   *
+   * @return Stage path for uploaded bindings if success,
+   *         otherwise NULL is returned and error is put in sfstmt->error.
+   */
+  char *STDCALL
+  _snowflake_stage_bind_upload(SF_STMT *sfstmt);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif //SNOWFLAKE_CLIENT_INT_H
+#endif // SNOWFLAKE_CLIENT_INT_H

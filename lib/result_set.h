@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_RESULTSET_H
 #define SNOWFLAKE_RESULTSET_H
 
@@ -9,7 +5,8 @@
 #include "connection.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
     // Result Set API ==============================================================================
@@ -26,10 +23,10 @@ extern "C" {
      * @return the created result set.
      */
     result_set_ptr rs_create_with_json_result(
-        cJSON * json_rowset,
-        SF_COLUMN_DESC * metadata,
+        cJSON *json_rowset,
+        SF_COLUMN_DESC *metadata,
         QueryResultFormat query_result_format,
-        const char * tz_string);
+        const char *tz_string);
 
     /**
      * Parameterized constructor.
@@ -43,10 +40,10 @@ extern "C" {
      * @return the created result set.
      */
     result_set_ptr rs_create_with_chunk(
-        void * initial_chunk,
-        SF_COLUMN_DESC * metadata,
+        void *initial_chunk,
+        SF_COLUMN_DESC *metadata,
         QueryResultFormat query_result_format,
-        const char * tz_string);
+        const char *tz_string);
 
     /**
      * Destructor.
@@ -64,7 +61,7 @@ extern "C" {
      * @return 0 if successful, otherwise an error is returned.
      */
     SF_STATUS STDCALL
-    rs_append_chunk(result_set_ptr rs, void * chunk);
+    rs_append_chunk(result_set_ptr rs, void *chunk);
 
     /**
      * Advances to the next row.
@@ -87,7 +84,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_bool(
         result_set_ptr rs,
         size_t idx,
-        sf_bool * out_data);
+        sf_bool *out_data);
 
     /**
      * Writes the value of the current cell as an int8 to the provided buffer.
@@ -101,7 +98,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_int8(
         result_set_ptr rs,
         size_t idx,
-        int8 * out_data);
+        int8 *out_data);
 
     /**
      * Writes the value of the current cell as an int32 to the provided buffer.
@@ -115,7 +112,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_int32(
         result_set_ptr rs,
         size_t idx,
-        int32 * out_data);
+        int32 *out_data);
 
     /**
      * Writes the value of the current cell as an int64 to the provided buffer.
@@ -129,7 +126,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_int64(
         result_set_ptr rs,
         size_t idx,
-        int64 * out_data);
+        int64 *out_data);
 
     /**
      * Writes the value of the current cell as a uint8 to the provided buffer.
@@ -143,7 +140,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_uint8(
         result_set_ptr rs,
         size_t idx,
-        uint8 * out_data);
+        uint8 *out_data);
 
     /**
      * Writes the value of the current cell as a uint32 to the provided buffer.
@@ -157,7 +154,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_uint32(
         result_set_ptr rs,
         size_t idx,
-        uint32 * out_data);
+        uint32 *out_data);
 
     /**
      * Writes the value of the current cell as a uint64 to the provided buffer.
@@ -171,7 +168,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_uint64(
         result_set_ptr rs,
         size_t idx,
-        uint64 * out_data);
+        uint64 *out_data);
 
     /**
      * Writes the value of the current cell as a float32 to the provided buffer.
@@ -185,7 +182,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_float32(
         result_set_ptr rs,
         size_t idx,
-        float32 * out_data);
+        float32 *out_data);
 
     /**
      * Writes the value of the current cell as a float64 to the provided buffer.
@@ -199,7 +196,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_float64(
         result_set_ptr rs,
         size_t idx,
-        float64 * out_data);
+        float64 *out_data);
 
     /**
      * Writes the value of the current cell as a constant C-string to the provided buffer.
@@ -213,7 +210,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_const_string(
         result_set_ptr rs,
         size_t idx,
-        const char ** out_data);
+        const char **out_data);
 
     /**
      * Writes the value of the current cell as a timestamp to the provided buffer.
@@ -227,7 +224,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_as_timestamp(
         result_set_ptr rs,
         size_t idx,
-        SF_TIMESTAMP * out_data);
+        SF_TIMESTAMP *out_data);
 
     /**
      * Writes the length of the current cell to the provided buffer.
@@ -241,7 +238,7 @@ extern "C" {
     SF_STATUS STDCALL rs_get_cell_strlen(
         result_set_ptr rs,
         size_t idx,
-        size_t * out_data);
+        size_t *out_data);
 
     /**
      * Gets the number of rows in the current chunk being processed.
@@ -264,28 +261,28 @@ extern "C" {
     SF_STATUS STDCALL rs_is_cell_null(
         result_set_ptr rs,
         size_t idx,
-        sf_bool * out_data);
+        sf_bool *out_data);
 
     /**
-    * Get the latest error code.
-    *
-    * @param rs                   The ResultSet object.
-    *
-    * @return the latest error code. 0 if no error.
-    */
+     * Get the latest error code.
+     *
+     * @param rs                   The ResultSet object.
+     *
+     * @return the latest error code. 0 if no error.
+     */
     SF_STATUS STDCALL rs_get_error(result_set_ptr rs);
 
     /**
-    * Get the latest error code.
-    *
-    * @param rs                   The ResultSet object.
-    *
-    * @return the latest error message. empty string if no error.
-    */
-    const char* rs_get_error_message(result_set_ptr rs);
+     * Get the latest error code.
+     *
+     * @param rs                   The ResultSet object.
+     *
+     * @return the latest error message. empty string if no error.
+     */
+    const char *rs_get_error_message(result_set_ptr rs);
 
     // return callback struct for arrow chunk downloading
-    NON_JSON_RESP* callback_create_arrow_resp(void);
+    NON_JSON_RESP *callback_create_arrow_resp(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
- */
+
 #include <boost/optional.hpp>
 
 class EnvOverride
 {
 public:
-  EnvOverride(const EnvOverride&) = delete;
-  void operator=(const EnvOverride&) = delete;
-  EnvOverride(std::string envVar_, const boost::optional<std::string>& newValue_)
-    : envVar{std::move(envVar_)}
-    , oldValue{}
+  EnvOverride(const EnvOverride &) = delete;
+  void operator=(const EnvOverride &) = delete;
+  EnvOverride(std::string envVar_, const boost::optional<std::string> &newValue_)
+      : envVar{std::move(envVar_)}, oldValue{}
   {
     char buf[BUF_SIZE];
-    char* oldValueCstr = sf_getenv_s(envVar.c_str(), buf, BUF_SIZE);
+    char *oldValueCstr = sf_getenv_s(envVar.c_str(), buf, BUF_SIZE);
     if (oldValueCstr != nullptr)
     {
       oldValue = oldValueCstr;
@@ -28,8 +25,8 @@ public:
     }
   }
 
-  EnvOverride(std::string envVar_, const std::string& newValue_)
-    : EnvOverride(std::move(envVar_), boost::make_optional(newValue_)) {}
+  EnvOverride(std::string envVar_, const std::string &newValue_)
+      : EnvOverride(std::move(envVar_), boost::make_optional(newValue_)) {}
 
   ~EnvOverride()
   {

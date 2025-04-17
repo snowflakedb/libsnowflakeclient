@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <cassert>
 #include "snowflake/Proxy.hpp"
 #include "utils/test_setup.h"
@@ -17,7 +13,8 @@ void test_proxy_parts_equality(
     unsigned port,
     Proxy::Protocol scheme,
     const char *noProxy,
-    bool setProxyFromEnv) {
+    bool setProxyFromEnv)
+{
     Proxy proxy(proxy_str);
 
     if (setProxyFromEnv)
@@ -94,19 +91,19 @@ void test_noproxy_fromenv(void **unused)
     sf_unsetenv("NO_PROXY");
 }
 
-int main(void) {
-  const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_proxy_machine_only),
-    cmocka_unit_test(test_proxy_machine_and_port),
-    cmocka_unit_test(test_proxy_machine_and_scheme),
-    cmocka_unit_test(test_proxy_machine_port_scheme),
-    cmocka_unit_test(test_proxy_all),
-    cmocka_unit_test(test_proxy_empty),
-    cmocka_unit_test(test_allproxy_noproxy_fromenv),
-    cmocka_unit_test(test_httpsproxy_fromenv),
-    cmocka_unit_test(test_httpproxy_fromenv),
-    cmocka_unit_test(test_noproxy_fromenv)
-  };
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
-  return ret;
+int main(void)
+{
+    const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_proxy_machine_only),
+        cmocka_unit_test(test_proxy_machine_and_port),
+        cmocka_unit_test(test_proxy_machine_and_scheme),
+        cmocka_unit_test(test_proxy_machine_port_scheme),
+        cmocka_unit_test(test_proxy_all),
+        cmocka_unit_test(test_proxy_empty),
+        cmocka_unit_test(test_allproxy_noproxy_fromenv),
+        cmocka_unit_test(test_httpsproxy_fromenv),
+        cmocka_unit_test(test_httpproxy_fromenv),
+        cmocka_unit_test(test_noproxy_fromenv)};
+    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    return ret;
 }

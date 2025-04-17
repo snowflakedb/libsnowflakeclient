@@ -1,8 +1,4 @@
 /*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
-/*
  * Notice: For Snowflake internal use only.
  *         External application should not use this class.
  */
@@ -17,161 +13,160 @@
 
 namespace Snowflake
 {
-namespace Client
-{
-
-class BindUploader
-{
-public:
- /**
-  * constructor
-  *
-  * @param stageDir The unique stage path for bindings uploading, could be a GUID.
-  * @param numParams Number of parameters.
-  * @param numParamSets Number of parameter sets.
-  * @param maxFileSize The max size of single file for bindings uploading.
-  *                    Separate into multiple files when exceed.
-  * @param compressLevel The compress level, between -1(default) to 9.
-  */
-  explicit BindUploader(const std::string& stageDir,
-                        unsigned int numParams,
-                        unsigned int numParamSets,
-                        unsigned int maxFileSize,
-                        int compressLevel);
-
- /**
-  * Add string value to binding stream and do uploading as needed.
-  * @param value The string value to be added.
-  * @param type The DB type of the value, for ODBC only when format
-  *             conversion for date/time types between stage/regular
-  *             binding is needed. (implementing convert/revert functions)
-  *
-  * @Return true if succeeded, false otherwise.
-  */
-  virtual bool addStringValue(const std::string& value, SF_DB_TYPE type);
-
-  /**
-   * Add NULL value to binding stream and do uploading as needed.
-   *
-  * @Return true if succeeded, false otherwise.
-   */
-  bool addNullValue();
-
-  inline std::string getStagePath()
+  namespace Client
   {
-    return m_stagePath;
-  }
 
-  inline bool hasBindingUploaded()
-  {
-    return m_hasBindingUploaded;
-  }
+    class BindUploader
+    {
+    public:
+      /**
+       * constructor
+       *
+       * @param stageDir The unique stage path for bindings uploading, could be a GUID.
+       * @param numParams Number of parameters.
+       * @param numParamSets Number of parameter sets.
+       * @param maxFileSize The max size of single file for bindings uploading.
+       *                    Separate into multiple files when exceed.
+       * @param compressLevel The compress level, between -1(default) to 9.
+       */
+      explicit BindUploader(const std::string &stageDir,
+                            unsigned int numParams,
+                            unsigned int numParamSets,
+                            unsigned int maxFileSize,
+                            int compressLevel);
 
-  inline std::string getError()
-  {
-    return m_errorMessage;
-  }
+      /**
+       * Add string value to binding stream and do uploading as needed.
+       * @param value The string value to be added.
+       * @param type The DB type of the value, for ODBC only when format
+       *             conversion for date/time types between stage/regular
+       *             binding is needed. (implementing convert/revert functions)
+       *
+       * @Return true if succeeded, false otherwise.
+       */
+      virtual bool addStringValue(const std::string &value, SF_DB_TYPE type);
 
-protected:
-  /**
-  * @return The statement for creating temporary stage for bind uploading.
-  */
-  std::string getCreateStageStmt();
+      /**
+       * Add NULL value to binding stream and do uploading as needed.
+       *
+       * @Return true if succeeded, false otherwise.
+       */
+      bool addNullValue();
 
-  void setError(const std::string& errMsg)
-  {
-    m_errorMessage = errMsg;
-  }
+      inline std::string getStagePath()
+      {
+        return m_stagePath;
+      }
 
-  /**
-  * Check whether the session's temporary stage has been created, and create it
-  * if not.
-  *
-  * @Return true if succeeded, false otherwise.
-  */
-  virtual bool createStageIfNeeded() = 0;
+      inline bool hasBindingUploaded()
+      {
+        return m_hasBindingUploaded;
+      }
 
-  /**
-  * Execute uploading for single data file.
-  *
-  * @param sql PUT command for single data file uploading
-  * @param uploadStream stream for data file to be uploaded
-  * @param dataSize Size of the data to be uploaded.
-  *
-  * @Return true if succeeded, false otherwise.
-  */
-  virtual bool executeUploading(const std::string &sql,
-                                std::basic_iostream<char>& uploadStream,
-                                size_t dataSize) = 0;
+      inline std::string getError()
+      {
+        return m_errorMessage;
+      }
 
-  /* date/time format conversions to be overridden by drivers (such as ODBC)
-   * that need native date/time type support.
-   * Will be called to converting binding format between regular binding and
-   * bulk binding.
-   * No conversion by default, in such case application/driver should bind
-   * data/time data as string.
-   */
+    protected:
+      /**
+       * @return The statement for creating temporary stage for bind uploading.
+       */
+      std::string getCreateStageStmt();
 
-  std::stringstream m_csvStream;
+      void setError(const std::string &errMsg)
+      {
+        m_errorMessage = errMsg;
+      }
 
-private:
-  /**
-  * Upload serialized binds in CSV stream to stage
-  *
-  * @Return true if succeeded, false otherwise.
-  */
-  bool putBinds();
+      /**
+       * Check whether the session's temporary stage has been created, and create it
+       * if not.
+       *
+       * @Return true if succeeded, false otherwise.
+       */
+      virtual bool createStageIfNeeded() = 0;
 
-  /**
-  * Compress data from csv stream to compress stream with gzip
-  * @return The data size of compress stream if compress succeeded.
-  * @throw when compress failed.
-  */
-  size_t compressWithGzip();
+      /**
+       * Execute uploading for single data file.
+       *
+       * @param sql PUT command for single data file uploading
+       * @param uploadStream stream for data file to be uploaded
+       * @param dataSize Size of the data to be uploaded.
+       *
+       * @Return true if succeeded, false otherwise.
+       */
+      virtual bool executeUploading(const std::string &sql,
+                                    std::basic_iostream<char> &uploadStream,
+                                    size_t dataSize) = 0;
 
-  /**
-  * Build PUT statement string. Handle filesystem differences and escaping backslashes.
-  * @param srcFilePath The faked source file path to upload.
-  */
-  std::string getPutStmt(const std::string& srcFilePath);
+      /* date/time format conversions to be overridden by drivers (such as ODBC)
+       * that need native date/time type support.
+       * Will be called to converting binding format between regular binding and
+       * bulk binding.
+       * No conversion by default, in such case application/driver should bind
+       * data/time data as string.
+       */
 
-  std::stringstream m_compressStream;
+      std::stringstream m_csvStream;
 
-  std::string m_stagePath;
+    private:
+      /**
+       * Upload serialized binds in CSV stream to stage
+       *
+       * @Return true if succeeded, false otherwise.
+       */
+      bool putBinds();
 
-  unsigned int m_fileNo;
+      /**
+       * Compress data from csv stream to compress stream with gzip
+       * @return The data size of compress stream if compress succeeded.
+       * @throw when compress failed.
+       */
+      size_t compressWithGzip();
 
-  unsigned int m_maxFileSize;
+      /**
+       * Build PUT statement string. Handle filesystem differences and escaping backslashes.
+       * @param srcFilePath The faked source file path to upload.
+       */
+      std::string getPutStmt(const std::string &srcFilePath);
 
-  unsigned int m_numParams;
+      std::stringstream m_compressStream;
 
-  unsigned int m_numParamSets;
+      std::string m_stagePath;
 
-  unsigned int m_curParamIndex;
+      unsigned int m_fileNo;
 
-  unsigned int m_curParamSetIndex;
+      unsigned int m_maxFileSize;
 
-  size_t m_dataSize;
+      unsigned int m_numParams;
 
-  std::chrono::steady_clock::time_point m_startTime;
+      unsigned int m_numParamSets;
 
-  std::chrono::steady_clock::time_point m_serializeStartTime;
+      unsigned int m_curParamIndex;
 
-  long long m_compressTime;
+      unsigned int m_curParamSetIndex;
 
-  long long m_serializeTime;
+      size_t m_dataSize;
 
-  long long m_putTime;
+      std::chrono::steady_clock::time_point m_startTime;
 
-  bool m_hasBindingUploaded;
+      std::chrono::steady_clock::time_point m_serializeStartTime;
 
-  int m_compressLevel;
+      long long m_compressTime;
 
-  std::string m_errorMessage;
+      long long m_serializeTime;
 
-};
+      long long m_putTime;
 
-} // namespace Client
+      bool m_hasBindingUploaded;
+
+      int m_compressLevel;
+
+      std::string m_errorMessage;
+    };
+
+  } // namespace Client
 } // namespace Snowflake
 
-#endif  // SNOWFLAKECLIENT_BINDUPLOADER_HPP
+#endif // SNOWFLAKECLIENT_BINDUPLOADER_HPP

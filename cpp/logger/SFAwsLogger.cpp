@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
+
 
 #include <aws/core/utils/logging/LogLevel.h>
 #include "SFAwsLogger.hpp"
@@ -26,7 +24,8 @@ namespace
 }
 
 Snowflake::Client::SFAwsLogger::SFAwsLogger()
-{}
+{
+}
 
 LogLevel Snowflake::Client::SFAwsLogger::GetLogLevel() const
 {
@@ -44,7 +43,7 @@ void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
     if (SFLogger::getExternalLogger() != NULL)
     {
       SFLogger::getExternalLogger()->logLineVA((SF_LOG_LEVEL)toSFLogeLevel(logLevel),
-        AWS_NS, tag, formatStr, args);
+                                               AWS_NS, tag, formatStr, args);
     }
     else
     {

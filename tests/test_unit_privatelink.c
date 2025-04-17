@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string.h>
 #include "utils/test_setup.h"
 #include "connection.h"
@@ -10,10 +6,10 @@
 /**
  * Test json body is properly updated.
  */
-void test_private_link_core(void** unused)
+void test_private_link_core(void **unused)
 {
-    char* original_env = getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
+    char *original_env = getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
+    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->user = "testuser";
     sf->password = "testpassword";
@@ -38,11 +34,12 @@ void test_private_link_core(void** unused)
     assert_string_equal("http://ocsp.account.privatelink.snowflakecomputing.cn/ocsp_response_cache.json", getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"));
     sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
 
-
-    if (original_env) {
+    if (original_env)
+    {
         sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL", original_env);
     }
-    else {
+    else
+    {
         sf_unsetenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
     }
 }

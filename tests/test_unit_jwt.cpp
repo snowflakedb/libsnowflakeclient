@@ -1,18 +1,14 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 #include <jwt/Jwt.hpp>
 #include "utils/TestSetup.hpp"
 #include "utils/test_setup.h"
 
-using Snowflake::Client::Jwt::IHeader;
-using Snowflake::Client::Jwt::IClaimSet;
 using Snowflake::Client::Jwt::AlgorithmType;
-using Snowflake::Client::Jwt::JWTObject;
+using Snowflake::Client::Jwt::IClaimSet;
+using Snowflake::Client::Jwt::IHeader;
 using Snowflake::Client::Jwt::IJwt;
+using Snowflake::Client::Jwt::JWTObject;
 using IHeaderUptr = std::unique_ptr<IHeader>;
 using IClaimSetUptr = std::unique_ptr<IClaimSet>;
 using IHeaderSptr = std::shared_ptr<IHeader>;
@@ -23,25 +19,31 @@ static EVP_PKEY *generate_key()
   EVP_PKEY *key = nullptr;
 
   std::unique_ptr<EVP_PKEY_CTX, std::function<void(EVP_PKEY_CTX *)>>
-    kct{EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), [](EVP_PKEY_CTX *ctx) { EVP_PKEY_CTX_free(ctx); }};
+      kct{EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), [](EVP_PKEY_CTX *ctx)
+          { EVP_PKEY_CTX_free(ctx); }};
 
-  if (EVP_PKEY_keygen_init(kct.get()) <= 0) return nullptr;
+  if (EVP_PKEY_keygen_init(kct.get()) <= 0)
+    return nullptr;
 
-  if (EVP_PKEY_CTX_set_rsa_keygen_bits(kct.get(), 2048) <= 0) return nullptr;
+  if (EVP_PKEY_CTX_set_rsa_keygen_bits(kct.get(), 2048) <= 0)
+    return nullptr;
 
-  if (EVP_PKEY_keygen(kct.get(), &key) <= 0) return nullptr;
+  if (EVP_PKEY_keygen(kct.get(), &key) <= 0)
+    return nullptr;
 
   return key;
 }
 
 static EVP_PKEY *extract_pub_key(EVP_PKEY *key_pair)
 {
-  std::unique_ptr<BIO, std::function<void(BIO *)>> mem
-    {BIO_new(BIO_s_mem()), [](BIO *bio) { BIO_free(bio); }};
+  std::unique_ptr<BIO, std::function<void(BIO *)>> mem{BIO_new(BIO_s_mem()), [](BIO *bio)
+                                                       { BIO_free(bio); }};
 
-  if (mem == nullptr) return nullptr;
+  if (mem == nullptr)
+    return nullptr;
 
-  if (!PEM_write_bio_PUBKEY(mem.get(), key_pair)) return nullptr;
+  if (!PEM_write_bio_PUBKEY(mem.get(), key_pair))
+    return nullptr;
 
   EVP_PKEY *pub_key = PEM_read_bio_PUBKEY(mem.get(), nullptr, nullptr, nullptr);
 
@@ -94,7 +96,6 @@ void test_claim_set(void **)
 
   assert_int_equal(claim_set->getClaimInLong("number"),
                    claim_set_cpy->getClaimInLong("number"));
-
 }
 
 void test_sign_verify(void **)
@@ -110,8 +111,8 @@ void test_sign_verify(void **)
   jwt.setHeader(header);
   jwt.setClaimSet(claim_set);
 
-  std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> key
-    {generate_key(), [](EVP_PKEY *k) { EVP_PKEY_free(k); }};
+  std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> key{generate_key(), [](EVP_PKEY *k)
+                                                                 { EVP_PKEY_free(k); }};
 
   if (key == nullptr)
   {
@@ -119,8 +120,8 @@ void test_sign_verify(void **)
     return;
   }
 
-  std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> pub_key
-    {extract_pub_key(key.get()), [](EVP_PKEY *k) { EVP_PKEY_free(k); }};
+  std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> pub_key{extract_pub_key(key.get()), [](EVP_PKEY *k)
+                                                                     { EVP_PKEY_free(k); }};
 
   std::string result = jwt.serialize(key.get());
 
@@ -129,7 +130,7 @@ void test_sign_verify(void **)
   assert_true(jwt.verify(pub_key.get(), true));
 
   // test JWTObject build from a plain JWT token string
-  IJwt* jwtFromString(IJwt::buildIJwt(result));
+  IJwt *jwtFromString(IJwt::buildIJwt(result));
   assert_true(jwtFromString->getHeader().get()->getAlgorithmType() == header->getAlgorithmType());
   assert_string_equal(jwtFromString->getClaimSet().get()->serialize().c_str(), claim_set->serialize().c_str());
 }
@@ -137,9 +138,9 @@ void test_sign_verify(void **)
 int main()
 {
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_claim_set),
-    cmocka_unit_test(test_header),
-    cmocka_unit_test(test_sign_verify),
+      cmocka_unit_test(test_claim_set),
+      cmocka_unit_test(test_header),
+      cmocka_unit_test(test_sign_verify),
   };
   return cmocka_run_group_tests(tests, nullptr, nullptr);
 }

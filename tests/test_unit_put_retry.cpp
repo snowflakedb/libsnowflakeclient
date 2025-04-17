@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2019-2020 Snowflake Computing, Inc. All rights reserved.
- */
-
 /**
  * Testing Put retry
  *
@@ -27,7 +23,7 @@ class MockedFailedParseStmt : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedFailedParseStmt()
-    : Snowflake::Client::IStatementPutGet(){}
+      : Snowflake::Client::IStatementPutGet() {}
 
   virtual bool parsePutGetCommand(std::string *sql,
                                   PutGetParseResponse *putGetParseResponse)
@@ -40,15 +36,14 @@ class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementGet()
-    : Snowflake::Client::IStatementPutGet()
+      : Snowflake::Client::IStatementPutGet()
   {
     m_stageInfo.stageType = Snowflake::Client::StageType::MOCKED_STAGE_TYPE;
     m_stageInfo.location = "fake s3 location";
     m_encryptionMaterial.emplace_back(
-      (char *)"dvkZi0dkBfrcHr6YxXLRFg==\0",
-      (char *)"1234\0",
-      1234
-    );
+        (char *)"dvkZi0dkBfrcHr6YxXLRFg==\0",
+        (char *)"1234\0",
+        1234);
     m_srcLocations.push_back("fake s3 location");
   }
 
@@ -79,15 +74,15 @@ class MockedStatementPut : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementPut(std::string fileName)
-    : IStatementPutGet()
+      : IStatementPutGet()
   {
     m_stageInfo.stageType = StageType::MOCKED_STAGE_TYPE;
     std::string dataDir = TestSetup::getDataDir();
     m_srcLocations.push_back(dataDir + fileName);
     m_encryptionMaterial.emplace_back(
-      (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
-      (char *)"1234\0",
-      1234);
+        (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
+        (char *)"1234\0",
+        1234);
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
@@ -111,7 +106,6 @@ private:
   std::vector<EncryptionMaterial> m_encryptionMaterial;
 
   std::vector<std::string> m_srcLocations;
-
 };
 
 class MockedStorageClient : public Snowflake::Client::IStorageClient
@@ -133,42 +127,41 @@ public:
    * @return put command status
    */
   virtual RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
-                                 std::basic_iostream<char> *dataStream)
+                                             std::basic_iostream<char> *dataStream)
   {
     bool shouldReturnPutFailed = false;
 
     if (!m_putSuccess)
     {
-        shouldReturnPutFailed = !m_putSuccess;
-        m_putSuccess = true;
+      shouldReturnPutFailed = !m_putSuccess;
+      m_putSuccess = true;
     }
     return shouldReturnPutFailed ? FAILED : SUCCESS;
   }
 
   virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
-    std::string * filePathFull, FileMetadata *fileMetadata)
+      std::string *filePathFull, FileMetadata *fileMetadata)
   {
-      return SUCCESS;
+    return SUCCESS;
   }
 
-  virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
-                                               std::basic_iostream<char>* dataStream)
+  virtual RemoteStorageRequestOutcome download(FileMetadata *fileMetadata,
+                                               std::basic_iostream<char> *dataStream)
   {
     return SUCCESS;
   }
 
 private:
   bool m_putSuccess;
-
 };
 
 /**
- * Simple put test case 
+ * Simple put test case
  * @param fileName
  */
 void test_simple_put_retry_core(std::string fileName)
 {
-  IStorageClient * client = new MockedStorageClient();
+  IStorageClient *client = new MockedStorageClient();
   StorageClientFactory::injectMockedClient(client);
 
   std::string cmd = std::string("put file://") + fileName + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
@@ -177,18 +170,17 @@ void test_simple_put_retry_core(std::string fileName)
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
 
-  ITransferResult * result = agent.execute(&cmd);
+  ITransferResult *result = agent.execute(&cmd);
 
   std::string put_status;
-  while(result->next())
+  while (result->next())
   {
     result->getColumnAsString(6, put_status);
     assert_string_equal("UPLOADED", put_status.c_str());
   }
-
 }
 
-void test_simple_put_retry(void ** unused)
+void test_simple_put_retry(void **unused)
 {
   test_simple_put_retry_core("small_file.csv.gz");
 }
@@ -203,10 +195,10 @@ void test_set_max_retry_core()
   {
     retry_context.waitForNextRetry();
     ++retryCount;
-  }while(retry_context.isRetryable(FAILED));
+  } while (retry_context.isRetryable(FAILED));
 
-  //The first run is not a retry.
-  assert_int_equal(retryCount-1, maxRetries);
+  // The first run is not a retry.
+  assert_int_equal(retryCount - 1, maxRetries);
 }
 void test_set_max_retry(void **unused)
 {
@@ -219,12 +211,12 @@ static int gr_setup(void **unused)
   return 0;
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_simple_put_retry),
-    cmocka_unit_test(test_set_max_retry),
+      cmocka_unit_test(test_simple_put_retry),
+      cmocka_unit_test(test_set_max_retry),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
 }
-

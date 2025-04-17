@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_BASIC_TYPES_H
 #define SNOWFLAKE_BASIC_TYPES_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include <limits.h>
@@ -14,21 +11,21 @@ extern "C" {
 #include <math.h>
 #include "platform.h"
 
-/**
- * Supported data types
- */
-typedef signed char int8;
-typedef unsigned char uint8;
-typedef unsigned int uint32;
-typedef int int32;
-typedef unsigned long long int uint64;
-typedef long long int int64;
-typedef double float64;
-typedef float float32;
-typedef int8 sf_bool;
+    /**
+     * Supported data types
+     */
+    typedef signed char int8;
+    typedef unsigned char uint8;
+    typedef unsigned int uint32;
+    typedef int int32;
+    typedef unsigned long long int uint64;
+    typedef long long int int64;
+    typedef double float64;
+    typedef float float32;
+    typedef int8 sf_bool;
 
-extern const int8 SF_BOOLEAN_TRUE;
-extern const int8 SF_BOOLEAN_FALSE;
+    extern const int8 SF_BOOLEAN_TRUE;
+    extern const int8 SF_BOOLEAN_FALSE;
 
 #define SF_UINT32_MAX UINT_MAX
 #define SF_UINT64_MAX ULLONG_MAX

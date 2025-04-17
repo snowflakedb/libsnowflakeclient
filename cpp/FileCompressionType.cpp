@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <fstream>
 #include <ios>
 #include <cstring>
@@ -61,19 +57,19 @@ std::vector<const char *> zstd_magics = {ZSTD_MAGIC};
 std::vector<const char *> brotli_magics = {BROTLI_MAGIC};
 
 Snowflake::Client::FileCompressionType::FileCompressionType(
-  const char * fileExtension,
-  const char * name,
-  bool isSupported) :
-  Snowflake::Client::FileCompressionType(fileExtension, name, {}, 0, isSupported)
+    const char *fileExtension,
+    const char *name,
+    bool isSupported) : Snowflake::Client::FileCompressionType(fileExtension, name, {}, 0, isSupported)
 {
 }
 
 Snowflake::Client::FileCompressionType::FileCompressionType(
-  const char * fileExtension,
-  const char * name,
-  std::vector<const char *> *magicNumbers,
-  short magicBytes,
-  bool isSupported){
+    const char *fileExtension,
+    const char *name,
+    std::vector<const char *> *magicNumbers,
+    short magicBytes,
+    bool isSupported)
+{
   m_fileExtension = fileExtension;
   m_isSupported = isSupported;
   m_magicNumbers = magicNumbers;
@@ -82,62 +78,62 @@ Snowflake::Client::FileCompressionType::FileCompressionType(
 }
 
 const std::vector<const FileCompressionType *> FileCompressionType::types = {
-  &FileCompressionType::GZIP,
-  &FileCompressionType::DEFLATE,
-  &FileCompressionType::RAW_DEFLATE,
-  &FileCompressionType::BZIP2,
-  &FileCompressionType::ZSTD,
-  &FileCompressionType::BROTLI,
-  &FileCompressionType::LZIP,
-  &FileCompressionType::LZMA,
-  &FileCompressionType::LZO,
-  &FileCompressionType::XZ,
-  &FileCompressionType::COMPRESS,
-  &FileCompressionType::ORC,
-  &FileCompressionType::PARQUET,
+    &FileCompressionType::GZIP,
+    &FileCompressionType::DEFLATE,
+    &FileCompressionType::RAW_DEFLATE,
+    &FileCompressionType::BZIP2,
+    &FileCompressionType::ZSTD,
+    &FileCompressionType::BROTLI,
+    &FileCompressionType::LZIP,
+    &FileCompressionType::LZMA,
+    &FileCompressionType::LZO,
+    &FileCompressionType::XZ,
+    &FileCompressionType::COMPRESS,
+    &FileCompressionType::ORC,
+    &FileCompressionType::PARQUET,
 };
 
 const FileCompressionType FileCompressionType::GZIP =
-  FileCompressionType(GZIP_EXTENSION, GZIP_NAME, &gzip_magics, 2, true);
+    FileCompressionType(GZIP_EXTENSION, GZIP_NAME, &gzip_magics, 2, true);
 
 const FileCompressionType FileCompressionType::DEFLATE =
-  FileCompressionType(DEFLATE_EXTENSION, DEFLATE_NAME, &deflate_magics, 2, true);
+    FileCompressionType(DEFLATE_EXTENSION, DEFLATE_NAME, &deflate_magics, 2, true);
 
-const FileCompressionType FileCompressionType::RAW_DEFLATE=
-  FileCompressionType(RAW_DEFLATE_EXTENSION, RAW_DEFLATE_NAME, true);
+const FileCompressionType FileCompressionType::RAW_DEFLATE =
+    FileCompressionType(RAW_DEFLATE_EXTENSION, RAW_DEFLATE_NAME, true);
 
 const FileCompressionType FileCompressionType::BZIP2 =
-  FileCompressionType(BZIP2_EXTENSION, BZIP2_NAME, &bzip2_magics, 2, true);
+    FileCompressionType(BZIP2_EXTENSION, BZIP2_NAME, &bzip2_magics, 2, true);
 
 const FileCompressionType FileCompressionType::ZSTD =
-  FileCompressionType(ZSTD_EXTENSION, ZSTD_NAME, &zstd_magics, 4, true);
+    FileCompressionType(ZSTD_EXTENSION, ZSTD_NAME, &zstd_magics, 4, true);
 
 const FileCompressionType FileCompressionType::BROTLI =
-  FileCompressionType(BROTLI_EXTENSION, BROTLI_NAME, &brotli_magics, 4, true);
+    FileCompressionType(BROTLI_EXTENSION, BROTLI_NAME, &brotli_magics, 4, true);
 
 const FileCompressionType FileCompressionType::ORC =
-  FileCompressionType(ORC_EXTENSION, ORC_NAME, &orc_magics, 3, true);
+    FileCompressionType(ORC_EXTENSION, ORC_NAME, &orc_magics, 3, true);
 
 const FileCompressionType FileCompressionType::PARQUET =
-  FileCompressionType(PARQUET_EXTENSION, PARQUET_NAME, &parquet_magics, 4, true);
+    FileCompressionType(PARQUET_EXTENSION, PARQUET_NAME, &parquet_magics, 4, true);
 
 const FileCompressionType FileCompressionType::LZIP =
-  FileCompressionType(LZIP_EXTENSION, LZIP_NAME, false);
+    FileCompressionType(LZIP_EXTENSION, LZIP_NAME, false);
 
 const FileCompressionType FileCompressionType::LZMA =
-  FileCompressionType(LZMA_EXTENSION, LZMA_NAME, false);
+    FileCompressionType(LZMA_EXTENSION, LZMA_NAME, false);
 
 const FileCompressionType FileCompressionType::LZO =
-  FileCompressionType(LZO_EXTENSION, LZO_NAME, false);
+    FileCompressionType(LZO_EXTENSION, LZO_NAME, false);
 
 const FileCompressionType FileCompressionType::XZ =
-  FileCompressionType(XZ_EXTENSION, XZ_NAME, false);
+    FileCompressionType(XZ_EXTENSION, XZ_NAME, false);
 
 const FileCompressionType FileCompressionType::COMPRESS =
-  FileCompressionType(COMPRESS_EXTENSION, COMPRESS_NAME, false);
+    FileCompressionType(COMPRESS_EXTENSION, COMPRESS_NAME, false);
 
 const FileCompressionType FileCompressionType::NONE =
-  FileCompressionType(NONE_EXTENSION, NONE_NAME, true);
+    FileCompressionType(NONE_EXTENSION, NONE_NAME, true);
 
 bool Snowflake::Client::FileCompressionType::matchMagicNumber(char *header) const
 {
@@ -146,7 +142,7 @@ bool Snowflake::Client::FileCompressionType::matchMagicNumber(char *header) cons
     for (size_t i = 0; i < m_magicNumbers->size(); i++)
     {
       if (strlen(header) >= m_magicBytes &&
-        !memcmp(header, m_magicNumbers->at(i), m_magicBytes))
+          !memcmp(header, m_magicNumbers->at(i), m_magicBytes))
       {
         return true;
       }
@@ -161,13 +157,13 @@ bool FileCompressionType::getIsSupported() const
   return m_isSupported;
 }
 
-const char * FileCompressionType::getFileExtension() const
+const char *FileCompressionType::getFileExtension() const
 {
   return m_fileExtension;
 }
 
 const FileCompressionType *FileCompressionType::
-  guessCompressionType(std::string &fileFullPath)
+    guessCompressionType(std::string &fileFullPath)
 {
   char header[MAX_MAGIC_BYTES + 1];
   memset(header, 0, sizeof(header));
@@ -176,7 +172,7 @@ const FileCompressionType *FileCompressionType::
   srcFile.read(header, MAX_MAGIC_BYTES);
   srcFile.close();
 
-  for (size_t i=0; i< types.size(); i++)
+  for (size_t i = 0; i < types.size(); i++)
   {
     if (types.at(i)->matchMagicNumber(header))
     {
@@ -190,10 +186,10 @@ const FileCompressionType *FileCompressionType::
     if (types.at(i) == &FileCompressionType::BROTLI)
     {
       auto pos = fileFullPath.find_last_of('.');
-      if( pos != std::string::npos) 
+      if (pos != std::string::npos)
       {
         std::string file_ext = fileFullPath.substr(pos);
-        if (!strcmp(file_ext.c_str(), types.at(i)->getFileExtension())) 
+        if (!strcmp(file_ext.c_str(), types.at(i)->getFileExtension()))
         {
           return types.at(i);
         }
@@ -207,9 +203,9 @@ const FileCompressionType *FileCompressionType::
 
 const FileCompressionType *FileCompressionType::lookUpByName(const char *name)
 {
-  for (size_t i=0; i<types.size(); i++)
+  for (size_t i = 0; i < types.size(); i++)
   {
-    if (!sf_strncasecmp(name, (const char*)(types.at(i)->m_name), sizeof(types.at(i)->m_name)))
+    if (!sf_strncasecmp(name, (const char *)(types.at(i)->m_name), sizeof(types.at(i)->m_name)))
     {
       return types.at(i);
     }
@@ -218,7 +214,7 @@ const FileCompressionType *FileCompressionType::lookUpByName(const char *name)
   return nullptr;
 }
 
-const char * FileCompressionType::getName() const
+const char *FileCompressionType::getName() const
 {
   return m_name;
 }

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "connection.h"
 #include "client_int.h"
 #include "utils/test_setup.h"
@@ -19,31 +15,33 @@
 #define URL_TOKEN "http://snowflake.com/session/token-request"
 #define URL_AUTHENTICATOR "http://snowflake.com/session/authenticator-request"
 
-void test_update_url_no_guid(void **unused) {
-    char urlbuf[512];
-    sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
-    RETRY_CONTEXT retry_ctx = {
-      1,      //retry_count
-      0,      // retry reason
-      0,      // network_timeout
-      1,      // time to sleep
-      NULL    // Decorrelate jitter
-    };
+void test_update_url_no_guid(void **unused)
+{
+  char urlbuf[512];
+  sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
+  RETRY_CONTEXT retry_ctx = {
+      1,   // retry_count
+      0,   // retry reason
+      0,   // network_timeout
+      1,   // time to sleep
+      NULL // Decorrelate jitter
+  };
 
-    sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
-    assert_int_equal(ret, SF_BOOLEAN_TRUE);
-    assert_string_equal(urlbuf, URL_NO_GUID);
+  sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
+  assert_int_equal(ret, SF_BOOLEAN_TRUE);
+  assert_string_equal(urlbuf, URL_NO_GUID);
 }
 
-void test_update_other_url_with_guid(void **unused) {
+void test_update_other_url_with_guid(void **unused)
+{
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NON_QUERY_WITH_GUID);
   RETRY_CONTEXT retry_ctx = {
-    1,      //retry_count
-    0,      // retry reason
-    0,      // network_timeout
-    1,      // time to sleep
-    NULL    // Decorrelate jitter
+      1,   // retry_count
+      0,   // retry reason
+      0,   // network_timeout
+      1,   // time to sleep
+      NULL // Decorrelate jitter
   };
 
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
@@ -54,46 +52,47 @@ void test_update_other_url_with_guid(void **unused) {
   assert_null(strstr(urlbuf, URL_PARAM_RETRY_COUNT));
   assert_null(strstr(urlbuf, URL_PARAM_RETRY_REASON));
   assert_null(strstr(urlbuf, URL_PARAM_CLIENT_START_TIME));
-  char* guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
+  char *guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
   assert_int_equal(strncmp(URL_NON_QUERY_WITH_GUID, urlbuf, strlen(urlbuf)), 0);
 }
 
-void test_update_query_url_with_retry_reason_disabled(void **unused) {
+void test_update_query_url_with_retry_reason_disabled(void **unused)
+{
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
-    1,      //retry_count
-    429,    // retry reason
-    0,      // network_timeout
-    1,      // time to sleep
-    NULL,   // Decorrelate jitter
-    sf_get_current_time_millis() // start time
+      1,                           // retry_count
+      429,                         // retry reason
+      0,                           // network_timeout
+      1,                           // time to sleep
+      NULL,                        // Decorrelate jitter
+      sf_get_current_time_millis() // start time
   };
 
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_FALSE);
   assert_int_equal(ret, SF_BOOLEAN_TRUE);
 
   // ended with guid
-  char* guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
+  char *guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
 
   // should have client start time added
-  char* starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  char *starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
   assert_non_null(starttime_ptr);
   assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
   *starttime_ptr = '\0';
 
   // should not have retry reason added
-  char* retryreason_ptr = strstr(urlbuf, URL_PARAM_RETRY_REASON);
+  char *retryreason_ptr = strstr(urlbuf, URL_PARAM_RETRY_REASON);
   assert_null(retryreason_ptr);
 
   // should have retry count added
-  char* retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
+  char *retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
   assert_non_null(retrycount_ptr);
   assert_string_equal(retrycount_ptr, "retryCount=1&");
   *retrycount_ptr = '\0';
@@ -137,34 +136,35 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
   assert_int_equal(strncmp(URL_QUERY, urlbuf, strlen(urlbuf)), 0);
 }
 
-void test_update_query_url_with_retry_reason_enabled(void **unused) {
+void test_update_query_url_with_retry_reason_enabled(void **unused)
+{
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
-    1,      //retry_count
-    429,    // retry reason
-    0,      // network_timeout
-    1,      // time to sleep
-    NULL,    // Decorrelate jitter
-    sf_get_current_time_millis() // start time
+      1,                           // retry_count
+      429,                         // retry reason
+      0,                           // network_timeout
+      1,                           // time to sleep
+      NULL,                        // Decorrelate jitter
+      sf_get_current_time_millis() // start time
   };
   sf_bool ret = retry_ctx_update_url(&retry_ctx, urlbuf, SF_BOOLEAN_TRUE);
   assert_int_equal(ret, SF_BOOLEAN_TRUE);
 
   // ended with guid
-  char* guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
+  char *guid_ptr = strstr(urlbuf, URL_PARAM_REQEST_GUID);
   assert_non_null(guid_ptr);
   assert_int_equal(strlen(guid_ptr), GUID_LENGTH);
   *guid_ptr = '\0';
-  
+
   // should have client start time added
-  char* starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
+  char *starttime_ptr = strstr(urlbuf, URL_PARAM_CLIENT_START_TIME);
   assert_non_null(starttime_ptr);
   assert_int_equal(strlen(starttime_ptr), CLIENT_START_TIME_LENGTH);
   *starttime_ptr = '\0';
 
   // should have retry count/reason added
-  char* retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
+  char *retrycount_ptr = strstr(urlbuf, URL_PARAM_RETRY_COUNT);
   assert_non_null(retrycount_ptr);
   assert_string_equal(retrycount_ptr, "retryCount=1&retryReason=429&");
   *retrycount_ptr = '\0';
@@ -204,18 +204,19 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
   assert_int_equal(strncmp(URL_QUERY, urlbuf, strlen(urlbuf)), 0);
 }
 
-void test_new_retry_strategy(void **unused) {
+void test_new_retry_strategy(void **unused)
+{
   DECORRELATE_JITTER_BACKOFF djb = {
-    SF_BACKOFF_BASE,    //base
-    SF_NEW_STRATEGY_BACKOFF_CAP      //cap
+      SF_BACKOFF_BASE,            // base
+      SF_NEW_STRATEGY_BACKOFF_CAP // cap
   };
   RETRY_CONTEXT curl_retry_ctx = {
-    0,      //retry_count
-    0,      // retry reason
-    SF_RETRY_TIMEOUT,
-    djb.base,      // time to sleep
-    &djb,    // Decorrelate jitter
-    sf_get_current_time_millis() // start time
+      0, // retry_count
+      0, // retry reason
+      SF_RETRY_TIMEOUT,
+      djb.base,                    // time to sleep
+      &djb,                        // Decorrelate jitter
+      sf_get_current_time_millis() // start time
   };
 
   uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
@@ -226,7 +227,7 @@ void test_new_retry_strategy(void **unused) {
 
   srand(time(NULL));
 
-  for (;retry_count < SF_MAX_RETRY; retry_count++)
+  for (; retry_count < SF_MAX_RETRY; retry_count++)
   {
     assert_int_equal(is_retryable_http_code(error_codes[retry_count]), SF_BOOLEAN_TRUE);
     next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
@@ -255,22 +256,24 @@ void test_new_retry_strategy(void **unused) {
   }
 }
 
-void test_retry_request_header(void **unused) {
-  struct TESTCASE {
-    const char* url;
+void test_retry_request_header(void **unused)
+{
+  struct TESTCASE
+  {
+    const char *url;
     sf_bool has_app_header;
   };
 
   struct TESTCASE cases[] = {
-    { URL_LOGIN, SF_BOOLEAN_TRUE },
-    { URL_TOKEN, SF_BOOLEAN_TRUE },
-    { URL_AUTHENTICATOR, SF_BOOLEAN_TRUE },
-    { URL_QUERY, SF_BOOLEAN_FALSE },
+      {URL_LOGIN, SF_BOOLEAN_TRUE},
+      {URL_TOKEN, SF_BOOLEAN_TRUE},
+      {URL_AUTHENTICATOR, SF_BOOLEAN_TRUE},
+      {URL_QUERY, SF_BOOLEAN_FALSE},
   };
 
   int casenum = sizeof(cases) / sizeof(struct TESTCASE);
 
-  SF_HEADER* header = NULL;
+  SF_HEADER *header = NULL;
   SF_CONNECT sf;
   sf.application_name = "test_app_name";
   sf.application_version = "0.0.0";
@@ -283,7 +286,7 @@ void test_retry_request_header(void **unused) {
     }
     sf_bool has_app_id = SF_BOOLEAN_FALSE;
     sf_bool has_app_ver = SF_BOOLEAN_FALSE;
-    struct curl_slist* header_item = header->header;
+    struct curl_slist *header_item = header->header;
     while (header_item)
     {
       if (strcmp(header_item->data, "CLIENT_APP_ID: test_app_name") == 0)
@@ -303,14 +306,15 @@ void test_retry_request_header(void **unused) {
   }
 }
 
-int main(void) {
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_update_url_no_guid),
-        cmocka_unit_test(test_update_other_url_with_guid),
-        cmocka_unit_test(test_update_query_url_with_retry_reason_disabled),
-        cmocka_unit_test(test_update_query_url_with_retry_reason_enabled),
-        cmocka_unit_test(test_new_retry_strategy),
-        cmocka_unit_test(test_retry_request_header),
-    };
-    return cmocka_run_group_tests(tests, NULL, NULL);
+int main(void)
+{
+  const struct CMUnitTest tests[] = {
+      cmocka_unit_test(test_update_url_no_guid),
+      cmocka_unit_test(test_update_other_url_with_guid),
+      cmocka_unit_test(test_update_query_url_with_retry_reason_disabled),
+      cmocka_unit_test(test_update_query_url_with_retry_reason_enabled),
+      cmocka_unit_test(test_new_retry_strategy),
+      cmocka_unit_test(test_retry_request_header),
+  };
+  return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_MOCK_ENDPOINTS_H
 #define SNOWFLAKECLIENT_MOCK_ENDPOINTS_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 // Common mock strings shared across tests
@@ -334,4 +331,4 @@ extern "C" {
 }
 #endif
 
-#endif //SNOWFLAKECLIENT_MOCK_ENDPOINTS_H
+#endif // SNOWFLAKECLIENT_MOCK_ENDPOINTS_H

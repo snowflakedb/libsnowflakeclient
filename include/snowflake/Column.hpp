@@ -1,19 +1,17 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_COLUMN_HPP
 #define SNOWFLAKECLIENT_COLUMN_HPP
 
 #include <string>
 #include "client.h"
 
-namespace Snowflake {
-    namespace Client {
-        class Column {
+namespace Snowflake
+{
+    namespace Client
+    {
+        class Column
+        {
         public:
-
-            Column(SF_COLUMN_DESC* column_desc_);
+            Column(SF_COLUMN_DESC *column_desc_);
 
             ~Column();
 
@@ -66,4 +64,4 @@ namespace Snowflake {
     }
 }
 
-#endif //SNOWFLAKECLIENT_COLUMN_HPP
+#endif // SNOWFLAKECLIENT_COLUMN_HPP

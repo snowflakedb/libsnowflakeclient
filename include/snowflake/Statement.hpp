@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP
 
@@ -11,11 +7,13 @@
 #include "Column.hpp"
 #include "Param.hpp"
 
-namespace Snowflake {
-    namespace Client {
-        class Statement {
+namespace Snowflake
+{
+    namespace Client
+    {
+        class Statement
+        {
         public:
-
             Statement(Connection &connection_);
 
             ~Statement(void);
@@ -28,5 +26,4 @@ namespace Snowflake {
     }
 }
 
-
-#endif //SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP
+#endif // SNOWFLAKECLIENT_SNOWFLAKESTATEMENT_HPP

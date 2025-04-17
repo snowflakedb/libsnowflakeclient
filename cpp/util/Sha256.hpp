@@ -1,7 +1,6 @@
 
 /*
  * File: Sha256.hpp
- * Copyright (c)  2025 Snowflake Computing
  */
 
 #ifndef SNOWFLAKECLIENT_SHA256_HPP
@@ -12,10 +11,12 @@
 
 #include <boost/optional.hpp>
 
-namespace Snowflake {
-  namespace Client {
+namespace Snowflake
+{
+  namespace Client
+  {
     boost::optional<std::string> sha256(const std::string &input);
   }
 }
 
-#endif //SNOWFLAKECLIENT_SHA256_HPP
+#endif // SNOWFLAKECLIENT_SHA256_HPP

@@ -1,7 +1,3 @@
-/*
-* Copyright (c) 2018-2020 Snowflake Computing
-*/
-
 #ifndef PROJECT_SF_OCSP_TELEMETRY_DATA_H
 #define PROJECT_SF_OCSP_TELEMETRY_DATA_H
 
@@ -58,23 +54,23 @@ typedef struct ocsp_telemetry_data
   int failopen_mode;
   int cache_enabled;
   int cache_hit;
-}SF_OTD;
+} SF_OTD;
 
 SF_OTD *get_ocsp_telemetry_instance();
 
-void sf_otd_set_event_type(const char *event_type, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_event_type(const char *event_type, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_event_sub_type(const char *event_sub_type, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_event_sub_type(const char *event_sub_type, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_sfc_peer_host(const char *sfc_peer_host, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_sfc_peer_host(const char *sfc_peer_host, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_certid(const char *certid, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_certid(const char *certid, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_ocsp_request(const char *ocsp_req_b64, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_ocsp_request(const char *ocsp_req_b64, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_event_sub_type(const char *ocsp_responder_url, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_event_sub_type(const char *ocsp_responder_url, SF_OTD *ocsp_telemetry_data);
 
-void sf_otd_set_error_msg(const char *error_msg, SF_OTD* ocsp_telemetry_data);
+void sf_otd_set_error_msg(const char *error_msg, SF_OTD *ocsp_telemetry_data);
 
 void sf_otd_set_insecure_mode(const int insecure_mode, SF_OTD *ocsp_telemetry_data);
 
@@ -84,4 +80,4 @@ void sf_otd_set_cache_hit(const int cache_hit, SF_OTD *ocsp_telemetry_data);
 
 void sf_otd_set_cache_enabled(const int cache_enabled, SF_OTD *ocsp_telemetry_data);
 
-#endif //PROJECT_SF_OCSP_TELEMETRY_DATA_H
+#endif // PROJECT_SF_OCSP_TELEMETRY_DATA_H

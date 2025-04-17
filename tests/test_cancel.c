@@ -1,16 +1,15 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include <string.h>
 #include "utils/test_setup.h"
 #include "snowflake/platform.h"
 #include "memory.h"
 #include "snowflake_util.h"
 
-void test_basic_cancel() {
+void test_basic_cancel()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -40,16 +39,19 @@ void test_basic_cancel() {
   snowflake_term(sf);
 }
 
-void test_no_stmt() {
+void test_no_stmt()
+{
   SF_STMT *sfstmt = NULL;
   SF_STATUS status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_ERROR_STATEMENT_NOT_EXIST);
 }
 
-void test_no_query() {
+void test_no_query()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -59,10 +61,12 @@ void test_no_query() {
   assert_int_equal(status, SF_STATUS_SUCCESS);
 }
 
-void test_prepared_query() {
+void test_prepared_query()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -78,10 +82,12 @@ void test_prepared_query() {
   snowflake_term(sf);
 }
 
-void test_async() {
+void test_async()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -91,7 +97,8 @@ void test_async() {
   status = snowflake_prepare(sfstmt, "select count(*)%1 from table(generator(timeLimit => 3600))", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_async_execute(sfstmt);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -110,10 +117,12 @@ void test_async() {
   snowflake_term(sf);
 }
 
-void test_finished_query() {
+void test_finished_query()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -123,7 +132,8 @@ void test_finished_query() {
   status = snowflake_prepare(sfstmt, "select 1;", 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_execute(sfstmt);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -139,10 +149,12 @@ void test_finished_query() {
   snowflake_term(sf);
 }
 
-void test_multiple_statements() {
+void test_multiple_statements()
+{
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -176,7 +188,8 @@ void test_multiple_statements() {
   snowflake_term(sf);
 }
 
-void test_bind_params() {
+void test_bind_params()
+{
   int array_size = 100000;
   int64 *int64_array = NULL;
   int64 int64_value = 12345;
@@ -220,32 +233,32 @@ void test_bind_params() {
 
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   SF_STMT *sfstmt = snowflake_stmt(sf);
   status = snowflake_query(
-    sfstmt,
-    "create or replace temporary table t (c1 number, c2 boolean, c3 string)",
-    0
-  );
+      sfstmt,
+      "create or replace temporary table t (c1 number, c2 boolean, c3 string)",
+      0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   int64 paramset_size = (int64)array_size;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
   status = snowflake_prepare(
-    sfstmt,
-    "insert into t values(?, ?, ?)",
-    0
-  );
+      sfstmt,
+      "insert into t values(?, ?, ?)",
+      0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   status = snowflake_bind_param_array(sfstmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_async_execute(sfstmt);
-  if (status != SF_STATUS_SUCCESS) {
+  if (status != SF_STATUS_SUCCESS)
+  {
     dump_error(&(sfstmt->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -270,10 +283,11 @@ void test_bind_params() {
   snowflake_term(sf);
 }
 
-void test_array_binding() {
+void test_array_binding()
+{
   SF_STATUS status;
-  char bind_data_b[5][4] = { "2.3", "3.4", "4.5", "5.6", "6.7"};
-  char bind_data_a[5][2] = { "2", "3", "4", "5", "6"};
+  char bind_data_b[5][4] = {"2.3", "3.4", "4.5", "5.6", "6.7"};
+  char bind_data_a[5][2] = {"2", "3", "4", "5", "6"};
 
   SF_BIND_INPUT input_a;
   SF_BIND_INPUT input_b;
@@ -306,26 +320,23 @@ void test_array_binding() {
   /* Create a statement once and reused */
   SF_STMT *sfstmt = snowflake_stmt(sf);
   status = snowflake_query(
-    sfstmt,
-    "create or replace temporary table foo1(a int, b double)",
-    0
-  );
+      sfstmt,
+      "create or replace temporary table foo1(a int, b double)",
+      0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   status = snowflake_query(
-    sfstmt,
-    "insert into foo1 values (2, NULL), (3, NULL), (4, NULL), (5, NULL), (6, NULL)",
-    0
-  );
+      sfstmt,
+      "insert into foo1 values (2, NULL), (3, NULL), (4, NULL), (5, NULL), (6, NULL)",
+      0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   int64 paramset_size = 5;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
   status = snowflake_prepare(
-    sfstmt,
-    "update foo1 set b = ? where a = ?",
-    0
-  );
+      sfstmt,
+      "update foo1 set b = ? where a = ?",
+      0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   status = snowflake_bind_param_array(sfstmt, input_array, sizeof(input_array) / sizeof(SF_BIND_INPUT));
@@ -350,7 +361,8 @@ void test_array_binding() {
   for (int i = 0; i < 5; i++)
   {
     status = snowflake_fetch(sfstmt);
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
       dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -374,9 +386,10 @@ void test_array_binding() {
   snowflake_term(sf);
 }
 
-int main(void) {
-    initialize_test(SF_BOOLEAN_FALSE);
-    const struct CMUnitTest tests[] = {
+int main(void)
+{
+  initialize_test(SF_BOOLEAN_FALSE);
+  const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_basic_cancel),
       cmocka_unit_test(test_no_stmt),
       cmocka_unit_test(test_no_query),
@@ -386,8 +399,8 @@ int main(void) {
       cmocka_unit_test(test_multiple_statements),
       cmocka_unit_test(test_bind_params),
       cmocka_unit_test(test_array_binding),
-    };
-    int ret = cmocka_run_group_tests(tests, NULL, NULL);
-    snowflake_global_term();
-    return ret;
+  };
+  int ret = cmocka_run_group_tests(tests, NULL, NULL);
+  snowflake_global_term();
+  return ret;
 }

@@ -1,7 +1,3 @@
-//
-// Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
-//
-
 #include <string.h>
 #include "utils/test_setup.h"
 #include "connection.h"
@@ -11,7 +7,8 @@
 /*
  * Test auth connection when the token was not provided.
  */
-void test_pat_with_no_token(void **unused) {
+void test_pat_with_no_token(void **unused)
+{
     SF_UNUSED(unused);
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
@@ -31,9 +28,10 @@ void test_pat_with_no_token(void **unused) {
 /*
  * Test the request body with pat connection.
  */
-void test_json_data_in_pat(void **unused) {
+void test_json_data_in_pat(void **unused)
+{
     SF_UNUSED(unused);
-    SF_CONNECT *sf = (SF_CONNECT *) SF_CALLOC(1, sizeof(SF_CONNECT));
+    SF_CONNECT *sf = (SF_CONNECT *)SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
     sf->user = "testuser";
@@ -58,12 +56,12 @@ void test_json_data_in_pat(void **unused) {
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "token")), "mock_token");
 }
 
-int main(void) {
+int main(void)
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_pat_with_no_token),
-        cmocka_unit_test(test_json_data_in_pat)
-    };
+        cmocka_unit_test(test_json_data_in_pat)};
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
     return ret;

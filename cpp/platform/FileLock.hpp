@@ -1,6 +1,5 @@
 /*
  * File:   FileLock.hpp *
- * Copyright (c) 2025 Snowflake Computing
  */
 
 #ifndef SNOWFLAKECLIENT_FILELOCK_HPP
@@ -8,36 +7,41 @@
 
 #include <string>
 
-namespace Snowflake {
+namespace Snowflake
+{
 
-namespace Client {
+  namespace Client
+  {
 
-  class FileLock {
-  public:
-    explicit FileLock(const std::string& path);
+    class FileLock
+    {
+    public:
+      explicit FileLock(const std::string &path);
 
-    // Disable copying
-    FileLock(const FileLock &) = delete;
-    FileLock &operator=(const FileLock &) = delete;
+      // Disable copying
+      FileLock(const FileLock &) = delete;
+      FileLock &operator=(const FileLock &) = delete;
 
-    inline bool isLocked() const {
-      return locked;
-    }
+      inline bool isLocked() const
+      {
+        return locked;
+      }
 
-    inline const std::string &getPath() const {
-      return path;
-    }
+      inline const std::string &getPath() const
+      {
+        return path;
+      }
 
-    ~FileLock();
+      ~FileLock();
 
-  private:
-    bool try_lock();
+    private:
+      bool try_lock();
 
-    std::string path;
-    bool locked;
-  };
+      std::string path;
+      bool locked;
+    };
+  }
+
 }
 
-}
-
-#endif //SNOWFLAKECLIENT_FILELOCK_HPP
+#endif // SNOWFLAKECLIENT_FILELOCK_HPP

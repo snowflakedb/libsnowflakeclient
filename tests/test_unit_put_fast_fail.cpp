@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2019-2020 Snowflake Computing, Inc. All rights reserved.
- */
-
 /**
  * Testing Put/Get retry
  *
@@ -44,12 +40,12 @@ void createTestFiles(void)
 #else
   mkdir(testDir.c_str(), 0755);
 #endif
-  for(int count = 0; count < 10 ; count++)
+  for (int count = 0; count < 10; count++)
   {
     char file[1024];
-    sprintf(file, "%sfile%d.csv", testDir.c_str(),count);
+    sprintf(file, "%sfile%d.csv", testDir.c_str(), count);
     FILE *fp = fopen(file, "w");
-    if(fp == NULL)
+    if (fp == NULL)
     {
       perror("Fopen: ");
       std::cout << "Could not create file." << std::endl;
@@ -62,7 +58,7 @@ class MockedFailedParseStmt : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedFailedParseStmt()
-    : Snowflake::Client::IStatementPutGet(){}
+      : Snowflake::Client::IStatementPutGet() {}
 
   virtual bool parsePutGetCommand(std::string *sql,
                                   PutGetParseResponse *putGetParseResponse)
@@ -75,17 +71,16 @@ class MockedStatementGet : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementGet()
-    : Snowflake::Client::IStatementPutGet()
+      : Snowflake::Client::IStatementPutGet()
   {
     m_stageInfo.stageType = Snowflake::Client::StageType::MOCKED_STAGE_TYPE;
     m_stageInfo.location = "fake s3 location/";
     for (int i = 0; i < 10; i++)
     {
       m_encryptionMaterial.emplace_back(
-        (char *)"YwBGVekuIpW20JAsAEQDng==\0",
-        (char *)"1234\0",
-        92019674385866
-      );
+          (char *)"YwBGVekuIpW20JAsAEQDng==\0",
+          (char *)"1234\0",
+          92019674385866);
       m_srcLocations.push_back("file" + std::to_string(i) + ".csv");
     }
   }
@@ -117,15 +112,15 @@ class MockedStatementPut : public Snowflake::Client::IStatementPutGet
 {
 public:
   MockedStatementPut(std::string fileName)
-    : IStatementPutGet()
+      : IStatementPutGet()
   {
     m_stageInfo.stageType = StageType::MOCKED_STAGE_TYPE;
     std::string dataDir = getTestFileMatchDir();
     m_srcLocations.push_back(dataDir + fileName);
     m_encryptionMaterial.emplace_back(
-      (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
-      (char *)"1234\0",
-      1234);
+        (char *)"3dOoaBhkB1wSw4hyfA5DJw==\0",
+        (char *)"1234\0",
+        1234);
   }
 
   virtual bool parsePutGetCommand(std::string *sql,
@@ -149,7 +144,6 @@ private:
   std::vector<EncryptionMaterial> m_encryptionMaterial;
 
   std::vector<std::string> m_srcLocations;
-
 };
 
 class MockedStorageClient : public Snowflake::Client::IStorageClient
@@ -171,11 +165,11 @@ public:
    * @return put command status
    */
   virtual RemoteStorageRequestOutcome upload(FileMetadata *fileMetadata,
-                                 std::basic_iostream<char> *dataStream)
+                                             std::basic_iostream<char> *dataStream)
   {
     std::size_t found = fileMetadata->srcFileName.find_last_of("/\\");
-    std::string fileName = fileMetadata->srcFileName.substr(found+1);
-    if(fileName.compare("file2.csv") == 0)
+    std::string fileName = fileMetadata->srcFileName.substr(found + 1);
+    if (fileName.compare("file2.csv") == 0)
     {
       if (m_failedTimes < timeOfFail)
       {
@@ -184,12 +178,12 @@ public:
       }
       return SUCCESS;
     }
-    //Lets make succesful files wait
-    //So the failed ones can catch up with retries and set fastFail.
+    // Lets make succesful files wait
+    // So the failed ones can catch up with retries and set fastFail.
     if (m_sleepAfterSuccess)
     {
 #ifdef _WIN32
-      Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+      Sleep(5000); // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
       std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
 #endif
@@ -198,22 +192,21 @@ public:
   }
 
   virtual RemoteStorageRequestOutcome GetRemoteFileMetadata(
-    std::string * filePathFull, FileMetadata *fileMetadata)
+      std::string *filePathFull, FileMetadata *fileMetadata)
   {
     fileMetadata->srcFileSize = (size_t)filesize;
     std::string iv = "fDnCvS9AFFdXnyM9bsEXcA==";
-    Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->
-                         encryptionMetadata.iv.data);
+    Util::Base64::decode(iv.c_str(), iv.size(), fileMetadata->encryptionMetadata.iv.data);
     fileMetadata->encryptionMetadata.enKekEncoded = "whKlah/HwHnm9RZw/h8gU5PLRg0IOXvwANx7cyLC4Fg=";
     return SUCCESS;
   }
 
-  virtual RemoteStorageRequestOutcome download(FileMetadata * fileMetadata,
-                                               std::basic_iostream<char>* dataStream)
+  virtual RemoteStorageRequestOutcome download(FileMetadata *fileMetadata,
+                                               std::basic_iostream<char> *dataStream)
   {
     std::size_t found = fileMetadata->srcFileName.find_last_of("/\\");
-    std::string fileName = fileMetadata->srcFileName.substr(found+1);
-    if(fileName.compare("file2.csv") == 0)
+    std::string fileName = fileMetadata->srcFileName.substr(found + 1);
+    if (fileName.compare("file2.csv") == 0)
     {
       if (m_failedTimes < timeOfFail)
       {
@@ -222,12 +215,12 @@ public:
       }
       return SUCCESS;
     }
-    //Lets make succesful files wait
-    //So the failed ones can catch up with retries and set fastFail.
+    // Lets make succesful files wait
+    // So the failed ones can catch up with retries and set fastFail.
     if (m_sleepAfterSuccess)
     {
 #ifdef _WIN32
-      Sleep(5000);  // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
+      Sleep(5000); // Sleep for sleepTime milli seconds (Sleep(<time in milliseconds>) in windows)
 #else
       std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
 #endif
@@ -247,7 +240,7 @@ void test_put_fast_fail_core(bool successWithRetry)
   // no need to wait for failed ones when all success (successWithRetry=true)
   // or run in sequence (parallel = 1)
   bool sleepAfterSuccess = !successWithRetry && (parallelThreads != 1);
-  IStorageClient * client = new MockedStorageClient(sleepAfterSuccess);
+  IStorageClient *client = new MockedStorageClient(sleepAfterSuccess);
   StorageClientFactory::injectMockedClient(client);
 
   std::string cmd = std::string("put file://") + matchDir + std::string("@odbctestStage AUTO_COMPRESS=false OVERWRITE=true");
@@ -275,23 +268,23 @@ void test_put_fast_fail_core(bool successWithRetry)
     if (successWithRetry)
     {
       assert_int_equal(10, result->getResultSize());
-      while(result->next())
+      while (result->next())
       {
         std::string value;
         result->getColumnAsString(6, value);
         assert_string_equal("UPLOADED", value.c_str());
       }
     }
-	else
+    else
     {
-      assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
+      assert_int_equal(result->getResultSize(), -1); // If this reaches here then fast fail failed.
     }
   }
-  catch(SnowflakeTransferException &ex)
+  catch (SnowflakeTransferException &ex)
   {
     if (successWithRetry)
     {
-      assert_int_equal(ex.getCode(), -1);//If this reaches here then fast fail failed.
+      assert_int_equal(ex.getCode(), -1); // If this reaches here then fast fail failed.
     }
     else
     {
@@ -306,7 +299,7 @@ void test_get_fast_fail_core(bool successWithRetry)
   // no need to wait for failed ones when all success (successWithRetry=true)
   // or run in sequence (parallel = 1)
   bool sleepAfterSuccess = !successWithRetry && (parallelThreads != 1);
-  IStorageClient * client = new MockedStorageClient(sleepAfterSuccess);
+  IStorageClient *client = new MockedStorageClient(sleepAfterSuccess);
   StorageClientFactory::injectMockedClient(client);
 
   std::string cmd = std::string("get @odbctestStage file://") + matchDir;
@@ -334,7 +327,7 @@ void test_get_fast_fail_core(bool successWithRetry)
     if (successWithRetry)
     {
       assert_int_equal(10, result->getResultSize());
-      while(result->next())
+      while (result->next())
       {
         std::string value;
         result->getColumnAsString(2, value);
@@ -343,14 +336,14 @@ void test_get_fast_fail_core(bool successWithRetry)
     }
     else
     {
-      assert_int_equal(result->getResultSize(), -1); //If this reaches here then fast fail failed.
+      assert_int_equal(result->getResultSize(), -1); // If this reaches here then fast fail failed.
     }
   }
-  catch(SnowflakeTransferException &ex)
+  catch (SnowflakeTransferException &ex)
   {
     if (successWithRetry)
     {
-      assert_int_equal(ex.getCode(), -1);//If this reaches here then fast fail failed.
+      assert_int_equal(ex.getCode(), -1); // If this reaches here then fast fail failed.
     }
     else
     {
@@ -434,17 +427,17 @@ static int gr_setup(void **unused)
   return 0;
 }
 
-int main(void) {
+int main(void)
+{
   void **unused;
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_put_fast_fail_sequential),
-    cmocka_unit_test(test_put_fast_fail_parallel),
-    cmocka_unit_test(test_put_fast_fail_large_sequential),
-    cmocka_unit_test(test_get_fast_fail_sequential),
-    cmocka_unit_test(test_get_fast_fail_parallel),
-    cmocka_unit_test(test_get_fast_fail_large_sequential),
+      cmocka_unit_test(test_put_fast_fail_sequential),
+      cmocka_unit_test(test_put_fast_fail_parallel),
+      cmocka_unit_test(test_put_fast_fail_large_sequential),
+      cmocka_unit_test(test_get_fast_fail_sequential),
+      cmocka_unit_test(test_get_fast_fail_parallel),
+      cmocka_unit_test(test_get_fast_fail_large_sequential),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }
-

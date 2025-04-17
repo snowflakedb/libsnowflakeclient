@@ -1,16 +1,17 @@
 /*
- * Copyright (c) 2023 Snowflake Computing, Inc. All rights reserved.
  * Test case for snowflake_sfqid() for now but we could add more test cases for
  * other functions on SF_STMT if anything missing.
  */
 #include <string.h>
 #include "utils/test_setup.h"
 
-void test_sfqid(void **unused) {
-    char qid[SF_UUID4_LEN] = { '\0' };
+void test_sfqid(void **unused)
+{
+    char qid[SF_UUID4_LEN] = {'\0'};
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
         dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -18,7 +19,8 @@ void test_sfqid(void **unused) {
     /* query */
     SF_STMT *sfstmt = snowflake_stmt(sf);
     status = snowflake_query(sfstmt, "select 1;", 0);
-    if (status != SF_STATUS_SUCCESS) {
+    if (status != SF_STATUS_SUCCESS)
+    {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -42,10 +44,11 @@ void test_sfqid(void **unused) {
     snowflake_term(sf);
 }
 
-int main(void) {
+int main(void)
+{
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_sfqid),
+        cmocka_unit_test(test_sfqid),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

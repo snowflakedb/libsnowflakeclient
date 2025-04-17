@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
 #define SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
 
@@ -12,17 +8,17 @@
 /* CPP only utilities */
 namespace Snowflake
 {
-namespace Client
-{
-namespace Util
-{
+    namespace Client
+    {
+        namespace Util
+        {
 
-void  replaceStrAll(std::string& stringToReplace,
-                    std::string const& oldValue,
-                    std::string const& newValue);
+            void replaceStrAll(std::string &stringToReplace,
+                               std::string const &oldValue,
+                               std::string const &newValue);
 
-} // namespace Util
-} // namespace Client
+        } // namespace Util
+    } // namespace Client
 } // namespace Snowflake
 
-#endif //SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
+#endif // SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
