@@ -279,7 +279,7 @@ if (MOCK)
         else()
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
+                    ../deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})

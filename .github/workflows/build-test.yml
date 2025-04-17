@@ -16,6 +16,36 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
+    build-test-mock:
+        name: Build-Test-Mock
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - name: Restore cached deps
+            id: cache-restore-deps
+            uses: actions/cache/restore@v4
+            with:
+              path: dep-cache
+              key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+            if: github.event_name == 'pull_request'
+          - name: Build
+            shell: bash
+            env:
+              BUILD_TYPE: ${{ matrix.build_type }}
+              ENABLE_MOCK_OBJECTS: true
+            run: ci/build_linux.sh
+          - uses: actions/setup-python@v5
+            with:
+              python-version: '3.13'
+              architecture: 'x64'
+          - name: Test
+            shell: bash
+            env:
+              BUILD_TYPE: ${{ matrix.build_type }}
+              CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
+              PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+            run: ci/test_linux.sh
+
     build-test-linux:
         name: Build-Test-Linux
         runs-on: ubuntu-latest
