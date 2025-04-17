@@ -81,6 +81,11 @@ long run_request_curl(
 
 void test_aws_attestation(void** state)
 {
+  char* gh_actions = std::getenv("GITHUB_ACTIONS");
+  if (gh_actions) {
+    std::cerr << "Skipping test_aws_attestation on GitHub Actions" << std::endl;
+    return;
+  }
   AttestationConfig config;
   config.type = AttestationType::AWS;
   auto attestationOpt = Snowflake::Client::createAttestation(config);

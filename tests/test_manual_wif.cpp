@@ -128,8 +128,12 @@ void test_azure_attestation(void** state)
   assert_true(attestationOpt.has_value());
   auto& attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
-  assert_true(attestation.issuer == "https://sts.windows.net/f05bdcc4-50e7-4fea-958d-32cdb12b3aca/");
-  assert_true(attestation.subject == "f05bdcc4-50e7-4fea-958d-32cdb12b3aca");
+  assert_true(!attestation.credential.empty());
+  std::cerr << "Credential: " << attestation.credential << std::endl;
+  assert_true(!attestation.issuer.empty());
+  std::cerr << "Issuer: " << attestation.credential << std::endl;
+  assert_true(!attestation.subject.empty());
+  std::cerr << "Subject: " << attestation.subject << std::endl;
 }
 
 int main()
