@@ -15,6 +15,12 @@
 #include "FileTransferAgent.hpp"
 #include "boost/filesystem.hpp"
 
+#ifndef _WIN32
+#include <locale.h>
+#include <langinfo.h>
+#include <iconv.h>
+#endif
+
 #define COLUMN_STATUS "STATUS"
 #define COLUMN_SOURCE "SOURCE"
 #define COLUMN_TARGET "TARGET"
@@ -86,8 +92,17 @@ public:
 
     return result;
 #else
-    std::string result = utf8_str;
-    replaceInPlace(result, UTF8_STR, PLATFORM_STR);
+    setlocale(LC_ALL, "");
+    char* encoding = nl_langinfo(CODESET);
+    iconv_t conv = iconv_open(encoding, "UTF-8");
+    std::vector<char> buf(utf8_str.size() * 4 + 1);
+    char* inbuf = const_cast<char*>(utf8_str.data());
+    size_t insize = utf8_str.size();
+    char* outbuf = const_cast<char*>(buf.data());
+    size_t outsize = buf.size();
+    iconv(conv, &inbuf, &insize, &outbuf, &outsize);
+    std::string result(buf.data());
+    iconv_close(conv);
     return result;
 #endif
   }
@@ -115,8 +130,17 @@ public:
 
     return result;
 #else
-    std::string result = platform_str;
-    replaceInPlace(result, PLATFORM_STR, UTF8_STR);
+    setlocale(LC_ALL, "");
+    char* encoding = nl_langinfo(CODESET);
+    iconv_t conv = iconv_open("UTF-8", encoding);
+    std::vector<char> buf(platform_str.size() * 4 + 1);
+    char* inbuf = const_cast<char*>(platform_str.data());
+    size_t insize = platform_str.size();
+    char* outbuf = const_cast<char*>(buf.data());
+    size_t outsize = buf.size();
+    iconv(conv, &inbuf, &insize, &outbuf, &outsize);
+    std::string result(buf.data());
+    iconv_close(conv);
     return result;
 #endif
   }
@@ -1970,6 +1994,11 @@ void test_upload_file_to_stage_using_stream(void **unused)
 
 void test_put_get_with_unicode(void **unused)
 {
+// On Linux/Mac the default one would be POSIX(ANSI), set to UTF8 to simulate
+// application using Unicode.
+#ifndef _WIN32
+  setlocale(LC_CTYPE, "en_US.utf8");
+#endif
   std::string dataDir = TestSetup::getDataDir();
   std::string filename=PLATFORM_STR + ".csv";
   copy_file(dataDir + "small_file.csv", dataDir + filename, copy_options::overwrite_existing);
@@ -2025,7 +2054,6 @@ int main(void) {
 #endif
 
   const struct CMUnitTest tests[] = {
-/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
     cmocka_unit_test_teardown(test_simple_put_auto_detect_gzip, teardown),
@@ -2056,9 +2084,7 @@ int main(void) {
     cmocka_unit_test_teardown(test_simple_put_with_proxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_simple_put_with_noproxy_fromenv, teardown),
     cmocka_unit_test_teardown(test_upload_file_to_stage_using_stream, donothing),
-*/
     cmocka_unit_test_teardown(test_put_get_with_unicode, teardown),
-/*
     cmocka_unit_test_teardown(test_simple_put_auto_compress_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir_native, teardown),
     cmocka_unit_test_teardown(test_simple_get_native, teardown),
@@ -2069,8 +2095,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL_native, teardown),
-*/
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }
+
