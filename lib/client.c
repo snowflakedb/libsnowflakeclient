@@ -1299,7 +1299,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 goto cleanup;
             }
 
-            //TODO: SNOW-715528 Enable server.
             char* auth_token = NULL;
             if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
                 secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
