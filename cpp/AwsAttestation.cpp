@@ -12,7 +12,7 @@
 namespace Snowflake {
   namespace Client {
 
-    boost::optional<Attestation> createAwsAttestation(const AttestationConfig& config) {
+    boost::optional<Attestation> createAwsAttestation(const AttestationConfig&) {
       Aws::SDKOptions options;
       Aws::InitAPI(options);
       auto credentialsProvider = Aws::MakeShared<Aws::Auth::DefaultAWSCredentialsProviderChain>({});

@@ -48,7 +48,7 @@ long run_request_curl(
   return response_code;
 }
 
-void test_aws_attestation(void** state)
+void test_aws_attestation(void**)
 {
   auto type = std::getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
   if (!type || strcmp(type, "AWS") != 0) {
@@ -87,7 +87,7 @@ void test_aws_attestation(void** state)
   );
 }
 
-void test_gcp_attestation(void** state)
+void test_gcp_attestation(void**)
 {
   char* type = std::getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
   if (!type || strcmp(type, "GCP") != 0) {
@@ -107,7 +107,7 @@ void test_gcp_attestation(void** state)
   assert_true(!attestation.subject.empty());
 }
 
-void test_azure_attestation(void** state)
+void test_azure_attestation(void**)
 {
   char* type = std::getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
   if (!type || strcmp(type, "AZURE") != 0) {

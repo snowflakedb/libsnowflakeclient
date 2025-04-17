@@ -79,7 +79,7 @@ long run_request_curl(
   return response_code;
 }
 
-void test_aws_attestation(void** state)
+void test_aws_attestation(void**)
 {
   char* gh_actions = std::getenv("GITHUB_ACTIONS");
   if (gh_actions) {
@@ -113,7 +113,7 @@ void test_aws_attestation(void** state)
   );
 }
 
-void test_gcp_attestation(void** state)
+void test_gcp_attestation(void**)
 {
   auto audience = "snowflakecomputing.com";
   auto jwtObj = Jwt::JWTObject();
@@ -142,7 +142,7 @@ void test_gcp_attestation(void** state)
   assert_true(attestation.subject == "107562638633288735786");
 }
 
-void test_azure_attestation(void** state)
+void test_azure_attestation(void**)
 {
   auto resource = "api://4f6b1daa-cbcb-4342-ac74-005fbc825d2a";
   auto jwtObj = Jwt::JWTObject();
@@ -178,7 +178,7 @@ void test_azure_attestation(void** state)
   assert_true(attestation.subject == "f05bdcc4-50e7-4fea-958d-32cdb12b3aca");
 }
 
-void test_oidc_attestation(void** state)
+void test_oidc_attestation(void**)
 {
   auto jwtObj = Jwt::JWTObject();
   jwtObj.getHeader()->setAlgorithm(Jwt::AlgorithmType::RS256);
