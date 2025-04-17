@@ -4,6 +4,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include <boost/url/url.hpp>
 #include <boost/optional.hpp>

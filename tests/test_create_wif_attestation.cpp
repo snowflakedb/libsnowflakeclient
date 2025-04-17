@@ -201,7 +201,9 @@ void test_oidc_attestation(void**)
 int main()
 {
   const struct CMUnitTest tests[] = {
+#ifndef _WIN32
       cmocka_unit_test(test_aws_attestation),
+#endif
       cmocka_unit_test(test_gcp_attestation),
       cmocka_unit_test(test_azure_attestation),
       cmocka_unit_test(test_oidc_attestation)
