@@ -3,8 +3,8 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_SRC_VERSION=8.10.1
-set CURL_BUILD_VERSION=5
+set CURL_SRC_VERSION=8.12.1
+set CURL_BUILD_VERSION=2
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -41,7 +41,7 @@ if /I "%platform%"=="x86" (
 if "%build_type%"=="Debug" (
     set curl_debug_option=yes
     set buildtype=debug
-    set LIBDEBUG=_debug
+    set LIBDEBUG=-d
 )
 if "%build_type%"=="Release" (
     set curl_debug_option=no
@@ -49,15 +49,24 @@ if "%build_type%"=="Release" (
     set LIBDEBUG=
 )
 set rtlibcfg=dynamic
+set staticcrt=OFF
+set staticlibs=OFF
+set sharedlibs=ON
 if "%dynamic_runtime%"=="OFF" (
     set rtlibcfg=static
+	set staticcrt=ON
+	set staticlibs=ON
+	set sharedlibs=OFF
 )
 
+if "%vs_version%"=="VS17" (
+    set vc_version="Visual Studio 17 2022"
+)
 if "%vs_version%"=="VS16" (
-    set vc_version=16
+    set vc_version="Visual Studio 16 2019"
 )
 if "%vs_version%"=="VS15" (
-    set vc_version=15
+    set vc_version="Visual Studio 15 2017"
 )
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
@@ -86,24 +95,49 @@ copy /v /y .\deps-build\%build_dir%\oob\include\*.h %curl_dep%\include
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === building curl
-cd "%currdir%"
-set install_dir=.\deps\%CURL_DIR%\builds\libcurl-vc%vc_version%-%arch%-%buildtype%-static-ssl-static-zlib-static-ipv6-sspi
-rmdir /S /Q %install_dir%-obj
-rmdir /S /Q %install_dir%-obj-curl
-rmdir /S /Q %install_dir%-obj-lib
+cd "%currdir%\deps\%CURL_DIR%"
+cmake ^
+. -G %vc_version% ^
+-A %cmake_architecture% ^
+-DCMAKE_BUILD_TYPE=%build_type% ^
+-DBUILD_SHARED_LIBS=%sharedlibs% ^
+-DBUILD_STATIC_LIBS=%staticlibs% ^
+-DCURL_STATIC_CRT=%staticcrt% ^
+-DBUILD_EXAMPLES=OFF ^
+-DBUILD_LIBCURL_DOCS=OFF ^
+-DBUILD_MISC_DOCS=OFF ^
+-DBUILD_TESTING=OFF ^
+-DOPENSSL_USE_STATIC_LIBS=ON ^
+-DCURL_USE_OPENSSL=ON ^
+-DOPENSSL_ROOT_DIR=%TMP%\curl_dep ^
+-DOPENSSL_CRYPTO_LIBRARY=%currdir%\deps-build\%build_dir%\openss\lib\libcrypto_a.lib ^
+-DCURL_ZLIB=ON ^
+-DZLIB_INCLUDE_DIR=%TMP%\curl_dep\include ^
+-DZLIB_LIBRARY=%currdir%\deps-build\%build_dir%\zlib\lib\zlib_a.lib ^
+-DOOB_LIBRARY=%currdir%\deps-build\%build_dir%\oob\lib\libtelemetry_a.lib ^
+-DCURL_USE_LIBPSL=OFF ^
+-DCURL_USE_LIBSSH2=OFF ^
+-DCURL_BROTLI=OFF ^
+-DCURL_ZSTD=OFF ^
+-DCURL_USE_LIBPSL=OFF ^
+-DUSE_NGHTTP2=OFF ^
+-DCURL_DISABLE_RTSP=ON ^
+-DCURL_DISABLE_LDAP=ON ^
+-DCURL_DISABLE_LDAPS=ON ^
+-DCURL_DISABLE_TELNET=ON ^
+-DCURL_DISABLE_TFTP=ON ^
+-DCURL_DISABLE_IMAP=ON ^
+-DCURL_DISABLE_SMB=ON ^
+-DCURL_DISABLE_SMTP=ON ^
+-DCURL_DISABLE_GOPHER=ON ^
+-DCURL_DISABLE_POP3=ON ^
+-DCURL_DISABLE_FTP=ON ^
+-DCURL_DISABLE_DICT=ON ^
+-DCURL_DISABLE_FILE=ON ^
+-DENABLE_CURL_MANUAL=OFF
+if %ERRORLEVEL% NEQ 0 goto :error
 
-cd .\deps\%CURL_DIR%\winbuild
-nmake ^
-    /f Makefile.vc ^
-    WITH_DEVEL=%TMP%\curl_dep ^
-    mode=static ^
-    VC=%vc_version% ^
-    WITH_SSL=static ^
-    WITH_ZLIB=static ^
-    ENABLE_WINSSL=no ^
-    RTLIBCFG=%rtlibcfg% ^
-    DEBUG=%curl_debug_option% ^
-    MACHINE=%arch%
+msbuild src/curl.vcxproj /p:Configuration=%build_type%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 cd "%currdir%"
@@ -113,17 +147,17 @@ md .\deps-build\%build_dir%\curl\lib
 md .\deps-build\%build_dir%\curl\include\curl
 
 copy /v /y ^
-    %install_dir%\bin\curl.exe ^
+    .\deps\%CURL_DIR%\src\%build_type%\curl.exe ^
     .\deps-build\%build_dir%\curl\bin
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
-    %install_dir%\lib\libcurl_a%LIBDEBUG%.lib ^
+    .\deps\%CURL_DIR%\lib\%build_type%\libcurl%LIBDEBUG%.lib ^
     .\deps-build\%build_dir%\curl\lib\libcurl_a.lib
 if %ERRORLEVEL% NEQ 0 goto :error
 
 copy /v /y ^
-    %install_dir%\include\curl\*.h ^
+    .\deps\%CURL_DIR%\include\curl\*.h ^
     .\deps-build\%build_dir%\curl\include\curl
 if %ERRORLEVEL% NEQ 0 goto :error
 

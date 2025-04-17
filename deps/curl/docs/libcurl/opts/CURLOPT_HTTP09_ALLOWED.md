@@ -30,7 +30,7 @@ Pass the long argument *allowed* set to 1L to allow HTTP/0.9 responses.
 
 An HTTP/0.9 response is a server response entirely without headers and only a
 body. You can connect to lots of random TCP services and still get a response
-that curl might consider to be HTTP/0.9!
+that curl might consider to be HTTP/0.9.
 
 # DEFAULT
 
@@ -64,4 +64,7 @@ responses.
 
 # RETURN VALUE
 
-Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not.
+curl_easy_setopt(3) returns a CURLcode indicating success or error.
+
+CURLE_OK (0) means everything was OK, non-zero means an error occurred, see
+libcurl-errors(3).

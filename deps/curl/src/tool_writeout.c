@@ -122,6 +122,7 @@ static const struct writeoutvar variables[] = {
    writeTime},
   {"time_pretransfer", VAR_PRETRANSFER_TIME, CURLINFO_PRETRANSFER_TIME_T,
    writeTime},
+  {"time_queue", VAR_QUEUE_TIME, CURLINFO_QUEUE_TIME_T, writeTime},
   {"time_redirect", VAR_REDIRECT_TIME, CURLINFO_REDIRECT_TIME_T, writeTime},
   {"time_starttransfer", VAR_STARTTRANSFER_TIME, CURLINFO_STARTTRANSFER_TIME_T,
    writeTime},
@@ -204,7 +205,7 @@ static int urlpart(struct per_transfer *per, writeoutid vid,
         rc = 5;
     }
     else
-      url = per->this_url;
+      url = per->url;
 
     if(!rc) {
       switch(vid) {
@@ -373,8 +374,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
       }
       break;
     case VAR_INPUT_URL:
-      if(per->this_url) {
-        strinfo = per->this_url;
+      if(per->url) {
+        strinfo = per->url;
         valid = true;
       }
       break;
@@ -398,7 +399,7 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
     case VAR_INPUT_URLEQUERY:
     case VAR_INPUT_URLEFRAGMENT:
     case VAR_INPUT_URLEZONEID:
-      if(per->this_url) {
+      if(per->url) {
         if(!urlpart(per, wovar->id, &strinfo)) {
           freestr = strinfo;
           valid = true;
@@ -411,8 +412,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
     }
   }
 
-  if(valid) {
-    DEBUGASSERT(strinfo);
+  DEBUGASSERT(!valid || strinfo);
+  if(valid && strinfo) {
     if(use_json) {
       fprintf(stream, "\"%s\":", wovar->name);
       jsonWriteString(stream, strinfo, FALSE);
@@ -652,7 +653,7 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
               FILE *stream2;
               memcpy(fname, ptr, flen);
               fname[flen] = 0;
-              stream2 = fopen(fname, append? FOPEN_APPENDTEXT :
+              stream2 = fopen(fname, append ? FOPEN_APPENDTEXT :
                               FOPEN_WRITETEXT);
               if(stream2) {
                 /* only change if the open worked */
