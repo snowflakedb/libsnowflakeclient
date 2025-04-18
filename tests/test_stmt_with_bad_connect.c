@@ -1,8 +1,4 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include "utils/test_setup.h"
-
 
 /**
  * Test attempting to run a query without connection and connect and retry

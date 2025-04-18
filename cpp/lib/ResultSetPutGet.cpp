@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "ResultSetPutGet.hpp"
 #include "../logger/SFLogger.hpp"
 #include "memory.h"

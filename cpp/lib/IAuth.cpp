@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string>
 #include <regex>
 #ifdef _WIN32

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "snowflake/SF_CRTFunctionSafe.h"
 #include "SnowflakeAzureClient.hpp"
 #include "FileMetadataInitializer.hpp"

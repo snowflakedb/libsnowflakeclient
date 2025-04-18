@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
-
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
 #include "memory.h"

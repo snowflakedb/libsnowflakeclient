@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string>
 #include "./lib/ClientQueryContextCache.hpp"
 #include "utils/test_setup.h"

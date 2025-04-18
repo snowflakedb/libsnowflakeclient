@@ -1,7 +1,3 @@
-/*
-* Copyright (c) 2018-2020 Snowflake Computing
-*/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

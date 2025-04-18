@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_STORAGECLIENTFACTORY_HPP
 #define SNOWFLAKECLIENT_STORAGECLIENTFACTORY_HPP
 

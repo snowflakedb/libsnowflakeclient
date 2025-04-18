@@ -1,6 +1,5 @@
 /*
  * File:   SecureStorageApple.cpp *
- * Copyright (c) 2013-2025 Snowflake Computing
  */
 
 #ifdef __APPLE__

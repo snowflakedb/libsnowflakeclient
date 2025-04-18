@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_RESULTSET_HPP
 #define SNOWFLAKECLIENT_RESULTSET_HPP
 

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "connection.h"
 #include "client_int.h"
 #include "utils/test_setup.h"
