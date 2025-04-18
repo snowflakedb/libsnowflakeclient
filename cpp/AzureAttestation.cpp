@@ -4,6 +4,10 @@
 #include "snowflake/HttpClient.hpp"
 #include "logger/SFLogger.hpp"
 
+namespace {
+  std::vector<std::string> allowedIssuers = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
+}
+
 namespace Snowflake {
   namespace Client {
     boost::optional<Attestation> createAzureAttestation(AttestationConfig& config) {
@@ -12,7 +16,7 @@ namespace Snowflake {
         return boost::none;
       }
 
-      auto azureConfig = azureConfigOpt.get();
+      const auto& azureConfig = azureConfigOpt.get();
       HttpRequest req{
           HttpRequest::Method::GET,
           azureConfig.getRequestURL(),
@@ -25,7 +29,7 @@ namespace Snowflake {
         return boost::none;
       }
 
-      auto response = responseOpt.get();
+      const auto& response = responseOpt.get();
       if (response.code != 200) {
         CXX_LOG_WARN("Azure metadata server request was not successful.");
         return boost::none;
@@ -54,7 +58,12 @@ namespace Snowflake {
         return boost::none;
       }
 
-      if (issuer.rfind("https://sts.windows.net/", 0) != 0) {
+      bool isValidIssuer =
+        std::any_of(allowedIssuers.begin(), allowedIssuers.end(), [&issuer](const std::string& allowedIssuer) {
+          return issuer.rfind(allowedIssuer, 0) == 0;
+        });
+
+      if (!isValidIssuer) {
         CXX_LOG_ERROR("Unexpected issuer in Azure JWT: %s", issuer.c_str());
         return boost::none;
       }

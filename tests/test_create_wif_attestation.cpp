@@ -141,12 +141,12 @@ void test_gcp_attestation(void**)
   assert_true(attestation.subject == "107562638633288735786");
 }
 
-void test_azure_attestation(void**)
-{
+void test_azure_for_claim_issues(std::string claimIssuer) {
   auto resource = "api://4f6b1daa-cbcb-4342-ac74-005fbc825d2a";
   auto jwtObj = Jwt::JWTObject();
+  auto iss = claimIssuer + "f05bdcc4-50e7-4fea-958d-32cdb12b3aca/";
   jwtObj.getHeader()->setAlgorithm(Jwt::AlgorithmType::RS256);
-  jwtObj.getClaimSet()->addClaim("iss", "https://sts.windows.net/f05bdcc4-50e7-4fea-958d-32cdb12b3aca/");
+  jwtObj.getClaimSet()->addClaim("iss", iss);
   jwtObj.getClaimSet()->addClaim("sub", "f05bdcc4-50e7-4fea-958d-32cdb12b3aca");
   jwtObj.getClaimSet()->addClaim("aud", resource);
   auto key = std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY*)>>(generate_key(), [](EVP_PKEY* k) { EVP_PKEY_free(k); });
@@ -173,8 +173,16 @@ void test_azure_attestation(void**)
   auto& attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
   assert_true(attestation.credential == jwtString);
-  assert_true(attestation.issuer == "https://sts.windows.net/f05bdcc4-50e7-4fea-958d-32cdb12b3aca/");
+  assert_true(attestation.issuer == iss);
   assert_true(attestation.subject == "f05bdcc4-50e7-4fea-958d-32cdb12b3aca");
+}
+
+void test_azure_attestation_login_microsoft(void**) {
+  test_azure_for_claim_issues("https://login.microsoftonline.com/");
+}
+
+void test_azure_attestation_sts(void**) {
+  test_azure_for_claim_issues("https://sts.windows.net/");
 }
 
 void test_oidc_attestation(void**)
@@ -205,7 +213,8 @@ int main()
       cmocka_unit_test(test_aws_attestation),
 #endif
       cmocka_unit_test(test_gcp_attestation),
-      cmocka_unit_test(test_azure_attestation),
+      cmocka_unit_test(test_azure_attestation_sts),
+      cmocka_unit_test(test_azure_attestation_login_microsoft),
       cmocka_unit_test(test_oidc_attestation)
   };
 
