@@ -34,7 +34,8 @@ if (LINUX)
     endif ()
 
     # Enable mocks
-    if (MOCK OR MOCK STREQUAL ON)
+    if (MOCK)
+        message("Mocks are enabled")
         set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wl,--wrap=http_perform")
         add_definitions(-DMOCK_ENABLED)
     endif ()
