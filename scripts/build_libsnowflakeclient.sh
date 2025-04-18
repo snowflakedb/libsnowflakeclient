@@ -64,8 +64,10 @@ if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
     cmake_opts+=("-DMOCK=ON")
 fi
 
+set -x
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
+set +x
 
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
