@@ -8,43 +8,12 @@
 #include <aws/core/http/HttpClient.h>
 #include <aws/sts/STSClient.h>
 #include <aws/sts/model/GetCallerIdentityRequest.h>
+#include "AWSUtils.hpp"
 
 namespace Snowflake {
   namespace Client {
-
-    std::string getAwsRegion() {
-      auto region = std::getenv("AWS_REGION");
-      if (region) {
-        return region;
-      }
-
-      auto profile_name = Aws::Auth::GetConfigProfileName();
-      if (Aws::Config::HasCachedConfigProfile(profile_name))
-      {
-        auto profile = Aws::Config::GetCachedConfigProfile(profile_name);
-        auto region = profile.GetRegion();
-        if (!region.empty())
-        {
-          return region;
-        }
-      }
-
-      if (Aws::Config::HasCachedCredentialsProfile(profile_name))
-      {
-        auto profile = Aws::Config::GetCachedCredentialsProfile(profile_name);
-        auto region = profile.GetRegion();
-        if (!region.empty())
-        {
-          return region;
-        }
-      }
-
-      return Aws::Region::US_EAST_1;
-    }
-
     boost::optional<Attestation> createAwsAttestation(const AttestationConfig&) {
-      Aws::SDKOptions options;
-      Aws::InitAPI(options);
+      auto awsSdkInit = AwsUtils::initAwsSdk();
       auto credentialsProvider = Aws::MakeShared<Aws::Auth::DefaultAWSCredentialsProviderChain>({});
       auto creds = credentialsProvider->GetAWSCredentials();
       if (creds.IsEmpty()) {
@@ -52,8 +21,9 @@ namespace Snowflake {
         return boost::none;
       }
 
-      std::string region = getAwsRegion();
-      std::string host = std::string("sts.") + getAwsRegion() + ".amazonaws.com";
+      std::string region = AwsUtils::getRegion();
+      std::string domain = AwsUtils::getDomainSuffixForRegionalUrl(region);
+      std::string host = std::string("sts") + "." + region + "." + domain;
       std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
 
       auto request = Aws::Http::CreateHttpRequest(
@@ -87,7 +57,6 @@ namespace Snowflake {
       std::string json = picojson::value(obj).serialize(true);
       std::string base64;
       Util::Base64::encodePadding(json.begin(), json.end(), std::back_inserter(base64));
-      Aws::ShutdownAPI(options);
       return Attestation{AttestationType::AWS, base64};
     }
   }

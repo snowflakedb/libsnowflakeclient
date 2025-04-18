@@ -15,10 +15,10 @@ namespace Snowflake {
       long code;
 
       std::string getBody() const {
-        return std::string(m_buffer.begin(), m_buffer.end());
+        return std::string(buffer.begin(), buffer.end());
       }
 
-      std::vector<char> m_buffer;
+      std::vector<char> buffer;
     };
 
     struct HttpRequest {
@@ -29,7 +29,7 @@ namespace Snowflake {
         POST,
       } method;
 
-      static std::string methodToString(Method method) {
+      static const char* methodToString(Method method) {
         switch (method) {
           case Method::GET:
             return "GET";

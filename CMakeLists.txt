@@ -214,6 +214,8 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/AzureAttestation.hpp
         cpp/AwsAttestation.hpp
         cpp/AzureAttestation.cpp
+        cpp/AWSUtils.cpp
+        cpp/AWSUtils.hpp
 )
 
 if (LINUX)

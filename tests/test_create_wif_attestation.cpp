@@ -7,7 +7,6 @@
 #include <openssl/rsa.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
-#include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
@@ -83,7 +82,7 @@ void test_aws_attestation(void**)
 {
   char* gh_actions = std::getenv("GITHUB_ACTIONS");
   if (gh_actions) {
-    std::cerr << "Skipping test_aws_attestation on GitHub Actions" << std::endl;
+    std::cerr << "Skipping test_aws_attestation on GitHub Actions since it requires AWS credentials" << std::endl;
     return;
   }
   AttestationConfig config;
@@ -128,7 +127,7 @@ void test_gcp_attestation(void**)
     assert_true(req.url.scheme() == "http");
     HttpResponse response;
     response.code = 200;
-    response.m_buffer = std::vector<char>(jwtString.begin(), jwtString.end());
+    response.buffer = std::vector<char>(jwtString.begin(), jwtString.end());
     return response;
   });
   AttestationConfig config;
@@ -162,7 +161,7 @@ void test_azure_attestation(void**)
     std::string response_body = picojson::value(obj).serialize();
     Snowflake::Client::HttpResponse response;
     response.code = 200;
-    response.m_buffer = std::vector<char>(response_body.begin(), response_body.end());
+    response.buffer = std::vector<char>(response_body.begin(), response_body.end());
     return response;
   });
   AttestationConfig config;
@@ -202,6 +201,7 @@ int main()
 {
   const struct CMUnitTest tests[] = {
 #ifndef _WIN32
+      // Disabled on Windows because we don't have AWS credentials set up in the CI
       cmocka_unit_test(test_aws_attestation),
 #endif
       cmocka_unit_test(test_gcp_attestation),

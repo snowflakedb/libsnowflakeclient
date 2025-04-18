@@ -12,14 +12,9 @@ namespace Snowflake {
         CURL *curl = curl_easy_init();
         HttpResponse response;
         boost::optional<HttpResponse> responseOpt = boost::none;
-        CXX_LOG_INFO("Running request: %s", req.url.c_str());
-        CXX_LOG_INFO("Method: %s", HttpRequest::methodToString(req.method).c_str());
-        for (const auto &h: req.headers) {
-          CXX_LOG_INFO("Header: %s: %s", h.first.c_str(), h.second.c_str());
-        }
 
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method).c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, SimpleHttpClient::write);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
 
@@ -52,8 +47,8 @@ namespace Snowflake {
 
     private:
       static size_t write(void *ptr, size_t size, size_t nmemb, HttpResponse *response) {
-        CXX_LOG_INFO("Writing %d bytes", (int) (size * nmemb));
-        response->m_buffer.insert(response->m_buffer.end(), (char *) ptr, (char *) ptr + size * nmemb);
+        CXX_LOG_TRACE("Writing %d bytes", (int) (size * nmemb));
+        response->buffer.insert(response->buffer.end(), (char *) ptr, (char *) ptr + size * nmemb);
         return size * nmemb;
       }
     };
