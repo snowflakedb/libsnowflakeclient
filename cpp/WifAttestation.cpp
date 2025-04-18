@@ -44,25 +44,29 @@ namespace Snowflake {
           CXX_LOG_INFO("Trying attestation type %s", stringFromAttestationType(type));
           auto attestation = provider(config);
           if (attestation) {
-            CXX_LOG_INFO("Detected attestation type %s", stringFromAttestationType(type));
+            CXX_LOG_INFO("Detected attestation type %s and performed attestation successfully", stringFromAttestationType(type));
             return attestation.get();
           }
         }
 
-        CXX_LOG_WARN("Failed to detect attestation type");
+        CXX_LOG_ERROR("Failed to detect attestation type");
         return boost::none;
       }
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
       if (!config.type) {
-        return createAutodetectAttestation(config);
+        auto result = createAutodetectAttestation(config);
+        if (!result) {
+          CXX_LOG_ERROR("Failed to create attestation for %s", stringFromAttestationType(config.type.get()));
+        }
+        return result;
       }
 
       auto type = config.type.get();
       return attestationProviders.at(type)(config);
     }
 
-    const std::unique_ptr<IHttpClient> defaultHttpClient = std::unique_ptr<IHttpClient>(IHttpClient::createSimple());
+    const std::unique_ptr<IHttpClient> defaultHttpClient = std::unique_ptr<IHttpClient>(IHttpClient::createSimple(defaultHttpClientConfig));
   }
 }

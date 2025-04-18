@@ -47,12 +47,18 @@ namespace Snowflake {
       std::map <std::string, std::string> headers;
     };
 
+    struct HttpClientConfig {
+      long connectTimeoutInSeconds;
+    };
+
+    extern const HttpClientConfig defaultHttpClientConfig;
+
     class IHttpClient {
     public:
       virtual boost::optional<HttpResponse> run(HttpRequest req) = 0;
       virtual ~IHttpClient() = default;
 
-      static IHttpClient* createSimple();
+      static IHttpClient* createSimple(const HttpClientConfig&);
     };
 
   }

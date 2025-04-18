@@ -7,7 +7,6 @@
 #include <aws/core/auth/AWSAuthSigner.h>
 #include <aws/core/http/HttpClient.h>
 #include <aws/sts/STSClient.h>
-#include <aws/sts/model/GetCallerIdentityRequest.h>
 #include "AWSUtils.hpp"
 
 namespace Snowflake {
@@ -42,7 +41,7 @@ namespace Snowflake {
 
       // Sign the request
       if (!signer.SignRequest(*request)) {
-        CXX_LOG_INFO("Failed to sign request");
+        CXX_LOG_ERROR("Failed to sign request");
         return boost::none;
       }
 

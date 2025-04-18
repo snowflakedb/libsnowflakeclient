@@ -5,7 +5,7 @@
 #include "logger/SFLogger.hpp"
 
 namespace {
-  std::vector<std::string> allowedIssuers = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
+  const std::vector<std::string> allowedIssuers = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
 }
 
 namespace Snowflake {
@@ -31,7 +31,7 @@ namespace Snowflake {
 
       const auto& response = responseOpt.get();
       if (response.code != 200) {
-        CXX_LOG_WARN("Azure metadata server request was not successful.");
+        CXX_LOG_ERROR("Azure metadata server request was not successful.");
         return boost::none;
       }
 
@@ -59,7 +59,7 @@ namespace Snowflake {
       }
 
       bool isValidIssuer =
-        std::any_of(allowedIssuers.begin(), allowedIssuers.end(), [&issuer](const std::string& allowedIssuer) {
+        std::any_of(allowedIssuers.cbegin(), allowedIssuers.cend(), [&issuer](const std::string& allowedIssuer) {
           return issuer.rfind(allowedIssuer, 0) == 0;
         });
 

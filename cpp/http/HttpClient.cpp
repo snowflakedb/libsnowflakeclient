@@ -5,14 +5,19 @@
 
 namespace Snowflake {
   namespace Client {
+    const HttpClientConfig defaultHttpClientConfig = {
+      5, // config timeout in seconds
+    };
 
     class SimpleHttpClient : public IHttpClient {
     public:
+      explicit SimpleHttpClient(const HttpClientConfig& cfg) : config(cfg) {}
       boost::optional<HttpResponse> run(HttpRequest req) override {
         CURL *curl = curl_easy_init();
         HttpResponse response;
         boost::optional<HttpResponse> responseOpt = boost::none;
 
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, SimpleHttpClient::write);
@@ -51,10 +56,12 @@ namespace Snowflake {
         response->buffer.insert(response->buffer.end(), (char *) ptr, (char *) ptr + size * nmemb);
         return size * nmemb;
       }
+
+      HttpClientConfig config;
     };
 
-    IHttpClient *IHttpClient::createSimple() {
-      return new SimpleHttpClient();
+    IHttpClient *IHttpClient::createSimple(const HttpClientConfig& cfg) {
+      return new SimpleHttpClient(cfg);
     }
   }
 }

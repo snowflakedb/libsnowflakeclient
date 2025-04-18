@@ -24,7 +24,7 @@ namespace Snowflake {
 
       auto responseOpt = config.httpClient->run(req);
       if (!responseOpt) {
-        CXX_LOG_ERROR("No response from GCP metadata server.");
+        CXX_LOG_INFO("No response from GCP metadata server.");
         return boost::none;
       }
 
