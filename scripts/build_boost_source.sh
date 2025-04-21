@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 BOOST_SRC_VERSION=1.81.0
-BOOST_BUILD_VERSION=2
+BOOST_BUILD_VERSION=3
 BOOST_VERSION=${BOOST_SRC_VERSION}.${BOOST_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -23,6 +23,10 @@ source $DIR/utils.sh
 
 BOOST_SOURCE_DIR=$DEPS_DIR/boost-${BOOST_SRC_VERSION}
 BOOST_BUILD_DIR=$DEPENDENCY_DIR/boost
+
+rm -rf $BOOST_SOURCE_DIR
+git clone --single-branch --branch deps/boost-$BOOST_SRC_VERSION https://github.com/snowflakedb/libsnowflakeclient.git $BOOST_SOURCE_DIR
+
 rm -rf $BOOST_BUILD_DIR
 mkdir $BOOST_BUILD_DIR
 
@@ -43,7 +47,7 @@ sed -i -- 's/build.sh)/build.sh gcc)/g' bootstrap.sh
 # If we are not doing a universal build, build with 64-bit
 CXXFLAGS="-std=c++17"
 if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
-    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=clang --with-libraries=filesystem,regex,system cxxflags="-arch x86_64 -arch arm64" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64"
+    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=clang --with-libraries=filesystem,regex,system,url cxxflags="-arch x86_64 -arch arm64" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64"
     ./b2 stage --stagedir=$BOOST_BUILD_DIR/x64 --includedir=$BOOST_BUILD_DIR/include toolset=clang target-os=darwin architecture=x86 variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch x86_64" cxxflags="-arch x86_64 ${CXXFLAGS}" linkflags="-arch x86_64" -a install
     ./b2 stage --stagedir=$BOOST_BUILD_DIR/arm64 toolset=clang variant=$VARIANT link=static address-model=64 cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3 -arch arm64" cxxflags="-arch arm64 ${CXXFLAGS}" linkflags="-arch arm64" -a install
     mkdir $BOOST_BUILD_DIR/lib
@@ -52,7 +56,7 @@ if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
     done
     rm -rf $BOOST_BUILD_DIR/x64 $BOOST_BUILD_DIR/arm64
 else
-    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system
+    CXX=$CXX ./bootstrap.sh --prefix=. --with-toolset=gcc --with-libraries=filesystem,regex,system,url
     ./b2 stage --stagedir=$BOOST_BUILD_DIR --includedir=$BOOST_BUILD_DIR/include toolset=gcc variant=$VARIANT link=static address-model=64 cxxflags="${CXXFLAGS}" cflags="-Wall -D_REENTRANT -DCLUNIX -fPIC -O3" -a install
 fi
 

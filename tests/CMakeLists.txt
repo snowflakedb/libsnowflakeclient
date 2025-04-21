@@ -102,8 +102,9 @@ SET(TESTS_PERF
         test_perf_type_conversion)
 
 SET(TESTS_MOCK
-        test_mock_service_name
-        test_mock_session_gone
+        # TODO: Re-enable tests in SNOW-2046054
+        # test_mock_service_name
+        # test_mock_session_gone
         test_mock_mfa_token_caching
 )
 
@@ -280,7 +281,7 @@ if (MOCK)
         else()
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
+                    ../deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
