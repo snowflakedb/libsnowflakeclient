@@ -1994,8 +1994,10 @@ void test_put_get_with_unicode(void **unused)
 {
 // On Linux/Mac the default one would be POSIX(ANSI), set to UTF8 to simulate
 // application using Unicode.
-#ifndef _WIN32
+#ifdef __linux__
   setlocale(LC_ALL, "en_US.utf8");
+#elif defined(__APPLE__)
+  setlocale(LC_ALL, "en_US.UTF-8");
 #endif
   std::string dataDir = TestSetup::getDataDir();
   std::string filename=PLATFORM_STR + ".csv";
