@@ -92,7 +92,6 @@ public:
 
     return result;
 #else
-    setlocale(LC_ALL, "");
     char* encoding = nl_langinfo(CODESET);
     iconv_t conv = iconv_open(encoding, "UTF-8");
     std::vector<char> buf(utf8_str.size() * 4 + 1);
@@ -130,7 +129,6 @@ public:
 
     return result;
 #else
-    setlocale(LC_ALL, "");
     char* encoding = nl_langinfo(CODESET);
     iconv_t conv = iconv_open("UTF-8", encoding);
     std::vector<char> buf(platform_str.size() * 4 + 1);
@@ -1997,7 +1995,7 @@ void test_put_get_with_unicode(void **unused)
 // On Linux/Mac the default one would be POSIX(ANSI), set to UTF8 to simulate
 // application using Unicode.
 #ifndef _WIN32
-  setlocale(LC_CTYPE, "en_US.utf8");
+  setlocale(LC_ALL, "en_US.utf8");
 #endif
   std::string dataDir = TestSetup::getDataDir();
   std::string filename=PLATFORM_STR + ".csv";
