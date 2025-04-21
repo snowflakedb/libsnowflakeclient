@@ -246,9 +246,9 @@ if (LINUX)
             pthread -Wl,--no-whole-archive -Wl,--as-needed -static-libgcc -static-libstdc++)
 endif ()
 if (APPLE)
-    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework security" -all_load
+    set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m iconv "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework security" -all_load
             ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
-    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework  security" -all_load ${CURL_LIB}
+    set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} z m iconv "-framework CoreFoundation -framework SystemConfiguration -framework CoreServices -framework  security" -all_load ${CURL_LIB}
             ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} pthread ${AZURE_STORAGE_LITE_LIB} ${AWS_ALL_LIBS} ${UUID_LIB})
 endif()
 if (WIN32)
