@@ -69,8 +69,10 @@ if [[ "$linking" == "Dynamic" ]]; then
     cmake_opts+=("-DBUILD_SHARED_LIBS=ON")
 fi
 
+set -x
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
+set +x
 
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR

@@ -46,6 +46,7 @@ docker run \
         -e CLIENT_CODE_COVERAGE \
         -e USE_EXTRA_WARNINGS \
         -e LINK_TYPE \
+        -e ENABLE_MOCK_OBJECTS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \
         "/mnt/host/ci/build/build.sh"
