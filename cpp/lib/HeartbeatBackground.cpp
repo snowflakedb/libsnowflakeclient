@@ -97,7 +97,9 @@ namespace Snowflake
                 if (m_worker == NULL)
                 {
                     this->m_master_token_validation_time = connection->master_token_validation_time;
-                    this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
+                    //this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
+                    this->m_heart_beat_interval = 5;
+
                     CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
                     m_worker = new std::thread(&HeartbeatBackground::heartBeatAll, this);
                 }
@@ -159,6 +161,7 @@ namespace Snowflake
                     proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
                 {
                     sf_bool success = SF_BOOLEAN_FALSE;
+                    char* s_resp = snowflake_cJSON_Print(resp_data);
                     if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
                         char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "code"));
                         if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
