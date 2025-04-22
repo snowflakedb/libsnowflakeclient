@@ -139,7 +139,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
         include/snowflake/entities.hpp
-        )
+)
 
 set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Connection.hpp
@@ -202,6 +202,18 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
+        include/snowflake/WifAttestation.hpp
+        cpp/WifAttestation.cpp
+        cpp/AwsAttestation.cpp
+        cpp/http/HttpClient.cpp
+        include/snowflake/HttpClient.hpp
+        cpp/GcpAttestation.hpp
+        cpp/GcpAttestation.cpp
+        cpp/AzureAttestation.hpp
+        cpp/AwsAttestation.hpp
+        cpp/AzureAttestation.cpp
+        cpp/AWSUtils.cpp
+        cpp/AWSUtils.hpp
 )
 
 if (LINUX)
@@ -225,6 +237,7 @@ if (UNIX)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AWS_STS_LIB libaws-cpp-sdk-sts.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_AUTH_LIB libaws-c-auth.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_CAL_LIB libaws-c-cal.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_COMMON_LIB libaws-c-common.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
@@ -239,6 +252,7 @@ if (UNIX)
     find_library(AWS_C_SDKUTILS_LIB libaws-c-sdkutils.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(BOOST_URL_LIB libboost_url.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_REGEX_LIB libboost_regex.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_SYSTEM_LIB libboost_system.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(ARROW_JEMALLOCPIC_LIB libjemalloc_pic.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -308,7 +322,8 @@ if (WIN32)
         find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_REGEX_LIB libboost_regex.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_SYSTEM_LIB libboost_system.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
-	else()
+        find_library(BOOST_URL_LIB libboost_url.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+    else()
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
