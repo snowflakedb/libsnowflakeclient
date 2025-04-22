@@ -1314,7 +1314,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             }
 
             else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
+              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
             }
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
