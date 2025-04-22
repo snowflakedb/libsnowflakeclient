@@ -93,19 +93,16 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 1
             );
 
-            // SNOW-715510: TODO Enable token_cache
-/*
             if (sf->token_cache == NULL) {
-                sf->token_cache = cred_cache_init();
+                sf->token_cache = secure_storage_init();
             }
 
-            char* token = cred_cache_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
             if (token != NULL)
             {
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                cred_cache_free_credential(token);
+                secure_storage_free_credential(token);
             }
-*/
         }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
