@@ -46,12 +46,32 @@ struct Base64 final
    */
   static std::string encodePadding(const std::vector<char> &bytes);
 
+  template<typename InputIterator, typename OutputIterator>
+  static void encodePadding(const InputIterator& first, const InputIterator& last, const OutputIterator& out)
+  {
+    std::vector<char> input;
+    std::copy(first, last, std::back_inserter(input));
+    std::string output = encodePadding(input);
+    std::copy(output.begin(), output.end(), out);
+  }
+
+
   /**
     * High level cpp api for decode
     * @param code in base64 format with padding
     * @return bytes
     */
   static std::vector<char> decodePadding(const std::string &code);
+
+  template<typename InputIterator, typename OutputIterator>
+  static void decodePadding(const InputIterator& first, const InputIterator& last, const OutputIterator& out)
+  {
+    std::string input;
+    std::copy(first, last, std::back_inserter(input));
+    std::vector<char> output = decodePadding(input);
+    std::copy(output.begin(), output.end(), out);
+  }
+
 
 
   /**

@@ -4,7 +4,7 @@
 ::
 @echo off
 set aws_src_version=1.11.283
-set aws_build_version=9
+set aws_build_version=10
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -62,7 +62,7 @@ set GIT_DIR=%TMP%
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
--DBUILD_ONLY=s3 ^
+-DBUILD_ONLY=s3;sts ^
 -DFORCE_CURL=on ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
 -DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
