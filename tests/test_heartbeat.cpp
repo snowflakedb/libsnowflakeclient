@@ -143,8 +143,8 @@ void test_token_renew(void** unused)
     strcpy(previous_masterToken, sf->master_token);
 
     renew_session_sync(sf);
-    assert_false(strcmp(previous_sessiontoken, sf->token) == 0);
-    assert_false(strcmp(previous_masterToken, sf->master_token) == 0);
+    assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
+    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
 
     SF_FREE(previous_sessiontoken);
     SF_FREE(previous_masterToken);
