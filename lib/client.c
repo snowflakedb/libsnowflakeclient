@@ -1111,10 +1111,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
 
     auth_terminate(sf);
-    if (sf->token_cache != NULL) 
-    {
-        secure_storage_term(sf->token_cache);
-    }
+    secure_storage_term(sf->token_cache);
     qcc_terminate(sf);
 
     _mutex_term(&sf->mutex_sequence_counter);
@@ -1316,12 +1313,9 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
             }
 
-            // SNOW-715510: TODO Enable token cache
-/*
             else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
               cred_cache_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
             }
-*/
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
