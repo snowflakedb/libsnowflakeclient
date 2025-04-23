@@ -159,7 +159,6 @@ namespace Snowflake
                     proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
                 {
                     sf_bool success = SF_BOOLEAN_FALSE;
-                    char* s_resp = snowflake_cJSON_Print(resp_data);
                     if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
                         char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "code"));
                         if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)

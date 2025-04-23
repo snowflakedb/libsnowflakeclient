@@ -103,19 +103,6 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
     }
 }
 
-static void alloc_buffer_and_copy(char** var, const char* str) {
-    size_t str_size;
-    SF_FREE(*var);
-    // If passed in string is null, then return since *var is already null from being freed
-    if (str) {
-        str_size = strlen(str) + 1; // For null terminator
-        *var = (char*)SF_CALLOC(1, str_size);
-        sf_strncpy(*var, str_size, str, str_size);
-    }
-    else {
-        *var = NULL;
-    }
-}
 void test_token_renew(void** unused)
 {
     SF_UNUSED(unused);
@@ -163,12 +150,63 @@ void test_token_renew(void** unused)
     snowflake_term(sf);
 }
 
+void test_heartbeat(void** unused)
+{
+#ifndef __linux__
+    return;
+#endif // 
+
+    SF_UNUSED(unused);
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    sf_bool client_session_keep_alive = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
+
+    uint64 client_heartbeat_frequency = 30;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &client_heartbeat_frequency);
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    char* previous_sessiontoken = (char*)SF_MALLOC(strlen(sf->token) + 1);
+    char* previous_masterToken = (char*)SF_MALLOC(strlen(sf->master_token) + 1);
+    strcpy(previous_sessiontoken, sf->token);
+    strcpy(previous_masterToken, sf->master_token);
+
+    sf_sleep_ms(1000 * 1000);
+    assert_true(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
+    assert_true(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+
+    snowflake_term(sf);
+}
+
+
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
     cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
     cmocka_unit_test(test_token_renew),
+    cmocka_unit_test(test_heartbeat),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
