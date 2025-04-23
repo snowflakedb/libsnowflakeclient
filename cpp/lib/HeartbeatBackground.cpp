@@ -209,7 +209,7 @@ namespace Snowflake
                     // For debug purpose only force heartbeat iterval to 1 second
                     // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
-                        m_heart_beat_interval = 1;
+                        m_heart_beat_interval = 15;
 #endif
                     CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", m_heart_beat_interval);
                     std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(m_heart_beat_interval);

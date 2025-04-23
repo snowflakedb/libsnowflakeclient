@@ -150,6 +150,7 @@ void test_token_renew(void** unused)
     snowflake_term(sf);
 }
 
+//HEARTBEAT_DEBUG should be enabled
 void test_heartbeat(void** unused)
 {
 #ifndef __linux__
@@ -176,7 +177,7 @@ void test_heartbeat(void** unused)
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
-    sf_bool client_session_keep_alive = SF_BOOLEAN_FALSE;
+    sf_bool client_session_keep_alive = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
 
     uint64 client_heartbeat_frequency = 30;
@@ -192,9 +193,9 @@ void test_heartbeat(void** unused)
     strcpy(previous_sessiontoken, sf->token);
     strcpy(previous_masterToken, sf->master_token);
 
-    sf_sleep_ms(1000 * 1000);
-    assert_true(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
-    assert_true(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+    sf_sleep_ms(30 * 1000);
+    assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
+    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
 
     snowflake_term(sf);
 }
