@@ -268,7 +268,6 @@ jobs:
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
-                  ENABLE_HEARTBEAT_DEBUG: 'true'
                   CLOUD_PROVIDER: AWS
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
@@ -298,7 +297,6 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
-                  ENABLE_HEARTBEAT_DEBUG: 'true'
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
             - uses: actions/setup-python@v5
@@ -349,7 +347,6 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
-                  ENABLE_HEARTBEAT_DEBUG: 'true'
                   CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: GCP
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}

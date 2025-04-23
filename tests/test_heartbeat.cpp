@@ -153,7 +153,7 @@ void test_token_renew(void** unused)
 //HEARTBEAT_DEBUG should be enabled
 void test_heartbeat(void** unused)
 {
-#ifndef __linux__
+#ifndef HEARTBEAT_DEBUG
     return;
 #endif // 
 
