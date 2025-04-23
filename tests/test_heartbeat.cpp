@@ -103,7 +103,19 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
     }
 }
 
-//For the codecoverage, 
+static void alloc_buffer_and_copy(char** var, const char* str) {
+    size_t str_size;
+    SF_FREE(*var);
+    // If passed in string is null, then return since *var is already null from being freed
+    if (str) {
+        str_size = strlen(str) + 1; // For null terminator
+        *var = (char*)SF_CALLOC(1, str_size);
+        sf_strncpy(*var, str_size, str, str_size);
+    }
+    else {
+        *var = NULL;
+    }
+}
 void test_token_renew(void** unused)
 {
     SF_UNUSED(unused);
@@ -134,7 +146,7 @@ void test_token_renew(void** unused)
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error)); 
+        dump_error(&(sf->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
     char* previous_sessiontoken = (char*)SF_MALLOC(strlen(sf->token) + 1);
