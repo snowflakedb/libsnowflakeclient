@@ -9,9 +9,8 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "memory.h"
-#include "../lib/heart_beat_background.h"
-#include "../cpp/lib/HeartbeatBackground.hpp"
 #include "snowflake_util.h"
+#include "../lib/heart_beat_background.h"
 
 void test_connect_with_client_session_keep_alive_disable(void** unused)
 {
@@ -187,15 +186,9 @@ void test_heartbeat_manually(void** unused)
     stop_heart_beat_for_this_session(sf);
     assert_false(sf->is_heart_beat_on);
 
-    using namespace Snowflake::Client;
-
-    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-    bg.mockHeartBeat(sf);
+    test_heartbeat(sf);
 
     snowflake_term(sf);
-
-
-
 
 }
 
@@ -256,6 +249,8 @@ int main(void) {
     cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
     cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
     cmocka_unit_test(test_token_renew),
+    cmocka_unit_test(test_heartbeat_manually),
+
     cmocka_unit_test(test_heartbeat),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);

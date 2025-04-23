@@ -32,6 +32,8 @@ extern "C" {
     */
     sf_bool renew_session_sync(SF_CONNECT* sf);
 
+    void test_heartbeat(SF_CONNECT* sf);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

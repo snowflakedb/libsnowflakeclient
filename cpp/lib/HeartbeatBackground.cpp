@@ -61,6 +61,12 @@ extern "C" {
         return SF_BOOLEAN_TRUE;
     }
 
+    void test_heartbeat(SF_CONNECT* sf) {
+
+        HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+        bg.mockHeartBeat(sf);
+    }
+
 } // extern "C"
 
 namespace Snowflake
