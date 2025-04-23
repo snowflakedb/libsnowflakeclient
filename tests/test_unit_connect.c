@@ -39,21 +39,30 @@ void test_unit_connect(void** unused)
     snowflake_term(sf);
 }
 
-void test_heart_beat_parameters(void** unused)
+void test_heart_beat_connection_parameters(void** unused)
 {
     SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
+    void* value = NULL;
+    sf_bool keepAlive = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &keepAlive);
+    snowflake_get_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &value);
+    assert_int_equal(*((sf_bool*)value), keepAlive);
+
     uint64 heart_beat_interval = 10000;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &heart_beat_interval);
-    assert_int_equal(sf->client_session_keep_alive_heartbeat_frequency, 3600);
+    snowflake_get_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &value);
+    assert_int_equal(*((uint64*)value), 3600);
 
     heart_beat_interval = 10;
+    snowflake_get_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &value);
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &heart_beat_interval);
-    assert_int_equal(sf->client_session_keep_alive_heartbeat_frequency, 900);
+    assert_int_equal(*((uint64*)value), 900);
 
     heart_beat_interval = 1234;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &heart_beat_interval);
-    assert_int_equal(sf->client_session_keep_alive_heartbeat_frequency, heart_beat_interval);
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &heart_beat_interval);
+    assert_int_equal(*((uint64*)value), heart_beat_interval);
 }
 
 int main(void) 
@@ -61,7 +70,7 @@ int main(void)
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_unit_connect),
-      cmocka_unit_test(test_heart_beat_parameters),
+      cmocka_unit_test(test_heart_beat_connection_parameters),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
