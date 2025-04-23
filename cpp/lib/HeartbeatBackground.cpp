@@ -97,9 +97,7 @@ namespace Snowflake
                 if (m_worker == NULL)
                 {
                     this->m_master_token_validation_time = connection->master_token_validation_time;
-                    //this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
-                    this->m_heart_beat_interval = 10;
-
+                    this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
                     CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
                     m_worker = new std::thread(&HeartbeatBackground::heartBeatAll, this);
                 }
