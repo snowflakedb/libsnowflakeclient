@@ -10,6 +10,7 @@
 #include "utils/TestSetup.hpp"
 #include "memory.h"
 #include "../lib/heart_beat_background.h"
+#include "../cpp/lib/HeartbeatBackground.hpp"
 #include "snowflake_util.h"
 
 void test_connect_with_client_session_keep_alive_disable(void** unused)
@@ -148,6 +149,54 @@ void test_token_renew(void** unused)
     SF_FREE(previous_sessiontoken);
     SF_FREE(previous_masterToken);
     snowflake_term(sf);
+}
+
+void test_heartbeat_manually(void** unused)
+{
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_PASSWORD"));
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    start_heart_beat_for_this_session(sf);
+    start_heart_beat_for_this_session(sf);
+    assert_true(sf->is_heart_beat_on);
+
+    stop_heart_beat_for_this_session(sf);
+    stop_heart_beat_for_this_session(sf);
+    assert_false(sf->is_heart_beat_on);
+
+    using namespace Snowflake::Client;
+
+    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+    bg.mockHeartBeat(sf);
+
+    snowflake_term(sf);
+
+
+
+
 }
 
 //HEARTBEAT_DEBUG should be enabled

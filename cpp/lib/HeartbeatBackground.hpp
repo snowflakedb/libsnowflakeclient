@@ -65,6 +65,9 @@ namespace Snowflake
              */
             void removeConnection(SF_CONNECT* connection);
 
+            //Testing Purpose;
+            void mockHeartBeat(SF_CONNECT* connection);
+
         private:
             heartbeatReq genHeartBeatReq(SF_CONNECT* connection);
 

@@ -319,5 +319,14 @@ namespace Snowflake
             HeartBeatQueue.clear();
         }
 
+        void HeartbeatBackground::mockHeartBeat(SF_CONNECT* sf) {
+            std::vector<heartbeatReq> HeartBeatQueue;
+            HeartBeatQueue.clear();
+            heartbeatReq hb = genHeartBeatReq(sf);
+            HeartBeatQueue.emplace_back(hb);
+            sendQueuedHeartBeatReq(HeartBeatQueue, NULL);
+            freeHeartBeatReqQueue(HeartBeatQueue);
+        }
+
     } // namespace Client
 } // namespace Snowflake
