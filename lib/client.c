@@ -1066,6 +1066,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+
+        sf->enable_encoding_conversion = SF_BOOLEAN_FALSE;
+        sf->app_encoding = NULL;
     }
 
     return sf;
@@ -1565,6 +1568,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           sf->stage_binding_disabled = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
+        case SF_CON_ENABLE_ENCODING_CONVERSION:
+          sf->enable_encoding_conversion = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1749,6 +1755,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
           break;
         case SF_CON_DISABLE_STAGE_BIND:
           *value = &sf->stage_binding_disabled;
+          break;
+        case SF_CON_ENABLE_ENCODING_CONVERSION:
+          *value = &sf->enable_encoding_conversion;
           break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,

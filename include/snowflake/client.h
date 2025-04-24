@@ -298,7 +298,9 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_OAUTH_TOKEN,
     SF_CON_DISABLE_CONSOLE_LOGIN,
     SF_CON_BROWSER_RESPONSE_TIMEOUT,
-    SF_CON_PAT
+    SF_CON_PAT,
+    SF_CON_ENABLE_ENCODING_CONVERSION,
+    SF_CON_APP_ENCODING
 } SF_ATTRIBUTE;
 
 /**
@@ -487,6 +489,10 @@ typedef struct SF_CONNECT {
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
     sf_bool disable_console_login;
+
+    // encoding conversion
+    sf_bool enable_encoding_conversion;
+    char* app_encoding;
 } SF_CONNECT;
 
 /**
