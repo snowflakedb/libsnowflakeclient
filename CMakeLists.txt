@@ -215,7 +215,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/AwsAttestation.hpp
         cpp/AzureAttestation.cpp
         cpp/AWSUtils.cpp
-        cpp/AWSUtils.hpp
+        include/snowflake/AWSUtils.hpp
+        cpp/OIDCAttestation.cpp
+        cpp/OIDCAttestation.hpp
 )
 
 if (LINUX)
