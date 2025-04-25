@@ -123,6 +123,8 @@ void test_integration_aws_attestation(void **) {
   auto &attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
   assert_true(attestation.credential.size() > 0);
+  assert_true(attestation.arn.has_value());
+  assert_true(!attestation.arn->empty());
   std::string json_string;
   Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
                                                  std::back_inserter(json_string));
@@ -147,15 +149,16 @@ void test_integration_aws_attestation(void **) {
 void test_unit_aws_attestation_success(void **) {
   AttestationConfig config;
   config.type = AttestationType::AWS;
-  auto awsSdkWrapper = std::make_unique<FakeAwsSdkWrapper>(AWS_TEST_REGION, AWS_TEST_ARN, AWS_TEST_CREDS);
-  config.awsSdkWrapper = awsSdkWrapper.get();
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_ARN, AWS_TEST_CREDS);
+  config.awsSdkWrapper = &awsSdkWrapper;
 
   auto attestationOpt = Snowflake::Client::createAttestation(config);
   assert_true(attestationOpt.has_value());
   auto &attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
   assert_true(!attestation.credential.empty());
-  assert_true(!attestation.arn.value_or("").empty());
+  assert_true(attestation.arn.has_value());
+  assert_true(!attestation.arn->empty());
   assert_true(!attestation.subject);
   assert_true(!attestation.issuer);
 }
@@ -170,18 +173,18 @@ void test_unit_aws_attestation_failed(FakeAwsSdkWrapper *awsSdkWrapper) {
 }
 
 void test_unit_aws_attestation_region_missing(void **) {
-  auto awsSdkWrapper = std::make_unique<FakeAwsSdkWrapper>(boost::none, AWS_TEST_ARN, AWS_TEST_CREDS);
-  test_unit_aws_attestation_failed(awsSdkWrapper.get());
+  auto awsSdkWrapper = FakeAwsSdkWrapper(boost::none, AWS_TEST_ARN, AWS_TEST_CREDS);
+  test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
 void test_unit_aws_attestation_arn_missing(void **) {
-  auto awsSdkWrapper = std::make_unique<FakeAwsSdkWrapper>(AWS_TEST_REGION, boost::none, AWS_TEST_CREDS);
-  test_unit_aws_attestation_failed(awsSdkWrapper.get());
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, boost::none, AWS_TEST_CREDS);
+  test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
 void test_unit_aws_attestation_cred_missing(void **) {
-  auto awsSdkWrapper = std::make_unique<FakeAwsSdkWrapper>(AWS_TEST_REGION, AWS_TEST_ARN, Aws::Auth::AWSCredentials());
-  test_unit_aws_attestation_failed(awsSdkWrapper.get());
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_ARN, Aws::Auth::AWSCredentials());
+  test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
 std::vector<char> makeGCPToken(boost::optional<std::string> issuer, boost::optional<std::string> subject) {
