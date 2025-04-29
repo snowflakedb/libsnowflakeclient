@@ -1,0 +1,33 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        description: 'The version to bump to'
+        type: string
+      ref:
+        required: false
+        description: 'The branch to bump the version on'
+        type: string
+        default: 'master'
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+      - name: setup git config
+        run: |
+          git config user.name "Bump version bot"
+          git config user.email "<>"
+      - name: Bump version
+        shell: bash
+        run: scripts/bump_version.sh "${VERSION}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.event.inputs.version }}
