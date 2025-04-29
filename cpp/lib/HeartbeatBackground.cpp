@@ -250,43 +250,7 @@ namespace Snowflake
 #endif
 
                 // renew session
-                if (renewQueue.size() > 0)
-                {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%d connections need retry with session renew", renewQueue.size());
-                    freeHeartBeatReqQueue(HeartBeatQueue);
-                    // get lock during renew. the reason is that:
-                    // 1. session renew needs more connection related implementation and it
-                    //    would be too heavy to bring it here
-                    // 2. hopefully there won't be too many connections need renew since
-                    //    by default it's per 4 hours
-                    // 3. We need to update session token in the connection which needs lock
-                    //    anyway
-                    MutexUnique guard(m_lock);
-                    for (size_t i = 0; i < renewQueue.size(); i++)
-                    {
-                        // check if the connection still in the heartbeat queue first
-                        // since it could be closed during heartbeat request sending with lock released
-                        std::map<std::string, SF_CONNECT*>::iterator itr = m_connections.find(renewQueue[i].sessionId);
-                        if (itr != m_connections.end())
-                        {
-                            CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::retry on session %s with session renew", renewQueue[i].sessionId.c_str());
-                            try
-                            {
-                                renew_session_sync(itr->second);
-                                HeartBeatQueue.emplace_back(this->genHeartBeatReq(itr->second));
-                            }
-                            catch (...)
-                            {
-                                CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
-                            }
-                        }
-                        CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
-                    }
-                }
-
-                // resend heartbeat after renew session, no further session renew needed
-                CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::resend heartbeat for %d of connections after session renew", HeartBeatQueue.size());
-                sendQueuedHeartBeatReq(HeartBeatQueue, NULL);
+                renewSession(HeartBeatQueue, renewQueue);
             }
         }
 
@@ -325,12 +289,59 @@ namespace Snowflake
             HeartBeatQueue.clear();
         }
 
+        void HeartbeatBackground::renewSession(std::vector<heartbeatReq>& heartBeatQueue,
+            std::vector<heartbeatReq>& renewQueue)
+        {
+            if (renewQueue.size() > 0)
+            {
+                CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%d connections need retry with session renew", renewQueue.size());
+                freeHeartBeatReqQueue(heartBeatQueue);
+                // get lock during renew. the reason is that:
+                // 1. session renew needs more connection related implementation and it
+                //    would be too heavy to bring it here
+                // 2. hopefully there won't be too many connections need renew since
+                //    by default it's per 4 hours
+                // 3. We need to update session token in the connection which needs lock
+                //    anyway
+                MutexUnique guard(m_lock);
+                for (size_t i = 0; i < renewQueue.size(); i++)
+                {
+                    // check if the connection still in the heartbeat queue first
+                    // since it could be closed during heartbeat request sending with lock released
+                    std::map<std::string, SF_CONNECT*>::iterator itr = m_connections.find(renewQueue[i].sessionId);
+                    if (itr != m_connections.end())
+                    {
+                        CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::retry on session %s with session renew", renewQueue[i].sessionId.c_str());
+                        try
+                        {
+                            renew_session_sync(itr->second);
+                            heartBeatQueue.emplace_back(this->genHeartBeatReq(itr->second));
+                        }
+                        catch (...)
+                        {
+                            CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
+                        }
+                    }
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
+                }
+            }
+
+            // resend heartbeat after renew session, no further session renew needed
+            CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::resend heartbeat for %d of connections after session renew", heartBeatQueue.size());
+            sendQueuedHeartBeatReq(heartBeatQueue, NULL);
+        }
+
         void HeartbeatBackground::mockHeartBeat(SF_CONNECT* sf) {
             std::vector<heartbeatReq> HeartBeatQueue;
+            std::vector<heartbeatReq> renewQueue;
+
             HeartBeatQueue.clear();
             heartbeatReq hb = genHeartBeatReq(sf);
             HeartBeatQueue.emplace_back(hb);
             sendQueuedHeartBeatReq(HeartBeatQueue, NULL);
+            renewQueue.clear();
+            renewQueue.insert(renewQueue.begin(), HeartBeatQueue.begin(), HeartBeatQueue.end());
+            renewSession(HeartBeatQueue, renewQueue);
             freeHeartBeatReqQueue(HeartBeatQueue);
         }
 

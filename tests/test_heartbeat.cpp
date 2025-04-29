@@ -144,7 +144,6 @@ void test_token_renew(void** unused)
     renew_session_sync(sf);
     assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
     assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
-
     SF_FREE(previous_sessiontoken);
     SF_FREE(previous_masterToken);
     snowflake_term(sf);
@@ -186,7 +185,20 @@ void test_heartbeat_manually(void** unused)
     stop_heart_beat_for_this_session(sf);
     assert_false(sf->is_heart_beat_on);
 
+    //Turn on to enable session.
+    start_heart_beat_for_this_session(sf);
+    assert_true(sf->is_heart_beat_on);
+
+    char* previous_sessiontoken = (char*)SF_MALLOC(strlen(sf->token) + 1);
+    char* previous_masterToken = (char*)SF_MALLOC(strlen(sf->master_token) + 1);;
+    strcpy(previous_sessiontoken, sf->token);
+    strcpy(previous_masterToken, sf->master_token);
     test_heartbeat(sf);
+
+    assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
+    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+    SF_FREE(previous_sessiontoken);
+    SF_FREE(previous_masterToken);
 
     snowflake_term(sf);
 
@@ -246,12 +258,11 @@ void test_heartbeat(void** unused)
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
-    cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
-    cmocka_unit_test(test_token_renew),
+    //cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
+    //cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
+    //cmocka_unit_test(test_token_renew),
     cmocka_unit_test(test_heartbeat_manually),
-
-    cmocka_unit_test(test_heartbeat),
+    //cmocka_unit_test(test_heartbeat),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

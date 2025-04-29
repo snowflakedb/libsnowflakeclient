@@ -95,6 +95,9 @@ namespace Snowflake
             // into renew queue.
             void sendQueuedHeartBeatReq(std::vector<heartbeatReq>& heartBeatQueue,
                 std::vector<heartbeatReq>* renewQueue);
+            
+            void renewSession(std::vector<heartbeatReq>& heartBeatQueue,
+                std::vector<heartbeatReq>& renewQueue);
 
             /** flags indicating whether worker thread should end or not */
             bool m_workerEnded = false;
