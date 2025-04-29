@@ -16,6 +16,7 @@
 #define URL_AUTHENTICATOR "http://snowflake.com/session/authenticator-request"
 
 void test_update_url_no_guid(void **unused) {
+    SF_UNUSED(unused);
     char urlbuf[512];
     sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NO_GUID);
     RETRY_CONTEXT retry_ctx = {
@@ -32,6 +33,7 @@ void test_update_url_no_guid(void **unused) {
 }
 
 void test_update_other_url_with_guid(void **unused) {
+  SF_UNUSED(unused);
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_NON_QUERY_WITH_GUID);
   RETRY_CONTEXT retry_ctx = {
@@ -58,6 +60,7 @@ void test_update_other_url_with_guid(void **unused) {
 }
 
 void test_update_query_url_with_retry_reason_disabled(void **unused) {
+  SF_UNUSED(unused);
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
@@ -134,6 +137,7 @@ void test_update_query_url_with_retry_reason_disabled(void **unused) {
 }
 
 void test_update_query_url_with_retry_reason_enabled(void **unused) {
+  SF_UNUSED(unused);
   char urlbuf[512];
   sf_sprintf(urlbuf, sizeof(urlbuf), "%s", URL_QUERY);
   RETRY_CONTEXT retry_ctx = {
@@ -201,6 +205,7 @@ void test_update_query_url_with_retry_reason_enabled(void **unused) {
 }
 
 void test_new_retry_strategy(void **unused) {
+  SF_UNUSED(unused);
   DECORRELATE_JITTER_BACKOFF djb = {
     SF_BACKOFF_BASE,    //base
     SF_NEW_STRATEGY_BACKOFF_CAP      //cap
@@ -214,7 +219,7 @@ void test_new_retry_strategy(void **unused) {
     sf_get_current_time_millis() // start time
   };
 
-  uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 408, 400, 538, 525};
+  uint32 error_codes[SF_MAX_RETRY] = {429, 503, 403, 503, 408, 538, 525};
   uint32 backoff = SF_BACKOFF_BASE;
   uint32 next_sleep_in_secs = 0;
   uint32 total_backoff = 0;
@@ -252,6 +257,7 @@ void test_new_retry_strategy(void **unused) {
 }
 
 void test_retry_request_header(void **unused) {
+  SF_UNUSED(unused);
   struct TESTCASE {
     const char* url;
     sf_bool has_app_header;
@@ -299,6 +305,29 @@ void test_retry_request_header(void **unused) {
   }
 }
 
+void test_retryable_http_code(void **unused) {
+  SF_UNUSED(unused);
+  struct TEST_CODE {
+    uint32 code;
+    sf_bool retryable;
+  };
+
+  struct TEST_CODE cases[] = {
+    { 400, SF_BOOLEAN_FALSE },
+    { 403, SF_BOOLEAN_TRUE },
+    { 404, SF_BOOLEAN_FALSE },
+    { 408, SF_BOOLEAN_TRUE },
+    { 429, SF_BOOLEAN_TRUE },
+    { 503, SF_BOOLEAN_TRUE },
+    { 600, SF_BOOLEAN_FALSE },
+  };
+
+  for (unsigned i = 0; i < sizeof(cases) / sizeof(struct TEST_CODE); i++)
+  {
+    assert_int_equal(is_retryable_http_code(cases[i].code), cases[i].retryable);
+  }
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_update_url_no_guid),
@@ -307,6 +336,7 @@ int main(void) {
         cmocka_unit_test(test_update_query_url_with_retry_reason_enabled),
         cmocka_unit_test(test_new_retry_strategy),
         cmocka_unit_test(test_retry_request_header),
+        cmocka_unit_test(test_retryable_http_code),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

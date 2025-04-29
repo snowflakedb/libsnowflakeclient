@@ -497,6 +497,38 @@ void test_mask_secret_log() {
             "\"privateKeyData\": \"abcdefghijk\"",
             "\"privateKeyData\": \"XXXX\""
         },
+        {//13
+            "queryStageMasterKey: 123asdfasdfASDFasdf456asdfasdfASDFasdf==",
+            "queryStageMasterKey: ****"
+        },
+        {//14
+            "AWS_KEY_ID: AKIAIOSFODNN7EXAMPLE",
+            "AWS_KEY_ID: ****"
+        },
+        {//15
+            "AWS_SECRET_KEY: 123asdfasdfASDFasdf/456asdfasdfASDF/asdf",
+            "AWS_SECRET_KEY: ****"
+        },
+        {//16
+            "AWS_TOKEN: ETMsDgAAAXI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ==",
+            "AWS_TOKEN: ****"
+        },
+        {//17
+            "\"encryptionMaterial\":\t{\n\t\t\t\"queryStageMasterKey\":\t\"123asdfasdfASDFasdf==\",\n\t\t\t\"queryId\":\t\"01b6f5ba-0002-0181-0000-11111111da\",\n\t\t\t\"smkId\":\t1111\n\t\t}",
+            "\"encryptionMaterial\": ****"
+        },
+        {//18
+            "\"creds\":\t{\n\t\t\t\t\"AWS_KEY_ID\":\t\"AKIAIOSFODNN7EXAMPLE\",\n\t\t\t\t\"AWS_SECRET_KEY\":\t\"123asdfasdfASDFasdf456asdfasdfASDFasdf\",\n\t\t\t\t\"AWS_TOKEN\":\t\"abc\",\n\t\t\t\t\"AWS_ID\":\t\"AKIAIOSFODNN7EXAMPLE\",\n\t\t\t\t\"AWS_KEY\":\t\"123asdfasdfASDFasdf456asdfasdfASDFasdf\"\n\t\t\t}",
+            "\"creds\": ****"
+        },
+        {//19
+            "\"token\":\t\"ETM:sDgAAA-XI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ==\"",
+            "\"token\": ****"
+        },
+        {//20
+            "\"masterToken\":\t\"ETM:sDgAAA-XI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ==\"",
+            "\"masterToken\": ****"
+        },
     };
 
     char * line = NULL;

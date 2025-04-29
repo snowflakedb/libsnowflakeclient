@@ -14,9 +14,13 @@ namespace Client
 
   boost::regex SecretDetector::PRIVATE_KEY_DATA_PATTERN = boost::regex("\"privateKeyData\": \"([A-Za-z0-9/+=\\\\n]{10,})\"", boost::regex::extended | boost::regex::icase);
 
-  boost::regex SecretDetector::CONNECTION_TOKEN_PATTERN = boost::regex("(token|assertion content)(['\"\\s:=]+)([A-Za-z0-9=/_+-]{8,})", boost::regex::icase);
+  boost::regex SecretDetector::CONNECTION_TOKEN_PATTERN = boost::regex("(token|assertion content|queryStageMasterKey|aws_key_id|aws_secret_key|aws_token)(['\"\\s:=]+)([A-Za-z0-9=/_+-]{8,})", boost::regex::icase);
 
   boost::regex SecretDetector::PASSWORD_PATTERN = boost::regex("(password|passcode|pwd)(['\"\\s:=]+)([A-Za-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})", boost::regex::icase);
+
+  boost::regex SecretDetector::ENCRYPTION_CREDS_IN_JSON_PATTERN = boost::regex("\"(encryptionMaterial|creds)\"\\s*:\\s*\\{.*?\\}", boost::regex::icase);
+
+  boost::regex SecretDetector::TOKEN_IN_JSON_PATTERN = boost::regex("\"(mastertoken|token)\":(\\t|\\s+)\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
 
   std::string SecretDetector::maskAwsKeys(std::string text)
   {
@@ -53,6 +57,16 @@ namespace Client
     return boost::regex_replace(text, SecretDetector::PASSWORD_PATTERN, "$1$2****");
   }
 
+  std::string SecretDetector::maskEncryptioncCredsInJson(std::string text)
+  {
+      return boost::regex_replace(text, SecretDetector::ENCRYPTION_CREDS_IN_JSON_PATTERN, "\"$1\": ****");
+  }
+
+  std::string SecretDetector::maskTokenInJson(std::string text)
+  {
+      return boost::regex_replace(text, SecretDetector::TOKEN_IN_JSON_PATTERN, "\"$1\": ****");
+  }
+
   std::string SecretDetector::maskSecrets(std::string text)
   {
     return SecretDetector::maskAwsKeys(
@@ -62,7 +76,11 @@ namespace Client
             SecretDetector::maskPrivateKeyData(
               SecretDetector::maskConnectionToken(
                 SecretDetector::maskPassword(
-                  text
+                  SecretDetector::maskEncryptioncCredsInJson(
+                    SecretDetector::maskTokenInJson(
+                      text
+                      )
+                    )
                   )
                 )
               )
