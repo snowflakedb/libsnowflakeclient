@@ -93,19 +93,16 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 1
             );
 
-            // SNOW-715510: TODO Enable token_cache
-/*
             if (sf->token_cache == NULL) {
-                sf->token_cache = cred_cache_init();
+                sf->token_cache = secure_storage_init();
             }
 
-            char* token = cred_cache_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
             if (token != NULL)
             {
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                cred_cache_free_credential(token);
+                secure_storage_free_credential(token);
             }
-*/
         }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
@@ -854,7 +851,7 @@ char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf) {
 }
 
 sf_bool STDCALL is_retryable_http_code(long int code) {
-    return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
+    return ((code >= 500 && code < 600) || code == 403 ||
             code == 408 || code == 429) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 

@@ -48,14 +48,15 @@ SET(TESTS_C
         test_ocsp_fail_open
         test_unit_privatelink
         test_multiple_statements
-	test_async
+        test_async
+        test_cancel
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
 #        test_stats
 # MFA, Oauth, and Okta connections are only able to run testing manually.
-         test_manual_connect
-        )
+        test_manual_connect
+)
 
 SET(TESTS_CXX
         test_unit_jwt
@@ -83,6 +84,8 @@ SET(TESTS_CXX
         test_unit_query_context_cache
         test_unit_sfurl
         test_toml_config
+        test_manual_wif
+        test_create_wif_attestation
 )
 
 if (LINUX)
@@ -100,8 +103,9 @@ SET(TESTS_PERF
         test_perf_type_conversion)
 
 SET(TESTS_MOCK
-        test_mock_service_name
-        test_mock_session_gone
+        # TODO: Re-enable tests in SNOW-2046054
+        # test_mock_service_name
+        # test_mock_session_gone
         test_mock_mfa_token_caching
 )
 
@@ -122,6 +126,7 @@ set(SOURCE_UTILS_CXX
 
 set(AWS_ALL_LIBS
         ${AWS_S3_LIB}
+        ${AWS_STS_LIB}
         ${AWS_CORE_LIB}
         ${AWS_CRT_CPP_LIB}
         ${AWS_C_EVENT_STREAM_LIB}
@@ -183,7 +188,7 @@ if (LINUX)
     # Group all arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_URL_LIB}
         ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB} ${ARROW_BROTLICOMMON_LIB}
         ${ARROW_DOUBLECONVERSION_LIB}
         ${ARROW_FLATBUFFERS_LIB}
@@ -199,7 +204,7 @@ if (APPLE)
     # Group all Arrow dependencies.
     set(ARROW_ALL_LIBS
         ${ARROW_ARROW_LIB}
-        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB}
+        ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_URL_LIB}
         ${ARROW_BROTLICOMMON_LIB} ${ARROW_BROTLIDEC_LIB} ${ARROW_BROTLIENC_LIB}
         ${ARROW_FLATBUFFERS_LIB}
         ${ARROW_GFLAGS_LIB}
@@ -214,9 +219,9 @@ if (WIN32)
     find_library(CMOCKA_LIB cmocka_a.lib PATHS ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib/ REQUIRED NO_DEFAULT_PATH)
 
     if ($ENV{ARROW_FROM_SOURCE})
-        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB})
+        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_URL_LIB})
     else ()
-        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_REGEX_LIB})
+        set(BOOST_ALL_LIBS ${BOOST_FILESYSTEM_LIB} ${BOOST_SYSTEM_LIB} ${BOOST_URL_LIB} ${BOOST_REGEX_LIB})
     endif ()
     # Groups all Arrow dependencies.
     set(ARROW_ALL_LIBS
@@ -278,7 +283,7 @@ if (MOCK)
         else()
             target_include_directories(
                     ${T} PUBLIC
-                    ../deps-build/${PLATFORM}/cmocka/include
+                    ../deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         endif()
         target_link_libraries(${T} ${TESTLIB_OPTS_C})

@@ -4,7 +4,7 @@
 ::
 @echo off
 set boost_src_version=1.81.0
-set boost_build_version=1
+set boost_build_version=2
 set boost_version=%boost_src_version%.%boost_build_version%
 call %*
 goto :EOF
@@ -42,6 +42,9 @@ set DEPS_DIR=%scriptdir%..\deps
 set BOOST_SOURCE_DIR=%DEPS_DIR%\boost-%boost_src_version%
 set BOOST_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\boost
 
+rd /S /Q %BOOST_SOURCE_DIR%
+git clone --single-branch --branch deps/boost-%BOOST_SRC_VERSION% https://github.com/snowflakedb/libsnowflakeclient.git %BOOST_SOURCE_DIR%
+
 cd "%BOOST_SOURCE_DIR%"
 
 rd /S /Q %BOOST_INSTALL_DIR%
@@ -61,9 +64,19 @@ if /I "%dynamic_runtime%"=="on" (
     set runtimelink=static
 )
 
-call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system
+call "%BOOST_SOURCE_DIR%\bootstrap.bat" --with-libraries=filesystem,regex,system,url
 if %ERRORLEVEL% NEQ 0 goto :error
-b2 stage --stagedir=%BOOST_INSTALL_DIR% --includedir=%BOOST_INSTALL_DIR%\include --layout=system --with-system --with-filesystem --with-regex link=static runtime-link=%runtimelink% threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging% cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" install
+b2 ^
+    -a^
+    --prefix=%BOOST_INSTALL_DIR%^
+    --exec-prefix=%BOOST_INSTALL_DIR%^
+    --layout=system^
+    --with-system --with-filesystem --with-regex --with-url^
+    link=static runtime-link=%runtimelink% toolset=msvc-14.3 threading=multi address-model=%bitness% variant=%variant% runtime-debugging=%debugging%^
+    cflags="/Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl" cxxflags="/std:c++17 /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl"^
+    install
+
+
 if %ERRORLEVEL% NEQ 0 goto :error
 ::remove cmake files including local build path information
 rd /S /Q %BOOST_INSTALL_DIR%\lib\cmake
