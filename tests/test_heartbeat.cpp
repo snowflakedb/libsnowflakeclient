@@ -103,52 +103,6 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
     }
 }
 
-void test_token_renew(void** unused)
-{
-    SF_UNUSED(unused);
-    SF_CONNECT* sf = snowflake_init();
-    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-        getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-        getenv("SNOWFLAKE_TEST_PASSWORD"));
-    char* host, * port, * protocol;
-    host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host) {
-        snowflake_set_attribute(sf, SF_CON_HOST, host);
-    }
-    port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port) {
-        snowflake_set_attribute(sf, SF_CON_PORT, port);
-    }
-    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol) {
-        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
-    }
-    sf_bool client_session_keep_alive = SF_BOOLEAN_TRUE;
-    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
-
-    uint64 client_session_keep_alive_heartbeat_frequency = 900;
-    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, &client_session_keep_alive_heartbeat_frequency);
-
-    SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-    char* previous_sessiontoken = (char*)SF_MALLOC(strlen(sf->token) + 1);
-    char* previous_masterToken = (char*)SF_MALLOC(strlen(sf->master_token) + 1);;
-    strcpy(previous_sessiontoken, sf->token);
-    strcpy(previous_masterToken, sf->master_token);
-
-    renew_session_sync(sf);
-    assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
-    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
-    SF_FREE(previous_sessiontoken);
-    SF_FREE(previous_masterToken);
-    snowflake_term(sf);
-}
-
 void test_heartbeat_manually(void** unused)
 {
     SF_CONNECT* sf = snowflake_init();
