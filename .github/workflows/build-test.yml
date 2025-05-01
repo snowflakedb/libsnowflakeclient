@@ -71,7 +71,6 @@ jobs:
               shell: bash
               env:
                   BUILD_TYPE: ${{ matrix.build_type }}
-                  ENABLE_HEARTBEAT_DEBUG: 'true'
               run: ci/build_linux.sh
             - name: Cache deps
               id: cache-save-deps

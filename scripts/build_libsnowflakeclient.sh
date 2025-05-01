@@ -64,10 +64,6 @@ if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
     cmake_opts+=("-DMOCK=ON")
 fi
 
-if [[ "$ENABLE_HEARTBEAT_DEBUG" == "true" ]]; then
-    cmake_opts+=("-DHEATBEAT_DEBUG=ON")
-fi
-
 set -x
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
