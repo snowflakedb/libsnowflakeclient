@@ -105,6 +105,7 @@ void test_connect_with_client_session_keep_alive_current(void** unused)
 
 void test_heartbeat_manually(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
