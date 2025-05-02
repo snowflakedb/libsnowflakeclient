@@ -219,7 +219,7 @@ void test_timestamp_tz_verifying_binding_value_helper(const char* timezone, sf_b
 #ifndef __linux__
           {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000 +07:00", .c2out = "0001-01-01 00:00:00.00000 +07:00"},
 #else
-          {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000 +07:00", .c2out ="1-01 00:00:00.00000 +07:00"},
+          {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000 +07:00", .c2out ="1-01-01 00:00:00.00000 +07:00"},
 #endif // __linux__
 
     };
