@@ -13,6 +13,9 @@ typedef struct test_case_to_string {
     SF_STATUS error_code;
 } TEST_CASE_TO_STRING;
 
+#define UTC "UTC"
+#define WARSAW "Europe/Warsaw"
+#define TOKYO "Asia/Tokyo"
 
 void test_timestamp_ntz_helper(sf_bool use_arrow, sf_bool useZeroPrecision){
   TEST_CASE_TO_STRING test_cases[] = {
@@ -196,11 +199,186 @@ void test_timestamp_ntz_json(void **unused) {
     test_timestamp_ntz_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 }
 
+void test_timestamp_ntz_verifying_binding_value_helper(const char* timezone, sf_bool isStageBinding) {
+    TEST_CASE_TO_STRING test_cases[] = {
+            {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = "2014-05-03 13:56:46.12300"},
+            {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = "1969-11-21 05:17:23.01230"},
+            {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00.00000"},
+            {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:00.00000"},
+  #ifndef __linux__
+            {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
+  #else
+            {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00.00000"},
+  #endif // __linux__
+            {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000"},
+    };
+
+    SF_CONNECT* sf = setup_snowflake_connection_with_autocommit(
+        timezone, SF_BOOLEAN_TRUE); // set the session timezone
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* Create a statement once and reused */
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+
+    if (isStageBinding) {
+        int64 stage_treshold = 1;
+        int64* cur_threshold;
+        snowflake_set_attribute(sfstmt->connection, SF_CON_STAGE_BIND_THRESHOLD, (void*)&stage_treshold);
+        snowflake_get_attribute(sfstmt->connection, SF_CON_STAGE_BIND_THRESHOLD, (void**)&cur_threshold);
+        assert_int_equal(*cur_threshold, stage_treshold);
+    }
+
+    /* Set query result format to Arrow if necessary */
+    status = snowflake_query(
+        sfstmt,
+        "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_query(
+        sfstmt,
+        "create or replace table t (c1 int, c2 timestamp_ntz(5))",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* insert data */
+    status = snowflake_prepare(
+        sfstmt,
+        "insert into t(c1,c2) values(?,?)",
+        0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    size_t i;
+    size_t len;
+    int no_error_test_cases = 0;
+    for (i = 0, len = sizeof(test_cases) / sizeof(TEST_CASE_TO_STRING);
+        i < len; i++) {
+        TEST_CASE_TO_STRING v = test_cases[i];
+        SF_BIND_INPUT ic1 = { 0 };
+        ic1.idx = 1;
+        ic1.name = NULL;
+        ic1.c_type = SF_C_TYPE_INT64;
+        ic1.value = (void*)&v.c1in;
+        ic1.len = sizeof(v.c1in);
+        status = snowflake_bind_param(sfstmt, &ic1);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        SF_BIND_INPUT ic2 = { 0 };
+        ic2.idx = 2;
+        ic2.name = NULL;
+        ic2.c_type = SF_C_TYPE_STRING;
+        ic2.value = (void*)v.c2in;
+        ic2.len = v.c2in != NULL ? strlen(v.c2in) : 0;
+        status = snowflake_bind_param(sfstmt, &ic2);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        status = snowflake_execute(sfstmt);
+        if (v.error_code != SF_STATUS_SUCCESS) {
+            // expecting failure
+            SF_ERROR_STRUCT* error = snowflake_stmt_error(sfstmt);
+            assert_int_equal(error->error_code, v.error_code);
+        }
+        else {
+            // expecting success
+            assert_int_equal(status, SF_STATUS_SUCCESS);
+            ++no_error_test_cases;
+        }
+    }
+
+    /* query */
+    status = snowflake_query(sfstmt, "select * from t order by 1", 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    char* c2buf = NULL;
+    size_t c2buf_len = 0;
+    size_t c2buf_max_size = 0;
+    sf_bool is_null;
+    assert_int_equal(snowflake_num_rows(sfstmt), no_error_test_cases);
+
+    int counter = 0;
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        TEST_CASE_TO_STRING v;
+        do {
+            memcpy(&v, &test_cases[counter++], sizeof(TEST_CASE_TO_STRING));
+        } while (v.error_code != (SF_STATUS)0);
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        if (v.c2out == NULL) {
+            // expecting NULL
+            snowflake_column_is_null(sfstmt, 2, &is_null);
+            assert_true(is_null);
+        }
+        else {
+            // expecting not null
+            snowflake_column_as_str(sfstmt, 2, &c2buf, &c2buf_len, &c2buf_max_size);
+            assert_string_equal(v.c2out, c2buf);
+        }
+    }
+    if (status != SF_STATUS_EOF) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_EOF);
+
+    status = snowflake_query(sfstmt, "drop table if exists t", 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    free(c2buf);
+    c2buf = NULL;
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
+void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
+    test_timestamp_ntz_verifying_binding_value_helper(UTC, SF_BOOLEAN_FALSE);
+    test_timestamp_ntz_verifying_binding_value_helper(UTC, SF_BOOLEAN_TRUE);
+}
+
+void test_verify_data_types_with_two_different_binding_WARSAW(void** unused) {
+    test_timestamp_ntz_verifying_binding_value_helper(WARSAW, SF_BOOLEAN_FALSE);
+    test_timestamp_ntz_verifying_binding_value_helper(WARSAW, SF_BOOLEAN_TRUE);
+}
+
+void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
+    test_timestamp_ntz_verifying_binding_value_helper(TOKYO, SF_BOOLEAN_FALSE);
+    test_timestamp_ntz_verifying_binding_value_helper(TOKYO, SF_BOOLEAN_TRUE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_timestamp_ntz_arrow),
       cmocka_unit_test(test_timestamp_ntz_json),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_UTC),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_WARSAW),
+      cmocka_unit_test(test_verify_data_types_with_two_different_binding_TOKYO),
+
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
