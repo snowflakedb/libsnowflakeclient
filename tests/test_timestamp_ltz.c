@@ -239,6 +239,8 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
     };
     SF_CONNECT* sf = setup_snowflake_connection_with_autocommit(
         timezone, SF_BOOLEAN_TRUE); // set the session timezone
+    sf_bool disable_stage_binding = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_DISABLE_STAGE_BIND, &disable_stage_binding);
 
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
