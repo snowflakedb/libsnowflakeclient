@@ -190,11 +190,13 @@ void test_timestamp_ntz_helper(sf_bool use_arrow, sf_bool useZeroPrecision){
 }
 
 void test_timestamp_ntz_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_timestamp_ntz_helper(SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE);
     test_timestamp_ntz_helper(SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE);
 }
 
 void test_timestamp_ntz_json(void **unused) {
+    SF_UNUSED(unused);
     test_timestamp_ntz_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE);
     test_timestamp_ntz_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 }
@@ -356,16 +358,19 @@ void test_timestamp_ntz_verifying_binding_value_helper(const char* timezone, sf_
 }
 
 void test_verify_data_types_with_two_different_binding_UTC(void** unused) {
+    SF_UNUSED(unused);
     test_timestamp_ntz_verifying_binding_value_helper(UTC, SF_BOOLEAN_FALSE);
     test_timestamp_ntz_verifying_binding_value_helper(UTC, SF_BOOLEAN_TRUE);
 }
 
 void test_verify_data_types_with_two_different_binding_WARSAW(void** unused) {
+    SF_UNUSED(unused);
     test_timestamp_ntz_verifying_binding_value_helper(WARSAW, SF_BOOLEAN_FALSE);
     test_timestamp_ntz_verifying_binding_value_helper(WARSAW, SF_BOOLEAN_TRUE);
 }
 
 void test_verify_data_types_with_two_different_binding_TOKYO(void** unused) {
+    SF_UNUSED(unused);
     test_timestamp_ntz_verifying_binding_value_helper(TOKYO, SF_BOOLEAN_FALSE);
     test_timestamp_ntz_verifying_binding_value_helper(TOKYO, SF_BOOLEAN_TRUE);
 }
