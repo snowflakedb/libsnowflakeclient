@@ -31,8 +31,14 @@ namespace Snowflake {
         Aws::SDKOptions options;
       };
 
-      std::shared_ptr<AwsSdkInitialized> initAwsSdk() {
+      std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown) {
         static std::shared_ptr<AwsSdkInitialized> awssdk = std::make_shared<AwsSdkInitialized>();
+        // To fix hanging issue when calling ShutdownAPI(), calling it earlier
+        // from application when calling snowflake_global_term()
+        if (shutdown)
+        {
+          awssdk.reset();
+        }
         return awssdk;
       }
 
@@ -91,5 +97,12 @@ namespace Snowflake {
         return instance.get();
       }
     }
+  }
+}
+
+extern "C" {
+  void awssdk_shutdown()
+  {
+    Snowflake::Client::AwsUtils::initAwsSdk(true);
   }
 }
