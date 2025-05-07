@@ -3255,8 +3255,8 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 json_copy_bool(&useRegionalURL, stage_info, "useRegionalUrl");
                 sfstmt->put_get_response->stage_info->useRegionalUrl = useRegionalURL;
                 sf_bool useVirtualURL = SF_BOOLEAN_FALSE;
-                json_copy_bool(&useRegionalURL, stage_info, "useVirtualUrl");
-                sfstmt->put_get_response->stage_info->useVirtualUrl = useRegionalURL;
+                json_copy_bool(&useVirtualURL, stage_info, "useVirtualUrl");
+                sfstmt->put_get_response->stage_info->useVirtualUrl = useVirtualURL;
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");
