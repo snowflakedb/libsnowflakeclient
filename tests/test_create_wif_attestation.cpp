@@ -104,7 +104,7 @@ long run_request_curl(
 }
 
 const std::string AWS_TEST_REGION = "us-east-1";
-const std::string AWS_TEST_ARN = "arn:aws:iam::123456789012:user/abcd1234";
+const std::string AWS_TEST_ARN = "arn:aws:sts::123456789012:assumed-role/my-role/session-abc";
 const Aws::Auth::AWSCredentials AWS_TEST_CREDS = Aws::Auth::AWSCredentials("AKIAEXAMPLE12345678",
                                                                            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
