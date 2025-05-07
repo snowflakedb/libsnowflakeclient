@@ -17,7 +17,7 @@ namespace Snowflake {
         return boost::none;
       }
 
-      auto regionOpt = config.awsSdkWrapper->getRegion();
+      auto regionOpt = config.awsSdkWrapper->getEC2Region();
       if (!regionOpt) {
         CXX_LOG_INFO("Failed to get AWS region");
         return boost::none;

@@ -44,30 +44,20 @@ namespace Snowflake {
       class SdkWrapper : public ISdkWrapper {
       public:
 
-        boost::optional<std::string> getRegion() override {
+        boost::optional<std::string> getEC2Region() override {
           auto awsRegion = std::getenv("AWS_REGION");
           if (awsRegion) {
             return std::string(awsRegion);
           }
 
           auto awsSdk = initAwsSdk();
-          auto profile_name = Aws::Auth::GetConfigProfileName();
-          if (Aws::Config::HasCachedConfigProfile(profile_name)) {
-            auto profile = Aws::Config::GetCachedConfigProfile(profile_name);
-            auto region = profile.GetRegion();
-            if (!region.empty()) {
-              return region;
-            }
+          Aws::Internal::EC2MetadataClient metadataClient;
+          std::string region = metadataClient.GetCurrentRegion();
+          if (!region.empty()) {
+            return region;
           }
 
-          if (Aws::Config::HasCachedCredentialsProfile(profile_name)) {
-            auto profile = Aws::Config::GetCachedCredentialsProfile(profile_name);
-            auto region = profile.GetRegion();
-            if (!region.empty()) {
-              return region;
-            }
-          }
-
+          CXX_LOG_INFO("Failed to get EC2 region");
           return boost::none;
         }
 

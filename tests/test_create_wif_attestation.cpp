@@ -56,7 +56,7 @@ public:
     return creds;
   }
 
-  boost::optional<std::string> getRegion() override {
+  boost::optional<std::string> getEC2Region() override {
     return region;
   }
 
