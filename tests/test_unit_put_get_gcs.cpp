@@ -265,6 +265,7 @@ void gcs_regional_url_test_core(bool useRegionalUrl, std::string region, std::st
  */
 void test_simple_put_gcs_with_token(void ** unused)
 {
+  SF_UNUSED(unused);
   put_gcs_test_core(true);
 }
 
@@ -273,6 +274,7 @@ void test_simple_put_gcs_with_token(void ** unused)
  */
 void test_simple_get_gcs_with_token(void ** unused)
 {
+  SF_UNUSED(unused);
   get_gcs_test_core(true);
 }
 
@@ -281,6 +283,7 @@ void test_simple_get_gcs_with_token(void ** unused)
 */
 void test_simple_put_gcs_with_presignedurl(void ** unused)
 {
+  SF_UNUSED(unused);
   put_gcs_test_core(false);
 }
 
@@ -289,32 +292,38 @@ void test_simple_put_gcs_with_presignedurl(void ** unused)
 */
 void test_simple_get_gcs_with_presignedurl(void ** unused)
 {
+  SF_UNUSED(unused);
   get_gcs_test_core(false);
 }
 
 void test_gcs_use_regional_url(void** unused)
 {
+  SF_UNUSED(unused);
   gcs_regional_url_test_core(true, "testregion", "", "storage.testregion.rep.googleapis.com", false);
 }
 
 void test_gcs_use_me2_region(void** unused)
 {
+  SF_UNUSED(unused);
   gcs_regional_url_test_core(false, "me-central2", "", "storage.me-central2.rep.googleapis.com", false);
 }
 
 void test_gcs_override_endpoint(void** unused)
 {
+  SF_UNUSED(unused);
   gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com", false);
 }
 
 void test_gcs_all_endpoint_fields_enabled(void** unused)
 {
-    gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com", true);
+  SF_UNUSED(unused);
+  gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com", true);
 }
 
 void test_gcs_use_virtual_url(void** unused)
 {
-    gcs_regional_url_test_core(false, "", "", "FakeGcsLocation.storage.googleapis.com", true);
+  SF_UNUSED(unused);
+  gcs_regional_url_test_core(false, "", "", "FakeGcsLocation.storage.googleapis.com", true);
 }
 
 static int gr_setup(void **unused)
@@ -334,7 +343,6 @@ int main(void) {
     cmocka_unit_test(test_gcs_override_endpoint),
     cmocka_unit_test(test_gcs_all_endpoint_fields_enabled),
     cmocka_unit_test(test_gcs_use_virtual_url),
-
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
