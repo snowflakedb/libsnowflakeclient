@@ -114,6 +114,8 @@ private:
   std::string m_gcsAccessToken;
 
   std::string m_stageEndpoint;
+
+  bool m_useVirtualUrl = false;
 };
 }
 }

@@ -35,7 +35,8 @@ public:
                      bool useRegionalUrl = false,
                      std::string region = "",
                      std::string endpoint = "",
-                     std::string expectedEndpoint = "storage.googleapis.com")
+                     std::string expectedEndpoint = "storage.googleapis.com",
+                     bool useVirtualUrl = false)
     : m_useGcsToken(useGcsToken),
       m_firstTime(true),
       m_isPut(false),
@@ -45,6 +46,7 @@ public:
     m_stageInfo.useRegionalUrl = useRegionalUrl;
     m_stageInfo.region = region;
     m_stageInfo.endPoint = endpoint;
+    m_stageInfo.useVirtualUrl = useVirtualUrl;
     if (m_useGcsToken)
     {
       m_stageInfo.credentials = { { "GCS_ACCESS_TOKEN", (char*)"fake gcs token"} };
@@ -56,6 +58,12 @@ public:
       m_stageInfo.presignedUrl = "https://faked.presigned.url";
       m_expectedUrl = m_stageInfo.presignedUrl;
     }
+
+    if (useVirtualUrl && endpoint == "") 
+    {
+       m_expectedUrl = std::string("https://") + expectedEndpoint + "/small_file.csv.gz";
+    }
+
     m_stageInfo.location = "FakeGcsLocation";
     std::string dataDir = TestSetup::getDataDir();
     m_srcLocationsPut.push_back(dataDir + "small_file.csv.gz");
@@ -234,11 +242,11 @@ void get_gcs_test_core(bool useGcsToken)
 }
 
 // test helper for regional url
-void gcs_regional_url_test_core(bool useRegionalUrl, std::string region, std::string endpoint, std::string expectedEndpoint)
+void gcs_regional_url_test_core(bool useRegionalUrl, std::string region, std::string endpoint, std::string expectedEndpoint, bool useVirtualUrl)
 {
   std::string cmd = std::string("put file://small_file.csv.gz @odbctestStage AUTO_COMPRESS=false");
 
-  MockedGCSStatement mockedStatementPut(true, useRegionalUrl, region, endpoint, expectedEndpoint);
+  MockedGCSStatement mockedStatementPut(true, useRegionalUrl, region, endpoint, expectedEndpoint, useVirtualUrl);
 
   Snowflake::Client::FileTransferAgent agent(&mockedStatementPut);
 
@@ -286,17 +294,27 @@ void test_simple_get_gcs_with_presignedurl(void ** unused)
 
 void test_gcs_use_regional_url(void** unused)
 {
-  gcs_regional_url_test_core(true, "testregion", "", "storage.testregion.rep.googleapis.com");
+  gcs_regional_url_test_core(true, "testregion", "", "storage.testregion.rep.googleapis.com", false);
 }
 
 void test_gcs_use_me2_region(void** unused)
 {
-  gcs_regional_url_test_core(false, "me-central2", "", "storage.me-central2.rep.googleapis.com");
+  gcs_regional_url_test_core(false, "me-central2", "", "storage.me-central2.rep.googleapis.com", false);
 }
 
 void test_gcs_override_endpoint(void** unused)
 {
-  gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com");
+  gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com", false);
+}
+
+void test_gcs_all_endpoint_fields_enabled(void** unused)
+{
+    gcs_regional_url_test_core(false, "testregion", "testendpoint.googleapis.com", "testendpoint.googleapis.com", true);
+}
+
+void test_gcs_use_virtual_url(void** unused)
+{
+    gcs_regional_url_test_core(false, "", "", "FakeGcsLocation.storage.googleapis.com", true);
 }
 
 static int gr_setup(void **unused)
@@ -314,6 +332,9 @@ int main(void) {
     cmocka_unit_test(test_gcs_use_regional_url),
     cmocka_unit_test(test_gcs_use_me2_region),
     cmocka_unit_test(test_gcs_override_endpoint),
+    cmocka_unit_test(test_gcs_all_endpoint_fields_enabled),
+    cmocka_unit_test(test_gcs_use_virtual_url),
+
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;

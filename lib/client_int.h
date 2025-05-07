@@ -118,6 +118,7 @@ typedef struct SF_STAGE_INFO {
   sf_bool useS3RegionalUrl;
   // whether to use regional URL (AWS and GCS only)
   sf_bool useRegionalUrl;
+  sf_bool useVirtualUrl;
   char* storageAccount; // For Azure only
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
