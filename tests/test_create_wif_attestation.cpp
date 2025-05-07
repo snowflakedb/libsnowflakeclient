@@ -207,7 +207,7 @@ const std::string GCP_TEST_SUBJECT = "107562638633288735786";
 const std::string GCP_TEST_AUDIENCE = "snowflakecomputing.com";
 
 FakeHttpClient makeSuccessfulGCPHttpClient(const std::vector<char> &token) {
-  return FakeHttpClient([&](Snowflake::Client::HttpRequest req) {
+  return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     assert_true((*req.url.params().find("audience")).value == GCP_TEST_AUDIENCE);
     assert_true(req.url.host() == "169.254.169.254");
     assert_true(req.url.scheme() == "http");
@@ -254,7 +254,7 @@ void test_unit_gcp_attestation_missing_subject(void **) {
 
 void test_unit_gcp_attestation_failed_request(void **) {
   auto token = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
-  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest req) {
+  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest) {
     return boost::none;
   });
 
@@ -267,7 +267,7 @@ void test_unit_gcp_attestation_failed_request(void **) {
 
 void test_unit_gcp_attestation_bad_request(void **) {
   auto token = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
-  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest req) {
+  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest) {
     HttpResponse response;
     response.code = 400;
     return response;
@@ -309,7 +309,7 @@ FakeHttpClient
 makeSuccessfulAzureHttpClient(const std::string &jwt, const std::string &api_version, const std::string &resource,
                               const std::string &host, const std::string &scheme,
                               const boost::optional<std::string> &identityHeader = boost::none) {
-  return FakeHttpClient([&](Snowflake::Client::HttpRequest req) {
+  return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     assert_true((*req.url.params().find("api-version")).value == api_version);
     assert_true((*req.url.params().find("resource")).value == resource);
     if (identityHeader) {
@@ -443,7 +443,7 @@ void test_unit_azure_attestation_invalid_issuer(void **) {
 
 void test_unit_azure_attestation_request_failed(void **) {
   auto token = makeAzureToken(AZURE_TEST_ISSUER_MICROSOFT, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
-  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest req) {
+  auto fakeHttpClient = FakeHttpClient([](Snowflake::Client::HttpRequest) {
     return boost::none;
   });
   AttestationConfig config;
