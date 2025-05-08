@@ -195,6 +195,9 @@ public:
    */
   SFURL(const SFURL &copy);
 
+  SFURL(std::string& protocol, std::string& host, std::string& port);
+
+
   /**
    * Assign operator
    * @param copy
