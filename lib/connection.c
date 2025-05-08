@@ -851,7 +851,7 @@ char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf) {
 }
 
 sf_bool STDCALL is_retryable_http_code(long int code) {
-    return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
+    return ((code >= 500 && code < 600) || code == 403 ||
             code == 408 || code == 429) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 
