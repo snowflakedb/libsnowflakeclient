@@ -36,6 +36,7 @@
 #define SF_DEFAULT_GET_MAX_RETRIES 5
 #define SF_MAX_GET_MAX_RETRIES 100
 #define SF_DEFAULT_GET_THRESHOLD 5
+#define SF_DEFAULT_PREFETCH_THREAD 4
 
 #define SESSION_URL "/session/v1/login-request"
 #define QUERY_URL "/queries/v1/query-request"
