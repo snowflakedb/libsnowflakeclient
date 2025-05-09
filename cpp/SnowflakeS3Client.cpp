@@ -8,7 +8,7 @@
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
-#include "AWSUtils.hpp"
+#include "snowflake/AWSUtils.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>

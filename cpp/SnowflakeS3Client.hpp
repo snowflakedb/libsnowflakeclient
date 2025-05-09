@@ -11,7 +11,7 @@
 #include "FileMetadata.hpp"
 #include "util/ThreadPool.hpp"
 #include "util/ByteArrayStreamBuf.hpp"
-#include "AWSUtils.hpp"
+#include "snowflake/AWSUtils.hpp"
 
 #ifdef _WIN32
  // see https://github.com/aws/aws-sdk-cpp/issues/402
