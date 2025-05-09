@@ -1,6 +1,3 @@
-/*
-* Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
-*/
 #define CURL_STATICLIB
 #include <string.h>
 #include <curl/curl.h>

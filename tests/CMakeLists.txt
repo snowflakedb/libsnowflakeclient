@@ -1,5 +1,3 @@
-# Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
-
 # include public headers and test utils
 include_directories(
         "../include"

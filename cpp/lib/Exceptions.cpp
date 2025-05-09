@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "snowflake/Exceptions.hpp"
 #include "../logger/SFLogger.hpp"
 

@@ -1,7 +1,3 @@
-/*
-* Copyright (c) 2018-2020 Snowflake Computing
-*/
-
 #ifndef PROJECT_SF_OCSP_TELEMETRY_DATA_H
 #define PROJECT_SF_OCSP_TELEMETRY_DATA_H
 

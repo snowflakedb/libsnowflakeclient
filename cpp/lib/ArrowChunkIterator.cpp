@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2021 Snowflake Computing, Inc. All right reserved.
- */
-
 #include <cmath>
 #include <cstdlib>
 #include <ctime>

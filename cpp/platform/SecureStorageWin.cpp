@@ -1,6 +1,5 @@
 /*
  * File:   SecureStorageWin.cpp *
- * Copyright (c) 2013-2020 Snowflake Computing
  */
 
 #ifdef _WIN32

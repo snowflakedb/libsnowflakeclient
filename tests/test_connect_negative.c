@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "utils/test_setup.h"
 
 void test_connect_account_missing(void **unused) {

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_CPP_UTIL_H
 #define SNOWFLAKE_CPP_UTIL_H
 

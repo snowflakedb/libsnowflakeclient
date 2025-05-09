@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "snowflake/SFURL.hpp"
 #include "snowflake/SF_CRTFunctionSafe.h"
 

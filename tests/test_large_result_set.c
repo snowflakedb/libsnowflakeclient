@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include "utils/test_setup.h"
 
 void test_large_result_set_helper(sf_bool use_arrow) {

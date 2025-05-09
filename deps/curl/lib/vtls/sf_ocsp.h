@@ -1,7 +1,3 @@
-/*
-* Copyright (c) 2017-2019 Snowflake Computing
-*/
-
 #ifndef HEADER_CURL_SF_OCSP_H
 #define HEADER_CURL_SF_OCSP_H
 

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "snowflake/Proxy.hpp"
 #include "snowflake/SF_CRTFunctionSafe.h"
 #include "snowflake/platform.h"

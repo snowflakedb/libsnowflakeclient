@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "Base64.hpp"
 #include <cstring>
 #include "snowflake/IBase64.hpp"

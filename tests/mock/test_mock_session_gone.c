@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string.h>
 #include "../utils/test_setup.h"
 #include "../utils/mock_setup.h"

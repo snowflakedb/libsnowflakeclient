@@ -1,6 +1,5 @@
 /*
  * File:   FileLock.hpp *
- * Copyright (c) 2025 Snowflake Computing
  */
 
 #ifndef SNOWFLAKECLIENT_FILELOCK_HPP

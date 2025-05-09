@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing, Inc. All rights reserved.
- */
-
 /**
  * Testing CA bundle file in Azure client
  *

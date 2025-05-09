@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2023 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_QUERY_CONTEXT_CACHE_H
 #define SNOWFLAKE_QUERY_CONTEXT_CACHE_H
 
