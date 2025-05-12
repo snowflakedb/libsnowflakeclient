@@ -1,6 +1,5 @@
 /*
  * File:   secure_storage.cpp *
- * Copyright (c) 2025 Snowflake Computing
  */
 
 #include <cstring>

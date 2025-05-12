@@ -63,5 +63,10 @@ namespace Snowflake {
     IHttpClient *IHttpClient::createSimple(const HttpClientConfig& cfg) {
       return new SimpleHttpClient(cfg);
     }
+
+    IHttpClient *IHttpClient::getInstance() {
+      static std::unique_ptr<IHttpClient> instance = std::make_unique<SimpleHttpClient>(defaultHttpClientConfig);
+      return instance.get();
+    }
   }
 }
