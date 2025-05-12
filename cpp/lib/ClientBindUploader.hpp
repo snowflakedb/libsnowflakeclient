@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #pragma once
 #ifndef SNOWFLAKECLIENT_CLIENTBINDUPLOADER_HPP
 #define SNOWFLAKECLIENT_CLIENTBINDUPLOADER_HPP

@@ -1,6 +1,5 @@
 /*
  * File:   SecureStorageLinux.cpp *
- * Copyright (c) 2013-2020 Snowflake Computing
  */
 
 #ifdef __linux__

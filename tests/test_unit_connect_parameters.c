@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include <string.h>
 #include <curl/curl.h>
 #include "utils/test_setup.h"
