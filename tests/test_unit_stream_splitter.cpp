@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "util/ByteArrayStreamBuf.hpp"
 #include "utils/test_setup.h"
 #include "util/ThreadPool.hpp"

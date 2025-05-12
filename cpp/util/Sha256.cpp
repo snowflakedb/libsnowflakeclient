@@ -1,7 +1,6 @@
 
 /*
  * File: Sha256.cpp
- * Copyright (c)  2025 Snowflake Computing
  */
 
 #include "Sha256.hpp"

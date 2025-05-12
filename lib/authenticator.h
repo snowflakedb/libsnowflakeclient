@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2022 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_AUTHENTICATOR_H
 #define SNOWFLAKE_AUTHENTICATOR_H
 

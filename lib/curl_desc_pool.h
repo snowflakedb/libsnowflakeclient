@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_CURL_DESC_POOL_H
 #define SNOWFLAKE_CURL_DESC_POOL_H
 

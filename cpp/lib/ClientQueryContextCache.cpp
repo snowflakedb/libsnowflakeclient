@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "ClientQueryContextCache.hpp"
 #include "../logger/SFLogger.hpp"
 #include "query_context_cache.h"
