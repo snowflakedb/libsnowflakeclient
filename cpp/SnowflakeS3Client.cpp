@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "SnowflakeS3Client.hpp"
 #include "FileTransferAgent.hpp"
 #include "FileMetadataInitializer.hpp"
