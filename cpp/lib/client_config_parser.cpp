@@ -1,8 +1,3 @@
-/**
- * Copyright (c) 2025 Snowflake Computing
- */
-
-
 #include "snowflake/Exceptions.hpp"
 #include "snowflake/client_config_parser.h"
 #include "../logger/SFLogger.hpp"

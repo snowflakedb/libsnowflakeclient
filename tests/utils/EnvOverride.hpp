@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
- */
 #include <boost/optional.hpp>
 
 class EnvOverride

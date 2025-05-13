@@ -1,7 +1,6 @@
 
 /*
  * File: Sha256.hpp
- * Copyright (c)  2025 Snowflake Computing
  */
 
 #ifndef SNOWFLAKECLIENT_SHA256_HPP

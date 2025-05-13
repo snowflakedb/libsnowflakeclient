@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_CONNECTION_MOCK_H
 #define SNOWFLAKECLIENT_CONNECTION_MOCK_H
 

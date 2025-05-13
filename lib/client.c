@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>

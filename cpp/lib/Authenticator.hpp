@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #pragma once
 #ifndef PROJECT_AUTHENTICATOR_HPP
 #define PROJECT_AUTHENTICATOR_HPP

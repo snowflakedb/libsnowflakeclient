@@ -1,6 +1,5 @@
 /*
  * File: SecureStorageImpl.cpp
- * Copyright (c)  2025 Snowflake Computing
  */
 
 #include "snowflake/SecureStorage.hpp"
