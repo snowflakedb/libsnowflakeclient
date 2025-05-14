@@ -69,7 +69,6 @@ struct StageInfo
 
   std::string presignedUrl;   //Required by GCS for uploading
 
-
   std::unordered_map<std::string, char *> credentials;
 };
 
