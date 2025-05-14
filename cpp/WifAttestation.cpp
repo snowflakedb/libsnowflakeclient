@@ -41,7 +41,7 @@ namespace Snowflake {
       if (!config.type) {
         auto result = createAutodetectAttestation(config);
         if (!result) {
-          CXX_LOG_ERROR("Failed to create attestation for %s", stringFromAttestationType(config.type.get()));
+          CXX_LOG_ERROR("Failed to autodetect attestation");
         }
         return result;
       }

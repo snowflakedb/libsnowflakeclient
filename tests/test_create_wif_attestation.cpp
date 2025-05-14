@@ -5,6 +5,7 @@
 #include <boost/url.hpp>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
+#include <picojson.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
 #include "utils/EnvOverride.hpp"
