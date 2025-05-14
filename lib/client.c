@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
@@ -874,6 +870,7 @@ cleanup:
     return ret;
 }
 
+extern void awssdk_shutdown();
 SF_STATUS STDCALL snowflake_global_term() {
     curl_global_cleanup();
 
@@ -881,6 +878,7 @@ SF_STATUS STDCALL snowflake_global_term() {
     SF_FREE(CA_BUNDLE_FILE);
     SF_FREE(SF_HEADER_USER_AGENT);
 
+    awssdk_shutdown();
     log_term();
     sf_alloc_map_to_log(SF_BOOLEAN_TRUE);
     sf_error_term();

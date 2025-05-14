@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2021 Snowflake Computing, Inc. All Rights Reserved
- */
 #ifndef SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP
 #define SNOWFLAKECLIENT_ARROWCHUNKITERATOR_HPP
 

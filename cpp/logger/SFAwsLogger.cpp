@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <aws/core/utils/logging/LogLevel.h>
 #include "SFAwsLogger.hpp"
 #include "snowflake/logger.h"

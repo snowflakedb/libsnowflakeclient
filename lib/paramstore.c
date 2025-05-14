@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
 #include "paramstore.h"
 
 void STDCALL sf_param_store_init(PARAM_TYPE ptype, void **ps)

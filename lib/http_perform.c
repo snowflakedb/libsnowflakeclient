@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifdef MOCK_ENABLED
 
 #include <stddef.h>
