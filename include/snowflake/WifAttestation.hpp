@@ -3,7 +3,6 @@
 #define SNOWFLAKECLIENT_CSPATESTATIONS_HPP
 
 #include <string>
-#include <picojson.h>
 #include <curl/curl.h>
 #include <boost/url.hpp>
 #include "HttpClient.hpp"
@@ -34,6 +33,20 @@ namespace Client {
     }
 
     return "UNKNOWN";
+  }
+
+  inline boost::optional<AttestationType> attestationTypeFromString(const std::string& type)
+  {
+    if (type == "AWS")
+      return AttestationType::AWS;
+    if (type == "AZURE")
+      return AttestationType::AZURE;
+    if (type == "GCP")
+      return AttestationType::GCP;
+    if (type == "OIDC")
+      return AttestationType::OIDC;
+
+    return boost::none;
   }
 
   struct Attestation {
