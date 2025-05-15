@@ -35,6 +35,7 @@ goto :EOF
     goto :EOF
 
 :get_zip_file_name
+    set dynamic_prefix=
     set component_name=%~1
     set component_version=%~2
     if "%component_name%"=="" (
@@ -57,8 +58,11 @@ goto :EOF
         echo Set build_type [Debug, Release]
         goto :error
     )
-    set zip_file_name=%component_name%_%arcdir%_%vsdir%_%build_type%-%component_version%.zip
-    set zip_cmake_file_name=%component_name%_cmake_%arcdir%_%vsdir%_%build_type%-%component_version%.zip
+    if /I "%link_type%"=="Dynamic" (
+        set link_type_prefix=dynamic_
+    )
+    set zip_file_name=%link_type_prefix%%component_name%_%arcdir%_%vsdir%_%build_type%-%component_version%.zip
+    set zip_cmake_file_name=%link_type_prefix%%component_name%_cmake_%arcdir%_%vsdir%_%build_type%-%component_version%.zip
     echo === zip_file_name: %zip_file_name%
     if "%component_name%"=="libsnowflakeclient" echo === zip_cmake_file_name: %zip_cmake_file_name%
     goto :EOF

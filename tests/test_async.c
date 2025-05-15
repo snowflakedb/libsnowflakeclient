@@ -1,7 +1,6 @@
 #include <string.h>
 #include "memory.h"
 #include "utils/test_setup.h"
-#include "snowflake_util.h"
 
 void test_normal_async_select_query() {
     SF_CONNECT* sf = setup_snowflake_connection();
@@ -66,7 +65,7 @@ void test_long_query_get_query_status() {
   int retries = 0;
   while (query_status != SF_QUERY_STATUS_SUCCESS || retries > 5) {
     query_status = snowflake_get_query_status(sfstmt);
-    sf_sleep_ms(2000);
+    sleep_for_ms(2000);
     retries++;
   }
 

@@ -4,10 +4,11 @@
 #
 function usage() {
     echo "Usage: `basename $0` [-p]"
-    echo "-p                 : Rebuild Snowflake Client with profile option. default: no profile"
-    echo "-t <Release/Debug> : Release or Debug builds"
-    echo "-s                 : Build source only. Skipping building tests."
-    echo "-v                 : Version"
+    echo "-p                  : Rebuild Snowflake Client with profile option. default: no profile"
+    echo "-t <Release/Debug>  : Release or Debug builds"
+    echo "-l <Dynamic/Static> : Dynamic or Static linking builds. default: Static"
+    echo "-s                  : Build source only. Skipping building tests."
+    echo "-v                  : Version"
     exit 2
 }
 set -o pipefail
@@ -64,6 +65,10 @@ if [[ "$ENABLE_MOCK_OBJECTS" == "true" ]]; then
     cmake_opts+=("-DMOCK=ON")
 fi
 
+if [[ "$linking" == "Dynamic" ]]; then
+    cmake_opts+=("-DBUILD_SHARED_LIBS=ON")
+fi
+
 set -x
 $CMAKE ${cmake_opts[@]} ..
 make 2>&1 | tee ../build.log
@@ -73,9 +78,21 @@ BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR/{include,lib}
 cp -pfr $DIR/../include/snowflake $BUILD_DIR/include
-cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
 
-echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
+if [[ "$linking" == "Static" ]]; then
+    cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.a $BUILD_DIR/lib
+else
+    if [[ "$PLATFORM" == "linux" ]]; then
+        cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.so $BUILD_DIR/lib
+    elif [[ "$PLATFORM" == "darwin" ]]; then
+        cp -p $DIR/../$CMAKE_DIR/libsnowflakeclient.dylib $BUILD_DIR/lib
+    else
+        echo "[ERROR] Unknown platform: $PLATFORM"
+        exit 1
+    fi
+fi
+
+echo === zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target $linking"
 zip_file "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target"
 cmake_file_name=$(get_cmake_file_name "libsnowflakeclient" "$LIBSNOWFLAKECLIENT_VERSION" "$target")
 if [[ -z "$GITHUB_ACTIONS" ]] && [[ -z "$BUILD_SOURCE_ONLY" ]] && [[ -n "$GIT_BRANCH" ]]; then
