@@ -30,9 +30,9 @@ AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 
 rm -rf $AWS_SOURCE_DIR
-git clone --single-branch --branch %aws_src_version% --recursive https://github.com/aws/aws-sdk-cpp.git $AWS_SOURCE_DIR
+git clone --single-branch tags $AWS_SRC_VERSION --recursive https://github.com/aws/aws-sdk-cpp.git $AWS_SOURCE_DIR
 pushd $AWS_SOURCE_DIR
-  git apply ../aws-patch/aws-%aws_src_version%.patch
+  git apply ../aws-patch/aws-$AWS_SRC_VERSION.patch
 popd
 
 [[ -n "$DOWNLOAD_ONLY" ]] && exit 0
