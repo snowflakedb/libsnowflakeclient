@@ -1,4 +1,4 @@
-
+#include <picojson.h>
 #include "AzureAttestation.hpp"
 #include "jwt/Jwt.hpp"
 #include "snowflake/HttpClient.hpp"
