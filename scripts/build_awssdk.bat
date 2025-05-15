@@ -3,8 +3,8 @@
 :: GitHub repo: https://github.com/aws/aws-sdk-cpp.git
 ::
 @echo off
-set aws_src_version=1.11.283
-set aws_build_version=10
+set aws_src_version=1.11.500
+set aws_build_version=1
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -42,9 +42,9 @@ set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%buil
 set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
 rd /S /Q %AWS_SOURCE_DIR%
-git clone --single-branch --branch deps/aws-sdk-%AWS_SRC_VERSION% https://github.com/snowflakedb/libsnowflakeclient.git %AWS_SOURCE_DIR%
+git clone --single-branch --branch %aws_src_version% --recursive https://github.com/aws/aws-sdk-cpp.git %AWS_SOURCE_DIR%
 pushd %AWS_SOURCE_DIR%
-  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
+  git apply ..\aws-patch\aws-%aws_src_version%.patch
 popd
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
@@ -59,6 +59,8 @@ set CURL_INC_PATH="%scriptdir%..\deps-build\%build_dir%\curl\include"
 set CURL_INC_PATH=%CURL_INC_PATH:\=/%
 REM Keep GIT_DIR. https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
+REM disable CPU extentsions to fix build error on Linux
+REM CPU extentsions might not be always available on all customer environments
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
@@ -67,6 +69,7 @@ cmake %AWS_SOURCE_DIR% ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
 -DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
 -DENABLE_TESTING=off ^
+-DUSE_CPU_EXTENSIONS=off ^
 -DAWS_STATIC_MSVC_RUNTIME_LIBRARY=ON ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
 -DCMAKE_C_FLAGS="/D CURL_STATICLIB /Z7 /W3 /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^
