@@ -126,12 +126,11 @@ bool StatementPutGet::parsePutGetCommand(std::string *sql,
     putGetParseResponse->stageInfo.credentials = {
             {"AZURE_SAS_KEY",     response->stage_info->stage_cred->azure_sas_token}
       };
-    putGetParseResponse->stageInfo.endPoint = response->stage_info->endPoint;
-
   }
   else if (sf_strncasecmp(response->stage_info->location_type, "gcs", 3) == 0)
   {
     putGetParseResponse->stageInfo.stageType = StageType::GCS;
+    putGetParseResponse->stageInfo.useVirtualUrl = (SF_BOOLEAN_TRUE == response->stage_info->useVirtualUrl);
     putGetParseResponse->stageInfo.credentials = {
             {"GCS_ACCESS_TOKEN",     response->stage_info->stage_cred->gcs_access_token}
     };
