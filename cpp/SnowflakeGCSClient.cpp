@@ -307,7 +307,7 @@ void SnowflakeGCSClient::buildGcsRequest(const std::string& filePathFull,
 
   // https://storage.googleapis.com//BUCKET_NAME/OBJECT_NAME
   // When use the virtual endPoint: https://BUCKET_NAME.storage.googleapis.com/OBJECT_NAME
-  std::string queryString = (!(m_stageInfo->endPoint.empty() && m_stageInfo->useVirtualUrl) ? bucket + "/" : "") + object;
+  std::string queryString = ((m_stageInfo->endPoint.empty() && m_stageInfo->useVirtualUrl) ? "" : bucket + "/") + object;
   url = "https://" + m_stageEndpoint + "/" + queryString;
   
   CXX_LOG_DEBUG("Build GCS request for file %s as URL: %s", filePathFull.c_str(), url.c_str());
