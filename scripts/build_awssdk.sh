@@ -53,6 +53,9 @@ aws_configure_opts+=(
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
     "-DENABLE_TESTING=OFF"
     "-DENABLE_CURL_LOGGING=OFF"
+#disable CPU extentsions to fix build error on Linux
+#CPU extentsions might not be always available on all customer environments
+    "-DUSE_CPU_EXTENSIONS=OFF"
     "-DOPENSSL_ROOT_DIR=$DEPENDENCY_DIR/openssl"
     "-Dcrypto_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-Dcrypto_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"

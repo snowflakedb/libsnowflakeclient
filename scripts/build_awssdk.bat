@@ -67,6 +67,9 @@ cmake %AWS_SOURCE_DIR% ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
 -DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
 -DENABLE_TESTING=off ^
+::disable CPU extentsions to fix build error on Linux
+::CPU extentsions might not be always available on all customer environments
+-DUSE_CPU_EXTENSIONS=off ^
 -DAWS_STATIC_MSVC_RUNTIME_LIBRARY=ON ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
 -DCMAKE_C_FLAGS="/D CURL_STATICLIB /Z7 /W3 /ZH:SHA_256 /guard:cf /Qspectre /sdl" ^

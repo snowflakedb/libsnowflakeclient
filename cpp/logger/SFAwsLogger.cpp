@@ -37,6 +37,18 @@ void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
   {
     va_list args;
     va_start(args, formatStr);
+    vaLog(logLevel, tag, formatStr, args);
+    va_end(args);
+  }
+}
+
+void Snowflake::Client::SFAwsLogger::vaLog(LogLevel logLevel,
+                                           const char* tag,
+                                           const char* formatStr,
+                                           va_list args)
+{
+  if (logLevel != LogLevel::Off)
+  {
     if (SFLogger::getExternalLogger() != NULL)
     {
       SFLogger::getExternalLogger()->logLineVA((SF_LOG_LEVEL)toSFLogeLevel(logLevel),
@@ -47,7 +59,6 @@ void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
       log_log_va_list(toSFLogeLevel(logLevel), tag, AWS_LINE, AWS_NS, formatStr,
                       args);
     }
-    va_end(args);
   }
 }
 
