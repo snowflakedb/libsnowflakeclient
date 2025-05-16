@@ -59,6 +59,8 @@ set CURL_INC_PATH="%scriptdir%..\deps-build\%build_dir%\curl\include"
 set CURL_INC_PATH=%CURL_INC_PATH:\=/%
 REM Keep GIT_DIR. https://github.com/aws/aws-sdk-cpp/issues/383
 set GIT_DIR=%TMP%
+REM disable CPU extentsions to fix build error on Linux
+REM CPU extentsions might not be always available on all customer environments
 cmake %AWS_SOURCE_DIR% ^
 -G "%cmake_generator%" ^
 -A "%cmake_architecture%" ^
@@ -67,8 +69,6 @@ cmake %AWS_SOURCE_DIR% ^
 -DCURL_LIBRARY="%CURL_LIB_PATH%" ^
 -DCURL_INCLUDE_DIR="%CURL_INC_PATH%" ^
 -DENABLE_TESTING=off ^
-::disable CPU extentsions to fix build error on Linux
-::CPU extentsions might not be always available on all customer environments
 -DUSE_CPU_EXTENSIONS=off ^
 -DAWS_STATIC_MSVC_RUNTIME_LIBRARY=ON ^
 -DCMAKE_INSTALL_PREFIX=%AWS_INSTALL_DIR% ^
