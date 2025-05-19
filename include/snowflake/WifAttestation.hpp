@@ -4,7 +4,6 @@
 
 #include <string>
 #include <curl/curl.h>
-#include <boost/url.hpp>
 #include "HttpClient.hpp"
 #include "AWSUtils.hpp"
 

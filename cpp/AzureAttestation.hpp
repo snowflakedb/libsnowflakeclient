@@ -11,7 +11,7 @@ namespace Snowflake {
       static boost::optional<AzureFunctionsManagedIdentityConfig> fromEnv();
 
       std::string header;
-      boost::url endpoint;
+      boost::urls::url endpoint;
       boost::optional<std::string> clientId;
     };
 
@@ -19,7 +19,7 @@ namespace Snowflake {
     {
       static boost::optional<AzureAttestationConfig> fromConfig(const AttestationConfig& config);
 
-      boost::url getRequestURL() const;
+      boost::urls::url getRequestURL() const;
       std::map<std::string, std::string> getRequestHeaders() const;
 
       std::string snowflakeEntraResource;
