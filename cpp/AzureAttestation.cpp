@@ -73,8 +73,8 @@ namespace Snowflake {
       return Attestation::makeAzure(jwtStr, issuer, subject);
     }
 
-    boost::urls::url AzureAttestationConfig::getRequestURL() const {
-      boost::urls::url url = boost::urls::url("http://169.254.169.254/metadata/identity/oauth2/token");
+    boost::url AzureAttestationConfig::getRequestURL() const {
+      boost::urls::url url = boost::url("http://169.254.169.254/metadata/identity/oauth2/token");
       if (managedIdentity) {
         url = managedIdentity->endpoint;
         if (managedIdentity->clientId) {

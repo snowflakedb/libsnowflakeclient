@@ -211,7 +211,7 @@ if(WIN32)
     # * Related reports:
     #   * https://developercommunity.visualstudio.com/content/problem/387684/c5105-with-stdioh-and-experimentalpreprocessor.html
     #   * https://developercommunity.visualstudio.com/content/problem/1249671/stdc17-generates-warning-compiling-windowsh.html
-    set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd5105")
+#    set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd5105")
 
     if(ARROW_USE_CCACHE)
       foreach(c_flag
@@ -395,14 +395,14 @@ endif()
 
 if(MSVC)
   # Disable annoying "performance warning" about int-to-bool conversion
-  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4800")
+#  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4800")
 
   # Disable unchecked iterator warnings, equivalent to /D_SCL_SECURE_NO_WARNINGS
-  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4996")
+#  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4996")
 
   # Disable "switch statement contains 'default' but no 'case' labels" warning
   # (required for protobuf, see https://github.com/protocolbuffers/protobuf/issues/6885)
-  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4065")
+#  set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} /wd4065")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "7.0" OR CMAKE_CXX_COMPILER_VERSION
