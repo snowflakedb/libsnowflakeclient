@@ -11,6 +11,9 @@
 namespace Snowflake {
   namespace Client {
 
+    // We don't need x-amz-content-sha256 header, because there is no payload to be signed.
+    // If x-amz-content-sha256 contain EMPTY_STRING_SHA256, the server responds with
+    // "The AWS STS request contained unacceptable headers."
     class AWS_CORE_API AWSAuthV4SignerNoPayload : public Aws::Client::AWSAuthV4Signer
     {
     public:
