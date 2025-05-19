@@ -1,7 +1,7 @@
 #include <memory>
 #include <utility>
 
-#include <boost/url.hpp>
+#include <boost/url/url.hpp>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <picojson.h>
@@ -77,7 +77,7 @@ void test_aws_attestation(void**)
   std::map<std::string, std::string> headers;
   HttpRequest req {
       HttpRequest::Method::GET,
-      boost::url(json.get("url").get<std::string>()),
+      boost::urls::url(json.get("url").get<std::string>()),
       headers
   };
   for (auto& header: json.get("headers").get<picojson::object>()) {
