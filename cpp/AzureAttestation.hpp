@@ -1,8 +1,7 @@
-
 #ifndef SNOWFLAKECLIENT_AZUREATTESTATION_HPP
 #define SNOWFLAKECLIENT_AZUREATTESTATION_HPP
 
-#include <snowflake/WifAttestation.hpp>
+#include "snowflake/WifAttestation.hpp"
 
 namespace Snowflake {
   namespace Client {

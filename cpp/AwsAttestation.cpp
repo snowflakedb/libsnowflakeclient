@@ -1,5 +1,5 @@
-
-#include <snowflake/WifAttestation.hpp>
+#include "snowflake/AWSUtils.hpp"
+#include "snowflake/WifAttestation.hpp"
 #include <picojson.h>
 #include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"

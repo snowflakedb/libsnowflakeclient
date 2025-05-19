@@ -1,18 +1,15 @@
 #include <memory>
-#include <utility>
-
 #include <boost/url/url.hpp>
-#include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <picojson.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
+#include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
 #include <curl/curl.h>
-#include <jwt/Jwt.hpp>
 
 using namespace Snowflake::Client;
 
