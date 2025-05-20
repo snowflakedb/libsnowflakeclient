@@ -1,18 +1,15 @@
 #include <memory>
-#include <utility>
-
-#include <boost/url.hpp>
-#include <openssl/evp.h>
+#include <boost/url/url.hpp>
 #include <openssl/rsa.h>
 #include <picojson.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
+#include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
 #include <curl/curl.h>
-#include <jwt/Jwt.hpp>
 
 using namespace Snowflake::Client;
 
@@ -77,7 +74,7 @@ void test_aws_attestation(void**)
   std::map<std::string, std::string> headers;
   HttpRequest req {
       HttpRequest::Method::GET,
-      boost::url(json.get("url").get<std::string>()),
+      boost::urls::url(json.get("url").get<std::string>()),
       headers
   };
   for (auto& header: json.get("headers").get<picojson::object>()) {

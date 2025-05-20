@@ -3,10 +3,7 @@
 #define SNOWFLAKECLIENT_CSPATESTATIONS_HPP
 
 #include <string>
-#include <curl/curl.h>
-#include <boost/url.hpp>
-#include "HttpClient.hpp"
-#include "AWSUtils.hpp"
+#include <boost/optional.hpp>
 
 namespace Snowflake {
 
@@ -73,14 +70,17 @@ namespace Client {
     }
   };
 
-  extern const std::unique_ptr<IHttpClient> defaultHttpClient;
+  class IHttpClient;
+  namespace AwsUtils {
+    class ISdkWrapper;
+  }
 
   struct AttestationConfig {
     boost::optional<AttestationType> type;
     boost::optional<std::string> token;
     boost::optional<std::string> snowflakeEntraResource;
-    IHttpClient* httpClient = IHttpClient::getInstance();
-    AwsUtils::ISdkWrapper* awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
+    IHttpClient* httpClient = NULL;
+    AwsUtils::ISdkWrapper* awsSdkWrapper = NULL;
   };
 
   boost::optional<Attestation> createAttestation(AttestationConfig& config);

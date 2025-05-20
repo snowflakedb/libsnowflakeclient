@@ -1,5 +1,5 @@
-
-#include <snowflake/WifAttestation.hpp>
+#include "snowflake/AWSUtils.hpp"
+#include "snowflake/WifAttestation.hpp"
 #include <picojson.h>
 #include "util/Base64.hpp"
 #include "logger/SFLogger.hpp"
@@ -10,6 +10,17 @@
 
 namespace Snowflake {
   namespace Client {
+
+    // We don't need x-amz-content-sha256 header, because there is no payload to be signed.
+    // If x-amz-content-sha256 contain EMPTY_STRING_SHA256, the server responds with
+    // "The AWS STS request contained unacceptable headers."
+    class AWS_CORE_API AWSAuthV4SignerNoPayload : public Aws::Client::AWSAuthV4Signer
+    {
+    public:
+      AWSAuthV4SignerNoPayload(const std::shared_ptr<Aws::Auth::AWSCredentialsProvider>& credentialsProvider, const char* serviceName, const Aws::String& region)
+          : AWSAuthV4Signer(credentialsProvider, serviceName, region) { m_includeSha256HashHeader = false; }
+    };
+
     boost::optional<Attestation> createAwsAttestation(const AttestationConfig& config) {
       auto awsSdkInit = AwsUtils::initAwsSdk();
       auto creds = config.awsSdkWrapper->getCredentials();
@@ -45,10 +56,8 @@ namespace Snowflake {
       request->SetHeaderValue("Host", host);
       request->SetHeaderValue("X-Snowflake-Audience", "snowflakecomputing.com");
 
-      request->AddContentBody(Aws::MakeShared<Aws::StringStream>(""));
-
       auto simpleCredProvider = std::make_shared<Aws::Auth::SimpleAWSCredentialsProvider>(creds);
-      Aws::Client::AWSAuthV4Signer signer(simpleCredProvider, "sts", region);
+      AWSAuthV4SignerNoPayload signer(simpleCredProvider, "sts", region);
 
       // Sign the request
       if (!signer.SignRequest(*request)) {

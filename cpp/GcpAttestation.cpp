@@ -11,7 +11,7 @@ namespace Snowflake {
 
     boost::optional<Attestation> createGcpAttestation(AttestationConfig& config)
     {
-      auto url = boost::url("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity");
+      auto url = boost::urls::url("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity");
       url.params().append({"audience", SNOWFLAKE_AUDIENCE});
 
       HttpRequest req {
