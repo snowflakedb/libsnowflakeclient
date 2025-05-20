@@ -1,13 +1,14 @@
-
 #include <memory>
 #include <utility>
-
 #include <boost/url.hpp>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
+#include <picojson.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
 #include "utils/EnvOverride.hpp"
+#include "snowflake/AWSUtils.hpp"
+#include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
 #include <curl/curl.h>

@@ -1,4 +1,6 @@
-
+#include <picojson.h>
+#include <boost/url/url.hpp>
+#include <boost/url/parse.hpp>
 #include "AzureAttestation.hpp"
 #include "jwt/Jwt.hpp"
 #include "snowflake/HttpClient.hpp"
@@ -72,8 +74,8 @@ namespace Snowflake {
       return Attestation::makeAzure(jwtStr, issuer, subject);
     }
 
-    boost::url AzureAttestationConfig::getRequestURL() const {
-      boost::urls::url url = boost::url("http://169.254.169.254/metadata/identity/oauth2/token");
+    boost::urls::url AzureAttestationConfig::getRequestURL() const {
+      boost::urls::url url = boost::urls::url("http://169.254.169.254/metadata/identity/oauth2/token");
       if (managedIdentity) {
         url = managedIdentity->endpoint;
         if (managedIdentity->clientId) {

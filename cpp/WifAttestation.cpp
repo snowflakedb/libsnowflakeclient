@@ -1,5 +1,5 @@
-
-#include <snowflake/WifAttestation.hpp>
+#include "snowflake/AWSUtils.hpp"
+#include "snowflake/WifAttestation.hpp"
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
@@ -38,10 +38,15 @@ namespace Snowflake {
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
+      if (config.httpClient == NULL)
+        config.httpClient = IHttpClient::getInstance();
+      if (config.awsSdkWrapper == NULL)
+        config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
+
       if (!config.type) {
         auto result = createAutodetectAttestation(config);
         if (!result) {
-          CXX_LOG_ERROR("Failed to create attestation for %s", stringFromAttestationType(config.type.get()));
+          CXX_LOG_ERROR("Failed to autodetect attestation");
         }
         return result;
       }
