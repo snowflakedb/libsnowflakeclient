@@ -1,4 +1,5 @@
 #include <picojson.h>
+#include <boost/url/url.hpp>
 #include <boost/url/parse.hpp>
 #include "AzureAttestation.hpp"
 #include "jwt/Jwt.hpp"
