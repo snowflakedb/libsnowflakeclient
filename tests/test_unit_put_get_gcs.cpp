@@ -55,7 +55,7 @@ public:
       m_expectedUrl = m_stageInfo.presignedUrl;
     }
 
-    if (useVirtualUrl && endpoint == "") 
+    if (useVirtualUrl) 
     {
        m_expectedUrl = std::string("https://") + expectedEndpoint + "/small_file.csv.gz";
     }
