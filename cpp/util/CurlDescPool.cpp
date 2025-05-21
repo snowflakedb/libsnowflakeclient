@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <utility>
 #include "snowflake/CurlDescPool.hpp"
 #include "curl_desc_pool.h"

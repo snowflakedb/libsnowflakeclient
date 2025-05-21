@@ -1,5 +1,3 @@
-# Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
-#
 # CMakeList for Snowflake Client
 #
 cmake_minimum_required(VERSION 3.17)
@@ -225,7 +223,9 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/AwsAttestation.hpp
         cpp/AzureAttestation.cpp
         cpp/AWSUtils.cpp
-        cpp/AWSUtils.hpp
+        include/snowflake/AWSUtils.hpp
+        cpp/OIDCAttestation.cpp
+        cpp/OIDCAttestation.hpp
 )
 
 if (LINUX)
@@ -317,6 +317,7 @@ if (WIN32)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AWS_STS_LIB aws-cpp-sdk-sts.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_AUTH_LIB aws-c-auth.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_CAL_LIB aws-c-cal.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_COMMON_LIB aws-c-common.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)

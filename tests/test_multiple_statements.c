@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
 #include <string.h>
 #include "utils/test_setup.h"
 

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2019-2020 Snowflake Computing, Inc. All rights reserved.
- */
-
 /**
  * Testing Put retry
  *

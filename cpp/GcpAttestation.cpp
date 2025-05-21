@@ -11,7 +11,7 @@ namespace Snowflake {
 
     boost::optional<Attestation> createGcpAttestation(AttestationConfig& config)
     {
-      auto url = boost::url("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity");
+      auto url = boost::urls::url("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/identity");
       url.params().append({"audience", SNOWFLAKE_AUDIENCE});
 
       HttpRequest req {
@@ -28,7 +28,7 @@ namespace Snowflake {
         return boost::none;
       }
 
-      auto response = responseOpt.get();
+      const auto& response = responseOpt.get();
       if (response.code != 200) {
         CXX_LOG_ERROR("GCP metadata server request was not successful.");
         return boost::none;
@@ -54,7 +54,7 @@ namespace Snowflake {
         return boost::none;
       }
 
-      return Attestation{AttestationType::GCP, jwtStr, issuer, subject};
+      return Attestation::makeGcp(jwtStr, issuer, subject);
     }
   }
 }
