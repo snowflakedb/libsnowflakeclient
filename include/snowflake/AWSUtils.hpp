@@ -11,11 +11,13 @@ namespace Snowflake {
     namespace AwsUtils {
       /*
        * Shared initialization of aws sdk to avoid multiple initialization.
-       * To initialize aws sdk, call initAwsSdk() and hold the returned shared_ptr as long as you use AWS SDK.
-       * shutdown = true to release resources hold for aws sdk.
+       * To initialize aws sdk, define AwsSdkInstance object
        */
-      class AwsSdkInitialized;
-      std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown = false);
+      class AwsSdkInstance {
+      public:
+        AwsSdkInstance();
+        ~AwsSdkInstance();
+      };
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName);
 
