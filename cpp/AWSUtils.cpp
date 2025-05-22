@@ -15,7 +15,7 @@ namespace Snowflake {
     namespace AwsUtils {
       class AwsSdkInitialized {
       public:
-        AwsSdkInitialized() : options{} {
+        AwsSdkInitialized() : options{}, refCount(0) {
           CXX_LOG_INFO("Initializing AWS SDK");
           Aws::InitAPI(options);
           Aws::Utils::Logging::InitializeAWSLogging(
@@ -29,17 +29,32 @@ namespace Snowflake {
         }
 
         Aws::SDKOptions options;
+        int refCount;
       };
 
-      std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown) {
-        static std::shared_ptr<AwsSdkInitialized> awssdk = std::make_shared<AwsSdkInitialized>();
-        // To fix hanging issue when calling ShutdownAPI(), calling it earlier
-        // from application when calling snowflake_global_term()
-        if (shutdown)
-        {
-          awssdk.reset();
+      Snowflake::Client::AwsMutex s_sdkMutex;
+      std::shared_ptr<AwsSdkInitialized> s_awssdk;
+
+      AwsSdkInstance::AwsSdkInstance() {
+        s_sdkMutex.lock();
+        if (!s_awssdk) {
+          s_awssdk = std::make_unique<AwsSdkInitialized>();
         }
-        return awssdk;
+        s_awssdk->refCount++;
+        s_sdkMutex.unlock();
+        CXX_LOG_TRACE("AWS SDK instance created");
+      }
+
+      AwsSdkInstance::~AwsSdkInstance() {
+        CXX_LOG_TRACE("AWS SDK instance removed");
+        s_sdkMutex.lock();
+        if (s_awssdk) {
+          s_awssdk->refCount--;
+          if (s_awssdk->refCount <= 0) {
+            s_awssdk = NULL;
+          }
+        }
+        s_sdkMutex.unlock();
       }
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName) {
@@ -56,7 +71,7 @@ namespace Snowflake {
             return std::string(awsRegion);
           }
 
-          auto awsSdk = initAwsSdk();
+          AwsUtils::AwsSdkInstance awsSdkInstance;
           Aws::Internal::EC2MetadataClient metadataClient;
           std::string region = metadataClient.GetCurrentRegion();
           if (!region.empty()) {
@@ -68,7 +83,7 @@ namespace Snowflake {
         }
 
         boost::optional<std::string> getArn() override {
-          auto awsSdk = initAwsSdk();
+          AwsUtils::AwsSdkInstance awsSdkInstance;
           Aws::STS::STSClient stsClient;
           Aws::STS::Model::GetCallerIdentityRequest request;
 
@@ -85,7 +100,7 @@ namespace Snowflake {
         }
 
         Aws::Auth::AWSCredentials getCredentials() override {
-          auto awsSdk = initAwsSdk();
+          AwsUtils::AwsSdkInstance awsSdkInstance;
           auto credentialsProvider = Aws::MakeShared<Aws::Auth::DefaultAWSCredentialsProviderChain>({});
           auto creds = credentialsProvider->GetAWSCredentials();
           return creds;
@@ -97,12 +112,5 @@ namespace Snowflake {
         return instance.get();
       }
     }
-  }
-}
-
-extern "C" {
-  void awssdk_shutdown()
-  {
-    Snowflake::Client::AwsUtils::initAwsSdk(true);
   }
 }
