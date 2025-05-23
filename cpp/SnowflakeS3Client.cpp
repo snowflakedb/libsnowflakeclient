@@ -52,6 +52,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      size_t uploadThreshold,
                                      TransferConfig *transferConfig,
                                      IStatementPutGet* statement) :
+  m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
