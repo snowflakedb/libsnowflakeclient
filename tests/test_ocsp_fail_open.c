@@ -75,7 +75,8 @@ void test_fail_close_timeout(void** unused) {
     sf_setenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED", "false");
 
     SF_CONNECT* sf = setup_snowflake_connection();
-    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &SF_BOOLEAN_FALSE);
+    sf_bool value = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_OCSP_FAIL_OPEN, &value);
 
     SF_STATUS ret = snowflake_connect(sf);
     assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
