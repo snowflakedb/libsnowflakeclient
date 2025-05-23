@@ -22,7 +22,7 @@ namespace Snowflake {
     };
 
     boost::optional<Attestation> createAwsAttestation(const AttestationConfig& config) {
-      AwsUtils::AwsSdkInstance awsSdkInstance;
+      auto awsSdkInit = AwsUtils::initAwsSdk();
       auto creds = config.awsSdkWrapper->getCredentials();
       if (creds.IsEmpty()) {
         CXX_LOG_INFO("Failed to get AWS credentials");
