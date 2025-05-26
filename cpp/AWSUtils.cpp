@@ -13,7 +13,6 @@
 namespace Snowflake {
   namespace Client {
     namespace AwsUtils {
-      static Aws::SDKOptions options;
       static bool awssdkInitialized = false;
 
       class AwsSdkInitialized {
@@ -26,24 +25,38 @@ namespace Snowflake {
         }
 
         ~AwsSdkInitialized() {
-          // Don't call ShutdownAPI() here to avoid memory issues caused by the
-          // nondeterministic order of static variable destruction.
-          // https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/basic-use.html
+          if (awssdkInitialized)
+          {
+            CXX_LOG_INFO("Shutting down AWS SDK");
+            Aws::Utils::Logging::ShutdownAWSLogging();
+            Aws::ShutdownAPI(options);
+          }
         }
+
+        Aws::SDKOptions options;
       };
 
+      void initStatic(std::unique_ptr<AwsSdkInitialized>& in_awssdk) {
+        static std::shared_ptr<AwsSdkInitialized> awssdk = std::move(in_awssdk);
+      }
+
       void initAwsSdk() {
-        static AwsSdkInitialized awssdk;
-        awssdkInitialized = true;
+        static Snowflake::Client::AwsMutex mutex;
+        mutex.lock();
+        if (!awssdkInitialized)
+        {
+          awssdkInitialized = true;
+
+          // The static objects are destructed in the reverse order of construction.
+          // So first we need to initialize AWS SDK, and then static AwsSdkInitialized object.
+          std::unique_ptr<AwsSdkInitialized> awssdk = std::make_unique<AwsSdkInitialized>();
+          initStatic(awssdk);
+        }
+        mutex.unlock();
       }
 
       void shutdownAwsSdk() {
-        if (awssdkInitialized)
-        {
-          CXX_LOG_INFO("Shutting down AWS SDK");
-          Aws::Utils::Logging::ShutdownAWSLogging();
-          Aws::ShutdownAPI(options);
-        }
+       // do nothing
       }
 
       std::string getDomainSuffixForRegionalUrl(const std::string &regionName) {
