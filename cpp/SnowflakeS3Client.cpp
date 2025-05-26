@@ -52,12 +52,12 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      size_t uploadThreshold,
                                      TransferConfig *transferConfig,
                                      IStatementPutGet* statement) :
-  m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
+  AwsUtils::initAwsSdk();
   Aws::String caFile;
   if ((transferConfig != nullptr) && (transferConfig->caBundleFile != nullptr))
   {
