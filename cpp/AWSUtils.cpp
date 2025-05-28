@@ -32,13 +32,20 @@ namespace Snowflake {
       };
 
       std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown) {
+        static Snowflake::Client::AwsMutex s_sdkMutex;
         static std::shared_ptr<AwsSdkInitialized> awssdk = std::make_shared<AwsSdkInitialized>();
         // To fix hanging issue when calling ShutdownAPI(), calling it earlier
         // from application when calling snowflake_global_term()
+        s_sdkMutex.lock();
         if (shutdown)
         {
           awssdk.reset();
         }
+        else if (!awssdk)
+        {
+          awssdk = std::make_shared<AwsSdkInitialized>();
+        }
+        s_sdkMutex.unlock();
         return awssdk;
       }
 
