@@ -10,6 +10,8 @@ typedef struct test_case_to_string {
     const int64 c1in;
     const char *c2in;
     const char *c2out;
+    const char* c3out;
+    const char* c4out;
     SF_STATUS error_code;
 } TEST_CASE_TO_STRING;
 
@@ -223,19 +225,19 @@ void test_timestamp_ltz_json(void **unused) {
 void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_bool isStageBinding) {
 
     TEST_CASE_TO_STRING test_cases[] = {
-            {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = "2014-05-03 13:56:46.12300"},
-            {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = "1969-11-21 05:17:23.01230"},
-            {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00.00000" },
+            {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = "2014-05-03 13:56:46", .c3out = "2014-05-03 13:56:46.12300", "2014-05-03 13:56:46.123000000"},
+            {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = "1969-11-21 05:17:23", .c3out = "1969-11-21 05:17:23.01230", .c4out = "1969-11-21 05:17:23.012300000"},
+            {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00", .c3out = "1960-01-01 00:00:00.00000", .c4out = "1960-01-01 00:00:00.000000000"},
   #ifdef __linux__
         // Must run the tests High Sierra (10.13) or newer OS.
         // Windows get inaccurate result as well.
-        {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:00.00000"},
+        {.c1in = 4, .c2in = "1500-01-01 00:00:00.0000", .c2out = "1500-01-01 00:00:00",.c3out = "1500-01-01 00:00:00.00000", .c4out = "1500-01-01 00:00:00.000000000"},
         // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
         // Windows get the same output as MacOS
         // {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
-        {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00.00000"},
+        {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00",.c3out = "1-01-01 00:00:00.00000", c4out = "1-01-01 00:00:00.000000000"},
 #endif // __linux__
-          {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00.00000"},
+          {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00", .c3out = "9999-01-01 00:00:00.00000", .c4out = "9999-01-01 00:00:00.000000000"},
     };
     SF_CONNECT* sf = setup_snowflake_connection_with_autocommit(
         timezone, SF_BOOLEAN_TRUE); // set the session timezone
@@ -259,7 +261,6 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
         assert_int_equal(*cur_threshold, stage_treshold);
     }
 
-    /* Set query result format to Arrow if necessary */
     status = snowflake_query(
         sfstmt,
         "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
@@ -272,7 +273,7 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
 
     status = snowflake_query(
         sfstmt,
-        "create or replace table t (c1 int, c2 timestamp_ltz(5))",
+        "create or replace table t (c1 int, c2 timestamp_ltz(0), c3 timestamp_ltz(5), c4 timestamp_ltz(9))",
         0
     );
     if (status != SF_STATUS_SUCCESS) {
@@ -283,7 +284,7 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
     /* insert data */
     status = snowflake_prepare(
         sfstmt,
-        "insert into t(c1,c2) values(?,?)",
+        "insert into t(c1,c2,c3,c4) values(?,?,?,?)",
         0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
@@ -320,6 +321,30 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
         }
         assert_int_equal(status, SF_STATUS_SUCCESS);
 
+        SF_BIND_INPUT ic3 = { 0 };
+        ic3.idx = 3;
+        ic3.name = NULL;
+        ic3.c_type = SF_C_TYPE_STRING;
+        ic3.value = (void*)v.c2in;
+        ic3.len = v.c2in != NULL ? strlen(v.c2in) : 0;
+        status = snowflake_bind_param(sfstmt, &ic3);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        SF_BIND_INPUT ic4 = { 0 };
+        ic4.idx = 4;
+        ic4.name = NULL;
+        ic4.c_type = SF_C_TYPE_STRING;
+        ic4.value = (void*)v.c2in;
+        ic4.len = v.c2in != NULL ? strlen(v.c2in) : 0;
+        status = snowflake_bind_param(sfstmt, &ic4);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
         status = snowflake_execute(sfstmt);
         if (v.error_code != SF_STATUS_SUCCESS) {
             // expecting failure
@@ -343,6 +368,13 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
     char* c2buf = NULL;
     size_t c2buf_len = 0;
     size_t c2buf_max_size = 0;
+    char* c3buf = NULL;
+    size_t c3buf_len = 0;
+    size_t c3buf_max_size = 0;
+    char* c4buf = NULL;
+    size_t c4buf_len = 0;
+    size_t c4buf_max_size = 0;
+
     sf_bool is_null;
     assert_int_equal(snowflake_num_rows(sfstmt), no_error_test_cases);
 
@@ -353,16 +385,13 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
             memcpy(&v, &test_cases[counter++], sizeof(TEST_CASE_TO_STRING));
         } while (v.error_code != (SF_STATUS)0);
         assert_int_equal(status, SF_STATUS_SUCCESS);
-        if (v.c2out == NULL) {
-            // expecting NULL
-            snowflake_column_is_null(sfstmt, 2, &is_null);
-            assert_true(is_null);
-        }
-        else {
             // expecting not null
             snowflake_column_as_str(sfstmt, 2, &c2buf, &c2buf_len, &c2buf_max_size);
             assert_string_equal(v.c2out, c2buf);
-        }
+            snowflake_column_as_str(sfstmt, 3, &c3buf, &c3buf_len, &c3buf_max_size);
+            assert_string_equal(v.c3out, c3buf);
+            snowflake_column_as_str(sfstmt, 4, &c4buf, &c4buf_len, &c4buf_max_size);
+            assert_string_equal(v.c4out, c4buf);
     }
     if (status != SF_STATUS_EOF) {
         dump_error(&(sfstmt->error));
@@ -376,7 +405,13 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     free(c2buf);
+    free(c3buf);
+    free(c4buf);
+
     c2buf = NULL;
+    c3buf = NULL;
+    c4buf = NULL;
+
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
