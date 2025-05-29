@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2022 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_AUTHENTICATOR_H
 #define SNOWFLAKE_AUTHENTICATOR_H
 
@@ -22,6 +18,7 @@ typedef enum authenticator_type
         AUTH_JWT,
         AUTH_USR_PWD_MFA,
         AUTH_PAT,
+        AUTH_TEST,
         AUTH_UNSUPPORTED
     } AuthenticatorType;
 

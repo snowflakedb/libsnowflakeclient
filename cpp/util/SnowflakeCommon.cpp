@@ -1,6 +1,3 @@
-/*
-* Copyright (c) 2021 Snowflake Computing, Inc. All rights reserved.
-*/
 #define CURL_STATICLIB
 #include <string.h>
 #include <curl/curl.h>
@@ -10,7 +7,7 @@
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
-#include <stdexcept>
+#include <chrono>
 #include "SnowflakeCommon.hpp"
 
 using namespace Snowflake;

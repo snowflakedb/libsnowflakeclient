@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_MEMORY_H
 #define SNOWFLAKE_MEMORY_H
 
@@ -24,8 +20,6 @@ typedef struct SF_INTERNAL_MEM_HOOKS {
     void *(*realloc)(void *ptr, size_t size);
     void *(*calloc)(size_t nitems, size_t size);
 } SF_INTERNAL_MEM_HOOKS;
-
-static SF_INTERNAL_MEM_HOOKS global_hooks = {malloc, free, realloc, calloc};
 
 void sf_memory_init();
 void sf_memory_term();

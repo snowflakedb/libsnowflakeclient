@@ -1,6 +1,5 @@
 /*
  * File:   SecureStorageWin.cpp *
- * Copyright (c) 2013-2020 Snowflake Computing
  */
 
 #ifdef _WIN32
@@ -30,7 +29,14 @@ namespace Client
 
   SecureStorageStatus SecureStorage::storeToken(const SecureStorageKey& key, const std::string& token)
   {
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot store token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string target = targetOpt.get();
+
     std::wstring wide_target = std::wstring(target.begin(), target.end());
 
     CREDENTIALW creds = { 0 };
@@ -54,7 +60,14 @@ namespace Client
 
   SecureStorageStatus SecureStorage::retrieveToken(const SecureStorageKey& key, std::string& token)
   {
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot retrieve token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string target = targetOpt.get();
+
     std::wstring wide_target = std::wstring(target.begin(), target.end());
     PCREDENTIALW retcreds = nullptr;
 
@@ -87,7 +100,14 @@ namespace Client
 
   SecureStorageStatus SecureStorage::removeToken(const SecureStorageKey& key)
   {
-    std::string target = convertTarget(key);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot remove token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string target = targetOpt.get();
+
     std::wstring wide_target = std::wstring(target.begin(), target.end());
 
     if (!CredDeleteW(wide_target.data(), CRED_TYPE_GENERIC, 0))

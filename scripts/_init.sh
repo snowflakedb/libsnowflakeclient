@@ -144,13 +144,14 @@ export BUILD_SOURCE_ONLY=
 export GET_VERSION=
 target=Release
 OPTIND=1
-while getopts ":hvpt:s" opt; do
+while getopts ":hvpdt:s" opt; do
   case $opt in
     t) target=$OPTARG ;;
     p) export BUILD_WITH_PROFILE_OPTION=true ;;
     h) usage;;
     s) export BUILD_SOURCE_ONLY=true ;;
     v) export GET_VERSION=true ;;
+    d) export DOWNLOAD_ONLY=true ;;
     \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
     :) echo "Option -$OPTARG requires an argument."; >&2 exit 1 ;;
   esac

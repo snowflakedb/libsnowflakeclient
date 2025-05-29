@@ -1,5 +1,3 @@
-# Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
-#
 # CMakeList for Snowflake Client
 #
 cmake_minimum_required(VERSION 3.17)
@@ -32,6 +30,7 @@ set(SOURCE_FILES
         include/snowflake/version.h
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
+        include/snowflake/client_config_parser.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -58,14 +57,14 @@ set(SOURCE_FILES
         lib/basic_types.c
         lib/error.h
         lib/error.c
-        lib/util.c
-        lib/util.h
+        lib/snowflake_cpp_util.h
+        lib/snowflake_util.c
+        lib/snowflake_util.h
         lib/client_int.h
         lib/chunk_downloader.h
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
-        cpp/lib/CacheFile.cpp
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -102,6 +101,7 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/Proxy.cpp
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
+        cpp/util/entities.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
@@ -136,10 +136,10 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/ITransferResult.hpp
         include/snowflake/PutGetParseResponse.hpp
         include/snowflake/SnowflakeTransferException.hpp
-        include/snowflake/IJwt.hpp
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
-        )
+        include/snowflake/entities.hpp
+)
 
 set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/Connection.hpp
@@ -152,8 +152,11 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/SFURL.hpp
         include/snowflake/CurlDesc.hpp
         include/snowflake/CurlDescPool.hpp
+        include/snowflake/IJwt.hpp
+        include/snowflake/IAuth.hpp
         include/snowflake/BindUploader.hpp
         include/snowflake/SecureStorage.hpp
+        include/snowflake/TomlConfigParser.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -173,12 +176,13 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetJson.cpp
         cpp/lib/ResultSetJson.hpp
         cpp/lib/Authenticator.cpp
+        cpp/lib/IAuth.cpp
         cpp/lib/Authenticator.hpp
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
-        cpp/lib/CacheFile.cpp
-        cpp/lib/CacheFile.hpp
+        cpp/lib/client_config_parser.cpp
+        cpp/lib/TomlConfigParser.cpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorageApple.cpp
@@ -192,12 +196,35 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/CurlDescPool.cpp
         cpp/util/Sha256.cpp
         cpp/util/Sha256.hpp
+        cpp/util/SnowflakeCppUtil.cpp
         cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
+        include/snowflake/WifAttestation.hpp
+        cpp/WifAttestation.cpp
+        cpp/AwsAttestation.cpp
+        cpp/http/HttpClient.cpp
+        include/snowflake/HttpClient.hpp
+        cpp/GcpAttestation.hpp
+        cpp/GcpAttestation.cpp
+        cpp/AzureAttestation.hpp
+        cpp/AwsAttestation.hpp
+        cpp/AzureAttestation.cpp
+        cpp/AWSUtils.cpp
+        include/snowflake/AWSUtils.hpp
+        cpp/OIDCAttestation.cpp
+        cpp/OIDCAttestation.hpp
 )
+
+if (LINUX)
+    set(SOURCE_FILES_CPP_WRAPPER
+        ${SOURCE_FILES_CPP_WRAPPER}
+            cpp/linux/CacheFile.cpp
+            cpp/linux/CacheFile.hpp
+    )
+endif()
 
 if (UNIX)
     if (LINUX)
@@ -212,6 +239,7 @@ if (UNIX)
     find_library(CRYPTO_LIB libcrypto.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/openssl/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB libaws-cpp-sdk-core.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_S3_LIB libaws-cpp-sdk-s3.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AWS_STS_LIB libaws-cpp-sdk-sts.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_AUTH_LIB libaws-c-auth.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_CAL_LIB libaws-c-cal.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_COMMON_LIB libaws-c-common.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
@@ -226,6 +254,7 @@ if (UNIX)
     find_library(AWS_C_SDKUTILS_LIB libaws-c-sdkutils.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/aws/${AWSLIBBIT}/ REQUIRED NO_DEFAULT_PATH)
     find_library(AZURE_STORAGE_LITE_LIB libazure-storage-lite.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(BOOST_URL_LIB libboost_url.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_REGEX_LIB libboost_regex.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(BOOST_SYSTEM_LIB libboost_system.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(ARROW_JEMALLOCPIC_LIB libjemalloc_pic.a PATHS deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/arrow_deps/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -278,6 +307,7 @@ if (WIN32)
     find_library(ZLIB_LIB zlib_a.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/zlib/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_CORE_LIB aws-cpp-sdk-core.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_S3_LIB aws-cpp-sdk-s3.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
+    find_library(AWS_STS_LIB aws-cpp-sdk-sts.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_AUTH_LIB aws-c-auth.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_CAL_LIB aws-c-cal.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
     find_library(AWS_C_COMMON_LIB aws-c-common.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/aws/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -295,7 +325,8 @@ if (WIN32)
         find_library(BOOST_FILESYSTEM_LIB libboost_filesystem.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_REGEX_LIB libboost_regex.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
         find_library(BOOST_SYSTEM_LIB libboost_system.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
-	else()
+        find_library(BOOST_URL_LIB libboost_url.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
+    else()
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             find_library(BOOST_FILESYSTEM_LIB boost_filesystem-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
             find_library(BOOST_REGEX_LIB boost_regex-vc140-mt-gd.lib PATHS deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/boost/lib/ REQUIRED NO_DEFAULT_PATH)
@@ -358,6 +389,7 @@ if (LINUX)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/uuid/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
 endif()
@@ -374,6 +406,7 @@ if (APPLE)
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
 endif()
@@ -389,6 +422,7 @@ if (WIN32)
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/azure/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/picojson/include
+            deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/tomlplusplus/include
             include
             lib)
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)

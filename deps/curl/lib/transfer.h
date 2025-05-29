@@ -33,17 +33,6 @@ void Curl_init_CONNECT(struct Curl_easy *data);
 
 CURLcode Curl_pretransfer(struct Curl_easy *data);
 
-typedef enum {
-  FOLLOW_NONE,  /* not used within the function, just a placeholder to
-                   allow initing to this */
-  FOLLOW_FAKE,  /* only records stuff, not actually following */
-  FOLLOW_RETRY, /* set if this is a request retry as opposed to a real
-                   redirect following */
-  FOLLOW_REDIR /* a full true redirect */
-} followtype;
-
-CURLcode Curl_follow(struct Curl_easy *data, char *newurl,
-                     followtype type);
 CURLcode Curl_sendrecv(struct Curl_easy *data, struct curltime *nowp);
 int Curl_single_getsock(struct Curl_easy *data,
                         struct connectdata *conn, curl_socket_t *socks);
@@ -100,12 +89,13 @@ void Curl_xfer_setup1(struct Curl_easy *data,
  * the amount to receive or -1 if unknown. With `shutdown` being
  * set, the transfer is only allowed to either send OR receive
  * and the socket 2 connection will be shutdown at the end of
- * the transfer. An unclean shutdown will fail the transfer.
+ * the transfer. An unclean shutdown will fail the transfer
+ * unless `shutdown_err_ignore` is TRUE.
  */
 void Curl_xfer_setup2(struct Curl_easy *data,
                       int send_recv,
                       curl_off_t recv_size,
-                      bool shutdown);
+                      bool shutdown, bool shutdown_err_ignore);
 
 /**
  * Multi has set transfer to DONE. Last chance to trigger

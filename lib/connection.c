@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string.h>
 #include "connection.h"
 #include <snowflake/logger.h>
@@ -10,7 +6,6 @@
 #include "client_int.h"
 #include "constants.h"
 #include "error.h"
-#include "authenticator.h"
 #include "curl_desc_pool.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
@@ -94,19 +89,16 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 1
             );
 
-            // SNOW-715510: TODO Enable token_cache
-/*
             if (sf->token_cache == NULL) {
-                sf->token_cache = cred_cache_init();
+                sf->token_cache = secure_storage_init();
             }
 
-            char* token = cred_cache_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
             if (token != NULL)
             {
                 snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                cred_cache_free_credential(token);
+                secure_storage_free_credential(token);
             }
-*/
         }
     }
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
@@ -138,7 +130,6 @@ cJSON *STDCALL create_query_json_body(const char *sql_text,
 #endif
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(body, "sqlText", sql_text);
-    snowflake_cJSON_AddBoolToObject(body, "asyncExec", SF_BOOLEAN_FALSE);
     snowflake_cJSON_AddNumberToObject(body, "sequenceId", (double) sequence_id);
     snowflake_cJSON_AddNumberToObject(body, "querySubmissionTime", submission_time);
     snowflake_cJSON_AddBoolToObject(body, "describeOnly", is_describe_only);
@@ -355,8 +346,18 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
             break;
         }
 
-        while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
-               strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0) {
+        sf_bool isAsyncExec = SF_BOOLEAN_FALSE;
+        cJSON *json_body = snowflake_cJSON_Parse(body);
+        if (json_body && snowflake_cJSON_IsObject(json_body)) {
+          cJSON* async = snowflake_cJSON_GetObjectItem(json_body, "asyncExec");
+          if (async && snowflake_cJSON_IsBool(async)) {
+            isAsyncExec = snowflake_cJSON_IsTrue(async);
+          }
+        }
+
+        if (!isAsyncExec) {
+          while (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 ||
+            strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0) {
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
             memset(query_code, 0, QUERYCODE_LEN);
@@ -390,6 +391,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
                 break;
             }
+          }
         }
 
         if (stop) {
@@ -411,7 +413,12 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               char *url,
                               SF_HEADER *header,
                               cJSON **json,
-                              SF_ERROR_STRUCT *error) {
+                              SF_ERROR_STRUCT *error,
+                              int64 renew_timeout,
+                              int8 retry_max_count,
+                              int64 retry_timeout,
+                              int64* elapsed_time,
+                              int8* retried_count) {
     SF_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
@@ -427,7 +434,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->retry_on_curle_couldnt_connect_count,
-                          0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
                           sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
@@ -459,7 +466,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                 if (!create_header(sf, new_header, error)) {
                     break;
                 }
-                if (!curl_get_call(sf, curl, url, new_header, json, error)) {
+                if (!curl_get_call(sf, curl, url, new_header, json, error, renew_timeout, retry_max_count, retry_timeout,elapsed_time, retried_count)) {
                     // Error is set in curl call
                     break;
                 }
@@ -840,7 +847,7 @@ char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf) {
 }
 
 sf_bool STDCALL is_retryable_http_code(long int code) {
-    return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
+    return ((code >= 500 && code < 600) || code == 403 ||
             code == 408 || code == 429) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 
@@ -894,7 +901,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                                  elapsed_time, retried_count, is_renew,
                                  renew_injection);
         } else if (request_type == GET_REQUEST_TYPE) {
-            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
+            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error,
+                renew_timeout, retry_max_count, retry_timeout, elapsed_time, retried_count);
         } else {
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_REQUEST,
                                 "An unknown request type was passed to the request function",
@@ -1285,4 +1293,19 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
+}
+
+sf_bool is_one_time_token_request(cJSON* resp)
+{
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+}
+
+size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+  return char_resp_cb(ptr, size, nmemb, userdata);
+}
+
+sf_bool is_password_required(AuthenticatorType auth)
+{
+    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
 }

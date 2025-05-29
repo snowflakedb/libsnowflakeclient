@@ -1,6 +1,5 @@
 /*
  * File:   SecureStorageLinux.cpp *
- * Copyright (c) 2013-2020 Snowflake Computing
  */
 
 #ifdef __linux__
@@ -13,7 +12,7 @@
 
 #include <picojson.h>
 
-#include "../lib/CacheFile.hpp"
+#include "../linux/CacheFile.hpp"
 #include "../logger/SFLogger.hpp"
 #include "../platform/FileLock.hpp"
 
@@ -47,7 +46,14 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    cacheFileUpdate(contents, convertTarget(key), token);
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot store token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
+    cacheFileUpdate(contents, target, token);
 
     error = writeFile(path, contents);
     if (!error.empty()) {
@@ -84,7 +90,14 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    auto tokenOpt = cacheFileGet(contents, convertTarget(key));
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot retrieve token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
+    auto tokenOpt = cacheFileGet(contents, target);
     if (!tokenOpt)
     {
       return SecureStorageStatus::NotFound;
@@ -120,7 +133,14 @@ namespace Client {
       contents = picojson::value(picojson::object());
     }
 
-    cacheFileRemove(contents, convertTarget(key));
+    auto targetOpt = convertTarget(key);
+    if (!targetOpt)
+    {
+      CXX_LOG_ERROR("Cannot remove token. Failed to convert key to string.");
+      return SecureStorageStatus::Error;
+    }
+    std::string& target = targetOpt.get();
+    cacheFileRemove(contents, target);
 
     error = writeFile(path, contents);
     if (!error.empty()) {

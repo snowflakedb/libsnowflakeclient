@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_CLIENT_INT_H
 #define SNOWFLAKE_CLIENT_INT_H
 
@@ -42,13 +38,17 @@
 #define RENEW_SESSION_URL "/session/token-request"
 #define DELETE_SESSION_URL "/session"
 #define QUERY_RESULT_URL_FORMAT "/queries/%s/result"
+#define QUERY_MONITOR_URL "/monitoring/queries/%s"
 // not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
+#define EXTERNALBROWSER_CONSOLE_URL "/console/login"
+#define ABORT_REQUEST_URL "/queries/v1/abort-request"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
 #define URL_PARAM_RETRY_REASON "retryReason="
 #define URL_PARAM_CLIENT_START_TIME "clientStartTime="
+#define URL_PARAM_REQUEST_ID "requestId="
 
 #define CLIENT_APP_ID_KEY "CLIENT_APP_ID"
 #define CLIENT_APP_VERSION_KEY "CLIENT_APP_VERSION"
@@ -114,6 +114,7 @@ typedef struct SF_STAGE_INFO {
   sf_bool useS3RegionalUrl;
   // whether to use regional URL (AWS and GCS only)
   sf_bool useRegionalUrl;
+  sf_bool useVirtualUrl;
   char* storageAccount; // For Azure only
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
@@ -147,6 +148,14 @@ typedef struct NAMED_PARAMS
 }NamedParams;
 
 /**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+} SF_QUERY_METADATA;
+
+/**
  * Allocate memory for put get response struct
  */
 void STDCALL sf_put_get_response_deallocate(SF_PUT_GET_RESPONSE *put_get_response);
@@ -162,8 +171,9 @@ SF_PUT_GET_RESPONSE *STDCALL sf_put_get_response_allocate();
  * @param sfstmt SNOWFLAKE_STMT context.
  * @param is_put_get_command type true if this is a put/get command
  * @param raw_response_buffer optional pointer to an SF_QUERY_RESULT_CAPTURE,
- * @param is_describe_only should the statement be executed in describe only mode
  * if the query response is to be captured.
+ * @param is_describe_only should the statement be executed in describe only mode
+ * @param is_async_exec should it execute asynchronously
  *
  * @return 0 if success, otherwise an errno is returned.
  */
@@ -171,7 +181,8 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
                                         sf_bool is_put_get_command,
                                         sf_bool is_native_put_get,
                                         struct SF_QUERY_RESULT_CAPTURE* result_capture,
-                                        sf_bool is_describe_only);
+                                        sf_bool is_describe_only,
+                                        sf_bool is_async_exec);
 
 /**
  * @return true if this is a put/get command, otherwise false

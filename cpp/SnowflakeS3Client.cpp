@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "SnowflakeS3Client.hpp"
 #include "FileTransferAgent.hpp"
 #include "FileMetadataInitializer.hpp"
@@ -12,6 +8,7 @@
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
+#include "snowflake/AWSUtils.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
@@ -41,42 +38,7 @@
 
 namespace
 {
-  /*
-   * With newer version of aws sdk (when updating to 1.11.283) ShutdownAWSLogging()
-   * and ShutdownAPI() need to be called after aws API usage is done otherwise
-   * it could throw exception when the application ends.
-   * Call them in destructor and add refCount to ensure no other S3Client instance
-   * in use.
-   */
-  struct awsdk_init
-  {
-    awsdk_init() : refCount(0)
-    {
-      Aws::InitAPI(options);
-      Aws::Utils::Logging::InitializeAWSLogging(
-        Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
-    }
-
-    ~awsdk_init()
-    {
-      Aws::Utils::Logging::ShutdownAWSLogging();
-      ShutdownAPI(options);
-    }
-
-    Aws::SDKOptions options;
-    int refCount;
-  };
-
-  Snowflake::Client::AwsMutex s_sdkMutex;
-  std::unique_ptr<struct awsdk_init> s_awssdk;
-
   const Aws::S3::Model::ChecksumAlgorithm INVALID_CHECKSUM = (Aws::S3::Model::ChecksumAlgorithm)(10);
-
-  std::string getDomainSuffixForRegionalUrl(const std::string& regionName)
-  {
-    // use .cn if the region name starts with "cn-"
-    return (regionName.find("cn-") == 0) ? "amazonaws.com.cn" : "amazonaws.com";
-  }
 }
 
 namespace Snowflake
@@ -90,6 +52,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      size_t uploadThreshold,
                                      TransferConfig *transferConfig,
                                      IStatementPutGet* statement) :
+  m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
@@ -120,14 +83,6 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      "CA bundle file is empty.");
   }
 
-  s_sdkMutex.lock();
-  if (!s_awssdk)
-  {
-    s_awssdk = std::unique_ptr<struct awsdk_init>(new struct awsdk_init);
-  }
-  s_awssdk->refCount++;
-  s_sdkMutex.unlock();
-
   // ClientConfiguration needs to be initialized after Aws::InitAPI() is called
   // so we can't keep it in member variable. Add a new member variable m_stageEndpoint
   // to keep the overriden endpoint.
@@ -151,7 +106,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     clientConfiguration.endpointOverride = Aws::String("s3.")
         + Aws::String(clientConfiguration.region)
         + Aws::String(".")
-        + Aws::String(getDomainSuffixForRegionalUrl(stageInfo->region));
+        + Aws::String(AwsUtils::getDomainSuffixForRegionalUrl(stageInfo->region));
   }
   m_stageEndpoint = clientConfiguration.endpointOverride;
 
@@ -222,16 +177,6 @@ SnowflakeS3Client::~SnowflakeS3Client()
   {
     delete m_threadPool;
   }
-  s_sdkMutex.lock();
-  if (s_awssdk)
-  {
-    s_awssdk->refCount--;
-    if (s_awssdk->refCount <= 0)
-    {
-      s_awssdk = NULL;
-    }
-  }
-  s_sdkMutex.unlock();
 }
 
 RemoteStorageRequestOutcome SnowflakeS3Client::upload(FileMetadata *fileMetadata,
