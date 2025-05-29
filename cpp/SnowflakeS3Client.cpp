@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "SnowflakeS3Client.hpp"
 #include "FileTransferAgent.hpp"
 #include "FileMetadataInitializer.hpp"
@@ -12,7 +8,7 @@
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
-#include "AWSUtils.hpp"
+#include "snowflake/AWSUtils.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
@@ -56,12 +52,12 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
                                      size_t uploadThreshold,
                                      TransferConfig *transferConfig,
                                      IStatementPutGet* statement) :
-  m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
   m_uploadThreshold(uploadThreshold),
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
+  AwsUtils::initAwsSdk();
   Aws::String caFile;
   if ((transferConfig != nullptr) && (transferConfig->caBundleFile != nullptr))
   {

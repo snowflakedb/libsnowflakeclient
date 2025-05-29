@@ -1,17 +1,15 @@
 #include <memory>
-#include <utility>
-
-#include <boost/url.hpp>
-#include <openssl/evp.h>
+#include <boost/url/url.hpp>
 #include <openssl/rsa.h>
+#include <picojson.h>
 #include "snowflake/TomlConfigParser.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
+#include "snowflake/HttpClient.hpp"
 #include "snowflake/WifAttestation.hpp"
 #include "util/Base64.hpp"
 #include <curl/curl.h>
-#include <jwt/Jwt.hpp>
 
 using namespace Snowflake::Client;
 
@@ -62,6 +60,8 @@ void test_aws_attestation(void**)
   auto& attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
   assert_true(attestation.credential.size() > 0);
+  assert_true(attestation.arn.has_value());
+  assert_true(!attestation.arn->empty());
   std::string json_string;
   Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(), std::back_inserter(json_string));
   picojson::value json;
@@ -74,7 +74,7 @@ void test_aws_attestation(void**)
   std::map<std::string, std::string> headers;
   HttpRequest req {
       HttpRequest::Method::GET,
-      boost::url(json.get("url").get<std::string>()),
+      boost::urls::url(json.get("url").get<std::string>()),
       headers
   };
   for (auto& header: json.get("headers").get<picojson::object>()) {
@@ -103,8 +103,9 @@ void test_gcp_attestation(void**)
   assert_true(attestation.type == Snowflake::Client::AttestationType::GCP);
   std::cerr << "Credential: " << attestation.credential << std::endl;
   assert_true(!attestation.credential.empty());
-  std::cerr << "Subject: " << attestation.subject << std::endl;
-  assert_true(!attestation.subject.empty());
+  assert_true(attestation.subject.has_value());
+  std::cerr << "Subject: " << attestation.subject.get() << std::endl;
+  assert_true(!attestation.subject->empty());
 }
 
 void test_azure_attestation(void**)
@@ -130,10 +131,12 @@ void test_azure_attestation(void**)
   assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
   assert_true(!attestation.credential.empty());
   std::cerr << "Credential: " << attestation.credential << std::endl;
-  assert_true(!attestation.issuer.empty());
+  assert_true(attestation.issuer.has_value());
+  assert_true(!attestation.issuer->empty());
   std::cerr << "Issuer: " << attestation.credential << std::endl;
-  assert_true(!attestation.subject.empty());
-  std::cerr << "Subject: " << attestation.subject << std::endl;
+  assert_true(!attestation.subject->empty());
+  assert_true(attestation.subject.has_value());
+  std::cerr << "Subject: " << attestation.subject.get() << std::endl;
 }
 
 int main()

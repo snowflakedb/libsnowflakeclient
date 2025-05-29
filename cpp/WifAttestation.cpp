@@ -1,32 +1,15 @@
-
-#include <snowflake/WifAttestation.hpp>
+#include "snowflake/AWSUtils.hpp"
+#include "snowflake/WifAttestation.hpp"
 #include "GcpAttestation.hpp"
 #include "AzureAttestation.hpp"
 #include "AwsAttestation.hpp"
+#include "OIDCAttestation.hpp"
 #include "logger/SFLogger.hpp"
 #include "jwt/Jwt.hpp"
 
 namespace Snowflake {
   namespace Client {
     namespace {
-
-      boost::optional<Attestation> createOIDCAttestation(const AttestationConfig& config) {
-        if (!config.token) {
-          CXX_LOG_WARN("No token provided for OIDC attestation.");
-          return {};
-        }
-
-        Jwt::JWTObject jwt(config.token.get());
-        auto claimSet = jwt.getClaimSet();
-        std::string issuer = claimSet->getClaimInString("iss");
-        std::string subject = claimSet->getClaimInString("sub");
-        if (issuer.empty() || subject.empty()) {
-          CXX_LOG_ERROR("No issuer or subject found in OIDC JWT.");
-          return boost::none;
-        }
-
-        return Attestation{AttestationType::OIDC, config.token.get(), issuer, subject};
-      }
 
       using AttestationProvider = std::function<boost::optional<Attestation>(AttestationConfig&)>;
       const std::map<AttestationType, AttestationProvider> attestationProviders = {
@@ -37,10 +20,10 @@ namespace Snowflake {
       };
 
       inline boost::optional<Attestation> createAutodetectAttestation(AttestationConfig& config) {
+        AttestationType order[] = {AttestationType::OIDC, AttestationType::AWS, AttestationType::AZURE, AttestationType::GCP};
         CXX_LOG_INFO("Detecting attestation type");
-        for (const auto& typeProvider : attestationProviders) {
-          auto type = typeProvider.first;
-          auto provider = typeProvider.second;
+        for (const auto& type: order) {
+          auto provider = attestationProviders.at(type);
           CXX_LOG_INFO("Trying attestation type %s", stringFromAttestationType(type));
           auto attestation = provider(config);
           if (attestation) {
@@ -55,10 +38,15 @@ namespace Snowflake {
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
+      if (config.httpClient == NULL)
+        config.httpClient = IHttpClient::getInstance();
+      if (config.awsSdkWrapper == NULL)
+        config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
+
       if (!config.type) {
         auto result = createAutodetectAttestation(config);
         if (!result) {
-          CXX_LOG_ERROR("Failed to create attestation for %s", stringFromAttestationType(config.type.get()));
+          CXX_LOG_ERROR("Failed to autodetect attestation");
         }
         return result;
       }
@@ -66,7 +54,5 @@ namespace Snowflake {
       auto type = config.type.get();
       return attestationProviders.at(type)(config);
     }
-
-    const std::unique_ptr<IHttpClient> defaultHttpClient = std::unique_ptr<IHttpClient>(IHttpClient::createSimple(defaultHttpClientConfig));
   }
 }

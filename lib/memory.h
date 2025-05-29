@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_MEMORY_H
 #define SNOWFLAKE_MEMORY_H
 

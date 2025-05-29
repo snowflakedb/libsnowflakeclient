@@ -1,11 +1,14 @@
-
+#include <picojson.h>
+#include <boost/url/url.hpp>
+#include <boost/url/parse.hpp>
 #include "AzureAttestation.hpp"
 #include "jwt/Jwt.hpp"
 #include "snowflake/HttpClient.hpp"
 #include "logger/SFLogger.hpp"
 
 namespace {
-  const std::vector<std::string> allowedIssuers = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
+  const std::vector<std::string> allowedIssuerPrefixes = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
+  const std::string defaultSnowflakeEntraResource = "api://fd3f753b-eed3-462c-b6a7-a4b5bb650aad";
 }
 
 namespace Snowflake {
@@ -59,7 +62,7 @@ namespace Snowflake {
       }
 
       bool isValidIssuer =
-        std::any_of(allowedIssuers.cbegin(), allowedIssuers.cend(), [&issuer](const std::string& allowedIssuer) {
+        std::any_of(allowedIssuerPrefixes.cbegin(), allowedIssuerPrefixes.cend(), [&issuer](const std::string& allowedIssuer) {
           return issuer.rfind(allowedIssuer, 0) == 0;
         });
 
@@ -68,44 +71,44 @@ namespace Snowflake {
         return boost::none;
       }
 
-      return Attestation{AttestationType::AZURE, jwtStr, issuer, subject};
+      return Attestation::makeAzure(jwtStr, issuer, subject);
     }
 
-    boost::url AzureAttestationConfig::getRequestURL() const {
-      boost::urls::url url = boost::url("http://169.254.169.254/metadata/identity/oauth2/token");
+    boost::urls::url AzureAttestationConfig::getRequestURL() const {
+      boost::urls::url url = boost::urls::url("http://169.254.169.254/metadata/identity/oauth2/token");
       if (managedIdentity) {
         url = managedIdentity->endpoint;
         if (managedIdentity->clientId) {
           url.params().append({"client_id", managedIdentity->clientId.get()});
         }
+        url.params().append({"api-version", "2019-08-01"});
+      }
+      else {
+        url.params().append({"api-version", "2018-02-01"});
       }
 
-      url.params().append({"api-version", "2018-02-01"});
       url.params().append({"resource", snowflakeEntraResource});
       return url;
     }
 
     std::map<std::string, std::string> AzureAttestationConfig::getRequestHeaders() const {
-      std::map<std::string, std::string> headers = {{"Metadata", "True"}};
       if (managedIdentity) {
-        headers["X-IDENTITY-HEADER"] = managedIdentity->header;
+        return {{"X-IDENTITY-HEADER", managedIdentity->header}};
       }
-      return headers;
+      else {
+        return {{"Metadata", "True"}};
+      }
     }
 
     boost::optional<AzureAttestationConfig>
     Snowflake::Client::AzureAttestationConfig::fromConfig(const Snowflake::Client::AttestationConfig &config) {
-      if (!config.snowflakeEntraResource) {
-        CXX_LOG_INFO("Failed to create azure attestation config: snowflake entra resource missing");
-        return boost::none;
-      }
       AzureAttestationConfig azureConfig;
-      azureConfig.snowflakeEntraResource = config.snowflakeEntraResource.get();
-      azureConfig.managedIdentity = AzureManagedIdentityConfig::fromEnv();
+      azureConfig.snowflakeEntraResource = config.snowflakeEntraResource.get_value_or(defaultSnowflakeEntraResource);
+      azureConfig.managedIdentity = AzureFunctionsManagedIdentityConfig::fromEnv();
       return azureConfig;
     }
 
-    boost::optional<AzureManagedIdentityConfig> Snowflake::Client::AzureManagedIdentityConfig::fromEnv() {
+    boost::optional<AzureFunctionsManagedIdentityConfig> Snowflake::Client::AzureFunctionsManagedIdentityConfig::fromEnv() {
       auto header = std::getenv("IDENTITY_HEADER");
       auto endpoint = std::getenv("IDENTITY_ENDPOINT");
       auto clientId = std::getenv("MANAGED_IDENTITY_CLIENT_ID");
@@ -115,10 +118,11 @@ namespace Snowflake {
 
       auto parsedEndpointResult = boost::urls::parse_uri(endpoint);
       if (!parsedEndpointResult) {
+        CXX_LOG_INFO("Failed to parse IDENTITY_ENDPOINT: %s", parsedEndpointResult.error().message().c_str());
         return boost::none;
       }
 
-      AzureManagedIdentityConfig config;
+      AzureFunctionsManagedIdentityConfig config;
       config.header = header;
       config.endpoint = parsedEndpointResult.value();
       config.clientId = clientId ? boost::optional<std::string>{clientId} : boost::none;
