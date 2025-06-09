@@ -7,8 +7,9 @@ SCRIPTS_DIR=$( cd "$CI_TEST_DIR/../../scripts" && pwd )
 set -o pipefail
 
 [[ -z "$BUILD_TYPE" ]] && echo "Set BUILD_TYPE: [Debug, Release]" && exit 1
+[[ -z "$LINK_TYPE" ]] && export LINK_TYPE=Static
 
-source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
+source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE -l $LINK_TYPE
 echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
 
@@ -33,6 +34,7 @@ function test_component()
     local build_type=$3
 
     echo "build_type: $build_type"
+    echo "link_type: $LINK_TYPE"
     local component_version=$("$component_script" -v)
     local cmake_file_name=$(get_cmake_file_name $component_name $component_version $build_type)
     local cmake_dir=cmake-build-$build_type

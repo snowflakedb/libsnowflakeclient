@@ -23,12 +23,10 @@ void test_get_describe_only_query_result(void **unused) {
     SF_QUERY_RESULT_CAPTURE *result_capture;
     snowflake_query_result_capture_init(&result_capture);
 
-    clear_snowflake_error(&sfstmt->error);
     status = snowflake_prepare(sfstmt, "select randstr(100,random()) from table(generator(rowcount=>2))", 0);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
     // Issue the query
-    clear_snowflake_error(&sfstmt->error);
     status = snowflake_describe_with_capture(sfstmt, result_capture);
     assert_int_equal(status, SF_STATUS_SUCCESS);
     char *resultBuffer = result_capture->capture_buffer;
@@ -37,7 +35,7 @@ void test_get_describe_only_query_result(void **unused) {
     cJSON *parsedJSON = snowflake_cJSON_Parse(resultBuffer);
 
     sf_bool success;
-    json_copy_bool(&success, parsedJSON, "success");
+    success = snowflake_cJSON_IsTrue(snowflake_cJSON_GetObjectItem(parsedJSON, "success")) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
     assert_int_equal(success, SF_BOOLEAN_TRUE);
 
     cJSON *data = snowflake_cJSON_GetObjectItem(parsedJSON, "data");

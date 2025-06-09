@@ -1,7 +1,7 @@
 #include <string.h>
 #include <assert.h>
 #include "utils/test_setup.h"
-
+#include "memory.h"
 
 typedef struct test_case_to_string {
     const int64 c1in;
@@ -164,8 +164,7 @@ void test_number_helper(sf_bool use_arrow) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    free(str);
-    str = NULL;
+    SF_FREE(str);
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }

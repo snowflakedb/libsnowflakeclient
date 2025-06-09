@@ -45,6 +45,7 @@ docker run \
         -e GITHUB_REF \
         -e CLIENT_CODE_COVERAGE \
         -e USE_EXTRA_WARNINGS \
+        -e LINK_TYPE \
         -e ENABLE_MOCK_OBJECTS \
         -w /mnt/host \
         "${BUILD_IMAGE_NAME}" \

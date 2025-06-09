@@ -15,6 +15,8 @@ extern "C" {
 #include <time.h>
 #include <snowflake/client.h>
 #include <snowflake/platform.h>
+#define SF_BOOLEAN_FALSE 0
+#define SF_BOOLEAN_TRUE 1
 
 #define SKIP_IF_PROXY_ENV_IS_SET \
 {                                                                                                               \
@@ -48,6 +50,12 @@ void drop_random_database();
  * @param error SF_ERROR_STRUCT
  */
 void dump_error(SF_ERROR_STRUCT *error);
+
+/**
+ * Helper sleep function
+ * @param sleep_ms sleep time in ms
+ */
+void sleep_for_ms(int sleep_ms);
 
 #ifdef __cplusplus
 }
