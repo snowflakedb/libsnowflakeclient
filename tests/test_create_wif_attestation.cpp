@@ -508,7 +508,5 @@ int main() {
       cmocka_unit_test(test_unit_oidc_attestation_missing_token)
   };
 
-  int ret = cmocka_run_group_tests(tests, NULL, NULL);
-  AwsUtils::shutdownAwsSdk();
-  return ret;
+  return cmocka_run_group_tests(tests, NULL, NULL);
 }
