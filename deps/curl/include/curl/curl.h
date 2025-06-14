@@ -2240,8 +2240,27 @@ typedef enum {
   /* Snowflake options. True if OOB telemetry is enabled. Defaults to false */
   CURLOPT(CURLOPT_SSL_SF_OOB_ENABLE, CURLOPTTYPE_LONG, 329),
 
+  /* Snowflake options. The status of whether custom headers should be considered for this request. */
+  CURLOPT(CURLOPT_SF_HEADER_APPLY_STATUS, CURLOPTTYPE_LONG, 330),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
+
+// possible values for CURLOPT_SF_HEADER_APPLY_STATUS and CURLINFO_SF_HEADER_APPLY_STATUS
+typedef enum {
+  // initial status, haven't been checked through customization hook
+  // Should be set to other values through curl_easy_setopt() in customization hook callback
+  // a request with UNKNOWN status would be cosidered as initial attempt,
+  // otherwise would be retry attempt
+  // reset the status when changing on method, URL, header, or curl_easy_reset() is called.
+  SF_HEADER_APPLY_STATUS_UNKNOWN,
+  // not apply to header customization
+  SF_HEADER_APPLY_STATUS_NO,
+  // custom headers need to be set only once for the initial attempt of this request
+  SF_HEADER_APPLY_STATUS_INVOKE_ONCE,
+  // custom headers need to be set each time including initial and retry attempts of this request
+  SF_HEADER_APPLY_STATUS_ALWAYS
+} SF_HEADER_APPLY_STATUS;
 
 #ifndef CURL_NO_OLDIES /* define this to test if your app builds with all
                           the obsolete stuff removed! */
@@ -2973,7 +2992,16 @@ typedef enum {
   CURLINFO_EARLYDATA_SENT_T = CURLINFO_OFF_T + 68,
   CURLINFO_HTTPAUTH_USED    = CURLINFO_LONG + 69,
   CURLINFO_PROXYAUTH_USED   = CURLINFO_LONG + 70,
-  CURLINFO_LASTONE          = 70
+// SNOW-2041981 custom information returned from curl_easy_getinfo() for header customization
+  // existing headers
+  CURLINFO_SF_HEADER        = CURLINFO_SLIST + 71,
+  // request method
+  CURLINFO_SF_METHOD        = CURLINFO_LONG + 72,
+  // request URL
+  CURLINFO_SF_URL           = CURLINFO_STRING + 73,
+  // the status of whether custom headers should be considered for this request
+  CURLINFO_SF_HEADER_APPLY_STATUS = CURLINFO_LONG + 74,
+  CURLINFO_LASTONE          = 74
 } CURLINFO;
 
 /* CURLINFO_RESPONSE_CODE is the new name for the option previously known as

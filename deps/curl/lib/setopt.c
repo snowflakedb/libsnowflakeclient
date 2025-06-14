@@ -332,6 +332,7 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
      * Do not include the body part in the output data stream.
      */
     data->set.opt_no_body = enabled;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
 #ifndef CURL_DISABLE_HTTP
     if(data->set.opt_no_body)
       /* in HTTP lingo, no body means using the HEAD request... */
@@ -356,6 +357,7 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
      * We want to sent data to the remote host. If this is HTTP, that equals
      * using the PUT request.
      */
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     if(arg) {
       /* If this is HTTP, PUT is what's needed to "upload" */
       data->set.method = HTTPREQ_PUT;
@@ -567,6 +569,7 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
     /* Does this option serve a purpose anymore? Yes it does, when
        CURLOPT_POSTFIELDS is not used and the POST data is read off the
        callback! */
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     if(arg) {
       data->set.method = HTTPREQ_POST;
       data->set.opt_no_body = FALSE; /* this is implied */
@@ -588,6 +591,7 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
      * Set to force us do HTTP GET
      */
     if(enabled) {
+      data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
       data->set.method = HTTPREQ_GET;
       data->set.opt_no_body = FALSE; /* this is implied */
     }
@@ -1421,6 +1425,9 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
                                          TRUE : FALSE;
     Curl_ssl_conn_config_update(data, FALSE);
     break;
+  case CURLOPT_SF_HEADER_APPLY_STATUS:
+    data->set.sf_header_apply_status = (SF_HEADER_APPLY_STATUS)arg;
+    break;
   default:
     /* unknown option */
     return CURLE_UNKNOWN_OPTION;
@@ -1499,6 +1506,7 @@ static CURLcode setopt_slist(struct Curl_easy *data, CURLoption option,
      * Set a list with HTTP headers to use (or replace internals with)
      */
     data->set.headers = slist;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     break;
 #endif
 #ifndef CURL_DISABLE_TELNET
@@ -1538,6 +1546,7 @@ static CURLcode setopt_pointers(struct Curl_easy *data, CURLoption option,
      */
     data->set.httppost = va_arg(param, struct curl_httppost *);
     data->set.method = HTTPREQ_POST_FORM;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     data->set.opt_no_body = FALSE; /* this is implied */
     Curl_mime_cleanpart(data->state.formp);
     Curl_safefree(data->state.formp);
@@ -1557,6 +1566,7 @@ static CURLcode setopt_pointers(struct Curl_easy *data, CURLoption option,
                                     FALSE);
     if(!result) {
       data->set.method = HTTPREQ_POST_MIME;
+      data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
       data->set.opt_no_body = FALSE; /* this is implied */
 #ifndef CURL_DISABLE_FORM_API
       Curl_mime_cleanpart(data->state.formp);
@@ -1758,6 +1768,7 @@ static CURLcode setopt_cptr(struct Curl_easy *data, CURLoption option,
 
     data->set.postfields = data->set.str[STRING_COPYPOSTFIELDS];
     data->set.method = HTTPREQ_POST;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     break;
 
   case CURLOPT_POSTFIELDS:
@@ -1768,6 +1779,7 @@ static CURLcode setopt_cptr(struct Curl_easy *data, CURLoption option,
     /* Release old copied data. */
     Curl_safefree(data->set.str[STRING_COPYPOSTFIELDS]);
     data->set.method = HTTPREQ_POST;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     break;
 #endif /* ! CURL_DISABLE_HTTP || ! CURL_DISABLE_MQTT */
 
@@ -2117,6 +2129,7 @@ static CURLcode setopt_cptr(struct Curl_easy *data, CURLoption option,
     }
     result = Curl_setstropt(&data->set.str[STRING_SET_URL], ptr);
     data->state.url = data->set.str[STRING_SET_URL];
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     break;
 
   case CURLOPT_USERPWD:
@@ -2207,6 +2220,7 @@ static CURLcode setopt_cptr(struct Curl_easy *data, CURLoption option,
       data->state.url = NULL;
     Curl_safefree(data->set.str[STRING_SET_URL]);
     data->set.uh = (CURLU *)ptr;
+    data->set.sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
     break;
   case CURLOPT_SSLCERT:
     /*

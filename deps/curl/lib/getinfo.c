@@ -186,6 +186,17 @@ static CURLcode getinfo_char(struct Curl_easy *data, CURLINFO info,
     *param_charp = NULL;
 #endif
     break;
+  case CURLINFO_SF_URL:
+    /* CURLOPT_CURLU overrides CURLOPT_URL and the contents of the CURLU handle
+       is allowed to be changed by the user between transfers */
+    if(data->set.uh) {
+      free(data->set.str[STRING_SET_URL]);
+      curl_url_get(data->set.uh,
+                   CURLUPART_URL, &data->set.str[STRING_SET_URL], 0);
+      }
+    }
+    *param_charp = data->set.str[STRING_SET_URL];
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }
@@ -365,6 +376,12 @@ static CURLcode getinfo_long(struct Curl_easy *data, CURLINFO info,
       data->info.used_proxy
 #endif
       ;
+    break;
+  case CURLINFO_SF_METHOD:
+    *param_longp = (long)data->set.method;
+    break;
+  case CURLINFO_SF_HEADER_APPLY_STATUS:
+    *param_longp = (long)data->set.sf_header_apply_status;
     break;
   default:
     return CURLE_UNKNOWN_OPTION;
@@ -587,6 +604,9 @@ static CURLcode getinfo_slist(struct Curl_easy *data, CURLINFO info,
       }
 #endif
     }
+    break;
+  case CURLINFO_SF_HEADER:
+    *param_slistp = data->set.headers;
     break;
   default:
     return CURLE_UNKNOWN_OPTION;

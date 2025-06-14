@@ -348,6 +348,7 @@ CURLcode Curl_init_userdefined(struct Curl_easy *data)
   struct UserDefined *set = &data->set;
   CURLcode result = CURLE_OK;
 
+  set->sf_header_apply_status = SF_HEADER_APPLY_STATUS_UNKNOWN;
   set->out = stdout; /* default output to stdout */
   set->in_set = stdin;  /* default input from stdin */
   set->err  = stderr;  /* default stderr to stderr */
