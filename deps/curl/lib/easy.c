@@ -762,6 +762,12 @@ static CURLcode easy_perform(struct Curl_easy *data, bool events)
     return CURLE_FAILED_INIT;
   }
 
+  if (data->set.perform_callback) {
+    /* call the perform callback function */
+    Curl_set_in_callback(data, TRUE);
+    prereq_rc = data->set.perform_callback(data);
+    Curl_set_in_callback(data, FALSE);
+  }
   /* if the handle has a connection still attached (it is/was a connect-only
      handle) then disconnect before performing */
   if(data->conn) {

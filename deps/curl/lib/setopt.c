@@ -2886,6 +2886,9 @@ static CURLcode setopt_func(struct Curl_easy *data, CURLoption option,
   case CURLOPT_PREREQFUNCTION:
     data->set.fprereq = va_arg(param, curl_prereq_callback);
     break;
+  case CURLOPT_SF_PERFORMFUNC:
+    data->set.perform_callback = va_arg(param, curl_perform_callback);
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }

@@ -2243,6 +2243,9 @@ typedef enum {
   /* Snowflake options. The status of whether custom headers should be considered for this request. */
   CURLOPT(CURLOPT_SF_HEADER_APPLY_STATUS, CURLOPTTYPE_LONG, 330),
 
+  /* Snowflake options. The callback when perform is called. */
+  CURLOPT(CURLOPT_SF_PERFORMFUNC, CURLOPTTYPE_FUNCTIONPOINT, 331),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
@@ -2261,6 +2264,9 @@ typedef enum {
   // custom headers need to be set each time including initial and retry attempts of this request
   SF_HEADER_APPLY_STATUS_ALWAYS
 } SF_HEADER_APPLY_STATUS;
+
+/* This is the CURLOPT_SF_PERFORMFUNC callback prototype. */
+typedef void (*curl_perform_callback)(CURL *curl);
 
 #ifndef CURL_NO_OLDIES /* define this to test if your app builds with all
                           the obsolete stuff removed! */

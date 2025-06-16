@@ -1531,7 +1531,8 @@ enum dupblob {
 typedef int (*multidone_func)(struct Curl_easy *easy, CURLcode result);
 
 struct UserDefined {
-  SF_HEADER_APPLY_STATUS sf_header_apply_status; /*The status of whether custom headers should be considered for this request.
+  SF_HEADER_APPLY_STATUS sf_header_apply_status; /*The status of whether custom headers should be considered for this request.*/
+  curl_perform_callback perform_callback; /* perform callback */
   FILE *err;         /* the stderr user data goes here */
   void *debugdata;   /* the data that will be passed to fdebug */
   char *errorbuffer; /* (Static) store failure messages in here */
