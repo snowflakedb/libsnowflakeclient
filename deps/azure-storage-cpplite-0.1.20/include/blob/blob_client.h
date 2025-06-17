@@ -71,13 +71,16 @@ namespace azure { namespace storage_lite {
                     unsigned proxy_port,
                     const std::string& proxy_user,
                     const std::string& proxy_password,
-                    const std::string& no_proxy)
+                    const std::string& no_proxy,
+                    curl_perform_callback perform_callback,
+                    void* perform_callback_data)
             : m_account(account)
         {
             m_context = std::make_shared<executor_context>(std::make_shared<tinyxml2_parser>(), std::make_shared<retry_policy>());
             m_client = std::make_shared<CurlEasyClient>(
                            max_concurrency, ca_path, proxy_host, proxy_port,
-                           proxy_user, proxy_password, no_proxy);
+                           proxy_user, proxy_password, no_proxy,
+                           perform_callback, perform_callback_data);
         }
 
         /// <summary>

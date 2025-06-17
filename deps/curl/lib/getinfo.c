@@ -193,7 +193,6 @@ static CURLcode getinfo_char(struct Curl_easy *data, CURLINFO info,
       free(data->set.str[STRING_SET_URL]);
       curl_url_get(data->set.uh,
                    CURLUPART_URL, &data->set.str[STRING_SET_URL], 0);
-      }
     }
     *param_charp = data->set.str[STRING_SET_URL];
     break;

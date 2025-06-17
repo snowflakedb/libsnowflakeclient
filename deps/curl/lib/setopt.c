@@ -2712,6 +2712,9 @@ static CURLcode setopt_cptr(struct Curl_easy *data, CURLoption option,
     break;
   }
 #endif
+  case CURLOPT_SF_PERFORMFUNC_DATA:
+    data->set.perform_callback_data = (void *)ptr;
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }

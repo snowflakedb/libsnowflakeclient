@@ -312,7 +312,9 @@ namespace azure {  namespace storage_lite {
                        unsigned proxy_port,
                        const std::string& proxy_user,
                        const std::string& proxy_password,
-                       const std::string& no_proxy
+                       const std::string& no_proxy,
+                       curl_perform_callback perform_callback,
+                       void* perform_callback_data
                        ) : m_size(size), m_caPath(ca_path)
         {
             curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -338,6 +340,11 @@ namespace azure {  namespace storage_lite {
                     curl_easy_setopt(h, CURLOPT_PROXYPASSWORD, proxy_password.c_str());
                   }
                   curl_easy_setopt(h, CURLOPT_NOPROXY, no_proxy.c_str());
+                }
+                if (perform_callback)
+                {
+                  curl_easy_setopt(h, CURLOPT_SF_PERFORMFUNC, perform_callback);
+                  curl_easy_setopt(h, CURLOPT_SF_PERFORMFUNC_DATA, perform_callback_data);
                 }
                 m_handles.push(h);
             }

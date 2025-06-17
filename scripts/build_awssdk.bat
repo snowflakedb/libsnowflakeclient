@@ -4,7 +4,7 @@
 ::
 @echo off
 set aws_src_version=1.11.283
-set aws_build_version=10
+set aws_build_version=11
 set aws_version=%aws_src_version%.%aws_build_version%
 call %*
 goto :EOF
@@ -42,10 +42,10 @@ set AWS_CMAKE_BUILD_DIR=%AWS_SOURCE_DIR%\cmake-build-%arcdir%-%vs_version%-%buil
 set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 
 rd /S /Q %AWS_SOURCE_DIR%
-git clone --single-branch --branch deps/aws-sdk-%AWS_SRC_VERSION% https://github.com/snowflakedb/libsnowflakeclient.git %AWS_SOURCE_DIR%
-pushd %AWS_SOURCE_DIR%
-  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
-popd
+git clone --single-branch --branch SNOW-2041981-header-custom-hook-aws https://github.com/snowflakedb/libsnowflakeclient.git %AWS_SOURCE_DIR%
+::pushd %AWS_SOURCE_DIR%
+::  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
+::popd
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
 md %AWS_CMAKE_BUILD_DIR%

@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 AWS_SRC_VERSION=1.11.283
-AWS_BUILD_VERSION=10
+AWS_BUILD_VERSION=11
 AWS_DIR=aws-sdk-cpp-$AWS_SRC_VERSION
 AWS_VERSION=$AWS_SRC_VERSION.$AWS_BUILD_VERSION
 
@@ -30,10 +30,10 @@ AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 
 rm -rf $AWS_SOURCE_DIR
-git clone --single-branch --branch deps/aws-sdk-$AWS_SRC_VERSION https://github.com/snowflakedb/libsnowflakeclient.git $AWS_SOURCE_DIR
-pushd $AWS_SOURCE_DIR
-  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
-popd
+git clone --single-branch --branch SNOW-2041981-header-custom-hook-aws https://github.com/snowflakedb/libsnowflakeclient.git $AWS_SOURCE_DIR
+#pushd $AWS_SOURCE_DIR
+#  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
+#popd
 
 [[ -n "$DOWNLOAD_ONLY" ]] && exit 0
 

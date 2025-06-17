@@ -2246,6 +2246,9 @@ typedef enum {
   /* Snowflake options. The callback when perform is called. */
   CURLOPT(CURLOPT_SF_PERFORMFUNC, CURLOPTTYPE_FUNCTIONPOINT, 331),
 
+  /* Snowflake options. The argument pass to perfrom callback, could be connection instance etc. */
+  CURLOPT(CURLOPT_SF_PERFORMFUNC_DATA, CURLOPTTYPE_CBPOINT, 332),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
@@ -2265,8 +2268,9 @@ typedef enum {
   SF_HEADER_APPLY_STATUS_ALWAYS
 } SF_HEADER_APPLY_STATUS;
 
-/* This is the CURLOPT_SF_PERFORMFUNC callback prototype. */
-typedef void (*curl_perform_callback)(CURL *curl);
+/* This is the CURLOPT_SF_PERFORMFUNC callback prototype.
+ * Pass in curl handle and the userdata set through CURLOPT_SF_PERFORMFUNC_DATA */
+typedef void (*curl_perform_callback)(CURL *curl, void* userdata);
 
 #ifndef CURL_NO_OLDIES /* define this to test if your app builds with all
                           the obsolete stuff removed! */
