@@ -84,15 +84,14 @@ exit /b 0
     exit /b 0
 
 :init_python
-    @echo off
     echo === creating venv
     py -3.7 -m venv venv
     call venv\scripts\activate
-    python -m pip install -U pip > nul 2>&1
+    python -m pip install -U pip
     if %ERRORLEVEL% NEQ 0 goto :error
-    pip install snowflake-connector-python > nul 2>&1
+    pip install snowflake-connector-python
     if %ERRORLEVEL% NEQ 0 goto :error
-    python -m pip install -U awscli > nul 2>&1
+    python -m pip install -U awscli
     if %ERRORLEVEL% NEQ 0 goto :error
     exit /b 0
 
