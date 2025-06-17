@@ -16,10 +16,10 @@ static const char* CURL_HANDLE_CONTAINER_TAG = "CurlHandleContainer";
 
 CurlHandleContainer::CurlHandleContainer(unsigned maxSize, long httpRequestTimeout, long connectTimeout, bool enableTcpKeepAlive,
                                         unsigned long tcpKeepAliveIntervalMs, long lowSpeedTime, unsigned long lowSpeedLimit,
-                                        Version version) :
+                                        Version version, curl_perform_callback performCallback, void* performCallbackData) :
                 m_maxPoolSize(maxSize), m_httpRequestTimeout(httpRequestTimeout), m_connectTimeout(connectTimeout), m_enableTcpKeepAlive(enableTcpKeepAlive),
                 m_tcpKeepAliveIntervalMs(tcpKeepAliveIntervalMs), m_lowSpeedTime(lowSpeedTime), m_lowSpeedLimit(lowSpeedLimit), m_poolSize(0),
-                m_version(version)
+                m_version(version), m_performCallback(performCallback), m_performCallbackData(performCallbackData)
 {
     AWS_LOGSTREAM_INFO(CURL_HANDLE_CONTAINER_TAG, "Initializing CurlHandleContainer with size " << maxSize);
 }
@@ -154,6 +154,11 @@ void CurlHandleContainer::SetDefaultOptionsOnHandle(CURL* handle)
     curl_easy_setopt(handle, CURLOPT_TCP_KEEPIDLE, m_tcpKeepAliveIntervalMs / 1000);
     curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, ConvertHttpVersion(m_version));
     curl_easy_setopt(handle, CURLOPT_MAXCONNECTS, m_maxPoolSize);
+    if (m_performCallback)
+    {
+        curl_easy_setopt(handle, CURLOPT_SF_PERFORMFUNC, m_performCallback);
+        curl_easy_setopt(handle, CURLOPT_SF_PERFORMFUNC_DATA, m_performCallbackData);
+    }
 }
 
 long CurlHandleContainer::ConvertHttpVersion(Version version) {

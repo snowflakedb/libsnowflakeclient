@@ -349,6 +349,16 @@ namespace Aws
             bool disableImdsV1 = false;
 
             /**
+             * Snowflake options. Curl perform callback for header customization.
+             */
+            void* performCallback = NULL;
+
+            /**
+             * Snowflake options. User data pass to Curl perform callback.
+             */
+            void* performCallbackData = NULL;
+
+            /**
              * A helper function to read config value from env variable or aws profile config
              */
             static Aws::String LoadConfigFromEnvOrProfile(const Aws::String& envKey,

@@ -31,7 +31,8 @@ public:
       */
     CurlHandleContainer(unsigned maxSize = 50, long httpRequestTimeout = 0, long connectTimeout = 1000, bool tcpKeepAlive = true,
                         unsigned long tcpKeepAliveIntervalMs = 30000, long lowSpeedTime = 3000, unsigned long lowSpeedLimit = 1,
-                        Version version = Version::HTTP_VERSION_2TLS);
+                        Version version = Version::HTTP_VERSION_2TLS,
+                        curl_perform_callback performCallback = NULL, void* performCallbackData = NULL);
     ~CurlHandleContainer();
 
     /**
@@ -71,6 +72,8 @@ private:
     unsigned m_poolSize;
     std::mutex m_containerLock;
     Version m_version;
+    curl_perform_callback m_performCallback;
+    void* m_performCallbackData;
 };
 
 } // namespace Http
