@@ -522,13 +522,13 @@ void test_sso_token_cache(void**)
         secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     }
     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "mock_sso_token");
+    sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
 
     IAuthWebServer* webserver = new MockAuthWebServer();
     MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
     sf->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(auth);
 
     cJSON* body = NULL;
-    auth_authenticate(sf);
     body = create_auth_json_body(
         sf,
         sf->application,
@@ -537,7 +537,6 @@ void test_sso_token_cache(void**)
         sf->timezone,
         sf->autocommit);
 
-    auth_update_json_body(sf, body);
     cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
 
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_ID_TOKEN);
@@ -570,7 +569,7 @@ int main(void) {
     cmocka_unit_test(test_auth_web_server_fail),
     cmocka_unit_test(test_unit_authenticator_external_browser_privatelink),
     cmocka_unit_test(test_authenticator_external_browser_privatelink_with_china_domain),
-    //cmocka_unit_test(test_sso_token_cache),
+    cmocka_unit_test(test_sso_token_cache),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

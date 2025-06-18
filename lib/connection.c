@@ -7,7 +7,6 @@
 #include "constants.h"
 #include "error.h"
 #include "curl_desc_pool.h"
-#include "../include/snowflake/secure_storage.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
 #define QUERYCODE_LEN 7
@@ -103,6 +102,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     //Create body
     body = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddItemToObject(body, "data", data);
+
+    // update authentication information to body
+    auth_update_json_body(sf, body);
 
     return body;
 }

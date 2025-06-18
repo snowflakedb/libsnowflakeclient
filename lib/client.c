@@ -1216,11 +1216,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         }
 
         sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-        //if (sf->auth_token != NULL)
-        //{
-        //    snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-        //    secure_storage_free_credential(token);
-        //}
+
     }
 
     if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) {
@@ -1228,12 +1224,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             sf->token_cache = secure_storage_init();
         }
 
-        char* a = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
         sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
-        //if (sf->auth_token != NULL) {
-        //    snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
-        //}
-
     }
 
     if (!(getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER && sf->auth_token != NULL)) {
@@ -1254,8 +1245,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->autocommit);
     log_trace("Created body");
 
-    // update authentication information to body
-    auth_update_json_body(sf, body);
     s_body = snowflake_cJSON_Print(body);
 
     // TODO delete password before printing
