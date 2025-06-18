@@ -1304,19 +1304,3 @@ sf_bool is_password_required(AuthenticatorType auth)
 {
     return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
 }
-
-sf_bool is_id_token_authentication(SF_CONNECT* sf, cJSON* body) 
-{
-    sf_bool is_id_token_auth = SF_BOOLEAN_TRUE;
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
-    if (!sf->client_store_temporary_credential) {
-        is_id_token_auth = SF_BOOLEAN_FALSE;
-    }
-    else if (!snowflake_cJSON_HasObjectItem(data, "AUTHENTICATOR")) {
-        is_id_token_auth = SF_BOOLEAN_FALSE;
-    }
-    else if (strcmp(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "AUTHENTICATOR")), SF_AUTHENTICATOR_ID_TOKEN) != 0) {
-        is_id_token_auth = SF_BOOLEAN_FALSE;
-    }
-    return is_id_token_auth;
-}

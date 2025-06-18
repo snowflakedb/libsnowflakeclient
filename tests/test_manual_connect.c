@@ -399,7 +399,6 @@ void test_sso_token_auth_renew(void** unused)
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
-
     sf->token_cache = secure_storage_init();
     secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "wrong token");

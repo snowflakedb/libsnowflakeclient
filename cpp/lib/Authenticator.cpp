@@ -145,7 +145,7 @@ extern "C" {
 
   SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
   {
-    if (!conn || !conn->auth_object)
+    if (!conn || !conn->auth_object || conn->auth_token != NULL)
     {
       return SF_STATUS_SUCCESS;
     }

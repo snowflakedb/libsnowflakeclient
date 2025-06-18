@@ -1220,21 +1220,24 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     }
 
     if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) {
-        if (sf->token_cache == NULL) {
+        if (sf->token_cache == NULL) 
+        {
             sf->token_cache = secure_storage_init();
         }
 
         sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     }
 
-    if (!(getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER && sf->auth_token != NULL)) {
-        //Skip external browser authenticate if the connector uses the ID(SSO) token auth.
-        ret = auth_authenticate(sf);
-        if (ret != SF_STATUS_SUCCESS) {
-            goto cleanup;
-        }
+    ret = auth_authenticate(sf);
+    if (ret != SF_STATUS_SUCCESS)
+    {
+         goto cleanup;
     }
 
+    ret = SF_STATUS_ERROR_GENERAL; // reset to the error
+
+    uuid4_generate(sf->request_id);// request id
+    
     // Create body
     body = create_auth_json_body(
         sf,
@@ -1244,18 +1247,11 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->timezone,
         sf->autocommit);
     log_trace("Created body");
-
     s_body = snowflake_cJSON_Print(body);
-
     // TODO delete password before printing
     if (DEBUG) {
         log_debug("body:\n%s", s_body);
     }
-    log_trace("Here is JSON request:\n%s", s_body);
-
-    ret = SF_STATUS_ERROR_GENERAL; // reset to the error
-
-    uuid4_generate(sf->request_id);// request id
 
     // Send request and get data
     // For authentication(JWT) needs renew credentials during retry
