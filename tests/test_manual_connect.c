@@ -333,8 +333,6 @@ void test_sso_token_auth(void** unused)
         snowflake_set_attribute(sf, SF_CON_ACCOUNT,
             getenv("SNOWFLAKE_TEST_ACCOUNT"));
         snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
-        snowflake_set_attribute(sf, SF_CON_PASSWORD,
-            getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_PASSWORD"));
         snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
             SF_AUTHENTICATOR_EXTERNAL_BROWSER);
         sf_bool client_store_temporary_credential = SF_BOOLEAN_TRUE;

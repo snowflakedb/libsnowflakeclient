@@ -188,8 +188,23 @@ extern "C" {
           snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
         }
     }
+    if (conn->auth_token != NULL)
+    {
+        if (conn->client_store_temporary_credential && authenticator == AUTH_EXTERNALBROWSER)
+        {
+            snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+            snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->auth_token);
+            snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
+            secure_storage_free_credential(conn->auth_token);
+        }
+        else if (conn->client_request_mfa_token)
+        {
+            snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->auth_token);
+            secure_storage_free_credential(conn->auth_token);
+        }
+    }
 
-    if (!conn || !conn->auth_object || is_id_token_authentication(conn, body))
+    if (!conn || !conn->auth_object || conn->auth_token != NULL)
     {
       return;
     }

@@ -65,6 +65,7 @@
 #define GONE_SESSION_CODE "390111"
 #define SESSION_TOKEN_EXPIRED_CODE "390112"
 #define MASTER_TOKEN_EXPIRED_CODE "390114"
+#define SF_GS_ERROR_CODE_ID_TOKEN_INVALID "390195"
 
 #define QUERY_IN_PROGRESS_CODE "333333"
 #define QUERY_IN_PROGRESS_ASYNC_CODE "333334"
@@ -75,6 +76,9 @@
 
 #define DATE_STRING_MAX_SIZE 12
 #define SECONDS_IN_AN_HOUR 86400L
+
+
+
 
 /**
  * Maximum one-directional range of offset-based timezones (24 hours)

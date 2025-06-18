@@ -237,8 +237,6 @@ typedef enum SF_STATUS {
 #define SF_QCC_CONTEXT_KEY         "context"
 #define SF_QCC_CONTEXT_VALUE_KEY   "base64Data"
 
-#define SF_GS_ERROR_CODE_ID_TOKEN_INVALID 390195
-
 /**
  * Attributes for Snowflake database session context.
  */
@@ -430,6 +428,9 @@ typedef struct SF_CONNECT {
     // Session info
     char *token;
     char *master_token;
+
+    // Token for either SSO or MFA.
+    char* auth_token;
 
     int64 login_timeout;
     int64 network_timeout;

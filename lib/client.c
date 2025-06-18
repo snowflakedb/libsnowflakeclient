@@ -1210,9 +1210,38 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    // TODO delete password before printing
-    if (DEBUG) {
-        log_debug("body:\n%s", s_body);
+    if (sf->client_request_mfa_token) {
+        if (sf->token_cache == NULL) {
+            sf->token_cache = secure_storage_init();
+        }
+
+        sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+        //if (sf->auth_token != NULL)
+        //{
+        //    snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
+        //    secure_storage_free_credential(token);
+        //}
+    }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) {
+        if (sf->token_cache == NULL) {
+            sf->token_cache = secure_storage_init();
+        }
+
+        char* a = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        //if (sf->auth_token != NULL) {
+        //    snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
+        //}
+
+    }
+
+    if (!(getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER && sf->auth_token != NULL)) {
+        //Skip external browser authenticate if the connector uses the ID(SSO) token auth.
+        ret = auth_authenticate(sf);
+        if (ret != SF_STATUS_SUCCESS) {
+            goto cleanup;
+        }
     }
 
     // Create body
@@ -1225,17 +1254,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->autocommit);
     log_trace("Created body");
 
-    if (!is_id_token_authentication(sf, body)) {
-        //Skip external browser authenticate if the connector uses the ID(SSO) token auth.
-        ret = auth_authenticate(sf);
-        if (ret != SF_STATUS_SUCCESS) {
-            goto cleanup;
-        }
-    }
-
     // update authentication information to body
     auth_update_json_body(sf, body);
     s_body = snowflake_cJSON_Print(body);
+
+    // TODO delete password before printing
+    if (DEBUG) {
+        log_debug("body:\n%s", s_body);
+    }
     log_trace("Here is JSON request:\n%s", s_body);
 
     ret = SF_STATUS_ERROR_GENERAL; // reset to the error
@@ -1286,7 +1312,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     log_debug("no code element.");
                 }
 
-                if (code == SF_GS_ERROR_CODE_ID_TOKEN_INVALID)
+                if (code == strtol(SF_GS_ERROR_CODE_ID_TOKEN_INVALID, NULL, 10))
                 { 
                     log_error("ID token expired or invalid. Reauthenticate.");
                     auth_renew_json_body(sf, body);
