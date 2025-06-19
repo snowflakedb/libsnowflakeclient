@@ -1216,7 +1216,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         }
 
         sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-
     }
 
     if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) {
@@ -1237,7 +1236,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     ret = SF_STATUS_ERROR_GENERAL; // reset to the error
 
     uuid4_generate(sf->request_id);// request id
-    
     // Create body
     body = create_auth_json_body(
         sf,
@@ -1319,7 +1317,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
 
             char* auth_token = NULL;
             if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-                secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
             }
 
             else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
