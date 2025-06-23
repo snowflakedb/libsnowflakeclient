@@ -145,7 +145,7 @@ extern "C" {
 
   SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
   {
-    if (!conn || !conn->auth_object || conn->auth_token != NULL)
+    if (!conn || !conn->auth_object || conn->sso_token != NULL)
     {
       return SF_STATUS_SUCCESS;
     }
@@ -165,64 +165,64 @@ extern "C" {
     return SF_STATUS_SUCCESS;
   }
 
-  void auth_update_json_body(SF_CONNECT * conn, cJSON* body)
+  void auth_update_json_body(SF_CONNECT* conn, cJSON* body)
   {
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
-    if (!data)
-    {
-        data = snowflake_cJSON_CreateObject();
-        snowflake_cJSON_AddItemToObject(body, "data", data);
-    }
-    auto authenticator = getAuthenticatorType(conn->authenticator);
-    if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
+      cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+      if (!data)
+      {
+          data = snowflake_cJSON_CreateObject();
+          snowflake_cJSON_AddItemToObject(body, "data", data);
+      }
+      auto authenticator = getAuthenticatorType(conn->authenticator);
+      if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
 
-    {
-        snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-        snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+      {
+          snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+          snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
 
-        if (AUTH_PAT == authenticator) {
-          snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_PAT);
-          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->programmatic_access_token);
-        } else {
-          snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
-          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
-        }
-    }
-    if (conn->auth_token != NULL)
-    {
-        if (conn->client_store_temporary_credential && authenticator == AUTH_EXTERNALBROWSER)
-        {
-            snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
-            snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->auth_token);
-            snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
-            secure_storage_free_credential(conn->auth_token);
-        }
-        else if (conn->client_request_mfa_token)
-        {
-            snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->auth_token);
-            secure_storage_free_credential(conn->auth_token);
-        }
-    }
+          if (AUTH_PAT == authenticator) {
+              snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_PAT);
+              snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->programmatic_access_token);
+          }
+          else {
+              snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_OAUTH);
+              snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
+          }
+      }
 
-    if (!conn || !conn->auth_object || conn->auth_token != NULL)
-    {
+      if (conn->sso_token)
+      {
+          snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->sso_token);
+          snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
+          secure_storage_free_credential(conn->sso_token);
+      }
+
+      if (conn->mfa_token)
+      {
+          snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->mfa_token);
+          secure_storage_free_credential(conn->mfa_token);
+      }
+
+      if (!conn || !conn->auth_object || conn->sso_token != NULL)
+      {
+          return;
+      }
+
+      try
+      {
+          jsonObject_t picoBody;
+          cJSONtoPicoJson(data, picoBody);
+          static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
+              updateDataMap(picoBody);
+          picoJsonTocJson(picoBody, &body);
+      }
+      catch (...)
+      {
+          ; // Do nothing
+      }
+
       return;
-    }
-
-    try
-    {
-      jsonObject_t picoBody;
-      cJSONtoPicoJson(data, picoBody);
-      static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
-          updateDataMap(picoBody);
-      picoJsonTocJson(picoBody, &body);
-    }
-    catch (...)
-    {
-      ; // Do nothing
-    }
-
-    return;
   }
 
   void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)

@@ -522,7 +522,7 @@ void test_sso_token_cache(void**)
         secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     }
     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "mock_sso_token");
-    sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+    sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
 
     IAuthWebServer* webserver = new MockAuthWebServer();
     MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);

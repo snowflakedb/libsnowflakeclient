@@ -429,8 +429,9 @@ typedef struct SF_CONNECT {
     char *token;
     char *master_token;
 
-    // Token for either SSO or MFA.
-    char* auth_token;
+    // For token cache auth.
+    char* sso_token;
+    char* mfa_token;
 
     int64 login_timeout;
     int64 network_timeout;

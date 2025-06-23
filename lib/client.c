@@ -1075,6 +1075,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+
+        sf->sso_token = NULL;
+        sf->mfa_token = NULL;
     }
 
     return sf;
@@ -1210,21 +1213,23 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    if (sf->client_request_mfa_token) {
+    if (sf->client_request_mfa_token) 
+    {
         if (sf->token_cache == NULL) {
             sf->token_cache = secure_storage_init();
         }
 
-        sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+        sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
     }
 
-    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) {
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) 
+    {
         if (sf->token_cache == NULL) 
         {
             sf->token_cache = secure_storage_init();
         }
 
-        sf->auth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
     }
 
     ret = auth_authenticate(sf);
