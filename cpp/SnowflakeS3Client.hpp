@@ -121,6 +121,8 @@ public:
   const char *GetClientConfigStageEndpoint();
 
 private:
+  std::shared_ptr<AwsUtils::AwsSdkInitialized> m_awsSdkInit;
+
   Aws::S3::S3Client *s3Client;
 
   StageInfo * m_stageInfo;

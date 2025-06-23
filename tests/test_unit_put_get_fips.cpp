@@ -312,7 +312,6 @@ int main(void) {
     cmocka_unit_test(test_s3_global_cafile_path_too_long)
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
-  AwsUtils::shutdownAwsSdk();
   return ret;
 }
 
