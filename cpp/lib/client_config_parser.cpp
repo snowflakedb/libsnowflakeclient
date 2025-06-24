@@ -11,6 +11,11 @@
 #undef snprintf
 #include <boost/filesystem.hpp>
 
+#include <string>
+#include <iostream>
+#include <exception>
+#include <stdio.h>
+
 #ifndef _WIN32 
 #include <dlfcn.h>
 #endif
@@ -97,6 +102,7 @@ namespace
   boost::filesystem::path resolveHomeDirConfigPath()
   {
     std::string homeDir = getEnvironmentVariableValue("HOME");
+    // std::cout << "home dir: " << homeDir << std::endl;
     if (!homeDir.empty())
     {
       boost::filesystem::path homeDirFilePath = homeDir;
@@ -114,6 +120,9 @@ namespace
   boost::filesystem::path resolveClientConfigPath(
     const boost::filesystem::path& configFilePath)
   {
+
+    // std::cout << "Start resolve client config path" << std::endl;
+
     // 1. Try config file if it was passed in
     if (!configFilePath.empty())
     {
@@ -129,13 +138,20 @@ namespace
       return clientConfigEnv;
     }
 
+    // std::cout<< "is the client config file in lib dir?" << std::endl;
+
     // 3. Try library dir
     boost::filesystem::path binaryDirFilePath = getBinaryPath().append(SF_CLIENT_CONFIG_FILE_NAME);
+    //boost::filesystem::path binaryDirFilePath = getBinaryPath().append("thisFileDoesNotExist");
+    // std::cout << ".dll binary path: " << binaryDirFilePath << std::endl;
     if (boost::filesystem::is_regular_file(binaryDirFilePath))
     {
       CXX_LOG_INFO("Using client configuration path from library directory: %s", binaryDirFilePath.c_str());
       return binaryDirFilePath;
     }
+
+    // std::cout << "the client config file is not in lib dir" << std::endl;
+    // std::cout << "the client config file must be in under home dir then if one does exsit" << std::endl;
 
     // 4. Try user home dir
     return resolveHomeDirConfigPath();
@@ -238,13 +254,30 @@ namespace
     const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
   {
-    boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
+    try {
+      boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
+      // std::cout << "no exception thrown from resolving client config path" << std::endl;
 
-    if (!derivedConfigPath.empty())
-    {
-      return parseConfigFile(derivedConfigPath, clientConfig);
+      if (!derivedConfigPath.empty())
+      {
+        // std::cout << "Derived Config path is not empty!\n Parsing Config File next\n" << std::endl;
+        return parseConfigFile(derivedConfigPath, clientConfig);
+      }
+    } catch (boost::filesystem::filesystem_error &e) {
+      // std::cout << "boost fs caught an exception: " << e.what() << std::endl; 
+      CXX_LOG_ERROR("boost filesystem error caught in loadClientConfig(): %s", e.what());
+    } catch (const std::ios_base::failure &e) {
+      // catch exception from fstream
+      // std::cout << "file operation exception caught: " << e.what() << std::endl;
+      CXX_LOG_ERROR("file operation exception caught in loadClientConfig(): %s", e.what());
+    } catch (const std::exception &e) {
+      // std::cout << "general exception caught: " << e.what() << std::endl;
+      CXX_LOG_ERROR("Caught a general excpetion in loadClientConfig(): %s", e.what());
+    } catch (...) {
+      // std::cout << "Unknow exception caught!" << std::endl;
+      CXX_LOG_ERROR("Caught unknown exception in loadClientConfig()");
     }
-    return false;
+      return false; 
   }
 }
 
