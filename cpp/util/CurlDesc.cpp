@@ -1,5 +1,6 @@
 #include "snowflake/CurlDesc.hpp"
 #include "../logger/SFLogger.hpp"
+#include "../lib/curl_desc_pool.h"
 
 namespace Snowflake
 {
@@ -63,6 +64,12 @@ namespace Client
       // simply reset, shared stuff and open connections will survive...
       curl_easy_reset(m_curl);
       CXX_LOG_TRACE("CurDesc::reset(): curl_easy_reset %p", m_curl);
+    }
+
+    if (m_url.getProxyHeaderCustomizer())
+    {
+      curl_easy_setopt(m_curl, CURLOPT_SF_PERFORMFUNC, _snowflake_curl_perform_callback);
+      curl_easy_setopt(m_curl, CURLOPT_SF_PERFORMFUNC_DATA, m_url.getProxyHeaderCustomizer());
     }
   }
 

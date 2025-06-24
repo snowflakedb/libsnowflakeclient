@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <string>
+#include "header_customizer.h"
 
 namespace Snowflake
 {
@@ -59,6 +60,16 @@ public:
         return this->m_noProxy;
     }
 
+    inline void setHeaderCustomizer(HEADER_CUSTOMIZER headerCustomizer)
+    {
+        m_header_customizer = headerCustomizer;
+    }
+
+    inline HEADER_CUSTOMIZER getHeaderCustomizer() const
+    {
+        return m_header_customizer;
+    }
+
     std::string getHost() const;
 
     void clearPwd();
@@ -72,6 +83,7 @@ private:
     unsigned m_port = 0;
     Protocol m_protocol = Protocol::NONE;
     std::string m_noProxy;
+    HEADER_CUSTOMIZER m_header_customizer = NULL;
 
     void stringToProxyParts(const std::string &proxy);
 };

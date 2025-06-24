@@ -2,6 +2,7 @@
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
 #include <curl/curl.h>
+#include "curl_desc_pool.h"
 
 namespace Snowflake {
   namespace Client {
@@ -22,6 +23,7 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, SimpleHttpClient::write);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
+        curl_easy_setopt(curl, CURLOPT_SF_PERFORMFUNC, _snowflake_curl_perform_callback);
 
         struct curl_slist *header_list = nullptr;
         for (const auto &h: req.headers) {

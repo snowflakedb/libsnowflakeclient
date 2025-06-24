@@ -7,16 +7,21 @@
 extern "C" {
 #endif
 
+#include "snowflake/header_customizer.h"
+
     /**
      * Get curl desc instance from pool.
      *
      * @param url       The url of the rest request
      * @param proxy     The proxy setting, null if not available.
      * @param no_proxy  The proxy setting, null if not available.
+     * @param proxy_header_customizer The header customizer callback for proxy authentication.
      *
      * @return curl desc instance from pool
      */
-    void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy);
+    void* get_curl_desc_from_pool(const char* url, const char* proxy,
+                                  const char* no_proxy,
+                                  HEADER_CUSTOMIZER proxy_header_customizer);
 
     /**
      * Get curl handle from the curl description returned from get_curl_desc_from_pool().
@@ -34,6 +39,8 @@ extern "C" {
      *
      */
     void free_curl_desc(void * curl_desc);
+
+    void _snowflake_curl_perform_callback(CURL* curl, void* userdata);
 
 #ifdef __cplusplus
 } // extern "C"

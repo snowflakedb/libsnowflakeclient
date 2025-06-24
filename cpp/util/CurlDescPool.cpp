@@ -13,7 +13,10 @@ extern "C" {
     std::unique_ptr<CurlDesc> curl_desc;
   };
 
-  void* get_curl_desc_from_pool(const char* url, const char* proxy, const char* no_proxy)
+  void* get_curl_desc_from_pool(const char* url,
+                                const char* proxy,
+                                const char* no_proxy,
+                                HEADER_CUSTOMIZER proxy_header_customizer)
   {
     CURL_DESC_S* ret = new CURL_DESC_S;
     if (!ret)
@@ -34,6 +37,10 @@ extern "C" {
           proxy_setting.setNoProxy(no_proxy);
         }
         sfurl.setProxy(proxy_setting);
+      }
+      if (proxy_header_customizer)
+      {
+          sfurl.setProxyHeaderCustomizer(proxy_header_customizer);
       }
       // get pool of curl descriptors
       ClientCurlDescPool& curlDescPool = ClientCurlDescPool::getInstance();

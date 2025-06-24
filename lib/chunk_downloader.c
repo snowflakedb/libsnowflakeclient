@@ -206,10 +206,11 @@ sf_bool STDCALL download_chunk(char *url, SF_HEADER *headers,
                                sf_bool fail_open,
                                const char *proxy,
                                const char *no_proxy,
+                               HEADER_CUSTOMIZER proxy_header_customizer,
                                int64 network_timeout,
                                int8 retry_max_count) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url, proxy, no_proxy, proxy_header_customizer);
     CURL *curl = get_curl_from_desc(curl_desc);
 
     if (!curl ||
@@ -241,6 +242,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    NON_JSON_RESP* (*callback_create_resp)(void),
                                                    const char *proxy,
                                                    const char *no_proxy,
+                                                   HEADER_CUSTOMIZER proxy_header_customizer,
                                                    int64 network_timeout,
                                                    int8 retry_max_count) {
     struct SF_CHUNK_DOWNLOADER *chunk_downloader = NULL;
@@ -279,6 +281,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->callback_create_resp = callback_create_resp;
     chunk_downloader->proxy = NULL;
     chunk_downloader->no_proxy = NULL;
+    chunk_downloader->proxy_header_customizer = proxy_header_customizer;
     chunk_downloader->network_timeout = network_timeout;
     chunk_downloader->retry_max_count = retry_max_count;
 
@@ -484,7 +487,7 @@ static void * chunk_downloader_thread(void *downloader) {
         }
         if (!download_chunk(chunk_downloader->queue[index].url, chunk_downloader->chunk_headers,
           chunk_ptr, non_json_resp, &err, chunk_downloader->insecure_mode, chunk_downloader->fail_open,
-          chunk_downloader->proxy, chunk_downloader->no_proxy,
+          chunk_downloader->proxy, chunk_downloader->no_proxy, chunk_downloader->proxy_header_customizer,
           chunk_downloader->network_timeout, chunk_downloader->retry_max_count)) {
             _rwlock_wrlock(&chunk_downloader->attr_lock);
             if (!chunk_downloader->has_error) {

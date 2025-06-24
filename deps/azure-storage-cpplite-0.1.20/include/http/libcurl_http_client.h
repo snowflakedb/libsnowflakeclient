@@ -294,12 +294,20 @@ namespace azure {  namespace storage_lite {
         }
 
         //Sets CURL CA BUNDLE location for all the curl handlers.
-        CurlEasyClient(int size, const std::string& ca_path) : m_size(size), m_caPath(ca_path)
+        CurlEasyClient(int size, const std::string& ca_path,
+                       curl_perform_callback perform_callback,
+                       void* perform_callback_data)
+            : m_size(size), m_caPath(ca_path)
         {
             curl_global_init(CURL_GLOBAL_DEFAULT);
             for (int i = 0; i < m_size; i++) {
                 CURL *h = curl_easy_init();
                 curl_easy_setopt(h, CURLOPT_CAINFO, m_caPath.c_str());
+                if (perform_callback)
+                {
+                    curl_easy_setopt(h, CURLOPT_SF_PERFORMFUNC, perform_callback);
+                    curl_easy_setopt(h, CURLOPT_SF_PERFORMFUNC_DATA, perform_callback_data);
+                }
                 //curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
                 m_handles.push(h);
             }

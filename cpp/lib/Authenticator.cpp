@@ -463,7 +463,9 @@ namespace Client
       std::string destination = url.toString();
       void* curl_desc;
       CURL* curl;
-      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl_desc = get_curl_desc_from_pool(destination.c_str(),
+                                          m_connection->proxy, m_connection->no_proxy,
+                                          m_connection->proxy_header_customizer);
       curl = get_curl_from_desc(curl_desc);
       SF_ERROR_STRUCT* err = &m_connection->error;
 
@@ -527,7 +529,9 @@ namespace Client
       std::string destination = url.toString();
       void* curl_desc;
       CURL* curl;
-      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+      curl_desc = get_curl_desc_from_pool(destination.c_str(),
+                                          m_connection->proxy, m_connection->no_proxy,
+                                          m_connection->proxy_header_customizer);
       curl = get_curl_from_desc(curl_desc);
 
       SF_ERROR_STRUCT* err = &m_connection->error;

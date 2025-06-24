@@ -23,6 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "../lib/curl_desc_pool.h"
 
 
 
@@ -147,6 +148,18 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     auto nonProxyHosts = Aws::Utils::StringUtils::Split(Aws::String(proxy.getNoProxy()), ',');
     clientConfiguration.nonProxyHosts = Aws::Utils::Array<Aws::String>(
                                           nonProxyHosts.data(), nonProxyHosts.size());
+  }
+
+  // Set proxy header customizer
+  HEADER_CUSTOMIZER proxyHeaderCustomizer = statement->getProxyHeaderCustomizer();
+  if (transferConfig && transferConfig->proxyHeaderCustomizer)
+  {
+    proxyHeaderCustomizer = transferConfig->proxyHeaderCustomizer;
+  }
+  if (proxyHeaderCustomizer)
+  {
+    clientConfiguration.performCallback = _snowflake_curl_perform_callback;
+    clientConfiguration.performCallbackData = proxyHeaderCustomizer;
   }
 
   CXX_LOG_DEBUG("CABundleFile used in aws sdk: %s", caFile.c_str());

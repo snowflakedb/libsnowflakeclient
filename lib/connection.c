@@ -869,7 +869,9 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool *is_renew,
                         sf_bool renew_injection) {
   sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
+    void* curl_desc = get_curl_desc_from_pool(url,
+                                              sf->proxy, sf->no_proxy,
+                                              sf->proxy_header_customizer);
     CURL *curl = get_curl_from_desc(curl_desc);
     char *encoded_url = NULL;
     SF_HEADER *my_header = NULL;

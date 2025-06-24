@@ -68,6 +68,7 @@ struct SF_CHUNK_DOWNLOADER {
     // proxy settings
     char *proxy;
     char *no_proxy;
+    HEADER_CUSTOMIZER proxy_header_customizer;
 
     // retry settings
     int64 network_timeout;
@@ -85,6 +86,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    NON_JSON_RESP* (*callback_create_resp)(void),
                                                    const char *proxy,
                                                    const char *no_proxy,
+                                                   HEADER_CUSTOMIZER proxy_header_customizer,
                                                    int64 network_timeout,
                                                    int8 retry_max_count);
 sf_bool STDCALL chunk_downloader_term(SF_CHUNK_DOWNLOADER *chunk_downloader);

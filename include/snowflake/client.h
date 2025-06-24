@@ -11,6 +11,7 @@ extern "C" {
 #include "version.h"
 #include "logger.h"
 #include "secure_storage.h"
+#include "header_customizer.h"
 
 #define SF_API_NAME "C API"
 
@@ -294,7 +295,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_OAUTH_TOKEN,
     SF_CON_DISABLE_CONSOLE_LOGIN,
     SF_CON_BROWSER_RESPONSE_TIMEOUT,
-    SF_CON_PAT
+    SF_CON_PAT,
+    SF_CON_PROXY_HEADER_CUSTOMIZER
 } SF_ATTRIBUTE;
 
 /**
@@ -404,6 +406,7 @@ typedef struct SF_CONNECT {
     // Proxy
     char * proxy;
     char * no_proxy;
+    HEADER_CUSTOMIZER proxy_header_customizer;
 
     // Query Context Cache
     // the flag of whether to disable qcc, false by default

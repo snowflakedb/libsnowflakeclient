@@ -22,12 +22,14 @@ struct TransferConfig
     useS3regionalUrl(false),
     compressLevel(-1),
     proxy(NULL),
+    proxyHeaderCustomizer(NULL),
     getSizeThreshold(0) {}
   char * caBundleFile;
   char * tempDir;
   bool useS3regionalUrl;
   int compressLevel;
   Util::Proxy * proxy;
+  HEADER_CUSTOMIZER proxyHeaderCustomizer;
   long getSizeThreshold;
 };
 

@@ -7,6 +7,7 @@
 #include <list>
 #include "snowflake/BaseClasses.hpp"
 #include "snowflake/Proxy.hpp"
+#include "snowflake/header_customizer.h"
 
 /**
  * Delegate class to modify url
@@ -418,6 +419,16 @@ public:
     return m_proxy;
   }
 
+  inline void setProxyHeaderCustomizer(HEADER_CUSTOMIZER proxyHeaderCustomizer)
+  {
+      m_proxyHeaderCustomizer = proxyHeaderCustomizer;
+  }
+
+  inline HEADER_CUSTOMIZER getProxyHeaderCustomizer() const
+  {
+      return m_proxyHeaderCustomizer;
+  }
+
 private:
 
   /**
@@ -445,6 +456,11 @@ private:
   */
   Snowflake::Client::Util::Proxy m_proxy;
   bool m_proxyEnabled;
+
+  // header customize callback for proxy authentication
+  // URL is a better place than Proxy since customer might set
+  // porxy through environment variables and need header customizer as well.
+  HEADER_CUSTOMIZER m_proxyHeaderCustomizer;
 
   /**
    * Parse the authority component of the sfurl

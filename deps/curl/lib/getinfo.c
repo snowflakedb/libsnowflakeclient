@@ -607,6 +607,9 @@ static CURLcode getinfo_slist(struct Curl_easy *data, CURLINFO info,
   case CURLINFO_SF_HEADER:
     *param_slistp = data->set.headers;
     break;
+  case CURLINFO_SF_PROXYHEADER:
+    *param_slistp = data->set.proxyheaders;
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }

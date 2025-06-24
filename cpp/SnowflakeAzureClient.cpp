@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "../lib/curl_desc_pool.h"
 
 #define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
 
@@ -83,6 +84,17 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
   std::shared_ptr<azure::storage_lite::storage_account> account = std::make_shared<azure::storage_lite::storage_account>(account_name, cred, true, endpoint);
   std::shared_ptr<azure::storage_lite::blob_client> bc;
 
+  // set proxy header customizer
+  curl_perform_callback performCallback = NULL;
+  HEADER_CUSTOMIZER proxyHeaderCustomizer = statement->getProxyHeaderCustomizer();
+  if (transferConfig && transferConfig->proxyHeaderCustomizer)
+  {
+    proxyHeaderCustomizer = transferConfig->proxyHeaderCustomizer;
+  }
+  if (proxyHeaderCustomizer)
+  {
+    performCallback = _snowflake_curl_perform_callback;
+  }
   Util::Proxy * proxy;
   if (transferConfig && transferConfig->proxy) {
     proxy = transferConfig->proxy;
@@ -97,11 +109,14 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
                 proxy->getPort(),
                 proxy->getUser(),
                 proxy->getPwd(),
-                proxy->getNoProxy());
+                proxy->getNoProxy(),
+                performCallback,
+                proxyHeaderCustomizer);
   }
   else
   {
-     bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile);
+     bc = std::make_shared<azure::storage_lite::blob_client>(account, m_parallel, caBundleFile,
+                                                             performCallback, proxyHeaderCustomizer);
   }
   m_blobclient= new azure::storage_lite::blob_client_wrapper(bc);
   //Ensure the stage location ended with /

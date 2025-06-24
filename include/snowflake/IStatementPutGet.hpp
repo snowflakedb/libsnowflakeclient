@@ -73,6 +73,11 @@ public:
     return NULL;
   }
 
+  virtual HEADER_CUSTOMIZER getProxyHeaderCustomizer()
+  {
+    return NULL;
+  }
+
   // Utility functions to convert enconding between UTF-8 to the encoding
   // from system locale. No coversion by default.
   virtual std::string UTF8ToPlatformString(const std::string& utf8_str)

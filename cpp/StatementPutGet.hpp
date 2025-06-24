@@ -24,6 +24,8 @@ public:
 
   virtual Util::Proxy* get_proxy();
 
+  virtual HEADER_CUSTOMIZER getProxyHeaderCustomizer();
+
   /**
   * PUT/GET on GCS use this interface to perform put request.
   * Not implemented by default.

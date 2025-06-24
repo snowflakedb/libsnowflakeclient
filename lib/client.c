@@ -1031,6 +1031,7 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->proxy = NULL;
         sf->no_proxy = NULL;
+        sf->proxy_header_customizer = NULL;
 
         sf->directURL_param = NULL;
         sf->directURL = NULL;
@@ -1494,6 +1495,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_NO_PROXY:
             alloc_buffer_and_copy(&sf->no_proxy, value);
             break;
+        case SF_CON_PROXY_HEADER_CUSTOMIZER:
+            sf->proxy_header_customizer = value ? *((HEADER_CUSTOMIZER*)value) : NULL;
+            break;
         case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
             sf->qcc_disable = value ? *((sf_bool *)value) : SF_BOOLEAN_FALSE;
             break;
@@ -1696,6 +1700,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_NO_PROXY:
             *value = sf->no_proxy;
+            break;
+        case SF_CON_PROXY_HEADER_CUSTOMIZER:
+            *value = sf->proxy_header_customizer;
             break;
         case SF_CON_DISABLE_QUERY_CONTEXT_CACHE:
             *value = &sf->qcc_disable;
@@ -1907,6 +1914,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
           callback_create_resp,
           sfstmt->connection->proxy,
           sfstmt->connection->no_proxy,
+          sfstmt->connection->proxy_header_customizer,
           get_retry_timeout(sfstmt->connection),
           sfstmt->connection->retry_count);
         SF_FREE(qrmk);

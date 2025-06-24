@@ -2246,7 +2246,7 @@ typedef enum {
   /* Snowflake options. The callback when perform is called. */
   CURLOPT(CURLOPT_SF_PERFORMFUNC, CURLOPTTYPE_FUNCTIONPOINT, 331),
 
-  /* Snowflake options. The argument pass to perfrom callback, could be connection instance etc. */
+  /* Snowflake options. The argument pass to perfrom callback, the function pointer of header customizer. */
   CURLOPT(CURLOPT_SF_PERFORMFUNC_DATA, CURLOPTTYPE_CBPOINT, 332),
 
   CURLOPT_LASTENTRY /* the last unused */
@@ -3005,12 +3005,14 @@ typedef enum {
 // SNOW-2041981 custom information returned from curl_easy_getinfo() for header customization
   // existing headers
   CURLINFO_SF_HEADER        = CURLINFO_SLIST + 71,
+  // existing proxy headers
+  CURLINFO_SF_PROXYHEADER        = CURLINFO_SLIST + 72,
   // request method
-  CURLINFO_SF_METHOD        = CURLINFO_LONG + 72,
+  CURLINFO_SF_METHOD        = CURLINFO_LONG + 73,
   // request URL
-  CURLINFO_SF_URL           = CURLINFO_STRING + 73,
+  CURLINFO_SF_URL           = CURLINFO_STRING + 74,
   // the status of whether custom headers should be considered for this request
-  CURLINFO_SF_HEADER_APPLY_STATUS = CURLINFO_LONG + 74,
+  CURLINFO_SF_HEADER_APPLY_STATUS = CURLINFO_LONG + 75,
   CURLINFO_LASTONE          = 74
 } CURLINFO;
 
