@@ -15,6 +15,5 @@
 			"AUTOCOMMIT":	"TRUE",
 			"CLIENT_REQUEST_MFA_TOKEN":	true
 		},
-		"TOKEN":	"MFA_TOKEN"
 	}
 }
