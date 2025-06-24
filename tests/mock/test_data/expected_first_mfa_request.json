@@ -14,6 +14,6 @@
 		"SESSION_PARAMETERS":	{
 			"AUTOCOMMIT":	"TRUE",
 			"CLIENT_REQUEST_MFA_TOKEN":	true
-		},
+		}
 	}
 }
