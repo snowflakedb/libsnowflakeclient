@@ -525,6 +525,7 @@ void test_sso_token_cache(void**)
     sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
 
     if (!sf->sso_token) {
+        CXX_LOG_DEBUG("Failed to read the sso token from storage. For testing, add sso token directly.")
         sf->sso_token = (char*)malloc(strlen("mock_sso_token") + 1);
         strcpy(sf->sso_token, "mock_sso_token");
     }
