@@ -7,7 +7,6 @@
 #include "logger/SFLogger.hpp"
 
 namespace {
-  const std::vector<std::string> allowedIssuerPrefixes = {"https://sts.windows.net/", "https://login.microsoftonline.com/"};
   const std::string defaultSnowflakeEntraResource = "api://fd3f753b-eed3-462c-b6a7-a4b5bb650aad";
 }
 
@@ -58,16 +57,6 @@ namespace Snowflake {
       std::string subject = claimSet->getClaimInString("sub");
       if (issuer.empty() || subject.empty()) {
         CXX_LOG_ERROR("No issuer or subject found in Azure JWT.");
-        return boost::none;
-      }
-
-      bool isValidIssuer =
-        std::any_of(allowedIssuerPrefixes.cbegin(), allowedIssuerPrefixes.cend(), [&issuer](const std::string& allowedIssuer) {
-          return issuer.rfind(allowedIssuer, 0) == 0;
-        });
-
-      if (!isValidIssuer) {
-        CXX_LOG_ERROR("Unexpected issuer in Azure JWT: %s", issuer.c_str());
         return boost::none;
       }
 

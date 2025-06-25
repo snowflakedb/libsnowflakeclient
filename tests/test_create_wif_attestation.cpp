@@ -50,8 +50,7 @@ class FakeAwsSdkWrapper : public AwsUtils::ISdkWrapper {
 public:
   FakeAwsSdkWrapper(
       boost::optional<std::string> region,
-      boost::optional<std::string> arn,
-      Aws::Auth::AWSCredentials creds) : region(std::move(region)), arn(std::move(arn)), creds(std::move(creds)) {}
+      Aws::Auth::AWSCredentials creds) : region(std::move(region)), creds(std::move(creds)) {}
 
   Aws::Auth::AWSCredentials getCredentials() override {
     return creds;
@@ -61,13 +60,8 @@ public:
     return region;
   }
 
-  boost::optional<std::string> getArn() override {
-    return arn;
-  }
-
 private:
   boost::optional<std::string> region;
-  boost::optional<std::string> arn;
   Aws::Auth::AWSCredentials creds;
 };
 
@@ -105,7 +99,6 @@ long run_request_curl(
 }
 
 const std::string AWS_TEST_REGION = "us-east-1";
-const std::string AWS_TEST_ARN = "arn:aws:sts::123456789012:assumed-role/my-role/session-abc";
 const Aws::Auth::AWSCredentials AWS_TEST_CREDS = Aws::Auth::AWSCredentials("AKIAEXAMPLE12345678",
                                                                            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
@@ -124,8 +117,6 @@ void test_integration_aws_attestation(void **) {
   auto &attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
   assert_true(attestation.credential.size() > 0);
-  assert_true(attestation.arn.has_value());
-  assert_true(!attestation.arn->empty());
   std::string json_string;
   Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
                                                  std::back_inserter(json_string));
@@ -150,7 +141,7 @@ void test_integration_aws_attestation(void **) {
 void test_attestation_success(const char* region, const char *expectedHost) {
   AttestationConfig config;
   config.type = AttestationType::AWS;
-  auto awsSdkWrapper = FakeAwsSdkWrapper(std::string(region), AWS_TEST_ARN, AWS_TEST_CREDS);
+  auto awsSdkWrapper = FakeAwsSdkWrapper(std::string(region), AWS_TEST_CREDS);
   config.awsSdkWrapper = &awsSdkWrapper;
 
   auto attestationOpt = Snowflake::Client::createAttestation(config);
@@ -158,8 +149,6 @@ void test_attestation_success(const char* region, const char *expectedHost) {
   auto &attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
   assert_true(!attestation.credential.empty());
-  assert_true(attestation.arn.has_value());
-  assert_true(!attestation.arn->empty());
   assert_true(!attestation.subject);
   assert_true(!attestation.issuer);
 
@@ -193,17 +182,12 @@ void test_unit_aws_attestation_failed(FakeAwsSdkWrapper *awsSdkWrapper) {
 }
 
 void test_unit_aws_attestation_region_missing(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(boost::none, AWS_TEST_ARN, AWS_TEST_CREDS);
-  test_unit_aws_attestation_failed(&awsSdkWrapper);
-}
-
-void test_unit_aws_attestation_arn_missing(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, boost::none, AWS_TEST_CREDS);
+  auto awsSdkWrapper = FakeAwsSdkWrapper(boost::none, AWS_TEST_CREDS);
   test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
 void test_unit_aws_attestation_cred_missing(void **) {
-  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_ARN, Aws::Auth::AWSCredentials());
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, Aws::Auth::AWSCredentials());
   test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
@@ -449,18 +433,6 @@ void test_unit_azure_attestation_missing_subject(void **) {
   assert_true(!attestationOpt);
 }
 
-void test_unit_azure_attestation_invalid_issuer(void **) {
-  auto token = makeAzureToken(AZURE_TEST_ISSUER_INVALID_PREFIX, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
-  auto fakeHttpClient = makeSuccessfulAzureHttpClient(token, AZURE_TEST_API_VERSION_VM, AZURE_TEST_RESOURCE,
-                                                      AZURE_TEST_DEFAULT_ENDPOINT_HOST, AZURE_TEST_DEFAULT_ENDPOINT_PROTOCOL);
-  AttestationConfig config;
-  config.type = AttestationType::AZURE;
-  config.snowflakeEntraResource = AZURE_TEST_RESOURCE;
-  config.httpClient = &fakeHttpClient;
-  auto attestationOpt = Snowflake::Client::createAttestation(config);
-  assert_true(!attestationOpt);
-}
-
 void test_unit_azure_attestation_request_failed(void **) {
   auto token = makeAzureToken(AZURE_TEST_ISSUER_MICROSOFT, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
   auto fakeHttpClient = FakeHttpClient([](Snowflake::Client::HttpRequest) {
@@ -510,7 +482,6 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_success),
       cmocka_unit_test(test_unit_aws_attestation_china_region_success),
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
-      cmocka_unit_test(test_unit_aws_attestation_arn_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
       cmocka_unit_test(test_unit_gcp_attestation_success),
       cmocka_unit_test(test_unit_gcp_attestation_missing_issuer),
@@ -518,7 +489,6 @@ int main() {
       cmocka_unit_test(test_unit_gcp_attestation_failed_request),
       cmocka_unit_test(test_unit_gcp_attestation_bad_request),
       cmocka_unit_test(test_unit_azure_attestation_vm_success),
-      cmocka_unit_test(test_unit_azure_attestation_invalid_issuer),
       cmocka_unit_test(test_unit_azure_attestation_missing_issuer),
       cmocka_unit_test(test_unit_azure_attestation_missing_resource),
       cmocka_unit_test(test_unit_azure_attestation_missing_subject),
