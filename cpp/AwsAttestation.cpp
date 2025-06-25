@@ -43,7 +43,7 @@ namespace Snowflake {
       }
       const std::string& arn = arnOpt.get();
 
-      const std::string domain = "amazonaws.com";
+      const std::string domain =  AwsUtils::getDomainSuffixForRegionalUrl(region);
       const std::string host = std::string("sts") + "." + region + "." + domain;
       const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
 
