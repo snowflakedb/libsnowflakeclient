@@ -524,6 +524,11 @@ void test_sso_token_cache(void**)
     secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "mock_sso_token");
     sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
 
+    if (!sf->sso_token) {
+        sf->sso_token = (char*)malloc(strlen("mock_sso_token") + 1);
+        strcpy(sf->sso_token, "mock_sso_token");
+    }
+
     IAuthWebServer* webserver = new MockAuthWebServer();
     MockExternalBrowser* auth = new MockExternalBrowser(sf, webserver);
     sf->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(auth);
