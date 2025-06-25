@@ -2,7 +2,7 @@
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
 #include <curl/curl.h>
-#include "curl_desc_pool.h"
+#include "../../lib/header_customizer_int.h"
 
 namespace Snowflake {
   namespace Client {

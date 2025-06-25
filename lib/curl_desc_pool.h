@@ -40,8 +40,6 @@ extern "C" {
      */
     void free_curl_desc(void * curl_desc);
 
-    void _snowflake_curl_perform_callback(CURL* curl, void* userdata);
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

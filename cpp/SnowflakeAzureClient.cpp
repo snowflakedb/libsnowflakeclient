@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "../lib/curl_desc_pool.h"
+#include "../lib/header_customizer_int.h"
 
 #define CONTENT_TYPE_OCTET_STREAM "application/octet-stream"
 

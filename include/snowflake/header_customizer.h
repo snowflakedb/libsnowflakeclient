@@ -1,8 +1,6 @@
 #ifndef SNOWFLAKE_HEADER_CUSTOMIZER_H
 #define SNOWFLAKE_HEADER_CUSTOMIZER_H
 
-#include "snowflake/basic_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,11 +37,11 @@ typedef enum {
  *                        If the buffer size of new_headers is not enough to store the entire string,
  *                        header customizer will be called again with increased buffer size of new_headers.
  */
-typedef sf_bool (*HEADER_CUSTOMIZER)(SF_HTTPREQ_METHOD http_method,
+typedef int (*HEADER_CUSTOMIZER)(SF_HTTPREQ_METHOD http_method,
                                      const char* target_uri,
                                      const char* existing_headers,
-                                     sf_bool is_retry,
-                                     sf_bool* invoke_once,
+                                     int is_retry,
+                                     int* invoke_once,
                                      char* new_headers,
                                      size_t new_headers_buflen,
                                      size_t* new_headers_len);

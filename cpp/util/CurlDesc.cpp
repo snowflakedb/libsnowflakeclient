@@ -1,6 +1,6 @@
 #include "snowflake/CurlDesc.hpp"
 #include "../logger/SFLogger.hpp"
-#include "../lib/curl_desc_pool.h"
+#include "../../lib/header_customizer_int.h"
 
 namespace Snowflake
 {
