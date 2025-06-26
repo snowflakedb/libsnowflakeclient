@@ -46,7 +46,7 @@ static struct {
 
 
 static const char *level_names[] = {
-    "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
+    "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "DEFAULT"
 };
 
 #ifdef LOG_USE_COLOR
@@ -221,7 +221,7 @@ SF_LOG_LEVEL log_from_str_to_level(const char *level_in_str) {
         return SF_LOG_FATAL;
     }
     int idx = 0, last = 0;
-    for (idx = 0, last = (int) SF_LOG_FATAL; idx <= last; ++idx) {
+    for (idx = 0, last = (int) SF_LOG_DEFAULT; idx <= last; ++idx) {
         size_t len = strlen(level_names[idx]);
         if (sf_strncasecmp(level_names[idx], level_in_str, len) == 0) {
             return (SF_LOG_LEVEL) idx;

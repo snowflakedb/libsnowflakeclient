@@ -11,6 +11,10 @@
 #undef snprintf
 #include <boost/filesystem.hpp>
 
+#include <string>
+#include <iostream>
+#include <exception>
+
 #ifndef _WIN32 
 #include <dlfcn.h>
 #endif
@@ -114,6 +118,7 @@ namespace
   boost::filesystem::path resolveClientConfigPath(
     const boost::filesystem::path& configFilePath)
   {
+
     // 1. Try config file if it was passed in
     if (!configFilePath.empty())
     {
@@ -238,13 +243,24 @@ namespace
     const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
   {
-    boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
-
-    if (!derivedConfigPath.empty())
-    {
-      return parseConfigFile(derivedConfigPath, clientConfig);
+    try {
+      boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
+      
+      if (!derivedConfigPath.empty())
+      {
+        return parseConfigFile(derivedConfigPath, clientConfig);
+      }
+    } catch (boost::filesystem::filesystem_error &e) {
+      CXX_LOG_ERROR("boost filesystem error caught in loadClientConfig(): %s", e.what());
+    } catch (const std::ios_base::failure &e) {
+      // catch exception from fstream
+      CXX_LOG_ERROR("file operation exception caught in loadClientConfig(): %s", e.what());
+    } catch (const std::exception &e) {
+      CXX_LOG_ERROR("Caught a general excpetion in loadClientConfig(): %s", e.what());
+    } catch (...) {
+      CXX_LOG_ERROR("Caught unknown exception in loadClientConfig()");
     }
-    return false;
+      return false; 
   }
 }
 
