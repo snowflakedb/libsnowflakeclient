@@ -120,6 +120,8 @@ static struct aws_event_loop_group *s_event_loop_group_new(
         /* Don't pin to hyper-threads if a user cared enough to specify a NUMA node */
         if (!pin_threads || (i < group_cpu_count && !usable_cpus[i].suspected_hyper_thread)) {
             struct aws_thread_options thread_options = *aws_default_thread_options();
+            // SNOW-2111927 custom changes to keep, fixing thread handle leak from event loop.
+            thread_options.join_strategy = AWS_TJS_MANAGED;
 
             struct aws_event_loop_options options = {
                 .clock = clock,
