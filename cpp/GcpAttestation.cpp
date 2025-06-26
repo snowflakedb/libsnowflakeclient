@@ -49,11 +49,6 @@ namespace Snowflake {
         return boost::none;
       }
 
-      if (issuer != "https://accounts.google.com") {
-        CXX_LOG_ERROR("Unexpected issuer in GCP JWT: %s", issuer.c_str());
-        return boost::none;
-      }
-
       return Attestation::makeGcp(jwtStr, issuer, subject);
     }
   }
