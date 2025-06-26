@@ -18,8 +18,6 @@
 #include "query_context_cache.h"
 #include "snowflake_util.h"
 
-// #include <stdio.h>
-
 #ifdef _WIN32
 #include <Shellapi.h>
 #define strncasecmp _strnicmp
@@ -505,11 +503,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
-    // FILE *mfptr;
-    // mfptr = fopen("log_init.txt", "w");
-    // fprintf(mfptr,"log path passed in: %s\n", log_path);
-    // fprintf(mfptr,"log level passed in : %s (%d)\n", log_from_level_to_str(log_level), log_level);
-
     // quiet logging needs to set here; otherwise, easy logging will print funny things onto console
     // Set logging level
     if (DEBUG) {
@@ -538,35 +531,26 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
       // Check specified parameters
       if (log_path && strlen(log_path) != 0) {
         sf_log_path = log_path;
-        // fprintf(mfptr,"log path is specified\n");
         // Check client config
       } else if (strlen(clientConfig.logPath) != 0) {
         sf_log_path = clientConfig.logPath;
-        // fprintf(mfptr,"log path is not specified; easy logging log path used\n");
       }
     }
-
-    // fprintf(mfptr,"after checking env log path, log path is now: %s\n", sf_log_path);
 
     // Check environment variable
     sf_log_level_str = sf_getenv_s("SNOWFLAKE_LOG_LEVEL", log_level_buf, sizeof(log_level_buf));
     if (sf_log_level_str != NULL) {
       sf_log_level = log_from_str_to_level(sf_log_level_str);
-    //   fprintf(mfptr,"log level is specified\n");
       // Check specified parameters
     } else if (sf_log_level == SF_LOG_DEFAULT) {
       // Check client config
       if (strlen(clientConfig.logLevel) != 0) {
         sf_log_level = log_from_str_to_level(clientConfig.logLevel);
-        // fprintf(mfptr,"log level is set by easy logging\n");
       } else {
         sf_log_level = SF_LOG_FATAL;
-        // fprintf(mfptr,"log level is set to default\n");
       }
     }
-
-    // fprintf(mfptr,"after checking env log level, log level is now: %s\n", log_from_level_to_str(sf_log_level));
-
+    
     log_set_level(sf_log_level);
     log_set_lock(&log_lock_func);
 
@@ -585,8 +569,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
                  (char *) time_str);
     }
 
-    // fprintf(mfptr,"log path used: %s\n", LOG_PATH);
-
     if (LOG_PATH != NULL) {
       if (strlen(LOG_PATH) != 0) {
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -601,10 +583,6 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     }
 
     snowflake_global_set_attribute(SF_GLOBAL_LOG_LEVEL, log_from_level_to_str(sf_log_level));
-
-    // fprintf(mfptr,"the final log level is: %s\n", log_from_level_to_str(sf_log_level));
-    // fprintf(mfptr,"the final log path is: %s\n", LOG_PATH);
-    // fclose(mfptr);
 
     return SF_BOOLEAN_TRUE;
 }
