@@ -17,6 +17,16 @@ namespace Snowflake {
       public:
         AwsSdkInitialized() : options{} {
           CXX_LOG_INFO("Initializing AWS SDK");
+          // SNOW-2111927: fix thread handle leak with the workaround here:
+          // https://github.com/aws/aws-sdk-cpp/issues/1854#issuecomment-1024113886
+          options.ioOptions.clientBootstrap_create_fn = []()
+          {
+              Aws::Crt::Io::EventLoopGroup eventLoopGroup;
+              Aws::Crt::Io::DefaultHostResolver defaultHostResolver(eventLoopGroup, 8, 30);
+              auto clientBootstrap = Aws::MakeShared<Aws::Crt::Io::ClientBootstrap>("Aws_Init_Cleanup", eventLoopGroup, defaultHostResolver);
+              clientBootstrap->EnableBlockingShutdown();
+              return clientBootstrap;
+          };
           Aws::InitAPI(options);
           Aws::Utils::Logging::InitializeAWSLogging(
               Aws::MakeShared<Snowflake::Client::SFAwsLogger>(""));
