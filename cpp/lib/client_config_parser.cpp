@@ -11,8 +11,6 @@
 #undef snprintf
 #include <boost/filesystem.hpp>
 
-#include <string>
-#include <iostream>
 #include <exception>
 
 #ifndef _WIN32 
@@ -118,7 +116,6 @@ namespace
   boost::filesystem::path resolveClientConfigPath(
     const boost::filesystem::path& configFilePath)
   {
-
     // 1. Try config file if it was passed in
     if (!configFilePath.empty())
     {
@@ -260,7 +257,7 @@ namespace
     } catch (...) {
       CXX_LOG_ERROR("Caught unknown exception in loadClientConfig()");
     }
-      return false; 
+    return false;
   }
 }
 
