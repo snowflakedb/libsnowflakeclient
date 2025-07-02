@@ -286,6 +286,9 @@ void test_external_browser(void** unused)
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         SF_AUTHENTICATOR_EXTERNAL_BROWSER);
     char* host, * port, * protocol;
@@ -301,10 +304,110 @@ void test_external_browser(void** unused)
     if (protocol) {
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
+
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
     }
+
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
+void test_sso_token_auth(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_sso_token_auth") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+ /*
+ * Should trigger external browser auth at the first time
+ * Make sure ALLOW_ID_TOKEN is set to true
+ * For more details refer to: https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-overview
+ */
+    for (int i = 0; i < 2; i++) {
+        SF_CONNECT* sf = snowflake_init();
+        snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+            getenv("SNOWFLAKE_TEST_ACCOUNT"));
+        snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
+        snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+            SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+        sf_bool client_store_temporary_credential = SF_BOOLEAN_TRUE;
+        snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &client_store_temporary_credential);
+        char* host, * port, * protocol;
+        host = getenv("SNOWFLAKE_TEST_HOST");
+        if (host) {
+            snowflake_set_attribute(sf, SF_CON_HOST, host);
+        }
+        port = getenv("SNOWFLAKE_TEST_PORT");
+        if (port) {
+            snowflake_set_attribute(sf, SF_CON_PORT, port);
+        }
+        protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+        if (protocol) {
+            snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+        }
+
+        if (i != 1) {
+            sf->token_cache = secure_storage_init();
+            secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        }
+       
+        SF_STATUS status = snowflake_connect(sf);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sf->error));
+        }
+
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        snowflake_term(sf);
+    }
+}
+
+void test_sso_token_auth_renew(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_sso_token_auth_renew") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_USERNAME"));
+    snowflake_set_attribute(sf, SF_CON_PASSWORD,
+        getenv("SNOWFLAKE_TEST_EXTERNAL_BROWSER_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        SF_AUTHENTICATOR_EXTERNAL_BROWSER);
+    sf_bool client_store_temporary_credential = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &client_store_temporary_credential);
+    char* host, * port, * protocol;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    sf->token_cache = secure_storage_init();
+    secure_storage_remove_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, "wrong token");
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
@@ -319,6 +422,8 @@ int main(void)
         cmocka_unit_test(test_mfa_connect_with_duo_passcodeInPassword),
         cmocka_unit_test(test_external_browser),
         cmocka_unit_test(test_okta_connect),
+        cmocka_unit_test(test_sso_token_auth),
+        cmocka_unit_test(test_sso_token_auth_renew),
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
