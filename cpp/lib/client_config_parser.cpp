@@ -11,8 +11,6 @@
 #undef snprintf
 #include <boost/filesystem.hpp>
 
-#include <exception>
-
 #ifndef _WIN32 
 #include <dlfcn.h>
 #endif
