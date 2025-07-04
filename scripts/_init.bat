@@ -15,6 +15,7 @@ if /I "%platform%"=="x86" set platform=x86
 
 set curdir=%cd%
 set ARROW_FROM_SOURCE=1
+set CJSON_VERSION=1.7.18
 
 if defined arch (
     if not "%platform%"=="" (

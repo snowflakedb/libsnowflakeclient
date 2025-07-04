@@ -55,6 +55,18 @@ if %ERRORLEVEL% NEQ 0 goto :error
 if not exist %scriptdir%..\deps-build\%build_dir%\azure\lib\azure-storage-lite.lib call "%scriptdir%build_azuresdk.bat" :build %platform% %build_type% %vs_version% %dynamic_runtime%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+echo === staging cJSON for libsnowflakeclient
+set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
+set CJSON_PATCH=%scriptdir%..\patches\libsfc-cJSON-%CJSON_VERSION%.patch
+rd /S /Q %CJSON_SOURCE_DIR%
+git clone https://github.com/DaveGamble/cJSON.git %CJSON_SOURCE_DIR%
+pushd %CJSON_SOURCE_DIR%
+  git checkout tags/v%CJSON_VERSION% -b v%CJSON_VERSION%
+  git apply %CJSON_PATCH%
+  copy /v /y .\cJSON.c "%scriptdir%..\lib\"
+  copy /v /y .\cJSON.h "%scriptdir%..\lib\"
+popd
+
 set cmake_dir=cmake-build-%arcdir%-%vs_version%-%build_type%
 rd /q /s %cmake_dir%
 md %cmake_dir%

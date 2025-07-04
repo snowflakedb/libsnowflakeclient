@@ -4,7 +4,7 @@
 
 @echo off
 set CURL_SRC_VERSION=8.12.1
-set CURL_BUILD_VERSION=2
+set CURL_BUILD_VERSION=4
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -93,6 +93,18 @@ copy /v /y .\deps-build\%build_dir%\oob\lib\libtelemetry_a.lib %curl_dep%\lib\li
 if %ERRORLEVEL% NEQ 0 goto :error
 copy /v /y .\deps-build\%build_dir%\oob\include\*.h %curl_dep%\include
 if %ERRORLEVEL% NEQ 0 goto :error
+
+echo === staging cJSON for curl
+set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
+set CJSON_PATCH=%scriptdir%..\patches\curl-cJSON-%CJSON_VERSION%.patch
+rd /S /Q %CJSON_SOURCE_DIR%
+git clone https://github.com/DaveGamble/cJSON.git %CJSON_SOURCE_DIR%
+pushd %CJSON_SOURCE_DIR%
+  git checkout tags/v%CJSON_VERSION% -b v%CJSON_VERSION%
+  git apply %CJSON_PATCH%
+  copy /v /y .\cJSON.c "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.c"
+  copy /v /y .\cJSON.h "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.h"
+popd
 
 echo === building curl
 cd "%currdir%\deps\%CURL_DIR%"
