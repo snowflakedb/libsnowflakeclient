@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 CURL_SRC_VERSION=8.12.1
-CURL_BUILD_VERSION=2
+CURL_BUILD_VERSION=4
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -25,6 +25,18 @@ source $DIR/utils.sh
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
+
+# staging cJSON for curl
+CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
+CJSON_PATCH=$DEPS_DIR/../patches/curl-cJSON-${CJSON_VERSION}.patch
+rm -rf $CJSON_SOURCE_DIR
+git clone https://github.com/DaveGamble/cJSON.git $CJSON_SOURCE_DIR
+pushd $CJSON_SOURCE_DIR
+  git checkout tags/v${CJSON_VERSION} -b ${CJSON_VERSION}
+  git apply $CJSON_PATCH
+  cp ./cJSON.c $LIBCURL_SOURCE_DIR/lib/vtls/sf_cJSON.c
+  cp ./cJSON.h $LIBCURL_SOURCE_DIR/lib/vtls/sf_cJSON.h
+popd
 
 # build libcurl
 curl_configure_opts=()
