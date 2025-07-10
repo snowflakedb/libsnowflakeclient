@@ -3,6 +3,12 @@
 #include "memory.h"
 #include <stdio.h>
 
+#include <string.h>
+#include <pwd.h>        // pwd structure
+// #include <sys/types.h>  //
+// #include <stdlib.h>     // set env
+#include <sys/stat.h>   //chmod and stat()
+
 #ifndef _WIN32
 #include <unistd.h>
 #else
@@ -394,6 +400,7 @@ void test_client_config_stdout() {
 
   // Get the log path determined by libsnowflakeclient
   snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+
   // Ensure the log file doesn't exist at the beginning
   assert_string_equal(LOG_PATH, "");
 
@@ -406,6 +413,133 @@ void test_client_config_stdout() {
 
   // Cleanup
   remove(configFilePath);
+}
+
+void test_log_creation_no_permission_to_home_folder(){
+  // check if current user is root. If so, exit test
+  // FILE *mfptr;
+  // mfptr = fopen("easyLogging_testlog.txt", "w");
+  // fprintf(mfptr, "Getting logging info with pwd.h\n");
+
+  char *name;
+  struct passwd *pwd;
+  pwd = getpwuid(getuid());
+  name = pwd->pw_name;
+  
+  // fprintf(mfptr, "Login name: %s\n", name);
+
+  assert_int_not_equal(strcmp(name, "root"), 0);
+  
+  // fprintf(mfptr, "Not root user; can test exception\n");
+  // fprintf(mfptr, "Creating Sf_client_config.json for user: %s\n", name);
+
+  // create sf_client_config.json in $HOME
+
+  // char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+  char filename[] = "/sf_client_config.json";
+  char *homedir = getenv("HOME");
+  size_t filepathsize = strlen(homedir)+strlen(filename)+1;
+  char *m_configFilePath = malloc(filepathsize);
+  snprintf(m_configFilePath, filepathsize, "%s%s", homedir, filename);
+
+  // fprintf(mfptr, "the file path: %s\n", m_configFilePath);
+
+  // FILE *file;
+  // file = fopen(m_configFilePath,"w");
+  // fprintf(file, "%s", clientConfigJSON);
+  // free(m_configFilePath);
+  // fclose(file);
+  
+  // check home folder permission
+  // int rc = system("ls -l /home");
+  // if(rc == 0){
+    // fprintf(mfptr, "Terminal command: 'ls -l /home' executed successfully\n");
+  // } else {
+    // fprintf(mfptr, "Terminal command: 'ls -l /home' failed\n");
+  // }
+
+  mode_t newPermission = 0000; // no read, write, execute permission for anyone
+  chmod(homedir, newPermission);
+  // if(chmod(homedir, newPermission)== 0){
+  //   fprintf(mfptr, "Successfully changed HOME dir's permission\n");
+
+  //   struct stat st;
+  //   int returncode = stat(homedir, &st);
+  //   fprintf(mfptr, "%s Permissions: \t", homedir);
+  //   fprintf(mfptr, (S_ISDIR(st.st_mode)) ? "d" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IRUSR) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWUSR) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXUSR) ? "x" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IRGRP) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWGRP) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXGRP) ? "x" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IROTH) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWOTH) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXOTH) ? "x\n" : "-\n");
+
+  // } else {
+  //   fprintf(mfptr, "Failed in changing HOME dir permission\n");
+  // }
+
+  // rc = system("chmod 000 /home/test1");
+  // if(rc == 0){
+  //   fprintf(mfptr, "Terminal command: 'chmod 000 /home/test1' executed successfully\n");
+  // } else {
+  //   fprintf(mfptr, "Terminal command: 'chmod 000 /home/test1' failed\n");
+  // }
+
+  // set $HOME folder to root user
+  // fprintf(mfptr, "Current homedir: %s\n", homedir);
+  // if(setenv("HOME", "/root", 1) == 0){
+  //   homedir = getenv("HOME");
+  //   fprintf(mfptr, "Updated homedir: %s\n", homedir);
+  // } else {
+  //   fprintf(mfptr, "unable to set $HOME to /root\n");
+  // }
+
+
+  // parse client config for log details - exception should be thrown here and caught
+  client_config clientConfig;
+  // fprintf(mfptr, "Attempting to load client config file from HOME\n");
+  sf_bool result = load_client_config("", &clientConfig);
+  // fprintf(mfptr, "Successful in trying to load client config file from HOME\n");
+  assert_false(result);
+
+  // // set global_client_config_attribute
+  // snowflake_global_set_attribute(SF_GLOBAL_CLIENT_CONFIG_FILE, m_configFilePath);
+  
+  // // global_client_init  
+  // snowflake_global_init("./easy_logging", SF_LOG_DEFAULT, NULL);
+
+  // char LOG_PATH[MAX_PATH] = {0};
+  // // get log path determined by libsfclient -> should trigger exception
+  // snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+  // fprintf(mfptr, "Easy logging log path: %s\n", LOG_PATH);
+  
+  newPermission = 0755; // resetting HOME dir for the next test
+  chmod(homedir, newPermission);
+  // if(chmod(homedir, newPermission)== 0){
+  //   fprintf(mfptr, "Successfully changed HOME dir's permission\n");
+
+  //   struct stat st;
+  //   int returncode = stat(homedir, &st);
+  //   fprintf(mfptr, "%s Permissions: \t", homedir);
+  //   fprintf(mfptr, (S_ISDIR(st.st_mode)) ? "d" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IRUSR) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWUSR) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXUSR) ? "x" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IRGRP) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWGRP) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXGRP) ? "x" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IROTH) ? "r" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IWOTH) ? "w" : "-");
+  //   fprintf(mfptr, (st.st_mode & S_IXOTH) ? "x\n" : "-\n");
+
+  // } else {
+  //   fprintf(mfptr, "Failed in changing HOME dir permission\n");
+  // }
+  
+  // fclose(mfptr);
 }
 
 void test_log_creation() {
@@ -567,6 +701,10 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
+#endif
+#if !defined(_WIN32) || !defined(_WIN64)
+        // NIX sys test only
+        cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
