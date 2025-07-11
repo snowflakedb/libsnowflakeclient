@@ -88,19 +88,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 "CLIENT_REQUEST_MFA_TOKEN",
                 1
             );
-
-            if (sf->token_cache == NULL) {
-                sf->token_cache = secure_storage_init();
-            }
-
-            char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-            if (token != NULL)
-            {
-                snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                secure_storage_free_credential(token);
-            }
         }
     }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER)
+    {
+        snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_STORE_TEMPORARY_CREDENTIAL", sf->client_store_temporary_credential);
+    }
+
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
 

@@ -35,15 +35,7 @@ namespace Snowflake {
         return boost::none;
       }
       const std::string& region = regionOpt.get();
-
-      auto arnOpt = config.awsSdkWrapper->getArn();
-      if (!arnOpt) {
-        CXX_LOG_INFO("Failed to get AWS ARN");
-        return boost::none;
-      }
-      const std::string& arn = arnOpt.get();
-
-      const std::string domain = "amazonaws.com";
+      const std::string domain =  AwsUtils::getDomainSuffixForRegionalUrl(region);
       const std::string host = std::string("sts") + "." + region + "." + domain;
       const std::string url = std::string("https://") + host + "/?Action=GetCallerIdentity&Version=2011-06-15";
 
@@ -76,7 +68,7 @@ namespace Snowflake {
       std::string json = picojson::value(obj).serialize(true);
       std::string base64;
       Util::Base64::encodePadding(json.begin(), json.end(), std::back_inserter(base64));
-      return Attestation::makeAws(base64, arn);
+      return Attestation::makeAws(base64);
     }
   }
 }

@@ -74,23 +74,6 @@ namespace Snowflake {
           return boost::none;
         }
 
-        boost::optional<std::string> getArn() override {
-          auto awsSdk = initAwsSdk();
-          Aws::STS::STSClient stsClient;
-          Aws::STS::Model::GetCallerIdentityRequest request;
-
-          auto outcome = stsClient.GetCallerIdentity(request);
-
-          // Check if the call was successful
-          if (!outcome.IsSuccess()) {
-            CXX_LOG_INFO("Failed to get caller identity: %s", outcome.GetError().GetMessage().c_str());
-            return boost::none;
-          }
-
-          const auto &result = outcome.GetResult();
-          return result.GetArn();
-        }
-
         Aws::Auth::AWSCredentials getCredentials() override {
           auto awsSdk = initAwsSdk();
           auto credentialsProvider = Aws::MakeShared<Aws::Auth::DefaultAWSCredentialsProviderChain>({});
