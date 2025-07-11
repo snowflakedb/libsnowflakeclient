@@ -110,6 +110,14 @@ static DWORD WINAPI thread_wrapper_fn(LPVOID arg) {
     if (is_managed_thread) {
         aws_thread_pending_join_add(&wrapper_ptr->node);
     }
+    /*
+     * SNOW-2111927 custom changes to keep, fixing thread handle leak from event loop.
+     * For threads manually joined, the thread handle in thread_copy is unused.
+     * Close at the end.
+     */
+    else {
+        CloseHandle(thread_wrapper.thread_copy.thread_handle);
+    }
 
     return 0;
 }
