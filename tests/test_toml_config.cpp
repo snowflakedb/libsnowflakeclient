@@ -5,6 +5,9 @@
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "utils/EnvOverride.hpp"
+#include <boost/filesystem.hpp>
+
+using namespace boost::filesystem;
 
 void test_valid_toml_file(void** unused) {
   SF_UNUSED(unused);
@@ -151,6 +154,129 @@ void test_data_types(void **unused) {
   remove(tomlFilePath.c_str());
 }
 
+void test_permissions(void **unused) {
+  SF_UNUSED(unused);
+  // Create toml file
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  // Set logging
+  std::string logname = "logs/snowflake_toml.txt";
+  log_set_level(SF_LOG_INFO);
+  log_set_path(logname.c_str());
+
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  std::vector<std::pair<perms, bool>> configPermissions =
+  {
+    { owner_all, true },
+    { owner_read | owner_write, true },
+    { owner_read | owner_exe, true },
+    { owner_read, true },
+    { owner_all | group_all, false },
+    { owner_all | group_read | group_write, false },
+    { owner_all | group_read | group_exe, true },
+    { owner_all | group_read, true },
+    { owner_all | group_write | group_exe, false },
+    { owner_all | group_write, false },
+    { owner_all | group_exe, true },
+    { owner_all | others_all, false },
+    { owner_all | others_read | others_write, false },
+    { owner_all | others_read | others_exe, true },
+    { owner_all | others_read, true },
+    { owner_all | others_write | others_exe, false },
+    { owner_all | others_write, false },
+    { owner_all | others_exe, true }
+  };
+
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
+  for (auto permission : configPermissions)
+  {
+    boost::filesystem::permissions(tomlFilePath, permission.first);
+    connectionParams = load_toml_config();
+    if (permission.second)
+    {
+      assert_int_equal(connectionParams.size(), 2);
+      if (permission.first & boost::filesystem::group_read ||
+        permission.first & boost::filesystem::others_read)
+      {
+        std::string line;
+        std::fstream logfile;
+        logfile.open(logname);
+        if (logfile.is_open())
+        {
+          bool isFound = false;
+          while (getline(logfile, line))
+          {
+            if (line.find("Warning due to other users having permission to read the config file") != std::string::npos)
+            {
+              isFound = true;
+              break;
+            }
+          }
+          logfile.close();
+          remove(logname.c_str());
+          assert_true(isFound);
+        }
+      }
+    }
+    else
+    {
+      assert_true(connectionParams.empty());
+    }
+    connectionParams.clear();
+  }
+
+  // Cleanup
+  remove(tomlFilePath.c_str());
+}
+
+void test_skip_warn(void **unused) {
+  SF_UNUSED(unused);
+  // Create toml file
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  // Set logging
+  std::string logname = "logs/snowflake_toml.txt";
+  log_set_level(SF_LOG_INFO);
+  log_set_path(logname.c_str());
+
+  EnvOverride permOverride("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
+  EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_read | others_read);
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+
+  bool isFound = false;
+  std::string line;
+  std::fstream logfile;
+  logfile.open(logname);
+  if (logfile.is_open())
+  {
+    while (getline(logfile, line))
+    {
+      if (line.find("Warning due to other users having permission to read the config file") != std::string::npos)
+      {
+        isFound = true;
+        break;
+      }
+    }
+    logfile.close();
+  }
+  assert_false(isFound);
+
+  remove(tomlFilePath.c_str());
+}
+
+
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
@@ -161,6 +287,10 @@ int main(void) {
       cmocka_unit_test(test_use_default_location_env),
       cmocka_unit_test(test_use_snowflake_default_connection_var),
       cmocka_unit_test(test_data_types),
+#ifndef _WIN32
+      cmocka_unit_test(test_permissions),
+      cmocka_unit_test(test_skip_warn)
+#endif
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
