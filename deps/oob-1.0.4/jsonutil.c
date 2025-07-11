@@ -465,7 +465,7 @@ void setConnectionString(char const* connStr)
 {
   if(connStr && connStr[0] != 0 )
   {
-    sf_strcpy(connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr), connStr);
+    copyString(connStr, connectionInfo.ctxStr, sizeof(connectionInfo.ctxStr));
   }
 }
 
