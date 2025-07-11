@@ -3,6 +3,10 @@
 #include "memory.h"
 #include <stdio.h>
 
+#include <string.h>
+#include <pwd.h>        // pwd structure
+#include <sys/stat.h>   //chmod and stat()
+
 #ifndef _WIN32
 #include <unistd.h>
 #else
@@ -394,6 +398,7 @@ void test_client_config_stdout() {
 
   // Get the log path determined by libsnowflakeclient
   snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+
   // Ensure the log file doesn't exist at the beginning
   assert_string_equal(LOG_PATH, "");
 
@@ -406,6 +411,31 @@ void test_client_config_stdout() {
 
   // Cleanup
   remove(configFilePath);
+}
+
+void test_log_creation_no_permission_to_home_folder(){
+  // check if current user is root. If so, exit test
+  char *name;
+  struct passwd *pwd;
+  pwd = getpwuid(getuid());
+  name = pwd->pw_name;
+  assert_int_not_equal(strcmp(name, "root"), 0);
+    
+  // retrieving HOME dir
+  char *homedir = getenv("HOME");
+  
+  // setting HOME dir to be inaccessible to all
+  mode_t newPermission = 0000; // no read, write, execute permission for anyone
+  chmod(homedir, newPermission);
+  
+  // parse client config for log details - exception should be thrown here and caught
+  client_config clientConfig;
+  sf_bool result = load_client_config("", &clientConfig);
+  assert_false(result);
+  
+  // resetting HOME dir for the next test
+  newPermission = 0755; 
+  chmod(homedir, newPermission);
 }
 
 void test_log_creation() {
@@ -567,6 +597,10 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
+#endif
+#if !defined(_WIN32) || !defined(_WIN64)
+        // NIX sys test only
+        cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
