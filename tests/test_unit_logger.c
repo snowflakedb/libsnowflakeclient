@@ -4,7 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <pwd.h>        
-#include <sys/stat.h>   
+#include <sys/stat.h>
+
+#define __USE_XOPEN_EXTENDED 1
+#include <ftw.h> 
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -412,6 +415,17 @@ void test_client_config_stdout() {
   remove(configFilePath);
 }
 
+int remove_helper(const char *filepath, const struct stat *st, int typeflag, struct FTW *ftwbuf){
+  int rc = remove(filepath);
+  if (rc != 0){
+    perror("Error in removing file");
+  }
+  return rc;
+}
+
+int remove_rf(const char *path){
+  return nftw(path, remove_helper, 64, FTW_DEPTH | FTW_PHYS);
+}
 void test_log_creation_no_permission_to_home_folder(){
   // check if current user is root. If so, exit test
   char *name;
@@ -423,23 +437,86 @@ void test_log_creation_no_permission_to_home_folder(){
     FILE *mfptr;
     mfptr = fopen("testEasyLogging.txt", "w");
 
-    // need to check if /SF_client_config_folder exists
+    // scenario #1 using HOME dir to set up for exception thrown
+    // fprintf(mfptr, "----- Entering Scenario #1 -----\n");
 
-    // making temp dir
+    // retrieving HOME dir
     // char *homedir = getenv("HOME");
-    // char foldername[] = "SF_Config_Folder";
-    // size_t pathSize = strlen(homedir)+ strlen(foldername) +1;
-    // char *sf_clientConfigFolderPath = malloc(pathSize);
-    // sprintf(sf_clientConfigFolderPath, pathSize, "%s%s", homedir, foldername);
-    
+
+    // storing the HOME dir's original permission
+    // struct stat homedir_stat;
+    // mode_t homedirOriginalPermission;
+    // if(stat(homedir, & homedir_stat) == 0){
+    //   fprintf(mfptr, "File: /tmp/SF_client_config_folder\n");
+    //   homedirOriginalPermission = homedir_stat.st_mode & 0777;
+    //   fprintf(mfptr, "Permission: %o\n", homedirOriginalPermission);
+    // } else {
+    //   fprintf(mfptr, "Error in getting sf client config folder stat\n");
+    // }
+
+    // setting HOME dir to be inaccessible to all
+    // mode_t newPermission = 0000; // no read, write, execute permission for anyone
+    // chmod(homedir, newPermission);
+
+    // parse client config for log details - exception should be thrown here and caught
+    // client_config clientConfig;
+    // sf_bool result = load_client_config("", &clientConfig);
+    // assert_false(result);
+
+    // resetting HOME dir for the next test
+    // chmod(homedir, homedirOriginalPermission);
+
+    // system("ls -l $HOME");
+
+    // scenario #2 using tmp/SF_client_config folder to set up for exception throw
+    fprintf(mfptr, "----- Entering Scenario #2 -----\n");
+
+    // need to check if /SF_client_config_folder exists
+    // int rc = remove_rf("/tmp/SF_client_config_folder");
+
+    // clean up /tmp/SF_client_config_folder
+    int rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
+
+    if(rc == 0){
+      fprintf(mfptr, "Successfully in cleaning up sf_client_config.json\n");
+    } else {
+      fprintf(mfptr, "Not succesfful in cleaning up sf_client_config.json\n");
+    }
+
+    rc = remove("/tmp/SF_client_config_folder/");
+    if(rc == 0){
+      fprintf(mfptr, "Successful in removing /tmp/SF_client_config folder\n");
+    } else {
+      fprintf(mfptr, "Not Successful in removing /tmp/SF_client_config folder\n");
+    }
+
+    if(rc == 0){
+      fprintf(mfptr, "There are no SF Client Config folder present\n");
+    } else {
+      fprintf(mfptr, "Not successful in removing /tmp/SF_client_config\n");
+    }
+
+    // creating SF Client Config folder under tmp folder
     fprintf(mfptr, "Creating SF client config folder in tmp folder\n");
-    int rc = mkdir("/tmp/SF_client_config_folder", S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH);
+
+    rc = mkdir("/tmp/SF_client_config_folder", S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH);
+    
     if (rc == 0){
       fprintf(mfptr,"Successful in creating sf client config folder in tmp folder\n");
     } else {
       fprintf(mfptr, "NOT successful in creating sf client config folder inside of tmp folder\n");
     }   
     system("ls -l $HOME");
+
+    struct stat file_stat;
+    mode_t file_stat_originalStat;
+    if(stat("/tmp/SF_client_config_folder", &file_stat) == 0){
+      fprintf(mfptr, "File: /tmp/SF_client_config_folder\n");
+      file_stat_originalStat = file_stat.st_mode & 0777;
+      fprintf(mfptr, "Permission: %o\n", file_stat_originalStat);
+    } else {
+      fprintf(mfptr, "Error in getting sf client config folder stat\n");
+    }
 
     fprintf(mfptr, "Creating sf client config,json inside tmp/ SF_Config_folder\n");
     
@@ -460,11 +537,11 @@ void test_log_creation_no_permission_to_home_folder(){
     system("ls -l /tmp/SF_client_config_folder");
 
     // setting SF_CLIENT_CONFIG_FILE PATH
-    setenv("SF_CLIENT_CONFIG_FILE", "/tmp/SF_client_config_folder/sf_client_config.json", 1);
-    system("echo $SF_CLIENT_CONFIG_FILE");
+    // setenv("SF_CLIENT_CONFIG_FILE", "/tmp/SF_client_config_folder/sf_client_config.json", 1);
+    // system("echo $SF_CLIENT_CONFIG_FILE");
 
-    // retrieving HOME dir
-    // char *homedir = getenv("HOME");
+    setenv("HOME", "/tmp/SF_client_config_folder/sf_client_config.json", 1);
+    system("echo $HOME");
     
     // setting SF_CLIENT_CONFIG dir to be inaccessible to all
     mode_t newPermission = 0000; // no read, write, execute permission for anyone
@@ -474,9 +551,28 @@ void test_log_creation_no_permission_to_home_folder(){
     // parse client config for log details - exception should be thrown here and caught
     client_config clientConfig;
     sf_bool result = load_client_config("", &clientConfig);
+    // result = load_client_config("", &clientConfig);
     assert_false(result);
+
+    chmod("/tmp/SF_client_config_folder", file_stat_originalStat);
     
-    // rm /tmp/SF_client_config_folder
+    // clean up /tmp/SF_client_config_folder
+    rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
+
+    if(rc == 0){
+      fprintf(mfptr, "Successfully in cleaning up sf_client_config.json\n");
+    } else {
+      fprintf(mfptr, "Not succesfful in cleaning up sf_client_config.json\n");
+    }
+
+    rc = remove("/tmp/SF_client_config_folder/");
+    if(rc == 0){
+      fprintf(mfptr, "Successful in removing /tmp/SF_client_config folder\n");
+    } else {
+      fprintf(mfptr, "Not Successful in removing /tmp/SF_client_config folder\n");
+    }
+    fclose(mfptr);
+
   }   
 }
 
