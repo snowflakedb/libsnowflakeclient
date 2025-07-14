@@ -32,7 +32,7 @@ AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 rm -rf $AWS_SOURCE_DIR
 git clone --single-branch --branch $AWS_SRC_VERSION --recursive https://github.com/aws/aws-sdk-cpp.git $AWS_SOURCE_DIR
 pushd $AWS_SOURCE_DIR
-  git apply ../aws-patch/aws-$AWS_SRC_VERSION.patch
+  git apply ../../patches/aws-sdk-cpp-$AWS_SRC_VERSION.patch
 popd
 
 [[ -n "$DOWNLOAD_ONLY" ]] && exit 0

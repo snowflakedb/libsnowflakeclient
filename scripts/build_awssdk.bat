@@ -44,7 +44,7 @@ set AWS_INSTALL_DIR=%scriptdir%..\deps-build\%build_dir%\aws\
 rd /S /Q %AWS_SOURCE_DIR%
 git clone --single-branch --branch %aws_src_version% --recursive https://github.com/aws/aws-sdk-cpp.git %AWS_SOURCE_DIR%
 pushd %AWS_SOURCE_DIR%
-  git apply ..\aws-patch\aws-%aws_src_version%.patch
+  git apply ..\..\patches\aws-sdk-cpp-%aws_src_version%.patch
 popd
 
 rd /S /Q %AWS_CMAKE_BUILD_DIR%
