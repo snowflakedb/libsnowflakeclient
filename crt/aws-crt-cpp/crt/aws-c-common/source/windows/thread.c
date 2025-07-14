@@ -88,12 +88,12 @@ static DWORD WINAPI thread_wrapper_fn(LPVOID arg) {
      */
     bool is_managed_thread = wrapper_ptr->thread_copy.detach_state == AWS_THREAD_MANAGED;
     if (!is_managed_thread) {
-      /*
-       * SNOW-2111927 custom changes to keep, fixing thread handle leak .
-       * For threads manually joined, close the thread handle in wrapper before
-       * releasing it.
-       */
-        CloseHandle(wrapper_ptr->thread_copy.thread_handle);
+        /*
+         * SNOW-2111927 custom changes to keep, fixing thread handle leak .
+         * For threads manually joined, close the thread handle in wrapper before
+         * releasing it.
+         */
+        aws_thread_clean_up(&wrapper_ptr->thread_copy);
         aws_mem_release(allocator, arg);
     }
 
