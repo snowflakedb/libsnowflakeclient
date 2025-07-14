@@ -36,11 +36,6 @@
 #define AWS_TOKEN "AWS_TOKEN"
 #define SFC_DIGEST "sfc-digest"
 
-namespace
-{
-  const Aws::S3::Model::ChecksumAlgorithm INVALID_CHECKSUM = (Aws::S3::Model::ChecksumAlgorithm)(10);
-}
-
 namespace Snowflake
 {
 namespace Client
@@ -239,14 +234,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
   putObjectRequest.SetBody(
     Aws::MakeShared<Aws::IOStream>("", dataStream->rdbuf()));
 
-  // In newer version of aws sdk (when updating to 1.11.283), it forcely use
-  // checksum that requires the data stream to be read by twice (one for
-  // checksum and one for uploading) while the cipherStream can only be read
-  // once and the second time will return error. It's defaults to MD5 when
-  // set it to NOT_SET so the only way to disable it is to set it to an
-  // invalid value.
-  putObjectRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
-
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
   if (outcome.IsSuccess())
@@ -272,7 +259,6 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
   uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
-  uploadPartRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
 
   Aws::S3::Model::UploadPartOutcome outcome = s3Client->UploadPart(uploadPartRequest);
 
