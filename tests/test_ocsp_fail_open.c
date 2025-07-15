@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "utils/test_setup.h"
 
 void setCacheFile(char *cache_file)

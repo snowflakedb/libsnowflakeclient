@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string.h>
 #include "connection.h"
 #include <snowflake/logger.h>
@@ -92,22 +88,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 "CLIENT_REQUEST_MFA_TOKEN",
                 1
             );
-
-            // SNOW-715510: TODO Enable token_cache
-/*
-            if (sf->token_cache == NULL) {
-                sf->token_cache = cred_cache_init();
-            }
-
-            char* token = cred_cache_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-            if (token != NULL)
-            {
-                snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                cred_cache_free_credential(token);
-            }
-*/
         }
     }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER)
+    {
+        snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_STORE_TEMPORARY_CREDENTIAL", sf->client_store_temporary_credential);
+    }
+
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
 
@@ -854,7 +842,7 @@ char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_buf) {
 }
 
 sf_bool STDCALL is_retryable_http_code(long int code) {
-    return ((code >= 500 && code < 600) || code == 400 || code == 403 ||
+    return ((code >= 500 && code < 600) || code == 403 ||
             code == 408 || code == 429) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
 }
 

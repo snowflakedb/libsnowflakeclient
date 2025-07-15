@@ -47,12 +47,14 @@ BEGIN {
         $LOGDIR
         $memanalyze
         $MEMDUMP
+        $perlcmd
         $perl
         $PIDDIR
         $proxy_address
         $PROXYIN
         $pwd
         $randseed
+        $run_duphandle
         $run_event_based
         $SERVERCMD
         $SERVERIN
@@ -65,10 +67,15 @@ BEGIN {
         %feature
         %keywords
         @protocols
+        $bundle
+        $dev_null
     );
 }
 use pathhelp qw(exe_ext);
 use Cwd qw(getcwd);
+use testutil qw(
+    shell_quote
+);
 
 
 #######################################################################
@@ -80,6 +87,7 @@ our $verbose;         # 1 to show verbose test output
 our $torture;         # 1 to enable torture testing
 our $proxy_address;   # external HTTP proxy address
 our $listonly;        # only list the tests
+our $run_duphandle;   # run curl with --test-duphandle to verify handle duplication
 our $run_event_based; # run curl with --test-event to test the event API
 our $automakestyle;   # use automake-like test status output format
 our $anyway;          # continue anyway, even if a test fail
@@ -90,7 +98,8 @@ our $randseed = 0;    # random number seed
 # paths
 our $pwd = getcwd();  # current working directory
 our $srcdir = $ENV{'srcdir'} || '.';  # root of the test source code
-our $perl="perl -I. -I$srcdir"; # invoke perl like this
+our $perlcmd=shell_quote($^X);
+our $perl="$perlcmd -I. " . shell_quote("-I$srcdir"); # invoke perl like this
 our $LOGDIR="log";  # root of the log directory; this will be different for
                     # each runner in multiprocess mode
 our $LIBDIR="./libtest";
@@ -100,8 +109,10 @@ our $VCURL=$CURL;  # what curl binary to use to verify the servers with
                    # VCURL is handy to set to the system one when the one you
                    # just built hangs or crashes and thus prevent verification
 # the path to the script that analyzes the memory debug output file
-our $memanalyze="$perl $srcdir/memanalyze.pl";
+our $memanalyze="$perl " . shell_quote("$srcdir/memanalyze.pl");
 our $valgrind;     # path to valgrind, or empty if disabled
+our $bundle = 0;   # use bundled server, libtest, unit binaries
+our $dev_null = ($^O eq 'MSWin32' ? 'NUL' : '/dev/null');
 
 # paths in $LOGDIR
 our $LOCKDIR = "lock";          # root of the server directory with lock files

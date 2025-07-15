@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKE_CLIENT_INT_H
 #define SNOWFLAKE_CLIENT_INT_H
 
@@ -46,11 +42,13 @@
 // not used for now but add for URL checking on connection requests
 #define AUTHENTICATOR_URL "/session/authenticator-request"
 #define EXTERNALBROWSER_CONSOLE_URL "/console/login"
+#define ABORT_REQUEST_URL "/queries/v1/abort-request"
 
 #define URL_PARAM_REQEST_GUID "request_guid="
 #define URL_PARAM_RETRY_COUNT "retryCount="
 #define URL_PARAM_RETRY_REASON "retryReason="
 #define URL_PARAM_CLIENT_START_TIME "clientStartTime="
+#define URL_PARAM_REQUEST_ID "requestId="
 
 #define CLIENT_APP_ID_KEY "CLIENT_APP_ID"
 #define CLIENT_APP_VERSION_KEY "CLIENT_APP_VERSION"
@@ -67,6 +65,7 @@
 #define GONE_SESSION_CODE "390111"
 #define SESSION_TOKEN_EXPIRED_CODE "390112"
 #define MASTER_TOKEN_EXPIRED_CODE "390114"
+#define SF_GS_ERROR_CODE_ID_TOKEN_INVALID "390195"
 
 #define QUERY_IN_PROGRESS_CODE "333333"
 #define QUERY_IN_PROGRESS_ASYNC_CODE "333334"
@@ -116,6 +115,7 @@ typedef struct SF_STAGE_INFO {
   sf_bool useS3RegionalUrl;
   // whether to use regional URL (AWS and GCS only)
   sf_bool useRegionalUrl;
+  sf_bool useVirtualUrl;
   char* storageAccount; // For Azure only
   SF_STAGE_CRED * stage_cred;
 } SF_STAGE_INFO;
@@ -147,6 +147,14 @@ typedef struct NAMED_PARAMS
     unsigned int used;
     unsigned int allocd;
 }NamedParams;
+
+/**
+ * Query metadata
+ */
+typedef struct SF_QUERY_METADATA {
+  SF_QUERY_STATUS status;
+  char *qid;
+} SF_QUERY_METADATA;
 
 /**
  * Allocate memory for put get response struct

@@ -16,6 +16,40 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
+    build-test-mock:
+        name: Build-Test-Mock
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            build_type: [ 'Debug', 'Release' ]
+        steps:
+          - uses: actions/checkout@v4
+          - name: Restore cached deps
+            id: cache-restore-deps
+            uses: actions/cache/restore@v4
+            with:
+              path: dep-cache
+              key: ${{ matrix.build_type }}-${{ github.event.pull_request.base.sha }}-Linux-dep-cache
+            if: github.event_name == 'pull_request'
+          - name: Build
+            shell: bash
+            env:
+              BUILD_TYPE: ${{ matrix.build_type }}
+              ENABLE_MOCK_OBJECTS: 'true'
+            run: ci/build_linux.sh
+          - uses: actions/setup-python@v5
+            with:
+              python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
+              architecture: 'x64'
+          - name: Test
+            shell: bash
+            env:
+              BUILD_TYPE: ${{ matrix.build_type }}
+              CLOUD_PROVIDER: 'AWS'
+              PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+            run: ci/test_linux.sh
+
     build-test-linux:
         name: Build-Test-Linux
         runs-on: ubuntu-latest
@@ -47,7 +81,7 @@ jobs:
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
             - uses: actions/setup-python@v5
               with:
-                python-version: '3.13'
+                python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
                 architecture: 'x64'
             - name: Test
               shell: bash
@@ -57,52 +91,6 @@ jobs:
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
               run: ci/test_linux.sh
 
-    build-test-win:
-        name: Build-Test-Win
-        runs-on: windows-2019
-        strategy:
-            fail-fast: false
-            matrix:
-                platform: [ 'x64', 'x86' ]
-                build_type: [ 'Debug', 'Release' ]
-                vs_version: [ 'VS16' ]
-                cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
-        steps:
-            - uses: actions/checkout@v4
-            - name: Restore cached deps
-              id: cache-restore-deps
-              uses: actions/cache/restore@v4
-              with:
-                path: dep-cache
-                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.event.pull_request.base.sha }}-Win-dep-cache
-              if: github.event_name == 'pull_request'
-            - name: Build
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-              run: ci\build_win.bat
-            - name: Cache deps
-              id: cache-save-deps
-              uses: actions/cache/save@v4
-              with:
-                path: dep-cache
-                key: ${{ matrix.build_type }}-${{ matrix.platform }}-${{ matrix.vs_version }}-${{ github.sha }}-Win-dep-cache
-              if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
-            - uses: actions/setup-python@v5
-              with:
-                python-version: '3.13'
-                architecture: 'x64'
-            - name: Test
-              shell: cmd
-              env:
-                  PLATFORM: ${{ matrix.platform }}
-                  BUILD_TYPE: ${{ matrix.build_type }}
-                  VS_VERSION: ${{ matrix.vs_version }}
-                  CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
-                  PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-              run: ci\test_win.bat
     build-test-win-vs2022:
         name: Build-Test-Win-vs2022
         runs-on: windows-2022
@@ -115,6 +103,13 @@ jobs:
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v4
+            - name: Install CMake
+              shell: cmd
+              run: |
+                curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
+                tar -xf cmake.zip
+                echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+                cmake --version
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
@@ -138,7 +133,7 @@ jobs:
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
             - uses: actions/setup-python@v5
               with:
-                python-version: '3.13'
+                python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
                 architecture: 'x64'
             - name: Test
               shell: cmd
@@ -212,7 +207,7 @@ jobs:
               run: ci/build_linux.sh
             - uses: actions/setup-python@v5
               with:
-                python-version: '3.13'
+                python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
                 architecture: 'x64'
             - name: Test on AWS
               shell: bash
@@ -252,7 +247,7 @@ jobs:
               run: ci/build_linux.sh
             - uses: actions/setup-python@v5
               with:
-                python-version: '3.13'
+                python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
                 architecture: 'x64'
             - name: Test on AZURE
               shell: bash
@@ -292,7 +287,7 @@ jobs:
               run: ci/build_linux.sh
             - uses: actions/setup-python@v5
               with:
-                python-version: '3.13'
+                python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
                 architecture: 'x64'
             - name: Test on GCP
               shell: bash

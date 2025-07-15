@@ -1,6 +1,7 @@
 <!-- Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al. -->
 <!-- SPDX-License-Identifier: curl -->
 # OPTIONS
+
 Options start with one or two dashes. Many of the options require an
 additional value next to them. If provided text does not start with a dash, it
 is presumed to be and treated as a URL.
@@ -22,6 +23,10 @@ prefix it with `no-`. However, in this list we mostly only list and show the
 When --next is used, it resets the parser state and you start again with a
 clean option state, except for the options that are global. Global options
 retain their values and meaning even after --next.
+
+The first argument that is exactly two dashes (`--`), marks the end of
+options; any argument after the end of options is interpreted as a URL
+argument even if it starts with a dash.
 
 The following options are global: `%GLOBALS`.
 
