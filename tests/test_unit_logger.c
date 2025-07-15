@@ -442,29 +442,26 @@ void test_log_creation() {
  * Test that generate exception
  */
 void test_log_creation_no_permission_to_home_folder(){
+ 
   // check if current user is root. If so, exit test
   char *name;
   struct passwd *pwd;
   pwd = getpwuid(getuid());
   name = pwd->pw_name;
+
   if(strcmp(name, "root") != 0){
-
-    // FILE *mfptr;
-    // mfptr = fopen("testEasyLogging.txt", "w");
-
-   // scenario #2 using tmp/SF_client_config folder to set up for exception throw
-    // fprintf(mfptr, "----- Entering Scenario #2 -----\n");
-
-    // ensuring /tmp/SF_client_config_folder does not exist
     struct stat fileBuffer;
     int rc;
+
     if(stat("/tmp/SF_client_config_folder/sf_client_config.json", &fileBuffer) != 0){
-      // /tmp/SF_Client_config folder exists
+      
+      // /tmp/SF_Client_config folder exists and needs to be cleaned up
       chmod("/tmp/SF_client_config_folder", 777);
       rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
 
       if(rc == 0){
         // successful in removing sf_client_config.json
+        // removing SF_client_config_folder
         rc = remove("/tmp/SF_client_config_folder/");
       } else {
         log_debug("Not successful in ensuring /tmp/sf_client_config_folder/sf_client_config.json does not exist");
@@ -475,81 +472,35 @@ void test_log_creation_no_permission_to_home_folder(){
         log_debug("Not successful in ensuring /tmp/sf_client_config_folder does not exist");
       }
     }    
-    
-    // if(rc == 0){
-    //   fprintf(mfptr, "Successfully in cleaning up sf_client_config.json\n");
-    // } else {
-    //   fprintf(mfptr, "Not succesfful in cleaning up sf_client_config.json\n");
-    // }
 
-    // rc = remove("/tmp/SF_client_config_folder/");
-    // if(rc == 0){
-    //   fprintf(mfptr, "Successful in removing /tmp/SF_client_config folder\n");
-    // } else {
-    //   fprintf(mfptr, "Not Successful in removing /tmp/SF_client_config folder\n");
-    // }
-
-    // if(rc == 0){
-    //   fprintf(mfptr, "There are no SF Client Config folder present\n");
-    // } else {
-    //   fprintf(mfptr, "Not successful in removing /tmp/SF_client_config\n");
-    // }
-
-    // creating SF Client Config folder under tmp folder
-    // fprintf(mfptr, "Creating SF client config folder in tmp folder\n");
-
+    // creating SF_client_config_folder
     rc = mkdir("/tmp/SF_client_config_folder", S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH);
     if(rc != 0){
       log_debug("NOT successful in creating sf client config folder inside of tmp folder");
     }
-    
-    // if (rc == 0){
-    //   fprintf(mfptr,"Successful in creating sf client config folder in tmp folder\n");
-    // } else {
-    //   fprintf(mfptr, "NOT successful in creating sf client config folder inside of tmp folder\n");
-    // }
-       
-    // system("ls -l $HOME");
 
     // obtaining a record of tmp folder permission
     struct stat folder_stat;
     mode_t folderOrigPerm = 0755;
     if(stat("/tmp/SF_client_config_folder", &folder_stat) == 0){
-      // fprintf(mfptr, "File: /tmp/SF_client_config_folder\n");
       folderOrigPerm = folder_stat.st_mode & 0777;
-      // fprintf(mfptr, "Permission: %o\n", folderOrigPerm);
     } else {
-      // fprintf(mfptr, "Error in getting sf client config folder stat\n");
       log_debug("Error: unable to get /tmp/sf_client_config folder permission");
     }
-
-    // fprintf(mfptr, "Creating sf client config,json inside tmp/ SF_Config_folder\n");
     
     char configFilePath[] = "/tmp/SF_client_config_folder/sf_client_config.json";
     char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
-
     FILE *file;
-    file = fopen(configFilePath, "w");
-    // if(file == NULL){
-    //   fprintf(mfptr, "Error opening sf client config.json file\n");
-    // } else {
-    //   fprintf(mfptr, "Successful in opening sf client config.json file to write\n");
-    // }
-    
+    file = fopen(configFilePath, "w");   
     fprintf(file, "%s", clientConfigJSON);
     fclose(file);
 
-    // system("ls -l /tmp/SF_client_config_folder");
-
     // setting $HOME to point at /tmp/sf_client_config_folder
     setenv("HOME", "/tmp/SF_client_config_folder/", 1);
-    // setenv("HOME", "/tmp/SF_client_config_folder/sf_client_config.json", 1);
-    // system("echo $HOME");
     
     // setting SF_CLIENT_CONFIG dir to be inaccessible to all
-    mode_t newPermission = 0000; // no read, write, execute permission for anyone
+    mode_t newPermission = 0000;
     chmod("/tmp/SF_client_config_folder", newPermission);
-    // system("ls -l /tmp");
     
     // parse client config for log details - exception should be thrown here and caught
     client_config clientConfig;
@@ -563,23 +514,16 @@ void test_log_creation_no_permission_to_home_folder(){
     rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
 
     if(rc == 0){
-      // fprintf(mfptr, "Successfully in cleaning up sf_client_config.json\n");
+      // Successful in removing sf_client_config.json
+      // removing SF_client_config folder
       rc = remove("/tmp/SF_client_config_folder/");
     } else {
-      // fprintf(mfptr, "Not succesfful in cleaning up sf_client_config.json\n");
       log_debug("Not succesfful in cleaning up sf_client_config.json");
     }
 
-    // rc = remove("/tmp/SF_client_config_folder/");
     if(rc != 0){
       log_debug("Not succesfful in removing /tmp/sf_client_config_folder");
     }
-    // if(rc == 0){
-    //   fprintf(mfptr, "Successful in removing /tmp/SF_client_config folder\n");
-    // } else {
-    //   fprintf(mfptr, "Not Successful in removing /tmp/SF_client_config folder\n");
-    // }
-    // fclose(mfptr);
   }   
 }
 
