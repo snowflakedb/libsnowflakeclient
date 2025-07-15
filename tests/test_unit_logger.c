@@ -412,6 +412,35 @@ void test_client_config_stdout() {
   remove(configFilePath);
 }
 
+void test_log_creation() {
+    char logname[] = "dummy.log";
+
+    // ensure the log file doesn't exist at the beginning
+    remove(logname);
+    assert_int_not_equal(access(logname, F_OK), 0);
+
+    log_set_lock(NULL);
+    log_set_level(SF_LOG_WARN);
+    log_set_quiet(1);
+    log_set_path(logname);
+
+    // info log won't trigger the log file creation since log level is set to warning
+    log_info("dummy info log");
+    assert_int_not_equal(access(logname, F_OK), 0);
+
+    // warning log will trigger the log file creation
+    log_warn("dummy warning log");
+    assert_int_equal(access(logname, F_OK), 0);
+    log_close();
+
+    remove(logname);
+}
+
+#ifndef _WIN32
+
+/**
+ * Test that generate exception
+ */
 void test_log_creation_no_permission_to_home_folder(){
   // check if current user is root. If so, exit test
   char *name;
@@ -445,8 +474,7 @@ void test_log_creation_no_permission_to_home_folder(){
         // not successful in removing sf_client_config_folder
         log_debug("Not successful in ensuring /tmp/sf_client_config_folder does not exist");
       }
-    }
-    
+    }    
     
     // if(rc == 0){
     //   fprintf(mfptr, "Successfully in cleaning up sf_client_config.json\n");
@@ -484,12 +512,12 @@ void test_log_creation_no_permission_to_home_folder(){
     // system("ls -l $HOME");
 
     // obtaining a record of tmp folder permission
-    struct stat file_stat;
-    mode_t file_stat_originalStat;
-    if(stat("/tmp/SF_client_config_folder", &file_stat) == 0){
+    struct stat folder_stat;
+    mode_t folderOrigPerm = 0755;
+    if(stat("/tmp/SF_client_config_folder", &folder_stat) == 0){
       // fprintf(mfptr, "File: /tmp/SF_client_config_folder\n");
-      file_stat_originalStat = file_stat.st_mode & 0777;
-      // fprintf(mfptr, "Permission: %o\n", file_stat_originalStat);
+      folderOrigPerm = folder_stat.st_mode & 0777;
+      // fprintf(mfptr, "Permission: %o\n", folderOrigPerm);
     } else {
       // fprintf(mfptr, "Error in getting sf client config folder stat\n");
       log_debug("Error: unable to get /tmp/sf_client_config folder permission");
@@ -529,7 +557,7 @@ void test_log_creation_no_permission_to_home_folder(){
     assert_false(result);
 
     // changing permission of tmp folder back to what it was 
-    chmod("/tmp/SF_client_config_folder", file_stat_originalStat);
+    chmod("/tmp/SF_client_config_folder", folderOrigPerm);
     
     // clean up /tmp/SF_client_config_folder
     rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
@@ -552,35 +580,9 @@ void test_log_creation_no_permission_to_home_folder(){
     //   fprintf(mfptr, "Not Successful in removing /tmp/SF_client_config folder\n");
     // }
     // fclose(mfptr);
-
   }   
 }
 
-void test_log_creation() {
-    char logname[] = "dummy.log";
-
-    // ensure the log file doesn't exist at the beginning
-    remove(logname);
-    assert_int_not_equal(access(logname, F_OK), 0);
-
-    log_set_lock(NULL);
-    log_set_level(SF_LOG_WARN);
-    log_set_quiet(1);
-    log_set_path(logname);
-
-    // info log won't trigger the log file creation since log level is set to warning
-    log_info("dummy info log");
-    assert_int_not_equal(access(logname, F_OK), 0);
-
-    // warning log will trigger the log file creation
-    log_warn("dummy warning log");
-    assert_int_equal(access(logname, F_OK), 0);
-    log_close();
-
-    remove(logname);
-}
-
-#ifndef _WIN32
 /**
  * Tests masking secret information in log
  */
