@@ -373,7 +373,9 @@ void test_array_binding_stage_fallback(void** unused) {
 
 void test_array_binding_threshold(void** unused) {
   SF_UNUSED(unused);
+  initialize_test(SF_BOOLEAN_TRUE);
   test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_FALSE);
 }
 
 // test threshold with fallback so we can ensure stage binding
