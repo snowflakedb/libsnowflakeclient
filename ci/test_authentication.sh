@@ -17,5 +17,5 @@ docker run \
   -e AWS_SECRET_ACCESS_KEY \
   -e GIT_BRANCH \
   -e GIT_COMMIT \
-  nexus.int.snowflakecomputing.com:8086/docker/snowdrivers-test-external-browser-odbc:2 \
+  nexus.int.snowflakecomputing.com:8086/docker/snowdrivers-test-external-browser-odbc:5 \
   "/mnt/host/ci/test/test_authentication.sh"
