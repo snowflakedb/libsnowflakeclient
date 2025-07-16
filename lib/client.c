@@ -838,7 +838,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("get_maxretries: %d", sf->get_maxretries);
     log_debug("get_threshold: %d", sf->get_threshold);
     log_debug("client_session_keep_alive: %s", sf->client_session_keep_alive ? "true" : "false");
-    log_debug("client_session_keep_alive: %d", sf->client_session_keep_alive_heartbeat_frequency);
+    log_debug("client_session_keep_alive_heartbeat_frequency: %d", sf->client_session_keep_alive_heartbeat_frequency);
 
     return SF_STATUS_SUCCESS;
 }

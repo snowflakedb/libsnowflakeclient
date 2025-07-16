@@ -69,7 +69,7 @@ void connection_thread(sf_bool* result)
     sf_bool client_session_keep_alive = SF_BOOLEAN_TRUE;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
     snowflake_connect(sf);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(20000));
     //Make sure renew_session_sync work well
     *result = renew_session_sync(sf);
 
@@ -213,11 +213,10 @@ void test_heartbeat(void** unused)
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-    //cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
-    //cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
-    //cmocka_unit_test(test_token_renew),
+    cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
+    cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
     cmocka_unit_test(test_heartbeat_manually),
-    //cmocka_unit_test(test_heartbeat),
+    cmocka_unit_test(test_heartbeat),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

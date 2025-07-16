@@ -39,7 +39,7 @@ extern "C" {
         }
         else
         {
-            CXX_LOG_TRACE("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
+            CXX_LOG_TRACE("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
