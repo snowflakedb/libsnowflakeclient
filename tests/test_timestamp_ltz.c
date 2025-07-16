@@ -372,7 +372,6 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
     size_t c4buf_len = 0;
     size_t c4buf_max_size = 0;
 
-    sf_bool is_null;
     assert_int_equal(snowflake_num_rows(sfstmt), no_error_test_cases);
 
     int counter = 0;
