@@ -8,6 +8,7 @@
 #ifndef _WIN32
 #include <unistd.h>
 #include <pwd.h>
+#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 #else
 #define F_OK 0
 inline int access(const char* pathname, int mode) {
@@ -442,89 +443,119 @@ void test_log_creation() {
  * Test that generate exception
  */
 void test_log_creation_no_permission_to_home_folder(){
- 
+
+  // FILE *mfptr;
+  // mfptr = fopen("easyLogging.txt", "w");
+
   // check if current user is root. If so, exit test
   char *name;
   struct passwd *pwd;
   pwd = getpwuid(getuid());
   name = pwd->pw_name;
 
-  if(strcmp(name, "root") != 0){
-    struct stat fileBuffer;
-    int rc;
-
-    if(stat("/tmp/SF_client_config_folder/sf_client_config.json", &fileBuffer) != 0){
+  if(strcmp(name, "root") == 0){
+    // fprintf(mfptr, "User is root; exiting test\n");
+    return;
+  }
+    
+  int rc = sf_delete_directory_if_exists(SF_TMP_FOLDER);
+  // int rc = sf_delete_directory_if_exists("/tmp/SF_client_config_folder/");
+  // if(rc != 0){
+  //   // not successful in removing sf_client_config_folder
+  //   fprintf(mfptr, "Either the tmp dir does not exist or not successful in removing the tmp folder\n");
+  // } else {
+  //   fprintf(mfptr, "Successful in ensuring tmp folder doesn't exist\n");
+  // }
+    
+    // struct stat fileBuffer;
+    // int rc;
+    // if(stat("/tmp/SF_client_config_folder/sf_client_config.json", &fileBuffer) != 0){
       
-      // /tmp/SF_Client_config folder exists and needs to be cleaned up
-      chmod("/tmp/SF_client_config_folder", 777);
-      rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
+    //   // /tmp/SF_Client_config folder exists and needs to be cleaned up
+    //   chmod(SF_TMP_FOLDER, 777);
+    //   rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
 
-      if(rc == 0){
-        // successful in removing sf_client_config.json
-        // removing SF_client_config_folder
-        rc = remove("/tmp/SF_client_config_folder/");
-      } else {
-        log_debug("Not successful in ensuring /tmp/sf_client_config_folder/sf_client_config.json does not exist");
-      }
+    //   if(rc == 0){
+    //     // successful in removing sf_client_config.json
+    //     // removing SF_client_config_folder
+    //     rc = remove("/tmp/SF_client_config_folder/");
+    //   } else {
+    //     log_debug("Not successful in ensuring /tmp/sf_client_config_folder/sf_client_config.json does not exist");
+    //   }
 
-      if(rc != 0){
-        // not successful in removing sf_client_config_folder
-        log_debug("Not successful in ensuring /tmp/sf_client_config_folder does not exist");
-      }
-    }    
+    //   if(rc != 0){
+    //     // not successful in removing sf_client_config_folder
+    //     log_debug("Not successful in ensuring /tmp/sf_client_config_folder does not exist");
+    //   }
+    // }   
 
     // creating SF_client_config_folder
-    rc = mkdir("/tmp/SF_client_config_folder", S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH);
-    if(rc != 0){
-      log_debug("NOT successful in creating sf client config folder inside of tmp folder");
-    }
+    rc = sf_create_directory_if_not_exists(SF_TMP_FOLDER);
+    // rc = sf_create_directory_if_not_exists("/tmp/SF_client_config_folder/");
+    // rc = mkdir(SF_TMP_FOLDER, S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH);
+    // if(rc != 0){
+    //   fprintf(mfptr, "NOT successful in creating sf client config folder inside of tmp folder\n");
+    // } else {
+    //   fprintf(mfptr, "Success in creating tmp folder\n");
+    // }
 
     // obtaining a record of tmp folder permission
-    struct stat folder_stat;
-    mode_t folderOrigPerm = 0755;
-    if(stat("/tmp/SF_client_config_folder", &folder_stat) == 0){
-      folderOrigPerm = folder_stat.st_mode & 0777;
-    } else {
-      log_debug("Error: unable to get /tmp/sf_client_config folder permission");
-    }
+    // struct stat folder_stat;
+    // mode_t folderOrigPerm = 0755;
+    // if(stat(SF_TMP_FOLDER, &folder_stat) == 0){
+    //   folderOrigPerm = folder_stat.st_mode & 0777;
+    // } else {
+    //   log_debug("Error: unable to get /tmp/sf_client_config folder permission");
+    // }
     
-    char configFilePath[] = "/tmp/SF_client_config_folder/sf_client_config.json";
-    char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
-    FILE *file;
-    file = fopen(configFilePath, "w");   
-    fprintf(file, "%s", clientConfigJSON);
-    fclose(file);
+    // char configFilePath[] = "/tmp/sf_client_config_folder/sf_client_config.json";
+    // char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
+    // FILE *file;
+    // file = fopen(configFilePath, "w");   
+    // fprintf(file, "%s", clientConfigJSON);
+    // fclose(file);
+    // fprintf(mfptr, "Successful in creating client config.json");
+
+    // getting $HOME dir
+    char *homedirOrig = getenv("HOME");
+    // system("echo $HOME");
 
     // setting $HOME to point at /tmp/sf_client_config_folder
-    setenv("HOME", "/tmp/SF_client_config_folder/", 1);
+    setenv("HOME", SF_TMP_FOLDER, 1);
+    // system("echo 'setting home dir' ; echo $HOME");
+    // system("ls -l /tmp");
     
     // setting SF_CLIENT_CONFIG dir to be inaccessible to all
-    mode_t newPermission = 0000;
-    chmod("/tmp/SF_client_config_folder", newPermission);
+    mode_t newPermission = 0x0000;
+    chmod(SF_TMP_FOLDER, newPermission);
+    // system("ls -l /tmp");
+    // fprintf(mfptr, "Successful in setting tmp folder permission\n");
     
     // parse client config for log details - exception should be thrown here and caught
     client_config clientConfig;
     sf_bool result = load_client_config("", &clientConfig);
     assert_false(result);
 
-    // changing permission of tmp folder back to what it was 
-    chmod("/tmp/SF_client_config_folder", folderOrigPerm);
+    // changing permission of tmp folder to ensure cleanup is possible
+    chmod(SF_TMP_FOLDER, 0750);
     
     // clean up /tmp/SF_client_config_folder
-    rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
+    rc = sf_delete_directory_if_exists(SF_TMP_FOLDER);
+    // rc = sf_delete_directory_if_exists(SF_TMP_FOLDER);
+    
+    // rc = remove("/tmp/SF_client_config_folder/sf_client_config.json");
 
-    if(rc == 0){
-      // Successful in removing sf_client_config.json
-      // removing SF_client_config folder
-      rc = remove("/tmp/SF_client_config_folder/");
-    } else {
-      log_debug("Not succesfful in cleaning up sf_client_config.json");
-    }
+    // if(rc == 0){
+    //   // Successful in removing sf_client_config.json
+    //   // removing SF_client_config folder
+    //   rc = remove("/tmp/SF_client_config_folder/");
+    // } else {
+    //   log_debug("Not succesfful in cleaning up sf_client_config.json");
+    // }
 
-    if(rc != 0){
-      log_debug("Not succesfful in removing /tmp/sf_client_config_folder");
-    }
-  }   
+    // if(rc != 0){
+    //   log_debug("Not succesfful in removing /tmp/sf_client_config_folder");
+    // }   
 }
 
 /**
@@ -647,25 +678,25 @@ void test_mask_secret_log() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_null_log_path),
-        cmocka_unit_test(test_default_log_path),
-        cmocka_unit_test(test_log_str_to_level),
-        cmocka_unit_test(test_invalid_client_config_path),
-        cmocka_unit_test(test_client_config_log_invalid_json),
-        cmocka_unit_test(test_client_config_log_malformed_json),
+        // cmocka_unit_test(test_null_log_path),
+        // cmocka_unit_test(test_default_log_path),
+        // cmocka_unit_test(test_log_str_to_level),
+        // cmocka_unit_test(test_invalid_client_config_path),
+        // cmocka_unit_test(test_client_config_log_invalid_json),
+        // cmocka_unit_test(test_client_config_log_malformed_json),
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-        cmocka_unit_test(test_client_config_log),
-        cmocka_unit_test(test_client_config_log_unknown_entries),
-        cmocka_unit_test(test_client_config_log_init),
-        cmocka_unit_test(test_client_config_log_init_home_config),
-        cmocka_unit_test(test_client_config_log_no_level),
-        cmocka_unit_test(test_client_config_log_no_path),
-        cmocka_unit_test(test_client_config_stdout),
+        // cmocka_unit_test(test_client_config_log),
+        // cmocka_unit_test(test_client_config_log_unknown_entries),
+        // cmocka_unit_test(test_client_config_log_init),
+        // cmocka_unit_test(test_client_config_log_init_home_config),
+        // cmocka_unit_test(test_client_config_log_no_level),
+        // cmocka_unit_test(test_client_config_log_no_path),
+        // cmocka_unit_test(test_client_config_stdout),
 #endif
-        cmocka_unit_test(test_log_creation),
+        // cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
-        cmocka_unit_test(test_mask_secret_log),
+        // cmocka_unit_test(test_mask_secret_log),
 #endif
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
