@@ -20,6 +20,18 @@ source $DIR/utils.sh $@
 
 [[ -n "$GET_VERSION" ]] && echo $LIBSNOWFLAKECLIENT_VERSION && exit 0
 
+DEPS_DIR=$DIR/../deps
+CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
+CJSON_PATCH=$DEPS_DIR/../patches/libsfc-cJSON-${CJSON_VERSION}.patch
+rm -rf $CJSON_SOURCE_DIR
+git clone https://github.com/DaveGamble/cJSON.git $CJSON_SOURCE_DIR
+pushd $CJSON_SOURCE_DIR
+  git checkout tags/v${CJSON_VERSION} -b ${CJSON_VERSION}
+  git apply $CJSON_PATCH
+  cp ./cJSON.c $DIR/../lib/
+  cp ./cJSON.h $DIR/../lib/
+popd
+
 cd $DIR/..
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 CMAKE_DIR=cmake-build-$target
