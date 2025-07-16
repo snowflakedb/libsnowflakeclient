@@ -2,7 +2,6 @@
 #include <snowflake/client_config_parser.h>
 #include "memory.h"
 #include <stdio.h>
-#include <string.h>  
 #include <sys/stat.h>
 
 #ifndef _WIN32
