@@ -605,25 +605,25 @@ void test_mask_secret_log() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-        // cmocka_unit_test(test_null_log_path),
-        // cmocka_unit_test(test_default_log_path),
-        // cmocka_unit_test(test_log_str_to_level),
-        // cmocka_unit_test(test_invalid_client_config_path),
-        // cmocka_unit_test(test_client_config_log_invalid_json),
-        // cmocka_unit_test(test_client_config_log_malformed_json),
+        cmocka_unit_test(test_null_log_path),
+        cmocka_unit_test(test_default_log_path),
+        cmocka_unit_test(test_log_str_to_level),
+        cmocka_unit_test(test_invalid_client_config_path),
+        cmocka_unit_test(test_client_config_log_invalid_json),
+        cmocka_unit_test(test_client_config_log_malformed_json),
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-        // cmocka_unit_test(test_client_config_log),
-        // cmocka_unit_test(test_client_config_log_unknown_entries),
-        // cmocka_unit_test(test_client_config_log_init),
-        // cmocka_unit_test(test_client_config_log_init_home_config),
-        // cmocka_unit_test(test_client_config_log_no_level),
-        // cmocka_unit_test(test_client_config_log_no_path),
-        // cmocka_unit_test(test_client_config_stdout),
+        cmocka_unit_test(test_client_config_log),
+        cmocka_unit_test(test_client_config_log_unknown_entries),
+        cmocka_unit_test(test_client_config_log_init),
+        cmocka_unit_test(test_client_config_log_init_home_config),
+        cmocka_unit_test(test_client_config_log_no_level),
+        cmocka_unit_test(test_client_config_log_no_path),
+        cmocka_unit_test(test_client_config_stdout),
 #endif
-        // cmocka_unit_test(test_log_creation),
+        cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
-        // cmocka_unit_test(test_mask_secret_log),
+        cmocka_unit_test(test_mask_secret_log),
 #endif
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
