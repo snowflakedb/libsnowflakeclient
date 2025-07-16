@@ -222,7 +222,7 @@ void test_timestamp_ltz_json(void **unused) {
 void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_bool isStageBinding) {
 
     TEST_CASE_TO_STRING test_cases[] = {
-            {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = "2014-05-03 13:56:46", .c3out = "2014-05-03 13:56:46.12300", "2014-05-03 13:56:46.123000000"},
+            {.c1in = 1, .c2in = "2014-05-03 13:56:46.123", .c2out = "2014-05-03 13:56:46", .c3out = "2014-05-03 13:56:46.12300", .c4out ="2014-05-03 13:56:46.123000000"},
             {.c1in = 2, .c2in = "1969-11-21 05:17:23.0123", .c2out = "1969-11-21 05:17:23", .c3out = "1969-11-21 05:17:23.01230", .c4out = "1969-11-21 05:17:23.012300000"},
             {.c1in = 3, .c2in = "1960-01-01 00:00:00.0000", .c2out = "1960-01-01 00:00:00", .c3out = "1960-01-01 00:00:00.00000", .c4out = "1960-01-01 00:00:00.000000000"},
   #ifdef __linux__
@@ -232,7 +232,7 @@ void test_timestamp_ltz_verifying_binding_value_helper(const char* timezone, sf_
         // High Sierra (10.13) fixed the calendar issue before 1600, yet the output is slightly different from Linux.
         // Windows get the same output as MacOS
         // {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "0001-01-01 00:00:00.00000"},
-        {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00",.c3out = "1-01-01 00:00:00.00000", c4out = "1-01-01 00:00:00.000000000"},
+        {.c1in = 5, .c2in = "0001-01-01 00:00:00.0000", .c2out = "1-01-01 00:00:00",.c3out = "1-01-01 00:00:00.00000", .c4out = "1-01-01 00:00:00.000000000"},
 #endif // __linux__
           {.c1in = 6, .c2in = "9999-01-01 00:00:00.0000", .c2out = "9999-01-01 00:00:00", .c3out = "9999-01-01 00:00:00.00000", .c4out = "9999-01-01 00:00:00.000000000"},
     };
