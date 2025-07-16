@@ -45,6 +45,11 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_PAT "programmatic_access_token"
 
+ /**
+ * Authenticator, SSO token
+ */
+#define SF_AUTHENTICATOR_ID_TOKEN "ID_TOKEN"
+
 /**
  * UUID4 length
  */
@@ -270,6 +275,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_INCLUDE_RETRY_REASON,
     SF_CON_RETRY_TIMEOUT,
     SF_CON_CLIENT_REQUEST_MFA_TOKEN,
+    SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL,
     SF_CON_MAX_RETRY,
     SF_CON_MAX_VARCHAR_SIZE,
     SF_CON_MAX_BINARY_SIZE,
@@ -425,6 +431,10 @@ typedef struct SF_CONNECT {
     char *token;
     char *master_token;
 
+    // For token cache auth.
+    char* sso_token;
+    char* mfa_token;
+
     int64 login_timeout;
     int64 network_timeout;
     int64 browser_response_timeout;
@@ -494,6 +504,8 @@ typedef struct SF_CONNECT {
     char* session_id;
     sf_bool client_session_keep_alive;
     uint64 client_session_keep_alive_heartbeat_frequency;
+
+    sf_bool client_store_temporary_credential;
 } SF_CONNECT;
 
 /**

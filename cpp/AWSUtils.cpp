@@ -32,13 +32,20 @@ namespace Snowflake {
       };
 
       std::shared_ptr<AwsSdkInitialized> initAwsSdk(bool shutdown) {
+        static Snowflake::Client::AwsMutex s_sdkMutex;
         static std::shared_ptr<AwsSdkInitialized> awssdk = std::make_shared<AwsSdkInitialized>();
         // To fix hanging issue when calling ShutdownAPI(), calling it earlier
         // from application when calling snowflake_global_term()
+        s_sdkMutex.lock();
         if (shutdown)
         {
           awssdk.reset();
         }
+        else if (!awssdk)
+        {
+          awssdk = std::make_shared<AwsSdkInitialized>();
+        }
+        s_sdkMutex.unlock();
         return awssdk;
       }
 
@@ -65,23 +72,6 @@ namespace Snowflake {
 
           CXX_LOG_INFO("Failed to get EC2 region");
           return boost::none;
-        }
-
-        boost::optional<std::string> getArn() override {
-          auto awsSdk = initAwsSdk();
-          Aws::STS::STSClient stsClient;
-          Aws::STS::Model::GetCallerIdentityRequest request;
-
-          auto outcome = stsClient.GetCallerIdentity(request);
-
-          // Check if the call was successful
-          if (!outcome.IsSuccess()) {
-            CXX_LOG_INFO("Failed to get caller identity: %s", outcome.GetError().GetMessage().c_str());
-            return boost::none;
-          }
-
-          const auto &result = outcome.GetResult();
-          return result.GetArn();
         }
 
         Aws::Auth::AWSCredentials getCredentials() override {

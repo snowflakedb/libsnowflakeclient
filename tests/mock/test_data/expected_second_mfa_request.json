@@ -7,7 +7,6 @@
 		"PASSWORD":	"passwd",
 		"EXT_AUTHN_DUO_METHOD":	"passcode",
 		"PASSCODE":	"passcode",
-		"TOKEN":	"MFA_TOKEN",
 		"CLIENT_ENVIRONMENT":	{
 			"OS":	"Linux",
 			"OS_VERSION":	"0"
@@ -17,6 +16,7 @@
 			"CLIENT_SESSION_KEEP_ALIVE":	false,
 			"CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY":	3600,
 			"CLIENT_REQUEST_MFA_TOKEN":	true
-		}
+		},
+		"TOKEN":	"MFA_TOKEN"
 	}
 }
