@@ -180,6 +180,7 @@ namespace
     picojson::value jsonConfig;
     std::string err;
     std::ifstream configFile;
+    CXX_LOG_INFO("Reading config file: %s", filePath.c_str());
     configFile.open(filePath.string(), std::fstream::in | std::ios::binary);
     if (!configFile)
     {

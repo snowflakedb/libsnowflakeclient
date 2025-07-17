@@ -68,7 +68,7 @@ BindUploader::BindUploader(const std::string& stageDir,
   m_hasBindingUploaded(false),
   m_compressLevel(compressLevel)
 {
-  CXX_LOG_TRACE("Constructing BindUploader: stageDir:%s, numParams: %d, numParamSets: %d, "
+  CXX_LOG_DEBUG("Constructing BindUploader: stageDir:%s, numParams: %d, numParamSets: %d, "
                 "maxFileSize: %d, compressLevel: %d",
                 stageDir.c_str(), numParams, numParamSets,
                 maxFileSize, compressLevel);
@@ -133,7 +133,7 @@ size_t BindUploader::compressWithGzip()
     WINDOW_BIT | GZIP_ENCODING, 8, Z_DEFAULT_STRATEGY);
   if (ret != Z_OK)
   {
-    CXX_LOG_TRACE("BindUploader: Compression initial failed with error code %d", ret);
+    CXX_LOG_DEBUG("BindUploader: Compression initial failed with error code %d", ret);
     throw;
   }
 

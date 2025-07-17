@@ -192,7 +192,7 @@ namespace Client
                 out[std::string("LOGIN_URL")] = m_idp->ssoURLStr;
                 out[std::string("PROOF_KEY")] = proofKey;
             }
-            CXX_LOG_DEBUG("sf::IAuthenticatorExternalBrowser::getLoginUrl::SSO URL: %s.", m_idp->ssoURLStr.c_str());
+            CXX_LOG_INFO("sf::IAuthenticatorExternalBrowser::getLoginUrl::SSO URL: %s.", m_idp->ssoURLStr.c_str());
         }
 
         std::string IAuthenticatorExternalBrowser::generateProofKey()
@@ -375,7 +375,7 @@ namespace Client
                 {
                     if (isRetry)
                     {
-                        CXX_LOG_TRACE("sf::IAuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d.",
+                      CXX_LOG_INFO("sf::IAuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d.",
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
@@ -412,10 +412,10 @@ namespace Client
 
             std::string post_back_url = html.substr(post_back_start,
                 post_back_end - post_back_start);
-            CXX_LOG_TRACE("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
+            CXX_LOG_INFO("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
             char unescaped_url[200];
             decode_html_entities_utf8(unescaped_url, post_back_url.c_str());
-            CXX_LOG_TRACE("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
+            CXX_LOG_INFO("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
             return std::string(unescaped_url);
         }
     }// namespace IAuth

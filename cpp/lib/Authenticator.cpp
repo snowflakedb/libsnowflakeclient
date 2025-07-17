@@ -347,6 +347,7 @@ namespace Client
 
   void AuthenticatorJWT::authenticate()
   {
+    CXX_LOG_INFO("Authenticating with JWT.");
     using namespace std::chrono;
     const auto now = system_clock::now().time_since_epoch();
     const auto seconds = duration_cast<std::chrono::seconds>(now);
@@ -437,6 +438,7 @@ namespace Client
 
   void AuthenticatorOKTA::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with OKTA.");
       IAuthenticatorOKTA::authenticate();
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
@@ -492,7 +494,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
+          CXX_LOG_INFO("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -516,7 +518,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_INFO("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
           m_errMsg = "OktaConnectionFailed: timeout reached.";
@@ -558,7 +560,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
+          CXX_LOG_INFO("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -605,7 +607,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_INFO("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
           m_errMsg = "OktaConnectionFailed: timeout reached.";
@@ -652,6 +654,7 @@ namespace Client
 
   void AuthenticatorExternalBrowser::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with external browser.");
       IAuthenticatorExternalBrowser::authenticate();
       if (m_authWebServer->isError())
       {
@@ -696,6 +699,7 @@ namespace Client
    */
   void AuthWebServer::start()
   {
+      CXX_LOG_INFO("AuthWebServer starting.");
       m_socket_desc_web_client = 0;
       m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       if ((int)m_socket_descriptor < 0)
@@ -740,6 +744,7 @@ namespace Client
    */
   void AuthWebServer::stop()
   {
+      CXX_LOG_INFO("AuthWebServer stopping.");
       if ((int)m_socket_desc_web_client > 0)
       {
 #ifndef _WIN32
