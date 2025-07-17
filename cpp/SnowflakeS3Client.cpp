@@ -50,7 +50,15 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
-  m_uploadThreshold(uploadThreshold),
+    // workaound for aws sdk issue causing error on multiple parts uploading
+    // lower the threshold to reduce chunk size
+    // TODO: try removing this on each update for aws sdk to see if the issue
+    //       is fixed.
+#if defined (_WIN32) && !defined(_WIN64)
+    m_uploadThreshold(100 * 1024 * 1024),
+#else
+    m_uploadThreshold(uploadThreshold),
+#endif
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   Aws::String caFile;
