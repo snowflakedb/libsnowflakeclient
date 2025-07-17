@@ -1974,7 +1974,7 @@ int main(void) {
   char *cp = getenv("CLOUD_PROVIDER");
   std::cout << "Cloud provider is " << cp << std::endl; 
 #endif
-
+  initialize_test(SF_BOOLEAN_TRUE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),
