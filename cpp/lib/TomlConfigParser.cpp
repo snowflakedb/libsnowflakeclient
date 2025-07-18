@@ -33,6 +33,7 @@ namespace
   {
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
+    std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);
     if (permissions & boost::filesystem::group_write ||
       permissions & boost::filesystem::others_write)
     {
@@ -40,11 +41,14 @@ namespace
         filePath.c_str());
       return false;
     }
-    if (permissions & boost::filesystem::group_read ||
-      permissions & boost::filesystem::others_read)
+    if (!boost::iequals(skipWarningForReadPermission, "true"))
     {
-      CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
-        filePath.c_str());
+      if (permissions & boost::filesystem::group_read ||
+        permissions & boost::filesystem::others_read)
+      {
+        CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
+          filePath.c_str());
+      }
     }
     return true;
   }
@@ -88,14 +92,17 @@ namespace
 
   std::map<std::string, boost::variant<std::string, int, bool, double>> parseTomlFile(const boost::filesystem::path& filePath) {
     std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
-#if !defined(_WIN32) && !defined(_WIN64)
-    std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);
-    if (!boost::iequals(skipWarningForReadPermission, "true"))
+    if (!boost::filesystem::exists(filePath))
     {
-      if (!checkIfValidPermissions(filePath))
-      {
-        return connectionParams;
-      }
+      CXX_LOG_ERROR("Could not find toml file. The file may not exist: %s",
+        filePath.c_str());
+      return connectionParams;
+    }
+
+#if !defined(_WIN32) && !defined(_WIN64)
+    if (!checkIfValidPermissions(filePath))
+    {
+      return connectionParams;
     }
 #endif
     toml::parse_result result = toml::parse_file(filePath.c_str());

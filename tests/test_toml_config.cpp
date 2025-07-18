@@ -30,6 +30,7 @@ void test_valid_toml_file(void** unused) {
 
 void test_missing_toml_file(void** unused) {
   SF_UNUSED(unused);
+  remove("./connections.toml");
   EnvOverride override("SNOWFLAKE_HOME", "./");
 
   std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
@@ -165,9 +166,9 @@ void test_permissions(void **unused) {
   file.close();
 
   // Set logging
-  std::string logname = "logs/snowflake_toml.txt";
+  std::string logPath = "logs/snowflake_toml.txt";
   log_set_level(SF_LOG_INFO);
-  log_set_path(logname.c_str());
+  log_set_path(logPath.c_str());
 
   EnvOverride override("SNOWFLAKE_HOME", "./");
 
@@ -206,7 +207,7 @@ void test_permissions(void **unused) {
       {
         std::string line;
         std::fstream logfile;
-        logfile.open(logname);
+        logfile.open(logPath);
         if (logfile.is_open())
         {
           bool isFound = false;
@@ -219,7 +220,7 @@ void test_permissions(void **unused) {
             }
           }
           logfile.close();
-          remove(logname.c_str());
+          remove(logPath.c_str());
           assert_true(isFound);
         }
       }
@@ -232,6 +233,7 @@ void test_permissions(void **unused) {
   }
 
   // Cleanup
+  log_close();
   remove(tomlFilePath.c_str());
 }
 
@@ -246,34 +248,50 @@ void test_skip_warn(void **unused) {
   file.close();
 
   // Set logging
-  std::string logname = "logs/snowflake_toml.txt";
+  std::string logPath = "logs/snowflake_tomlwarn.txt";
+  remove(logPath.c_str());
   log_set_level(SF_LOG_INFO);
-  log_set_path(logname.c_str());
+  log_set_path(logPath.c_str());
 
   EnvOverride permOverride("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
   EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+
+  // Test warning is skipped
   boost::filesystem::permissions(tomlFilePath, owner_all | group_read | others_read);
   std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
 
-  bool isFound = false;
+  // Test error is not skipped
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_all | others_all);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
+
+  bool isWarnFound = false;
+  bool isErrorFound = false;
   std::string line;
   std::fstream logfile;
-  logfile.open(logname);
+  logfile.open(logPath);
   if (logfile.is_open())
   {
     while (getline(logfile, line))
     {
       if (line.find("Warning due to other users having permission to read the config file") != std::string::npos)
       {
-        isFound = true;
-        break;
+        isWarnFound = true;
+      }
+      if (line.find("Error due to other users having permission to modify the config file") != std::string::npos)
+      {
+        isErrorFound = true;
       }
     }
     logfile.close();
   }
-  assert_false(isFound);
+  log_close();
+  assert_false(isWarnFound);
+  assert_true(isErrorFound);
 
   remove(tomlFilePath.c_str());
+  remove(logPath.c_str());
 }
 
 
