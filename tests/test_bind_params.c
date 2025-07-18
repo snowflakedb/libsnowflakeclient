@@ -190,22 +190,27 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     int8_input.idx = 1;
     int8_input.c_type = SF_C_TYPE_INT8;
     int8_input.value = int8_array;
+    int8_input.len = 0;
 
     uint8_input.idx = 2;
     uint8_input.c_type = SF_C_TYPE_UINT8;
     uint8_input.value = uint8_array;
-    
+    uint8_input.len = 0;
+
     int64_input.idx = 3;
     int64_input.c_type = SF_C_TYPE_INT64;
     int64_input.value = int64_array;
+    int64_input.len = 0;
 
     uint64_input.idx = 4;
     uint64_input.c_type = SF_C_TYPE_UINT64;
     uint64_input.value = uint64_array;
+    uint64_input.len = 0;
 
     float_input.idx = 5;
     float_input.c_type = SF_C_TYPE_FLOAT64;
     float_input.value = float_array;
+    int8_input.len = 0;
 
     string_input.idx = 6;
     string_input.c_type = SF_C_TYPE_STRING;
@@ -220,10 +225,12 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     bool_input.idx = 8;
     bool_input.c_type = SF_C_TYPE_BOOLEAN;
     bool_input.value = bool_array;
+    bool_input.len = 0;
 
     null_input.idx = 9;
     null_input.c_type = SF_C_TYPE_STRING;
     null_input.value = NULL;
+    null_input.len = 0;
     null_input.len_ind = null_ind_array;
 
     input_array[0] = int8_input;
@@ -373,7 +380,9 @@ void test_array_binding_stage_fallback(void** unused) {
 
 void test_array_binding_threshold(void** unused) {
   SF_UNUSED(unused);
+  initialize_test(SF_BOOLEAN_TRUE);
   test_array_binding_core(1000, SF_BOOLEAN_FALSE, 500, SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_FALSE);
 }
 
 // test threshold with fallback so we can ensure stage binding

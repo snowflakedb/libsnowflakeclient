@@ -1203,7 +1203,7 @@ void test_large_get_threshold_native(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
 
   // TODO SNOW-1526335
   // Sometime we can't get OCSP response from cache server or responder
@@ -1974,7 +1974,6 @@ int main(void) {
   char *cp = getenv("CLOUD_PROVIDER");
   std::cout << "Cloud provider is " << cp << std::endl; 
 #endif
-
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_teardown(test_simple_put_auto_compress, teardown),
     cmocka_unit_test_teardown(test_simple_put_config_temp_dir, teardown),

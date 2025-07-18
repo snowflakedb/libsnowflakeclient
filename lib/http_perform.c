@@ -91,7 +91,7 @@ int my_trace(CURL *handle, curl_infotype type,
     struct data *config = (struct data *) userp;
     const char *text;
     (void) handle; /* prevent compiler warning */
-
+    return 0;
     switch (type) {
         case CURLINFO_TEXT:
             sf_fprintf(stderr, "== Info: %s", data);

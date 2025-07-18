@@ -1,0 +1,53 @@
+Submodule crt/aws-crt-cpp contains modified content
+Submodule crt/aws-c-common contains modified content
+diff --git a/crt/aws-crt-cpp/crt/aws-c-common/source/json.c b/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
+index 2f1630e..f0eb014 100644
+--- a/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
++++ b/crt/aws-crt-cpp/crt/aws-c-common/source/json.c
+@@ -385,6 +385,7 @@ void aws_json_module_init(struct aws_allocator *allocator) {
+ void aws_json_module_cleanup(void) {
+     if (s_aws_json_module_initialized) {
+         s_aws_json_module_allocator = NULL;
++        cJSON_InitHooks(NULL); // custom change to keep
+         s_aws_json_module_initialized = false;
+     }
+ }
+diff --git a/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c b/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
+index 6606c05..7f4ad6f 100644
+--- a/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
++++ b/crt/aws-crt-cpp/crt/aws-c-common/source/windows/thread.c
+@@ -89,6 +89,12 @@ static DWORD WINAPI thread_wrapper_fn(LPVOID arg) {
+      */
+     bool is_managed_thread = wrapper_ptr->thread_copy.detach_state == AWS_THREAD_MANAGED;
+     if (!is_managed_thread) {
++        /*
++         * SNOW-2111927 custom changes to keep, fixing thread handle leak .
++         * For threads manually joined, close the thread handle in wrapper before
++         * releasing it.
++         */
++        aws_thread_clean_up(&wrapper_ptr->thread_copy);
+         aws_mem_release(allocator, arg);
+     }
+
+diff --git a/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp b/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp
+index 8b1524b337d..db14a0c1182 100644
+--- a/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp
++++ b/src/aws-cpp-sdk-core/source/client/RequestCompression.cpp
+@@ -86,7 +86,7 @@ iostream_outcome Aws::Client::RequestCompression::compress(std::shared_ptr<Aws::
+     {
+         // calculating stream size
+         input->seekg(0, input->end);
+-        size_t streamSize = input->tellg();
++        size_t streamSize = (size_t)input->tellg();
+         input->seekg(0, input->beg);
+
+         AWS_LOGSTREAM_TRACE(AWS_REQUEST_COMPRESSION_LOG_TAG, "Compressing request of " << streamSize << " bytes.");
+@@ -204,7 +204,7 @@ Aws::Client::RequestCompression::uncompress(std::shared_ptr<Aws::IOStream> input
+     {
+         // calculating stream size
+         input->seekg(0, input->end);
+-        size_t streamSize = input->tellg();
++        size_t streamSize = (size_t)input->tellg();
+         input->seekg(0, input->beg);
+
+         AWS_LOGSTREAM_TRACE(AWS_REQUEST_COMPRESSION_LOG_TAG, "Uncompressing request of " << streamSize << " bytes.");
