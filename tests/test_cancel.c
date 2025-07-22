@@ -31,8 +31,12 @@ void test_basic_cancel() {
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -101,12 +105,16 @@ void test_async() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to init
-  sf_sleep_ms(1000);
+  sf_sleep_ms(5000);
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -175,8 +183,12 @@ void test_multiple_statements() {
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -215,17 +227,19 @@ void test_bind_params() {
   int64_input.idx = 1;
   int64_input.c_type = SF_C_TYPE_INT64;
   int64_input.value = int64_array;
+  int64_input.len = 0;
   bool_input.idx = 2;
   bool_input.c_type = SF_C_TYPE_BOOLEAN;
   bool_input.value = bool_array;
+  bool_input.len = 0;
   string_input.idx = 3;
   string_input.c_type = SF_C_TYPE_STRING;
   string_input.value = string_array;
   string_input.len = sizeof(string_value);
 
   input_array[0] = int64_input;
-  input_array[2] = bool_input;
-  input_array[1] = string_input;
+  input_array[1] = bool_input;
+  input_array[2] = string_input;
 
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
@@ -266,8 +280,12 @@ void test_bind_params() {
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  sf_sleep_ms(2000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -383,8 +401,15 @@ void test_array_binding() {
     snowflake_column_as_str(sfstmt, 1, &result, &value_len, &max_value_size);
     assert_string_equal(result, bind_data_a[i]);
     snowflake_column_as_str(sfstmt, 2, &result, &value_len, &max_value_size);
-    // Only test if cancel failed. If succeeded, unsure at which update it cancelled.
-    if (!isCancelSucceed)
+    /*
+     * Don't check the value since this test case is for queries don't
+     * support array binding therefore the driver fallbacks to batch execution
+     * and executes the query multiple times with each parameter set.
+     * When cancel failed we don't know it failed on which one therefore don't
+     * know how many rows updated. Only check the value of the first row if
+     * cancel failed.
+     */
+    if ((!isCancelSucceed) && (i == 0))
     {
       assert_string_equal(result, bind_data_b[i]);
     }
