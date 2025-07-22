@@ -122,6 +122,10 @@ void test_simple_put_core(const char * fileName,
 
   if (!connection) {
     sf = setup_snowflake_connection();
+    // extend timeout to fix possible timeout failure
+    int64 timeout = 600;
+    snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
+    snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
     status = snowflake_connect(sf);
     assert_int_equal(SF_STATUS_SUCCESS, status);
   }
@@ -477,6 +481,10 @@ void test_simple_get_data(const char *getCommand, const char *size,
     /* init */
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
+    // extend timeout to fix possible timeout failure
+    int64 timeout = 600;
+    snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
+    snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
     status = snowflake_connect(sf);
     assert_int_equal(SF_STATUS_SUCCESS, status);
 
