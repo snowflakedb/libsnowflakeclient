@@ -105,11 +105,15 @@ void test_async() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to init
-  sf_sleep_ms(5000);
+  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  while (SF_QUERY_STATUS_RUNNING != query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
   while (SF_QUERY_STATUS_RUNNING == query_status)
   {
     sf_sleep_ms(1000);
