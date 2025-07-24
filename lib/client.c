@@ -691,24 +691,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     // split account and region if connected by a dot.
     char* dot_ptr = strchr(sf->account, (int)'.');
     if (dot_ptr) {
-        char* extracted_account = NULL;
         char* extracted_region = NULL;
         alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
         *dot_ptr = '\0';
-        if (strcmp(extracted_region, "global") == 0) {
-            char* dash_ptr = strrchr(sf->account, (int)'-');
-            // If there is an external ID then just remove it from account
-            if (dash_ptr) {
-                *dash_ptr = '\0';
-            }
-        }
-        alloc_buffer_and_copy(&extracted_account, sf->account);
-        SF_FREE(sf->account);
         SF_FREE(sf->region);
-        sf->account = extracted_account;
         sf->region = extracted_region;
     }
 
+    // use account with external ID to construct host before removing
     if (!sf->host) {
         // construct a host parameter if not specified,
         char buf[1024];
@@ -729,6 +719,21 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                      sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
+    }
+
+    // continue on split account removing exteral ID
+    if (dot_ptr) {
+        char* extracted_account = NULL;
+        if (strcmp(sf->region, "global") == 0) {
+            char* dash_ptr = strrchr(sf->account, (int)'-');
+            // If there is an external ID then just remove it from account
+            if (dash_ptr) {
+                *dash_ptr = '\0';
+            }
+        }
+        alloc_buffer_and_copy(&extracted_account, sf->account);
+        SF_FREE(sf->account);
+        sf->account = extracted_account;
     }
 
     char* top_domain = strrchr(sf->host, '.');
