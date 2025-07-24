@@ -1305,19 +1305,3 @@ sf_bool is_password_required(AuthenticatorType auth)
 {
     return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
 }
-
-uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_frequency)
-{
-    int64 max = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
-    int64 min = max / 4;
-
-    if (heart_beat_frequency > max)
-    {
-        return max;
-    }
-    else if (heart_beat_frequency < min)
-    {
-        return min;
-    }
-    return floor(heart_beat_frequency);
-}

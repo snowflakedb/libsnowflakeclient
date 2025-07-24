@@ -103,7 +103,6 @@ namespace Snowflake
                 if (m_worker == NULL)
                 {
                     this->m_master_token_validation_time = connection->master_token_validation_time;
-                    this->m_heart_beat_interval = connection->client_session_keep_alive_heartbeat_frequency;
                     CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
                     m_worker = new std::thread(&HeartbeatBackground::heartBeatAll, this);
                 }
@@ -129,6 +128,11 @@ namespace Snowflake
         {
             MutexGuard m_guard(m_lock);
             m_connections.erase(connection->session_id);
+        }
+
+        long HeartbeatBackground::calculateHeartBeatInterval(long master_token_validation_time)
+        {
+            return master_token_validation_time / 4;
         }
 
         void HeartbeatBackground::sendQueuedHeartBeatReq(
@@ -212,13 +216,15 @@ namespace Snowflake
                 // be closed and destroyed during that
                 {
                     MutexUnique guard(m_lock);
+                    long heartBeatInterval = this->calculateHeartBeatInterval(this->m_master_token_validation_time);
+
                     // For debug purpose only force heartbeat iterval to 1 second
                     // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
-                        m_heart_beat_interval = 15;
+                    heartBeatInterval = 1;
 #endif
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", m_heart_beat_interval);
-                    std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(m_heart_beat_interval);
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", heartBeatInterval);
+                    std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(heartBeatInterval);
                     // wait on either being notified by main thread or timeout(which is the desired heartbeatSync interval)
                     m_cv.wait_for(guard, heartBeatDuration);
                     if (m_workerEnded)

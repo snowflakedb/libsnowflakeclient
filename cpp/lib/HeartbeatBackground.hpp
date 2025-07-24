@@ -73,6 +73,9 @@ namespace Snowflake
 
             void freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue);
 
+            /** calculate interval between two heartbeats */
+            long calculateHeartBeatInterval(long master_token_validation_time);
+
             /** worker thread that is doing heartbeat*/
             std::thread* m_worker = NULL;
 
@@ -80,7 +83,6 @@ namespace Snowflake
             std::map<std::string, SF_CONNECT*> m_connections;
 
             int64 m_master_token_validation_time;
-            long m_heart_beat_interval;
 
             /** global lock */
             Mutex m_lock;

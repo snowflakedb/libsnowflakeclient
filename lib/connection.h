@@ -671,8 +671,6 @@ sf_bool is_one_time_token_request(cJSON *resp);
 */
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 
-uint64 validate_client_session_keep_alive_heart_beat_frequency(int64 heart_beat_frequency);
-
 sf_bool is_password_required(AuthenticatorType auth);
 
 #ifdef __cplusplus
