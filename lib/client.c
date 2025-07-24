@@ -513,6 +513,14 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
+    // quiet logging needs to set here; otherwise, easy logging will print funny things onto console
+    // Set logging level
+    if (DEBUG) {
+        log_set_quiet(SF_BOOLEAN_FALSE);
+    } else {
+        log_set_quiet(SF_BOOLEAN_TRUE);
+    }
+
     client_config clientConfig = { 0 };
     if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
     {
@@ -552,13 +560,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         sf_log_level = SF_LOG_FATAL;
       }
     }
-
-    // Set logging level
-    if (DEBUG) {
-        log_set_quiet(SF_BOOLEAN_FALSE);
-    } else {
-        log_set_quiet(SF_BOOLEAN_TRUE);
-    }
+    
     log_set_level(sf_log_level);
     log_set_lock(&log_lock_func);
 
@@ -576,6 +578,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
     }
+
     if (LOG_PATH != NULL) {
       if (strlen(LOG_PATH) != 0) {
         // Set the log path only, the log file will be created when actual log output is needed.
