@@ -51,6 +51,7 @@ call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === staging cJSON for curl
+set CURL_DIR=curl
 set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
 set CJSON_PATCH=%scriptdir%..\patches\curl-cJSON-%CJSON_VERSION%.patch
 rd /S /Q %CJSON_SOURCE_DIR%
@@ -66,7 +67,6 @@ popd
 set OOB_SOURCE_DIR=%currdir%\deps\%OOB_DIR%
 
 cd %OOB_SOURCE_DIR%
-set CURL_DIR=curl
 nmake -f Makefile.msc clean
 nmake -f Makefile.msc
 
