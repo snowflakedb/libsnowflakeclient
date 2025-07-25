@@ -12,7 +12,7 @@ function usage() {
 set -o pipefail
 
 OOB_SRC_VERSION=1.0.4
-OOB_BUILD_VERSION=15
+OOB_BUILD_VERSION=16
 OOB_VERSION=$OOB_SRC_VERSION.$OOB_BUILD_VERSION
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -22,6 +22,19 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $OOB_VERSION && exit 0
 
 export OOB_SOURCE_DIR=$DEPS_DIR/oob-$OOB_SRC_VERSION/
+
+# staging cJSON for curl
+LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
+CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
+CJSON_PATCH=$DEPS_DIR/../patches/curl-cJSON-${CJSON_VERSION}.patch
+rm -rf $CJSON_SOURCE_DIR
+git clone https://github.com/DaveGamble/cJSON.git $CJSON_SOURCE_DIR
+pushd $CJSON_SOURCE_DIR
+  git checkout tags/v${CJSON_VERSION} -b ${CJSON_VERSION}
+  git apply $CJSON_PATCH
+  cp ./cJSON.c $LIBCURL_SOURCE_DIR/lib/vtls/sf_cJSON.c
+  cp ./cJSON.h $LIBCURL_SOURCE_DIR/lib/vtls/sf_cJSON.h
+popd
 
 # build
 OOB_BUILD_DIR=$DEPENDENCY_DIR/oob
