@@ -238,11 +238,17 @@ namespace
     const boost::filesystem::path& configFilePath,
     client_config& clientConfig)
   {
-    boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
-
-    if (!derivedConfigPath.empty())
-    {
-      return parseConfigFile(derivedConfigPath, clientConfig);
+    try {
+      boost::filesystem::path derivedConfigPath = resolveClientConfigPath(configFilePath);
+      
+      if (!derivedConfigPath.empty())
+      {
+        return parseConfigFile(derivedConfigPath, clientConfig);
+      }
+    } catch (const std::exception &e) {
+      CXX_LOG_ERROR("Caught an excpetion in loadClientConfig(): %s", e.what());
+    } catch (...) {
+      CXX_LOG_ERROR("Caught unknown exception in loadClientConfig()");
     }
     return false;
   }
