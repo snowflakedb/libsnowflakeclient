@@ -12,8 +12,8 @@ function usage() {
 }
 set -o pipefail
 
-AWS_SRC_VERSION=1.11.283
-AWS_BUILD_VERSION=10
+AWS_SRC_VERSION=1.11.500
+AWS_BUILD_VERSION=1
 AWS_DIR=aws-sdk-cpp-$AWS_SRC_VERSION
 AWS_VERSION=$AWS_SRC_VERSION.$AWS_BUILD_VERSION
 
@@ -30,9 +30,9 @@ AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
 
 rm -rf $AWS_SOURCE_DIR
-git clone --single-branch --branch deps/aws-sdk-$AWS_SRC_VERSION https://github.com/snowflakedb/libsnowflakeclient.git $AWS_SOURCE_DIR
+git clone --single-branch --branch $AWS_SRC_VERSION --recursive https://github.com/aws/aws-sdk-cpp.git $AWS_SOURCE_DIR
 pushd $AWS_SOURCE_DIR
-  git checkout d229db6ad2fd3817b72a9b8d27e7a8aaf6d98da1
+  git apply ../../patches/aws-sdk-cpp-$AWS_SRC_VERSION.patch
 popd
 
 [[ -n "$DOWNLOAD_ONLY" ]] && exit 0
@@ -53,6 +53,9 @@ aws_configure_opts+=(
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
     "-DENABLE_TESTING=OFF"
     "-DENABLE_CURL_LOGGING=OFF"
+#disable CPU extentsions to fix build error on Linux
+#CPU extentsions might not be always available on all customer environments
+    "-DUSE_CPU_EXTENSIONS=OFF"
     "-DOPENSSL_ROOT_DIR=$DEPENDENCY_DIR/openssl"
     "-Dcrypto_INCLUDE_DIR=$DEPENDENCY_DIR/openssl/include"
     "-Dcrypto_LIBRARY=$DEPENDENCY_DIR/openssl/lib/libcrypto.a"
