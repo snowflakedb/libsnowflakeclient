@@ -12,9 +12,13 @@ void test_basic_cancel() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
+  char unique_id[SF_UUID4_LEN];
+  char query[256];
+  generate_unique_id(unique_id);
+  sprintf(query, "select '%s', count(*)%%1 from table(generator(timeLimit => 3600))", unique_id);
   /* query */
   SF_STMT *sfstmt = snowflake_stmt(sf);
-  status = snowflake_prepare(sfstmt, "select count(*)%1 from table(generator(timeLimit => 3600))", 0);
+  status = snowflake_prepare(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   SF_THREAD_HANDLE execute_thread;
@@ -27,8 +31,12 @@ void test_basic_cancel() {
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -83,9 +91,13 @@ void test_async() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
+  char unique_id[SF_UUID4_LEN];
+  char query[256];
+  generate_unique_id(unique_id);
+  sprintf(query, "select '%s', count(*)%%1 from table(generator(timeLimit => 3600))", unique_id);
   /* query */
   SF_STMT *sfstmt = snowflake_stmt(sf);
-  status = snowflake_prepare(sfstmt, "select count(*)%1 from table(generator(timeLimit => 3600))", 0);
+  status = snowflake_prepare(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_async_execute(sfstmt);
   if (status != SF_STATUS_SUCCESS) {
@@ -93,12 +105,20 @@ void test_async() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to init
-  sf_sleep_ms(1000);
+  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  while (SF_QUERY_STATUS_RUNNING != query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -150,7 +170,11 @@ void test_multiple_statements() {
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
-  status = snowflake_prepare(sfstmt, "select 1; select count(*)%1 from table(generator(timeLimit => 3600)); select 3", 0);
+  char unique_id[SF_UUID4_LEN];
+  char query[256];
+  generate_unique_id(unique_id);
+  sprintf(query, "select 1; select '%s', count(*)%%1 from table(generator(timeLimit => 3600)); select 3", unique_id);
+  status = snowflake_prepare(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   SF_THREAD_HANDLE execute_thread;
@@ -163,8 +187,12 @@ void test_multiple_statements() {
   _thread_join(execute_thread);
   _thread_join(cancel_thread);
   // Give time for query to cancel
-  sf_sleep_ms(1000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
@@ -203,17 +231,19 @@ void test_bind_params() {
   int64_input.idx = 1;
   int64_input.c_type = SF_C_TYPE_INT64;
   int64_input.value = int64_array;
+  int64_input.len = 0;
   bool_input.idx = 2;
   bool_input.c_type = SF_C_TYPE_BOOLEAN;
   bool_input.value = bool_array;
+  bool_input.len = 0;
   string_input.idx = 3;
   string_input.c_type = SF_C_TYPE_STRING;
   string_input.value = string_array;
   string_input.len = sizeof(string_value);
 
   input_array[0] = int64_input;
-  input_array[2] = bool_input;
-  input_array[1] = string_input;
+  input_array[1] = bool_input;
+  input_array[2] = string_input;
 
   SF_CONNECT *sf = setup_snowflake_connection();
   SF_STATUS status = snowflake_connect(sf);
@@ -222,19 +252,24 @@ void test_bind_params() {
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
+  char unique_id[SF_UUID4_LEN];
+  char query[256];
+  generate_unique_id(unique_id);
+  sprintf(query, "create or replace temporary table t%s (c1 number, c2 boolean, c3 string)", unique_id);
   SF_STMT *sfstmt = snowflake_stmt(sf);
   status = snowflake_query(
     sfstmt,
-    "create or replace temporary table t (c1 number, c2 boolean, c3 string)",
+    query,
     0
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   int64 paramset_size = (int64)array_size;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
+  sprintf(query, "insert into t%s values(?, ?, ?)", unique_id);
   status = snowflake_prepare(
     sfstmt,
-    "insert into t values(?, ?, ?)",
+    query,
     0
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -249,13 +284,18 @@ void test_bind_params() {
   status = snowflake_cancel_query(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   // Give time for query to cancel
-  sf_sleep_ms(2000);
-  SF_QUERY_STATUS query_status = snowflake_get_query_status(sfstmt);
+  SF_QUERY_STATUS query_status = SF_QUERY_STATUS_RUNNING;
+  while (SF_QUERY_STATUS_RUNNING == query_status)
+  {
+    sf_sleep_ms(1000);
+    query_status = snowflake_get_query_status(sfstmt);
+  }
   assert_int_equal(query_status, SF_QUERY_STATUS_FAILED_WITH_ERROR);
   assert_int_equal(sfstmt->error.error_code, SF_STATUS_ERROR_QUERY_CANCELLED);
   assert_string_equal(sfstmt->error.msg, "SQL execution canceled");
 
-  status = snowflake_query(sfstmt, "select count(*) from t", 0);
+  sprintf(query, "select count(*) from t%s", unique_id);
+  status = snowflake_query(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   status = snowflake_fetch(sfstmt);
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -302,25 +342,31 @@ void test_array_binding() {
 
   /* Create a statement once and reused */
   SF_STMT *sfstmt = snowflake_stmt(sf);
+  char unique_id[SF_UUID4_LEN];
+  char query[256];
+  generate_unique_id(unique_id);
+  sprintf(query, "create or replace temporary table foo1%s(a int, b double)", unique_id);
   status = snowflake_query(
     sfstmt,
-    "create or replace temporary table foo1(a int, b double)",
+    query,
     0
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
+  sprintf(query, "insert into foo1%s values (2, NULL), (3, NULL), (4, NULL), (5, NULL), (6, NULL)", unique_id);
   status = snowflake_query(
     sfstmt,
-    "insert into foo1 values (2, NULL), (3, NULL), (4, NULL), (5, NULL), (6, NULL)",
+    query,
     0
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
 
   int64 paramset_size = 5;
   status = snowflake_stmt_set_attr(sfstmt, SF_STMT_PARAMSET_SIZE, &paramset_size);
+  sprintf(query, "update foo1%s set b = ? where a = ?", unique_id);
   status = snowflake_prepare(
     sfstmt,
-    "update foo1 set b = ? where a = ?",
+    query,
     0
   );
   assert_int_equal(status, SF_STATUS_SUCCESS);
@@ -340,7 +386,8 @@ void test_array_binding() {
   }
   _thread_join(execute_thread);
 
-  status = snowflake_query(sfstmt, "select * from foo1", 0);
+  sprintf(query, "select * from foo1%s", unique_id);
+  status = snowflake_query(sfstmt, query, 0);
   assert_int_equal(status, SF_STATUS_SUCCESS);
   assert_int_equal(snowflake_num_rows(sfstmt), 5);
 
@@ -358,8 +405,15 @@ void test_array_binding() {
     snowflake_column_as_str(sfstmt, 1, &result, &value_len, &max_value_size);
     assert_string_equal(result, bind_data_a[i]);
     snowflake_column_as_str(sfstmt, 2, &result, &value_len, &max_value_size);
-    // Only test if cancel failed. If succeeded, unsure at which update it cancelled.
-    if (!isCancelSucceed)
+    /*
+     * Don't check the value since this test case is for queries don't
+     * support array binding therefore the driver fallbacks to batch execution
+     * and executes the query multiple times with each parameter set.
+     * When cancel failed we don't know it failed on which one therefore don't
+     * know how many rows updated. Only check the value of the first row if
+     * cancel failed.
+     */
+    if ((!isCancelSucceed) && (i == 0))
     {
       assert_string_equal(result, bind_data_b[i]);
     }
