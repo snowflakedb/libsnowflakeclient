@@ -194,7 +194,7 @@ void test_array_binding_core(unsigned int array_size, sf_bool fallback, int64 st
     uint8_input.idx = 2;
     uint8_input.c_type = SF_C_TYPE_UINT8;
     uint8_input.value = uint8_array;
-    
+
     int64_input.idx = 3;
     int64_input.c_type = SF_C_TYPE_INT64;
     int64_input.value = int64_array;

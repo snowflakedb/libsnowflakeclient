@@ -119,7 +119,7 @@ if [[ "$PLATFORM" == "darwin" ]]; then
     export CXX=clang++
     export GCC=$CC
     export GXX=$CXX
-    export MACOSX_VERSION_MIN=10.14
+    export MACOSX_VERSION_MIN=10.15
     export MKTEMP="mktemp -t snowflake"
     
     # Check to see if we are doing a universal build
