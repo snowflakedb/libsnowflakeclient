@@ -691,6 +691,17 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    // split account and region if connected by a dot.
+    char* dot_ptr = strchr(sf->account, (int)'.');
+    if (dot_ptr) {
+        char* extracted_region = NULL;
+        alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
+        *dot_ptr = '\0';
+        SF_FREE(sf->region);
+        sf->region = extracted_region;
+    }
+
+    // use account with external ID to construct host before removing
     if (!sf->host) {
         // construct a host parameter if not specified,
         char buf[1024];
@@ -711,6 +722,21 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                      sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
+    }
+
+    // continue on split account removing exteral ID
+    if (dot_ptr) {
+        char* extracted_account = NULL;
+        if (strcmp(sf->region, "global") == 0) {
+            char* dash_ptr = strrchr(sf->account, (int)'-');
+            // If there is an external ID then just remove it from account
+            if (dash_ptr) {
+                *dash_ptr = '\0';
+            }
+        }
+        alloc_buffer_and_copy(&extracted_account, sf->account);
+        SF_FREE(sf->account);
+        sf->account = extracted_account;
     }
 
     char* top_domain = strrchr(sf->host, '.');
@@ -751,26 +777,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
 
-    // split account and region if connected by a dot.
-    char *dot_ptr = strchr(sf->account, (int) '.');
-    if (dot_ptr) {
-        char *extracted_account = NULL;
-        char *extracted_region = NULL;
-        alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
-        *dot_ptr = '\0';
-        if (strcmp(extracted_region, "global") == 0) {
-            char *dash_ptr = strrchr(sf->account, (int) '-');
-            // If there is an external ID then just remove it from account
-            if (dash_ptr) {
-                *dash_ptr = '\0';
-            }
-        }
-        alloc_buffer_and_copy(&extracted_account, sf->account);
-        SF_FREE(sf->account);
-        SF_FREE(sf->region);
-        sf->account = extracted_account;
-        sf->region = extracted_region;
-    }
     if (!sf->protocol) {
         alloc_buffer_and_copy(&sf->protocol, "https");
     }
@@ -1421,6 +1427,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->account, value);
             break;
         case SF_CON_REGION:
+            log_warn("Connection parameter SF_CON_REGION is deprecated."
+                     "Instead you could specify full server URL using SF_CON_HOST, "
+                     "or specify region through SF_CON_ACCOUNT with format <account>.<region>");
             alloc_buffer_and_copy(&sf->region, value);
             break;
         case SF_CON_USER:
