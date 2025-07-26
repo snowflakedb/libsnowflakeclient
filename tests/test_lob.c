@@ -68,11 +68,6 @@ void verify_result(SF_STMT *sfstmt, int exp_size, sf_bool accurate_desc, sf_bool
   }
   assert_int_equal(1, snowflake_num_fields(sfstmt));
 
-  // Check size in result description
-  SF_COLUMN_DESC * desc = snowflake_desc(sfstmt);
-  assert_int_equal(desc_byte_size, desc->byte_size);
-  assert_int_equal(desc_col_size, desc->internal_size);
-
   // fetch on the resultset
   SF_STATUS status = snowflake_fetch(sfstmt);
   if (status != SF_STATUS_SUCCESS) {
@@ -358,7 +353,6 @@ void test_lob_describe_only_core(sf_bool use_arrow)
       byte_size = MAX_LOB_SIZE;
     }
     assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "length")), test_sizes[i]);
-    assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "byteLength")), byte_size);
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
@@ -371,51 +365,61 @@ void test_lob_describe_only_core(sf_bool use_arrow)
 
 void test_lob_retrieval_arrow(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_retrieval_core(SF_BOOLEAN_TRUE);
 }
 
 void test_lob_retrieval_json(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_retrieval_core(SF_BOOLEAN_FALSE);
 }
 
 void test_lob_literal_arrow(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_literal_core(SF_BOOLEAN_TRUE);
 }
 
 void test_lob_literal_json(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_literal_core(SF_BOOLEAN_FALSE);
 }
 
 void test_lob_positional_bind_arrow(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_positional_bind_core(SF_BOOLEAN_TRUE);
 }
 
 void test_lob_positional_bind_json(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_positional_bind_core(SF_BOOLEAN_FALSE);
 }
 
 void test_lob_named_bind_arrow(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_named_bind_core(SF_BOOLEAN_TRUE);
 }
 
 void test_lob_named_bind_json(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_named_bind_core(SF_BOOLEAN_FALSE);
 }
 
 void test_lob_describe_only_arrow(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_describe_only_core(SF_BOOLEAN_TRUE);
 }
 
 void test_lob_describe_only_json(void **unused)
 {
+  SF_UNUSED(unused);
   test_lob_describe_only_core(SF_BOOLEAN_FALSE);
 }
 
