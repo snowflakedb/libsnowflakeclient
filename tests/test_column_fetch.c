@@ -1587,7 +1587,7 @@ int main(void) {
       cmocka_unit_test(test_column_strlen_json),
       cmocka_unit_test(test_column_as_str_arrow),
       cmocka_unit_test(test_column_as_str_json),
-      // cmocka_unit_test(test_column_length_with_bundle_202408_disabled),
+      cmocka_unit_test(test_column_length_with_bundle_202408_disabled),
       cmocka_unit_test(test_column_length_with_bundle_202408_enabled),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);

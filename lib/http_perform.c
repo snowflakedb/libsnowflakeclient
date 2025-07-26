@@ -112,7 +112,7 @@ int my_trace(CURL *handle, curl_infotype type,
             text = "<= Recv header";
             break;
         case CURLINFO_DATA_IN:
-            return 0;
+            text = "<= Recv data";
             break;
         case CURLINFO_SSL_DATA_IN:
             text = "<= Recv SSL data";
