@@ -435,7 +435,31 @@ sf_bool STDCALL http_perform(CURL *curl,
                       next_sleep_in_secs);
               sf_sleep_ms(next_sleep_in_secs*1000);
             } else if ((res == CURLE_OPERATION_TIMEDOUT) && (renew_timeout > 0)) {
-               retry = SF_BOOLEAN_TRUE;
+              retry = SF_BOOLEAN_TRUE;
+            } else if (res == CURLE_PARTIAL_FILE) {
+              if (((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
+              {
+                  uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                  log_debug(
+                      "curl_easy_perform() Got retryable error curl code %d, retry count  %d "
+                      "will retry after %d seconds", res,
+                      curl_retry_ctx.retry_count,
+                      next_sleep_in_secs);
+                  sf_sleep_ms(next_sleep_in_secs * 1000);
+                  retry = SF_BOOLEAN_TRUE;
+              }
+              else {
+                  char msg[1024];
+                  sf_sprintf(msg, sizeof(msg),
+                      "Exceeded the retry_timeout , curl error code: [%d]",
+                      res);
+                  SET_SNOWFLAKE_ERROR(error,
+                      SF_STATUS_ERROR_RETRY,
+                      msg,
+                      SF_SQLSTATE_UNABLE_TO_CONNECT);
+                  retry = SF_BOOLEAN_FALSE;
+              }
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
