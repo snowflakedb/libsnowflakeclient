@@ -3180,6 +3180,10 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     snowflake_cJSON_AddBoolToObject(body, "asyncExec", is_async_exec);
 
+    s_body = snowflake_cJSON_Print(body);
+    log_trace("Here is constructed body without bindings:\n%s", s_body);
+    SF_FREE(s_body);
+
     if (bind_stage)
     {
       snowflake_cJSON_AddStringToObject(body, "bindStage", bind_stage);
@@ -3199,7 +3203,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_trace("Here is constructed body:\n%s", s_body);
+//    log_trace("Here is constructed body:\n%s", s_body);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
@@ -3212,6 +3216,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
+        if (strlen(s_resp) < 1000)
         log_trace("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
