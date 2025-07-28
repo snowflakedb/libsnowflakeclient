@@ -64,6 +64,10 @@ namespace Client
       curl_easy_reset(m_curl);
       CXX_LOG_TRACE("CurDesc::reset(): curl_easy_reset %p", m_curl);
     }
+
+    // some default options
+    curl_easy_setopt(m_curl, CURLOPT_NOSIGNAL, 1);
+    curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, true);
   }
 
 }
