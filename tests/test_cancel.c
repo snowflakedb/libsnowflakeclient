@@ -426,7 +426,7 @@ void test_array_binding() {
 }
 
 int main(void) {
-    initialize_test(SF_BOOLEAN_FALSE);
+    initialize_test(SF_BOOLEAN_TRUE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_basic_cancel),
       cmocka_unit_test(test_no_stmt),
