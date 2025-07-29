@@ -98,9 +98,10 @@ void verify_result(SF_STMT *sfstmt, int exp_size, sf_bool accurate_desc, sf_bool
 void test_lob_setup(SF_CONNECT **out_sf, SF_STMT **out_sfstmt, sf_bool use_arrow)
 {
   SF_CONNECT *sf = setup_snowflake_connection();
-  /* extend network timeout to retrive large query response with LOB data */
+  /* extend timeout to retrive large query response with LOB data */
   int64 timeout = 600;
   snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
+  snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
