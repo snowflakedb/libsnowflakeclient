@@ -406,16 +406,13 @@ void test_array_binding() {
     assert_string_equal(result, bind_data_a[i]);
     snowflake_column_as_str(sfstmt, 2, &result, &value_len, &max_value_size);
     /*
-     * Don't check the value since this test case is for queries don't
-     * support array binding therefore the driver fallbacks to batch execution
-     * and executes the query multiple times with each parameter set.
-     * When cancel failed we don't know it failed on which one therefore don't
-     * know how many rows updated. Only check the value of the first row if
-     * cancel failed.
+     * Check the value only when cancel succeeded.
+     * When cancel failed not sure whether the query is being executed then canceled,
+     * or the cancel is before executing the query.
      */
-    if ((!isCancelSucceed) && (i == 0))
+    if (isCancelSucceed)
     {
-      assert_string_equal(result, bind_data_b[i]);
+      assert_ptr_equal(result, NULL);
     }
 
     free(result);
