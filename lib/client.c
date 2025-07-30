@@ -124,7 +124,7 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT *sfstmt) {
       NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
 
       s_resp = snowflake_cJSON_Print(resp);
-      log_trace("GET %s returned response:\n%s", status_query, s_resp);
+      log_debug("GET %s returned response:\n%s", status_query, s_resp);
 
       data = snowflake_cJSON_GetObjectItem(resp, "data");
 
@@ -768,7 +768,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                 "Replace SF_OCSP_RESPONSE_CACHE_SERVER_URL from %s to %s",
                 getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"),url_buf);
         }
-        log_trace(
+        log_debug(
             "sf", "Connection", "connect",
             "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
             url_buf);
@@ -1111,7 +1111,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
                     0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
             s_resp = snowflake_cJSON_Print(resp);
-            log_trace("JSON response:\n%s", s_resp);
+            log_debug("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
              * Catching error here won't help
              */
@@ -1258,7 +1258,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->application_version,
         sf->timezone,
         sf->autocommit);
-    log_trace("Created body");
+    log_debug("Created body");
     s_body = snowflake_cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
@@ -1285,7 +1285,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), &elapsed_time,
                     &retried_count, &is_renew, renew_injection)) {
             s_resp = snowflake_cJSON_Print(resp);
-            log_trace("Here is JSON response:\n%s", s_resp);
+            log_debug("Here is JSON response:\n%s", s_resp);
             if ((json_error = json_copy_bool(&success, resp, "success")) !=
                 SF_JSON_ERROR_NONE) {
                 log_error("JSON error: %d", json_error);
@@ -2782,7 +2782,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
     if (!sfstmt->sql_text || (strlen(sfstmt->request_id) == 0)) {
-        log_trace("No queries found or query has not been executed yet.");
+        log_debug("No queries found or query has not been executed yet.");
         return SF_STATUS_SUCCESS;
     }
     clear_snowflake_error(&sfstmt->error);
@@ -2791,7 +2791,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         if (!is_query_still_running(metadata->status) &&
             (metadata->status != SF_QUERY_STATUS_UNKNOWN) &&
             (sfstmt->error.error_code == SF_STATUS_SUCCESS)) {
-            log_trace("Query is no longer running.");
+            log_debug("Query is no longer running.");
             return SF_STATUS_SUCCESS;
         }
     }
@@ -2832,7 +2832,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         0, sfstmt->connection->retry_count, get_retry_timeout(sfstmt->connection),
         NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         s_resp = snowflake_cJSON_Print(resp);
-        log_trace("Here is JSON response:\n%s", s_resp);
+        log_debug("Here is JSON response:\n%s", s_resp);
 
         //cJSON *success = snowflake_cJSON_GetObjectItem(resp, "success");
         sf_bool success = SF_BOOLEAN_FALSE;
@@ -3208,7 +3208,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_trace("Here is constructed body:\n%s", s_body);
+    log_debug("Here is constructed body:\n%s", s_body);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
@@ -3221,7 +3221,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
-        log_trace("Here is JSON response:\n%s", s_resp);
+        log_debug("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
         if (result_capture != NULL) {
@@ -3393,7 +3393,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             goto cleanup;
         }
     } else {
-        log_trace("Connection failed");
+        log_debug("Connection failed");
         // Set the return status to the error code
         // that we got from the connection layer
         ret = sfstmt->error.error_code;
@@ -4015,7 +4015,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
-          log_info("scale is calculated as %d", scale);
+          log_debug("scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,
