@@ -242,6 +242,11 @@ typedef enum SF_STATUS {
  */
 typedef enum SF_ATTRIBUTE {
     SF_CON_ACCOUNT,
+    /**
+     * SF_CON_REGION is deprecated.
+     * Instead you could specify full server URL using SF_CON_HOST,
+     * or specify region through SF_CON_ACCOUNT with format <account>.<region>
+     */
     SF_CON_REGION,
     SF_CON_USER,
     SF_CON_PASSWORD,
