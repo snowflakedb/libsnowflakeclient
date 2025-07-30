@@ -224,3 +224,15 @@ void drop_random_database()
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf);
 }
+
+void generate_unique_id(char* buf)
+{
+    uuid4_generate(buf);
+    for (size_t i = 0; i < strlen(buf); i++)
+    {
+        if (buf[i] == '-')
+        {
+            buf[i] = '_';
+        }
+    }
+}

@@ -1203,7 +1203,7 @@ void test_large_get_threshold_native(void **unused)
 
 static int gr_setup(void **unused)
 {
-  initialize_test(SF_BOOLEAN_FALSE);
+  initialize_test(SF_BOOLEAN_TRUE);
 
   // TODO SNOW-1526335
   // Sometime we can't get OCSP response from cache server or responder
