@@ -271,7 +271,7 @@ void test_okta_authenticator_fail(void**)
 
     MockOkta okta = MockOkta(sf);
     okta.authenticate();
-    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed.");
+    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed: The specified authenticator and destination URL in Saml Assertion did not match.");
 
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();
