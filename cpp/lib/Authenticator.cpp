@@ -156,7 +156,7 @@ extern "C" {
 
       // Based on the Okta and external browser implementation, we avoid using try-catch in order to follow the Google C++ Style Guide.
       // As a result, we handle errors using boolean flags and defer final error handling to the C API level.
-      if (&conn->error) {
+      if ((conn->error).error_code != SF_STATUS_SUCCESS) {
           return SF_STATUS_ERROR_GENERAL;
       }
     }
