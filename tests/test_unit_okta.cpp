@@ -186,7 +186,7 @@ void test_idp_authenticator(void**)
 
     idp.isCurrentCallFailed = true;
     idp.getIDPInfo(dataMap);
-    assert_string_equal(idp.getErrorMessage(), "Fail to get authenticator info.");
+    assert_string_equal(idp.getErrorMessage(), "Fail to get authenticator info in getIDPInfo.");
 
     snowflake_term(sf);
 }

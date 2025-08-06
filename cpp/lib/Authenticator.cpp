@@ -444,7 +444,7 @@ namespace Client
   void AuthenticatorOKTA::authenticate()
   {
       IAuthenticatorOKTA::authenticate();
-      if (IAuthenticatorOKTA::isError() || m_idp->isError())
+      if (isError() || m_idp->isError())
       {
           const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
