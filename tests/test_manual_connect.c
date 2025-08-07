@@ -252,8 +252,7 @@ void test_okta_connect(void** unused)
         getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         getenv("SNOWFLAKE_TEST_AUTHENTICATOR"));
-    snowflake_set_attribute(sf, SF_CON_APPLICATION_NAME, "PDO");
-    snowflake_set_attribute(sf, SF_CON_APPLICATION_VERSION, "8.4.7 - 3.2.0");
+
     char* host, * port, * protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {

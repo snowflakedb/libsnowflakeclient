@@ -359,7 +359,7 @@ namespace Client
                 {
                     CXX_LOG_WARN("sf::IAuthenticatorOKTA::authenticate::Fail to get one time token response, response body=%s.",
                         picojson::value(respData).serialize().c_str());
-                    m_errMsg = "SFAuthenticatorVerificationFailed: :authenticate::Fail to get one time token response.";
+                    m_errMsg = "SFAuthenticatorVerificationFailed::authenticate::Fail to get one time token response.";
 
                     return;
                 }
@@ -381,6 +381,8 @@ namespace Client
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
+                    CXX_LOG_ERROR("SF::IAuthenticatorOKTA::authenticate::Failed to get the saml response. response body=%s.", picojson::value(resp).serialize().c_str());
+                    m_errMsg = "SFAuthenticatorVerificationFailed::authenticate::Failed to get the saml response.";
                     return;
                 }
                 break;
