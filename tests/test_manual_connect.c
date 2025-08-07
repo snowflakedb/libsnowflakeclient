@@ -247,12 +247,11 @@ void test_okta_connect(void** unused)
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, "SEN");
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_OKTA_USERNAME"));
     snowflake_set_attribute(sf, SF_CON_PASSWORD,
         getenv("SNOWFLAKE_TEST_OKTA_PASSWORD"));
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
         getenv("SNOWFLAKE_TEST_AUTHENTICATOR"));
-
     char* host, * port, * protocol;
     host = getenv("SNOWFLAKE_TEST_HOST");
     if (host) {
