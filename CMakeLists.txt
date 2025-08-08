@@ -31,6 +31,7 @@ set(SOURCE_FILES
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
         include/snowflake/client_config_parser.h
+        include/snowflake/Stopwatch.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -142,7 +143,6 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
         include/snowflake/entities.hpp
-        include/snowflake/stopwatch.h
 )
 
 set(SOURCE_FILES_CPP_WRAPPER
