@@ -76,7 +76,7 @@ namespace Client
                 }
             }
             else {
-                CXX_LOG_INFO("sf::IDPAuthenticator::getIDPInfo::Fail to get authenticator info.");
+                CXX_LOG_DEBUG("sf::IDPAuthenticator::getIDPInfo::Fail to get authenticator info.");
                 m_errMsg = "Fail to get authenticator info.";
                 ret = false;
             }
@@ -192,7 +192,7 @@ namespace Client
                 out[std::string("LOGIN_URL")] = m_idp->ssoURLStr;
                 out[std::string("PROOF_KEY")] = proofKey;
             }
-            CXX_LOG_INFO("sf::IAuthenticatorExternalBrowser::getLoginUrl::SSO URL: %s.", m_idp->ssoURLStr.c_str());
+            CXX_LOG_DEBUG("sf::IAuthenticatorExternalBrowser::getLoginUrl::SSO URL: %s.", m_idp->ssoURLStr.c_str());
         }
 
         std::string IAuthenticatorExternalBrowser::generateProofKey()
@@ -316,7 +316,7 @@ namespace Client
                 m_errMsg = "SFAuthWebBrowserFailed: Could not find a usable version of Winsock.dll.";
             }
 
-            CXX_LOG_INFO("sf::AuthWinSock::constructor::Winsock %s.%s DLL was found", std::to_string(LOBYTE(wsaData.wVersion)).c_str(), std::to_string(HIBYTE(wsaData.wVersion)).c_str());
+            CXX_LOG_DEBUG("sf::AuthWinSock::constructor::Winsock %s.%s DLL was found", std::to_string(LOBYTE(wsaData.wVersion)).c_str(), std::to_string(HIBYTE(wsaData.wVersion)).c_str());
         }
 
         AuthWinSock::~AuthWinSock()
@@ -375,7 +375,7 @@ namespace Client
                 {
                     if (isRetry)
                     {
-                      CXX_LOG_INFO("sf::IAuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d.",
+                      CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::authenticate::Retry on getting SAML response with one time token renewed for %d times with updated retryTimeout = %d.",
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
@@ -414,10 +414,10 @@ namespace Client
 
             std::string post_back_url = html.substr(post_back_start,
                 post_back_end - post_back_start);
-            CXX_LOG_INFO("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
+            CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url before unescape: %s.", post_back_url.c_str());
             char unescaped_url[200];
             decode_html_entities_utf8(unescaped_url, post_back_url.c_str());
-            CXX_LOG_INFO("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
+            CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
             return std::string(unescaped_url);
         }
     }// namespace IAuth

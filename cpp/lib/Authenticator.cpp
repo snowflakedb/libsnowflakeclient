@@ -520,7 +520,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_INFO("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
           m_errMsg = "OktaConnectionFailed: timeout reached.";
