@@ -6,6 +6,7 @@
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
+#include <snowflake/Stopwatch.h>
 #include "constants.h"
 #include "client_int.h"
 #include "connection.h"
@@ -775,8 +776,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         alloc_buffer_and_copy(&sf->port, "443");
     }
 
-    log_debug("application name: %s", sf->application_name);
-    log_debug("application version: %s", sf->application_version);
+    log_debug("Application name: %s", sf->application_name);
+    log_debug("Application version: %s", sf->application_version);
     log_debug("authenticator: %s", sf->authenticator);
     log_debug("user: %s", sf->user);
     log_debug("password: %s", sf->password ? "****" : sf->password);
@@ -1090,6 +1091,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
     cJSON *resp = NULL;
     char *s_resp = NULL;
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
     clear_snowflake_error(&sf->error);
 
     if (sf->token && sf->master_token) {
@@ -1149,6 +1152,10 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->oauth_token);
     SF_FREE(sf);
 
+    stopwatch_stop(&stopwatch);
+    log_info("Snowflake connection termination time: %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
+
     return SF_STATUS_SUCCESS;
 }
 
@@ -1168,6 +1175,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             SF_SQLSTATE_CONNECTION_ALREADY_EXIST);
         return SF_STATUS_ERROR_GENERAL;
     }
+
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+
     // Reset error context
     clear_snowflake_error(&sf->error);
 
@@ -1297,7 +1308,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 if (codeJson) {
                     code = strtol(codeJson->valuestring, NULL, 10);
                 } else {
-                    log_debug("no code element.");
+                    log_debug("No code element.");
                 }
 
                 if (code == strtol(SF_GS_ERROR_CODE_ID_TOKEN_INVALID, NULL, 10))
@@ -1351,6 +1362,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             goto cleanup;
         }
     }
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Snowflake connected in %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
     /* we are done... */
     ret = SF_STATUS_SUCCESS;
 
@@ -1375,6 +1390,10 @@ cleanup:
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
     SF_FREE(s_resp);
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Snowflake connection failed in %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
 
     return ret;
 }
@@ -2135,7 +2154,7 @@ SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt)
         if (codeJson) {
             code = (int64) strtol(codeJson->valuestring, NULL, 10);
         } else {
-            log_debug("no code element.");
+            log_debug("No code element.");
         }
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                  message ? message
@@ -2753,15 +2772,24 @@ SF_STATUS STDCALL snowflake_query(
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+    log_debug("Starting snowflake query");
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = snowflake_prepare(sfstmt, command, command_size);
     if (ret != SF_STATUS_SUCCESS) {
+      log_debug("Failed snowflake prepare. Total time: %ld ms.", stopwatch_elapsedMillis(&stopwatch));
         return ret;
     }
     ret = snowflake_execute(sfstmt);
+    stopwatch_stop(&stopwatch);
     if (ret != SF_STATUS_SUCCESS) {
+        log_debug("Failed snowflake execute query with id %s. Total time: %ld ms.",
+          sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
         return ret;
     }
+    log_debug("Finished snowflake query with id %s. Total time: %ld ms.",
+      sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
     return SF_STATUS_SUCCESS;
 }
 
@@ -2923,6 +2951,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     // If no more results, set return to SF_STATUS_EOF
     if (sfstmt->chunk_rowcount == 0) {
         if (sfstmt->chunk_downloader) {
+            Stopwatch stopwatch;
+            stopwatch_start(&stopwatch);
             log_debug("Fetching next chunk from chunk downloader.");
             _critical_section_lock(&sfstmt->chunk_downloader->queue_lock);
             do {
@@ -2986,6 +3016,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
             }
             while (0);
             _critical_section_unlock(&sfstmt->chunk_downloader->queue_lock);
+            stopwatch_stop(&stopwatch);
+            log_debug("Fetching chunk took %ld ms.", stopwatch_elapsedMillis(&stopwatch));
         } else {
             // If there is no chunk downloader set, then we've truly reached the end of the results and should set EOL
             log_debug("No chunk downloader set, end of results.");
@@ -3372,7 +3404,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             if (codeJson) {
                 code = (int64) strtol(codeJson->valuestring, NULL, 10);
             } else {
-                log_debug("no code element.");
+                log_debug("No code element.");
             }
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                      message ? message
@@ -3464,6 +3496,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         return _snowflake_execute_put_get_native(sfstmt, NULL, 0, 0, result_capture);
     }
 
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+
     clear_snowflake_error(&sfstmt->error);
 
     _mutex_lock(&sfstmt->connection->mutex_sequence_counter);
@@ -3519,13 +3554,18 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         return _batch_dml_execute(sfstmt, result_capture);
     }
 
-    return _snowflake_execute_with_binds_ex(sfstmt,
+    ret =  _snowflake_execute_with_binds_ex(sfstmt,
                                             is_put_get_command,
                                             result_capture,
                                             is_describe_only,
                                             bind_stage,
                                             bindings,
                                             is_async_exec);
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Query execution with id %s took %ld ms.",
+      sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
+    return ret;
 }
 
 SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf) {
@@ -4003,7 +4043,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
-          log_debug("scale is calculated as %d", scale);
+          log_debug("Scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,

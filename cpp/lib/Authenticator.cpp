@@ -17,6 +17,7 @@
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
+#include "log_file_util.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -280,6 +281,7 @@ namespace Client
   void AuthenticatorJWT::loadPrivateKey(const std::string &privateKeyFile,
                                         const std::string &passcode)
   {
+    log_file_usage(privateKeyFile.c_str(), "Extracting private key file.", false);
     FILE *file = nullptr;
     if (sf_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
     {

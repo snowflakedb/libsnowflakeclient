@@ -379,6 +379,8 @@ namespace Client
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
+                    CXX_LOG_ERROR("sf::IAuthenticatorOKTA::authenticate::Fail to get SAML response, response body=%s.",
+                      picojson::value(resp).serialize().c_str());
                     return;
                 }
                 break;
@@ -391,7 +393,7 @@ namespace Client
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {
-                CXX_LOG_ERROR("sf","IAuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s.",
+                CXX_LOG_ERROR("sf::IAuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s.",
                     server_url.c_str(),
                     post_back_url.c_str());
                 m_errMsg = "SFSamlResponseVerificationFailed.";

@@ -65,6 +65,7 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
+        lib/log_file_util.h
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -102,6 +103,8 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
         cpp/util/entities.cpp
+        cpp/util/LogFileUtil.cpp
+        cpp/util/Stopwatch.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
@@ -139,6 +142,7 @@ set (SOURCE_FILES_PUT_GET
         include/snowflake/IBase64.hpp
         include/snowflake/Proxy.hpp
         include/snowflake/entities.hpp
+        include/snowflake/stopwatch.h
 )
 
 set(SOURCE_FILES_CPP_WRAPPER
