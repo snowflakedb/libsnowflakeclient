@@ -137,8 +137,8 @@ set(AWS_ALL_LIBS
         ${AWS_C_CAL_LIB}
         ${AWS_C_MQTT_LIB}
         ${AWS_S2N_LIB}
-        ${AWS_C_COMMON_LIB}
         ${AWS_C_SDKUTILS_LIB}
+        ${AWS_C_COMMON_LIB}
     )
 
 SET(TEST_DATA

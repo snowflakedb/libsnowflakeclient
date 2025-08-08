@@ -7,6 +7,7 @@
 #include <toml++/toml.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace
 {
@@ -15,6 +16,7 @@ namespace
   // constants
   const std::string ENV_SNOWFLAKE_HOME = "SNOWFLAKE_HOME";
   const std::string ENV_SNOWFLAKE_DEF_CONN_NAME = "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
+  const std::string ENV_SKIP_WARNING_FOR_READ_PERM = "SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE";
   const std::string SNOWFLAKE_HOME_DIR = ".snowflake";
   const std::string TOML_FILENAME = "connections.toml";
 
@@ -26,6 +28,30 @@ namespace
       return std::string(value);
     }
     return "";
+  }
+
+  sf_bool checkIfValidPermissions(const boost::filesystem::path &filePath)
+  {
+    boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
+    boost::filesystem::perms permissions = fileStatus.permissions();
+    std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);
+    if (permissions & boost::filesystem::group_write ||
+      permissions & boost::filesystem::others_write)
+    {
+      CXX_LOG_ERROR("Error due to other users having permission to modify the config file: %s",
+        filePath.c_str());
+      return false;
+    }
+    if (!boost::iequals(skipWarningForReadPermission, "true"))
+    {
+      if (permissions & boost::filesystem::group_read ||
+        permissions & boost::filesystem::others_read)
+      {
+        CXX_LOG_WARN("Warning due to other users having permission to read the config file: %s",
+          filePath.c_str());
+      }
+    }
+    return true;
   }
 
   boost::filesystem::path resolveTomlPath() {
@@ -67,7 +93,20 @@ namespace
 
   std::map<std::string, boost::variant<std::string, int, bool, double>> parseTomlFile(const boost::filesystem::path& filePath) {
     std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
-    log_file_usage(filePath.string().c_str(), "Reading TOML config file.", true);
+	log_file_usage(filePath.string().c_str(), "Reading TOML config file.", true);
+    if (!boost::filesystem::exists(filePath))
+    {
+      CXX_LOG_ERROR("Could not find toml file. The file may not exist: %s",
+        filePath.c_str());
+      return connectionParams;
+    }
+
+#if !defined(_WIN32) && !defined(_WIN64)
+    if (!checkIfValidPermissions(filePath))
+    {
+      return connectionParams;
+    }
+#endif
     toml::parse_result result = toml::parse_file(filePath.c_str());
     if (!result)
     {

@@ -2,9 +2,12 @@
 #include <snowflake/client_config_parser.h>
 #include "memory.h"
 #include <stdio.h>
+#include <sys/stat.h>
 
 #ifndef _WIN32
 #include <unistd.h>
+#include <pwd.h>
+#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 #else
 #define F_OK 0
 inline int access(const char* pathname, int mode) {
@@ -394,6 +397,7 @@ void test_client_config_stdout() {
 
   // Get the log path determined by libsnowflakeclient
   snowflake_global_get_attribute(SF_GLOBAL_LOG_PATH, LOG_PATH, MAX_PATH);
+
   // Ensure the log file doesn't exist at the beginning
   assert_string_equal(LOG_PATH, "");
 
@@ -433,6 +437,53 @@ void test_log_creation() {
 }
 
 #ifndef _WIN32
+
+/**
+ * Test that generate exception
+ */
+void test_log_creation_no_permission_to_home_folder(){
+
+  // check if current user is root. If so, exit test
+  char *name;
+  struct passwd *pwd;
+  pwd = getpwuid(getuid());
+  name = pwd->pw_name;
+
+  if(strcmp(name, "root") == 0){
+    return;
+  }
+  
+  // clean up tmp folder if necessary
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);    
+
+  // creating SF_client_config_folder
+  sf_create_directory_if_not_exists(SF_TMP_FOLDER);
+
+  // getting $HOME dir
+  char *homedirOrig = getenv("HOME");
+
+  // setting $HOME to point at /tmp/sf_client_config_folder
+  setenv("HOME", SF_TMP_FOLDER, 1);
+    
+  // setting SF_CLIENT_CONFIG dir to be inaccessible to all
+  mode_t newPermission = 0x0000;
+  chmod(SF_TMP_FOLDER, newPermission);
+    
+  // parse client config for log details - exception should be thrown here and caught
+  client_config clientConfig;
+  sf_bool result = load_client_config("", &clientConfig);
+  assert_false(result);
+
+  // changing permission of tmp folder to ensure cleanup is possible
+  chmod(SF_TMP_FOLDER, 0750);
+    
+  // clean up /tmp/SF_client_config_folder
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);
+
+  // resetting HOME 
+  setenv("HOME", homedirOrig, 1);   
+}
+
 /**
  * Tests masking secret information in log
  */
@@ -570,6 +621,7 @@ int main(void) {
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
+        cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif
     };
