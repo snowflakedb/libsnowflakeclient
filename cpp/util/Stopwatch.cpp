@@ -13,7 +13,7 @@ void stopwatch_start(Stopwatch* s)
 
 void stopwatch_stop(Stopwatch* s)
 {
-  if (s != NULL)
+  if (s != NULL && s->isStarted)
   {
     s->isStarted = false;
     s->elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(
