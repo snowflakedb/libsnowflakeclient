@@ -153,6 +153,12 @@ extern "C" {
     try
     {
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->authenticate();
+
+      // Based on the Okta and external browser implementation, we avoid using try-catch in order to follow the Google C++ Style Guide.
+      // As a result, we handle errors using boolean flags and defer final error handling to the C API level.
+      if ((conn->error).error_code != SF_STATUS_SUCCESS) {
+          return SF_STATUS_ERROR_GENERAL;
+      }
     }
     catch (...)
     {
@@ -438,7 +444,7 @@ namespace Client
   void AuthenticatorOKTA::authenticate()
   {
       IAuthenticatorOKTA::authenticate();
-      if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
+      if (isError() || m_idp->isError())
       {
           const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
