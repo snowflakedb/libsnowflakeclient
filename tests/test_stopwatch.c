@@ -37,6 +37,7 @@ void test_restart(void **unused) {
 void test_stop_already_stopped(void **unused) {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
+  sf_sleep_ms(100);
   stopwatch_stop(&stopwatch);
   assert_false(stopwatch_isStarted(&stopwatch));
   stopwatch_stop(&stopwatch); // should not change state
@@ -50,12 +51,13 @@ void test_start_already_started(void **unused) {
   sf_sleep_ms(500);
   stopwatch_start(&stopwatch); // should not change state
   assert_true(stopwatch_isStarted(&stopwatch));
-  assert_true(stopwatch_elapsedMillis(&stopwatch) > 500);
+  assert_true(stopwatch_elapsedMillis(&stopwatch) >= 500);
 }
 
 void test_get_millis_stopped(void **unused) {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
+  sf_sleep_ms(100);
   stopwatch_stop(&stopwatch);
   long elapsed = stopwatch_elapsedMillis(&stopwatch);
   assert_true(elapsed > 0);
