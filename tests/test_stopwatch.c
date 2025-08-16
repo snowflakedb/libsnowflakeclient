@@ -43,6 +43,7 @@ void test_stop_already_stopped(void **unused) {
   stopwatch_stop(&stopwatch); // should not change state
   assert_false(stopwatch_isStarted(&stopwatch));
   assert_true(stopwatch_elapsedMillis(&stopwatch) > 0);
+  printf("Elapsed time: %ld ms\n", stopwatch_elapsedMillis(&stopwatch));
 }
 
 void test_start_already_started(void **unused) {
@@ -52,6 +53,7 @@ void test_start_already_started(void **unused) {
   stopwatch_start(&stopwatch); // should not change state
   assert_true(stopwatch_isStarted(&stopwatch));
   assert_true(stopwatch_elapsedMillis(&stopwatch) >= 500);
+  printf("Elapsed time: %ld ms\n", stopwatch_elapsedMillis(&stopwatch));
 }
 
 void test_get_millis_stopped(void **unused) {
@@ -61,6 +63,7 @@ void test_get_millis_stopped(void **unused) {
   stopwatch_stop(&stopwatch);
   long elapsed = stopwatch_elapsedMillis(&stopwatch);
   assert_true(elapsed > 0);
+  printf("Elapsed time: %ld ms\n", elapsed);
   assert_false(stopwatch_isStarted(&stopwatch));
 }
 
@@ -71,6 +74,7 @@ void test_get_millis_running(void **unused) {
   sf_sleep_ms(500);
   long elapsed = stopwatch_elapsedMillis(&stopwatch);
   assert_true(elapsed >= 500); // should be at least 500 milliseconds
+  printf("Elapsed time: %ld ms\n", elapsed);
   assert_true(stopwatch_isStarted(&stopwatch));
   sf_sleep_ms(100);
   assert_true(stopwatch_elapsedMillis(&stopwatch) > elapsed);
@@ -89,6 +93,5 @@ int main(void) {
       cmocka_unit_test(test_get_millis_running)
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
-    snowflake_global_term();
     return ret;
 }
