@@ -309,6 +309,7 @@ void test_multi_stmt_arrow_format(void **unused)
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
 
     /* Enable fix for multi-statement with arrow.
      * Ingore failure since the test user might not be able to change the parameter.
