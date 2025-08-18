@@ -287,6 +287,90 @@ void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_FALSE, 2), SF_BOOLEAN_FALSE);
 }
 
+void test_multi_stmt_arrow_format(void **unused)
+{
+	/* use large result set to confirm the format of both query response and result chunks */
+    const int rownum = 100000;
+    SF_CONNECT *sf = setup_snowflake_connection();
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    SF_STMT *sfstmt = snowflake_stmt(sf);
+
+    /* set parameters */
+	/* use arrow format */
+    status = snowflake_query(sfstmt,
+                             "alter session set C_API_QUERY_RESULT_FORMAT=ARROW",
+                             0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+
+    /* Enable fix for multi-statement with arrow.
+     * Ingore failure since the test user might not be able to change the parameter.
+     * In such case assume the parameter has been enabled on the test account.
+     */
+    status = snowflake_query(sfstmt,
+                             "alter session set ENABLE_FIX_1758055_ADD_ARROW_SUPPORT_FOR_MULTI_STMTS=true",
+                             0);
+
+    /* query */
+    int64 multi_stmt_count = 3;
+    status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_query(sfstmt,
+                             "create or replace temporary table test_multi_large(c1 number, c2 number);\n"
+                             "insert into test_multi_large select seq4(), TO_VARCHAR(seq4()) from table(generator(rowcount => 100000));\n"
+                             "select * from test_multi_large",
+                             0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* first statement (begin) */
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
+
+    /* second statement (insert) */
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), rownum);
+
+    /* third statement (select) */
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), rownum);
+
+    /* the format of select result should be arrow */
+    assert_int_equal(sfstmt->qrf, SF_ARROW_FORMAT);
+
+    int counter = 0;
+    int64 intout;
+    const char* strout;
+    char strexp[64];
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_int64(sfstmt, 1, &intout);
+        assert_int_equal(intout, counter);
+        snowflake_column_as_const_str(sfstmt, 2, &strout);
+        sprintf(strexp, "%d", counter);
+        assert_string_equal(strout, strexp);
+        ++counter;
+    }
+    assert_int_equal(status, SF_STATUS_EOF);
+    assert_int_equal(counter, rownum);
+
+    // no more result
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_EOF);
+
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
@@ -297,6 +381,7 @@ int main(void) {
         cmocka_unit_test(test_multi_stmt_count_session_param_on),
         cmocka_unit_test(test_multi_stmt_count_stmt_attr_match),
         cmocka_unit_test(test_multi_stmt_count_stmt_attr_mismatch),
+        cmocka_unit_test(test_multi_stmt_arrow_format),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
