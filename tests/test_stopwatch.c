@@ -2,20 +2,21 @@
 #include "snowflake/Stopwatch.h"
 #include "snowflake_util.h"
 
-void test_is_started(void **unused) {
+void test_is_started() {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
   assert_true(stopwatch_isStarted(&stopwatch));
+  stopwatch_stop(&stopwatch);
 }
 
-void test_is_stopped(void **unused) {
+void test_is_stopped() {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
   stopwatch_stop(&stopwatch);
   assert_false(stopwatch_isStarted(&stopwatch));
 }
 
-void test_reset(void **unused) {
+void test_reset() {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
   stopwatch_reset(&stopwatch);
@@ -23,7 +24,7 @@ void test_reset(void **unused) {
   assert_int_equal(stopwatch_elapsedMillis(&stopwatch), 0);
 }
 
-void test_restart(void **unused) {
+void test_restart() {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
   sf_sleep_ms(500);
@@ -32,10 +33,12 @@ void test_restart(void **unused) {
   stopwatch_restart(&stopwatch);
   assert_true(stopwatch_isStarted(&stopwatch));
   assert_true(stopwatch_elapsedMillis(&stopwatch) < 500);
+  stopwatch_stop(&stopwatch);
 }
 
-void test_stop_already_stopped(void **unused) {
+void test_stop_already_stopped() {
   Stopwatch stopwatch;
+  stopwatch_reset(&stopwatch);
   stopwatch_start(&stopwatch);
   sf_sleep_ms(100);
   stopwatch_stop(&stopwatch);
@@ -46,8 +49,9 @@ void test_stop_already_stopped(void **unused) {
   printf("Elapsed time: %ld ms\n", stopwatch_elapsedMillis(&stopwatch));
 }
 
-void test_start_already_started(void **unused) {
+void test_start_already_started() {
   Stopwatch stopwatch;
+  stopwatch_reset(&stopwatch);
   stopwatch_start(&stopwatch);
   sf_sleep_ms(500);
   stopwatch_start(&stopwatch); // should not change state
@@ -56,8 +60,9 @@ void test_start_already_started(void **unused) {
   printf("Elapsed time: %ld ms\n", stopwatch_elapsedMillis(&stopwatch));
 }
 
-void test_get_millis_stopped(void **unused) {
+void test_get_millis_stopped() {
   Stopwatch stopwatch;
+  stopwatch_reset(&stopwatch);
   stopwatch_start(&stopwatch);
   sf_sleep_ms(100);
   stopwatch_stop(&stopwatch);
@@ -67,8 +72,9 @@ void test_get_millis_stopped(void **unused) {
   assert_false(stopwatch_isStarted(&stopwatch));
 }
 
-void test_get_millis_running(void **unused) {
+void test_get_millis_running() {
   Stopwatch stopwatch;
+  stopwatch_reset(&stopwatch);
   stopwatch_start(&stopwatch);
   // wait for a short duration
   sf_sleep_ms(500);
