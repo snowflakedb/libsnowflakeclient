@@ -3,6 +3,7 @@
 
 void test_multi_stmt_transaction(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -73,6 +74,7 @@ void test_multi_stmt_transaction(void **unused)
 
 void test_multi_stmt_transaction_rollback(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -143,6 +145,7 @@ void test_multi_stmt_transaction_rollback(void **unused)
 
 void test_multi_stmt_with_large_result(void **unused)
 {
+    SF_UNUSED(unused);
     const int rownum = 100000;
     SF_CONNECT *sf = setup_snowflake_connection();
 
@@ -261,6 +264,7 @@ sf_bool test_multi_stmt_core(sf_bool use_session_param, int count)
 
 void test_multi_stmt_count_session_param_off(void** unused)
 {
+    SF_UNUSED(unused);
     // disable multiple statements by setting session parameter to 1
     // the query is expected to fail
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_TRUE, 1), SF_BOOLEAN_FALSE);
@@ -268,6 +272,7 @@ void test_multi_stmt_count_session_param_off(void** unused)
 
 void test_multi_stmt_count_session_param_on(void** unused)
 {
+    SF_UNUSED(unused);
     // enable multiple statements by setting session parameter to 0
     // the query should work
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_TRUE, 0), SF_BOOLEAN_TRUE);
@@ -275,6 +280,7 @@ void test_multi_stmt_count_session_param_on(void** unused)
 
 void test_multi_stmt_count_stmt_attr_match(void** unused)
 {
+    SF_UNUSED(unused);
     // set statement attribute with match number
     // the query should work
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_FALSE, 3), SF_BOOLEAN_TRUE);
@@ -282,6 +288,7 @@ void test_multi_stmt_count_stmt_attr_match(void** unused)
 
 void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
 {
+    SF_UNUSED(unused);
     // set statement attribute with mismatch number
     // the query is expected to fail
     assert_int_equal(test_multi_stmt_core(SF_BOOLEAN_FALSE, 2), SF_BOOLEAN_FALSE);
@@ -289,7 +296,8 @@ void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
 
 void test_multi_stmt_arrow_format(void **unused)
 {
-	/* use large result set to confirm the format of both query response and result chunks */
+    SF_UNUSED(unused);
+    /* use large result set to confirm the format of both query response and result chunks */
     const int rownum = 100000;
     SF_CONNECT *sf = setup_snowflake_connection();
 
