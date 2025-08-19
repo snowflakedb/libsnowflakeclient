@@ -296,6 +296,7 @@ void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
 
 void test_multi_stmt_arrow_format(void **unused)
 {
+    initialize_test(SF_BOOLEAN_TRUE);
     SF_UNUSED(unused);
     /* use large result set to confirm the format of both query response and result chunks */
     const int rownum = 100000;
