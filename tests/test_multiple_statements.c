@@ -296,7 +296,6 @@ void test_multi_stmt_count_stmt_attr_mismatch(void** unused)
 
 void test_multi_stmt_arrow_format(void **unused)
 {
-    initialize_test(SF_BOOLEAN_TRUE);
     SF_UNUSED(unused);
     /* use large result set to confirm the format of both query response and result chunks */
     const int rownum = 100000;
@@ -356,8 +355,11 @@ void test_multi_stmt_arrow_format(void **unused)
     assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt), rownum);
 
+/* skip Windows 32-bit which arrow is not available */
+#if !defined (_WIN32) || defined(_WIN64)
     /* the format of select result should be arrow */
     assert_int_equal(sfstmt->qrf, SF_ARROW_FORMAT);
+#endif
 
     int counter = 0;
     int64 intout;
