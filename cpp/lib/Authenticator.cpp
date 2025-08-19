@@ -496,7 +496,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_INFO("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -562,7 +562,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_INFO("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -609,7 +609,7 @@ namespace Client
 
       if (ret && elapsedTime >= m_retryTimeout)
       {
-          CXX_LOG_INFO("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
+          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
               m_retryTimeout, elapsedTime);
 
           m_errMsg = "OktaConnectionFailed: timeout reached.";

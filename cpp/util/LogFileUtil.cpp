@@ -4,7 +4,7 @@
 
 void log_warn_when_accessible_by_others(const char *filePath, const char *context, bool log_read_access)
 {
-//#ifndef _WIN32
+#ifndef _WIN32
   try
   {
     boost::filesystem::path filePathObj(filePath);
@@ -25,7 +25,7 @@ void log_warn_when_accessible_by_others(const char *filePath, const char *contex
     log_warn("%s, Unable to access the file to check the permission: %s. Error %s",
       context, filePath, e.what());
   }
-//#endif
+#endif
 }
 
 void log_file_usage(const char* filePath, const char* context, bool log_read_access)
