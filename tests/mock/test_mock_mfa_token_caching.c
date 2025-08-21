@@ -3,7 +3,6 @@
 #include "../utils/test_setup.h"
 #include "../utils/mock_setup.h"
 #include <unistd.h>
-#include <snowflake/config.h>
 
 const size_t MAX_PATH_LEN = 1024;
 
@@ -21,25 +20,6 @@ char* load_data(const char* filename) {
   char *string = malloc(fsize + 1);
   fread(string, fsize, 1, fp);
   fclose(fp);
-  
-  // Replace ${CMAKE_BUILD_TYPE} with actual build type
-  char *build_type_placeholder = "${CMAKE_BUILD_TYPE}";
-  char *found = strstr(string, build_type_placeholder);
-  if (found) {
-    size_t prefix_len = found - string;
-    size_t suffix_len = strlen(found + strlen(build_type_placeholder));
-    size_t new_len = prefix_len + strlen(CMAKE_BUILD_TYPE) + suffix_len;
-    char *new_string = malloc(new_len + 1);
-    
-    strncpy(new_string, string, prefix_len);
-    strcpy(new_string + prefix_len, CMAKE_BUILD_TYPE);
-    strcpy(new_string + prefix_len + strlen(CMAKE_BUILD_TYPE), 
-           found + strlen(build_type_placeholder));
-    
-    free(string);
-    string = new_string;
-  }
-  
   return string;
 }
 

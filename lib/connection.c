@@ -32,20 +32,21 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     cJSON *session_parameters;
     char os_version[128];
     char app_path[MAX_PATH];
-    sf_get_callers_executable_path(app_path, sizeof(app_path));
 
     //Create Client Environment JSON blob
     client_env = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(client_env, "APPLICATION", application);
-    snowflake_cJSON_AddStringToObject(client_env, "APPLICATION_PATH", app_path);
     snowflake_cJSON_AddStringToObject(client_env, "OS", sf_os_name());
 #ifdef MOCK_ENABLED
     os_version[0] = '0';
     os_version[1] = '\0';
+    app_path = "/app/path";
 #else
     sf_os_version(os_version, sizeof(os_version));
+    sf_get_callers_executable_path(app_path, sizeof(app_path));
 #endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
+    snowflake_cJSON_AddStringToObject(client_env, "APPLICATION_PATH", app_path);
 
     session_parameters = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(

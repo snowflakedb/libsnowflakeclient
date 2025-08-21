@@ -8,7 +8,7 @@
 		"EXT_AUTHN_DUO_METHOD":	"passcode",
 		"PASSCODE":	"passcode",
 		"CLIENT_ENVIRONMENT":	{
-			"APPLICATION_PATH":	"/mnt/host/cmake-build-${CMAKE_BUILD_TYPE}/tests/test_mock_mfa_token_caching",
+			"APPLICATION_PATH":	"/app/path",
 			"OS":	"Linux",
 			"OS_VERSION":	"0"
 		},

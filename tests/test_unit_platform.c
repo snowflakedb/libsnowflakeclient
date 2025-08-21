@@ -12,7 +12,6 @@ void test_sf_get_callers_executable_path(void **unused) {
   char path[MAX_PATH];
 
   sf_get_callers_executable_path(path, sizeof(path));
-  printf("path: %s\n", path);
   assert_true(strstr(path, "test_unit_platform") != NULL);
 }
 
