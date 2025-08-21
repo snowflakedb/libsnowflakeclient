@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <unistd.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <pwd.h>
 #endif
@@ -17,6 +18,7 @@
 
 #ifdef __APPLE__
 #include <sys/sysctl.h>
+#include <mach-o/dyld.h>
 #endif
 
 #ifndef _WIN32
@@ -29,6 +31,8 @@
 #ifdef _WIN32
 #include <stdint.h>
 #include <VersionHelpers.h>
+#include <stdlib.h>
+#include <windows.h>
 
 // gmttime(), localtime() don't support negative epoch on Windows.
 // Take the implementation from ODBC/DataConversion.cpp
@@ -922,3 +926,36 @@ void STDCALL sf_delete_uniq_dir_if_exists(const char *tmpfile)
     sf_delete_directory_if_exists(fpath);
 }
 
+void STDCALL sf_get_callers_executable_path(char* out_buf, size_t buf_size) {
+  if (!out_buf || buf_size == 0) {
+    return;
+  }
+
+#ifdef _WIN32
+  DWORD result = GetModuleFileNameA(NULL, out_buf, (DWORD)buf_size);
+  if (result == 0 || result >= buf_size) {
+    sf_strcpy(out_buf, buf_size, "unknown");
+    return;
+  }
+#elif __APPLE__
+  char path[MAX_PATH];
+  uint32_t size = sizeof(path);
+  if (_NSGetExecutablePath(path, &size) == 0) {
+    char real_path[MAX_PATH];
+    if (realpath(path, real_path) != NULL) {
+      sf_strcpy(out_buf, buf_size, real_path);
+      return;
+    }
+  }
+  sf_strcpy(out_buf, buf_size, "unknown");
+#elif __linux__
+  ssize_t count = readlink("/proc/self/exe", out_buf, buf_size - 1);
+  if (count != -1 && count < buf_size) {
+    out_buf[count] = '\0';
+    return;
+  }
+  sf_strcpy(out_buf, buf_size, "unknown");
+#else
+  sf_strcpy(out_buf, buf_size, "unknown");
+#endif
+}
