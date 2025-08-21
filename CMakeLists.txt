@@ -5,6 +5,13 @@ project(snowflakeclient)
 include(cmake/platform.cmake)
 include(cmake/flags.cmake)
 
+# Configure build type header
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/snowflake/config.h"
+)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
+
 # Enabling tests by Ctest. Don't use INCLUDE(Ctest) as
 # we don't need Dart and other tools.
 enable_testing()
