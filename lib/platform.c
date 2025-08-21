@@ -950,7 +950,7 @@ void STDCALL sf_get_callers_executable_path(char* out_buf, size_t buf_size) {
   sf_strcpy(out_buf, buf_size, "unknown");
 #elif __linux__
   ssize_t count = readlink("/proc/self/exe", out_buf, buf_size - 1);
-  if (count != -1 && count < buf_size) {
+  if (count != -1 && count < (ssize_t)buf_size) {
     out_buf[count] = '\0';
     return;
   }
