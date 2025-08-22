@@ -277,7 +277,8 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
     chunk_downloader->has_error = SF_BOOLEAN_FALSE;
     chunk_downloader->sf_error = sf_error;
     chunk_downloader->insecure_mode = insecure_mode;
-    chunk_downloader->fail_open = fail_open,
+    chunk_downloader->fail_open = fail_open;
+    chunk_downloader->clr_check = clr_check;
     chunk_downloader->callback_create_resp = callback_create_resp;
     chunk_downloader->proxy = NULL;
     chunk_downloader->no_proxy = NULL;

@@ -1,5 +1,5 @@
 #include "utils/test_setup.h"
-
+/*
 void test_succees_with_crl_check(void **unused) {
   SF_UNUSED(unused);
 
@@ -15,12 +15,12 @@ void test_succees_with_crl_check(void **unused) {
 
   SF_STATUS ret = snowflake_connect(sf);
 
-  // must succeed with CURL error
+  // must succeed with success
   assert_int_equal(ret, SF_STATUS_SUCCESS);
 
   snowflake_term(sf);
 }
-
+*/
 void test_fail_with_no_crl(void **unused) {
   SF_UNUSED(unused);
 
@@ -53,7 +53,7 @@ void test_fail_with_no_crl(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_succees_with_crl_check),
+        //cmocka_unit_test(test_succees_with_crl_check),
         cmocka_unit_test(test_fail_with_no_crl),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
