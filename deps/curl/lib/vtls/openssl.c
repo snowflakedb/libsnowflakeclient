@@ -65,6 +65,7 @@
 #include "strerror.h"
 #include "curl_printf.h"
 #include "sf_ocsp.h"
+#include "sf_crl.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -1900,6 +1901,9 @@ static int ossl_init(void)
   /* init Cert OCSP revocation checks */
   initCertOCSP();
 
+  /* init Cert CRL revocation checks */
+  initCertCRL();
+
   return 1;
 }
 
@@ -3636,6 +3640,16 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
     if(result == CURLE_OK && cache_criteria_met) {
       ossl_set_cached_x509_store(cf, data, store);
     }
+
+    /* !!! Starting Snowflake CRL !!! */
+    if (conn_config->sf_crl_check) {
+      registerCRLCheck(data, store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
 
   return result;
