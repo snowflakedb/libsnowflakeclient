@@ -40,7 +40,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 #ifdef MOCK_ENABLED
     os_version[0] = '0';
     os_version[1] = '\0';
-    app_path = "/app/path";
+    strcpy(app_path, "/app/path");
 #else
     sf_os_version(os_version, sizeof(os_version));
     sf_get_callers_executable_path(app_path, sizeof(app_path));
