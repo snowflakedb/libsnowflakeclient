@@ -493,7 +493,7 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
       int fd = fileno(fp);
       if (fd != -1) {
         if (fstat(fd, &file_stats) == 0) {
-          *download_time = file_stats.st_mtimespec.tv_sec;
+          *download_time = file_stats.st_mtime.tv_sec;
           *pcrl = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
         }
       }
