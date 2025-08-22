@@ -51,8 +51,8 @@ void test_proxy_machine_port_scheme(void **unused)
 
 void test_proxy_all(void **unused)
 {
-    test_proxy_parts_equality("https://someuser:somepwd@somewhere.com:5050", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "", false);
-    test_proxy_parts_equality("http://username:password@proxyserver.company.com:80", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP, "", false);
+    test_proxy_parts_equality("https://someuser:somepwd@somewhere.com:5050", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "", false); // pragma: allowlist secret
+    test_proxy_parts_equality("http://username:password@proxyserver.company.com:80", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP, "", false); // pragma: allowlist secret
 }
 
 void test_proxy_empty(void **unused)
@@ -62,7 +62,7 @@ void test_proxy_empty(void **unused)
 
 void test_allproxy_noproxy_fromenv(void **unused)
 {
-    sf_setenv("all_proxy", "https://someuser:somepwd@somewhere.com:5050");
+    sf_setenv("all_proxy", "https://someuser:somepwd@somewhere.com:5050"); // pragma: allowlist secret
     sf_setenv("no_proxy", "proxyserver.com");
     test_proxy_parts_equality("", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "proxyserver.com", true);
     sf_unsetenv("all_proxy");
@@ -71,14 +71,14 @@ void test_allproxy_noproxy_fromenv(void **unused)
 
 void test_httpsproxy_fromenv(void **unused)
 {
-    sf_setenv("https_proxy", "https://someuser:somepwd@somewhere.com:5050");
+    sf_setenv("https_proxy", "https://someuser:somepwd@somewhere.com:5050"); // pragma: allowlist secret
     test_proxy_parts_equality("", "someuser", "somepwd", "somewhere.com", 5050, Proxy::Protocol::HTTPS, "", true);
     sf_unsetenv("https_proxy");
 }
 
 void test_httpproxy_fromenv(void **unused)
 {
-    sf_setenv("http_proxy", "http://username:password@proxyserver.company.com:80");
+    sf_setenv("http_proxy", "http://username:password@proxyserver.company.com:80"); // pragma: allowlist secret
     test_proxy_parts_equality("", "username", "password", "proxyserver.company.com", 80, Proxy::Protocol::HTTP, "", true);
     sf_unsetenv("http_proxy");
 }
@@ -87,6 +87,14 @@ void test_noproxy_fromenv(void **unused)
 {
     sf_setenv("NO_PROXY", "proxyserver.company.com");
     test_proxy_parts_equality("", "", "", "", 0, Proxy::Protocol::NONE, "proxyserver.company.com", true);
+    sf_unsetenv("NO_PROXY");
+}
+
+void test_noproxy_fromenv_long_no_proxy(void **unused)
+{
+    auto long_no_proxy = "looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongproxyserver.company.com";
+    sf_setenv("NO_PROXY", long_no_proxy);
+    test_proxy_parts_equality("", "", "", "", 0, Proxy::Protocol::NONE, long_no_proxy, true);
     sf_unsetenv("NO_PROXY");
 }
 
@@ -101,7 +109,8 @@ int main(void) {
     cmocka_unit_test(test_allproxy_noproxy_fromenv),
     cmocka_unit_test(test_httpsproxy_fromenv),
     cmocka_unit_test(test_httpproxy_fromenv),
-    cmocka_unit_test(test_noproxy_fromenv)
+    cmocka_unit_test(test_noproxy_fromenv),
+    cmocka_unit_test(test_noproxy_fromenv_long_no_proxy)
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;
