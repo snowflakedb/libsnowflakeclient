@@ -15,6 +15,7 @@
 #ifdef _WIN32
 #include <windows.h>
 typedef HANDLE SF_MUTEX_HANDLE;
+#define PATH_MAX MAX_PATH  /* Maximum PATH legnth */
 #else
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #endif
