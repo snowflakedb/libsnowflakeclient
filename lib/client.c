@@ -820,6 +820,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("autocommit: %s", sf->autocommit ? "true": "false");
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
+    log_debug("clr_check: %s", sf->clr_check ? "true" : "false");
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
@@ -1011,6 +1012,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->ocsp_fail_open = SF_BOOLEAN_TRUE;
+        sf->clr_check = SF_BOOLEAN_FALSE;
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
@@ -1489,6 +1491,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_OCSP_FAIL_OPEN:
           sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
+        case SF_CON_CLR_CHECK:
+          sf->clr_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
@@ -1699,6 +1704,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OCSP_FAIL_OPEN:
           *value = &sf->ocsp_fail_open;
+          break;
+        case SF_CON_CLR_CHECK:
+          *value = &sf->clr_check;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             *value = &sf->login_timeout;
@@ -1967,6 +1975,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
           &sfstmt->error,
           sfstmt->connection->insecure_mode,
           sfstmt->connection->ocsp_fail_open,
+          sfstmt->connection->clr_check,
           callback_create_resp,
           sfstmt->connection->proxy,
           sfstmt->connection->no_proxy,

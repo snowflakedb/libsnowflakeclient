@@ -484,7 +484,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              char *body, PUT_PAYLOAD* put_payload, cJSON **json, NON_JSON_RESP* non_json_resp,
                              char** resp_headers, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
-                             int8 retry_on_curle_couldnt_connect_count,
+                             sf_bool clr_check, int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,
@@ -515,7 +515,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  *
  * @param sf The Snowflake Connection object to use for connection details.
  * @param json A reference to a cJSON pointer. Holds the response of the request.
- * @param url The URL path for the request. A full URL will be constructed using this path.
+ * @param url_path The URL path for the request. A full URL will be constructed using this path.
  * @param url_params URL parameters to add to the encoded URL.
  * @param num_url_params Number of URL parameters.
  * @param body JSON body text to send as part of the request. If running a GET request, set to NULL.
@@ -540,7 +540,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  * @param renew_injection For test purpose only. Forcely trigger renew timeout.
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
+sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url_path, URL_KEY_VALUE* url_params, int num_url_params,
                         char *body, SF_HEADER *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
                         sf_bool use_application_json_accept_type,
                         int64 renew_timeout, int8 retry_max_count, int64 retry_timeout,

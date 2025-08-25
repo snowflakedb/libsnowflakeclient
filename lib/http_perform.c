@@ -137,6 +137,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
                              sf_bool fail_open,
+                             sf_bool clr_check,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -384,6 +385,39 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, clr_check);
+        if (res != CURLE_OK) {
+          log_error("Unable to set CRL CHECK [%s]",
+                    curl_easy_strerror(res));
+          break;
+        }
+
+        if (clr_check)
+        {
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, SF_BOOLEAN_TRUE);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL allow null crl [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, SF_BOOLEAN_TRUE);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL disk caching [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, SF_BOOLEAN_TRUE);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL memory caching [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+        }
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
             res = curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");

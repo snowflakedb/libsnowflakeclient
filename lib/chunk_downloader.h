@@ -62,6 +62,9 @@ struct SF_CHUNK_DOWNLOADER {
     // OCSP fail open flag
     sf_bool fail_open;
 
+    // CRL flag
+    sf_bool clr_check;
+
     // callback function to create non-json response buffer. Json format will be used if this is set to NULL.
     NON_JSON_RESP* (*callback_create_resp)(void);
 
@@ -82,6 +85,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    SF_ERROR_STRUCT *sf_error,
                                                    sf_bool insecure_mode,
                                                    sf_bool fail_open,
+                                                   sf_bool clr_check,
                                                    NON_JSON_RESP* (*callback_create_resp)(void),
                                                    const char *proxy,
                                                    const char *no_proxy,

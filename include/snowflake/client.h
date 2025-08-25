@@ -305,7 +305,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_OAUTH_TOKEN,
     SF_CON_DISABLE_CONSOLE_LOGIN,
     SF_CON_BROWSER_RESPONSE_TIMEOUT,
-    SF_CON_PAT
+    SF_CON_PAT,
+    SF_CON_CLR_CHECK
 } SF_ATTRIBUTE;
 
 /**
@@ -385,6 +386,7 @@ typedef struct SF_CONNECT {
     sf_bool passcode_in_password;
     sf_bool insecure_mode;
     sf_bool ocsp_fail_open;
+    sf_bool clr_check;
     sf_bool autocommit;
     sf_bool client_request_mfa_token;
     char *timezone;
