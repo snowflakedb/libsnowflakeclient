@@ -78,7 +78,7 @@ void Snowflake::Client::Util::Proxy::clearPwd() {
 }
 
 void Snowflake::Client::Util::Proxy::setProxyFromEnv() {
-    char valbuf[4096];
+    char valbuf[32767];
     char* env_value = get_env_or(valbuf, sizeof(valbuf), "all_proxy", "https_proxy", "http_proxy");
     if (env_value != nullptr) {
         std::string proxy(env_value);
