@@ -103,18 +103,22 @@ int my_trace(CURL *handle, curl_infotype type,
             text = "=> Send header";
             break;
         case CURLINFO_DATA_OUT:
+            return 0;
             text = "=> Send data";
             break;
         case CURLINFO_SSL_DATA_OUT:
+            return 0;
             text = "=> Send SSL data";
             break;
         case CURLINFO_HEADER_IN:
             text = "<= Recv header";
             break;
         case CURLINFO_DATA_IN:
+            return 0;
             text = "<= Recv data";
             break;
         case CURLINFO_SSL_DATA_IN:
+            return 0;
             text = "<= Recv SSL data";
             break;
     }
@@ -420,7 +424,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         /* Check for errors */
         if (res != CURLE_OK) {
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
-                                              retry_on_curle_couldnt_connect_count)
+                                              (unsigned)retry_on_curle_couldnt_connect_count)
             {
               retry = SF_BOOLEAN_TRUE;
               uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
@@ -431,7 +435,31 @@ sf_bool STDCALL http_perform(CURL *curl,
                       next_sleep_in_secs);
               sf_sleep_ms(next_sleep_in_secs*1000);
             } else if ((res == CURLE_OPERATION_TIMEDOUT) && (renew_timeout > 0)) {
-               retry = SF_BOOLEAN_TRUE;
+              retry = SF_BOOLEAN_TRUE;
+            } else if (res == CURLE_PARTIAL_FILE) {
+              if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
+              {
+                  uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                  log_debug(
+                      "curl_easy_perform() Got retryable error curl code %d, retry count  %d "
+                      "will retry after %d seconds", res,
+                      curl_retry_ctx.retry_count,
+                      next_sleep_in_secs);
+                  sf_sleep_ms(next_sleep_in_secs * 1000);
+                  retry = SF_BOOLEAN_TRUE;
+              }
+              else {
+                  char msg[1024];
+                  sf_sprintf(msg, sizeof(msg),
+                      "Exceeded the retry_timeout , curl error code: [%d]",
+                      res);
+                  SET_SNOWFLAKE_ERROR(error,
+                      SF_STATUS_ERROR_RETRY,
+                      msg,
+                      SF_SQLSTATE_UNABLE_TO_CONNECT);
+                  retry = SF_BOOLEAN_FALSE;
+              }
             } else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
@@ -469,8 +497,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                 curl_retry_ctx.retry_reason = (uint32)http_code;
               }
               if (retry &&
-                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
+                  ((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
