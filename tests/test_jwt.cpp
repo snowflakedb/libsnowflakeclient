@@ -301,7 +301,7 @@ void test_renew(void **unused) {
 
 int main(void) {
 // accountadmin is required for jwt test and it's available in test account only for Linux
-// Since we need to change the user settings the test can't be run in parallel, limit it to Linux x86_64, AWS and Release
+// Since we need to change the user settings the test can't be run in parallel, limit it to code coverage on Linux x86_64, AWS and Release
 #ifndef __linux__
   printf("Skipping - not build on linux\n");
   return 0;
@@ -320,6 +320,12 @@ int main(void) {
   char *benv = getenv("BUILD_TYPE");
   if ((!benv) || strncmp(benv, "Release", 8)) {
     printf("Skipping - not Release build\n");
+    return 0;
+  }
+
+  char *cvenv = getenv("CLIENT_CODE_COVERAGE");
+  if ((!cvenv) || strncmp(cvenv, "1", 2)) {
+    printf("Skipping - not code coverage test\n");
     return 0;
   }
 
