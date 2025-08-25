@@ -3,6 +3,7 @@
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
 #include "picojson.h"
+#include "log_file_util.h"
 
 #include <fstream>
 #include <sstream>
@@ -180,6 +181,7 @@ namespace
     picojson::value jsonConfig;
     std::string err;
     std::ifstream configFile;
+    log_file_usage(filePath.string().c_str(), "Reading client config file.", true);
     configFile.open(filePath.string(), std::fstream::in | std::ios::binary);
     if (!configFile)
     {
