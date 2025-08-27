@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <aws/core/utils/logging/LogLevel.h>
 #include "SFAwsLogger.hpp"
 #include "snowflake/logger.h"
@@ -52,6 +48,29 @@ void Snowflake::Client::SFAwsLogger::Log(LogLevel logLevel,
                       args);
     }
     va_end(args);
+  }
+}
+
+void Snowflake::Client::SFAwsLogger::vaLog(LogLevel logLevel,
+                                           const char* tag,
+                                           const char* formatStr,
+                                           va_list args)
+{
+  if (logLevel != LogLevel::Off)
+  {
+    va_list copy;
+    va_copy(copy, args);
+    if (SFLogger::getExternalLogger() != NULL)
+    {
+      SFLogger::getExternalLogger()->logLineVA((SF_LOG_LEVEL)toSFLogeLevel(logLevel),
+        AWS_NS, tag, formatStr, copy);
+    }
+    else
+    {
+      log_log_va_list(toSFLogeLevel(logLevel), tag, AWS_LINE, AWS_NS, formatStr,
+                      copy);
+    }
+    va_end(copy);
   }
 }
 

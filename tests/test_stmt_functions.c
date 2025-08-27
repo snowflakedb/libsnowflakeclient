@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Snowflake Computing, Inc. All rights reserved.
  * Test case for snowflake_sfqid() for now but we could add more test cases for
  * other functions on SF_STMT if anything missing.
  */

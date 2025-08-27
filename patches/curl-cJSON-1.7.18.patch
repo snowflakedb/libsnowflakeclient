@@ -1,0 +1,1545 @@
+diff --git a/cJSON.c b/cJSON.c
+index 61483d9..e8dd50f 100644
+--- a/cJSON.c
++++ b/cJSON.c
+@@ -56,7 +56,13 @@
+ #pragma GCC visibility pop
+ #endif
+ 
+-#include "cJSON.h"
++#include "curl_setup.h"
++#include "strcase.h"
++#include "sf_cJSON.h"
++
++/* ignoring float value comparison warning */
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wfloat-equal"
+ 
+ /* define our own boolean type */
+ #ifdef true
+@@ -89,16 +95,16 @@ typedef struct {
+     const unsigned char *json;
+     size_t position;
+ } error;
+-static error global_error = { NULL, 0 };
++static error sf_curl_global_error = { NULL, 0 };
+ 
+-CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
++CJSON_PUBLIC(const char *) sf_curl_cJSON_GetErrorPtr(void)
+ {
+-    return (const char*) (global_error.json + global_error.position);
++    return (const char*) (sf_curl_global_error.json + sf_curl_global_error.position);
+ }
+ 
+-CJSON_PUBLIC(char *) cJSON_GetStringValue(const cJSON * const item)
++CJSON_PUBLIC(char *) sf_curl_cJSON_GetStringValue(const cJSON * const item)
+ {
+-    if (!cJSON_IsString(item))
++    if (!sf_curl_cJSON_IsString(item))
+     {
+         return NULL;
+     }
+@@ -106,9 +112,9 @@ CJSON_PUBLIC(char *) cJSON_GetStringValue(const cJSON * const item)
+     return item->valuestring;
+ }
+ 
+-CJSON_PUBLIC(double) cJSON_GetNumberValue(const cJSON * const item)
++CJSON_PUBLIC(double) sf_curl_cJSON_GetNumberValue(const cJSON * const item)
+ {
+-    if (!cJSON_IsNumber(item))
++    if (!sf_curl_cJSON_IsNumber(item))
+     {
+         return (double) NAN;
+     }
+@@ -121,7 +127,7 @@ CJSON_PUBLIC(double) cJSON_GetNumberValue(const cJSON * const item)
+     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
+ #endif
+ 
+-CJSON_PUBLIC(const char*) cJSON_Version(void)
++CJSON_PUBLIC(const char*) sf_curl_cJSON_Version(void)
+ {
+     static char version[15];
+     sprintf(version, "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
+@@ -142,7 +148,7 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned
+         return 0;
+     }
+ 
+-    for(; tolower(*string1) == tolower(*string2); (void)string1++, string2++)
++    for(; Curl_raw_tolower(*string1) == Curl_raw_tolower(*string2); (void)string1++, string2++)
+     {
+         if (*string1 == '\0')
+         {
+@@ -150,7 +156,7 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned
+         }
+     }
+ 
+-    return tolower(*string1) - tolower(*string2);
++    return Curl_raw_tolower(*string1) - Curl_raw_tolower(*string2);
+ }
+ 
+ typedef struct internal_hooks
+@@ -183,9 +189,9 @@ static void * CJSON_CDECL internal_realloc(void *pointer, size_t size)
+ /* strlen of character literals resolved at compile time */
+ #define static_strlen(string_literal) (sizeof(string_literal) - sizeof(""))
+ 
+-static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
++static internal_hooks sf_curl_global_hooks = { internal_malloc, internal_free, internal_realloc };
+ 
+-static unsigned char* cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
++static unsigned char* sf_curl_cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
+ {
+     size_t length = 0;
+     unsigned char *copy = NULL;
+@@ -206,39 +212,39 @@ static unsigned char* cJSON_strdup(const unsigned char* string, const internal_h
+     return copy;
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
++CJSON_PUBLIC(void) sf_curl_cJSON_InitHooks(cJSON_Hooks* hooks)
+ {
+     if (hooks == NULL)
+     {
+         /* Reset hooks */
+-        global_hooks.allocate = malloc;
+-        global_hooks.deallocate = free;
+-        global_hooks.reallocate = realloc;
++        sf_curl_global_hooks.allocate = malloc;
++        sf_curl_global_hooks.deallocate = free;
++        sf_curl_global_hooks.reallocate = realloc;
+         return;
+     }
+ 
+-    global_hooks.allocate = malloc;
++    sf_curl_global_hooks.allocate = malloc;
+     if (hooks->malloc_fn != NULL)
+     {
+-        global_hooks.allocate = hooks->malloc_fn;
++        sf_curl_global_hooks.allocate = hooks->malloc_fn;
+     }
+ 
+-    global_hooks.deallocate = free;
++    sf_curl_global_hooks.deallocate = free;
+     if (hooks->free_fn != NULL)
+     {
+-        global_hooks.deallocate = hooks->free_fn;
++        sf_curl_global_hooks.deallocate = hooks->free_fn;
+     }
+ 
+     /* use realloc only if both free and malloc are used */
+-    global_hooks.reallocate = NULL;
+-    if ((global_hooks.allocate == malloc) && (global_hooks.deallocate == free))
++    sf_curl_global_hooks.reallocate = NULL;
++    if ((sf_curl_global_hooks.allocate == malloc) && (sf_curl_global_hooks.deallocate == free))
+     {
+-        global_hooks.reallocate = realloc;
++        sf_curl_global_hooks.reallocate = realloc;
+     }
+ }
+ 
+ /* Internal constructor. */
+-static cJSON *cJSON_New_Item(const internal_hooks * const hooks)
++static cJSON *sf_curl_cJSON_New_Item(const internal_hooks * const hooks)
+ {
+     cJSON* node = (cJSON*)hooks->allocate(sizeof(cJSON));
+     if (node)
+@@ -250,7 +256,7 @@ static cJSON *cJSON_New_Item(const internal_hooks * const hooks)
+ }
+ 
+ /* Delete a cJSON structure. */
+-CJSON_PUBLIC(void) cJSON_Delete(cJSON *item)
++CJSON_PUBLIC(void) sf_curl_cJSON_Delete(cJSON *item)
+ {
+     cJSON *next = NULL;
+     while (item != NULL)
+@@ -258,19 +264,19 @@ CJSON_PUBLIC(void) cJSON_Delete(cJSON *item)
+         next = item->next;
+         if (!(item->type & cJSON_IsReference) && (item->child != NULL))
+         {
+-            cJSON_Delete(item->child);
++            sf_curl_cJSON_Delete(item->child);
+         }
+         if (!(item->type & cJSON_IsReference) && (item->valuestring != NULL))
+         {
+-            global_hooks.deallocate(item->valuestring);
++            sf_curl_global_hooks.deallocate(item->valuestring);
+             item->valuestring = NULL;
+         }
+         if (!(item->type & cJSON_StringIsConst) && (item->string != NULL))
+         {
+-            global_hooks.deallocate(item->string);
++            sf_curl_global_hooks.deallocate(item->string);
+             item->string = NULL;
+         }
+-        global_hooks.deallocate(item);
++        sf_curl_global_hooks.deallocate(item);
+         item = next;
+     }
+ }
+@@ -381,7 +387,7 @@ loop_end:
+ }
+ 
+ /* don't ask me, but the original cJSON_SetNumberValue returns an integer or double */
+-CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
++CJSON_PUBLIC(double) sf_curl_cJSON_SetNumberHelper(cJSON *object, double number)
+ {
+     if (number >= INT_MAX)
+     {
+@@ -399,8 +405,8 @@ CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
+     return object->valuedouble = number;
+ }
+ 
+-/* Note: when passing a NULL valuestring, cJSON_SetValuestring treats this as an error and return NULL */
+-CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)
++/* Note: when passing a NULL valuestring, snowflake_cJSON_SetValuestring treats this as an error and return NULL */
++CJSON_PUBLIC(char*) sf_curl_cJSON_SetValuestring(cJSON *object, const char *valuestring)
+ {
+     char *copy = NULL;
+     /* if object's type is not cJSON_String or is cJSON_IsReference, it should not set valuestring */
+@@ -418,14 +424,14 @@ CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)
+         strcpy(object->valuestring, valuestring);
+         return object->valuestring;
+     }
+-    copy = (char*) cJSON_strdup((const unsigned char*)valuestring, &global_hooks);
++    copy = (char*) sf_curl_cJSON_strdup((const unsigned char*)valuestring, &sf_curl_global_hooks);
+     if (copy == NULL)
+     {
+         return NULL;
+     }
+     if (object->valuestring != NULL)
+     {
+-        cJSON_free(object->valuestring);
++        sf_curl_cJSON_free(object->valuestring);
+     }
+     object->valuestring = copy;
+ 
+@@ -519,7 +525,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed)
+ 
+             return NULL;
+         }
+-
++        
+         memcpy(newbuffer, p->buffer, p->offset + 1);
+         p->hooks.deallocate(p->buffer);
+     }
+@@ -570,10 +576,10 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
+     {
+         length = sprintf((char*)number_buffer, "null");
+     }
+-	else if(d == (double)item->valueint)
+-	{
+-		length = sprintf((char*)number_buffer, "%d", item->valueint);
+-	}
++    else if(d == (double)item->valueint)
++    {
++        length = sprintf((char*)number_buffer, "%d", item->valueint);
++    }
+     else
+     {
+         /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
+@@ -1085,7 +1091,7 @@ static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
+     return buffer;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
+ {
+     size_t buffer_length;
+ 
+@@ -1097,18 +1103,18 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return
+     /* Adding null character size due to require_null_terminated. */
+     buffer_length = strlen(value) + sizeof("");
+ 
+-    return cJSON_ParseWithLengthOpts(value, buffer_length, return_parse_end, require_null_terminated);
++    return sf_curl_cJSON_ParseWithLengthOpts(value, buffer_length, return_parse_end, require_null_terminated);
+ }
+ 
+ /* Parse an object - create a new root, and populate. */
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end, cJSON_bool require_null_terminated)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end, cJSON_bool require_null_terminated)
+ {
+     parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
+     cJSON *item = NULL;
+ 
+     /* reset error position */
+-    global_error.json = NULL;
+-    global_error.position = 0;
++    sf_curl_global_error.json = NULL;
++    sf_curl_global_error.position = 0;
+ 
+     if (value == NULL || 0 == buffer_length)
+     {
+@@ -1118,9 +1124,9 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
+     buffer.content = (const unsigned char*)value;
+     buffer.length = buffer_length;
+     buffer.offset = 0;
+-    buffer.hooks = global_hooks;
++    buffer.hooks = sf_curl_global_hooks;
+ 
+-    item = cJSON_New_Item(&global_hooks);
++    item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (item == NULL) /* memory fail */
+     {
+         goto fail;
+@@ -1151,7 +1157,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
+ fail:
+     if (item != NULL)
+     {
+-        cJSON_Delete(item);
++        sf_curl_cJSON_Delete(item);
+     }
+ 
+     if (value != NULL)
+@@ -1174,21 +1180,21 @@ fail:
+             *return_parse_end = (const char*)local_error.json + local_error.position;
+         }
+ 
+-        global_error = local_error;
++        sf_curl_global_error = local_error;
+     }
+ 
+     return NULL;
+ }
+ 
+ /* Default options for cJSON_Parse */
+-CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_Parse(const char *value)
+ {
+-    return cJSON_ParseWithOpts(value, 0, 0);
++    return sf_curl_cJSON_ParseWithOpts(value, 0, 0);
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithLength(const char *value, size_t buffer_length)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithLength(const char *value, size_t buffer_length)
+ {
+-    return cJSON_ParseWithLengthOpts(value, buffer_length, 0, 0);
++    return sf_curl_cJSON_ParseWithLengthOpts(value, buffer_length, 0, 0);
+ }
+ 
+ #define cjson_min(a, b) (((a) < (b)) ? (a) : (b))
+@@ -1261,17 +1267,17 @@ fail:
+ }
+ 
+ /* Render a cJSON item/entity/structure to text. */
+-CJSON_PUBLIC(char *) cJSON_Print(const cJSON *item)
++CJSON_PUBLIC(char *) sf_curl_cJSON_Print(const cJSON *item)
+ {
+-    return (char*)print(item, true, &global_hooks);
++    return (char*)print(item, true, &sf_curl_global_hooks);
+ }
+ 
+-CJSON_PUBLIC(char *) cJSON_PrintUnformatted(const cJSON *item)
++CJSON_PUBLIC(char *) sf_curl_cJSON_PrintUnformatted(const cJSON *item)
+ {
+-    return (char*)print(item, false, &global_hooks);
++    return (char*)print(item, false, &sf_curl_global_hooks);
+ }
+ 
+-CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
++CJSON_PUBLIC(char *) sf_curl_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt)
+ {
+     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
+ 
+@@ -1280,7 +1286,7 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
+         return NULL;
+     }
+ 
+-    p.buffer = (unsigned char*)global_hooks.allocate((size_t)prebuffer);
++    p.buffer = (unsigned char*)sf_curl_global_hooks.allocate((size_t)prebuffer);
+     if (!p.buffer)
+     {
+         return NULL;
+@@ -1290,11 +1296,11 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
+     p.offset = 0;
+     p.noalloc = false;
+     p.format = fmt;
+-    p.hooks = global_hooks;
++    p.hooks = sf_curl_global_hooks;
+ 
+     if (!print_value(item, &p))
+     {
+-        global_hooks.deallocate(p.buffer);
++        sf_curl_global_hooks.deallocate(p.buffer);
+         p.buffer = NULL;
+         return NULL;
+     }
+@@ -1302,7 +1308,7 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
+     return (char*)p.buffer;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format)
+ {
+     printbuffer p = { 0, 0, 0, 0, 0, 0, { 0, 0, 0 } };
+ 
+@@ -1316,7 +1322,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_PrintPreallocated(cJSON *item, char *buffer, cons
+     p.offset = 0;
+     p.noalloc = true;
+     p.format = format;
+-    p.hooks = global_hooks;
++    p.hooks = sf_curl_global_hooks;
+ 
+     return print_value(item, &p);
+ }
+@@ -1489,7 +1495,7 @@ static cJSON_bool parse_array(cJSON * const item, parse_buffer * const input_buf
+     do
+     {
+         /* allocate next item */
+-        cJSON *new_item = cJSON_New_Item(&(input_buffer->hooks));
++        cJSON *new_item = sf_curl_cJSON_New_Item(&(input_buffer->hooks));
+         if (new_item == NULL)
+         {
+             goto fail; /* allocation failure */
+@@ -1542,7 +1548,7 @@ success:
+ fail:
+     if (head != NULL)
+     {
+-        cJSON_Delete(head);
++        sf_curl_cJSON_Delete(head);
+     }
+ 
+     return false;
+@@ -1647,7 +1653,7 @@ static cJSON_bool parse_object(cJSON * const item, parse_buffer * const input_bu
+     do
+     {
+         /* allocate next item */
+-        cJSON *new_item = cJSON_New_Item(&(input_buffer->hooks));
++        cJSON *new_item = sf_curl_cJSON_New_Item(&(input_buffer->hooks));
+         if (new_item == NULL)
+         {
+             goto fail; /* allocation failure */
+@@ -1722,7 +1728,7 @@ success:
+ fail:
+     if (head != NULL)
+     {
+-        cJSON_Delete(head);
++        sf_curl_cJSON_Delete(head);
+     }
+ 
+     return false;
+@@ -1843,7 +1849,7 @@ static cJSON_bool print_object(const cJSON * const item, printbuffer * const out
+ }
+ 
+ /* Get Array size/item / object item. */
+-CJSON_PUBLIC(int) cJSON_GetArraySize(const cJSON *array)
++CJSON_PUBLIC(int) sf_curl_cJSON_GetArraySize(const cJSON *array)
+ {
+     cJSON *child = NULL;
+     size_t size = 0;
+@@ -1885,7 +1891,7 @@ static cJSON* get_array_item(const cJSON *array, size_t index)
+     return current_child;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_GetArrayItem(const cJSON *array, int index)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetArrayItem(const cJSON *array, int index)
+ {
+     if (index < 0)
+     {
+@@ -1927,19 +1933,19 @@ static cJSON *get_object_item(const cJSON * const object, const char * const nam
+     return current_element;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItem(const cJSON * const object, const char * const string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetObjectItem(const cJSON * const object, const char * const string)
+ {
+     return get_object_item(object, string, false);
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string)
+ {
+     return get_object_item(object, string, true);
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_HasObjectItem(const cJSON *object, const char *string)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_HasObjectItem(const cJSON *object, const char *string)
+ {
+-    return cJSON_GetObjectItem(object, string) ? 1 : 0;
++    return sf_curl_cJSON_GetObjectItem(object, string) ? 1 : 0;
+ }
+ 
+ /* Utility for array list handling. */
+@@ -1958,7 +1964,7 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
+         return NULL;
+     }
+ 
+-    reference = cJSON_New_Item(hooks);
++    reference = sf_curl_cJSON_New_Item(hooks);
+     if (reference == NULL)
+     {
+         return NULL;
+@@ -2005,7 +2011,7 @@ static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
+ }
+ 
+ /* Add item to array/object. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToArray(cJSON *array, cJSON *item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToArray(cJSON *array, cJSON *item)
+ {
+     return add_item_to_array(array, item);
+ }
+@@ -2043,7 +2049,7 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
+     }
+     else
+     {
+-        new_key = (char*)cJSON_strdup((const unsigned char*)string, hooks);
++        new_key = (char*)sf_curl_cJSON_strdup((const unsigned char*)string, hooks);
+         if (new_key == NULL)
+         {
+             return false;
+@@ -2063,146 +2069,146 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
+     return add_item_to_array(object, item);
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
+ {
+-    return add_item_to_object(object, string, item, &global_hooks, false);
++    return add_item_to_object(object, string, item, &sf_curl_global_hooks, false);
+ }
+ 
+ /* Add an item to an object with constant string as key */
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
+ {
+-    return add_item_to_object(object, string, item, &global_hooks, true);
++    return add_item_to_object(object, string, item, &sf_curl_global_hooks, true);
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
+ {
+     if (array == NULL)
+     {
+         return false;
+     }
+ 
+-    return add_item_to_array(array, create_reference(item, &global_hooks));
++    return add_item_to_array(array, create_reference(item, &sf_curl_global_hooks));
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
+ {
+     if ((object == NULL) || (string == NULL))
+     {
+         return false;
+     }
+ 
+-    return add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
++    return add_item_to_object(object, string, create_reference(item, &sf_curl_global_hooks), &sf_curl_global_hooks, false);
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddNullToObject(cJSON * const object, const char * const name)
+ {
+-    cJSON *null = cJSON_CreateNull();
+-    if (add_item_to_object(object, name, null, &global_hooks, false))
++    cJSON *null = sf_curl_cJSON_CreateNull();
++    if (add_item_to_object(object, name, null, &sf_curl_global_hooks, false))
+     {
+         return null;
+     }
+ 
+-    cJSON_Delete(null);
++    sf_curl_cJSON_Delete(null);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddTrueToObject(cJSON * const object, const char * const name)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddTrueToObject(cJSON * const object, const char * const name)
+ {
+-    cJSON *true_item = cJSON_CreateTrue();
+-    if (add_item_to_object(object, name, true_item, &global_hooks, false))
++    cJSON *true_item = sf_curl_cJSON_CreateTrue();
++    if (add_item_to_object(object, name, true_item, &sf_curl_global_hooks, false))
+     {
+         return true_item;
+     }
+ 
+-    cJSON_Delete(true_item);
++    sf_curl_cJSON_Delete(true_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddFalseToObject(cJSON * const object, const char * const name)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddFalseToObject(cJSON * const object, const char * const name)
+ {
+-    cJSON *false_item = cJSON_CreateFalse();
+-    if (add_item_to_object(object, name, false_item, &global_hooks, false))
++    cJSON *false_item = sf_curl_cJSON_CreateFalse();
++    if (add_item_to_object(object, name, false_item, &sf_curl_global_hooks, false))
+     {
+         return false_item;
+     }
+ 
+-    cJSON_Delete(false_item);
++    sf_curl_cJSON_Delete(false_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean)
+ {
+-    cJSON *bool_item = cJSON_CreateBool(boolean);
+-    if (add_item_to_object(object, name, bool_item, &global_hooks, false))
++    cJSON *bool_item = sf_curl_cJSON_CreateBool(boolean);
++    if (add_item_to_object(object, name, bool_item, &sf_curl_global_hooks, false))
+     {
+         return bool_item;
+     }
+ 
+-    cJSON_Delete(bool_item);
++    sf_curl_cJSON_Delete(bool_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number)
+ {
+-    cJSON *number_item = cJSON_CreateNumber(number);
+-    if (add_item_to_object(object, name, number_item, &global_hooks, false))
++    cJSON *number_item = sf_curl_cJSON_CreateNumber(number);
++    if (add_item_to_object(object, name, number_item, &sf_curl_global_hooks, false))
+     {
+         return number_item;
+     }
+ 
+-    cJSON_Delete(number_item);
++    sf_curl_cJSON_Delete(number_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
+ {
+-    cJSON *string_item = cJSON_CreateString(string);
+-    if (add_item_to_object(object, name, string_item, &global_hooks, false))
++    cJSON *string_item = sf_curl_cJSON_CreateString(string);
++    if (add_item_to_object(object, name, string_item, &sf_curl_global_hooks, false))
+     {
+         return string_item;
+     }
+ 
+-    cJSON_Delete(string_item);
++    sf_curl_cJSON_Delete(string_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw)
+ {
+-    cJSON *raw_item = cJSON_CreateRaw(raw);
+-    if (add_item_to_object(object, name, raw_item, &global_hooks, false))
++    cJSON *raw_item = sf_curl_cJSON_CreateRaw(raw);
++    if (add_item_to_object(object, name, raw_item, &sf_curl_global_hooks, false))
+     {
+         return raw_item;
+     }
+ 
+-    cJSON_Delete(raw_item);
++    sf_curl_cJSON_Delete(raw_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddObjectToObject(cJSON * const object, const char * const name)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddObjectToObject(cJSON * const object, const char * const name)
+ {
+-    cJSON *object_item = cJSON_CreateObject();
+-    if (add_item_to_object(object, name, object_item, &global_hooks, false))
++    cJSON *object_item = sf_curl_cJSON_CreateObject();
++    if (add_item_to_object(object, name, object_item, &sf_curl_global_hooks, false))
+     {
+         return object_item;
+     }
+ 
+-    cJSON_Delete(object_item);
++    sf_curl_cJSON_Delete(object_item);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON*) cJSON_AddArrayToObject(cJSON * const object, const char * const name)
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddArrayToObject(cJSON * const object, const char * const name)
+ {
+-    cJSON *array = cJSON_CreateArray();
+-    if (add_item_to_object(object, name, array, &global_hooks, false))
++    cJSON *array = sf_curl_cJSON_CreateArray();
++    if (add_item_to_object(object, name, array, &sf_curl_global_hooks, false))
+     {
+         return array;
+     }
+ 
+-    cJSON_Delete(array);
++    sf_curl_cJSON_Delete(array);
+     return NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
+ {
+     if ((parent == NULL) || (item == NULL))
+     {
+@@ -2238,47 +2244,47 @@ CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const it
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromArray(cJSON *array, int which)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromArray(cJSON *array, int which)
+ {
+     if (which < 0)
+     {
+         return NULL;
+     }
+ 
+-    return cJSON_DetachItemViaPointer(array, get_array_item(array, (size_t)which));
++    return sf_curl_cJSON_DetachItemViaPointer(array, get_array_item(array, (size_t)which));
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromArray(cJSON *array, int which)
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromArray(cJSON *array, int which)
+ {
+-    cJSON_Delete(cJSON_DetachItemFromArray(array, which));
++    sf_curl_cJSON_Delete(sf_curl_cJSON_DetachItemFromArray(array, which));
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObject(cJSON *object, const char *string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromObject(cJSON *object, const char *string)
+ {
+-    cJSON *to_detach = cJSON_GetObjectItem(object, string);
++    cJSON *to_detach = sf_curl_cJSON_GetObjectItem(object, string);
+ 
+-    return cJSON_DetachItemViaPointer(object, to_detach);
++    return sf_curl_cJSON_DetachItemViaPointer(object, to_detach);
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string)
+ {
+-    cJSON *to_detach = cJSON_GetObjectItemCaseSensitive(object, string);
++    cJSON *to_detach = sf_curl_cJSON_GetObjectItemCaseSensitive(object, string);
+ 
+-    return cJSON_DetachItemViaPointer(object, to_detach);
++    return sf_curl_cJSON_DetachItemViaPointer(object, to_detach);
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromObject(cJSON *object, const char *string)
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromObject(cJSON *object, const char *string)
+ {
+-    cJSON_Delete(cJSON_DetachItemFromObject(object, string));
++    sf_curl_cJSON_Delete(sf_curl_cJSON_DetachItemFromObject(object, string));
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string)
+ {
+-    cJSON_Delete(cJSON_DetachItemFromObjectCaseSensitive(object, string));
++    sf_curl_cJSON_Delete(sf_curl_cJSON_DetachItemFromObjectCaseSensitive(object, string));
+ }
+ 
+ /* Replace array/object items with new ones. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
+ {
+     cJSON *after_inserted = NULL;
+ 
+@@ -2312,7 +2318,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON
+     return true;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement)
+ {
+     if ((parent == NULL) || (parent->child == NULL) || (replacement == NULL) || (item == NULL))
+     {
+@@ -2356,19 +2362,19 @@ CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON
+ 
+     item->next = NULL;
+     item->prev = NULL;
+-    cJSON_Delete(item);
++    sf_curl_cJSON_Delete(item);
+ 
+     return true;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
+ {
+     if (which < 0)
+     {
+         return false;
+     }
+ 
+-    return cJSON_ReplaceItemViaPointer(array, get_array_item(array, (size_t)which), newitem);
++    return sf_curl_cJSON_ReplaceItemViaPointer(array, get_array_item(array, (size_t)which), newitem);
+ }
+ 
+ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSON *replacement, cJSON_bool case_sensitive)
+@@ -2381,9 +2387,9 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
+     /* replace the name in the replacement */
+     if (!(replacement->type & cJSON_StringIsConst) && (replacement->string != NULL))
+     {
+-        cJSON_free(replacement->string);
++        sf_curl_cJSON_free(replacement->string);
+     }
+-    replacement->string = (char*)cJSON_strdup((const unsigned char*)string, &global_hooks);
++    replacement->string = (char*)sf_curl_cJSON_strdup((const unsigned char*)string, &sf_curl_global_hooks);
+     if (replacement->string == NULL)
+     {
+         return false;
+@@ -2391,23 +2397,23 @@ static cJSON_bool replace_item_in_object(cJSON *object, const char *string, cJSO
+ 
+     replacement->type &= ~cJSON_StringIsConst;
+ 
+-    return cJSON_ReplaceItemViaPointer(object, get_object_item(object, string, case_sensitive), replacement);
++    return sf_curl_cJSON_ReplaceItemViaPointer(object, get_object_item(object, string, case_sensitive), replacement);
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
+ {
+     return replace_item_in_object(object, string, newitem, false);
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object, const char *string, cJSON *newitem)
+ {
+     return replace_item_in_object(object, string, newitem, true);
+ }
+ 
+ /* Create basic types: */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateNull(void)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_NULL;
+@@ -2416,9 +2422,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateTrue(void)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_True;
+@@ -2427,9 +2433,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateFalse(void)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_False;
+@@ -2438,9 +2444,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateBool(cJSON_bool boolean)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = boolean ? cJSON_True : cJSON_False;
+@@ -2449,9 +2455,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateNumber(double num)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_Number;
+@@ -2475,16 +2481,16 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateString(const char *string)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_String;
+-        item->valuestring = (char*)cJSON_strdup((const unsigned char*)string, &global_hooks);
++        item->valuestring = (char*)sf_curl_cJSON_strdup((const unsigned char*)string, &sf_curl_global_hooks);
+         if(!item->valuestring)
+         {
+-            cJSON_Delete(item);
++            sf_curl_cJSON_Delete(item);
+             return NULL;
+         }
+     }
+@@ -2492,9 +2498,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateStringReference(const char *string)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (item != NULL)
+     {
+         item->type = cJSON_String | cJSON_IsReference;
+@@ -2504,9 +2510,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateObjectReference(const cJSON *child)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (item != NULL) {
+         item->type = cJSON_Object | cJSON_IsReference;
+         item->child = (cJSON*)cast_away_const(child);
+@@ -2515,8 +2521,8 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child) {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateArrayReference(const cJSON *child) {
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (item != NULL) {
+         item->type = cJSON_Array | cJSON_IsReference;
+         item->child = (cJSON*)cast_away_const(child);
+@@ -2525,16 +2531,16 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child) {
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateRaw(const char *raw)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type = cJSON_Raw;
+-        item->valuestring = (char*)cJSON_strdup((const unsigned char*)raw, &global_hooks);
++        item->valuestring = (char*)sf_curl_cJSON_strdup((const unsigned char*)raw, &sf_curl_global_hooks);
+         if(!item->valuestring)
+         {
+-            cJSON_Delete(item);
++            sf_curl_cJSON_Delete(item);
+             return NULL;
+         }
+     }
+@@ -2542,9 +2548,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateArray(void)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if(item)
+     {
+         item->type=cJSON_Array;
+@@ -2553,9 +2559,9 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void)
+     return item;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateObject(void)
+ {
+-    cJSON *item = cJSON_New_Item(&global_hooks);
++    cJSON *item = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (item)
+     {
+         item->type = cJSON_Object;
+@@ -2565,7 +2571,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void)
+ }
+ 
+ /* Create Arrays: */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateIntArray(const int *numbers, int count)
+ {
+     size_t i = 0;
+     cJSON *n = NULL;
+@@ -2577,14 +2583,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
+         return NULL;
+     }
+ 
+-    a = cJSON_CreateArray();
++    a = sf_curl_cJSON_CreateArray();
+ 
+     for(i = 0; a && (i < (size_t)count); i++)
+     {
+-        n = cJSON_CreateNumber(numbers[i]);
++        n = sf_curl_cJSON_CreateNumber(numbers[i]);
+         if (!n)
+         {
+-            cJSON_Delete(a);
++            sf_curl_cJSON_Delete(a);
+             return NULL;
+         }
+         if(!i)
+@@ -2605,7 +2611,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count)
+     return a;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateFloatArray(const float *numbers, int count)
+ {
+     size_t i = 0;
+     cJSON *n = NULL;
+@@ -2617,14 +2623,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
+         return NULL;
+     }
+ 
+-    a = cJSON_CreateArray();
++    a = sf_curl_cJSON_CreateArray();
+ 
+     for(i = 0; a && (i < (size_t)count); i++)
+     {
+-        n = cJSON_CreateNumber((double)numbers[i]);
++        n = sf_curl_cJSON_CreateNumber((double)numbers[i]);
+         if(!n)
+         {
+-            cJSON_Delete(a);
++            sf_curl_cJSON_Delete(a);
+             return NULL;
+         }
+         if(!i)
+@@ -2645,7 +2651,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
+     return a;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateDoubleArray(const double *numbers, int count)
+ {
+     size_t i = 0;
+     cJSON *n = NULL;
+@@ -2657,14 +2663,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
+         return NULL;
+     }
+ 
+-    a = cJSON_CreateArray();
++    a = sf_curl_cJSON_CreateArray();
+ 
+     for(i = 0; a && (i < (size_t)count); i++)
+     {
+-        n = cJSON_CreateNumber(numbers[i]);
++        n = sf_curl_cJSON_CreateNumber(numbers[i]);
+         if(!n)
+         {
+-            cJSON_Delete(a);
++            sf_curl_cJSON_Delete(a);
+             return NULL;
+         }
+         if(!i)
+@@ -2685,7 +2691,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count)
+     return a;
+ }
+ 
+-CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int count)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateStringArray(const char *const *strings, int count)
+ {
+     size_t i = 0;
+     cJSON *n = NULL;
+@@ -2697,14 +2703,14 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
+         return NULL;
+     }
+ 
+-    a = cJSON_CreateArray();
++    a = sf_curl_cJSON_CreateArray();
+ 
+     for (i = 0; a && (i < (size_t)count); i++)
+     {
+-        n = cJSON_CreateString(strings[i]);
++        n = sf_curl_cJSON_CreateString(strings[i]);
+         if(!n)
+         {
+-            cJSON_Delete(a);
++            sf_curl_cJSON_Delete(a);
+             return NULL;
+         }
+         if(!i)
+@@ -2726,7 +2732,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
+ }
+ 
+ /* Duplication */
+-CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+ {
+     cJSON *newitem = NULL;
+     cJSON *child = NULL;
+@@ -2739,7 +2745,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+         goto fail;
+     }
+     /* Create new item */
+-    newitem = cJSON_New_Item(&global_hooks);
++    newitem = sf_curl_cJSON_New_Item(&sf_curl_global_hooks);
+     if (!newitem)
+     {
+         goto fail;
+@@ -2750,7 +2756,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+     newitem->valuedouble = item->valuedouble;
+     if (item->valuestring)
+     {
+-        newitem->valuestring = (char*)cJSON_strdup((unsigned char*)item->valuestring, &global_hooks);
++        newitem->valuestring = (char*)sf_curl_cJSON_strdup((unsigned char*)item->valuestring, &sf_curl_global_hooks);
+         if (!newitem->valuestring)
+         {
+             goto fail;
+@@ -2758,7 +2764,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+     }
+     if (item->string)
+     {
+-        newitem->string = (item->type&cJSON_StringIsConst) ? item->string : (char*)cJSON_strdup((unsigned char*)item->string, &global_hooks);
++        newitem->string = (item->type&cJSON_StringIsConst) ? item->string : (char*)sf_curl_cJSON_strdup((unsigned char*)item->string, &sf_curl_global_hooks);
+         if (!newitem->string)
+         {
+             goto fail;
+@@ -2773,7 +2779,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+     child = item->child;
+     while (child != NULL)
+     {
+-        newchild = cJSON_Duplicate(child, true); /* Duplicate (with recurse) each item in the ->next chain */
++        newchild = sf_curl_cJSON_Duplicate(child, true); /* Duplicate (with recurse) each item in the ->next chain */
+         if (!newchild)
+         {
+             goto fail;
+@@ -2803,7 +2809,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
+ fail:
+     if (newitem != NULL)
+     {
+-        cJSON_Delete(newitem);
++        sf_curl_cJSON_Delete(newitem);
+     }
+ 
+     return NULL;
+@@ -2858,7 +2864,7 @@ static void minify_string(char **input, char **output) {
+     }
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_Minify(char *json)
++CJSON_PUBLIC(void) sf_curl_cJSON_Minify(char *json)
+ {
+     char *into = json;
+ 
+@@ -2906,7 +2912,7 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json)
+     *into = '\0';
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsInvalid(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2916,7 +2922,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_Invalid;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsFalse(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2926,7 +2932,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_False;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsTrue(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2937,7 +2943,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item)
+ }
+ 
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsBool(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2946,7 +2952,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item)
+ 
+     return (item->type & (cJSON_True | cJSON_False)) != 0;
+ }
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsNull(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2956,7 +2962,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_NULL;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsNumber(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2966,7 +2972,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_Number;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsString(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2976,7 +2982,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_String;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsArray(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2986,7 +2992,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_Array;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsObject(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -2996,7 +3002,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_Object;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsRaw(const cJSON * const item)
+ {
+     if (item == NULL)
+     {
+@@ -3006,7 +3012,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item)
+     return (item->type & 0xFF) == cJSON_Raw;
+ }
+ 
+-CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive)
+ {
+     if ((a == NULL) || (b == NULL) || ((a->type & 0xFF) != (b->type & 0xFF)))
+     {
+@@ -3071,7 +3077,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+ 
+             for (; (a_element != NULL) && (b_element != NULL);)
+             {
+-                if (!cJSON_Compare(a_element, b_element, case_sensitive))
++                if (!sf_curl_cJSON_Compare(a_element, b_element, case_sensitive))
+                 {
+                     return false;
+                 }
+@@ -3092,7 +3098,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+         {
+             cJSON *a_element = NULL;
+             cJSON *b_element = NULL;
+-            cJSON_ArrayForEach(a_element, a)
++            sf_curl_cJSON_ArrayForEach(a_element, a)
+             {
+                 /* TODO This has O(n^2) runtime, which is horrible! */
+                 b_element = get_object_item(b, a_element->string, case_sensitive);
+@@ -3101,7 +3107,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+                     return false;
+                 }
+ 
+-                if (!cJSON_Compare(a_element, b_element, case_sensitive))
++                if (!sf_curl_cJSON_Compare(a_element, b_element, case_sensitive))
+                 {
+                     return false;
+                 }
+@@ -3109,7 +3115,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+ 
+             /* doing this twice, once on a and b to prevent true comparison if a subset of b
+              * TODO: Do this the proper way, this is just a fix for now */
+-            cJSON_ArrayForEach(b_element, b)
++            sf_curl_cJSON_ArrayForEach(b_element, b)
+             {
+                 a_element = get_object_item(a, b_element->string, case_sensitive);
+                 if (a_element == NULL)
+@@ -3117,7 +3123,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+                     return false;
+                 }
+ 
+-                if (!cJSON_Compare(b_element, a_element, case_sensitive))
++                if (!sf_curl_cJSON_Compare(b_element, a_element, case_sensitive))
+                 {
+                     return false;
+                 }
+@@ -3131,13 +3137,14 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
+     }
+ }
+ 
+-CJSON_PUBLIC(void *) cJSON_malloc(size_t size)
++CJSON_PUBLIC(void *) sf_curl_cJSON_malloc(size_t size)
+ {
+-    return global_hooks.allocate(size);
++    return sf_curl_global_hooks.allocate(size);
+ }
+ 
+-CJSON_PUBLIC(void) cJSON_free(void *object)
++CJSON_PUBLIC(void) sf_curl_cJSON_free(void *object)
+ {
+-    global_hooks.deallocate(object);
++    sf_curl_global_hooks.deallocate(object);
+     object = NULL;
+ }
++#pragma GCC diagnostic pop
+diff --git a/cJSON.h b/cJSON.h
+index 88cf0bc..09583f3 100644
+--- a/cJSON.h
++++ b/cJSON.h
+@@ -138,160 +138,160 @@ typedef int cJSON_bool;
+ #endif
+ 
+ /* returns the version of cJSON as a string */
+-CJSON_PUBLIC(const char*) cJSON_Version(void);
++CJSON_PUBLIC(const char*) sf_curl_cJSON_Version(void);
+ 
+ /* Supply malloc, realloc and free functions to cJSON */
+-CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks);
++CJSON_PUBLIC(void) sf_curl_cJSON_InitHooks(cJSON_Hooks* hooks);
+ 
+ /* Memory Management: the caller is always responsible to free the results from all variants of cJSON_Parse (with cJSON_Delete) and cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The exception is cJSON_PrintPreallocated, where the caller has full responsibility of the buffer. */
+ /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */
+-CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value);
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithLength(const char *value, size_t buffer_length);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_Parse(const char *value);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithLength(const char *value, size_t buffer_length);
+ /* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte parsed. */
+ /* If you supply a ptr in return_parse_end and parsing fails, then return_parse_end will contain a pointer to the error so will match cJSON_GetErrorPtr(). */
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated);
+-CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end, cJSON_bool require_null_terminated);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_ParseWithLengthOpts(const char *value, size_t buffer_length, const char **return_parse_end, cJSON_bool require_null_terminated);
+ 
+ /* Render a cJSON entity to text for transfer/storage. */
+-CJSON_PUBLIC(char *) cJSON_Print(const cJSON *item);
++CJSON_PUBLIC(char *) sf_curl_cJSON_Print(const cJSON *item);
+ /* Render a cJSON entity to text for transfer/storage without any formatting. */
+-CJSON_PUBLIC(char *) cJSON_PrintUnformatted(const cJSON *item);
++CJSON_PUBLIC(char *) sf_curl_cJSON_PrintUnformatted(const cJSON *item);
+ /* Render a cJSON entity to text using a buffered strategy. prebuffer is a guess at the final size. guessing well reduces reallocation. fmt=0 gives unformatted, =1 gives formatted */
+-CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt);
++CJSON_PUBLIC(char *) sf_curl_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt);
+ /* Render a cJSON entity to text using a buffer already allocated in memory with given length. Returns 1 on success and 0 on failure. */
+ /* NOTE: cJSON is not always 100% accurate in estimating how much memory it will use, so to be safe allocate 5 bytes more than you actually need */
+-CJSON_PUBLIC(cJSON_bool) cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format);
+ /* Delete a cJSON entity and all subentities. */
+-CJSON_PUBLIC(void) cJSON_Delete(cJSON *item);
++CJSON_PUBLIC(void) sf_curl_cJSON_Delete(cJSON *item);
+ 
+ /* Returns the number of items in an array (or object). */
+-CJSON_PUBLIC(int) cJSON_GetArraySize(const cJSON *array);
++CJSON_PUBLIC(int) sf_curl_cJSON_GetArraySize(const cJSON *array);
+ /* Retrieve item number "index" from array "array". Returns NULL if unsuccessful. */
+-CJSON_PUBLIC(cJSON *) cJSON_GetArrayItem(const cJSON *array, int index);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetArrayItem(const cJSON *array, int index);
+ /* Get item "string" from object. Case insensitive. */
+-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItem(const cJSON * const object, const char * const string);
+-CJSON_PUBLIC(cJSON *) cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string);
+-CJSON_PUBLIC(cJSON_bool) cJSON_HasObjectItem(const cJSON *object, const char *string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetObjectItem(const cJSON * const object, const char * const string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_GetObjectItemCaseSensitive(const cJSON * const object, const char * const string);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_HasObjectItem(const cJSON *object, const char *string);
+ /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
+-CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void);
++CJSON_PUBLIC(const char *) sf_curl_cJSON_GetErrorPtr(void);
+ 
+ /* Check item type and return its value */
+-CJSON_PUBLIC(char *) cJSON_GetStringValue(const cJSON * const item);
+-CJSON_PUBLIC(double) cJSON_GetNumberValue(const cJSON * const item);
++CJSON_PUBLIC(char *) sf_curl_cJSON_GetStringValue(const cJSON * const item);
++CJSON_PUBLIC(double) sf_curl_cJSON_GetNumberValue(const cJSON * const item);
+ 
+ /* These functions check the type of an item */
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsInvalid(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsFalse(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsTrue(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsBool(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsNull(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsNumber(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsString(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsArray(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsObject(const cJSON * const item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_IsRaw(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsInvalid(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsFalse(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsTrue(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsBool(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsNull(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsNumber(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsString(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsArray(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsObject(const cJSON * const item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_IsRaw(const cJSON * const item);
+ 
+ /* These calls create a cJSON item of the appropriate type. */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateNull(void);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateTrue(void);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateFalse(void);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateBool(cJSON_bool boolean);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateNull(void);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateTrue(void);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateFalse(void);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateBool(cJSON_bool boolean);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateNumber(double num);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateString(const char *string);
+ /* raw json */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateRaw(const char *raw);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateArray(void);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateObject(void);
+ 
+ /* Create a string where valuestring references a string so
+  * it will not be freed by cJSON_Delete */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateStringReference(const char *string);
+ /* Create an object/array that only references it's elements so
+  * they will not be freed by cJSON_Delete */
+-CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateObjectReference(const cJSON *child);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateArrayReference(const cJSON *child);
+ 
+ /* These utilities create an Array of count items.
+  * The parameter count cannot be greater than the number of elements in the number array, otherwise array access will be out of bounds.*/
+-CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count);
+-CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int count);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateIntArray(const int *numbers, int count);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateFloatArray(const float *numbers, int count);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateDoubleArray(const double *numbers, int count);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_CreateStringArray(const char *const *strings, int count);
+ 
+ /* Append item to the specified array/object. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToArray(cJSON *array, cJSON *item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToArray(cJSON *array, cJSON *item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
+ /* Use this when string is definitely const (i.e. a literal, or as good as), and will definitely survive the cJSON object.
+  * WARNING: When this function was used, make sure to always check that (item->type & cJSON_StringIsConst) is zero before
+  * writing to `item->string` */
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
+ /* Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't want to corrupt your existing cJSON. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
+-CJSON_PUBLIC(cJSON_bool) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item);
+ 
+ /* Remove/Detach items from Arrays/Objects. */
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item);
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromArray(cJSON *array, int which);
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromArray(cJSON *array, int which);
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObject(cJSON *object, const char *string);
+-CJSON_PUBLIC(cJSON *) cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string);
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromObject(cJSON *object, const char *string);
+-CJSON_PUBLIC(void) cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromArray(cJSON *array, int which);
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromArray(cJSON *array, int which);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromObject(cJSON *object, const char *string);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_DetachItemFromObjectCaseSensitive(cJSON *object, const char *string);
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromObject(cJSON *object, const char *string);
++CJSON_PUBLIC(void) sf_curl_cJSON_DeleteItemFromObjectCaseSensitive(cJSON *object, const char *string);
+ 
+ /* Update array items. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement);
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
+-CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object,const char *string,cJSON *newitem);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem); /* Shifts pre-existing items to the right. */
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON * const item, cJSON * replacement);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object,const char *string,cJSON *newitem);
+ 
+ /* Duplicate a cJSON item */
+-CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse);
++CJSON_PUBLIC(cJSON *) sf_curl_cJSON_Duplicate(const cJSON *item, cJSON_bool recurse);
+ /* Duplicate will create a new, identical cJSON item to the one you pass, in new memory that will
+  * need to be released. With recurse!=0, it will duplicate any children connected to the item.
+  * The item->next and ->prev pointers are always zero on return from Duplicate. */
+ /* Recursively compare two cJSON items for equality. If either a or b is NULL or invalid, they will be considered unequal.
+  * case_sensitive determines if object keys are treated case sensitive (1) or case insensitive (0) */
+-CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive);
++CJSON_PUBLIC(cJSON_bool) sf_curl_cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive);
+ 
+ /* Minify a strings, remove blank characters(such as ' ', '\t', '\r', '\n') from strings.
+  * The input pointer json cannot point to a read-only address area, such as a string constant, 
+  * but should point to a readable and writable address area. */
+-CJSON_PUBLIC(void) cJSON_Minify(char *json);
++CJSON_PUBLIC(void) sf_curl_cJSON_Minify(char *json);
+ 
+ /* Helper functions for creating and adding items to an object at the same time.
+  * They return the added item or NULL on failure. */
+-CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name);
+-CJSON_PUBLIC(cJSON*) cJSON_AddTrueToObject(cJSON * const object, const char * const name);
+-CJSON_PUBLIC(cJSON*) cJSON_AddFalseToObject(cJSON * const object, const char * const name);
+-CJSON_PUBLIC(cJSON*) cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean);
+-CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number);
+-CJSON_PUBLIC(cJSON*) cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string);
+-CJSON_PUBLIC(cJSON*) cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw);
+-CJSON_PUBLIC(cJSON*) cJSON_AddObjectToObject(cJSON * const object, const char * const name);
+-CJSON_PUBLIC(cJSON*) cJSON_AddArrayToObject(cJSON * const object, const char * const name);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddNullToObject(cJSON * const object, const char * const name);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddTrueToObject(cJSON * const object, const char * const name);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddFalseToObject(cJSON * const object, const char * const name);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddObjectToObject(cJSON * const object, const char * const name);
++CJSON_PUBLIC(cJSON*) sf_curl_cJSON_AddArrayToObject(cJSON * const object, const char * const name);
+ 
+ /* When assigning an integer value, it needs to be propagated to valuedouble too. */
+-#define cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
++#define sf_curl_cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
+ /* helper for the cJSON_SetNumberValue macro */
+-CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
+-#define cJSON_SetNumberValue(object, number) ((object != NULL) ? cJSON_SetNumberHelper(object, (double)number) : (number))
++CJSON_PUBLIC(double) sf_curl_cJSON_SetNumberHelper(cJSON *object, double number);
++#define sf_curl_cJSON_SetNumberValue(object, number) ((object != NULL) ? sf_curl_cJSON_SetNumberHelper(object, (double)number) : (number))
+ /* Change the valuestring of a cJSON_String object, only takes effect when type of object is cJSON_String */
+-CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring);
++CJSON_PUBLIC(char*) sf_curl_cJSON_SetValuestring(cJSON *object, const char *valuestring);
+ 
+ /* If the object is not a boolean type this does nothing and returns cJSON_Invalid else it returns the new type*/
+-#define cJSON_SetBoolValue(object, boolValue) ( \
++#define sf_curl_cJSON_SetBoolValue(object, boolValue) ( \
+     (object != NULL && ((object)->type & (cJSON_False|cJSON_True))) ? \
+     (object)->type=((object)->type &(~(cJSON_False|cJSON_True)))|((boolValue)?cJSON_True:cJSON_False) : \
+     cJSON_Invalid\
+ )
+ 
+ /* Macro for iterating over an array or object */
+-#define cJSON_ArrayForEach(element, array) for(element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
++#define sf_curl_cJSON_ArrayForEach(element, array) for(element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
+ 
+ /* malloc/free objects using the malloc/free functions that have been set with cJSON_InitHooks */
+-CJSON_PUBLIC(void *) cJSON_malloc(size_t size);
+-CJSON_PUBLIC(void) cJSON_free(void *object);
++CJSON_PUBLIC(void *) sf_curl_cJSON_malloc(size_t size);
++CJSON_PUBLIC(void) sf_curl_cJSON_free(void *object);
+ 
+ #ifdef __cplusplus
+ }

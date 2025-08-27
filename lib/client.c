@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
@@ -510,6 +506,14 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
     SF_LOG_LEVEL sf_log_level = log_level;
     char strerror_buf[SF_ERROR_BUFSIZE];
 
+    // quiet logging needs to set here; otherwise, easy logging will print funny things onto console
+    // Set logging level
+    if (DEBUG) {
+        log_set_quiet(SF_BOOLEAN_FALSE);
+    } else {
+        log_set_quiet(SF_BOOLEAN_TRUE);
+    }
+
     client_config clientConfig = { 0 };
     if (!log_path || (strlen(log_path) == 0) || sf_log_level == SF_LOG_DEFAULT)
     {
@@ -549,13 +553,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         sf_log_level = SF_LOG_FATAL;
       }
     }
-
-    // Set logging level
-    if (DEBUG) {
-        log_set_quiet(SF_BOOLEAN_FALSE);
-    } else {
-        log_set_quiet(SF_BOOLEAN_TRUE);
-    }
+    
     log_set_level(sf_log_level);
     log_set_lock(&log_lock_func);
 
@@ -573,6 +571,7 @@ static sf_bool STDCALL log_init(const char *log_path, SF_LOG_LEVEL log_level) {
         sf_sprintf(LOG_PATH, log_path_size, "logs/snowflake_%s.txt",
                  (char *) time_str);
     }
+
     if (LOG_PATH != NULL) {
       if (strlen(LOG_PATH) != 0) {
         // Set the log path only, the log file will be created when actual log output is needed.
@@ -695,6 +694,17 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    // split account and region if connected by a dot.
+    char* dot_ptr = strchr(sf->account, (int)'.');
+    if (dot_ptr) {
+        char* extracted_region = NULL;
+        alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
+        *dot_ptr = '\0';
+        SF_FREE(sf->region);
+        sf->region = extracted_region;
+    }
+
+    // use account with external ID to construct host before removing
     if (!sf->host) {
         // construct a host parameter if not specified,
         char buf[1024];
@@ -715,6 +725,21 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                      sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
+    }
+
+    // continue on split account removing exteral ID
+    if (dot_ptr) {
+        char* extracted_account = NULL;
+        if (strcmp(sf->region, "global") == 0) {
+            char* dash_ptr = strrchr(sf->account, (int)'-');
+            // If there is an external ID then just remove it from account
+            if (dash_ptr) {
+                *dash_ptr = '\0';
+            }
+        }
+        alloc_buffer_and_copy(&extracted_account, sf->account);
+        SF_FREE(sf->account);
+        sf->account = extracted_account;
     }
 
     char* top_domain = strrchr(sf->host, '.');
@@ -755,26 +780,6 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     log_info("Connecting to %s Snowflake domain", (strcasecmp(top_domain, "cn") == 0) ? "CHINA" : "GLOBAL");
 
-    // split account and region if connected by a dot.
-    char *dot_ptr = strchr(sf->account, (int) '.');
-    if (dot_ptr) {
-        char *extracted_account = NULL;
-        char *extracted_region = NULL;
-        alloc_buffer_and_copy(&extracted_region, dot_ptr + 1);
-        *dot_ptr = '\0';
-        if (strcmp(extracted_region, "global") == 0) {
-            char *dash_ptr = strrchr(sf->account, (int) '-');
-            // If there is an external ID then just remove it from account
-            if (dash_ptr) {
-                *dash_ptr = '\0';
-            }
-        }
-        alloc_buffer_and_copy(&extracted_account, sf->account);
-        SF_FREE(sf->account);
-        SF_FREE(sf->region);
-        sf->account = extracted_account;
-        sf->region = extracted_region;
-    }
     if (!sf->protocol) {
         alloc_buffer_and_copy(&sf->protocol, "https");
     }
@@ -797,6 +802,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
     if (AUTH_PAT == auth_type) {
         log_debug("programmatic_access_token: %s", sf->programmatic_access_token ? "provided" : "not provided");
+    }
+    if (AUTH_EXTERNALBROWSER == auth_type) {
+        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
+        log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
+        log_debug("browser_response_timeout: %d", sf->browser_response_timeout);
+    }
+    if (AUTH_OKTA == auth_type) {
+        log_debug("disable_saml_url_check: %s", sf->disable_saml_url_check ? "true" : "false");
     }
     log_debug("host: %s", sf->host);
     log_debug("port: %s", sf->port);
@@ -878,6 +891,7 @@ cleanup:
     return ret;
 }
 
+extern void awssdk_shutdown();
 SF_STATUS STDCALL snowflake_global_term() {
     curl_global_cleanup();
 
@@ -885,6 +899,7 @@ SF_STATUS STDCALL snowflake_global_term() {
     SF_FREE(CA_BUNDLE_FILE);
     SF_FREE(SF_HEADER_USER_AGENT);
 
+    awssdk_shutdown();
     log_term();
     sf_alloc_map_to_log(SF_BOOLEAN_TRUE);
     sf_error_term();
@@ -1003,8 +1018,10 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
+        sf->client_store_temporary_credential = SF_BOOLEAN_TRUE;
 #else
         sf->client_request_mfa_token = SF_BOOLEAN_FALSE;
+        sf->client_store_temporary_credential = SF_BOOLEAN_FALSE;
 #endif
         sf->qcc_disable = SF_BOOLEAN_FALSE;
         sf->include_retry_reason = SF_BOOLEAN_TRUE;
@@ -1055,6 +1072,7 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->oauth_token = NULL;
         sf->disable_console_login = SF_BOOLEAN_TRUE;
+        sf->disable_saml_url_check = SF_BOOLEAN_FALSE;
         sf->programmatic_access_token = NULL;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
@@ -1070,8 +1088,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
-
         sf->prefetch_threads = SF_DEFAULT_PREFETCH_THREAD;
+        sf->sso_token = NULL;
+        sf->mfa_token = NULL;
     }
 
     return sf;
@@ -1207,15 +1226,34 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
+    if (sf->client_request_mfa_token) 
+    {
+        if (sf->token_cache == NULL) {
+            sf->token_cache = secure_storage_init();
+        }
+
+        sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+    }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) 
+    {
+        if (sf->token_cache == NULL) 
+        {
+            sf->token_cache = secure_storage_init();
+        }
+
+        sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+    }
+
     ret = auth_authenticate(sf);
-    if (ret != SF_STATUS_SUCCESS) {
-        goto cleanup;
+    if (ret != SF_STATUS_SUCCESS)
+    {
+         goto cleanup;
     }
 
     ret = SF_STATUS_ERROR_GENERAL; // reset to the error
 
     uuid4_generate(sf->request_id);// request id
-
     // Create body
     body = create_auth_json_body(
         sf,
@@ -1275,6 +1313,15 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     log_debug("no code element.");
                 }
 
+                if (code == strtol(SF_GS_ERROR_CODE_ID_TOKEN_INVALID, NULL, 10))
+                { 
+                    log_error("ID token expired or invalid. Reauthenticate.");
+                    auth_renew_json_body(sf, body);
+                    s_body = snowflake_cJSON_Print(body);
+                    retried_count++;
+                    continue;
+                }
+
                 SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
                                     message ? message : "Query was not successful",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -1286,11 +1333,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 goto cleanup;
             }
 
-            char* mfa_token = NULL;
-            if (json_copy_string(&mfa_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, mfa_token);
+            char* auth_token = NULL;
+            if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
             }
 
+            else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
+              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
+            }
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
@@ -1381,6 +1431,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->account, value);
             break;
         case SF_CON_REGION:
+            log_warn("Connection parameter SF_CON_REGION is deprecated."
+                     "Instead you could specify full server URL using SF_CON_HOST, "
+                     "or specify region through SF_CON_ACCOUNT with format <account>.<region>");
             alloc_buffer_and_copy(&sf->region, value);
             break;
         case SF_CON_USER:
@@ -1555,6 +1608,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_CLIENT_REQUEST_MFA_TOKEN:
             sf->client_request_mfa_token = value ? *((sf_bool *) value): SF_BOOLEAN_TRUE;
+            break;
+        case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+            sf->client_store_temporary_credential = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
             break;
         case SF_CON_STAGE_BIND_THRESHOLD:
             if (value)
@@ -1756,6 +1812,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           *value = &sf->stage_binding_disabled;
           break;
+        case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+            *value = &sf->client_store_temporary_credential;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -3260,6 +3319,9 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 sf_bool useRegionalURL = SF_BOOLEAN_FALSE;
                 json_copy_bool(&useRegionalURL, stage_info, "useRegionalUrl");
                 sfstmt->put_get_response->stage_info->useRegionalUrl = useRegionalURL;
+                sf_bool useVirtualURL = SF_BOOLEAN_FALSE;
+                json_copy_bool(&useVirtualURL, stage_info, "useVirtualUrl");
+                sfstmt->put_get_response->stage_info->useVirtualUrl = useVirtualURL;
                 json_copy_string(
                     &sfstmt->put_get_response->stage_info->stage_cred->aws_secret_key,
                     stage_cred, "AWS_SECRET_KEY");

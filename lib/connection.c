@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2025 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include <string.h>
 #include "connection.h"
 #include <snowflake/logger.h>
@@ -35,6 +31,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     cJSON *client_env;
     cJSON *session_parameters;
     char os_version[128];
+    char app_path[MAX_PATH];
 
     //Create Client Environment JSON blob
     client_env = snowflake_cJSON_CreateObject();
@@ -43,10 +40,13 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 #ifdef MOCK_ENABLED
     os_version[0] = '0';
     os_version[1] = '\0';
+    strcpy(app_path, "/app/path");
 #else
     sf_os_version(os_version, sizeof(os_version));
+    sf_get_callers_executable_path(app_path, sizeof(app_path));
 #endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
+    snowflake_cJSON_AddStringToObject(client_env, "APPLICATION_PATH", app_path);
 
     session_parameters = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(
@@ -92,19 +92,14 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
                 "CLIENT_REQUEST_MFA_TOKEN",
                 1
             );
-
-            if (sf->token_cache == NULL) {
-                sf->token_cache = secure_storage_init();
-            }
-
-            char* token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-            if (token != NULL)
-            {
-                snowflake_cJSON_AddStringToObject(data, "TOKEN", token);
-                secure_storage_free_credential(token);
-            }
         }
     }
+
+    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER)
+    {
+        snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_STORE_TEMPORARY_CREDENTIAL", sf->client_store_temporary_credential);
+    }
+
     snowflake_cJSON_AddItemToObject(data, "CLIENT_ENVIRONMENT", client_env);
     snowflake_cJSON_AddItemToObject(data, "SESSION_PARAMETERS", session_parameters);
 

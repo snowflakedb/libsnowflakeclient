@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 #include <jwt/Jwt.hpp>

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #ifndef SNOWFLAKECLIENT_SFAWSLOGGER_HPP
 #define SNOWFLAKECLIENT_SFAWSLOGGER_HPP
 
@@ -52,6 +48,10 @@ public:
    * Does a printf style output to the output stream. Don't use this, it's unsafe. See LogStream
    */
   virtual void Log(LogLevel logLevel, const char* tag, const char* formatStr, ...);
+  /**
+   * va_list overload for Log, avoid using this as well.
+   */
+  virtual void vaLog(LogLevel logLevel, const char* tag, const char* formatStr, va_list args);
   /**
   * Writes the stream to the output stream.
   */

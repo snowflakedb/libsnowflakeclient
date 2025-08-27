@@ -3,7 +3,7 @@
 ::
 @echo off
 set OOB_SRC_VERSION=1.0.4
-set OOB_BUILD_VERSION=13
+set OOB_BUILD_VERSION=16
 set OOB_VERSION=%OOB_SRC_VERSION%.%OOB_BUILD_VERSION%
 call %*
 goto :EOF
@@ -50,11 +50,23 @@ set target_name=libtelemetry_a.lib
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
+echo === staging cJSON for curl
+set CURL_DIR=curl
+set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
+set CJSON_PATCH=%scriptdir%..\patches\curl-cJSON-%CJSON_VERSION%.patch
+rd /S /Q %CJSON_SOURCE_DIR%
+git clone https://github.com/DaveGamble/cJSON.git %CJSON_SOURCE_DIR%
+pushd %CJSON_SOURCE_DIR%
+  git checkout tags/v%CJSON_VERSION% -b v%CJSON_VERSION%
+  git apply %CJSON_PATCH%
+  copy /v /y .\cJSON.c "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.c"
+  copy /v /y .\cJSON.h "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.h"
+popd
+
 @echo ====== Building oob
 set OOB_SOURCE_DIR=%currdir%\deps\%OOB_DIR%
 
 cd %OOB_SOURCE_DIR%
-set CURL_DIR=curl
 nmake -f Makefile.msc clean
 nmake -f Makefile.msc
 

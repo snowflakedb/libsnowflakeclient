@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "SnowflakeS3Client.hpp"
 #include "FileTransferAgent.hpp"
 #include "FileMetadataInitializer.hpp"
@@ -12,7 +8,7 @@
 #include "crypto/CipherStreamBuf.hpp"
 #include "logger/SFAwsLogger.hpp"
 #include "logger/SFLogger.hpp"
-#include "AWSUtils.hpp"
+#include "snowflake/AWSUtils.hpp"
 #include <aws/core/Aws.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
@@ -40,11 +36,6 @@
 #define AWS_TOKEN "AWS_TOKEN"
 #define SFC_DIGEST "sfc-digest"
 
-namespace
-{
-  const Aws::S3::Model::ChecksumAlgorithm INVALID_CHECKSUM = (Aws::S3::Model::ChecksumAlgorithm)(10);
-}
-
 namespace Snowflake
 {
 namespace Client
@@ -59,7 +50,15 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
   m_awsSdkInit(AwsUtils::initAwsSdk()),
   m_stageInfo(stageInfo),
   m_threadPool(nullptr),
-  m_uploadThreshold(uploadThreshold),
+    // workaound for aws sdk issue causing error on multiple parts uploading
+    // lower the threshold to reduce chunk size
+    // TODO: try removing this on each update for aws sdk to see if the issue
+    //       is fixed.
+#if defined (_WIN32) && !defined(_WIN64)
+    m_uploadThreshold(100 * 1024 * 1024),
+#else
+    m_uploadThreshold(uploadThreshold),
+#endif
   m_parallel(std::min(parallel, std::thread::hardware_concurrency()))
 {
   Aws::String caFile;
@@ -243,14 +242,6 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doSingleUpload(FileMetadata *file
   putObjectRequest.SetBody(
     Aws::MakeShared<Aws::IOStream>("", dataStream->rdbuf()));
 
-  // In newer version of aws sdk (when updating to 1.11.283), it forcely use
-  // checksum that requires the data stream to be read by twice (one for
-  // checksum and one for uploading) while the cipherStream can only be read
-  // once and the second time will return error. It's defaults to MD5 when
-  // set it to NOT_SET so the only way to disable it is to set it to an
-  // invalid value.
-  putObjectRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
-
   Aws::S3::Model::PutObjectOutcome outcome = s3Client->PutObject(
     putObjectRequest);
   if (outcome.IsSuccess())
@@ -276,7 +267,6 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
   uploadPartRequest.SetBody(Aws::MakeShared<Aws::IOStream>("", uploadCtx->buf));
   uploadPartRequest.SetUploadId(uploadCtx->m_uploadId);
   uploadPartRequest.SetPartNumber(uploadCtx->m_partNumber);
-  uploadPartRequest.SetChecksumAlgorithm(INVALID_CHECKSUM);
 
   Aws::S3::Model::UploadPartOutcome outcome = s3Client->UploadPart(uploadPartRequest);
 

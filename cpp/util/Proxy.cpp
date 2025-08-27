@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
- */
-
 #include "snowflake/Proxy.hpp"
 #include "snowflake/SF_CRTFunctionSafe.h"
 #include "snowflake/platform.h"
@@ -82,7 +78,7 @@ void Snowflake::Client::Util::Proxy::clearPwd() {
 }
 
 void Snowflake::Client::Util::Proxy::setProxyFromEnv() {
-    char valbuf[1024];
+    char valbuf[32767];
     char* env_value = get_env_or(valbuf, sizeof(valbuf), "all_proxy", "https_proxy", "http_proxy");
     if (env_value != nullptr) {
         std::string proxy(env_value);

@@ -1,5 +1,3 @@
-# Copyright (c) 2018-2019 Snowflake Computing, Inc. All rights reserved.
-
 # include public headers and test utils
 include_directories(
         "../include"
@@ -43,6 +41,7 @@ SET(TESTS_C
         test_stmt_functions
         test_unit_oauth
         test_unit_pat
+        test_unit_platform
         test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open
@@ -139,8 +138,8 @@ set(AWS_ALL_LIBS
         ${AWS_C_CAL_LIB}
         ${AWS_C_MQTT_LIB}
         ${AWS_S2N_LIB}
-        ${AWS_C_COMMON_LIB}
         ${AWS_C_SDKUTILS_LIB}
+        ${AWS_C_COMMON_LIB}
     )
 
 SET(TEST_DATA
