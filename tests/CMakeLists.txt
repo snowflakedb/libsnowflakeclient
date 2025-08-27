@@ -41,6 +41,7 @@ SET(TESTS_C
         test_stmt_functions
         test_unit_oauth
         test_unit_pat
+        test_unit_platform
         test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open

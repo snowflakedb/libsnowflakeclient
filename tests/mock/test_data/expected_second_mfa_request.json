@@ -9,7 +9,8 @@
 		"PASSCODE":	"passcode",
 		"CLIENT_ENVIRONMENT":	{
 			"OS":	"Linux",
-			"OS_VERSION":	"0"
+			"OS_VERSION":	"0",
+			"APPLICATION_PATH":	"/app/path"
 		},
 		"SESSION_PARAMETERS":	{
 			"AUTOCOMMIT":	"TRUE",
