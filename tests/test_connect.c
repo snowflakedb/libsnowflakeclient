@@ -3,7 +3,7 @@
 /**
  * Test connection with null context
  */
-void test_null_sf_connect(void **unused) {
+void test_null_sf_connect() {
     SF_CONNECT *sf = NULL;
     // Try connecting with a NULL connection struct, should fail
     SF_STATUS status = snowflake_connect(sf);
@@ -13,7 +13,7 @@ void test_null_sf_connect(void **unused) {
 /**
  * Test connection with existing token
  */
-void test_existing_token_sf_connect(void **unused) {
+void test_existing_token_sf_connect() {
   SF_CONNECT *sf = snowflake_init();
   sf->token = "faketoken";
   SF_STATUS status = snowflake_connect(sf);
@@ -23,7 +23,7 @@ void test_existing_token_sf_connect(void **unused) {
 /**
  * Test connection without parameters
  */
-void test_no_connection_parameters(void **unused) {
+void test_no_connection_parameters() {
     SF_CONNECT *sf = snowflake_init();
     SF_STATUS status = snowflake_connect(sf);
     assert_int_not_equal(status, SF_STATUS_SUCCESS);
@@ -35,7 +35,7 @@ void test_no_connection_parameters(void **unused) {
 /**
  * Test connection with minimum parameter set
  */
-void test_connect_with_minimum_parameters(void **unused) {
+void test_connect_with_minimum_parameters() {
     SF_CONNECT *sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -67,7 +67,7 @@ void test_connect_with_minimum_parameters(void **unused) {
 /**
  * Test connection with full parameter set
  */
-void test_connect_with_full_parameters(void **unused) {
+void test_connect_with_full_parameters() {
     SF_CONNECT *sf = setup_snowflake_connection();
 
     SF_STATUS status = snowflake_connect(sf);
@@ -81,7 +81,7 @@ void test_connect_with_full_parameters(void **unused) {
 /**
 * Test connection with disableQueryContextCache
 */
-void test_connect_with_disable_qcc(void **unused) {
+void test_connect_with_disable_qcc() {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   sf_bool disable_qcc = SF_BOOLEAN_TRUE;
@@ -103,7 +103,7 @@ void test_connect_with_disable_qcc(void **unused) {
 /**
 * Test connection with includeRetryReason
 */
-void test_connect_with_include_retry_context(void **unused) {
+void test_connect_with_include_retry_context() {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   sf_bool include_retry_reason = SF_BOOLEAN_FALSE;
@@ -159,7 +159,7 @@ void setCacheFile(char *cache_file)
 /**
  * Test connection with OCSP cache server off
  */
-void test_connect_with_ocsp_cache_server_off(void **unused) {
+void test_connect_with_ocsp_cache_server_off() {
     char cache_file[4096];
     setCacheFile(cache_file);
     remove(cache_file);
@@ -177,7 +177,7 @@ void test_connect_with_ocsp_cache_server_off(void **unused) {
 /**
  * Test connection with OCSP cache server on
  */
-void test_connect_with_ocsp_cache_server_on(void **unused) {
+void test_connect_with_ocsp_cache_server_on() {
     char cache_file[4096];
     setCacheFile(cache_file);
     remove(cache_file);
@@ -199,7 +199,7 @@ void test_connect_with_ocsp_cache_server_on(void **unused) {
 * variables and disable the proxy through proxy parameter to ensure the settings
 * in parameter are being used.
 */
-void test_connect_with_proxy(void **unused) {
+void test_connect_with_proxy() {
   SKIP_IF_PROXY_ENV_IS_SET;
 
   // set invalid proxy in environment variables
