@@ -1,5 +1,6 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
+#include "log_file_util.h"
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
@@ -438,6 +439,35 @@ void test_log_creation() {
 
 #ifndef _WIN32
 
+void test_log_file_util_missing_file() {
+  char logname[] = "dummy.log";
+  char filePath[] = "testfile.txt";
+  FILE *file;
+  file = fopen(filePath, "w");
+  fclose(file);
+
+  mode_t newPermission = 0x0000;
+  chmod(filePath, newPermission);
+
+  // ensure the log file doesn't exist at the beginning
+  remove(logname);
+  assert_int_not_equal(access(logname, F_OK), 0);
+
+  log_set_lock(NULL);
+  log_set_level(SF_LOG_WARN);
+  log_set_quiet(1);
+  log_set_path(logname);
+
+  log_file_usage(filePath, "test", true);
+  assert_int_equal(access(logname, F_OK), 0);
+  log_close();
+
+  chmod(filePath, 0750);
+  remove(filePath);
+
+  remove(logname);
+}
+
 /**
  * Test that generate exception
  */
@@ -621,6 +651,7 @@ int main(void) {
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
+        cmocka_unit_test(test_log_file_util_missing_file),
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif

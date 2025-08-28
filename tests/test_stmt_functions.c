@@ -14,8 +14,13 @@ void test_sfqid(void **unused) {
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
+    /* query with null stmt*/
+    SF_STMT *sfstmt = NULL;
+    status = snowflake_query(sfstmt, "select 1;", 0);
+    assert_int_equal(status, SF_STATUS_ERROR_STATEMENT_NOT_EXIST);
+
     /* query */
-    SF_STMT *sfstmt = snowflake_stmt(sf);
+    sfstmt = snowflake_stmt(sf);
     status = snowflake_query(sfstmt, "select 1;", 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));

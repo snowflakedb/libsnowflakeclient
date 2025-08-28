@@ -11,6 +11,16 @@ void test_null_sf_connect(void **unused) {
 }
 
 /**
+ * Test connection with existing token
+ */
+void test_existing_token_sf_connect(void **unused) {
+  SF_CONNECT *sf = snowflake_init();
+  sf->token = "faketoken";
+  SF_STATUS status = snowflake_connect(sf);
+  assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
+}
+
+/**
  * Test connection without parameters
  */
 void test_no_connection_parameters(void **unused) {
@@ -232,6 +242,7 @@ int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_null_sf_connect),
+      cmocka_unit_test(test_existing_token_sf_connect),
       cmocka_unit_test(test_no_connection_parameters),
       cmocka_unit_test(test_connect_with_minimum_parameters),
       cmocka_unit_test(test_connect_with_full_parameters),

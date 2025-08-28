@@ -2,6 +2,16 @@
 #include "snowflake/Stopwatch.h"
 #include "snowflake_util.h"
 
+void test_null_stopwatch() {
+  Stopwatch* stopwatch = NULL;
+  stopwatch_start(stopwatch);
+  stopwatch_stop(stopwatch);
+  stopwatch_reset(stopwatch);
+  stopwatch_restart(stopwatch);
+  assert_int_equal(stopwatch_elapsedMillis(stopwatch), 0);
+  assert_false(stopwatch_isStarted(stopwatch));
+}
+
 void test_is_started() {
   Stopwatch stopwatch;
   stopwatch_start(&stopwatch);
@@ -85,6 +95,7 @@ void test_get_millis_running() {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
+      cmocka_unit_test(test_null_stopwatch),
       cmocka_unit_test(test_is_started),
       cmocka_unit_test(test_is_stopped),
       cmocka_unit_test(test_reset),
