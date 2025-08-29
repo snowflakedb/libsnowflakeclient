@@ -439,6 +439,32 @@ void test_log_creation() {
 
 #ifndef _WIN32
 
+/*
+ * Test non-existent file with log file util
+ */
+void test_log_file_util_non_existent_file() {
+  char logname[] = "dummy.log";
+  const char *non_existent_file = "/tmp/this_file_should_not_exist_123456789";
+
+  // ensure the log file doesn't exist at the beginning
+  remove(logname);
+  assert_int_not_equal(access(logname, F_OK), 0);
+
+  log_set_lock(NULL);
+  log_set_level(SF_LOG_WARN);
+  log_set_quiet(1);
+  log_set_path(logname);
+
+  log_file_usage(non_existent_file, "TestContext", true);
+
+  // warning log will trigger the log file creation
+  log_warn("dummy warning log");
+  assert_int_equal(access(logname, F_OK), 0);
+  log_close();
+
+  remove(logname);
+}
+
 /**
  * Test that generate exception
  */
@@ -622,6 +648,7 @@ int main(void) {
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
+        cmocka_unit_test(test_log_file_util_non_existent_file),
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif

@@ -46,10 +46,35 @@ void test_sfqid(void **unused) {
     snowflake_term(sf);
 }
 
+void test_failed_request() {
+  SF_CONNECT *sf = snowflake_init();
+
+  // Set up a valid session token so we don't hit the earlier error path
+  sf->token = "dummy_token";
+  sf->master_token = "dummy_master_token";
+
+  // Set up a host that will fail to connect (invalid host)
+  sf->host = "invalid.snowflakecomputing.com";
+  sf->user = "dummy_user";
+  sf->account = "dummy_account";
+
+  SF_STMT *sfstmt = snowflake_stmt(sf);
+
+  snowflake_prepare(sfstmt, "select 1;", 0);
+
+  // Call the function directly; request will fail
+  SF_STATUS status = snowflake_execute(sfstmt);
+
+  assert_int_not_equal(status, SF_STATUS_SUCCESS);
+
+  snowflake_stmt_term(sfstmt);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_sfqid),
+      cmocka_unit_test(test_failed_request),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

@@ -270,6 +270,32 @@ void test_serialize_request_and_deserialize_response_data_with_empty_context(voi
   helper.assertCacheDataWithContext("");
 }
 
+void test_deserialize_mismatch_field(void ** unused) {
+  SF_UNUSED(unused);
+  QueryContextCacheTestHelper helper;
+  helper.initCacheWithData();
+
+  // Create a JSON object with one invalid entry
+  cJSON *data = snowflake_cJSON_CreateObject();
+  cJSON *entries = snowflake_cJSON_CreateArray();
+
+  cJSON *badEntry = snowflake_cJSON_CreateObject();
+  snowflake_cJSON_AddStringToObject(badEntry, "id", "not_a_number"); // Should be a number
+  snowflake_cJSON_AddNumberToObject(badEntry, "read_timestamp", 123456789);
+  snowflake_cJSON_AddNumberToObject(badEntry, "priority", 0);
+  snowflake_cJSON_AddStringToObject(badEntry, "context", "base64context");
+
+  snowflake_cJSON_AddItemToArray(entries, badEntry);
+  snowflake_cJSON_AddItemToObject(data, "entries", entries);
+
+  helper.qcc.deserializeQueryContext(data);
+  assert_int_equal(helper.qcc.getSize(), 0);
+  helper.qcc.deserializeQueryContextReq(data);
+  assert_int_equal(helper.qcc.getSize(), 0);
+
+  snowflake_cJSON_Delete(data);
+}
+
 static int gr_setup(void **unused)
 {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -290,6 +316,7 @@ int main(void) {
     cmocka_unit_test(test_empty_cache_with_empty_response_data),
     cmocka_unit_test(test_serialize_request_and_deserialize_response_data),
     cmocka_unit_test(test_serialize_request_and_deserialize_response_data_with_empty_context),
+    cmocka_unit_test(test_deserialize_mismatch_field),
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, NULL);
   return ret;
