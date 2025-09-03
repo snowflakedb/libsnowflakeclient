@@ -48,21 +48,18 @@ void freeTotpCodes(char** codes) {
     free(codes);
 }
 
-// Test function: MFA authentication using TOTP codes from generator
 void test_mfa_totp_authentication(void **unused) {
     SF_UNUSED(unused);
 
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
     
-    // Set MFA authentication parameters
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
     snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_AUTH_TEST_MFA_USER"));
     snowflake_set_attribute(sf, SF_CON_PASSWORD, getenv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD"));
     
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
     
-    // Get TOTP codes from the generator
     char** totpCodes = getTotpCodes("");
     
     if (!totpCodes) {
@@ -73,11 +70,9 @@ void test_mfa_totp_authentication(void **unused) {
     
     char lastError[1024] = {0};
     
-    // Try each TOTP code
     for (int i = 0; i < 3 && totpCodes[i]; i++) {
         printf("Trying TOTP code %d: %s\n", i + 1, totpCodes[i]);
         
-        // Set the TOTP passcode
         snowflake_set_attribute(sf, SF_CON_PASSCODE, totpCodes[i]);
         
         SF_STATUS status = snowflake_connect(sf);
@@ -112,8 +107,7 @@ void test_mfa_totp_authentication(void **unused) {
             const char* errorMsg = error ? error->msg : "Unknown error";
             snprintf(lastError, sizeof(lastError), "%s", errorMsg);
             
-            // Check if it's a TOTP-related error (retry with next code)
-            if (strstr(errorMsg, "Invalid") || strstr(errorMsg, "TOTP") || 
+            if (strstr(errorMsg, "Invalid") || strstr(errorMsg, "TOTP") ||
                 strstr(errorMsg, "passcode") || strstr(errorMsg, "MFA")) {
                 printf("WARN: TOTP attempt %d failed - retrying with next code\n", i + 1);
                 continue;
@@ -125,9 +119,6 @@ void test_mfa_totp_authentication(void **unused) {
     }
     freeTotpCodes(totpCodes);
     snowflake_term(sf);
-    char failMsg[1536];
-    snprintf(failMsg, sizeof(failMsg), 
-            "Failed to connect with any TOTP codes. Last error: %s", 
-            lastError);
-    fail_msg(failMsg);
+    printf("ERROR: Failed to connect with any TOTP codes. Last error: %s\n", lastError);
+    fail();
 }
