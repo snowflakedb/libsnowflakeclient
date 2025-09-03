@@ -484,7 +484,7 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              char *body, PUT_PAYLOAD* put_payload, cJSON **json, NON_JSON_RESP* non_json_resp,
                              char** resp_headers, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
-                             sf_bool clr_check, int8 retry_on_curle_couldnt_connect_count,
+                             sf_bool crl_check, int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout, int8 retry_max_count,
                              int64 *elapsed_time, int8 *retried_count,
                              sf_bool *is_renew, sf_bool renew_injection,

@@ -1,5 +1,5 @@
 #include "utils/test_setup.h"
-/*
+
 void test_succees_with_crl_check(void **unused) {
   SF_UNUSED(unused);
 
@@ -10,8 +10,8 @@ void test_succees_with_crl_check(void **unused) {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   // enable CLR check
-  sf_bool clr_check = SF_BOOLEAN_TRUE;
-  snowflake_set_attribute(sf, SF_CON_CLR_CHECK, &clr_check);
+  sf_bool crl_check = SF_BOOLEAN_TRUE;
+  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
 
   SF_STATUS ret = snowflake_connect(sf);
 
@@ -20,7 +20,7 @@ void test_succees_with_crl_check(void **unused) {
 
   snowflake_term(sf);
 }
-*/
+
 void test_fail_with_no_crl(void **unused) {
   SF_UNUSED(unused);
 
@@ -34,8 +34,8 @@ void test_fail_with_no_crl(void **unused) {
   SF_CONNECT *sf = setup_snowflake_connection();
 
   // enable CLR check
-  sf_bool clr_check = SF_BOOLEAN_TRUE;
-  snowflake_set_attribute(sf, SF_CON_CLR_CHECK, &clr_check);
+  sf_bool crl_check = SF_BOOLEAN_TRUE;
+  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
 
   SF_STATUS ret = snowflake_connect(sf);
 
@@ -53,7 +53,7 @@ void test_fail_with_no_crl(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        //cmocka_unit_test(test_succees_with_crl_check),
+        cmocka_unit_test(test_succees_with_crl_check),
         cmocka_unit_test(test_fail_with_no_crl),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);

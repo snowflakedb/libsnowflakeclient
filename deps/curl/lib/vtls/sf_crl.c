@@ -264,6 +264,7 @@ void normalize_filename(char* file_name)
       file_name[i] = '_';
   }
 }
+
 static const char *get_dp_url(DIST_POINT *dp)
 {
   GENERAL_NAMES *gens;
@@ -300,7 +301,6 @@ char* mkdir_if_not_exists(char* dir, const struct Curl_easy *data)
       return NULL;
 
     }
-    infof(data, "Already exists %s directory.", dir);
   }
   else
   {
@@ -407,7 +407,7 @@ char* ensure_cache_dir(char* cache_dir, const struct Curl_easy *data)
 #endif
   infof(data, "OCSP cache file directory: %s", cache_dir);
   return cache_dir;
-  err:
+err:
   return NULL;
 }
 
@@ -439,7 +439,7 @@ void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
     return;
 
   ucrl_unregister(uri);
-    ucrl_register(uri, *pcrl, *last_modified);
+  ucrl_register(uri, *pcrl, *last_modified);
 }
 
 void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
@@ -455,10 +455,17 @@ void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
     get_file_path_by_uri(data, uri, file_path);
     if (*file_path) {
       fp = fopen(file_path, "w");
-      if (fp) {
-        PEM_write_X509_CRL(fp, *pcrl);
+      if (!fp) {
+        if (!PEM_write_X509_CRL(fp, *pcrl))
+          infof(data->data, "Cannot save CRL content to file: %s", file_path);
         fclose(fp);
       }
+      else {
+        infof(data->data, "Cannot open CRL file to save: %s", file_path);
+      }
+    }
+    else {
+      infof(data->data, "Cannot resolve path for CRL cache");
     }
   }
 }
@@ -470,6 +477,7 @@ void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
   if (!data->crl_memory_caching)
     return;
 
+  // lookup for CRL in memory cache
   ucrl = ucrl_lookup(uri);
   if (ucrl) {
     *download_time = ucrl->download_time;
@@ -486,6 +494,7 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
   if (!data->crl_disk_caching)
     return;
 
+  // lookup for CRL on disk
   get_file_path_by_uri(data, uri, file_path);
   if (*file_path) {
     fp = fopen(file_path, "r");
@@ -497,8 +506,17 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
           *download_time = file_stats.st_mtime;
           *pcrl = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
         }
+        else {
+          infof(data->data, "Cannot get file status: %s", file_path);
+        }
+      }
+      else {
+        infof(data->data, "Cannot obtain file descriptor: %s", file_path);
       }
       fclose(fp);
+    }
+    else {
+      infof(data->data, "Cannot open file to read: %s", file_path);
     }
   }
 }
@@ -527,7 +545,6 @@ bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
 
   if (!*pcrl)
     return false;
-
 
   validity_days_str = getenv("SF_CRL_VALIDITY_TIME");
   if (validity_days_str)
@@ -654,11 +671,6 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
     return NULL;
   }
 
-  /* Try to download delta CRL */
-  crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-  load_crls_crldp(data, crls, crldp);
-  sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-
   data->curr_crl_num = sk_X509_CRL_num(crls);
   return crls;
 }
@@ -736,7 +748,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
   /* register handler to skip CRL errors when needed */
   X509_STORE_set_verify_cb(ctx, error_handler);
 
-  X509_STORE_set_flags(ctx, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+  X509_STORE_set_flags(ctx, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL | X509_V_FLAG_X509_STRICT);
 
   sctx_register(ctx, data,
                crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching);
