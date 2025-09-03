@@ -67,6 +67,7 @@ set(SOURCE_FILES
         lib/mock_http_perform.h
         lib/http_perform.c
         lib/log_file_util.h
+		lib/log_file_util.c
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -104,7 +105,6 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
         cpp/util/entities.cpp
-        cpp/util/LogFileUtil.cpp
         cpp/util/Stopwatch.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
