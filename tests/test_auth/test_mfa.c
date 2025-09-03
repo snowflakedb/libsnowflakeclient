@@ -52,14 +52,32 @@ void test_mfa_totp_authentication(void **unused) {
     SF_UNUSED(unused);
 
     SF_CONNECT *sf = snowflake_init();
-    set_all_snowflake_attributes(sf);
+    
+    char *mfa_user = getenv("SNOWFLAKE_AUTH_TEST_MFA_USER");
+    char *mfa_password = getenv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD");
+    
+    printf("DEBUG: MFA_USER = %s\n", mfa_user ? mfa_user : "NULL");
+    
+    // Check if MFA credentials are available
+    if (!mfa_user || !mfa_password) {
+        snowflake_term(sf);
+        fail_msg("MFA environment variables not set - SNOWFLAKE_AUTH_TEST_MFA_USER and SNOWFLAKE_AUTH_TEST_MFA_PASSWORD required");
+        return;
+    }
+    
+    // Set connection attributes manually to avoid conflicts
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, getenv("SNOWFLAKE_AUTH_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_HOST, getenv("SNOWFLAKE_AUTH_TEST_HOST"));
+    snowflake_set_attribute(sf, SF_CON_PORT, getenv("SNOWFLAKE_AUTH_TEST_PORT"));
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, getenv("SNOWFLAKE_AUTH_TEST_PROTOCOL"));
+    snowflake_set_attribute(sf, SF_CON_ROLE, getenv("SNOWFLAKE_AUTH_TEST_ROLE"));
     
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_AUTH_TEST_MFA_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD, getenv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD"));
+    snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
     
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
-    
+          
     char** totpCodes = getTotpCodes("");
     
     if (!totpCodes) {
@@ -83,10 +101,16 @@ void test_mfa_totp_authentication(void **unused) {
             snowflake_term(sf);
             
             sf = snowflake_init();
-            set_all_snowflake_attributes(sf);
+            // Set connection attributes manually to avoid conflicts
+            snowflake_set_attribute(sf, SF_CON_ACCOUNT, getenv("SNOWFLAKE_AUTH_TEST_ACCOUNT"));
+            snowflake_set_attribute(sf, SF_CON_HOST, getenv("SNOWFLAKE_AUTH_TEST_HOST"));
+            snowflake_set_attribute(sf, SF_CON_PORT, getenv("SNOWFLAKE_AUTH_TEST_PORT"));
+            snowflake_set_attribute(sf, SF_CON_PROTOCOL, getenv("SNOWFLAKE_AUTH_TEST_PROTOCOL"));
+            snowflake_set_attribute(sf, SF_CON_ROLE, getenv("SNOWFLAKE_AUTH_TEST_ROLE"));
+            
             snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
-            snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_AUTH_TEST_MFA_USER"));
-            snowflake_set_attribute(sf, SF_CON_PASSWORD, getenv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD"));
+            snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
+            snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
             
             SF_STATUS cacheStatus = snowflake_connect(sf);
@@ -107,8 +131,12 @@ void test_mfa_totp_authentication(void **unused) {
             const char* errorMsg = error ? error->msg : "Unknown error";
             snprintf(lastError, sizeof(lastError), "%s", errorMsg);
             
+            printf("DEBUG: Full error details - Code: %d, Message: %s\n", 
+                   error ? error->error_code : -1, errorMsg);
+
             if (strstr(errorMsg, "Invalid") || strstr(errorMsg, "TOTP") ||
-                strstr(errorMsg, "passcode") || strstr(errorMsg, "MFA")) {
+                strstr(errorMsg, "passcode") || strstr(errorMsg, "MFA") ||
+                strstr(errorMsg, "authentication failed")) {
                 printf("WARN: TOTP attempt %d failed - retrying with next code\n", i + 1);
                 continue;
             } else {
