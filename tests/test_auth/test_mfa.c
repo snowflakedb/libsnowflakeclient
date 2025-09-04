@@ -7,6 +7,8 @@
 #include "auth_utils.h"
 #include "snowflake/secure_storage.h"
 
+#define MAX_TOTP_CODES 3
+
 char** getTotpCodes(const char* seed) {
     char command[512];
     const char *totpGeneratorPath = "/externalbrowser/totpGenerator.js";
@@ -29,12 +31,14 @@ char** getTotpCodes(const char* seed) {
     char *newline = strchr(output, '\n');
     if (newline) *newline = '\0';
     
-    char **codes = malloc(sizeof(char*) * 3);
-    codes[0] = codes[1] = codes[2] = NULL;
+    char **codes = malloc(sizeof(char*) * MAX_TOTP_CODES);
+    for (int i = 0; i < MAX_TOTP_CODES; i++) {
+        codes[i] = NULL;
+    }
     
     int count = 0;
     char *token = strtok(output, " ");
-    while (token && count < 3) {
+    while (token && count < MAX_TOTP_CODES) {
         codes[count] = malloc(strlen(token) + 1);
         strcpy(codes[count], token);
         count++;
@@ -46,7 +50,7 @@ char** getTotpCodes(const char* seed) {
 
 void freeTotpCodes(char** codes) {
     if (!codes) return;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < MAX_TOTP_CODES; i++) {
         if (codes[i]) free(codes[i]);
     }
     free(codes);
@@ -62,8 +66,8 @@ void test_mfa_totp_authentication(void **unused) {
     
     // Remove and recreate cache directory with proper permissions
     rmdir(cache_path);
-    if (mkdir(cache_path, 0700) != 0 && errno != EEXIST) {
-        fail_msg("Failed to create MFA cache directory");
+    if (mkdir(cache_path, 0700) != 0) {
+        fail_msg("Failed to create MFA cache directory with secure permissions");
         return;
     }
     
@@ -107,7 +111,7 @@ void test_mfa_totp_authentication(void **unused) {
     
     char lastError[1024] = {0};
     
-    for (int i = 0; i < 3 && totpCodes[i]; i++) {
+    for (int i = 0; i < MAX_TOTP_CODES && totpCodes[i]; i++) {
         
         snowflake_set_attribute(sf, SF_CON_PASSCODE, totpCodes[i]);
         
