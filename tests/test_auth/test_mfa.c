@@ -65,17 +65,64 @@ void test_mfa_totp_authentication(void **unused) {
         return;
     }
     
+    // Debug all connection parameters
+    char *account = getenv("SNOWFLAKE_AUTH_TEST_ACCOUNT");
+    char *host = getenv("SNOWFLAKE_AUTH_TEST_HOST");
+    char *port = getenv("SNOWFLAKE_AUTH_TEST_PORT");
+    char *protocol = getenv("SNOWFLAKE_AUTH_TEST_PROTOCOL");
+    char *role = getenv("SNOWFLAKE_AUTH_TEST_ROLE");
+    
+    printf("DEBUG: ACCOUNT = %s\n", account ? account : "NULL");
+    printf("DEBUG: HOST = %s\n", host ? host : "NULL");
+    printf("DEBUG: PORT = %s\n", port ? port : "NULL");
+    printf("DEBUG: PROTOCOL = %s\n", protocol ? protocol : "NULL");
+    printf("DEBUG: ROLE = %s\n", role ? role : "NULL");
+    
     // Set connection attributes manually to avoid conflicts
-    snowflake_set_attribute(sf, SF_CON_ACCOUNT, getenv("SNOWFLAKE_AUTH_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_HOST, getenv("SNOWFLAKE_AUTH_TEST_HOST"));
-    snowflake_set_attribute(sf, SF_CON_PORT, getenv("SNOWFLAKE_AUTH_TEST_PORT"));
-    snowflake_set_attribute(sf, SF_CON_PROTOCOL, getenv("SNOWFLAKE_AUTH_TEST_PROTOCOL"));
-    snowflake_set_attribute(sf, SF_CON_ROLE, getenv("SNOWFLAKE_AUTH_TEST_ROLE"));
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, account);
+    snowflake_set_attribute(sf, SF_CON_HOST, host);
+    snowflake_set_attribute(sf, SF_CON_PORT, port);
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    snowflake_set_attribute(sf, SF_CON_ROLE, role);
     
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
     snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
     snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
     
+    printf("DEBUG: Set authenticator to USERNAME_PASSWORD_MFA\n");
+    
+    snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
+    
+    // Test basic connection first without TOTP to isolate the issue
+    printf("DEBUG: Testing basic MFA connection without TOTP...\n");
+    SF_STATUS basicStatus = snowflake_connect(sf);
+    printf("DEBUG: Basic connection status: %d\n", basicStatus);
+    
+    if (basicStatus != SF_STATUS_SUCCESS) {
+        SF_ERROR_STRUCT* basicError = snowflake_error(sf);
+        printf("DEBUG: Basic connection error - Code: %d, Message: %s\n", 
+               basicError ? basicError->error_code : -1, 
+               basicError ? basicError->msg : "Unknown");
+        
+        // If basic connection fails, no point trying TOTP
+        snowflake_term(sf);
+        fail_msg("Basic MFA connection failed - check credentials and connection parameters");
+        return;
+    }
+    
+    // Disconnect and reconnect for TOTP attempts
+    snowflake_term(sf);
+    sf = snowflake_init();
+    
+    // Re-set all attributes for TOTP attempts
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, account);
+    snowflake_set_attribute(sf, SF_CON_HOST, host);
+    snowflake_set_attribute(sf, SF_CON_PORT, port);
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    snowflake_set_attribute(sf, SF_CON_ROLE, role);
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
+    snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
           
     char** totpCodes = getTotpCodes("");
@@ -90,6 +137,22 @@ void test_mfa_totp_authentication(void **unused) {
     
     for (int i = 0; i < 3 && totpCodes[i]; i++) {
         printf("Trying TOTP code %d: %s\n", i + 1, totpCodes[i]);
+        
+        // Reset connection for each attempt to avoid state corruption
+        if (i > 0) {
+            snowflake_term(sf);
+            sf = snowflake_init();
+            // Set connection attributes again
+            snowflake_set_attribute(sf, SF_CON_ACCOUNT, getenv("SNOWFLAKE_AUTH_TEST_ACCOUNT"));
+            snowflake_set_attribute(sf, SF_CON_HOST, getenv("SNOWFLAKE_AUTH_TEST_HOST"));
+            snowflake_set_attribute(sf, SF_CON_PORT, getenv("SNOWFLAKE_AUTH_TEST_PORT"));
+            snowflake_set_attribute(sf, SF_CON_PROTOCOL, getenv("SNOWFLAKE_AUTH_TEST_PROTOCOL"));
+            snowflake_set_attribute(sf, SF_CON_ROLE, getenv("SNOWFLAKE_AUTH_TEST_ROLE"));
+            snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
+            snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
+            snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
+            snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
+        }
         
         snowflake_set_attribute(sf, SF_CON_PASSCODE, totpCodes[i]);
         
