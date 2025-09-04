@@ -65,7 +65,6 @@ void test_mfa_totp_authentication(void **unused) {
         return;
     }
     
-    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
     snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
     snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
@@ -94,11 +93,11 @@ void test_mfa_totp_authentication(void **unused) {
             
             sf = snowflake_init();
             set_all_snowflake_attributes(sf);
-            snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, "USERNAME_PASSWORD_MFA");
             snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
             snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
-
+            snowflake_set_attribute(sf, SF_CON_PASSCODE, NULL);
+ 
             SF_STATUS cacheStatus = snowflake_connect(sf);
             
             if (cacheStatus == SF_STATUS_SUCCESS) {
@@ -124,6 +123,11 @@ void test_mfa_totp_authentication(void **unused) {
                 strstr(errorMsg, "passcode") || strstr(errorMsg, "MFA") ||
                 strstr(errorMsg, "authentication failed")) {
                 printf("WARN: TOTP attempt %d failed - retrying with next code\n", i + 1);
+
+                snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
+                snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
+                snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
+                
                 continue;
             } else {
                 printf("WARN: Non-TOTP error on attempt %d, stopping: %s\n", i + 1, lastError);
