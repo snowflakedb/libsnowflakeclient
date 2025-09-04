@@ -462,7 +462,7 @@ void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
         fclose(fp);
       }
       else {
-        infof(data->data, "Cannot open CRL file to save: %s", file_path);
+        infof(data->data, "Cannot open CRL file to save (errno %d): %s", errno, file_path);
       }
     }
     else {
@@ -519,7 +519,7 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
       fclose(fp);
     }
     else {
-      infof(data->data, "Cannot open file to read: %s", file_path);
+      infof(data->data, "Cannot open file to read (errno %d): %s", errno, file_path);
     }
   }
   if (*pcrl)
@@ -532,7 +532,7 @@ bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
   int day, sec;
   time_t download_time;
   char* validity_days_str;
-  int validity_days;
+  int validity_days = 0;
   time_t validity_time;
 
   *pcrl = NULL;
