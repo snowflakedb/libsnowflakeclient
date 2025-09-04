@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
 #include "auth_utils.h"
+#include "snowflake/secure_storage.h"
 
 char** getTotpCodes(const char* seed) {
     char command[512];
@@ -51,13 +55,39 @@ void freeTotpCodes(char** codes) {
 void test_mfa_totp_authentication(void **unused) {
     SF_UNUSED(unused);
 
+    // Setup MFA token cache directory (required for Linux)
+    const char* cache_dir = "sf_mfa_cache_test";
+    char cache_path[256];
+    snprintf(cache_path, sizeof(cache_path), "%s", cache_dir);
+    
+    // Remove and recreate cache directory with proper permissions
+    rmdir(cache_path);
+    if (mkdir(cache_path, 0700) != 0 && errno != EEXIST) {
+        fail_msg("Failed to create MFA cache directory");
+        return;
+    }
+    
+    // Set cache directory environment variable
+    if (setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", cache_path, 1) != 0) {
+        fail_msg("Failed to set SF_TEMPORARY_CREDENTIAL_CACHE_DIR");
+        return;
+    }
+
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
+    
+    // Clear any existing MFA token (like mock test does)
+    secure_storage_ptr ss = secure_storage_init();
+    if (ss) {
+        secure_storage_remove_credential(ss, sf->host, getenv("SNOWFLAKE_AUTH_TEST_MFA_USER"), MFA_TOKEN);
+        secure_storage_term(ss);
+    }
     
     char *mfa_user = getenv("SNOWFLAKE_AUTH_TEST_MFA_USER");
     char *mfa_password = getenv("SNOWFLAKE_AUTH_TEST_MFA_PASSWORD");
     
     printf("DEBUG: MFA_USER = %s\n", mfa_user ? mfa_user : "NULL");
+    printf("DEBUG: Cache directory = %s\n", cache_path);
     
     if (!mfa_user || !mfa_password) {
         snowflake_term(sf);
@@ -89,6 +119,17 @@ void test_mfa_totp_authentication(void **unused) {
         if (status == SF_STATUS_SUCCESS) {
             printf("MFA authentication successful with TOTP code %d\n", i + 1);
             
+            // Check if MFA token was saved during first connection
+            secure_storage_ptr ss_check = secure_storage_init();
+            char* saved_token = secure_storage_get_credential(ss_check, sf->host, mfa_user, MFA_TOKEN);
+            if (saved_token) {
+                printf("DEBUG: MFA token saved successfully (length: %zu)\n", strlen(saved_token));
+                secure_storage_free_credential(saved_token);
+            } else {
+                printf("DEBUG: WARNING - No MFA token found in cache after successful TOTP auth!\n");
+            }
+            secure_storage_term(ss_check);
+            
             snowflake_term(sf);
             
             sf = snowflake_init();
@@ -96,9 +137,20 @@ void test_mfa_totp_authentication(void **unused) {
             snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
             snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
-            snowflake_set_attribute(sf, SF_CON_PASSCODE, NULL); // Clear old TOTP - rely on cached MFA token
+            snowflake_set_attribute(sf, SF_CON_PASSCODE, NULL); // No TOTP - rely on cached MFA token
 
-            printf("DEBUG: Attempting cache test (no TOTP) - should use cached MFA token\n");
+            // Check if MFA token is available before second connection
+            secure_storage_ptr ss_check2 = secure_storage_init();
+            char* retrieved_token = secure_storage_get_credential(ss_check2, sf->host, mfa_user, MFA_TOKEN);
+            if (retrieved_token) {
+                printf("DEBUG: MFA token retrieved for cache test (length: %zu)\n", strlen(retrieved_token));
+                secure_storage_free_credential(retrieved_token);
+            } else {
+                printf("DEBUG: ERROR - No MFA token available for cache test!\n");
+            }
+            secure_storage_term(ss_check2);
+
+            printf("DEBUG: Testing MFA token caching (no TOTP) - should use cached mfaToken\n");
             SF_STATUS cacheStatus = snowflake_connect(sf);
             
             if (cacheStatus != SF_STATUS_SUCCESS) {
@@ -109,8 +161,11 @@ void test_mfa_totp_authentication(void **unused) {
             
             freeTotpCodes(totpCodes);
             assert_int_equal(cacheStatus, SF_STATUS_SUCCESS);
-            printf("SUCCESS: MFA authentication and caching completed successfully\n");
+            printf("SUCCESS: MFA authentication and token caching completed successfully\n");
             snowflake_term(sf);
+            
+            // Cleanup cache directory
+            rmdir(cache_path);
             return;
         } else {
             SF_ERROR_STRUCT* error = snowflake_error(sf);
@@ -138,6 +193,10 @@ void test_mfa_totp_authentication(void **unused) {
     }
     freeTotpCodes(totpCodes);
     snowflake_term(sf);
+    
+    // Cleanup cache directory on failure
+    rmdir(cache_path);
+    
     printf("ERROR: Failed to connect with any TOTP codes. Last error: %s\n", lastError);
     fail();
 }
