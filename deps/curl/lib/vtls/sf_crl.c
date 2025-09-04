@@ -11,6 +11,7 @@
 
 // Connection timeout in seconds for CRL download
 #define CRL_DOWNLOAD_TIMEOUT 30L
+#define infof(data,...) printf(__VA_ARGS__),printf("\n")
 
 #ifdef _WIN32
 #include <windows.h>
@@ -405,7 +406,7 @@ char* ensure_cache_dir(char* cache_dir, const struct Curl_easy *data)
   }
   strcat(cache_dir, "\\");
 #endif
-  infof(data, "OCSP cache file directory: %s", cache_dir);
+  infof(data, "CRL cache file directory: %s", cache_dir);
   return cache_dir;
 err:
   return NULL;
@@ -483,6 +484,8 @@ void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
     *download_time = ucrl->download_time;
     *pcrl = X509_CRL_dup(ucrl->crl);
   }
+  if (*pcrl)
+    infof(data->data, "CRL loaded from memory: %s", uri);
 }
 
 void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
@@ -519,6 +522,8 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
       infof(data->data, "Cannot open file to read: %s", file_path);
     }
   }
+  if (*pcrl)
+    infof(data->data, "CRL loaded from disk: %s", uri);
 }
 
 bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
@@ -553,12 +558,16 @@ bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
     validity_days = 10; /* default 10 days */
 
   validity_time = download_time + (validity_days * 86400);
-  if (validity_time < time(NULL))
+  if (validity_time < time(NULL)) {
+    infof(data->data, "CRL validity time (%d days) expired, need reloading: %s", validity_days, uri);
     return false;
+  }
 
   if (ASN1_TIME_diff(&day, &sec, NULL, X509_CRL_get0_nextUpdate(*pcrl))
-      && day <= 0 && sec <= 0)
+      && day <= 0 && sec <= 0) {
+    infof(data->data, "CRL need to be updated: %s", uri);
     return false;
+  }
 
   return true;
 }
@@ -593,6 +602,11 @@ X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
 
   BIO_free(mem);
   crl = (X509_CRL *)res;
+
+  if (crl)
+    infof(data->data, "CRL loaded from http: %s", uri);
+  else
+    infof(data->data, "CRL cannot be loaded from http: %s", uri);
 
   if (crl &&
       (!crl_cached ||
