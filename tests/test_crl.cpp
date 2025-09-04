@@ -1,4 +1,10 @@
+#include <utility>
+#include <thread>
+
+#include "snowflake/CurlDescPool.hpp"
 #include "utils/test_setup.h"
+
+using namespace ::Snowflake::Client;
 
 void test_succees_with_crl_check(void **unused) {
   SF_UNUSED(unused);
@@ -23,6 +29,10 @@ void test_succees_with_crl_check(void **unused) {
 
 void test_fail_with_no_crl(void **unused) {
   SF_UNUSED(unused);
+
+  // we need to remove curl cache
+  ClientCurlDescPool::getInstance().init();
+  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
 
   // disable OCSP check
   sf_bool value = SF_BOOLEAN_FALSE;

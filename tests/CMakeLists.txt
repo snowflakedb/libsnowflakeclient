@@ -44,7 +44,6 @@ SET(TESTS_C
         test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open
-        test_crl
         test_unit_privatelink
         test_multiple_statements
         test_async
@@ -85,6 +84,7 @@ SET(TESTS_CXX
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
+        test_crl
 )
 
 if (LINUX)
