@@ -286,7 +286,7 @@ static const char *get_dp_url(DIST_POINT *dp)
   return NULL;
 }
 
-char* mkdir_if_not_exists(char* dir, const struct Curl_easy *data)
+char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir)
 {
 #ifdef _WIN32
   int result = _mkdir(dir);
@@ -310,28 +310,28 @@ char* mkdir_if_not_exists(char* dir, const struct Curl_easy *data)
   return dir;
 }
 
-char* ensure_cache_dir(char* cache_dir, const struct Curl_easy *data)
+char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
 {
 #ifdef __linux__
   char *home_env = getenv("HOME");
   strcpy(cache_dir, (home_env == NULL ? (char*)"/tmp" : home_env));
 
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/.cache");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/snowflake");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/crls");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
@@ -339,27 +339,27 @@ char* ensure_cache_dir(char* cache_dir, const struct Curl_easy *data)
 #elif defined(__APPLE__)
   char *home_env = getenv("HOME");
   strcpy(cache_dir, (home_env == NULL ? (char*)"/tmp" : home_env));
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/Library");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/Caches");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/Snowflake");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "/crls");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
@@ -375,62 +375,68 @@ char* ensure_cache_dir(char* cache_dir, const struct Curl_easy *data)
     }
   }
   strcpy(cache_dir, (home_env == NULL ? (char*)"c:\\temp" : home_env));
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\AppData");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\Local");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\Snowflake");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\Caches");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\crls");
-  if (mkdir_if_not_exists(cache_dir, data) == NULL)
+  if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
   }
   strcat(cache_dir, "\\");
 #endif
-  infof(data, "CRL cache file directory: %s", cache_dir);
   return cache_dir;
 err:
   return NULL;
 }
 
-static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
+static void get_cache_dir(const struct store_ctx_entry *data, char* cache_dir)
 {
-  const char *file_dir;
-  char *file_name;
-  char cache_dir[PATH_MAX] = "";
+  const char *env_dir;
 
-  file_path[0] = 0;
+  cache_dir[0] = 0;
 
-  file_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
-  if (file_dir) {
-    strcpy(file_path, file_dir);
+  env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
+  if (env_dir) {
+    strcpy(cache_dir, env_dir);
   }
   else {
-    ensure_cache_dir(file_path, data->data);
+    ensure_cache_dir(data->data, cache_dir);
   }
+}
 
-  file_name = file_path + strlen(file_path);
-  strcpy(file_name, uri);
-  normalize_filename(file_name);
+static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
+{
+  char cache_dir[PATH_MAX] = "";
+
+  get_cache_dir(data, file_path);
+
+  if (*file_path) {
+    char *file_name = file_path + strlen(file_path);
+    strcpy(file_name, uri);
+    normalize_filename(file_name);
+  }
 }
 
 void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
@@ -456,7 +462,7 @@ void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
     get_file_path_by_uri(data, uri, file_path);
     if (*file_path) {
       fp = fopen(file_path, "w");
-      if (!fp) {
+      if (fp) {
         if (!PEM_write_X509_CRL(fp, *pcrl))
           infof(data->data, "Cannot save CRL content to file: %s", file_path);
         fclose(fp);
@@ -763,7 +769,14 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  bool crl_disk_caching,
                                  bool crl_memory_caching)
 {
+  char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
+  get_cache_dir(data, cache_dir);
+  if (*cache_dir)
+    infof(data, "CRL cache file directory: %s", cache_dir);
+  else
+    infof(data, "CRL cache file directory not exists!");
+
 
   /* register handler to read CRLs */
   X509_STORE_set_lookup_crls_cb(ctx, lookup_crls_handler);
