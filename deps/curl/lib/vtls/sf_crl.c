@@ -680,13 +680,15 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
   int err;
   X509 *err_cert;
   struct store_ctx_entry *data;
+#define MAX_CERT_NAME_LEN 100
+  char X509_cert_name[MAX_CERT_NAME_LEN + 1];
 
   if (ok)
     return ok;
 
   data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
   if (!data)
-    return ok;
+    return 0;
 
   err = X509_STORE_CTX_get_error(ctx);
   err_cert = X509_STORE_CTX_get_current_cert(ctx);
@@ -694,19 +696,25 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
   if (err == X509_V_ERR_UNABLE_TO_GET_CRL) {
     if (X509_self_signed(err_cert, 1)) {
       infof(data->data, "CRL validation skipped error %d - self signed, subject=%s",
-            err, X509_get_subject_name(err_cert));
+            err,
+            X509_NAME_oneline(X509_get_subject_name(err_cert), X509_cert_name,
+                              MAX_CERT_NAME_LEN));
       X509_STORE_CTX_set_error(ctx, 0);
       return 1;
     }
     if (data->crl_allow_no_crl && data->curr_crl_num == 0) {
       infof(data->data, "CRL validation skipped error %d - no crl in the certificate, subject=%s",
-            err, X509_get_subject_name(err_cert));
+            err,
+            X509_NAME_oneline(X509_get_subject_name(err_cert), X509_cert_name,
+                              MAX_CERT_NAME_LEN));
       X509_STORE_CTX_set_error(ctx, 0);
       return 1;
     }
     if (data->crl_advisory) {
       infof(data->data, "CRL validation skipped error %d - advisory mode, subject=%s",
-            err, X509_get_subject_name(err_cert));
+            err,
+            X509_NAME_oneline(X509_get_subject_name(err_cert), X509_cert_name,
+                              MAX_CERT_NAME_LEN));
       X509_STORE_CTX_set_error(ctx, 0);
       return 1;
     }
@@ -714,7 +722,8 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
 
   infof(data->data,
         "Certificate validation error, subject=%s, error %d at depth %d, %s",
-        X509_get_subject_name(err_cert),
+        X509_NAME_oneline(X509_get_subject_name(err_cert), X509_cert_name,
+                          MAX_CERT_NAME_LEN),
         err,
         X509_STORE_CTX_get_error_depth(ctx),
         X509_verify_cert_error_string(err));
@@ -750,6 +759,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 
   X509_STORE_set_flags(ctx, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL | X509_V_FLAG_X509_STRICT);
 
+  /* register X509_STORE with given parameters */
   sctx_register(ctx, data,
                crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching);
 }
