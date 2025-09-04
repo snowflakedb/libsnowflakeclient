@@ -96,21 +96,14 @@ void test_mfa_totp_authentication(void **unused) {
             snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
             snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
-            snowflake_set_attribute(sf, SF_CON_PASSCODE, NULL);
  
             SF_STATUS cacheStatus = snowflake_connect(sf);
             
-            if (cacheStatus == SF_STATUS_SUCCESS) {
-                printf("SUCCESS: MFA authentication and caching completed successfully\n");
-                freeTotpCodes(totpCodes);
-                snowflake_term(sf);
-                return; // Success - exit test
-            } else {
-                SF_ERROR_STRUCT* error = snowflake_error(sf);
-                snprintf(lastError, sizeof(lastError), "MFA token caching failed: %s", 
-                        error ? error->msg : "Unknown error");
-                break; 
-            }
+            freeTotpCodes(totpCodes);
+            assert_int_equal(cacheStatus, SF_STATUS_SUCCESS);
+            printf("SUCCESS: MFA authentication and caching completed successfully\n");
+            snowflake_term(sf);
+            return;
         } else {
             SF_ERROR_STRUCT* error = snowflake_error(sf);
             const char* errorMsg = error ? error->msg : "Unknown error";
