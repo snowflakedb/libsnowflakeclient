@@ -8,10 +8,6 @@
 void test_sfqid(void **unused) {
     char qid[SF_UUID4_LEN] = { '\0' };
 
-    sf_bool debug = SF_BOOLEAN_TRUE;
-    // turn on DEBUG mode to test with debug mode logging as well
-    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
-
     SF_CONNECT *sf = setup_snowflake_connection();
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
