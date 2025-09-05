@@ -11,7 +11,7 @@
 
 // Connection timeout in seconds for CRL download
 #define CRL_DOWNLOAD_TIMEOUT 30L
-#define infof(data,...) printf(__VA_ARGS__),printf("\n")
+#define infof(data,...) fprintf(stderr, __VA_ARGS__)
 
 #ifdef _WIN32
 #include <windows.h>
@@ -771,7 +771,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 {
   char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
-  return;
+  //return;
   get_cache_dir(data, cache_dir);
   if (*cache_dir)
     infof(data, "CRL cache file directory: %s", cache_dir);
