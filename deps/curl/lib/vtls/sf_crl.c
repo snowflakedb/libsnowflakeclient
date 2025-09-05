@@ -275,6 +275,7 @@ static const char *get_dp_url(DIST_POINT *dp)
   GENERAL_NAME *gen;
   int i, gtype;
   ASN1_STRING *uri;
+
   if (!dp->distpoint || dp->distpoint->type != 0)
     return NULL;
   gens = dp->distpoint->name.fullname;
@@ -433,6 +434,7 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
 {
   char cache_dir[PATH_MAX] = "";
 
+  fprintf(stderr, "CRL: get_file_path_by_uri 1: %s\n", uri);
   get_cache_dir(data, file_path);
 
   if (*file_path) {
@@ -440,6 +442,8 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
     strcpy(file_name, uri);
     normalize_filename(file_name);
   }
+  fprintf(stderr, "CRL: get_file_path_by_uri 2: %s\n", file_path);
+
 }
 
 void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
@@ -460,20 +464,28 @@ void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
 void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
                       X509_CRL **pcrl)
 {
-  FILE *fp;
+  BIO *fp;
   char file_path[PATH_MAX];
 
   if (!data->crl_disk_caching)
     return;
 
+  fprintf(stderr, "CRL: save_crl_to_disk 1: %s\n", uri);
+
   if (*pcrl != NULL && data->crl_disk_caching) {
     get_file_path_by_uri(data, uri, file_path);
+    fprintf(stderr, "CRL: save_crl_to_disk 2: %s\n", file_path);
     if (*file_path) {
-      fp = fopen(file_path, "w");
+      fprintf(stderr, "CRL: save_crl_to_disk 3\n");
+      fp = BIO_new_file(file_path, "w");
+      fprintf(stderr, "CRL: save_crl_to_disk 4\n");
       if (fp) {
-        if (!PEM_write_X509_CRL(fp, *pcrl))
+        fprintf(stderr, "CRL: save_crl_to_disk 5\n");
+        if (!PEM_write_bio_X509_CRL(fp, *pcrl))
           infof(data->data, "Cannot save CRL content to file: %s", file_path);
-        fclose(fp);
+        fprintf(stderr, "CRL: save_crl_to_disk 6\n");
+        BIO_free(fp);
+        fprintf(stderr, "CRL: save_crl_to_disk 7\n");
       }
       else {
         infof(data->data, "Cannot open CRL file to save (errno %d): %s", errno, file_path);
@@ -483,6 +495,7 @@ void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
       infof(data->data, "Cannot resolve path for CRL cache");
     }
   }
+  fprintf(stderr, "CRL: save_crl_to_disk 8\n");
 }
 
 void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
@@ -492,11 +505,17 @@ void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
   if (!data->crl_memory_caching)
     return;
 
+  fprintf(stderr, "CRL: get_crl_from_memory 1: %s\n", uri);
+
   // lookup for CRL in memory cache
   ucrl = ucrl_lookup(uri);
+
+  fprintf(stderr, "CRL: get_crl_from_memory 2\n");
   if (ucrl) {
+    fprintf(stderr, "CRL: get_crl_from_memory 3\n");
     *download_time = ucrl->download_time;
     *pcrl = X509_CRL_dup(ucrl->crl);
+    fprintf(stderr, "CRL: get_crl_from_memory 4\n");
   }
   if (*pcrl)
     infof(data->data, "CRL loaded from memory: %s", uri);
@@ -505,23 +524,28 @@ void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
 void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
                        X509_CRL **pcrl, time_t *download_time)
 {
-  FILE *fp;
+  BIO *fp;
   char file_path[PATH_MAX];
 
   if (!data->crl_disk_caching)
     return;
 
+  fprintf(stderr, "CRL: get_crl_from_disk 1: %s\n", uri);
+
   // lookup for CRL on disk
   get_file_path_by_uri(data, uri, file_path);
+  fprintf(stderr, "CRL: get_crl_from_disk 2: %s\n", file_path);
   if (*file_path) {
-    fp = fopen(file_path, "r");
+    fp = BIO_new_file(file_path, "r");
+    fprintf(stderr, "CRL: get_crl_from_disk 3\n");
     if (fp) {
+      fprintf(stderr, "CRL: get_crl_from_disk 4\n");
       struct stat file_stats;
-      int fd = fileno(fp);
+      int fd = BIO_get_fd(fp, NULL);
       if (fd != -1) {
         if (fstat(fd, &file_stats) == 0) {
           *download_time = file_stats.st_mtime;
-          *pcrl = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
+          *pcrl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
         }
         else {
           infof(data->data, "Cannot get file status: %s", file_path);
@@ -530,12 +554,17 @@ void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
       else {
         infof(data->data, "Cannot obtain file descriptor: %s", file_path);
       }
-      fclose(fp);
+      fprintf(stderr, "CRL: get_crl_from_disk 5\n");
+
+      BIO_free(fp);
+      fprintf(stderr, "CRL: get_crl_from_disk 6\n");
     }
     else {
       infof(data->data, "Cannot open file to read (errno %d): %s", errno, file_path);
     }
   }
+  fprintf(stderr, "CRL: get_crl_from_disk 7\n");
+
   if (*pcrl)
     infof(data->data, "CRL loaded from disk: %s", uri);
 }
@@ -601,12 +630,16 @@ void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *
 {
   time_t curr_time = time(NULL);
 
+  fprintf(stderr, "CRL: save_crl_to_cache 1: %s\n", uri);
   _mutex_lock(&crl_response_cache_mutex);
-
+  fprintf(stderr, "CRL: save_crl_to_cache 2\n");
   save_crl_to_disk(data, uri, &crl);
   save_crl_in_memory(data, uri, &crl, &curr_time);
 
+  fprintf(stderr, "CRL: save_crl_to_cache 3\n");
   _mutex_unlock(&crl_response_cache_mutex);
+  fprintf(stderr, "CRL: save_crl_to_cache 4\n");
+
 }
 
 X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
