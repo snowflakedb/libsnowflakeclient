@@ -122,10 +122,13 @@ void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool crl_advis
 
 struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx)
 {
+  fprintf(stderr, "CRL: sctx_lookup 1\n");
+
   for (size_t i = 0; i < sctx_registry.size; ++i) {
     if (sctx_registry.entries[i].ctx == ctx)
       return &sctx_registry.entries[i];
   }
+  fprintf(stderr, "CRL: sctx_lookup 2\n");
   return NULL;
 }
 
@@ -445,8 +448,13 @@ void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
   if (!data->crl_memory_caching)
     return;
 
+  fprintf(stderr, "CRL: save_crl_in_memory 1\n");
+
   ucrl_unregister(uri);
+  fprintf(stderr, "CRL: save_crl_in_memory 2\n");
   ucrl_register(uri, *pcrl, *last_modified);
+  fprintf(stderr, "CRL: save_crl_in_memory 3\n");
+
 }
 
 void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
@@ -543,16 +551,25 @@ bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
 
   *pcrl = NULL;
 
+  fprintf(stderr, "CRL: get_crl_from_cache 1\n");
+
   _mutex_lock(&crl_response_cache_mutex);
 
+  fprintf(stderr, "CRL: get_crl_from_cache 2\n");
+
   get_crl_from_memory(data, uri, pcrl, &download_time);
+  fprintf(stderr, "CRL: get_crl_from_cache 3\n");
+
   if (!*pcrl) {
     get_crl_from_disk(data, uri, pcrl, &download_time);
     if (*pcrl)
       save_crl_in_memory(data, uri, pcrl, &download_time);
   }
+  fprintf(stderr, "CRL: get_crl_from_cache 4\n");
 
   _mutex_unlock(&crl_response_cache_mutex);
+
+  fprintf(stderr, "CRL: get_crl_from_cache 5\n");
 
   if (!*pcrl)
     return false;
@@ -575,6 +592,8 @@ bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
     return false;
   }
 
+  fprintf(stderr, "CRL: get_crl_from_cache 6\n");
+
   return true;
 }
 
@@ -596,19 +615,27 @@ X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
   X509_CRL *crl_cached = NULL;
   X509_CRL *crl = NULL;
 
+  fprintf(stderr, "CRL: load_crl 1\n");
+
   if (get_crl_from_cache(data, uri, &crl_cached))
     return crl_cached;
+
+  fprintf(stderr, "CRL: load_crl 2\n");
 
   BIO *mem = OSSL_HTTP_get(uri, NULL /* proxy */, NULL /* no_proxy */,
                            NULL, NULL, NULL /* cb */, NULL /* arg */,
                            1024 /* buf_size */, NULL /* headers */,
                            NULL /* expected_ct */, 1 /* expect_asn1 */,
                            0, CRL_DOWNLOAD_TIMEOUT);
+
+  fprintf(stderr, "CRL: load_crl 3\n");
   ASN1_VALUE *res = ASN1_item_d2i_bio(ASN1_ITEM_rptr(X509_CRL), mem, NULL);
 
+  fprintf(stderr, "CRL: load_crl 4\n");
   BIO_free(mem);
   crl = (X509_CRL *)res;
 
+  fprintf(stderr, "CRL: load_crl 5\n");
   if (crl)
     infof(data->data, "CRL loaded from http: %s", uri);
   else
@@ -638,6 +665,7 @@ X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
       crl = NULL;
     }
   }
+  fprintf(stderr, "CRL: load_crl 6\n");
   return crl;
 }
 
@@ -649,14 +677,27 @@ static void load_crls_crldp(struct store_ctx_entry *data,
   const char *urlptr = NULL;
   X509_CRL *crl = NULL;
 
+  fprintf(stderr, "CRL: load_crls_crldp 1\n");
+
   for (i = 0; i < sk_DIST_POINT_num(crldp); i++) {
     DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
+    fprintf(stderr, "CRL: load_crls_crldp 2\n");
+
     urlptr = get_dp_url(dp);
+    fprintf(stderr, "CRL: load_crls_crldp 3\n");
+
     if (urlptr != NULL) {
+      fprintf(stderr, "CRL: load_crls_crldp 4\n");
+
       crl = load_crl(data, urlptr);
+      fprintf(stderr, "CRL: load_crls_crldp 5\n");
       sk_X509_CRL_push(crls, crl);
+      fprintf(stderr, "CRL: load_crls_crldp 6\n");
+
     }
   }
+  fprintf(stderr, "CRL: load_crls_crldp 7\n");
+
 }
 
 /************************************************************************************
@@ -670,26 +711,41 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
   STACK_OF(DIST_POINT) *crldp;
   struct store_ctx_entry *data;
 
+  fprintf(stderr, "CRL: lookup_crls_handler 1\n");
+
   if (getenv("SF_TEST_CRL_NO_CRL"))
     return NULL;
 
   data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
+
+  fprintf(stderr, "CRL: lookup_crls_handler 2\n");
   if (!data)
     return NULL;
   data->curr_crl_num = 0;
 
+  fprintf(stderr, "CRL: lookup_crls_handler 3\n");
+
   crls = sk_X509_CRL_new_null();
+  fprintf(stderr, "CRL: lookup_crls_handler 4\n");
+
   if (!crls)
     return NULL;
+  fprintf(stderr, "CRL: lookup_crls_handler 5\n");
+
   x = X509_STORE_CTX_get_current_cert(ctx);
   crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
   load_crls_crldp(data, crls, crldp);
   sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
 
+  fprintf(stderr, "CRL: lookup_crls_handler 6\n");
+
+
   if (sk_X509_CRL_num(crls) == 0) {
     sk_X509_CRL_free(crls);
     return NULL;
   }
+
+  fprintf(stderr, "CRL: lookup_crls_handler 7\n");
 
   data->curr_crl_num = sk_X509_CRL_num(crls);
   return crls;
