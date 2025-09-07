@@ -73,13 +73,21 @@ int _mutex_term(SF_MUTEX_HANDLE *lock) {
 /************************************************************************************
  * Helpers to map X509_STORE* to configuration parameters 
  ************************************************************************************/
+
+static int sctx_ensure_capacity();
+static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool crl_advisory,
+                          bool crl_allow_no_crl, bool crl_disk_caching, bool crl_memory_caching);
+static struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx);
+static void sctx_unregister(const X509_STORE *ctx);
+static void sctx_clear();
+
 struct store_ctx_entry {
   const X509_STORE *ctx;
   struct Curl_easy *data;
-  bool crl_advisory;
-  bool crl_allow_no_crl;
-  bool crl_disk_caching;
-  bool crl_memory_caching;
+  int crl_advisory;
+  int crl_allow_no_crl;
+  int crl_disk_caching;
+  int crl_memory_caching;
   int curr_crl_num;
 };
 
@@ -143,9 +151,7 @@ static void sctx_unregister(const X509_STORE *ctx)
       sctx_registry.size--;
 
       if (sctx_registry.size == 0) {
-        OPENSSL_free(sctx_registry.entries);
-        sctx_registry.entries = NULL;
-        sctx_registry.capacity = 0;
+        sctx_clear();
       }
       return;
     }
@@ -163,9 +169,15 @@ static void sctx_clear()
 /************************************************************************************
  * Helpers for CRL memory cache, map uri to X509_CRL*
  ************************************************************************************/
+static int ucrl_ensure_capacity();
+static void ucrl_register(const char *uri, const X509_CRL *crl, time_t download_time);
+static struct uri_crl_entry *ucrl_lookup(const char *uri);
+static void ucrl_unregister(const char *uri);
+static void ucrl_clear();
+
 struct uri_crl_entry {
   char *uri;
-  const X509_CRL *crl;
+  X509_CRL *crl;
   time_t download_time;
 };
 
@@ -230,9 +242,7 @@ static void ucrl_unregister(const char *uri)
       ucrl_registry.size--;
 
       if (ucrl_registry.size == 0) {
-        OPENSSL_free(ucrl_registry.entries);
-        ucrl_registry.entries = NULL;
-        ucrl_registry.capacity = 0;
+        ucrl_clear();
       }
       return;
     }
@@ -255,6 +265,34 @@ static void ucrl_clear()
 /************************************************************************************
  * CLR caching
  ************************************************************************************/
+static int is_valid_filename_char(char c);
+static void normalize_filename(char* file_name);
+static const char *get_dp_url(DIST_POINT *dp);
+static char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir);
+static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir);
+static void get_cache_dir(const struct Curl_easy *data, char* cache_dir);
+static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path);
+static void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
+                               X509_CRL **pcrl, time_t *last_modified);
+static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
+                             X509_CRL **pcrl);
+static void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
+                                X509_CRL **pcrl, time_t *download_time);
+static void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
+                              X509_CRL **pcrl, time_t *download_time);
+static int get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
+                              X509_CRL **pcrl);
+static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *crl);
+static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri);
+static void load_crls_crldp(struct store_ctx_entry *data,
+                            STACK_OF(X509_CRL) *crls,
+                            STACK_OF(DIST_POINT) *crldp);
+static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
+                                               const X509_NAME *nm);
+static int error_handler(int ok, X509_STORE_CTX *ctx);
+static void term_crl();
+
+
 static int is_valid_filename_char(char c)
 {
   // Forbidden on Linux, Windows and Mac: < > : " / \ | ? *
@@ -419,7 +457,7 @@ err:
   return NULL;
 }
 
-static void get_cache_dir(const struct store_ctx_entry *data, char* cache_dir)
+static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
 {
   const char *env_dir;
 
@@ -430,14 +468,14 @@ static void get_cache_dir(const struct store_ctx_entry *data, char* cache_dir)
     strcpy(cache_dir, env_dir);
   }
   else {
-    ensure_cache_dir(data->data, cache_dir);
+    ensure_cache_dir(data, cache_dir);
   }
 }
 
 static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
 {
   fprintf(stderr, "CRL: get_file_path_by_uri 1: %s\n", uri);
-  get_cache_dir(data, file_path);
+  get_cache_dir(data->data, file_path);
 
   if (*file_path) {
     char *file_name = file_path + strlen(file_path);
@@ -542,9 +580,9 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
     fp = BIO_new_file(file_path, "r");
     fprintf(stderr, "CRL: get_crl_from_disk 3\n");
     if (fp) {
-      fprintf(stderr, "CRL: get_crl_from_disk 4\n");
       struct stat file_stats;
-      int fd = BIO_get_fd(fp, NULL);
+      fprintf(stderr, "CRL: get_crl_from_disk 4\n");
+      long fd = BIO_get_fd(fp, NULL);
       if (fd != -1) {
         if (fstat(fd, &file_stats) == 0) {
           *download_time = file_stats.st_mtime;
@@ -572,8 +610,8 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
     infof(data->data, "CRL loaded from disk: %s", uri);
 }
 
-static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
-                               X509_CRL **pcrl)
+static int get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
+                              X509_CRL **pcrl)
 {
   int day, sec;
   time_t download_time;
@@ -608,7 +646,7 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
   fprintf(stderr, "CRL: get_crl_from_cache 5\n");
 
   if (!*pcrl)
-    return false;
+    return 0;
 
   validity_days_str = getenv("SF_CRL_VALIDITY_TIME");
   if (validity_days_str)
@@ -619,18 +657,18 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
   validity_time = download_time + (validity_days * 86400);
   if (validity_time < time(NULL)) {
     infof(data->data, "CRL validity time (%d days) expired, need reloading: %s", validity_days, uri);
-    return false;
+    return 0;
   }
 
   if (ASN1_TIME_diff(&day, &sec, NULL, X509_CRL_get0_nextUpdate(*pcrl))
       && day <= 0 && sec <= 0) {
     infof(data->data, "CRL need to be updated: %s", uri);
-    return false;
+    return 0;
   }
 
   fprintf(stderr, "CRL: get_crl_from_cache 6\n");
 
-  return true;
+  return 1;
 }
 
 static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *crl)
