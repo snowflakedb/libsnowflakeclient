@@ -1012,7 +1012,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->ocsp_fail_open = SF_BOOLEAN_TRUE;
-        sf->crl_check = SF_BOOLEAN_TRUE; // TODO: tmp
+        sf->crl_check = SF_BOOLEAN_FALSE; // TODO: tmp
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
