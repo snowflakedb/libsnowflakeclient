@@ -152,7 +152,7 @@ static void sctx_unregister(const X509_STORE *ctx)
 
 static void sctx_clear()
 {
-  free(sctx_registry.entries);
+  OPENSSL_free(sctx_registry.entries);
   sctx_registry.entries = NULL;
   sctx_registry.capacity = 0;
   sctx_registry.size = 0;
@@ -244,7 +244,7 @@ static void ucrl_clear()
     X509_CRL_free(ucrl_registry.entries[i].crl);
     OPENSSL_free(ucrl_registry.entries[i].uri);
   }
-  free(ucrl_registry.entries);
+  OPENSSL_free(ucrl_registry.entries);
   ucrl_registry.entries = NULL;
   ucrl_registry.capacity = 0;
   ucrl_registry.size = 0;
