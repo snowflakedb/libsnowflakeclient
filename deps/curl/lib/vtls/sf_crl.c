@@ -96,7 +96,7 @@ static int sctx_ensure_capacity()
 
   if (sctx_registry.size >= sctx_registry.capacity) {
     new_capacity = sctx_registry.capacity + 8;
-    new_entries = realloc(sctx_registry.entries, new_capacity * sizeof(struct store_ctx_entry));
+    new_entries = OPENSSL_realloc(sctx_registry.entries, new_capacity * sizeof(struct store_ctx_entry));
     if (!new_entries)
       return 0;
     sctx_registry.entries = new_entries;
@@ -141,7 +141,7 @@ static void sctx_unregister(const X509_STORE *ctx)
       sctx_registry.size--;
 
       if (sctx_registry.size == 0) {
-        free(sctx_registry.entries);
+        OPENSSL_free(sctx_registry.entries);
         sctx_registry.entries = NULL;
         sctx_registry.capacity = 0;
       }
@@ -182,7 +182,7 @@ static int ucrl_ensure_capacity()
 
   if (ucrl_registry.size >= ucrl_registry.capacity) {
     new_capacity = ucrl_registry.capacity + 8;
-    new_entries = realloc(ucrl_registry.entries, new_capacity * sizeof(struct uri_crl_entry));
+    new_entries = OPENSSL_realloc(ucrl_registry.entries, new_capacity * sizeof(struct uri_crl_entry));
     if (!new_entries)
       return 0;
     ucrl_registry.entries = new_entries;
@@ -228,7 +228,7 @@ static void ucrl_unregister(const char *uri)
       ucrl_registry.size--;
 
       if (ucrl_registry.size == 0) {
-        free(ucrl_registry.entries);
+        OPENSSL_free(ucrl_registry.entries);
         ucrl_registry.entries = NULL;
         ucrl_registry.capacity = 0;
       }
