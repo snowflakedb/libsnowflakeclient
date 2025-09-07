@@ -145,6 +145,7 @@ static void sctx_unregister(const X509_STORE *ctx)
         sctx_registry.entries = NULL;
         sctx_registry.capacity = 0;
       }
+      return;
     }
   }
 }
@@ -231,6 +232,7 @@ static void ucrl_unregister(const char *uri)
         ucrl_registry.entries = NULL;
         ucrl_registry.capacity = 0;
       }
+      return;
     }
   }
 }
@@ -432,8 +434,6 @@ static void get_cache_dir(const struct store_ctx_entry *data, char* cache_dir)
 
 static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
 {
-  char cache_dir[PATH_MAX] = "";
-
   fprintf(stderr, "CRL: get_file_path_by_uri 1: %s\n", uri);
   get_cache_dir(data, file_path);
 
