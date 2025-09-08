@@ -11,13 +11,12 @@
 
 // Connection timeout in seconds for CRL download
 #define CRL_DOWNLOAD_TIMEOUT 30L
-#define infof(data,...) fprintf(stderr, __VA_ARGS__)
 
 #ifdef _WIN32
 #include <windows.h>
 typedef HANDLE SF_MUTEX_HANDLE;
 #ifndef PATH_MAX
-# define PATH_MAX 4096
+#define PATH_MAX MAX_PATH
 #endif
 #else
 typedef pthread_mutex_t SF_MUTEX_HANDLE;
@@ -73,14 +72,6 @@ int _mutex_term(SF_MUTEX_HANDLE *lock) {
 /************************************************************************************
  * Helpers to map X509_STORE* to configuration parameters 
  ************************************************************************************/
-
-static int sctx_ensure_capacity();
-static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool crl_advisory,
-                          bool crl_allow_no_crl, bool crl_disk_caching, bool crl_memory_caching);
-static struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx);
-static void sctx_unregister(const X509_STORE *ctx);
-static void sctx_clear();
-
 struct store_ctx_entry {
   const X509_STORE *ctx;
   struct Curl_easy *data;
@@ -132,14 +123,19 @@ static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool cr
 
 static struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx)
 {
-  fprintf(stderr, "CRL: sctx_lookup 1\n");
-
   for (size_t i = 0; i < sctx_registry.size; ++i) {
     if (sctx_registry.entries[i].ctx == ctx)
       return &sctx_registry.entries[i];
   }
-  fprintf(stderr, "CRL: sctx_lookup 2\n");
   return NULL;
+}
+
+static void sctx_clear()
+{
+  OPENSSL_free(sctx_registry.entries);
+  sctx_registry.entries = NULL;
+  sctx_registry.capacity = 0;
+  sctx_registry.size = 0;
 }
 
 static void sctx_unregister(const X509_STORE *ctx)
@@ -158,23 +154,9 @@ static void sctx_unregister(const X509_STORE *ctx)
   }
 }
 
-static void sctx_clear()
-{
-  OPENSSL_free(sctx_registry.entries);
-  sctx_registry.entries = NULL;
-  sctx_registry.capacity = 0;
-  sctx_registry.size = 0;
-}
-
 /************************************************************************************
  * Helpers for CRL memory cache, map uri to X509_CRL*
  ************************************************************************************/
-static int ucrl_ensure_capacity();
-static void ucrl_register(const char *uri, const X509_CRL *crl, time_t download_time);
-static struct uri_crl_entry *ucrl_lookup(const char *uri);
-static void ucrl_unregister(const char *uri);
-static void ucrl_clear();
-
 struct uri_crl_entry {
   char *uri;
   X509_CRL *crl;
@@ -228,6 +210,19 @@ static struct uri_crl_entry *ucrl_lookup(const char *uri)
   return NULL;
 }
 
+static void ucrl_clear()
+{
+  for (size_t i = 0; i < ucrl_registry.size; ++i) {
+    /* Release objects */
+    X509_CRL_free(ucrl_registry.entries[i].crl);
+    OPENSSL_free(ucrl_registry.entries[i].uri);
+  }
+  OPENSSL_free(ucrl_registry.entries);
+  ucrl_registry.entries = NULL;
+  ucrl_registry.capacity = 0;
+  ucrl_registry.size = 0;
+}
+
 static void ucrl_unregister(const char *uri)
 {
   for (size_t i = 0; i < ucrl_registry.size; ++i) {
@@ -249,49 +244,9 @@ static void ucrl_unregister(const char *uri)
   }
 }
 
-static void ucrl_clear()
-{
-  for (size_t i = 0; i < ucrl_registry.size; ++i) {
-    /* Release objects */
-    X509_CRL_free(ucrl_registry.entries[i].crl);
-    OPENSSL_free(ucrl_registry.entries[i].uri);
-  }
-  OPENSSL_free(ucrl_registry.entries);
-  ucrl_registry.entries = NULL;
-  ucrl_registry.capacity = 0;
-  ucrl_registry.size = 0;
-}
-
 /************************************************************************************
  * CLR caching
  ************************************************************************************/
-static int is_valid_filename_char(char c);
-static void normalize_filename(char* file_name);
-static const char *get_dp_url(DIST_POINT *dp);
-static char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir);
-static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir);
-static void get_cache_dir(const struct Curl_easy *data, char* cache_dir);
-static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path);
-static void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
-                               X509_CRL **pcrl, time_t *last_modified);
-static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
-                             X509_CRL **pcrl);
-static void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
-                                X509_CRL **pcrl, time_t *download_time);
-static void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
-                              X509_CRL **pcrl, time_t *download_time);
-static int get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
-                              X509_CRL **pcrl);
-static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *crl);
-static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri);
-static void load_crls_crldp(struct store_ctx_entry *data,
-                            STACK_OF(X509_CRL) *crls,
-                            STACK_OF(DIST_POINT) *crldp);
-static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
-                                               const X509_NAME *nm);
-static int error_handler(int ok, X509_STORE_CTX *ctx);
-static void term_crl();
-
 
 static int is_valid_filename_char(char c)
 {
@@ -474,7 +429,6 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
 
 static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
 {
-  fprintf(stderr, "CRL: get_file_path_by_uri 1: %s\n", uri);
   get_cache_dir(data->data, file_path);
 
   if (*file_path) {
@@ -482,24 +436,16 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
     strcpy(file_name, uri);
     normalize_filename(file_name);
   }
-  fprintf(stderr, "CRL: get_file_path_by_uri 2: %s\n", file_path);
-
 }
 
 static void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
                                X509_CRL **pcrl, time_t *last_modified)
 {
-  fprintf(stderr, "CRL: save_crl_in_memory 0\n");
   if (!data->crl_memory_caching)
     return;
 
-  fprintf(stderr, "CRL: save_crl_in_memory 1\n");
-
   ucrl_unregister(uri);
-  fprintf(stderr, "CRL: save_crl_in_memory 2\n");
   ucrl_register(uri, *pcrl, *last_modified);
-  fprintf(stderr, "CRL: save_crl_in_memory 3\n");
-
 }
 
 static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
@@ -511,22 +457,14 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
   if (!data->crl_disk_caching)
     return;
 
-  fprintf(stderr, "CRL: save_crl_to_disk 1: %s\n", uri);
-
   if (*pcrl != NULL && data->crl_disk_caching) {
     get_file_path_by_uri(data, uri, file_path);
-    fprintf(stderr, "CRL: save_crl_to_disk 2: %s\n", file_path);
     if (*file_path) {
-      fprintf(stderr, "CRL: save_crl_to_disk 3\n");
       fp = BIO_new_file(file_path, "w");
-      fprintf(stderr, "CRL: save_crl_to_disk 4\n");
       if (fp) {
-        fprintf(stderr, "CRL: save_crl_to_disk 5\n");
         if (!PEM_write_bio_X509_CRL(fp, *pcrl))
           infof(data->data, "Cannot save CRL content to file: %s", file_path);
-        fprintf(stderr, "CRL: save_crl_to_disk 6\n");
         BIO_free(fp);
-        fprintf(stderr, "CRL: save_crl_to_disk 7\n");
       }
       else {
         infof(data->data, "Cannot open CRL file to save (errno %d): %s", errno, file_path);
@@ -536,7 +474,6 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
       infof(data->data, "Cannot resolve path for CRL cache");
     }
   }
-  fprintf(stderr, "CRL: save_crl_to_disk 8\n");
 }
 
 static void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
@@ -546,17 +483,12 @@ static void get_crl_from_memory(const struct store_ctx_entry *data, const char *
   if (!data->crl_memory_caching)
     return;
 
-  fprintf(stderr, "CRL: get_crl_from_memory 1: %s\n", uri);
-
   // lookup for CRL in memory cache
   ucrl = ucrl_lookup(uri);
 
-  fprintf(stderr, "CRL: get_crl_from_memory 2\n");
   if (ucrl) {
-    fprintf(stderr, "CRL: get_crl_from_memory 3\n");
     *download_time = ucrl->download_time;
     *pcrl = X509_CRL_dup(ucrl->crl);
-    fprintf(stderr, "CRL: get_crl_from_memory 4\n");
   }
   if (*pcrl)
     infof(data->data, "CRL loaded from memory: %s", uri);
@@ -571,17 +503,12 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
   if (!data->crl_disk_caching)
     return;
 
-  fprintf(stderr, "CRL: get_crl_from_disk 1: %s\n", uri);
-
   // lookup for CRL on disk
   get_file_path_by_uri(data, uri, file_path);
-  fprintf(stderr, "CRL: get_crl_from_disk 2: %s\n", file_path);
   if (*file_path) {
     fp = BIO_new_file(file_path, "r");
-    fprintf(stderr, "CRL: get_crl_from_disk 3\n");
     if (fp) {
       struct stat file_stats;
-      fprintf(stderr, "CRL: get_crl_from_disk 4\n");
       long fd = BIO_get_fd(fp, NULL);
       if (fd != -1) {
         if (fstat(fd, &file_stats) == 0) {
@@ -595,16 +522,13 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
       else {
         infof(data->data, "Cannot obtain file descriptor: %s", file_path);
       }
-      fprintf(stderr, "CRL: get_crl_from_disk 5\n");
 
       BIO_free(fp);
-      fprintf(stderr, "CRL: get_crl_from_disk 6\n");
     }
     else {
       infof(data->data, "Cannot open file to read (errno %d): %s", errno, file_path);
     }
   }
-  fprintf(stderr, "CRL: get_crl_from_disk 7\n");
 
   if (*pcrl)
     infof(data->data, "CRL loaded from disk: %s", uri);
@@ -621,29 +545,17 @@ static int get_crl_from_cache(const struct store_ctx_entry *data, const char *ur
 
   *pcrl = NULL;
 
-  fprintf(stderr, "CRL: get_crl_from_cache 1\n");
-
   _mutex_lock(&crl_response_cache_mutex);
 
-  fprintf(stderr, "CRL: get_crl_from_cache 2\n");
-
   get_crl_from_memory(data, uri, pcrl, &download_time);
-  fprintf(stderr, "CRL: get_crl_from_cache 3\n");
-
   if (!*pcrl) {
     get_crl_from_disk(data, uri, pcrl, &download_time);
-    fprintf(stderr, "CRL: get_crl_from_cache 33\n");
     if (*pcrl) {
-      fprintf(stderr, "CRL: get_crl_from_cache 34\n");
       save_crl_in_memory(data, uri, pcrl, &download_time);
     }
-    fprintf(stderr, "CRL: get_crl_from_cache 35\n");
   }
-  fprintf(stderr, "CRL: get_crl_from_cache 4\n");
 
   _mutex_unlock(&crl_response_cache_mutex);
-
-  fprintf(stderr, "CRL: get_crl_from_cache 5\n");
 
   if (!*pcrl)
     return 0;
@@ -665,9 +577,6 @@ static int get_crl_from_cache(const struct store_ctx_entry *data, const char *ur
     infof(data->data, "CRL need to be updated: %s", uri);
     return 0;
   }
-
-  fprintf(stderr, "CRL: get_crl_from_cache 6\n");
-
   return 1;
 }
 
@@ -675,16 +584,12 @@ static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X50
 {
   time_t curr_time = time(NULL);
 
-  fprintf(stderr, "CRL: save_crl_to_cache 1: %s\n", uri);
   _mutex_lock(&crl_response_cache_mutex);
-  fprintf(stderr, "CRL: save_crl_to_cache 2\n");
+
   save_crl_to_disk(data, uri, &crl);
   save_crl_in_memory(data, uri, &crl, &curr_time);
 
-  fprintf(stderr, "CRL: save_crl_to_cache 3\n");
   _mutex_unlock(&crl_response_cache_mutex);
-  fprintf(stderr, "CRL: save_crl_to_cache 4\n");
-
 }
 
 static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
@@ -693,12 +598,8 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
   X509_CRL *crl_cached = NULL;
   X509_CRL *crl = NULL;
 
-  fprintf(stderr, "CRL: load_crl 1\n");
-
   if (get_crl_from_cache(data, uri, &crl_cached))
     return crl_cached;
-
-  fprintf(stderr, "CRL: load_crl 2\n");
 
   BIO *mem = OSSL_HTTP_get(uri, NULL /* proxy */, NULL /* no_proxy */,
                            NULL, NULL, NULL /* cb */, NULL /* arg */,
@@ -706,14 +607,11 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
                            NULL /* expected_ct */, 1 /* expect_asn1 */,
                            0, CRL_DOWNLOAD_TIMEOUT);
 
-  fprintf(stderr, "CRL: load_crl 3\n");
   ASN1_VALUE *res = ASN1_item_d2i_bio(ASN1_ITEM_rptr(X509_CRL), mem, NULL);
 
-  fprintf(stderr, "CRL: load_crl 4\n");
   BIO_free(mem);
   crl = (X509_CRL *)res;
 
-  fprintf(stderr, "CRL: load_crl 5\n");
   if (crl)
     infof(data->data, "CRL loaded from http: %s", uri);
   else
@@ -743,7 +641,6 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
       crl = NULL;
     }
   }
-  fprintf(stderr, "CRL: load_crl 6\n");
   return crl;
 }
 
@@ -755,27 +652,14 @@ static void load_crls_crldp(struct store_ctx_entry *data,
   const char *urlptr = NULL;
   X509_CRL *crl = NULL;
 
-  fprintf(stderr, "CRL: load_crls_crldp 1\n");
-
   for (i = 0; i < sk_DIST_POINT_num(crldp); i++) {
     DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
-    fprintf(stderr, "CRL: load_crls_crldp 2\n");
-
     urlptr = get_dp_url(dp);
-    fprintf(stderr, "CRL: load_crls_crldp 3\n");
-
     if (urlptr != NULL) {
-      fprintf(stderr, "CRL: load_crls_crldp 4\n");
-
       crl = load_crl(data, urlptr);
-      fprintf(stderr, "CRL: load_crls_crldp 5\n");
       sk_X509_CRL_push(crls, crl);
-      fprintf(stderr, "CRL: load_crls_crldp 6\n");
-
     }
   }
-  fprintf(stderr, "CRL: load_crls_crldp 7\n");
-
 }
 
 /************************************************************************************
@@ -789,41 +673,29 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
   STACK_OF(DIST_POINT) *crldp;
   struct store_ctx_entry *data;
 
-  fprintf(stderr, "CRL: lookup_crls_handler 1\n");
-
   if (getenv("SF_TEST_CRL_NO_CRL"))
     return NULL;
 
   data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
 
-  fprintf(stderr, "CRL: lookup_crls_handler 2\n");
   if (!data)
     return NULL;
+
   data->curr_crl_num = 0;
-
-  fprintf(stderr, "CRL: lookup_crls_handler 3\n");
-
   crls = sk_X509_CRL_new_null();
-  fprintf(stderr, "CRL: lookup_crls_handler 4\n");
 
   if (!crls)
     return NULL;
-  fprintf(stderr, "CRL: lookup_crls_handler 5\n");
 
   x = X509_STORE_CTX_get_current_cert(ctx);
   crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
   load_crls_crldp(data, crls, crldp);
   sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
 
-  fprintf(stderr, "CRL: lookup_crls_handler 6\n");
-
-
   if (sk_X509_CRL_num(crls) == 0) {
     sk_X509_CRL_free(crls);
     return NULL;
   }
-
-  fprintf(stderr, "CRL: lookup_crls_handler 7\n");
 
   data->curr_crl_num = sk_X509_CRL_num(crls);
   return crls;
