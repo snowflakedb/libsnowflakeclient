@@ -673,15 +673,16 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
   STACK_OF(DIST_POINT) *crldp;
   struct store_ctx_entry *data;
 
-  if (getenv("SF_TEST_CRL_NO_CRL"))
-    return NULL;
-
   data = sctx_lookup(X509_STORE_CTX_get0_store(ctx));
 
   if (!data)
     return NULL;
 
   data->curr_crl_num = 0;
+
+  if (getenv("SF_TEST_CRL_NO_CRL"))
+    return NULL;
+
   crls = sk_X509_CRL_new_null();
 
   if (!crls)
