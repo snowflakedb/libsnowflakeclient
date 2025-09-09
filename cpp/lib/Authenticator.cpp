@@ -569,7 +569,9 @@ namespace Client
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
                   raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
-                  m_connection->insecure_mode, m_connection->ocsp_fail_open, m_connection->crl_check,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
+                  m_connection->crl_disk_caching, m_connection->crl_memory_caching,
                   m_connection->retry_on_curle_couldnt_connect_count,
                   renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
                   m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
@@ -578,7 +580,9 @@ namespace Client
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
                   raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
-                  m_connection->insecure_mode, m_connection->ocsp_fail_open, m_connection->crl_check,
+                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                  m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
+                  m_connection->crl_disk_caching, m_connection->crl_memory_caching,
                   m_connection->retry_on_curle_couldnt_connect_count,
                   renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
                   m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);

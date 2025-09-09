@@ -138,6 +138,10 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool insecure_mode,
                              sf_bool fail_open,
                              sf_bool crl_check,
+                             sf_bool crl_advisory,
+                             sf_bool crl_allow_no_crl,
+                             sf_bool crl_disk_caching,
+                             sf_bool crl_memory_caching,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -394,7 +398,15 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (crl_check)
         {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, SF_BOOLEAN_TRUE);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, crl_advisory);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL advisory mode [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, crl_allow_no_crl);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL allow null crl [%s]",
@@ -402,7 +414,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, SF_BOOLEAN_TRUE);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, crl_disk_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL disk caching [%s]",
@@ -410,7 +422,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, SF_BOOLEAN_TRUE);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, crl_memory_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL memory caching [%s]",
@@ -418,6 +430,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
         }
+
         // Set chunk downloader specific stuff here
         if (chunk_downloader) {
             res = curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
