@@ -305,7 +305,12 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_OAUTH_TOKEN,
     SF_CON_DISABLE_CONSOLE_LOGIN,
     SF_CON_BROWSER_RESPONSE_TIMEOUT,
-    SF_CON_PAT
+    SF_CON_PAT,
+    SF_CON_CRL_CHECK,
+    SF_CON_CRL_ADVISORY,
+    SF_CON_CRL_ALLOW_NO_CRL,
+    SF_CON_CRL_DISK_CACHING,
+    SF_CON_CRL_MEMORY_CACHING
 } SF_ATTRIBUTE;
 
 /**
@@ -391,7 +396,13 @@ typedef struct SF_CONNECT {
     char *service_name;
     char *query_result_format;
 
-    /* used when updating parameters */
+    sf_bool crl_check;
+    sf_bool crl_advisory;
+    sf_bool crl_allow_no_crl;
+    sf_bool crl_disk_caching;
+    sf_bool crl_memory_caching;
+
+  /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;
 
     char *authenticator;

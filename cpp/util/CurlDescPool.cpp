@@ -25,7 +25,7 @@ extern "C" {
     Snowflake::Client::SFURL sfurl;
     try
     {
-      sfurl.parse(url);
+      sfurl = Snowflake::Client::SFURL::parse(url);
       if (proxy)
       {
         Snowflake::Client::Util::Proxy proxy_setting(proxy);
