@@ -292,7 +292,7 @@ static char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir)
 #ifdef _WIN32
   int result = _mkdir(dir);
 #else
-  int result = mkdir(dir, 0755);
+  int result = mkdir(dir, 0700);
 #endif
   if (result != 0)
   {

@@ -32,7 +32,7 @@ void test_fail_with_no_crl(void **unused) {
 
   // we need to remove curl cache
   ClientCurlDescPool::getInstance().init();
-  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(6000)));
 
   // disable OCSP check
   sf_bool value = SF_BOOLEAN_FALSE;
@@ -72,7 +72,7 @@ void test_success_with_no_crl_if_allow_no_crl(void **unused) {
 
   // we need to remove curl cache
   ClientCurlDescPool::getInstance().init();
-  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(6000)));
 
   // disable OCSP check
   sf_bool value = SF_BOOLEAN_FALSE;
@@ -99,12 +99,12 @@ void test_success_with_no_crl_if_allow_no_crl(void **unused) {
   sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
-void test_success_with_no_crl_if_advisory_mode(void **unused) {
+void test_success_with_no_crl_in_advisory_mode(void **unused) {
   SF_UNUSED(unused);
 
   // we need to remove curl cache
   ClientCurlDescPool::getInstance().init();
-  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(5000)));
+  std::this_thread::sleep_for(std::chrono::milliseconds(std::chrono::milliseconds(6000)));
 
   // disable OCSP check
   sf_bool value = SF_BOOLEAN_FALSE;
@@ -137,7 +137,7 @@ int main(void) {
         cmocka_unit_test(test_succees_with_crl_check),
         cmocka_unit_test(test_fail_with_no_crl),
         cmocka_unit_test(test_success_with_no_crl_if_allow_no_crl),
-        cmocka_unit_test(test_success_with_no_crl_if_advisory_mode)
+        cmocka_unit_test(test_success_with_no_crl_in_advisory_mode)
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
