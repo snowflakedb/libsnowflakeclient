@@ -473,14 +473,13 @@ static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(
   int ecount = embedded ? sk_X509_num(embedded) : 0;
   if(ecount >= 1 && ch && sk_X509_num(ch) >= 2) {
     X509 *responder = sk_X509_value(embedded, ecount - 1);
-    int i;
-    for(i = 0; i < sk_X509_num(ch); ++i) {
+    for(int i = 0; i < sk_X509_num(ch); ++i) {
       X509 *cand = sk_X509_value(ch, i);
       if(X509_check_issued(cand, responder) == X509_V_OK) {
         if(X509_check_issued(cand, cand) != X509_V_OK) continue; /* only self-signed */
-        int j, present = 0;
-        for(j = 0; j < ecount; ++j) {
-          if(X509_cmp(sk_X509_value(embedded, j), cand) == 0) { present = 1; break; }
+        int present = false;
+        for(int j = 0; j < ecount; ++j) {
+          if(X509_cmp(sk_X509_value(embedded, j), cand) == 0) { present = true; break; }
         }
         if(!present) {
           if(!OCSP_basic_add1_cert(br, cand)) {
@@ -516,8 +515,6 @@ static int checkSSDStatus(void) {
     }
     return (strncmp(ssd_env, "true", sizeof("true")) == 0);
 }
-
-/* removed file-based diagnostics */
 
 SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
                              STACK_OF(X509) *ch,
@@ -2681,5 +2678,3 @@ end:
   infof(data, "End SF OCSP Validation... Result: %d", rs);
   return rs;
 }
-
-/* removed unused ocsp_curl_trace */
