@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -32,6 +33,21 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
+
+/* Enable curl verbose logging when the environment variable SF_CURL_VERBOSE is set.
+ * This allows turning on libcurl debug without recompiling with DEBUG. */
+static int is_curl_verbose_enabled(void)
+{
+    const char *env = getenv("SF_CURL_VERBOSE");
+    if (!env) return 0;
+    return (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' || env[0] == 'Y');
+}
+
+/* Test-only hook to validate verbose toggle behavior */
+int sf_is_curl_verbose_enabled_for_test(void)
+{
+    return is_curl_verbose_enabled();
+}
 
 static
 void dump(const char *text,
@@ -94,7 +110,8 @@ int my_trace(CURL *handle, curl_infotype type,
 
     switch (type) {
         case CURLINFO_TEXT:
-            sf_fprintf(stderr, "== Info: %s", data);
+            /* Route curl info to Snowflake logger so it appears in driver logs */
+            log_info("CURLDBG: %s", data);
             /* FALLTHROUGH */
         default: /* in case a new one is introduced to shock us */
             return 0;
@@ -118,8 +135,8 @@ int my_trace(CURL *handle, curl_infotype type,
             text = "<= Recv SSL data";
             break;
     }
-
-    dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    /* Summarize payload type and size to avoid massive hexdumps in logs */
+    log_info("CURLDBG: %s (%zu bytes)", text, size);
     return 0;
 }
 
@@ -186,7 +203,9 @@ sf_bool STDCALL http_perform(CURL *curl,
         return SF_BOOLEAN_FALSE;
     }
 
-    //TODO set error buffer
+    // Set libcurl error buffer for detailed diagnostics
+    char curl_error_buffer[CURL_ERROR_SIZE];
+    curl_error_buffer[0] = '\0';
 
     do {
         // Reset buffer since this may not be our first rodeo
@@ -212,13 +231,15 @@ sf_bool STDCALL http_perform(CURL *curl,
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
 
         // Set parameters
+        curl_error_buffer[0] = '\0';
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer);
         res = curl_easy_setopt(curl, CURLOPT_URL, url);
         if (res != CURLE_OK) {
             log_error("Failed to set URL [%s]", curl_easy_strerror(res));
             break;
         }
 
-        if (DEBUG) {
+        if (DEBUG || is_curl_verbose_enabled()) {
             curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
             curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
@@ -376,7 +397,6 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_easy_strerror(res));
             break;
         }
-
         res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, fail_open);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP FAIL_OPEN [%s]",
@@ -419,6 +439,9 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         /* Check for errors */
         if (res != CURLE_OK) {
+          if (curl_error_buffer[0] != '\0') {
+            log_error("curl error buffer: %s", curl_error_buffer);
+          }
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
                                               retry_on_curle_couldnt_connect_count)
             {
@@ -443,6 +466,9 @@ sf_bool STDCALL http_perform(CURL *curl,
                 }
                 msg[sizeof(msg)-1] = (char)0;
                 log_error(msg);
+                if (res == CURLE_SSL_INVALIDCERTSTATUS) {
+                  log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
+                }
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
