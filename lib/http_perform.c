@@ -36,18 +36,6 @@ static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
 
 /* Enable curl verbose logging when the environment variable SF_CURL_VERBOSE is set.
  * This allows turning on libcurl debug without recompiling with DEBUG. */
-static int is_curl_verbose_enabled(void)
-{
-    const char *env = getenv("SF_CURL_VERBOSE");
-    if (!env) return 0;
-    return (env[0] == '1' || env[0] == 't' || env[0] == 'T' || env[0] == 'y' || env[0] == 'Y');
-}
-
-/* Test-only hook to validate verbose toggle behavior */
-int sf_is_curl_verbose_enabled_for_test(void)
-{
-    return is_curl_verbose_enabled();
-}
 
 static
 void dump(const char *text,
@@ -110,8 +98,8 @@ int my_trace(CURL *handle, curl_infotype type,
 
     switch (type) {
         case CURLINFO_TEXT:
-            /* Route curl info to Snowflake logger so it appears in driver logs */
-            log_info("CURLDBG: %s", data);
+            /* Route curl info to Snowflake logger at debug level */
+            log_debug("CURLDBG: %s", data);
             /* FALLTHROUGH */
         default: /* in case a new one is introduced to shock us */
             return 0;
@@ -136,7 +124,7 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
     }
     /* Summarize payload type and size to avoid massive hexdumps in logs */
-    log_info("CURLDBG: %s (%zu bytes)", text, size);
+    log_debug("CURLDBG: %s (%zu bytes)", text, size);
     return 0;
 }
 
@@ -239,12 +227,17 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-        if (DEBUG || is_curl_verbose_enabled()) {
+        {
+            int enable_verbose = DEBUG ? 1 : 0;
+            const char *sf_cv = getenv("SF_CURL_VERBOSE");
+            if (sf_cv && sf_cv[0] != '0') enable_verbose = 1;
+            if (enable_verbose) {
             curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
             curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
             /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
             curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+            }
         }
 
         if (header) {

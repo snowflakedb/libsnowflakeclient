@@ -568,19 +568,7 @@ static int checkSSDStatus(void) {
     return (strncmp(ssd_env, "true", sizeof("true")) == 0);
 }
 
-/* diagnostics emitted via infof only when verbose is enabled */
-static void ocsp_diagf(const char *fmt, ...)
-{
-  FILE *fp = fopen("/tmp/sf-ocsp-diag.log", "a");
-  if(!fp) return;
-  va_list ap;
-  va_start(ap, fmt);
-  fprintf(fp, "[pid=%ld] ", (long)getpid());
-  vfprintf(fp, fmt, ap);
-  fputc('\n', fp);
-  va_end(ap);
-  fclose(fp);
-}
+/* removed file-based diagnostics */
 
 SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
                              STACK_OF(X509) *ch,
@@ -766,7 +754,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     if(aux) sk_X509_free(aux); /* elements are not freed */
     if(verify_certs) sk_X509_free(verify_certs);
   }
-  infof(data, "OCSP: verify result=%d err=%s", ocsp_res,
+  debugf(data, "OCSP: verify result=%d err=%s", ocsp_res,
         ossl_strerror(ERR_get_error(), error_buffer, sizeof(error_buffer)));
   /* ocsp_res: 1... success, 0... error, -1... fatal error */
   if (ocsp_res <= 0)
@@ -781,7 +769,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       char line[256];
       line[0] = '\0';
       X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
-      infof(data, "OCSP diag: chain[%d] subject=%s", idx, line);
+      debugf(data, "OCSP diag: chain[%d] subject=%s", idx, line);
     }
     {
       STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
@@ -791,7 +779,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
         char line[256];
         line[0] = '\0';
         X509_NAME_oneline(X509_get_subject_name(ex), line, (int)sizeof(line));
-        infof(data, "OCSP diag: embedded[%d] subject=%s", idx, line);
+        debugf(data, "OCSP diag: embedded[%d] subject=%s", idx, line);
       }
     }
     failf(data,
@@ -904,9 +892,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
         int vret = X509_verify_cert(vctx);
         int verr = X509_STORE_CTX_get_error(vctx);
         int vdepth = X509_STORE_CTX_get_error_depth(vctx);
-        infof(data, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
-        fprintf(stderr, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d\n", vret, verr, vdepth);
-        ocsp_diagf("OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
+        debugf(data, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
       }
       if(vctx) X509_STORE_CTX_free(vctx);
     } else {
@@ -1093,7 +1079,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   OPENSSL_free(port);
   OPENSSL_free(path);
 
-  infof(data, "OCSP fetch URL: %s", urlbuf);
+  debugf(data, "OCSP fetch URL: %s", urlbuf);
 
   int url_parse_result;
 
@@ -2191,9 +2177,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
           char line[256];
           line[0] = '\0';
           X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
-          infof(data, "OCSP diag: chain[%d] subject=%s", i, line);
-          fprintf(stderr, "OCSP diag: chain[%d] subject=%s\n", i, line);
-          ocsp_diagf("OCSP diag: chain[%d] subject=%s", i, line);
+          debugf(data, "OCSP diag: chain[%d] subject=%s", i, line);
         }
       }
     }
@@ -2806,9 +2790,4 @@ end:
   return rs;
 }
 
-static int ocsp_curl_trace(CURL *handle, curl_infotype type, char *data_buf, size_t size, void *userp)
-{
-  // This function is not used in the original file, so it's left unchanged.
-  // You can add your custom logging logic here if needed.
-  return 0;
-}
+/* removed unused ocsp_curl_trace */
