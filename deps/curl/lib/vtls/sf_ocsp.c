@@ -339,13 +339,13 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
 {
   // allocate buffer 3 times larger than source data in case every single, add 1 for '\0'
   // character needs to be encoded as %xx
-  size_t buf_len = data_size * 3 + 1;
+  size_t buf_cap = data_size * 3 + 1;
   char* encode_buf = NULL;
   char* cur_ptr = NULL;
   size_t enc_len = 0;
   size_t pos = 0;
 
-  encode_buf = (char*)malloc(buf_len);
+  encode_buf = (char*)malloc(buf_cap);
   if(!encode_buf)
   {
     return CURLE_OUT_OF_MEMORY;
@@ -366,21 +366,17 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
       *cur_ptr = car;
       cur_ptr++;
       enc_len++;
-      buf_len--;
     }
     else
     {
       /* percent-encode non-unreserved without intermediate null writes */
       static const char HEX[] = "0123456789ABCDEF";
       unsigned char u = (unsigned char)car;
-      (void)buf_len; /* not used in direct writes */
       cur_ptr[0] = '%';
       cur_ptr[1] = HEX[(u >> 4) & 0xF];
       cur_ptr[2] = HEX[u & 0xF];
       cur_ptr += 3;
       enc_len += 3;
-      /* buf_len tracks remaining capacity incl. final terminator; reduce by 3 */
-      buf_len -= 3;
     }
   }
 
