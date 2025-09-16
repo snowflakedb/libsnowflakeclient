@@ -11,15 +11,24 @@
 extern int sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st);
 extern int sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch);
 
-/* Helpers to build a minimal self-signed root and an intermediate (responder) */
+/* Helpers to build a minimal self-signed root and an intermediate (responder)
+ * Use OpenSSL 3.0 EVP_PKEY keygen APIs to avoid deprecated RSA_* calls. */
 static EVP_PKEY* make_key(void) {
-  EVP_PKEY *pkey = EVP_PKEY_new();
-  RSA *rsa = RSA_new();
-  BIGNUM *e = BN_new();
-  BN_set_word(e, RSA_F4);
-  RSA_generate_key_ex(rsa, 1024, e, NULL);
-  EVP_PKEY_assign_RSA(pkey, rsa);
-  BN_free(e);
+  EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+  EVP_PKEY *pkey = NULL;
+  if (!ctx)
+    return NULL;
+  if (EVP_PKEY_keygen_init(ctx) <= 0)
+    goto end;
+  /* 2048-bit RSA for tests */
+  if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 2048) <= 0)
+    goto end;
+  if (EVP_PKEY_keygen(ctx, &pkey) <= 0) {
+    pkey = NULL;
+    goto end;
+  }
+end:
+  EVP_PKEY_CTX_free(ctx);
   return pkey;
 }
 
