@@ -26,7 +26,7 @@ int sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509)
   const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
   int ecount = embedded ? sk_X509_num(embedded) : 0;
   X509 *signer = NULL;
-  if(OCSP_resp_get0_signer(br, &signer, embedded) != 1 || !signer)
+  if(OCSP_resp_get0_signer(br, &signer, (STACK_OF(X509)*)embedded) != 1 || !signer)
     return 0;
   for(int i = 0; i < sk_X509_num(ch); ++i) {
     X509 *cand = sk_X509_value(ch, i);
