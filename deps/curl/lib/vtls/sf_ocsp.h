@@ -3,6 +3,7 @@
 
 #include "urldata.h"
 #include <openssl/ssl.h>
+#include <openssl/ocsp.h>
 
 #ifdef _WIN32
 #define SF_PUBLIC(type)   __declspec(dllexport) type __stdcall
@@ -18,6 +19,9 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
                                   int ocsp_failopen,
                                   bool oob_enable);
 
+/* Test hooks used by unit tests */
+SF_PUBLIC(int) sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st);
+SF_PUBLIC(int) sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch);
 
 #endif
 

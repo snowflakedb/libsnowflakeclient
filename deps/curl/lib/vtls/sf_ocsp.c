@@ -386,7 +386,7 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
   return CURLE_OK;
 }
 
-int sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st)
+SF_PUBLIC(int) sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st)
 {
   if(!br || !st) return 0;
   OCSP_RESPONSE *resp = OCSP_response_create(OCSP_RESPONSE_STATUS_SUCCESSFUL, br);
@@ -404,7 +404,7 @@ int sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *
 /* Forward declare helper to reuse in prod and tests */
 static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(X509) *ch, struct Curl_easy *data);
 
-int sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch)
+SF_PUBLIC(int) sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch)
 {
   struct Curl_easy dummy; memset(&dummy, 0, sizeof(dummy));
   return sf_ocsp_add_responder_issuer_from_chain(br, ch, &dummy);
