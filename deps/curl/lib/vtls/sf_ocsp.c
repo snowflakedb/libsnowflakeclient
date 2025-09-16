@@ -395,8 +395,8 @@ SF_PUBLIC(int) sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X
   /* ocsp_log_data not needed for unit tests */
   int status = checkResponse(resp, ch, st, &dummy, NULL);
   OCSP_RESPONSE_free(resp);
-  /* Success if production path deemed GOOD (represented as CURLE_OK) */
-  return (status == CURLE_OK) ? 1 : 0;
+  /* Success if production path deemed GOOD */
+  return (status == CERT_STATUS_GOOD) ? 1 : 0;
 }
 
 /* Test-only: inject a self-signed issuer of the responder from ch into br->certs.
