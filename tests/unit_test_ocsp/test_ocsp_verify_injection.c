@@ -7,7 +7,7 @@
 #include <openssl/ocsp.h>
 #include <openssl/pem.h>
 
-/* Test hooks from sf_ocsp.c */
+/* Test hooks from curl vtls (exported by sf_ocsp.c) */
 extern int sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st);
 extern int sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch);
 

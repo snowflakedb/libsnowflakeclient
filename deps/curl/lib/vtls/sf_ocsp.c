@@ -465,7 +465,7 @@ static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(
 {
   int added = 0;
   if(!br || !ch) return 0;
-  STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+  const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
   int ecount = embedded ? sk_X509_num(embedded) : 0;
   if(ecount >= 1 && ch && sk_X509_num(ch) >= 2) {
     X509 *responder = sk_X509_value(embedded, ecount - 1);
@@ -562,7 +562,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
 
   /* Log OCSP signer subject to help diagnose verification failures */
   {
-    STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+    const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
     X509 *signer = NULL;
     if(OCSP_resp_get0_signer(br, &signer, embedded) == 1 && signer) {
       char subj[256]; subj[0] = '\0';
@@ -611,7 +611,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       /* Fallback: retry using only embedded responder certs and skip chain
        * validation of the responder (signature-only). This mitigates
        * cross-signed path ambiguities during OCSP verification. */
-      STACK_OF(X509) *embedded_only = OCSP_resp_get0_certs(br);
+      const STACK_OF(X509) *embedded_only = OCSP_resp_get0_certs(br);
       if(embedded_only) {
         infof(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
         ocsp_res = OCSP_basic_verify(br, embedded_only, st,
@@ -622,7 +622,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       /* Fallback 2: build aux from signer and its issuer found in the verified
        * TLS chain to prefer the same issuer pairing used for the handshake. */
       X509 *signer = NULL;
-      STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+      const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
       if(OCSP_resp_get0_signer(br, &signer, embedded) == 1 && signer) {
         int i, count = sk_X509_num(ch);
         for(i = 0; i < count; ++i) {
@@ -662,7 +662,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       infof(data, "OCSP diag: chain[%d] subject=%s", idx, line);
     }
     {
-      STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+      const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
       int ecount = embedded ? sk_X509_num(embedded) : 0;
       for(idx = 0; idx < ecount && idx < 4; ++idx) {
         X509 *ex = sk_X509_value(embedded, idx);
@@ -775,7 +775,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
    * X509_STORE error codes before OCSP_basic_verify. */
   {
     X509 *signer_diag = NULL;
-    STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+    const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
     if(OCSP_resp_get0_signer(br, &signer_diag, embedded) == 1 && signer_diag) {
       X509_STORE_CTX *vctx = X509_STORE_CTX_new();
       if(vctx && X509_STORE_CTX_init(vctx, st, signer_diag, ch) == 1) {
