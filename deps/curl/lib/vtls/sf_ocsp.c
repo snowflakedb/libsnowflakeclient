@@ -617,7 +617,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
        * cross-signed path ambiguities during OCSP verification. */
       STACK_OF(X509) *embedded_only = OCSP_resp_get0_certs(br);
       if(embedded_only) {
-        infof(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
+        debugf(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
         ocsp_res = OCSP_basic_verify(br, embedded_only, st,
                                      OCSP_TRUSTOTHER | OCSP_NOVERIFY);
       }
@@ -636,7 +636,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
             if(aux2) {
               sk_X509_push(aux2, signer);
               sk_X509_push(aux2, cand);
-              infof(data, "OCSP: retry verify with signer+issuer from verified TLS chain");
+              debugf(data, "OCSP: retry verify with signer+issuer from verified TLS chain");
               ocsp_res = OCSP_basic_verify(br, aux2, st, OCSP_TRUSTOTHER);
               sk_X509_free(aux2); /* elements are not freed */
             }
@@ -757,7 +757,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     {
       case V_OCSP_CERTSTATUS_GOOD:
         result = CURLE_OK;
-        debugf(data, "SSL certificate status: %s (%d)",
+        infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
 
@@ -769,7 +769,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
 
       case V_OCSP_CERTSTATUS_UNKNOWN:
         result = CERT_STATUS_UNKNOWN;
-        debugf(data, "SSL certificate status: %s (%d)",
+        infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
     }
@@ -790,7 +790,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       }
       if(vctx) X509_STORE_CTX_free(vctx);
     } else {
-      infof(data, "OCSP diag: signer unavailable for explicit verification");
+      debugf(data, "OCSP diag: signer unavailable for explicit verification");
     }
   }
 
@@ -973,7 +973,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
   OPENSSL_free(port);
   OPENSSL_free(path);
 
-  debugf(data, "OCSP fetch URL: %s", urlbuf);
+  infof(data, "OCSP fetch URL: %s", urlbuf);
 
   int url_parse_result;
 
@@ -2062,7 +2062,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
       iss[0] = '\0';
       X509_NAME_oneline(X509_get_subject_name(cert), subj, (int)sizeof(subj));
       X509_NAME_oneline(X509_get_subject_name(issuer), iss, (int)sizeof(iss));
-      infof(data, "OCSP diag: sf_status=%d fail_open=%d end_entity=%s issuer=%s", (int)sf_cert_status, (int)ocsp_fail_open, subj, iss);
+      debugf(data, "OCSP diag: sf_status=%d fail_open=%d end_entity=%s issuer=%s", (int)sf_cert_status, (int)ocsp_fail_open, subj, iss);
       if(ch) {
         int c = sk_X509_num(ch);
         int i;
@@ -2254,7 +2254,7 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   strcpy(cache_file, cache_dir);
   strcat(cache_file, PATH_SEP);
   strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
-  debugf(data, "OCSP Cache file: %s", cache_file);
+  infof(data, "OCSP Cache file: %s", cache_file);
 
   /* cache lock directory/file */
   strcpy(cache_lock_file, cache_file);
@@ -2268,15 +2268,15 @@ void writeOCSPCacheFile(struct Curl_easy* data)
     {
       if ((long)time(NULL) - (long) statbuf.st_mtime < 60*60)
       {
-        debugf(data, "Other process lock the file, ignored");
+        infof(data, "Other process lock the file, ignored");
         goto end;
       }
       else
       {
-        debugf(data, "Remove the old lock file");
+        infof(data, "Remove the old lock file");
         if (remove(cache_lock_file) != 0)
         {
-          debugf(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
+          infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
           goto end;
         }
       }
@@ -2293,34 +2293,34 @@ void writeOCSPCacheFile(struct Curl_easy* data)
   }
   if (fclose(fh) != 0)
   {
-    debugf(data, "Failed to close a lock file: %s. Ignored.", cache_lock_file);
+    infof(data, "Failed to close a lock file: %s. Ignored.", cache_lock_file);
     goto end;
   }
 
   fp = fopen(cache_file, "w");
   if (fp == NULL)
   {
-    debugf(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
+    infof(data, "Failed to open OCSP response cache file. Skipping writing OCSP cache file.");
     goto end;
   }
   jsonText = sf_curl_cJSON_PrintUnformatted(ocsp_cache_root);
   if (fprintf(fp, "%s", jsonText) < 0)
   {
-    debugf(data, "Failed to write OCSP response cache file. Skipping");
+    infof(data, "Failed to write OCSP response cache file. Skipping");
   }
 
   if (fclose(fp) != 0)
   {
-    debugf(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
+    infof(data, "Failed to close OCSP response cache file: %s. Ignored", cache_file);
   }
-  debugf(data, "Write OCSP Response to cache file");
+  infof(data, "Write OCSP Response to cache file");
 
   /* deallocate json string */
   sf_curl_cJSON_free(jsonText);
 
   if (remove(cache_lock_file) != 0)
   {
-    debugf(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
+    infof(data, "Failed to delete the lock file: %s, ignored", cache_lock_file);
   }
 end:
   if (ocsp_cache_root != NULL)
@@ -2362,16 +2362,16 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   strcpy(cache_file, cache_dir);
   strcat(cache_file, PATH_SEP);
   strcat(cache_file, OCSP_RESPONSE_CACHE_JSON);
-  debugf(data, "OCSP cache file: %s", cache_file);
+  infof(data, "OCSP cache file: %s", cache_file);
 
   if (ocsp_cache_root != NULL)
   {
-    debugf(data, "OCSP cache was already read onto memory");
+    infof(data, "OCSP cache was already read onto memory");
     goto end;
   }
   if (access(cache_file, F_OK) == -1)
   {
-    debugf(data, "No OCSP cache file found on disk. file: %s", cache_file);
+    infof(data, "No OCSP cache file found on disk. file: %s", cache_file);
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -2383,7 +2383,7 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   if (stat(cache_file, &statbuf) != 0)
 #endif
   {
-    debugf(data, "Failed to get cache file size. file: %s", cache_file);
+    infof(data, "Failed to get cache file size. file: %s", cache_file);
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -2392,7 +2392,7 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   ocsp_resp_cache_str = (char *)malloc(statbuf.st_size + 1);
   if (ocsp_resp_cache_str == NULL)
   {
-    debugf(data, "Failed to allocate buffer for OCSP cache file. file: %s", cache_file);
+    infof(data, "Failed to allocate buffer for OCSP cache file. file: %s", cache_file);
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
@@ -2400,30 +2400,30 @@ void readOCSPCacheFile(struct Curl_easy* data, SF_OTD *ocsp_log_data)
   pfile = fopen(cache_file, "r");
   if (pfile == NULL)
   {
-    debugf(data, "Failed to open OCSP response cache file. Ignored.");
+    infof(data, "Failed to open OCSP response cache file. Ignored.");
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
     goto end;
   }
 
   if (fgets(ocsp_resp_cache_str, statbuf.st_size + 1, pfile) == NULL) {
-    debugf(data, "Failed to read OCSP response cache file. Ignored");
+    infof(data, "Failed to read OCSP response cache file. Ignored");
     goto file_close;
   }
   /* just attached the whole JSON object */
   ocsp_cache_root = sf_curl_cJSON_Parse(ocsp_resp_cache_str);
   if (ocsp_cache_root == NULL)
   {
-    debugf(data, "Failed to parse cache file content in json format");
+    infof(data, "Failed to parse cache file content in json format");
     sf_otd_set_event_sub_type(OCSP_CACHE_READ_FAILURE, ocsp_log_data);
   }
   else
   {
-    debugf(data, "OCSP cache file was successfully loaded");
+    infof(data, "OCSP cache file was successfully loaded");
   }
 file_close:
   if (fclose(pfile) != 0)
   {
-    debugf(data, "Failed to close cache file. Ignored.");
+    infof(data, "Failed to close cache file. Ignored.");
     goto end;
   }
 end:
