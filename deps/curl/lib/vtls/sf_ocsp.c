@@ -370,9 +370,16 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
     }
     else
     {
-      snprintf(cur_ptr, buf_len, "%%%.2X", car);
+      /* percent-encode non-unreserved without intermediate null writes */
+      static const char HEX[] = "0123456789ABCDEF";
+      unsigned char u = (unsigned char)car;
+      (void)buf_len; /* not used in direct writes */
+      cur_ptr[0] = '%';
+      cur_ptr[1] = HEX[(u >> 4) & 0xF];
+      cur_ptr[2] = HEX[u & 0xF];
       cur_ptr += 3;
       enc_len += 3;
+      /* buf_len tracks remaining capacity incl. final terminator; reduce by 3 */
       buf_len -= 3;
     }
   }
