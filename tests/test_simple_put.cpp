@@ -11,6 +11,12 @@
 #include "FileTransferAgent.hpp"
 #include "boost/filesystem.hpp"
 
+#ifndef _WIN32
+#include <locale.h>
+#include <langinfo.h>
+#include <iconv.h>
+#endif
+
 #define COLUMN_STATUS "STATUS"
 #define COLUMN_SOURCE "SOURCE"
 #define COLUMN_TARGET "TARGET"
@@ -60,16 +66,76 @@ public:
   StatementPutGetUnicode(SF_STMT *stmt) : StatementPutGet(stmt) {}
   virtual std::string UTF8ToPlatformString(const std::string& utf8_str)
   {
-    std::string result = utf8_str;
-    replaceInPlace(result, UTF8_STR, PLATFORM_STR);
+#ifdef _WIN32
+    // convert utf8 string to wstring
+    auto size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8_str.data(), (int)utf8_str.size(), nullptr, 0);
+    if (size_needed <= 0)
+    {
+      return "";
+    }
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, utf8_str.data(), (int)utf8_str.size(), wstr.data(), size_needed);
+
+    // convert wstring to platform string
+    size_needed = WideCharToMultiByte(CP_ACP, 0, wstr.data(), (int)wstr.size(), nullptr, 0, nullptr, nullptr);
+    if (size_needed <= 0)
+    {
+      return "";
+    }
+    std::string result(size_needed, 0);
+    WideCharToMultiByte(CP_ACP, 0, wstr.data(), (int)wstr.size(), result.data(), size_needed, nullptr, nullptr);
+
     return result;
+#else
+    char* encoding = nl_langinfo(CODESET);
+    iconv_t conv = iconv_open(encoding, "UTF-8");
+    std::vector<char> buf(utf8_str.size() * 4 + 1);
+    char* inbuf = const_cast<char*>(utf8_str.data());
+    size_t insize = utf8_str.size();
+    char* outbuf = const_cast<char*>(buf.data());
+    size_t outsize = buf.size();
+    iconv(conv, &inbuf, &insize, &outbuf, &outsize);
+    std::string result(buf.data());
+    iconv_close(conv);
+    return result;
+#endif
   }
 
   virtual std::string platformStringToUTF8(const std::string& platform_str)
   {
-    std::string result = platform_str;
-    replaceInPlace(result, PLATFORM_STR, UTF8_STR);
+#ifdef _WIN32
+    // convert platform string to wstring
+    auto size_needed = MultiByteToWideChar(CP_ACP, 0, platform_str.data(), (int)platform_str.size(), nullptr, 0);
+    if (size_needed <= 0)
+    {
+      return "";
+    }
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(CP_ACP, 0, platform_str.data(), (int)platform_str.size(), wstr.data(), size_needed);
+
+    // convert wstring to UTF-8
+    size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, nullptr, nullptr);
+    if (size_needed <= 0)
+    {
+      return "";
+    }
+    std::string result(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), result.data(), size_needed, nullptr, nullptr);
+
     return result;
+#else
+    char* encoding = nl_langinfo(CODESET);
+    iconv_t conv = iconv_open("UTF-8", encoding);
+    std::vector<char> buf(platform_str.size() * 4 + 1);
+    char* inbuf = const_cast<char*>(platform_str.data());
+    size_t insize = platform_str.size();
+    char* outbuf = const_cast<char*>(buf.data());
+    size_t outsize = buf.size();
+    iconv(conv, &inbuf, &insize, &outbuf, &outsize);
+    std::string result(buf.data());
+    iconv_close(conv);
+    return result;
+#endif
   }
 };
 
@@ -1929,6 +1995,13 @@ void test_upload_file_to_stage_using_stream(void **unused)
 
 void test_put_get_with_unicode(void **unused)
 {
+// On Linux/Mac the default one would be POSIX(ANSI), set to UTF8 to simulate
+// application using Unicode.
+#ifdef __linux__
+  setlocale(LC_ALL, "en_US.utf8");
+#elif defined(__APPLE__)
+  setlocale(LC_ALL, "en_US.UTF-8");
+#endif
   std::string dataDir = TestSetup::getDataDir();
   std::string filename=PLATFORM_STR + ".csv";
   copy_file(dataDir + "small_file.csv", dataDir + filename, copy_options::overwrite_existing);
@@ -2029,3 +2102,4 @@ int main(void) {
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
 }
+
