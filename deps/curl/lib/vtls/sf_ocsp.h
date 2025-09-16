@@ -19,9 +19,7 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
                                   int ocsp_failopen,
                                   bool oob_enable);
 
-/* Test hooks used by unit tests */
-SF_PUBLIC(int) sf_ocsp_verify_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch, X509_STORE *st);
-SF_PUBLIC(int) sf_ocsp_inject_selfsigned_issuer_for_test(OCSP_BASICRESP *br, STACK_OF(X509) *ch);
+/* Test hooks are provided by unit tests; not exported from curl */
 
 #endif
 
