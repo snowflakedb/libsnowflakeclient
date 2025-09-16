@@ -26,6 +26,7 @@ add_test(test_encode_url_extra test_encode_url_extra)
 # OCSP verify injection/path-building test
 add_executable(
         test_ocsp_verify_injection
-        test_ocsp_verify_injection.c)
+        test_ocsp_verify_injection.c
+        sf_ocsp_test_shim.c)
 target_link_libraries(test_ocsp_verify_injection ${TESTLIB_OPTS_C})
 add_test(test_ocsp_verify_injection test_ocsp_verify_injection)
