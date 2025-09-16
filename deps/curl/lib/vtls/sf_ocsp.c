@@ -529,7 +529,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
   char error_buffer[1024];
 
   br = OCSP_response_get1_basic(resp);
-  debugf(data, "OCSP: response_status=%d basic_resp_present=%s", OCSP_response_status(resp), br ? "yes" : "no");
+  infof(data, "OCSP: response_status=%d basic_resp_present=%s", OCSP_response_status(resp), br ? "yes" : "no");
   if (getTestStatus(SF_OCSP_TEST_MODE) == TEST_ENABLED)
   {
     printTestWarning(data);
@@ -555,9 +555,9 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     /* Ensure cross-signed chains can anchor at provided trust without needing
      * a self-signed root, and prefer trust store certs when building paths. */
     X509_STORE_set_flags(st, X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
-    debugf(data, "OCSP: set store flags PARTIAL_CHAIN|TRUSTED_FIRST");
+    infof(data, "OCSP: set store flags PARTIAL_CHAIN|TRUSTED_FIRST");
   }
-  debugf(data, "OCSP: verify begin trust_other=0 chain_count=%d store_present=%s", ch ? sk_X509_num(ch) : 0, st ? "yes" : "no");
+  infof(data, "OCSP: verify begin trust_other=0 chain_count=%d store_present=%s", ch ? sk_X509_num(ch) : 0, st ? "yes" : "no");
   /* Workaround cross-signed responder verification: if the OCSP response embeds
    * a responder cert but not its issuer, add the issuer from the verified chain. */
   {
@@ -571,9 +571,9 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     if(OCSP_resp_get0_signer(br, &signer, embedded) == 1 && signer) {
       char subj[256]; subj[0] = '\0';
       X509_NAME_oneline(X509_get_subject_name(signer), subj, (int)sizeof(subj));
-      debugf(data, "OCSP: signer subject=%s", subj);
+      infof(data, "OCSP: signer subject=%s", subj);
     } else {
-      debugf(data, "OCSP: signer not found via embedded certs");
+      infof(data, "OCSP: signer not found via embedded certs");
     }
   }
   /* Use the provided store as trust anchor. Prefer a minimal aux chain of
@@ -617,7 +617,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
        * cross-signed path ambiguities during OCSP verification. */
       STACK_OF(X509) *embedded_only = OCSP_resp_get0_certs(br);
       if(embedded_only) {
-        debugf(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
+        infof(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
         ocsp_res = OCSP_basic_verify(br, embedded_only, st,
                                      OCSP_TRUSTOTHER | OCSP_NOVERIFY);
       }
@@ -636,7 +636,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
             if(aux2) {
               sk_X509_push(aux2, signer);
               sk_X509_push(aux2, cand);
-              debugf(data, "OCSP: retry verify with signer+issuer from verified TLS chain");
+              infof(data, "OCSP: retry verify with signer+issuer from verified TLS chain");
               ocsp_res = OCSP_basic_verify(br, aux2, st, OCSP_TRUSTOTHER);
               sk_X509_free(aux2); /* elements are not freed */
             }
@@ -648,7 +648,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     if(aux) sk_X509_free(aux); /* elements are not freed */
     if(verify_certs) sk_X509_free(verify_certs);
   }
-  debugf(data, "OCSP: verify result=%d err=%s", ocsp_res,
+  infof(data, "OCSP: verify result=%d err=%s", ocsp_res,
         ossl_strerror(ERR_get_error(), error_buffer, sizeof(error_buffer)));
   /* ocsp_res: 1... success, 0... error, -1... fatal error */
   if (ocsp_res <= 0)
@@ -663,7 +663,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
       char line[256];
       line[0] = '\0';
       X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
-      debugf(data, "OCSP diag: chain[%d] subject=%s", idx, line);
+      infof(data, "OCSP diag: chain[%d] subject=%s", idx, line);
     }
     {
       STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
@@ -673,7 +673,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
         char line[256];
         line[0] = '\0';
         X509_NAME_oneline(X509_get_subject_name(ex), line, (int)sizeof(line));
-        debugf(data, "OCSP diag: embedded[%d] subject=%s", idx, line);
+        infof(data, "OCSP diag: embedded[%d] subject=%s", idx, line);
       }
     }
     failf(data,
@@ -786,11 +786,11 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
         int vret = X509_verify_cert(vctx);
         int verr = X509_STORE_CTX_get_error(vctx);
         int vdepth = X509_STORE_CTX_get_error_depth(vctx);
-        debugf(data, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
+        infof(data, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
       }
       if(vctx) X509_STORE_CTX_free(vctx);
     } else {
-      debugf(data, "OCSP diag: signer unavailable for explicit verification");
+      infof(data, "OCSP diag: signer unavailable for explicit verification");
     }
   }
 
@@ -2062,7 +2062,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
       iss[0] = '\0';
       X509_NAME_oneline(X509_get_subject_name(cert), subj, (int)sizeof(subj));
       X509_NAME_oneline(X509_get_subject_name(issuer), iss, (int)sizeof(iss));
-      debugf(data, "OCSP diag: sf_status=%d fail_open=%d end_entity=%s issuer=%s", (int)sf_cert_status, (int)ocsp_fail_open, subj, iss);
+      infof(data, "OCSP diag: sf_status=%d fail_open=%d end_entity=%s issuer=%s", (int)sf_cert_status, (int)ocsp_fail_open, subj, iss);
       if(ch) {
         int c = sk_X509_num(ch);
         int i;
@@ -2071,7 +2071,7 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
           char line[256];
           line[0] = '\0';
           X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
-          debugf(data, "OCSP diag: chain[%d] subject=%s", i, line);
+          infof(data, "OCSP diag: chain[%d] subject=%s", i, line);
         }
       }
     }

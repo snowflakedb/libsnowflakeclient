@@ -523,7 +523,7 @@ static CURLcode ossl_certchain(struct Curl_easy *data, SSL *ssl)
 
     pubkey = X509_get_pubkey(x);
     if(!pubkey)
-      debugf(data, "   Unable to load public key");
+      infof(data, "   Unable to load public key");
     else {
       int pktype;
 #ifdef HAVE_OPAQUE_EVP_PKEY
