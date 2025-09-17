@@ -4736,7 +4736,20 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     STACK_OF(X509) *ch = NULL;
     X509_STORE     *st = NULL;
 
+    /* Prefer the verified chain if available to ensure correct issuer pairing
+       for cross-signed chains; fall back to peer-provided chain otherwise. */
+    infof(data, "Snowflake OCSP: preferring verified chain for issuer determination");
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
+    !(defined(LIBRESSL_VERSION_NUMBER) && \
+      LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
+    !defined(OPENSSL_IS_BORINGSSL) && \
+    !defined(OPENSSL_IS_AWSLC)
+    ch = SSL_get0_verified_chain(octx->ssl);
+    if(!ch)
+      ch = SSL_get_peer_cert_chain(octx->ssl);
+#else
     ch = SSL_get_peer_cert_chain(octx->ssl);
+#endif
     if (!ch)
     {
       infof(data, "OCSP validation could not get peer certificate chain");
@@ -4746,6 +4759,11 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     {
       infof(data, "OCSP validation could not get certificate data store");
     }
+
+    /* Additional diagnostics for OCSP chain/store context */
+    infof(data, "Snowflake OCSP: verified_chain_present=%s chain_count=%d",
+          ch ? "yes" : "no", ch ? sk_X509_num(ch) : 0);
+    infof(data, "Snowflake OCSP: cert_store_present=%s", st ? "yes" : "no");
 
     if (ch && st)
     {
