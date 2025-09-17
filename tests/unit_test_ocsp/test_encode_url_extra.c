@@ -44,7 +44,7 @@ int main(void) {
     fprintf(stderr, "[reserved] length mismatch outlen=%zu strlen(enc)=%zu\n", outlen, strlen(enc));
     return 3;
   }
-  free(enc);
+  curl_free(enc);
   enc = NULL; outlen = 0;
 
   /* Slash and tilde */
@@ -60,7 +60,7 @@ int main(void) {
     fprintf(stderr, "[slash-tilde] length mismatch outlen=%zu strlen(enc)=%zu\n", outlen, strlen(enc));
     return 3;
   }
-  free(enc);
+  curl_free(enc);
   enc = NULL; outlen = 0;
 
   /* All unreserved stay literal */
@@ -76,7 +76,7 @@ int main(void) {
     fprintf(stderr, "[unreserved] length mismatch outlen=%zu strlen(enc)=%zu\n", outlen, strlen(enc));
     return 3;
   }
-  free(enc);
+  curl_free(enc);
   enc = NULL; outlen = 0;
 
   fprintf(stderr, "OK\n");
