@@ -159,6 +159,14 @@
 #define ARG2_X509_signature_print
 #endif
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
+    !(defined(LIBRESSL_VERSION_NUMBER) && \
+      LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
+    !defined(OPENSSL_IS_BORINGSSL) && \
+    !defined(OPENSSL_IS_AWSLC)
+#define CURL_HAS_VERIFIED_CHAIN 1
+#endif
+
 #else
 /* For OpenSSL before 1.1.0 */
 #define ASN1_STRING_get0_data(x) ASN1_STRING_data(x)
@@ -4614,11 +4622,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509* cert,
   return result;
 }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) &&  \
-  !(defined(LIBRESSL_VERSION_NUMBER) && \
-    LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
-  !defined(OPENSSL_IS_BORINGSSL) && \
-  !defined(OPENSSL_IS_AWSLC) && \
+#if defined(CURL_HAS_VERIFIED_CHAIN) && \
   !defined(CURL_DISABLE_VERBOSE_STRINGS)
 static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
 {
@@ -4739,14 +4743,18 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     /* Prefer the verified chain if available to ensure correct issuer pairing
        for cross-signed chains; fall back to peer-provided chain otherwise. */
     infof(data, "Snowflake OCSP: preferring verified chain for issuer determination");
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
-    !(defined(LIBRESSL_VERSION_NUMBER) && \
-      LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
-    !defined(OPENSSL_IS_BORINGSSL) && \
-    !defined(OPENSSL_IS_AWSLC)
-    ch = SSL_get0_verified_chain(octx->ssl);
-    if(!ch)
-      ch = SSL_get_peer_cert_chain(octx->ssl);
+#if defined(CURL_HAS_VERIFIED_CHAIN)
+    {
+      STACK_OF(X509) *verified = SSL_get0_verified_chain(octx->ssl);
+      bool used_verified = false;
+      ch = verified;
+      if(!ch)
+        ch = SSL_get_peer_cert_chain(octx->ssl);
+      else
+        used_verified = true;
+      infof(data, "Snowflake OCSP: used_verified_chain=%s",
+            used_verified ? "yes" : "no");
+    }
 #else
     ch = SSL_get_peer_cert_chain(octx->ssl);
 #endif

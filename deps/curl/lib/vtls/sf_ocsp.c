@@ -454,7 +454,6 @@ static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(
     for(int i = 0; i < sk_X509_num(ch); ++i) {
       X509 *cand = sk_X509_value(ch, i);
       if(X509_check_issued(cand, responder) == X509_V_OK) {
-        if(X509_check_issued(cand, cand) != X509_V_OK) continue; /* only self-signed */
         int present = false;
         for(int j = 0; j < ecount; ++j) {
           if(X509_cmp(sk_X509_value(embedded, j), cand) == 0) { present = true; break; }
