@@ -9,6 +9,8 @@ on:
     pull_request:
         branches:
             - '**'
+    schedule:
+        - cron: '0 0 * * 0'
 
 concurrency:
     # older builds for the same pull request numer or branch should be cancelled

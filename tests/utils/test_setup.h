@@ -43,6 +43,8 @@ int setup_random_database();
 
 void drop_random_database();
 
+void generate_unique_id(char* buf);
+
 /**
  * Dump error
  * @param error SF_ERROR_STRUCT
