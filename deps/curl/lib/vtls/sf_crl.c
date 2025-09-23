@@ -140,6 +140,10 @@ static void sctx_clear()
 
 static void sctx_unregister(const X509_STORE *ctx)
 {
+  if (!sctx_registry.entries || !ctx) {
+    return;
+  }
+
   for (size_t i = 0; i < sctx_registry.size; ++i) {
     if (sctx_registry.entries[i].ctx == ctx) {
       /* Move last entry to freed spot for fast removal */
