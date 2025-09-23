@@ -229,6 +229,10 @@ static void ucrl_clear()
 
 static void ucrl_unregister(const char *uri)
 {
+  if (!ucrl_registry.entries || !uri) {
+    return;
+  }
+
   for (size_t i = 0; i < ucrl_registry.size; ++i) {
     if (ucrl_registry.entries[i].uri == uri) {
 
@@ -319,7 +323,10 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
 {
 #ifdef __linux__
   char *home_env = getenv("HOME");
-  strcpy(cache_dir, (home_env == NULL ? (char*)"/tmp" : home_env));
+  if (home_env == NULL) {
+    goto err;
+  }
+  strcpy(cache_dir, home_env);
 
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
@@ -343,7 +350,10 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   strcat(cache_dir, "/");
 #elif defined(__APPLE__)
   char *home_env = getenv("HOME");
-  strcpy(cache_dir, (home_env == NULL ? (char*)"/tmp" : home_env));
+  if (home_env == NULL) {
+    goto err;
+  }
+  strcpy(cache_dir, home_env);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
@@ -371,15 +381,10 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   strcat(cache_dir, "/");
 #elif  defined(_WIN32)
   char *home_env = getenv("USERPROFILE");
-  if (home_env == NULL)
-  {
-    home_env = getenv("TMP");
-	if (home_env == NULL)
-    {
-      home_env = getenv("TEMP");
-    }
+  if (home_env == NULL) {
+    goto err;
   }
-  strcpy(cache_dir, (home_env == NULL ? (char*)"c:\\temp" : home_env));
+  strcpy(cache_dir, home_env);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     goto err;
