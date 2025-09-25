@@ -449,9 +449,10 @@ static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(
   if(!br || !ch) return 0;
   const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
   int ecount = embedded ? sk_X509_num(embedded) : 0;
-  if(ecount >= 1 && ch && sk_X509_num(ch) >= 2) {
+  int ch_count = sk_X509_num(ch);
+  if(ecount >= 1 && ch_count >= 2) {
     X509 *responder = sk_X509_value(embedded, ecount - 1);
-    for(int i = 0; i < sk_X509_num(ch); ++i) {
+    for(int i = 0; i < ch_count; ++i) {
       X509 *cand = sk_X509_value(ch, i);
       if(X509_check_issued(cand, responder) == X509_V_OK) {
         int present = false;
@@ -583,8 +584,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
      * SF_OCSP_PERMISSIVE_VERIFY is set; useful for test isolation. */
     unsigned long vflags = 0;
     {
-      char *env = getenv("SF_OCSP_PERMISSIVE_VERIFY");
-      if(env && (env[0]=='1'||env[0]=='t'||env[0]=='T'||env[0]=='y'||env[0]=='Y'))
+      if(parse_bool_env("SF_OCSP_PERMISSIVE_VERIFY"))
         vflags |= OCSP_NOCHECKS;
     }
     ocsp_res = OCSP_basic_verify(br, verify_certs ? verify_certs : ch, st, vflags);
