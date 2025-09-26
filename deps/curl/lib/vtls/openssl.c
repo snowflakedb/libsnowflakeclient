@@ -3647,7 +3647,8 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
                        conn_config->sf_crl_advisory,
                        conn_config->sf_crl_allow_no_crl,
                        conn_config->sf_crl_disk_caching,
-                       conn_config->sf_crl_memory_caching);
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout);
     }
     /* !!! End of Snowflake CRL !!! */
   }

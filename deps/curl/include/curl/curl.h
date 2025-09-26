@@ -2256,6 +2256,9 @@ typedef enum {
   /* Snowflake options. True if CRL is cached in memory. Defaults to true */
   CURLOPT(CURLOPT_SSL_SF_CRL_MEMORY_CACHING, CURLOPTTYPE_LONG, 334),
 
+  /* Snowflake options. True if CRL is cached in memory. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, CURLOPTTYPE_LONG, 334),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 

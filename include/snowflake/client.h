@@ -82,6 +82,11 @@ extern "C" {
  */
 #define SF_RETRY_TIMEOUT 300
 
+    /**
+     * CRL download timeout in seconds
+     */
+#define SF_CRL_DOWNLOAD_TIMEOUT 120
+
  /**
  * max retry number
  */
@@ -310,7 +315,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_CRL_ADVISORY,
     SF_CON_CRL_ALLOW_NO_CRL,
     SF_CON_CRL_DISK_CACHING,
-    SF_CON_CRL_MEMORY_CACHING
+    SF_CON_CRL_MEMORY_CACHING,
+    SF_CON_CRL_DOWNLOAD_TIMEOUT
 } SF_ATTRIBUTE;
 
 /**
@@ -401,6 +407,7 @@ typedef struct SF_CONNECT {
     sf_bool crl_allow_no_crl;
     sf_bool crl_disk_caching;
     sf_bool crl_memory_caching;
+    int64 crl_download_timeout;
 
   /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;

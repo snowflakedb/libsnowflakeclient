@@ -142,6 +142,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              sf_bool crl_allow_no_crl,
                              sf_bool crl_disk_caching,
                              sf_bool crl_memory_caching,
+                             int64 crl_download_timeout,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -428,6 +429,14 @@ sf_bool STDCALL http_perform(CURL *curl,
             log_error("Unable to set CRL memory caching [%s]",
                       curl_easy_strerror(res));
             break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, crl_download_timeout);
+          if (res != CURLE_OK)
+          {
+              log_error("Unable to set CRL download timeout [%s]",
+                        curl_easy_strerror(res));
+              break;
           }
         }
 

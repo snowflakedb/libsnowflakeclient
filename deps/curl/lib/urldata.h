@@ -275,6 +275,7 @@ struct ssl_primary_config {
                                certificates without crl */
   bool sf_crl_disk_caching;   /* set FALSE to disable CRL disk caching */
   bool sf_crl_memory_caching; /* set FALSE to disable CRL memory caching */
+  long sf_crl_download_timeout; /* timeout in seconds for CRL download */
   bool sf_oob_enable;    /* set TRUE if OOB telemetry is enabled.*/
   char *CApath;          /* certificate dir (does not work on Windows) */
   char *CAfile;          /* certificate to verify peer against */

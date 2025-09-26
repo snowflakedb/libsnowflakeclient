@@ -291,11 +291,11 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
-                          sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time,
-                          retried_count, is_renew, renew_injection,
-                          sf->proxy, sf->no_proxy, sf->include_retry_reason,
-                          is_new_strategy_url) ||
+                          sf->crl_download_timeout,
+                          sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
+                          elapsed_time, retried_count, is_renew,
+                          renew_injection, sf->proxy, sf->no_proxy,
+                          sf->include_retry_reason, is_new_strategy_url) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -436,9 +436,9 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
-                          sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
-                          sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
+                          sf->crl_download_timeout,
+                          sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count, elapsed_time, retried_count, NULL,
+                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
             break;

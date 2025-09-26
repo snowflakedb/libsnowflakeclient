@@ -486,13 +486,13 @@ sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url
                              SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
                              sf_bool crl_check, sf_bool crl_advisory, sf_bool crl_allow_no_crl,
                              sf_bool crl_disk_caching, sf_bool crl_memory_caching,
-                             int8 retry_on_curle_couldnt_connect_count,
-                             int64 renew_timeout, int8 retry_max_count,
-                             int64 *elapsed_time, int8 *retried_count,
-                             sf_bool *is_renew, sf_bool renew_injection,
-                             const char *proxy, const char *no_proxy,
-                             sf_bool include_retry_reason,
-                             sf_bool is_login_request);
+                             int64 crl_download_timeout,
+                             int8 retry_on_curle_couldnt_connect_count, int64 renew_timeout,
+                             int8 retry_max_count, int64 *elapsed_time,
+                             int8 *retried_count, sf_bool *is_renew,
+                             sf_bool renew_injection, const char *proxy,
+                             const char *no_proxy,
+                             sf_bool include_retry_reason, sf_bool is_login_request);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.

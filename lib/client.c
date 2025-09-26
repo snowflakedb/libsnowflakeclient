@@ -1021,6 +1021,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->crl_allow_no_crl = SF_BOOLEAN_TRUE;
         sf->crl_disk_caching = SF_BOOLEAN_TRUE;
         sf->crl_memory_caching = SF_BOOLEAN_TRUE;
+        sf->crl_download_timeout = SF_CRL_DOWNLOAD_TIMEOUT;
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
@@ -1514,6 +1515,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_CRL_MEMORY_CACHING:
           sf->crl_memory_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
+        case SF_CON_CRL_DOWNLOAD_TIMEOUT:
+          sf->crl_download_timeout = value ? *((int64*)value) : SF_CRL_DOWNLOAD_TIMEOUT;
+          break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
@@ -1739,6 +1743,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
           break;
         case SF_CON_CRL_MEMORY_CACHING:
           *value = &sf->crl_memory_caching;
+          break;
+        case SF_CON_CRL_DOWNLOAD_TIMEOUT:
+          *value = &sf->crl_download_timeout;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             *value = &sf->login_timeout;
@@ -1999,24 +2006,25 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
           callback_create_resp = callback_create_arrow_resp;
         }
         sfstmt->chunk_downloader = chunk_downloader_init(
-          qrmk,
-          chunk_headers,
-          chunks,
-          2, // thread count
-          4, // fetch slot
-          &sfstmt->error,
-          sfstmt->connection->insecure_mode,
-          sfstmt->connection->ocsp_fail_open,
-          sfstmt->connection->crl_check,
-          sfstmt->connection->crl_advisory,
-          sfstmt->connection->crl_allow_no_crl,
-          sfstmt->connection->crl_disk_caching,
-          sfstmt->connection->crl_memory_caching,
-          callback_create_resp,
-          sfstmt->connection->proxy,
-          sfstmt->connection->no_proxy,
-          get_retry_timeout(sfstmt->connection),
-          sfstmt->connection->retry_count);
+            qrmk,
+            chunk_headers,
+            chunks,
+            2, // thread count
+            4, // fetch slot
+            &sfstmt->error,
+            sfstmt->connection->insecure_mode,
+            sfstmt->connection->ocsp_fail_open,
+            sfstmt->connection->crl_check,
+            sfstmt->connection->crl_advisory,
+            sfstmt->connection->crl_allow_no_crl,
+            sfstmt->connection->crl_disk_caching,
+            sfstmt->connection->crl_memory_caching,
+            sfstmt->connection->crl_download_timeout,
+            callback_create_resp,
+            sfstmt->connection->proxy,
+            sfstmt->connection->no_proxy,
+            get_retry_timeout(sfstmt->connection),
+            sfstmt->connection->retry_count);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
           // Unable to create chunk downloader.

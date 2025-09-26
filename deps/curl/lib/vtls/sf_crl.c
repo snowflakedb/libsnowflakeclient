@@ -4,13 +4,12 @@
 #include "sf_ocsp.h"
 #include "sf_crl.h"
 
+#include <stdbool.h>
 #include <openssl/x509v3.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Connection timeout in seconds for CRL download
-#define CRL_DOWNLOAD_TIMEOUT 30L
 
 #ifdef _WIN32
 #include <windows.h>
@@ -80,6 +79,7 @@ struct store_ctx_entry {
   int crl_disk_caching;
   int crl_memory_caching;
   int curr_crl_num;
+  long crl_download_timeout;  /* Timeout in seconds for CRL download */
 };
 
 struct store_ctx_array {
@@ -107,7 +107,8 @@ static int sctx_ensure_capacity()
 }
 
 static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool crl_advisory,
-                          bool crl_allow_no_crl, bool crl_disk_caching, bool crl_memory_caching)
+                          bool crl_allow_no_crl, bool crl_disk_caching, bool crl_memory_caching,
+                          long crl_download_timeout)
 {
   if (!sctx_ensure_capacity())
     return;
@@ -118,6 +119,7 @@ static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool cr
   sctx_registry.entries[sctx_registry.size].crl_disk_caching = crl_disk_caching;
   sctx_registry.entries[sctx_registry.size].crl_memory_caching = crl_memory_caching;
   sctx_registry.entries[sctx_registry.size].curr_crl_num = -1;
+  sctx_registry.entries[sctx_registry.size].crl_download_timeout = crl_download_timeout;
   sctx_registry.size++;
 }
 
@@ -253,7 +255,7 @@ static void ucrl_unregister(const char *uri)
 }
 
 /************************************************************************************
- * CLR caching
+ * CRL caching
  ************************************************************************************/
 
 static int is_valid_filename_char(char c)
@@ -543,7 +545,7 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
     infof(data->data, "CRL loaded from disk: %s", uri);
 }
 
-static int get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
+static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
                               X509_CRL **pcrl)
 {
   int day, sec;
@@ -567,7 +569,7 @@ static int get_crl_from_cache(const struct store_ctx_entry *data, const char *ur
   _mutex_unlock(&crl_response_cache_mutex);
 
   if (!*pcrl)
-    return 0;
+    return false;
 
   validity_days_str = getenv("SF_CRL_VALIDITY_TIME");
   if (validity_days_str)
@@ -578,15 +580,15 @@ static int get_crl_from_cache(const struct store_ctx_entry *data, const char *ur
   validity_time = download_time + (validity_days * 86400);
   if (validity_time < time(NULL)) {
     infof(data->data, "CRL validity time (%d days) expired, need reloading: %s", validity_days, uri);
-    return 0;
+    return false;
   }
 
   if (ASN1_TIME_diff(&day, &sec, NULL, X509_CRL_get0_nextUpdate(*pcrl))
       && day <= 0 && sec <= 0) {
     infof(data->data, "CRL need to be updated: %s", uri);
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
 static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *crl)
@@ -614,7 +616,7 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
                            NULL, NULL, NULL /* cb */, NULL /* arg */,
                            1024 /* buf_size */, NULL /* headers */,
                            NULL /* expected_ct */, 1 /* expect_asn1 */,
-                           0, CRL_DOWNLOAD_TIMEOUT);
+                           0, data->crl_download_timeout);
 
   ASN1_VALUE *res = ASN1_item_d2i_bio(ASN1_ITEM_rptr(X509_CRL), mem, NULL);
 
@@ -672,7 +674,7 @@ static void load_crls_crldp(struct store_ctx_entry *data,
 }
 
 /************************************************************************************
- * CLR validation handlers
+ * CRL validation handlers
  ************************************************************************************/
 static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
                                                const X509_NAME *nm)
@@ -716,7 +718,7 @@ static int error_handler(int ok, X509_STORE_CTX *ctx)
   int err;
   X509 *err_cert;
   struct store_ctx_entry *data;
-#define MAX_CERT_NAME_LEN 100
+#define MAX_CERT_NAME_LEN 64
   char X509_cert_name[MAX_CERT_NAME_LEN + 1];
 
   if (ok)
@@ -783,7 +785,8 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  bool crl_advisory,
                                  bool crl_allow_no_crl,
                                  bool crl_disk_caching,
-                                 bool crl_memory_caching)
+                                 bool crl_memory_caching,
+                                 long crl_download_timeout)
 {
   char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
@@ -805,7 +808,8 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 
   /* register X509_STORE with given parameters */
   sctx_register(ctx, data,
-               crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching);
+               crl_advisory, crl_allow_no_crl, crl_disk_caching, crl_memory_caching,
+               crl_download_timeout);
 }
 
 SF_PUBLIC(void) initCertCRL()

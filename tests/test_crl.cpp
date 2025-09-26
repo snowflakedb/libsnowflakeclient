@@ -6,7 +6,7 @@
 
 using namespace ::Snowflake::Client;
 
-void test_succees_with_crl_check(void **unused) {
+void test_success_with_crl_check(void **unused) {
   SF_UNUSED(unused);
 
   // disable OCSP check
@@ -15,7 +15,7 @@ void test_succees_with_crl_check(void **unused) {
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CLR check
+  // enable CRL check
   sf_bool crl_check = SF_BOOLEAN_TRUE;
   snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
 
@@ -43,7 +43,7 @@ void test_fail_with_no_crl(void **unused) {
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CLR check
+  // enable CRL check
   sf_bool crl_check = SF_BOOLEAN_TRUE;
   snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
 
@@ -83,7 +83,7 @@ void test_success_with_no_crl_if_allow_no_crl(void **unused) {
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CLR check and allow no crl
+  // enable CRL check and allow no crl
   sf_bool crl_check = SF_BOOLEAN_TRUE;
   sf_bool crl_advisory = SF_BOOLEAN_FALSE;
   sf_bool crl_allow_no_crl = SF_BOOLEAN_TRUE;
@@ -115,7 +115,7 @@ void test_success_with_no_crl_in_advisory_mode(void **unused) {
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CLR check and advisory mode
+  // enable CRL check and advisory mode
   sf_bool crl_check = SF_BOOLEAN_TRUE;
   sf_bool crl_advisory = SF_BOOLEAN_TRUE;
   sf_bool crl_allow_no_crl = SF_BOOLEAN_FALSE;
@@ -131,15 +131,39 @@ void test_success_with_no_crl_in_advisory_mode(void **unused) {
   sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
-int main(void) {
+static void die(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}
+
+void test_crl_download_timeout(void **unused) {
+  SF_UNUSED(unused);
+
+  if ((int)CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT <= 0) {
+    die("CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT undefined");
+  }
+
+  CURL *ch = nullptr;
+  if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK)
+    die("curl_global_init failed");
+  ch = curl_easy_init();
+  if (!ch)
+    die("curl_easy_init failed");
+
+  if (curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, 1L) != CURLE_OK)
+    die("curl_easy_setopt CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT failed");
+}
+
+int main() {
     initialize_test(SF_BOOLEAN_FALSE);
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_succees_with_crl_check),
+    const CMUnitTest tests[] = {
+        cmocka_unit_test(test_success_with_crl_check),
         cmocka_unit_test(test_fail_with_no_crl),
         cmocka_unit_test(test_success_with_no_crl_if_allow_no_crl),
-        cmocka_unit_test(test_success_with_no_crl_in_advisory_mode)
+        cmocka_unit_test(test_success_with_no_crl_in_advisory_mode),
+        cmocka_unit_test(test_crl_download_timeout)
     };
-    int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    int ret = cmocka_run_group_tests(tests, nullptr, nullptr);
     snowflake_global_term();
     return ret;
 }

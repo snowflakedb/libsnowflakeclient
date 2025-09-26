@@ -6,7 +6,8 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  bool crl_advisory,
                                  bool crl_allow_no_crl,
                                  bool crl_disk_caching,
-                                 bool crl_memory_caching);
+                                 bool crl_memory_caching,
+                                 long crl_download_timeout);
 
 SF_PUBLIC(void) initCertCRL();
 
