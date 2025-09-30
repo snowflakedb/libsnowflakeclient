@@ -9,7 +9,6 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  bool crl_memory_caching,
                                  long crl_download_timeout);
 
-SF_PUBLIC(void) initCertCRL();
+SF_PUBLIC(void) initCertCRL(void);
 
 #endif
-

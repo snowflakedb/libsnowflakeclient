@@ -166,7 +166,6 @@ static void sctx_unregister(const X509_STORE *ctx)
 struct uri_crl_entry {
   char *uri;
   X509_CRL *crl;
-  time_t download_time;
 };
 
 struct uri_crl_array {
@@ -193,7 +192,7 @@ static int ucrl_ensure_capacity()
   return 1;
 }
 
-static void ucrl_register(const char *uri, const X509_CRL *crl, time_t download_time)
+static void ucrl_register(const char *uri, const X509_CRL *crl)
 {
   if (!ucrl_ensure_capacity())
     return;
@@ -202,7 +201,6 @@ static void ucrl_register(const char *uri, const X509_CRL *crl, time_t download_
   {
     strcpy(ucrl_registry.entries[ucrl_registry.size].uri, uri);
     ucrl_registry.entries[ucrl_registry.size].crl = X509_CRL_dup(crl);
-    ucrl_registry.entries[ucrl_registry.size].download_time = download_time;
     ucrl_registry.size++;
   }
 }
@@ -461,13 +459,13 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
 }
 
 static void save_crl_in_memory(const struct store_ctx_entry *data, const char *uri,
-                               X509_CRL **pcrl, time_t *last_modified)
+                               X509_CRL **pcrl)
 {
   if (!data->crl_memory_caching)
     return;
 
   ucrl_unregister(uri);
-  ucrl_register(uri, *pcrl, *last_modified);
+  ucrl_register(uri, *pcrl);
 }
 
 static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri,
@@ -499,7 +497,7 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
 }
 
 static void get_crl_from_memory(const struct store_ctx_entry *data, const char *uri,
-                                X509_CRL **pcrl, time_t *download_time)
+                                X509_CRL **pcrl)
 {
   struct uri_crl_entry *ucrl;
   if (!data->crl_memory_caching)
@@ -509,7 +507,6 @@ static void get_crl_from_memory(const struct store_ctx_entry *data, const char *
   ucrl = ucrl_lookup(uri);
 
   if (ucrl) {
-    *download_time = ucrl->download_time;
     *pcrl = X509_CRL_dup(ucrl->crl);
   }
   if (*pcrl)
@@ -517,7 +514,7 @@ static void get_crl_from_memory(const struct store_ctx_entry *data, const char *
 }
 
 static void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
-                              X509_CRL **pcrl, time_t *download_time)
+                              X509_CRL **pcrl)
 {
   BIO *fp;
   char file_path[PATH_MAX];
@@ -534,7 +531,6 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
       long fd = BIO_get_fd(fp, NULL);
       if (fd != -1) {
         if (fstat(fd, &file_stats) == 0) {
-          *download_time = file_stats.st_mtime;
           *pcrl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
         }
         else {
@@ -560,20 +556,16 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
                               X509_CRL **pcrl)
 {
   int day, sec;
-  time_t download_time;
-  char* validity_days_str;
-  int validity_days = 0;
-  time_t validity_time;
 
   *pcrl = NULL;
 
   _mutex_lock(&crl_response_cache_mutex);
 
-  get_crl_from_memory(data, uri, pcrl, &download_time);
+  get_crl_from_memory(data, uri, pcrl);
   if (!*pcrl) {
-    get_crl_from_disk(data, uri, pcrl, &download_time);
+    get_crl_from_disk(data, uri, pcrl);
     if (*pcrl) {
-      save_crl_in_memory(data, uri, pcrl, &download_time);
+      save_crl_in_memory(data, uri, pcrl);
     }
   }
 
@@ -582,34 +574,39 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
   if (!*pcrl)
     return false;
 
-  validity_days_str = getenv("SF_CRL_VALIDITY_TIME");
-  if (validity_days_str)
-    validity_days = atoi(validity_days_str);
-  if (validity_days == 0)
-    validity_days = 10; /* default 10 days */
+  ASN1_TIME *curr_time = ASN1_TIME_set(NULL, time(NULL));
+  const ASN1_TIME *next_update = X509_CRL_get0_nextUpdate(*pcrl);
 
-  validity_time = download_time + (validity_days * 86400);
-  if (validity_time < time(NULL)) {
-    infof(data->data, "CRL validity time (%d days) expired, need reloading: %s", validity_days, uri);
-    return false;
-  }
-
-  if (ASN1_TIME_diff(&day, &sec, NULL, X509_CRL_get0_nextUpdate(*pcrl))
+  if (ASN1_TIME_diff(&day, &sec, curr_time, next_update)
       && day <= 0 && sec <= 0) {
-    infof(data->data, "CRL need to be updated: %s", uri);
+    // Get human readable time for logging
+    BIO *bio = BIO_new(BIO_s_mem());
+    ASN1_TIME_print(bio, curr_time);
+    char curr_buf[64] = {0};
+    int curr_len = BIO_read(bio, curr_buf, sizeof(curr_buf) - 1);
+    curr_buf[curr_len > 0 ? curr_len : 0] = '\0';
+    BIO_reset(bio);
+    ASN1_TIME_print(bio, X509_CRL_get0_nextUpdate(*pcrl));
+    char next_buf[64] = {0};
+    int next_len = BIO_read(bio, next_buf, sizeof(next_buf) - 1);
+    next_buf[next_len > 0 ? next_len : 0] = '\0';
+    BIO_free(bio);
+
+    infof(data->data, "CRL need to be updated: %s. Current time: %s, CRL next update: %s", uri, curr_buf, next_buf);
+
+    ASN1_TIME_free(curr_time);
     return false;
   }
+  ASN1_TIME_free(curr_time);
   return true;
 }
 
 static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X509_CRL *crl)
 {
-  time_t curr_time = time(NULL);
-
   _mutex_lock(&crl_response_cache_mutex);
 
   save_crl_to_disk(data, uri, &crl);
-  save_crl_in_memory(data, uri, &crl, &curr_time);
+  save_crl_in_memory(data, uri, &crl);
 
   _mutex_unlock(&crl_response_cache_mutex);
 }
