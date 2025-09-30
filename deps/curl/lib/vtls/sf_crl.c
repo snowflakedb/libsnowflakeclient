@@ -615,7 +615,6 @@ static void save_crl_to_cache(struct store_ctx_entry *data, const char *uri, X50
 
 static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
 {
-  int day, sec;
   X509_CRL *crl_cached = NULL;
   X509_CRL *crl = NULL;
 
@@ -642,21 +641,18 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
       (!crl_cached ||
         is_crl_newer(crl_cached, crl))) {
     save_crl_to_cache(data, uri, crl);
+    return crl;
   }
-  else
-  {
-    /* don't need crl anymore */
-    X509_CRL_free(crl);
 
-    if (crl_cached
-        && !is_crl_expired(crl_cached)) {
-      crl = crl_cached;
-    }
-    else {
-      crl = NULL;
-    }
+  /* don't need crl anymore */
+  X509_CRL_free(crl);
+
+  if (crl_cached
+      && !is_crl_expired(crl_cached)) {
+    return crl_cached;
   }
-  return crl;
+
+  return NULL;
 }
 
 static void load_crls_crldp(struct store_ctx_entry *data,
