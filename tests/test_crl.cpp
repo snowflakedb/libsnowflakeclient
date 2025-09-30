@@ -20,7 +20,7 @@ static std::string get_cache_dir() {
 
 #if defined(_WIN32)
   tmp_cache_dir = "C:\\Windows\\Temp\\crl_cache_" + std::string(uuid);
-  _mkdir(tmp_cache_dir)
+  _mkdir(tmp_cache_dir.c_str());
 #else
   tmp_cache_dir = "/tmp/crl_cache_" + std::string(uuid);
   mkdir(tmp_cache_dir.c_str(), 0700);
