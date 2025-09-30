@@ -407,7 +407,7 @@ typedef struct SF_CONNECT {
     sf_bool crl_allow_no_crl;
     sf_bool crl_disk_caching;
     sf_bool crl_memory_caching;
-    int64 crl_download_timeout;
+    long crl_download_timeout;
 
   /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;

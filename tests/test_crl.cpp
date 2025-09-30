@@ -1,10 +1,66 @@
 #include <utility>
 #include <thread>
+#if defined(_WIN32)
+#include <io.h>
+#include <direct.h>
+#else
+#include <dirent.h>
+#endif
 
+#include "client_int.h"
 #include "snowflake/CurlDescPool.hpp"
 #include "utils/test_setup.h"
 
 using namespace ::Snowflake::Client;
+
+static std::string get_cache_dir() {
+  char uuid[37] = {0};
+  generate_unique_id(uuid);
+  std::string tmp_cache_dir;
+
+#if defined(_WIN32)
+  tmp_cache_dir = "C:\\Windows\\Temp\\crl_cache_" + std::string(uuid);
+  _mkdir(tmp_cache_dir)
+#else
+  tmp_cache_dir = "/tmp/crl_cache_" + std::string(uuid);
+  mkdir(tmp_cache_dir.c_str(), 0700);
+#endif
+
+  return tmp_cache_dir;
+}
+
+static bool dir_has_files(const std::string& path) {
+#if defined(_WIN32)
+    std::string search_path = path + "\\*";
+    intptr_t handle;
+    struct _finddata_t fileinfo;
+    handle = _findfirst(search_path.c_str(), &fileinfo);
+    if (handle == -1) {
+        // Directory does not exist or cannot be opened
+        return false;
+    }
+    do {
+        if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
+            _findclose(handle);
+            return true;
+        }
+    } while (_findnext(handle, &fileinfo) == 0);
+    _findclose(handle);
+    return false;
+#else
+    DIR *dir = opendir(path.c_str());
+    if (!dir) return false;
+    dirent *entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            closedir(dir);
+            return true;
+        }
+    }
+    closedir(dir);
+    return false;
+#endif
+}
 
 void test_success_with_crl_check(void **unused) {
   SF_UNUSED(unused);
@@ -131,37 +187,80 @@ void test_success_with_no_crl_in_advisory_mode(void **unused) {
   sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
-static void die(const char *msg) {
-  fprintf(stderr, "%s\n", msg);
-  exit(1);
-}
-
-void test_crl_download_timeout(void **unused) {
+void test_curl_crl_params(void **unused) {
   SF_UNUSED(unused);
 
-  if ((int)CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT <= 0) {
-    die("CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT undefined");
-  }
+  CURL *ch = nullptr;
+  assert_int_equal(curl_global_init(CURL_GLOBAL_ALL), CURLE_OK);
+  ch = curl_easy_init();
+  assert_non_null(ch);
+
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, 1L), CURLE_OK);
+
+  curl_easy_cleanup(ch);
+  curl_global_cleanup();
+}
+
+void test_crl_cache(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  sf_setenv("SF_CRL_RESPONSE_CACHE_DIR", cache_dir.c_str());
+  assert_true(!dir_has_files(cache_dir));
 
   CURL *ch = nullptr;
-  if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK)
-    die("curl_global_init failed");
+  curl_global_init(CURL_GLOBAL_ALL);
   ch = curl_easy_init();
-  if (!ch)
-    die("curl_easy_init failed");
+  assert_non_null(ch);
 
-  if (curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, 1L) != CURLE_OK)
-    die("curl_easy_setopt CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT failed");
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
+  curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+  assert_int_equal(curl_easy_perform(ch), CURLE_OK);
+
+  // Check if any CRL has been downloaded
+  assert_true(dir_has_files(cache_dir));
+  sf_unsetenv("SF_CRL_RESPONSE_CACHE_DIR");
+}
+
+void test_no_crl_cache_if_disabled(void **unused) {
+  SF_UNUSED(unused);
+
+  const std::string cache_dir = get_cache_dir();
+  sf_setenv("SF_CRL_RESPONSE_CACHE_DIR", cache_dir.c_str());
+  assert_true(!dir_has_files(cache_dir));
+
+  CURL *ch = nullptr;
+  curl_global_init(CURL_GLOBAL_ALL);
+  ch = curl_easy_init();
+  assert_non_null(ch);
+
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
+  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 0L), CURLE_OK);
+  curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+  assert_int_equal(curl_easy_perform(ch), CURLE_OK);
+
+  // Check if any CRL has been downloaded
+  assert_true(!dir_has_files(cache_dir));
+  sf_unsetenv("SF_CRL_RESPONSE_CACHE_DIR");
 }
 
 int main() {
     initialize_test(SF_BOOLEAN_FALSE);
-    const CMUnitTest tests[] = {
-        cmocka_unit_test(test_success_with_crl_check),
-        cmocka_unit_test(test_fail_with_no_crl),
-        cmocka_unit_test(test_success_with_no_crl_if_allow_no_crl),
-        cmocka_unit_test(test_success_with_no_crl_in_advisory_mode),
-        cmocka_unit_test(test_crl_download_timeout)
+    constexpr CMUnitTest tests[] = {
+      cmocka_unit_test(test_success_with_crl_check),
+      cmocka_unit_test(test_fail_with_no_crl),
+      cmocka_unit_test(test_success_with_no_crl_if_allow_no_crl),
+      cmocka_unit_test(test_success_with_no_crl_in_advisory_mode),
+      cmocka_unit_test(test_curl_crl_params),
+      cmocka_unit_test(test_crl_cache),
+      cmocka_unit_test(test_no_crl_cache_if_disabled)
     };
     int ret = cmocka_run_group_tests(tests, nullptr, nullptr);
     snowflake_global_term();

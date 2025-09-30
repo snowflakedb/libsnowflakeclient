@@ -432,6 +432,17 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
   env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
   if (env_dir) {
     strcpy(cache_dir, env_dir);
+#if defined(_WIN32)
+    const size_t len = strlen(cache_dir);
+    if (cache_dir[len-1] != '\\') {
+      strcat(cache_dir, "\\");
+    }
+#else
+    const size_t len = strlen(cache_dir);
+    if (cache_dir[len-1] != '/') {
+      strcat(cache_dir, "/");
+    }
+#endif
   }
   else {
     ensure_cache_dir(data, cache_dir);

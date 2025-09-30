@@ -69,7 +69,7 @@ struct SF_CHUNK_DOWNLOADER {
     sf_bool crl_allow_no_crl;
     sf_bool crl_disk_caching;
     sf_bool crl_memory_caching;
-    int64 crl_download_timeout;
+    long crl_download_timeout;
 
     // callback function to create non-json response buffer. Json format will be used if this is set to NULL.
     NON_JSON_RESP* (*callback_create_resp)(void);
@@ -96,7 +96,7 @@ SF_CHUNK_DOWNLOADER *STDCALL chunk_downloader_init(const char *qrmk,
                                                    sf_bool crl_allow_no_crl,
                                                    sf_bool crl_disk_caching,
                                                    sf_bool crl_memory_caching,
-                                                   int64 crl_download_timeout,
+                                                   long crl_download_timeout,
                                                    NON_JSON_RESP* (*callback_create_resp)(void),
                                                    const char *proxy,
                                                    const char *no_proxy,
