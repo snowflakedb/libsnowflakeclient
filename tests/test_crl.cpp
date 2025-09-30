@@ -19,7 +19,8 @@ static std::string get_cache_dir() {
   std::string tmp_cache_dir;
 
 #if defined(_WIN32)
-  tmp_cache_dir = "C:\\Windows\\Temp\\crl_cache_" + std::string(uuid);
+  const char* win_dir = getenv("WINDIR");
+  tmp_cache_dir = std::string(win_dir) + "\\Temp\\crl_cache_" + std::string(uuid);
   _mkdir(tmp_cache_dir.c_str());
 #else
   tmp_cache_dir = "/tmp/crl_cache_" + std::string(uuid);
