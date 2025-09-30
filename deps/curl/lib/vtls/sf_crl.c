@@ -160,6 +160,28 @@ static void sctx_unregister(const X509_STORE *ctx)
   }
 }
 
+static bool is_crl_newer(const X509_CRL *crl_old, const X509_CRL *crl_new)
+{
+  if (!crl_new)
+    return false;
+  if (!crl_old)
+    return true;
+
+  return ASN1_TIME_compare(X509_CRL_get0_lastUpdate(crl_new), X509_CRL_get0_lastUpdate(crl_old)) == 1;
+}
+
+static bool is_crl_expired(const X509_CRL *crl) {
+  if (!crl) {
+    return false;
+  }
+
+  ASN1_TIME *now = ASN1_TIME_set(NULL, time(NULL));
+  const int cmp = ASN1_TIME_compare(X509_CRL_get0_nextUpdate(crl), now);
+  ASN1_TIME_free(now);
+
+  return cmp <= 0;
+}
+
 /************************************************************************************
  * Helpers for CRL memory cache, map uri to X509_CRL*
  ************************************************************************************/
@@ -555,8 +577,6 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
 static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *uri,
                               X509_CRL **pcrl)
 {
-  int day, sec;
-
   *pcrl = NULL;
 
   _mutex_lock(&crl_response_cache_mutex);
@@ -574,30 +594,12 @@ static bool get_crl_from_cache(const struct store_ctx_entry *data, const char *u
   if (!*pcrl)
     return false;
 
-  ASN1_TIME *curr_time = ASN1_TIME_set(NULL, time(NULL));
-  const ASN1_TIME *next_update = X509_CRL_get0_nextUpdate(*pcrl);
+  if (is_crl_expired(*pcrl)) {
+    infof(data->data, "CRL need to be updated: %s", uri);
 
-  if (ASN1_TIME_diff(&day, &sec, curr_time, next_update)
-      && day <= 0 && sec <= 0) {
-    // Get human readable time for logging
-    BIO *bio = BIO_new(BIO_s_mem());
-    ASN1_TIME_print(bio, curr_time);
-    char curr_buf[64] = {0};
-    int curr_len = BIO_read(bio, curr_buf, sizeof(curr_buf) - 1);
-    curr_buf[curr_len > 0 ? curr_len : 0] = '\0';
-    BIO_reset(bio);
-    ASN1_TIME_print(bio, X509_CRL_get0_nextUpdate(*pcrl));
-    char next_buf[64] = {0};
-    int next_len = BIO_read(bio, next_buf, sizeof(next_buf) - 1);
-    next_buf[next_len > 0 ? next_len : 0] = '\0';
-    BIO_free(bio);
-
-    infof(data->data, "CRL need to be updated: %s. Current time: %s, CRL next update: %s", uri, curr_buf, next_buf);
-
-    ASN1_TIME_free(curr_time);
     return false;
   }
-  ASN1_TIME_free(curr_time);
+
   return true;
 }
 
@@ -638,10 +640,7 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
 
   if (crl &&
       (!crl_cached ||
-         (ASN1_TIME_diff(&day, &sec,
-                         X509_CRL_get0_lastUpdate(crl_cached),
-                         X509_CRL_get0_lastUpdate(crl))
-          && day >= 0 && sec >= 0))) {
+        is_crl_newer(crl_cached, crl))) {
     save_crl_to_cache(data, uri, crl);
   }
   else
@@ -650,10 +649,7 @@ static X509_CRL *load_crl(struct store_ctx_entry *data, const char *uri)
     X509_CRL_free(crl);
 
     if (crl_cached
-        && ASN1_TIME_diff(&day, &sec,
-                          NULL,
-                          X509_CRL_get0_nextUpdate(crl_cached))
-        && day >= 0 && sec >= 0) {
+        && !is_crl_expired(crl_cached)) {
       crl = crl_cached;
     }
     else {
