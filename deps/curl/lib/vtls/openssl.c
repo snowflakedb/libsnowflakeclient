@@ -4734,7 +4734,7 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     return CURLE_PEER_FAILED_VERIFICATION;
   }
 
-  /* !!! Starting Snowflake OCSP !!! */
+  /* !!! Starting OCSP !!! */
   if (conn_config->sf_ocsp_check)
   {
     STACK_OF(X509) *ch = NULL;
@@ -4742,7 +4742,7 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
 
     /* Prefer the verified chain if available to ensure correct issuer pairing
        for cross-signed chains; fall back to peer-provided chain otherwise. */
-    infof(data, "Snowflake OCSP: preferring verified chain for issuer determination");
+    infof(data, "OCSP: preferring verified chain for issuer determination");
 #if defined(CURL_HAS_VERIFIED_CHAIN)
     {
       STACK_OF(X509) *verified = SSL_get0_verified_chain(octx->ssl);
@@ -4752,7 +4752,7 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
         ch = SSL_get_peer_cert_chain(octx->ssl);
       else
         used_verified = true;
-      infof(data, "Snowflake OCSP: used_verified_chain=%s",
+      infof(data, "OCSP: used_verified_chain=%s",
             used_verified ? "yes" : "no");
     }
 #else
@@ -4769,9 +4769,9 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     }
 
     /* Additional diagnostics for OCSP chain/store context */
-    infof(data, "Snowflake OCSP: verified_chain_present=%s chain_count=%d",
+    infof(data, "OCSP: verified_chain_present=%s chain_count=%d",
           ch ? "yes" : "no", ch ? sk_X509_num(ch) : 0);
-    infof(data, "Snowflake OCSP: cert_store_present=%s", st ? "yes" : "no");
+    infof(data, "OCSP: cert_store_present=%s", st ? "yes" : "no");
 
     if (ch && st)
     {
@@ -4783,7 +4783,7 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
       }
     }
   }
-  /* !!! End of Snowflake OCSP !!! */
+  /* !!! End of OCSP !!! */
 
   infof(data, "%s certificate:",
         Curl_ssl_cf_is_proxy(cf) ? "Proxy" : "Server");

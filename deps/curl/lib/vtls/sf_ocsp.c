@@ -215,7 +215,7 @@ static int parse_bool_env(const char *name)
   const char *env = getenv(name);
   if(!env || !*env) return 0;
   switch(env[0]) {
-    case '1': case 't': case 'T': case 'y': case 'Y': case 'o': case 'O':
+    case '1': case 't': case 'T': case 'y': case 'Y':
       return 1;
     default:
       break;
