@@ -77,7 +77,7 @@ namespace Client
             }
             else {
                 CXX_LOG_INFO("sf::IDPAuthenticator::getIDPInfo::Fail to get authenticator info.");
-                m_errMsg = "Fail to get authenticator info.";
+                m_errMsg = "Fail to get authenticator info in getIDPInfo.";
                 ret = false;
             }
             return ret;
@@ -359,6 +359,8 @@ namespace Client
                 {
                     CXX_LOG_WARN("sf::IAuthenticatorOKTA::authenticate::Fail to get one time token response, response body=%s.",
                         picojson::value(respData).serialize().c_str());
+                    m_errMsg = "SFAuthenticatorVerificationFailed::authenticate::Fail to get one time token response.";
+
                     return;
                 }
 
@@ -379,6 +381,8 @@ namespace Client
                             m_idp->m_retriedCount, m_idp->m_retryTimeout);
                         continue;
                     }
+                    CXX_LOG_ERROR("SF::IAuthenticatorOKTA::authenticate::Failed to get the saml response. response body=%s.", picojson::value(resp).serialize().c_str());
+                    m_errMsg = "SFAuthenticatorVerificationFailed::authenticate::Failed to get the saml response.";
                     return;
                 }
                 break;
@@ -391,10 +395,10 @@ namespace Client
             if ((!m_disableSamlUrlCheck) &&
                 (!urlHasSamePrefix(post_back_url, server_url)))
             {
-                CXX_LOG_ERROR("sf","IAuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s.",
+                CXX_LOG_ERROR("sf::IAuthenticatorOKTA::authenticate::The specified authenticator and destination URL in Saml Assertion did not match, expected=%s, post back=%s.",
                     server_url.c_str(),
                     post_back_url.c_str());
-                m_errMsg = "SFSamlResponseVerificationFailed.";
+                m_errMsg = "SFSamlResponseVerificationFailed: The specified authenticator and destination URL in Saml Assertion did not match.";
             }
         }
 
