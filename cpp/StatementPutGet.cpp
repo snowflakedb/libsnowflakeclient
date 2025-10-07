@@ -194,9 +194,11 @@ bool StatementPutGet::http_put(std::string const& url,
   success = http_perform(curl, PUT_REQUEST_TYPE, urlbuf, &reqHeaders, NULL, &putPayload, NULL,
                          NULL, &respHeaders, get_retry_timeout(sf),
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode,sf->ocsp_fail_open,
-                         sf->retry_on_curle_couldnt_connect_count,
-                         0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
-                         sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+                         sf->crl_disk_caching, sf->crl_memory_caching,
+                         sf->crl_download_timeout,
+                         sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);
@@ -255,9 +257,11 @@ bool StatementPutGet::http_get(std::string const& url,
   success = http_perform(curl, reqType, urlbuf, &reqHeaders, NULL, NULL, NULL,
                          &resp, &respHeaders, get_retry_timeout(sf),
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
-                         sf->retry_on_curle_couldnt_connect_count,
-                         0, sf->retry_count, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
-                         sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                         sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+                         sf->crl_disk_caching, sf->crl_memory_caching,
+                         sf->crl_download_timeout,
+                         sf->retry_on_curle_couldnt_connect_count, 0, sf->retry_count, NULL, NULL, NULL,
+                         SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
 
   free_curl_desc(curl_desc);
   SF_FREE(urlbuf);

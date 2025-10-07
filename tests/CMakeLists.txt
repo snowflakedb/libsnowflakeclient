@@ -85,6 +85,7 @@ SET(TESTS_CXX
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
+        test_crl
 )
 
 if (LINUX)
