@@ -239,10 +239,10 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
     }
     else
     {
-      log_trace("SF_HEADER_USER_AGENT is null");
+      log_debug("SF_HEADER_USER_AGENT is null");
     }
 
-    log_trace("Created header");
+    log_debug("Created header");
 
     // All good :dancingpenguin:
     ret = SF_BOOLEAN_TRUE;
@@ -370,7 +370,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_trace("ping pong starting...");
+            log_debug("Ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
                          0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
@@ -1243,7 +1243,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
     header->header = curl_slist_append(header->header, header->header_app_version);
   }
 
-  log_trace("Added application infor header");
+  log_debug("Added application infor header");
 
   ret = SF_BOOLEAN_TRUE;
 
