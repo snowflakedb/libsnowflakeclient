@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_SRC_VERSION=8.12.1
+set CURL_SRC_VERSION=8.16.0
 set CURL_BUILD_VERSION=4
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
