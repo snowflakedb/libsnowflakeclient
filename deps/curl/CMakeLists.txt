@@ -253,6 +253,7 @@ if(WIN32)
     endif()
     unset(MINGW64_VERSION CACHE)  # Avoid storing in CMake cache
   endif()
+  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl")
 elseif(DOS OR AMIGA)
   set(BUILD_SHARED_LIBS OFF)
   set(BUILD_STATIC_LIBS ON)
@@ -922,6 +923,9 @@ if(CURL_DEFAULT_SSL_BACKEND AND NOT _valid_default_ssl_backend)
   message(FATAL_ERROR "CURL_DEFAULT_SSL_BACKEND '${CURL_DEFAULT_SSL_BACKEND}' not enabled.")
 endif()
 
+if(WIN32)
+  list(APPEND CURL_LIBS ${OOB_LIBRARY})
+endif()
 # Keep ZLIB detection after TLS detection,
 # and before calling curl_openssl_check_exists().
 
@@ -1954,6 +1958,7 @@ include(CMake/OtherTests.cmake)
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS "HAVE_CONFIG_H")
 
 if(WIN32)
+  list(APPEND CURL_LIBS "crypt32" "ole32" "msvcrt")
   list(APPEND CURL_NETWORK_AND_TIME_LIBS "${_win32_winsock}")
   if(NOT WINCE AND NOT WINDOWS_STORE)
     list(APPEND CURL_NETWORK_AND_TIME_LIBS "iphlpapi")

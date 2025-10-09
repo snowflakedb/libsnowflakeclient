@@ -1282,6 +1282,21 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
   case CURLOPT_UPLOAD_FLAGS:
     s->upload_flags = (unsigned char)arg;
     break;
+  case CURLOPT_SSL_SF_OCSP_CHECK:
+    data->set.ssl.primary.sf_ocsp_check = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OCSP_FAIL_OPEN:
+    data->set.ssl.primary.sf_ocsp_failopen = (0 != arg) ?
+                                         TRUE:FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_OOB_ENABLE:
+    data->set.ssl.primary.sf_oob_enable = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
   default:
     return CURLE_UNKNOWN_OPTION;
   }

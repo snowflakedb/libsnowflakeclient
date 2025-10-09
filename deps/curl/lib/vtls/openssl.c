@@ -1890,6 +1890,9 @@ static int ossl_init(void)
 
   Curl_tls_keylog_open();
 
+  /* init Cert OCSP revocation checks */
+  initCertOCSP();
+
   return 1;
 }
 
@@ -4866,6 +4869,35 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
     failf(data, "SSL: could not get peer certificate");
     return CURLE_PEER_FAILED_VERIFICATION;
   }
+
+  /* !!! Starting Snowflake OCSP !!! */
+  if (conn_config->sf_ocsp_check)
+  {
+    STACK_OF(X509) *ch = NULL;
+    X509_STORE     *st = NULL;
+
+    ch = SSL_get_peer_cert_chain(octx->ssl);
+    if (!ch)
+    {
+      infof(data, "OCSP validation could not get peer certificate chain");
+    }
+    st = SSL_CTX_get_cert_store(octx->ssl_ctx);
+    if (!st)
+    {
+      infof(data, "OCSP validation could not get certificate data store");
+    }
+
+    if (ch && st)
+    {
+      result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
+      if (result)
+      {
+        BIO_free(mem);
+        return result;
+      }
+    }
+  }
+  /* !!! End of Snowflake OCSP !!! */
 
   infof(data, "%s certificate:",
         Curl_ssl_cf_is_proxy(cf) ? "Proxy" : "Server");

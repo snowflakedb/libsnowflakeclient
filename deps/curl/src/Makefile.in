@@ -842,7 +842,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
 	-I$(top_srcdir)/lib -I$(srcdir) $(am__append_1) \
 	$(am__append_2) $(am__append_3)
 curlinfo_SOURCES = curlinfo.c
-AM_LDFLAGS = 
+AM_LDFLAGS =
 @USE_UNICODE_TRUE@UNICODEFLAG = -municode
 curl_cfiles_gen = $(HUGE) $(CA_EMBED_CSOURCE)
 curl_hfiles_gen = tool_hugehelp.h
@@ -850,9 +850,9 @@ CLEANFILES = $(am__append_4) $(am__append_6) $(HUGE) \
 	$(CA_EMBED_CSOURCE)
 # These are part of the libcurl static lib. Add them here when linking shared.
 @USE_CPPFLAG_CURL_STATICLIB_FALSE@curlx_csrc = $(CURLX_CFILES)
-@USE_CPPFLAG_CURL_STATICLIB_TRUE@curlx_csrc = 
+@USE_CPPFLAG_CURL_STATICLIB_TRUE@curlx_csrc =
 @USE_CPPFLAG_CURL_STATICLIB_FALSE@curlx_hsrc = $(CURLX_HFILES)
-@USE_CPPFLAG_CURL_STATICLIB_TRUE@curlx_hsrc = 
+@USE_CPPFLAG_CURL_STATICLIB_TRUE@curlx_hsrc =
 @USE_UNITY_TRUE@nodist_curl_SOURCES = curltool_unity.c
 @USE_UNITY_FALSE@curl_SOURCES = $(CURL_CFILES) $(CURL_HFILES) \
 @USE_UNITY_FALSE@	$(curl_cfiles_gen) $(curl_hfiles_gen) \
@@ -868,7 +868,7 @@ curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_PC_LIBS_PRIVATE@
 @BUILD_UNITTESTS_TRUE@libcurltool_la_LDFLAGS = -static $(LIBCURL_PC_LIBS_PRIVATE)
 @BUILD_UNITTESTS_TRUE@@USE_UNITY_TRUE@nodist_libcurltool_la_SOURCES = libcurltool_unity.c
 @BUILD_UNITTESTS_TRUE@@USE_UNITY_FALSE@libcurltool_la_SOURCES = $(CURL_CFILES) $(CURL_HFILES) $(curlx_csrc) $(curlx_hsrc)
-@BUILD_UNITTESTS_TRUE@@USE_UNITY_TRUE@libcurltool_la_SOURCES = 
+@BUILD_UNITTESTS_TRUE@@USE_UNITY_TRUE@libcurltool_la_SOURCES =
 
 # Use absolute directory to disable VPATH
 ASCIIPAGE = $(top_builddir)/docs/cmdline-opts/curl.txt
@@ -1050,7 +1050,7 @@ curl$(EXEEXT): $(curl_OBJECTS) $(curl_DEPENDENCIES) $(EXTRA_curl_DEPENDENCIES)
 	@rm -f curl$(EXEEXT)
 	$(AM_V_CCLD)$(curl_LINK) $(curl_OBJECTS) $(curl_LDADD) $(LIBS)
 
-curlinfo$(EXEEXT): $(curlinfo_OBJECTS) $(curlinfo_DEPENDENCIES) $(EXTRA_curlinfo_DEPENDENCIES) 
+curlinfo$(EXEEXT): $(curlinfo_OBJECTS) $(curlinfo_DEPENDENCIES) $(EXTRA_curlinfo_DEPENDENCIES)
 	@rm -f curlinfo$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(curlinfo_OBJECTS) $(curlinfo_LDADD) $(LIBS)
 

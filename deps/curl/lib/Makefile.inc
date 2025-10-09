@@ -89,7 +89,9 @@ LIB_VTLS_CFILES =           \
   vtls/vtls_scache.c        \
   vtls/vtls_spack.c         \
   vtls/wolfssl.c            \
-  vtls/x509asn1.c
+  vtls/x509asn1.c           \
+  vtls/sf_ocsp.c            \
+  vtls/sf_cJSON.c
 
 LIB_VTLS_HFILES =           \
   vtls/cipher_suite.h       \
@@ -107,7 +109,9 @@ LIB_VTLS_HFILES =           \
   vtls/vtls_scache.h        \
   vtls/vtls_spack.h         \
   vtls/wolfssl.h            \
-  vtls/x509asn1.h
+  vtls/x509asn1.h           \
+  vtls/sf_ocsp.h            \
+  vtls/sf_cJSON.h
 
 LIB_VQUIC_CFILES = \
   vquic/curl_ngtcp2.c   \
