@@ -684,8 +684,6 @@ typedef struct SF_TIMESTAMP {
  */
 void STDCALL snowflake_query_result_capture_init(SF_QUERY_RESULT_CAPTURE **input);
 
-static void alloc_buffer_and_copy(char** var, const char* str);
-
 /**
  * Global Snowflake initialization.
  *

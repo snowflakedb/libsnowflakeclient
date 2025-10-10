@@ -79,6 +79,10 @@ extern "C" {
     {
         return AUTH_OAUTH_AUTHORIZATION_CODE;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS) == 0)
+    {
+        return AUTH_OAUTH_CLIENT_CREDENTIALS;
+    }
     if (strcasecmp(authenticator, "test") == 0)
     {
         return AUTH_TEST;
@@ -112,7 +116,7 @@ extern "C" {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorOKTA(conn));
       }
-      if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type)
+      if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type)
       {
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
               new Snowflake::Client::AuthenticatorOAuth(conn,

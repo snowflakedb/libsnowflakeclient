@@ -153,17 +153,17 @@ namespace Snowflake {
                 IAuthenticationWebBrowserRunner* webBrowserRunner)
             : m_connection(connection),
             m_challengeProvider(AuthenticationChallengeBaseProvider::getInstance()),
-m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner),
+            m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner),
             m_oauthFlow(AuthenticatorOAuth::authenticatorToFlowType(getAuthenticatorType(connection->authenticator))),
-            m_authEndpoint(SFURL::parse(connection->oauth_authorization_endpoint)),
+            m_authEndpoint(SFURL::parse(connection->oauth_authorization_endpoint ? connection->oauth_authorization_endpoint : "")),
             m_tokenEndpoint(SFURL::parse(connection->oauth_token_endpoint)),
             m_clientId(connection->oauth_client_id),
             m_clientSecret(connection->oauth_client_secret),
             m_authScope(connection->oauth_scope ? connection->oauth_scope : "session:role:" + std::string(connection->role)),
             m_redirectUri(SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL)),
             m_redirectUriDynamicDefault(is_string_empty(connection->oauth_redirect_uri)),
-            m_authWebServer(authWebServer != nullptr ? authWebServer : new OAuthTokenListenerWebServer())
-            //m_singleUseRefreshTokens(connection->getOAuthSingleUseRefreshTokens()) 
+            m_authWebServer(authWebServer != nullptr ? authWebServer : new OAuthTokenListenerWebServer()),
+            m_singleUseRefreshTokens(connection->single_use_refresh_token) 
         {}
 
         OAuthFlowType AuthenticatorOAuth::authenticatorToFlowType(AuthenticatorType authenticatorType)
@@ -299,11 +299,11 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
 
         bool AuthenticatorOAuth::refreshAccessTokenFlow() {
             return false;
-           /* if (m_connection->oauth_refresh_token) {
-                CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow", "Refresh token is empty, a complete flow is required");
+            if (m_connection->oauth_refresh_token) {
+                CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
                 return false;
             }
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::refreshAccessTokenFlow", "OAuth refresh access token flow started");
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token flow started");
 
             RefreshAccessTokenRequest request{
               m_clientId,
@@ -313,23 +313,28 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
               m_authScope
             };
 
-            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow", "executeRefreshAccessTokenRequest")
+            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow::executeRefreshAccessTokenRequest")
                 AccessTokenResponse response = executeRefreshAccessTokenRequest(request);
             if (!response.success) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::refreshAccessTokenFlow", "OAuth refresh access token failed: %s",
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token failed: %s",
                     response.errorMessage.c_str());
             }
 
             CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow", "token refresh completed")
                 resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
 
-            return response.success;*/
+            return response.success;
         }
 
         void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) {
             m_token = accessToken;
-         /*   alloc_buffer_and_copy(&m_connection->oauth_token, accessToken.c_str());
-            alloc_buffer_and_copy(&m_connection->oauth_refresh_token, refreshToken.c_str());*/
+            size_t str_size = strlen(accessToken.c_str()) + 1;
+            m_connection->oauth_token = (char*)SF_CALLOC(1, str_size);
+            std::strcpy(m_connection->oauth_token, accessToken.c_str());
+
+            str_size = strlen(refreshToken.c_str()) + 1;
+            m_connection->oauth_refresh_token = (char*)SF_CALLOC(1, str_size);
+            std::strcpy(m_connection->oauth_refresh_token, refreshToken.c_str());
         }
 
         AuthorizationCodeResponse AuthenticatorOAuth::executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest)
@@ -351,11 +356,11 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
             {
                 token = tokenFuture.get();
             }
-            catch (const Snowflake::Client::Jwt::JwtException& e)
+            catch (const Snowflake::Client::AuthException& e)
             {
                 m_authWebServer->stop();
                 CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAuthorizationCodeRequest::Error while trying to get authorization code: %s", e.what());
-                return AuthorizationCodeResponse::failed(e.what());
+                return AuthorizationCodeResponse::failed(e.cause());
             }
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAuthorizationCodeRequest::Received token: %s", maskOAuthSecret(token).c_str())
@@ -407,6 +412,9 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest", "POST %s",
                 tokenURL.toString().c_str());
+
+            //TODO: Log headers if needed
+            
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest");
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::%s", maskOAuthSecret(body).c_str());
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
@@ -438,8 +446,6 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "token request: %s",
                 maskOAuthSecret(request.tokenEndpoint).c_str());
 
-
-
             // body
             std::string body = createRefreshAccessTokenRequestBody(request);
             jsonObject_t resp;
@@ -451,38 +457,26 @@ m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner
             //    CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "%s",
             //        maskOAuthSecret(header).c_str());
             //}
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", " ");
+            //CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", " ");
+
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "%s",
                 maskOAuthSecret(body).c_str());
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "----------------------");
 
             if (!executeRestRequest(request.tokenEndpoint, body, resp)) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest", "OAuth error: %s", m_errMsg);
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest::OAuth error: %s", m_errMsg);
                 return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
             }
 
-            try {
-                //resp = executeRestRequest(request.tokenEndpoint, httpExtraHeaders, body);
-            }
-            catch (const std::exception& e) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "OAuth error: %s",
-                    e.what());
-                //return AccessTokenResponse::failed(formatAccessTokenResponseFailureText(resp));
+            std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
+            std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
+
+
+            if (accessToken.empty()) {
+                return AccessTokenResponse::failed("Invalid Identity Provider response: access token not provided");
             }
 
-            //if (resp.success() && !resp.body().empty()) {
-            //    const jsonValue_t* bodyJson = resp.json().get();
-            //    std::string accessToken = bodyJson->contains("access_token") ?
-            //        bodyJson->get("access_token").to_string() : "";
-            //    std::string refreshToken = bodyJson->contains("refresh_token") ?
-            //        bodyJson->get("refresh_token").to_string() : "";
-            //    if (!accessToken.empty()) {
-            //        return AccessTokenResponse::succeeded(accessToken, refreshToken);
-            //    }
-            //}
-            //return AccessTokenResponse::failed(formatAccessTokenResponseFailureText(resp));
-            return AccessTokenResponse::failed("");
-
+            return AccessTokenResponse::succeeded(accessToken, refreshToken);
         }
 
         std::string AuthenticatorOAuth::createRefreshAccessTokenRequestBody(const RefreshAccessTokenRequest& request) {
