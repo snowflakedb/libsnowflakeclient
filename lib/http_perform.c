@@ -26,6 +26,9 @@
 #include "client_int.h"
 #include "snowflake_util.h"
 
+#include <string.h>
+#include <stdio.h>
+
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
      char nohex);
@@ -92,6 +95,8 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
+    char* masked = "";
+
     switch (type) {
         case CURLINFO_TEXT:
             sf_fprintf(stderr, "== Info: %s", data);
@@ -101,9 +106,11 @@ int my_trace(CURL *handle, curl_infotype type,
 
         case CURLINFO_HEADER_OUT:
             text = "=> Send header";
+            terminal_mask(data, size, masked);
             break;
         case CURLINFO_DATA_OUT:
             text = "=> Send data";
+            terminal_mask(data, size, masked);
             break;
         case CURLINFO_SSL_DATA_OUT:
             text = "=> Send SSL data";
@@ -113,13 +120,25 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
         case CURLINFO_DATA_IN:
             text = "<= Recv data";
+            terminal_mask(data, size, masked);
             break;
         case CURLINFO_SSL_DATA_IN:
             text = "<= Recv SSL data";
             break;
     }
 
-    dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    if(strlen(masked) == 0){
+        // data not masked
+        printf("Data does not require masking\n");
+        dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    } else {
+        // data masked
+        printf("Data masked\n");
+        dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+    }
+    // terminal_mask(data, size, masked);
+    // dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+
     return 0;
 }
 

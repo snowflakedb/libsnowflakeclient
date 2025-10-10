@@ -1,6 +1,8 @@
 #include "SFLogger.hpp"
 #include "SecretDetector.hpp"
 
+#include <iostream>
+
 Snowflake::Client::ISFLogger *
   Snowflake::Client::SFLogger::m_externalLogger = nullptr;
 
@@ -18,6 +20,14 @@ void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
 {
   std::string maskedMsg = Snowflake::Client::SFLogger::getMaskedMsgVA(fmt, args);
   sf_fprintf(fp, "%s", maskedMsg.c_str());
+}
+
+void terminal_mask(char *data, size_t size, char* masked){
+    std::string text(data);
+    std::cout << "Terminal Mask: text received" << std::endl;
+    std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
+    std::cout << "Terminal Mask: text processed; returning result" << std::endl;
+    std::strncpy(masked, maskedMsg.c_str(), size);
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)

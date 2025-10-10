@@ -98,6 +98,8 @@ void log_set_path(const char* path);
 
 void log_close();
 
+void terminal_mask(char *data, size_t size, char* masked);
+
 #if defined(__cplusplus)
 }
 #endif
