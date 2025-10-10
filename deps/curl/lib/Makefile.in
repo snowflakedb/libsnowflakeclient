@@ -940,8 +940,8 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
 	vtls/$(DEPDIR)/libcurl_la-rustls.Plo \
 	vtls/$(DEPDIR)/libcurl_la-schannel.Plo \
 	vtls/$(DEPDIR)/libcurl_la-schannel_verify.Plo \
-    vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo \
-    vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo \
+	vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo \
+	vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo \
 	vtls/$(DEPDIR)/libcurl_la-vtls.Plo \
 	vtls/$(DEPDIR)/libcurl_la-vtls_scache.Plo \
 	vtls/$(DEPDIR)/libcurl_la-vtls_spack.Plo \
@@ -957,6 +957,8 @@ am__depfiles_remade = ./$(DEPDIR)/libcurl_la-altsvc.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-rustls.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-schannel.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-schannel_verify.Plo \
+	vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Plo \
+	vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-vtls.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-vtls_scache.Plo \
 	vtls/$(DEPDIR)/libcurlu_la-vtls_spack.Plo \

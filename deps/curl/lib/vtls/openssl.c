@@ -67,6 +67,7 @@
 #include "../strdup.h"
 #include "../strerror.h"
 #include "../curl_printf.h"
+#include "sf_ocsp.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
