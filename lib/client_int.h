@@ -83,7 +83,7 @@
 #define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
 
 int uuid4_generate_non_terminated(char *dst);
-int uuid4_generate(char *dst);
+int uuid4_generate(char* dst);
 
 /**
  * Encryption material

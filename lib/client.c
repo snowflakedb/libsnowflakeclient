@@ -691,6 +691,10 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type) {
+
+    }
+
     // split account and region if connected by a dot.
     char* dot_ptr = strchr(sf->account, (int)'.');
     if (dot_ptr) {
@@ -1087,6 +1091,15 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;
+
+        sf->oauth_authorization_endpoint = NULL;
+        sf->oauth_token_endpoint = NULL;
+        sf->oauth_redirect_uri = NULL;
+        sf->oauth_client_id = NULL;
+        sf->oauth_client_secret = NULL;
+        sf->oauth_scope = NULL;
+        sf->oauth_refresh_token = NULL;
+        sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1156,6 +1169,12 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
     SF_FREE(sf->oauth_token);
+    SF_FREE(sf->oauth_authorization_endpoint);
+    SF_FREE(sf->oauth_token_endpoint);
+    SF_FREE(sf->oauth_redirect_uri);
+    SF_FREE(sf->oauth_client_id);
+    SF_FREE(sf->oauth_client_secret);
+    SF_FREE(sf->oauth_scope);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -1480,6 +1499,24 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_OAUTH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_token, value);
             break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_authorization_endpoint, value);
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_token_endpoint, value);
+            break;
+        case SF_CON_OAUTH_REDRIRECT_URI:
+            alloc_buffer_and_copy(&sf->oauth_redirect_uri, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            alloc_buffer_and_copy(&sf->oauth_client_id, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            alloc_buffer_and_copy(&sf->oauth_client_secret, value);
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            alloc_buffer_and_copy(&sf->oauth_scope, value);
+            break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
             break;
@@ -1693,6 +1730,24 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             *value = sf->oauth_token;
+            break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            *value = sf->oauth_authorization_endpoint;
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            *value = sf->oauth_token_endpoint;
+            break;
+        case SF_CON_OAUTH_REDRIRECT_URI:
+            *value = sf->oauth_redirect_uri;
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            *value = sf->oauth_client_id;
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            *value = sf->oauth_client_secret;
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            *value = sf->oauth_scope;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;

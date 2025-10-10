@@ -40,6 +40,20 @@ sf_bool validate_application(const char* application)
   return SF_BOOLEAN_FALSE;
 }
 
+sf_bool validate_oauth_connection_parameter(const char* parameter) {
+    std::string value = parameter;
+
+    if (value.find('\n') != std::string::npos ||
+        value.find('\r') != std::string::npos)
+    {
+        return SF_BOOLEAN_FALSE;
+    }
+    
+    return SF_BOOLEAN_TRUE;
+
+}
+
+
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {
   if (!sf_is_directory_exist(directoryName))

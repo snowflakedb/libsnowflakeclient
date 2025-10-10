@@ -15,6 +15,7 @@
 #endif
 
 #include "Authenticator.hpp"
+#include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
 
@@ -74,7 +75,10 @@ extern "C" {
     {
         return AUTH_PAT;
     }
-
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE) == 0)
+    {
+        return AUTH_OAUTH_AUTHORIZATION_CODE;
+    }
     if (strcasecmp(authenticator, "test") == 0)
     {
         return AUTH_TEST;
@@ -108,6 +112,13 @@ extern "C" {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorOKTA(conn));
       }
+      if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorOAuth(conn,
+                  nullptr, nullptr));
+      }
+
       if (AUTH_TEST == auth_type)
       {
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
@@ -735,6 +746,11 @@ namespace Client
       CXX_LOG_INFO("sf::AuthWebServer::start::Web Server successfully started with port %d.", m_port);
   }
 
+  int AuthWebServer::start(std::string host, int port, std::string path) {
+      return 0;
+  };
+
+
   /**
    * Stop web server
    */
@@ -792,6 +808,9 @@ namespace Client
   {
       m_timeout = timeout;
   }
+
+  void AuthWebServer::startAccept(std::string state) {}
+
 
   void AuthWebServer::startAccept()
   {
@@ -1099,7 +1118,7 @@ namespace Client
       return ret;
   }
 
-  std::string AuthWebServer::getSAMLToken()
+  std::string AuthWebServer::getToken()
   {
       return m_saml_token;
   }

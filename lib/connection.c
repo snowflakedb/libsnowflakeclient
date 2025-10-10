@@ -1296,7 +1296,7 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 
 sf_bool is_one_time_token_request(cJSON* resp)
 {
-  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || (snowflake_cJSON_HasObjectItem(resp, "access_token") && snowflake_cJSON_HasObjectItem(resp, "scope") && (snowflake_cJSON_HasObjectItem(resp, "refresh_token")));
 }
 
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
@@ -1306,5 +1306,5 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 
 sf_bool is_password_required(AuthenticatorType auth)
 {
-    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
+    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth) && (AUTH_OAUTH_AUTHORIZATION_CODE != auth);
 }

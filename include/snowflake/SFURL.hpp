@@ -204,6 +204,9 @@ public:
    */
   static SFURL parse(const std::string &url);
 
+  static SFURL parse(const char* url);
+
+
   /**
    * Scheme getter
    * @return scheme
