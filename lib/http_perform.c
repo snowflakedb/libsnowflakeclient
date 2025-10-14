@@ -129,15 +129,15 @@ int my_trace(CURL *handle, curl_infotype type,
 
     if(strlen(masked) == 0){
         // data not masked
-        printf("Data does not require masking\n");
+        // printf("Data does not require masking\n");
         dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
     } else {
         // data masked
-        printf("Data masked\n");
+        // printf("Data masked\n");
         dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
     }
-    // terminal_mask(data, size, masked);
-    // dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+    /*terminal_mask(data, size, masked);
+    dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);*/
 
     return 0;
 }

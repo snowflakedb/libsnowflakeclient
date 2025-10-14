@@ -23,11 +23,13 @@ void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
 }
 
 void terminal_mask(char *data, size_t size, char* masked){
-    std::string text(data);
-    std::cout << "Terminal Mask: text received" << std::endl;
-    std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
-    std::cout << "Terminal Mask: text processed; returning result" << std::endl;
-    std::strncpy(masked, maskedMsg.c_str(), size);
+  // masked = data;
+  strncpy(masked, data, sizeof(size));
+  std::string text(masked);
+  // std::cout << "Terminal Mask: "<< text << std::endl;
+  std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(masked);
+  // std::cout << "Terminal Mask: " << maskedMsg << std::endl;
+  std::strncpy(masked, maskedMsg.c_str(), size);
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)
