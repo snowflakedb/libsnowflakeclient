@@ -52,7 +52,7 @@ namespace Snowflake
             if (ret != noErr)
             {
                 CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser. err: %d", ret);
-                //SF_THROWGEN1_NO_INCIDENT("SFOAuthError", std::to_string(ret));
+                throw AuthException("SFOAuthError" + std::to_string(ret));
             }
 #elif _WIN32
             HINSTANCE ret = ShellExecuteA(NULL, "open", ssoUrl.c_str(), NULL, NULL,
@@ -63,7 +63,7 @@ namespace Snowflake
                 return;
             }
             CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser. err: %d", (int)(unsigned long long)ret);
-            //SF_THROWGEN1_NO_INCIDENT("SFOAuthError", std::to_string((int)(unsigned long long)ret));
+            throw AuthException("SFOAuthError " + std::to_string((int)(unsigned long long)ret));
 #else
             // use fork to avoid using system() call and prevent command injection
             char* argv[3];
@@ -77,9 +77,8 @@ namespace Snowflake
             if (child_pid < 0)
             {
                 // fork failed
-                CXX_LOG_ERROR("sf", "AuthenticatorExternalBrowser", "startWebBrowser",
-                    "Failed to start web browser on fork. err: %s", simba_strerror(errno).c_str());
-                SF_THROWGEN1_NO_INCIDENT("SFOAuthError", simba_strerror(errno));
+                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork. err: %s", simba_strerror(errno).c_str());
+                throw AuthException("SFOAuthError " + simba_strerror(errno));
             }
             else if (child_pid == 0)
             {
@@ -94,7 +93,7 @@ namespace Snowflake
                 if (waitpid(child_pid, &child_status, 0) < 0)
                 {
                     CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser on waitpid. err: %s", simba_strerror(errno).c_str());
-                    //SF_THROWGEN1_NO_INCIDENT("SFOAuthError", simba_strerror(errno));
+                    throw AuthException("SFOAuthError " + simba_strerror(errno));
                 }
 
                 if (WIFEXITED(child_status)) {
@@ -102,7 +101,7 @@ namespace Snowflake
                     if (es != 0)
                     {
                         CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser. xdg-open returned %d", es);
-                        //SF_THROWGEN1_NO_INCIDENT("SFOAuthError", std::to_string(es));
+                        throw AuthException("SFOAuthError " + std::to_string(es));
                     }
                 }
             }

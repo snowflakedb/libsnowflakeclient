@@ -4,9 +4,6 @@
 
 #include <future>
 #include "snowflake/client.h"
-
-
-
 #include "snowflake/SFURL.hpp"
 #include "../include/snowflake/IAuth.hpp"
 
@@ -28,13 +25,6 @@ namespace Snowflake {
         struct AccessTokenResponse;
         struct RefreshAccessTokenRequest;
 
-        enum class OAuthFlowType
-        {
-            OAUTH_FLOW_AUTHORIZATION_CODE,
-            OAUTH_FLOW_CLIENT_CREDENTIALS,
-            OAUTH_UNSUPPORTED,
-        };
-
         /*
          * Supports OAuth 2.1:
          * - authorization code flow with PKCE
@@ -51,19 +41,18 @@ namespace Snowflake {
             AuthenticatorOAuth(SF_CONNECT* connection,
                 IAuthWebServer* authWebServer = nullptr,
                 IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
-            //    IRestRequestProvider* restRequestProvider = nullptr);
 
 
 
             void authenticate() override;
             void updateDataMap(jsonObject_t& dataMap) override;
+            virtual bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp);
+
         private:
             void authorizationCodeFlow();
             void clientCredentialsFlow();
             bool refreshAccessTokenFlow();
-            void validateConfiguration();
             void handleInvalidResponse(const bool success, const std::string& errorMessage);
-            bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp);
             AuthorizationCodeResponse executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest);
             AccessTokenResponse executeAccessTokenRequest(AccessTokenRequest& request);
             AccessTokenResponse executeRefreshAccessTokenRequest(RefreshAccessTokenRequest& request);
@@ -75,17 +64,15 @@ namespace Snowflake {
             void refreshDynamicRedirectUri(int portUsed, AuthorizationCodeRequest& authorizationCodeRequest);
             std::string oauthAuthorizationFlow();
             void resetTokens(std::string accessToken, std::string refreshToken);
-            static OAuthFlowType authenticatorToFlowType(AuthenticatorType authenticatorType);
 
             SF_CONNECT* m_connection;
             AuthenticationChallengeBaseProvider* m_challengeProvider;
             IAuthenticationWebBrowserRunner* m_webBrowserRunner;
-            //IRestRequestProvider* const m_restRequestProvider;
 
             std::unique_ptr<IAuthWebServer> m_authWebServer;
             typedef Snowflake::Client::Util::IBase64 Base64;
 
-            OAuthFlowType m_oauthFlow;
+            AuthenticatorType m_oauthFlow;
             SFURL m_authEndpoint;
             SFURL m_tokenEndpoint;
             std::string m_clientId;
@@ -152,13 +139,13 @@ namespace Snowflake {
             constexpr static const char* successMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
                 "<title>Authorization Code Granted for Snowflake</title></head>\n"
                 "<body><h4>Your identity was confirmed</h4>"
-                "Access to Snowflake has been granted to the ODBC driver.\n"
+                "Access to Snowflake has been granted to the libsnowflakeclient.\n"
                 "You can close this window now and go back where you started from.\n"
                 "</body></html>";
             constexpr static const char* failureMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
                 "<title>Authorization Code Failed for Snowflake</title></head>\n"
                 "<body><h4>Could not validate your identity</h4>"
-                "Access to Snowflake could not have been granted to the ODBC driver.\n"
+                "Access to Snowflake could not have been granted to libsnowflakeclient.\n"
                 "You can close this window now and try again.\n"
                 "</body></html>";
         };

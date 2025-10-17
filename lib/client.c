@@ -691,7 +691,56 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type) {
+    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
+        sf_bool invalid = SF_BOOLEAN_FALSE;
+
+        if (is_string_empty(sf->oauth_client_id))
+        {
+            log_error("The client_id parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+        if (is_string_empty(sf->oauth_client_secret))
+        {
+            log_error("The client_secret parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (auth_type == AUTH_OAUTH_AUTHORIZATION_CODE)
+
+        {
+            if (is_string_empty(sf->oauth_redirect_uri)) {
+                log_info("The auth_redirect_uri parameter is not configured. 127.0.0.1 will be used");
+            }
+
+            if (is_string_empty(sf->oauth_authorization_endpoint)) {
+                log_info("The oauth_authorization_endpoint parameter is not configured. Using the default endpoint instead.");
+            }
+
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_info("The oauth_token_endpointparameter is not configured. Using the default endpoint instead.");
+            }
+        }
+        else {
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_error("The oauth_token_endpoint parameter is required for the OAuth Client Credentials authentication");
+                invalid = SF_BOOLEAN_TRUE;
+            }
+        }
+
+        if (is_string_empty(sf->oauth_scope) && is_string_empty(sf->role)) {
+            log_error("Both the 'oauth_scope' and 'role' parameters are not configured. At least one of them must be configured.");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (invalid)
+        {
+            SET_SNOWFLAKE_ERROR(
+                &sf->error,
+                SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                ERR_MSG_OAUTH_PARAMETER_IS_MISSING,
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_GENERAL;
+        }
 
     }
 
@@ -1175,6 +1224,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->oauth_client_id);
     SF_FREE(sf->oauth_client_secret);
     SF_FREE(sf->oauth_scope);
+    SF_FREE(sf->oauth_refresh_token);
     SF_FREE(sf);
 
     return SF_STATUS_SUCCESS;
@@ -1250,14 +1300,23 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
     }
 
-    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) 
+    AuthenticatorType authtype = getAuthenticatorType(sf->authenticator);
+    if (sf->client_store_temporary_credential)
     {
         if (sf->token_cache == NULL) 
         {
             sf->token_cache = secure_storage_init();
         }
 
-        sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+
+        if (authtype == AUTH_EXTERNALBROWSER) {
+            sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+        }
+
+        if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE) {
+            sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
+            sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+        }
     }
 
     ret = auth_authenticate(sf);
@@ -1349,13 +1408,21 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             }
 
             char* auth_token = NULL;
-            if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+            if (sf->token_cache) {
+                if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+                }
+                else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
+                }
+                else if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE || authtype == AUTH_OAUTH_CLIENT_CREDENTIALS) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, sf->oauth_token);
+                    if (sf->oauth_refresh_token) {
+                        secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, sf->oauth_refresh_token);
+                    }
+                }
             }
 
-            else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
-            }
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
@@ -1505,7 +1572,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_OAUTH_TOKEN_ENDPOINT:
             alloc_buffer_and_copy(&sf->oauth_token_endpoint, value);
             break;
-        case SF_CON_OAUTH_REDRIRECT_URI:
+        case SF_CON_OAUTH_REDIRECT_URI:
             alloc_buffer_and_copy(&sf->oauth_redirect_uri, value);
             break;
         case SF_CON_OAUTH_CLIENT_ID:
@@ -1515,6 +1582,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->oauth_client_secret, value);
             break;
         case SF_CON_OAUTH_SCOPE:
+            alloc_buffer_and_copy(&sf->oauth_scope, value);
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_scope, value);
             break;
         case SF_CON_PAT:
@@ -1737,7 +1807,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_OAUTH_TOKEN_ENDPOINT:
             *value = sf->oauth_token_endpoint;
             break;
-        case SF_CON_OAUTH_REDRIRECT_URI:
+        case SF_CON_OAUTH_REDIRECT_URI:
             *value = sf->oauth_redirect_uri;
             break;
         case SF_CON_OAUTH_CLIENT_ID:
@@ -1748,6 +1818,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OAUTH_SCOPE:
             *value = sf->oauth_scope;
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
+            *value = &sf->client_store_temporary_credential;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;

@@ -39,14 +39,12 @@ namespace Snowflake
             instance = std::move(testInstance);
         }
 
-
         std::string AuthenticationChallengeProvider::generateState() const
         {
             char guid[SF_UUID4_LEN];
             uuid4_generate(guid);
             std::vector<char> vec(std::begin(guid), std::end(guid));
             return Base64::encodeURLNoPadding(vec);
-            //return "";
         }
 
         std::string AuthenticationChallengeProvider::generateCodeVerifier() const

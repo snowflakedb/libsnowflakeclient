@@ -39,7 +39,6 @@ SET(TESTS_C
         test_get_query_result_response
         test_get_describe_only_query_result
         test_stmt_functions
-        test_unit_oauth
         test_unit_pat
         test_unit_platform
         test_unit_connect
@@ -61,6 +60,7 @@ SET(TESTS_CXX
         test_unit_jwt
         test_unit_external_browser
         test_unit_okta
+        test_unit_oauth
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_encryption
@@ -402,6 +402,7 @@ endif()
 if (UNIX)
     add_subdirectory(unit_test_ocsp)
     add_subdirectory(test_auth)
+    add_subdirectory(test_oauth)
 endif()
 add_subdirectory(test_bind_datastructures)
 
