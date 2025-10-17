@@ -20,10 +20,7 @@ namespace Client
 
   boost::regex SecretDetector::ENCRYPTION_CREDS_IN_JSON_PATTERN = boost::regex("\"(encryptionMaterial|creds)\"\\s*:\\s*\\{.*?\\}", boost::regex::icase);
 
-  boost::regex SecretDetector::TOKEN_IN_JSON_PATTERN = boost::regex("\"(mastertoken|token)\":(\\t|\\s+)\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
-
-  boost::regex SecretDetector::CURLINFO_TOKEN_PATTERN = boost::regex("\"(mastertoken|token|sessionToken|oldSessionToken)\"\\s*:\\s*(\\t|\\s+)\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
-
+  boost::regex SecretDetector::TOKEN_IN_JSON_PATTERN = boost::regex("\"(mastertoken|token|oldSessionToken|sessionToken)\"\\s*:\\s*(\\t|\\s+)\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
 
   std::string SecretDetector::maskAwsKeys(std::string text)
   {
@@ -70,11 +67,6 @@ namespace Client
       return boost::regex_replace(text, SecretDetector::TOKEN_IN_JSON_PATTERN, "\"$1\": ****");
   }
 
-  std::string SecretDetector::maskCurlInfoToken(std::string text)
-  {
-      return boost::regex_replace(text, SecretDetector::CURLINFO_TOKEN_PATTERN, "\"$1\": ****");
-  }
-
   std::string SecretDetector::maskSecrets(std::string text)
   {
     return SecretDetector::maskAwsKeys(
@@ -86,9 +78,7 @@ namespace Client
                 SecretDetector::maskPassword(
                   SecretDetector::maskEncryptioncCredsInJson(
                     SecretDetector::maskTokenInJson(
-                      SecretDetector::maskCurlInfoToken(
                         text
-                        )
                       )
                     )
                   )

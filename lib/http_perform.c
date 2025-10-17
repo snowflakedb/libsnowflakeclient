@@ -27,8 +27,6 @@
 #include "client_int.h"
 #include "snowflake_util.h"
 
-#include <string.h>
-
 static void
 dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
      char nohex);
