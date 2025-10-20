@@ -20,11 +20,18 @@ void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
   sf_fprintf(fp, "%s", maskedMsg.c_str());
 }
 
-void terminal_mask(char *data, size_t size, char* masked){
-  strncpy(masked, data, sizeof(size));
+void terminal_mask(char *data, size_t datasize, char* masked){
+  strncpy(masked, data, sizeof(datasize));
   std::string text(masked);
-  std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(masked);
-  std::strncpy(masked, maskedMsg.c_str(), size);
+  std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
+  /*int r = text.compare(maskedMsg);
+  if(r == 0){
+    // text is not masked
+  } else {
+    // text is masked
+    std::strncpy(masked, maskedMsg.c_str(), datasize);
+  }*/
+  std::strncpy(masked, maskedMsg.c_str(), datasize);
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)

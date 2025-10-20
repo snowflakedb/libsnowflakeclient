@@ -96,7 +96,7 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
-    char* masked = "";
+    char* masked = calloc(size, sizeof(char));
 
     switch (type) {
         case CURLINFO_TEXT:
@@ -135,7 +135,8 @@ int my_trace(CURL *handle, curl_infotype type,
         // data masked
         dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
     }
-    
+    // dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    free(masked);
     return 0;
 }
 
