@@ -1,7 +1,6 @@
 #include "AuthenticationWebBrowserRunner.hpp"
 #include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
-
 #include <memory>
 
 #ifdef __APPLE__
@@ -16,6 +15,7 @@
 #ifdef __linux__
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 namespace Snowflake

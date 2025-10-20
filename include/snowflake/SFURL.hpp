@@ -206,7 +206,6 @@ public:
 
   static SFURL parse(const char* url);
 
-
   /**
    * Scheme getter
    * @return scheme

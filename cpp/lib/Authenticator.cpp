@@ -754,7 +754,6 @@ namespace Client
       return 0;
   };
 
-
   /**
    * Stop web server
    */
@@ -812,9 +811,6 @@ namespace Client
   {
       m_timeout = timeout;
   }
-
-  void AuthWebServer::startAccept(std::string state) {}
-
 
   void AuthWebServer::startAccept()
   {

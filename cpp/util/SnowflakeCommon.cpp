@@ -50,9 +50,7 @@ sf_bool validate_oauth_connection_parameter(const char* parameter) {
     }
     
     return SF_BOOLEAN_TRUE;
-
 }
-
 
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {

@@ -1306,5 +1306,15 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 
 sf_bool is_password_required(AuthenticatorType auth)
 {
-    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth) && (AUTH_OAUTH_AUTHORIZATION_CODE != auth) && (AUTH_OAUTH_CLIENT_CREDENTIALS != auth);
+    switch (auth) {
+    case AUTH_JWT:
+    case AUTH_OAUTH:
+    case AUTH_PAT:
+    case AUTH_EXTERNALBROWSER:
+    case AUTH_OAUTH_AUTHORIZATION_CODE:
+    case AUTH_OAUTH_CLIENT_CREDENTIALS:
+        return 0; 
+    default:
+        return 1;
+    }
 }

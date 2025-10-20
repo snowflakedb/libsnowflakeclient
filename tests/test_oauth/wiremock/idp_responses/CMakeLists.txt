@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.17)
-
 configure_file(idp_auth_browser_timeout.json . COPYONLY)
 configure_file(idp_auth_custom_urls.json . COPYONLY)
 configure_file(idp_auth_invalid_access_token.json . COPYONLY)

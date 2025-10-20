@@ -124,7 +124,7 @@ namespace Client
       void stop() override;
       int getPort() override;
       void startAccept() override;
-      void startAccept(std::string state) override;
+      void startAccept(std::string state) override {};
       bool receive() override;
       std::string getToken() override;
       bool isConsentCacheIdToken() override;

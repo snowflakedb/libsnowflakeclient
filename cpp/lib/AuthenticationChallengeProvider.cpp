@@ -2,9 +2,7 @@ extern "C" {
 #include "../lib/client_int.h"
 }
 #include "AuthenticationChallengeProvider.hpp"
-
 #include "Authenticator.hpp"
-
 #include <string>
 #include <openssl/rand.h>
 #include "snowflake/IBase64.hpp"
