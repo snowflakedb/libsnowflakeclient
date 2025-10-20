@@ -7,8 +7,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #endif
-#include "AuthenticatorOAuth.hpp"
 
+#include "AuthenticatorOAuth.hpp"
 #include <algorithm>
 #include <cctype>
 #include <future>
@@ -30,7 +30,6 @@
 #endif
 
 #include "snowflake/IBase64.hpp"
-
 #include "Authenticator.hpp"
 #include "AuthenticationChallengeProvider.hpp"
 #include "AuthenticationWebBrowserRunner.hpp"
@@ -43,7 +42,6 @@
 #include "error.h"
 
 namespace {
-
     std::string encodeBase64(const std::string& s) {
         return Snowflake::Client::Util::IBase64::encodeURLNoPadding(std::vector<char>(s.begin(), s.end()));
     }
@@ -59,6 +57,7 @@ namespace {
 
 namespace Snowflake {
     namespace Client {
+
         const std::string AuthenticatorOAuth::S_LOCALHOST = "127.0.0.1";
         const std::string AuthenticatorOAuth::S_LOCALHOST_URL = "http://" + AuthenticatorOAuth::S_LOCALHOST;
         const std::string AuthenticatorOAuth::S_OAUTH_DEFAULT_AUTHORIZATION_URL_POSTFIX = "/oauth/authorize";
@@ -545,7 +544,6 @@ namespace Snowflake {
             }
 
             m_webBrowserRunner->startWebBrowser(ssoUrl);
-
         }
 
 

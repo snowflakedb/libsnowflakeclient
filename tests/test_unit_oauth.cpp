@@ -35,15 +35,14 @@ void test_oauth_with_no_token(void** unused)
  */
 void test_json_data_in_oauth(void** unused)
 {
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-    sf->authenticator = "oauth";
-    sf->oauth_token = "mock_token";
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_OAUTH);
+    snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, "mock_token");
 
     cJSON* body = create_auth_json_body(
         sf,
@@ -62,6 +61,7 @@ void test_json_data_in_oauth(void** unused)
     data = snowflake_cJSON_GetObjectItem(body, "data");
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "authenticator")), "oauth");
     assert_string_equal(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "token")), "mock_token");
+    snowflake_term(sf);
 }
 
 class OAuthTokenListenerWebServerMock : public OAuthTokenListenerWebServer {
@@ -168,17 +168,18 @@ void test_oauth_invalid_parameters(void** unused)
 }
 
 void test_oauth_start_browser_url(void** unused) {
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->authenticator = SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-    sf->oauth_client_id = "client123";
-    sf->oauth_client_secret = "client123Password";
-    sf->oauth_redirect_uri = "http://localhost:8001/oauth2/v1/redirect_uri";
-    sf->role = "ANALYST";
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_HOST, "testaccount.snowflakecomputing.com");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_ROLE, "ANALYST");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE);
+    snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "client123");
+    snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client123Password");
+    snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, "http://localhost:8001/oauth2/v1/redirect_uri");
 
     auto* webServer = new OAuthTokenListenerWebServerMock();
     auto* webBrowserRunner = new WebBrowserRunnerMock();
@@ -196,19 +197,21 @@ void test_oauth_start_browser_url(void** unused) {
     assert_string_equal(codeChallengeMethod.c_str(), "S256");
 
     delete auth;
+    snowflake_term(sf);
 }
 
 void test_oauth_start_browser_url_no_redirect_url(void** unused) {
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->authenticator = SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-    sf->oauth_client_id = "client123";
-    sf->oauth_client_secret = "client123Password";
-    sf->role = "ANALYST";
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
+    snowflake_set_attribute(sf, SF_CON_HOST, "testaccount.snowflakecomputing.com");
+    snowflake_set_attribute(sf, SF_CON_USER, "test_user");
+    snowflake_set_attribute(sf, SF_CON_HOST, "host");
+    snowflake_set_attribute(sf, SF_CON_PORT, "443");
+    snowflake_set_attribute(sf, SF_CON_PROTOCOL, "https");
+    snowflake_set_attribute(sf, SF_CON_ROLE, "ANALYST");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE);
+    snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "client123");
+    snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client123Password");
 
     auto* webServer = new OAuthTokenListenerWebServerMock();
     auto* webBrowserRunner = new WebBrowserRunnerMock();
@@ -232,6 +235,7 @@ void test_oauth_start_browser_url_no_redirect_url(void** unused) {
     assert_string_equal(codeChallengeMethod.c_str(), "S256");
 
     delete auth;
+    snowflake_term(sf);
 }
 
 int main(void)

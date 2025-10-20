@@ -5,6 +5,8 @@
 #include "../cpp/lib/AuthenticationWebBrowserRunner.hpp"
 #include "snowflake/SFURL.hpp"
 #include "../cpp/logger/SFLogger.hpp"
+#include "../../lib/connection.h"
+#include "curl_desc_pool.h"
 
 
 namespace Snowflake {
@@ -15,20 +17,22 @@ namespace Snowflake {
             void startWebBrowser(const std::string& url) override
             {
                 CXX_LOG_TRACE("sf::AuthenticationWebBrowserTestRunner::running curl to open a browser::%s", url.c_str())
-                ::Snowflake::Client::SFURL sfUrl = ::Snowflake::Client::SFURL::parse(url);
-                std::vector<std::string> httpExtraHeaders;
-                try {
-                    //RestRequest::getInstance()->getInternal(sfUrl,
-                    //    &httpExtraHeaders,
-                    //    resp,
-                    //    false,
-                    //    "");
-                }
-                catch (std::exception& e)
-                {
-                    CXX_LOG_ERROR("sf", "AuthenticationWebBrowserTestRunner", "running curl to open a browser failed with exception", "%s", e.what())
-                        // intentionally not rethrown to mimic external browser behaviour
-                }
+                    int64 elapsedTime = 0;
+                    cJSON* resp_data = NULL;
+                    void* curl_desc;
+                    CURL* curl;
+                    curl_desc = get_curl_desc_from_pool(url.c_str(), NULL, NULL);
+                    curl = get_curl_from_desc(curl_desc);
+
+                    jsonObject_t resp;
+                    std::cout << "Opening browser to URL: " << url << std::endl;
+                    std::cout << SF_GLOBAL_CA_BUNDLE_FILE << curl << std::endl;
+
+                    http_perform(curl, GET_REQUEST_TYPE, (char*)url.c_str(), NULL, NULL, NULL, &resp_data,
+                        NULL, NULL, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                        0,
+                        0, 7, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                        NULL, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE));
             }
         };
     } // namespace Client
