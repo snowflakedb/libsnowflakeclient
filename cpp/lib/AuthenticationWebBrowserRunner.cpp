@@ -77,8 +77,8 @@ namespace Snowflake
             if (child_pid < 0)
             {
                 // fork failed
-                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork. err: %s", simba_strerror(errno).c_str());
-                throw AuthException("SFOAuthError " + simba_strerror(errno));
+                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork. err: %s", strerror(errno));
+                throw AuthException(std::string("SFOAuthError ") + strerror(errno));
             }
             else if (child_pid == 0)
             {
@@ -92,8 +92,8 @@ namespace Snowflake
                 // This is run by the parent. Wait for the child to terminate.
                 if (waitpid(child_pid, &child_status, 0) < 0)
                 {
-                    CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser on waitpid. err: %s", simba_strerror(errno).c_str());
-                    throw AuthException("SFOAuthError " + simba_strerror(errno));
+                    CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser on waitpid. err: %s", strerror(errno));
+                    throw AuthException(std::string("SFOAuthError ") + strerror(errno));
                 }
 
                 if (WIFEXITED(child_status)) {

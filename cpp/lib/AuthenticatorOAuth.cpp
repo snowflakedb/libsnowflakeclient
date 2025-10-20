@@ -182,6 +182,9 @@ namespace Snowflake {
                 m_token = m_connection->oauth_token;
                 return;
             }
+
+            //This try catch is to capture any AuthException thrown from the flows and get the error message
+            // The try catch in this authentication flows will be refactored in the next PR
             try {
                 // try to get a new access token using the existing refresh token
                 if (refreshAccessTokenFlow())

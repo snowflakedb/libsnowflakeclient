@@ -25,6 +25,8 @@ add_executable(test_oauth_client_credentials
     UnitOAuthClientCredentialsTest.cpp
 )
 
+add_compile_options(-Wall -Wno-error=ignored-attributes)
+
 target_link_libraries(test_oauth_authorization_flow ${TESTLIB_OPTS_C})
 target_link_libraries(test_oauth_client_credentials ${TESTLIB_OPTS_C})
 

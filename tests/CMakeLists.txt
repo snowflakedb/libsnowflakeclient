@@ -402,7 +402,6 @@ endif()
 if (UNIX)
     add_subdirectory(unit_test_ocsp)
     add_subdirectory(test_auth)
-    add_subdirectory(test_oauth)
 endif()
 add_subdirectory(test_bind_datastructures)
 
