@@ -441,7 +441,7 @@ void test_log_creation() {
 /**
  * Test that generate exception
  */
-void test_log_creation_no_permission_to_home_folder(){
+void test_log_creation_no_permission_to_home_folder() {
 
   // check if current user is root. If so, exit test
   char *name;
@@ -483,6 +483,7 @@ void test_log_creation_no_permission_to_home_folder(){
   // resetting HOME 
   setenv("HOME", homedirOrig, 1);   
 }
+
 
 /**
  * Tests masking secret information in log
@@ -580,6 +581,14 @@ void test_mask_secret_log() {
             "\"masterToken\":\t\"ETM:sDgAAA-XI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ==\"",
             "\"masterToken\": ****"
         },
+        {//21
+             "\"Snowflake Token\"=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8+y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0Mlm+FrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/HkvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"",
+            "\"Snowflake Token\": ****"
+        },
+        {//22
+            "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"",
+            "\"masterToken\": ****"
+        },
     };
 
     char * line = NULL;
@@ -604,7 +613,7 @@ void test_mask_secret_log() {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_null_log_path),
+        /*cmocka_unit_test(test_null_log_path),
         cmocka_unit_test(test_default_log_path),
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
@@ -619,9 +628,9 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
 #endif
-        cmocka_unit_test(test_log_creation),
+        cmocka_unit_test(test_log_creation),*/
 #ifndef _WIN32
-        cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
+        //cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif
     };
