@@ -8,9 +8,6 @@
       "request_guid": {
         "matches": ".*"
       },
-      "requestId": {
-        "matches": ".*"
-      },
       "databaseName": {
         "matches": ".*"
       },
@@ -37,7 +34,7 @@
         "matchesJsonPath": "$[?(@.data.TOKEN==\"access-token-123\")]"
       },
       {
-        "matchesJsonPath" : "$[?(@.data.CLIENT_ENVIRONMENT.OAUTH_TYPE =~ /(oauth_client_credentials)|(oauth_authorization_code)/i)]"
+        "matchesJsonPath": "$[?(@.data.CLIENT_ENVIRONMENT.OAUTH_TYPE =~ /(oauth_client_credentials)|(oauth_authorization_code)/i)]"
       }
     ]
   },

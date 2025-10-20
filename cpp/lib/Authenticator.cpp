@@ -751,6 +751,9 @@ namespace Client
   }
 
   int AuthWebServer::start(std::string host, int port, std::string path) {
+      SF_UNUSED(host);
+      SF_UNUSED(port);
+      SF_UNUSED(path);
       return 0;
   };
 

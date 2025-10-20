@@ -15,6 +15,7 @@ using namespace Snowflake::Client;
  */
 void test_oauth_with_no_token(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -35,6 +36,7 @@ void test_oauth_with_no_token(void** unused)
  */
 void test_json_data_in_oauth(void** unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_USER, "test_user");
@@ -136,6 +138,7 @@ SF_CONNECT* get_test_connection()
 
 void test_oauth_invalid_parameters(void** unused)
 {
+    SF_UNUSED(unused);
     // missing both the client id and the client secret
     SF_CONNECT* test1 = get_test_connection();
     // missing clinet secret
@@ -168,6 +171,7 @@ void test_oauth_invalid_parameters(void** unused)
 }
 
 void test_oauth_start_browser_url(void** unused) {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_HOST, "testaccount.snowflakecomputing.com");
@@ -201,6 +205,7 @@ void test_oauth_start_browser_url(void** unused) {
 }
 
 void test_oauth_start_browser_url_no_redirect_url(void** unused) {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_HOST, "testaccount.snowflakecomputing.com");
@@ -238,6 +243,21 @@ void test_oauth_start_browser_url_no_redirect_url(void** unused) {
     snowflake_term(sf);
 }
 
+void test_mask_oauth_secret_string(void** unused)
+{
+    SF_UNUSED(unused);
+    auto masked = Snowflake::Client::maskOAuthSecret("this should be masked as it contains token: not-for-the-logs-value");
+    assert_string_equal(masked.c_str(), "****");
+}
+
+void test_mask_oauth_secret_sf_url(void** unused)
+{
+    SF_UNUSED(unused);
+    Snowflake::Client::SFURL sfUrl = Snowflake::Client::SFURL::parse("https://some.host.com/with/secrets?token=abc&user=jdoe");
+    auto masked = Snowflake::Client::maskOAuthSecret(sfUrl);
+    assert_string_equal(masked.c_str(), "****");
+}
+
 int main(void)
 {
     initialize_test(SF_BOOLEAN_FALSE);
@@ -247,6 +267,8 @@ int main(void)
       cmocka_unit_test(test_oauth_invalid_parameters),
       cmocka_unit_test(test_oauth_start_browser_url),
       cmocka_unit_test(test_oauth_start_browser_url_no_redirect_url),
+      cmocka_unit_test(test_mask_oauth_secret_string),
+      cmocka_unit_test(test_mask_oauth_secret_sf_url),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

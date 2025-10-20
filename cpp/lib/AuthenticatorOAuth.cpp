@@ -271,6 +271,7 @@ namespace Snowflake {
         }
 
         std::string AuthenticatorOAuth::oauthWebServerTask(IAuthWebServer* authWebServer, const SFURL& redirectUrl, const std::string& state, const int browserResponseTimeout) {
+            SF_UNUSED(browserResponseTimeout);
             try {
                 authWebServer->startAccept(state);
                 authWebServer->receive();
@@ -368,6 +369,9 @@ namespace Snowflake {
 
         bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
             const std::string& body, jsonObject_t& resp) {
+
+            //TODO: This post call has the same workflows with the CIDP post calls. This code will be refactored in the next PR
+
             std::string destination = endPoint.toString();
             void* curl_desc;
             CURL* curl;
@@ -594,6 +598,9 @@ namespace Snowflake {
         //////////////////////////////////////////////////////////
         /// WEB SRV
         //////////////////////////////////////////////////////////
+
+        //TODO: This Websever have redundant code with AuthWebServer for the external browser. 
+        // This code will be refactored in the next PR
 
         OAuthTokenListenerWebServer::OAuthTokenListenerWebServer() : m_socket_descriptor(0),
             m_socket_desc_web_client(0),
@@ -825,6 +832,7 @@ namespace Snowflake {
 
         void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char* method, char** rest_mesg)
         {
+            SF_UNUSED(method);
             char** position = rest_mesg;
             char* fullPath = sf_strtok(NULL, " \t\n", position);
             char* protocol = sf_strtok(NULL, " \t\n", position);
@@ -939,6 +947,7 @@ namespace Snowflake {
 #if defined _DEBUG_OAUTH
             return secret;
 #else
+            SF_UNUSED(secret);
             return "****";
 #endif
         }
@@ -947,6 +956,7 @@ namespace Snowflake {
 #if defined _DEBUG_OAUTH
             return secret.toString();
 #else
+            SF_UNUSED(secret);
             return "****";
 #endif
         }
