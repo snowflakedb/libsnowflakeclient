@@ -42,8 +42,6 @@ namespace Snowflake {
                 IAuthWebServer* authWebServer = nullptr,
                 IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
-
-
             void authenticate() override;
             void updateDataMap(jsonObject_t& dataMap) override;
             virtual bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp);

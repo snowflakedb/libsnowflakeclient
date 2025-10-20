@@ -272,6 +272,8 @@ namespace Snowflake {
 
         std::string AuthenticatorOAuth::oauthWebServerTask(IAuthWebServer* authWebServer, const SFURL& redirectUrl, const std::string& state, const int browserResponseTimeout) {
             SF_UNUSED(browserResponseTimeout);
+            SF_UNUSED(redirectUrl);
+
             try {
                 authWebServer->startAccept(state);
                 authWebServer->receive();
