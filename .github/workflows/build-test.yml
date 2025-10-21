@@ -159,6 +159,13 @@ jobs:
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
+            - name: Install CMake
+              shell: bash
+              run: |
+                curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-macos-universal.tar.gz" -o cmake.tar.gz
+                tar -xzf cmake.tar.gz
+                echo "$PWD/cmake-3.31.6-macos-universal/CMake.app/Contents/bin" >> $GITHUB_PATH
+                cmake --version
             - name: Restore cached deps
               id: cache-restore-deps
               uses: actions/cache/restore@v4
