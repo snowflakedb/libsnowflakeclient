@@ -5,22 +5,15 @@
 #include <cstdio>  
 #include <memory>
 #include <iostream>
-#ifdef _WIN32
-#include <windows.h>
-#define sleep(x) Sleep(1000 * (x))
-#define popen  _popen
-#define pclose _pclose
-#else
 #include <unistd.h>
-#endif
-//#include "SimbaSettingReader.h"
+#include <functional>
 
 #include "wiremock.hpp"
 #include "../cpp/logger/SFLogger.hpp"
 
 namespace Snowflake {
     namespace Client {
-        double WiremockRunner::S_WIREMOCK_TIMEOUT_MS = 2500;
+        double WiremockRunner::S_WIREMOCK_TIMEOUT_MS = 2500000;
 
         WiremockRunner::WiremockRunner()
         {
@@ -183,7 +176,9 @@ namespace Snowflake {
         void WiremockRunner::exec(const std::string& cmd) {
             std::array<char, 128> buffer{};
             std::string result;
-            const std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+
+auto close_file = [](FILE* f){ if(f) pclose(f); };
+std::unique_ptr<FILE, decltype(close_file)> pipe(popen(cmd.c_str(), "r"), close_file);
             if (!pipe) {
                 throw std::runtime_error("popen() failed!");
             }
@@ -201,8 +196,8 @@ namespace Snowflake {
                     + " --proxy-pass-through false"
                     + " --port " + wiremockAdminPort
                     + " --https-port " + wiremockPort
-                    + " --https-keystore ./wiremock/ca-cert.jks"
-                    + " --ca-keystore ./wiremock/ca-cert.jks";
+                    + " --https-keystore ./tests/test_oauth/wiremock/ca-cert.jks"
+                    + " --ca-keystore ./tests/test_oauth/wiremock/ca-cert.jks";
                 exec(command); // blocking call, will be running in a separate thread
             }
             catch (std::exception& e) {

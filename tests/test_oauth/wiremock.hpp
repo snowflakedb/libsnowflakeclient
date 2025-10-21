@@ -13,7 +13,7 @@ namespace Snowflake {
         constexpr auto wiremockHomeDir = "~/.wiremock";
         constexpr auto wiremockPath = "~/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
         constexpr auto wiremockPort = "63900";
-        constexpr auto wiremockAdminPort = "1000";
+        constexpr auto wiremockAdminPort = "8081";
         constexpr auto wiremockHost = "127.0.0.1";
 
         class WiremockRunner
@@ -34,6 +34,7 @@ namespace Snowflake {
             static void setup();
             static void exec(const std::string& cmd);
             static void readJSONFromFile(const std::string& JSONFile, std::string& res);
+            static pid_t startWiremockAsync(const std::string& cmd);
 
         public:
             WiremockRunner();

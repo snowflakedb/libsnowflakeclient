@@ -1296,7 +1296,7 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 
 sf_bool is_one_time_token_request(cJSON* resp)
 {
-  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || (snowflake_cJSON_HasObjectItem(resp, "access_token") && snowflake_cJSON_HasObjectItem(resp, "scope"));
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || (snowflake_cJSON_HasObjectItem(resp, "access_token"));
 }
 
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)

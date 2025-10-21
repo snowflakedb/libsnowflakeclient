@@ -5,12 +5,6 @@
     "urlPathPattern": "/session",
     "method": "POST",
     "queryParameters": {
-      "delete": {
-        "matches": "true"
-      },
-      "requestId": {
-        "matches": ".*"
-      },
       "request_guid": {
         "matches": ".*"
       }

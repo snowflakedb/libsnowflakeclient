@@ -39,9 +39,8 @@ namespace Snowflake
 
         std::string AuthenticationChallengeProvider::generateState() const
         {
-            char guid[SF_UUID4_LEN];
-            uuid4_generate(guid);
-            std::vector<char> vec(std::begin(guid), std::end(guid));
+            std::vector<char> vec(SF_UUID4_LEN);
+            uuid4_generate(vec.data());
             return Base64::encodeURLNoPadding(vec);
         }
 

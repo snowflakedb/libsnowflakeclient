@@ -168,6 +168,11 @@ extern "C" {
     try
     {
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->authenticate();
+
+      if (conn->error.error_code != SF_STATUS_SUCCESS)
+      {
+        return SF_STATUS_ERROR_GENERAL;
+      }
     }
     catch (...)
     {

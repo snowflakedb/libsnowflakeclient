@@ -16,117 +16,91 @@ SF_CONNECT* createConnection() {
 }
 }
 
+Snowflake::Client::WiremockRunner* wiremock;
+
 void test_successful_oauth_client_credentials_flow(void** unused)
 {
+    delete wiremock;
     initAuthChallengeTestProvider();
-    auto wiremock = WiremockRunner("wiremock/idp_responses/idp_client_successful.json",
+    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_client_successful.json",
         {
-          "wiremock/snowflake_responses/snowflake_login_successful.json",
-          "wiremock/snowflake_responses/snowflake_disconnect_successful.json"
+          "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+          "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         });
     SF_CONNECT* sf = createConnection();
-
-
-    CXX_LOG_INFO("sf", "UnitOAuthClientCredentialsTest", "Connect", "Connecting to Snowflake");
-    SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    };
-    CXX_LOG_INFO("sf", "UnitOAuthClientCredentialsTest", "Connect", "Connected to Snowflake successfully");
+    CXX_LOG_INFO("sf::UnitOAuthClientCredentialsTest::Connect::Connecting to Snowflake");
+    assert_true(snowflake_connect(sf) == SF_STATUS_SUCCESS);
+    CXX_LOG_INFO("sf::UnitOAuthClientCredentialsTest::Connect::Connected to Snowflake successfully");
     assert_false(std::string(sf->token).empty());
     assert_string_equal(sf->token, "token-t1");
+
+    assert_true(snowflake_term(sf) == SF_STATUS_SUCCESS);
 }
 
 void test_failure_oauth_client_credentials_flow(void** unused)
 {
+    delete wiremock;
     initAuthChallengeTestProvider();
-    auto wiremock = WiremockRunner("wiremock/idp_responses/idp_client_token_request_error.json", {});
+    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_client_token_request_error.json", {});
     SF_CONNECT* sf = createConnection();
 
-    CXX_LOG_INFO("sf", "UnitOAuthClientCredentialsTest", "Connect", "Connecting to Snowflake");
-        SF_STATUS status = snowflake_connect(sf);
-    if (status == SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    };
+    CXX_LOG_INFO("sf::UnitOAuthClientCredentialsTest::Connect::Connecting to Snowflake");
+    SF_STATUS status = snowflake_connect(sf);
+    assert_false(status == SF_STATUS_SUCCESS);
 }
 
 void test_re_authentication_and_refresh_token_is_valid(void** unused)
 {
+    delete wiremock;
     initAuthChallengeTestProvider();
-    auto wiremock = WiremockRunner("wiremock/snowflake_responses/snowflake_login_failed.json", {
-      "wiremock/idp_responses/idp_refresh_successful.json",
-      "wiremock/snowflake_responses/snowflake_login_successful.json",
-      "wiremock/snowflake_responses/snowflake_disconnect_successful.json",
+    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_failed.json", {
+      "./tests/test_oauth/wiremock/idp_responses/idp_refresh_successful.json",
+      "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+      "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json",
         });
-    CXX_LOG_INFO("sf", "UnitOAuthTest", "RefreshTokenAndConnect", "Prepare wiremock mapping");
+    CXX_LOG_INFO("sf::UnitOAuthTest::RefreshTokenAndConnect::Prepare wiremock mapping");
 
     SF_CONNECT* sf = createConnection();
     snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, "expired-access-token-123");
-    sf->oauth_refresh_token = "refresh - token - 123";
+    snowflake_set_attribute(sf, SF_CON_OAUTH_REFRESH_TOKEN, "refresh-token-123");
 
-    //  try {
-    //    CXX_LOG_INFO("sf::UnitOAuthTest::RefreshTokenAndConnect::Connecting to Snowflake using cached access token")
-    //    SF_STATUS status = snowflake_connect(sf);
+    CXX_LOG_INFO("sf::UnitOAuthTest::RefreshTokenAndConnect::Connecting to Snowflake using cached access token")
+    assert_true(snowflake_connect(sf) == SF_STATUS_SUCCESS);
+    assert_string_equal(sf->token, "token-t1");
+    assert_string_equal(sf->oauth_token, "access-token-123");
+    assert_true(std::string(sf->oauth_refresh_token).empty());
 
-    //  } catch (const ReauthenticationRequest& ex) {
-    //    CXX_LOG_INFO("sf::UnitOAuthTest::RefreshTokenAndConnect::Connecting to Snowflake using cached access token")
-    //    REQUIRE(ex.getCode() == Connection::S_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE);
-    //  }
-
-    //  CXX_LOG_INFO("sf", "UnitOAuthTest", "RefreshTokenAndConnect", "Refresh token and connect to Snowflake")
-    //  std::string sessionToken = connection.connect();
-    //  CXX_LOG_INFO("sf", "UnitOAuthTest", "RefreshTokenAndConnect", "Connected to Snowflake successfully")
-    //  REQUIRE(sessionToken == "token-t1");
-    //  REQUIRE(connection.getOAuthAccessToken() == "access-token-123");
-    //  REQUIRE(connection.getOAuthRefreshToken().empty());
-
-    //  connection.disconnect();
-    //} catch (const std::exception& e) {
-    //  CXX_LOG_ERROR("sf", "UnitOAuthTest", "RefreshTokenAndConnect", "Exception: %s", e.what())
-    //  REQUIRE(false);
-    //}
-}
+    assert_true(snowflake_term(sf) == SF_STATUS_SUCCESS);
+      }
 
 void test_re_authentication_and_refresh_token_is_expired(void** unused)
 {
-    /* try {
+    delete wiremock;
        initAuthChallengeTestProvider();
-       CXX_LOG_INFO("sf", "UnitOAuthTest", "ExpiredRefreshToken", "Prepare wiremock mapping");
-       auto wiremock = WiremockRunner("wiremock/snowflake_responses/snowflake_login_failed.json",{
-         "wiremock/idp_responses/idp_refresh_failed.json",
-         "wiremock/idp_responses/idp_client_successful_after_refresh.json",
-         "wiremock/snowflake_responses/snowflake_login_successful.json",
-         "wiremock/snowflake_responses/snowflake_disconnect_successful.json",
+       CXX_LOG_INFO("sf::UnitOAuthTest::ExpiredRefreshToken::Prepare wiremock mapping");
+      wiremock = new WiremockRunner("./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_failed.json",{
+         "./tests/test_oauth/wiremock/idp_responses/idp_refresh_failed.json",
+         "./tests/test_oauth/wiremock/idp_responses/idp_client_successful_after_refresh.json",
+         "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+         "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json",
        });
-       Connection connection = createConnection();
-       connection.resetOAuthAccessToken("expired-access-token-123");
-       connection.resetOAuthRefreshToken("expired-refresh-token-123");
-       CXX_LOG_INFO("sf", "UnitOAuthTest", "ExpiredRefreshToken", "Connecting to Snowflake using cached access token");
-       try {
-         connection.connect();
-         REQUIRE(false);
-       } catch (const ReauthenticationRequest& ex) {
-         CXX_LOG_INFO("sf", "UnitOAuthTest", "ExpiredRefreshToken", "Failed to connect to Snowflake using cached access token")
-         REQUIRE(ex.getCode() == Connection::S_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE);
-       }
-       REQUIRE(connection.getOAuthAccessToken().empty());
-       CXX_LOG_INFO("sf", "UnitOAuthTest", "ExpiredRefreshToken", "Trying to refresh, failing and obtaining new tokens using Client Credentials");
-       std::string sessionToken = connection.connect();
 
-       CXX_LOG_INFO("sf", "UnitOAuthTest", "ExpiredRefreshToken", "Connected to Snowflake successfully")
-       REQUIRE(sessionToken == "token-t1");
-       REQUIRE(connection.getOAuthAccessToken() == "access-token-123");
-       REQUIRE(connection.getOAuthRefreshToken() == "refresh-token-123");
+    SF_CONNECT* sf = createConnection();
+    snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN, "expired-access-token-123");
+    snowflake_set_attribute(sf, SF_CON_OAUTH_REFRESH_TOKEN, "expired-refresh-token-123");
+    CXX_LOG_INFO("sf::UnitOAuthTest::ExpiredRefreshToken::Connecting to Snowflake using cached access token");
+    assert_true(snowflake_connect(sf) == SF_STATUS_SUCCESS);
 
-       connection.disconnect();
-     } catch (const std::exception& e) {
-       CXX_LOG_ERROR("sf", "UnitOAuthTest", "RefreshTokenAndConnect", "Exception: %s", e.what())
-       REQUIRE(false);
-     }*/
+    assert_string_equal(sf->token, "token-t1");
+    assert_string_equal(sf->oauth_token, "access-token-123");
+    assert_string_equal(sf->oauth_refresh_token, "refresh-token-123");
+    assert_true(snowflake_term(sf) == SF_STATUS_SUCCESS);
 }
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
+    sf_bool disableVerifyPeer = SF_BOOLEAN_TRUE;
+    snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &disableVerifyPeer);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_successful_oauth_client_credentials_flow),
       cmocka_unit_test(test_failure_oauth_client_credentials_flow),
@@ -134,6 +108,7 @@ int main(void) {
       cmocka_unit_test(test_re_authentication_and_refresh_token_is_expired),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
+    delete wiremock;
     return ret;
 }
 

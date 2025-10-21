@@ -1396,6 +1396,16 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     continue;
                 }
 
+                if (code == strtol(SF_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE, NULL, 10))
+                { 
+                    log_error("OAUTH acess token expired or invalid. Reauthenticate.");
+                    SF_FREE(sf->oauth_token);
+                    auth_renew_json_body(sf, body);
+                    s_body = snowflake_cJSON_Print(body);
+                    retried_count++;
+                    continue;
+                }
+
                 SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
                                     message ? message : "Query was not successful",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -1563,6 +1573,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_token, value);
+            break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            alloc_buffer_and_copy(&sf->oauth_refresh_token, value);
             break;
         case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
             alloc_buffer_and_copy(&sf->oauth_authorization_endpoint, value);
@@ -1798,6 +1811,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             *value = sf->oauth_token;
+            break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            *value = sf->oauth_refresh_token;
             break;
         case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
             *value = sf->oauth_authorization_endpoint;

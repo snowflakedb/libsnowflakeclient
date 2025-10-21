@@ -3,6 +3,7 @@
     {
       "scenarioName": "oauth",
       "requiredScenarioState": "Started",
+      "newScenarioState": "Acquired access token",
       "request": {
         "urlPathPattern": "/oauth/token-request.*",
         "method": "POST",
@@ -11,7 +12,7 @@
             "contains": "Basic"
           },
           "Content-Type": {
-            "contains": "application/x-www-form-urlencoded; charset=UTF-8"
+            "contains": "application/x-www-form-urlencoded"
           }
         },
         "bodyPatterns": [

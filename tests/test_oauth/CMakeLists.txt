@@ -31,4 +31,4 @@ target_link_libraries(test_oauth_authorization_flow ${TESTLIB_OPTS_C})
 target_link_libraries(test_oauth_client_credentials ${TESTLIB_OPTS_C})
 
 add_test(test_oauth_authorization_flow test_oauth_authorization_flow)
-add_test(test_oauth_authorization_flow test_oauth_authorization_flow)
+add_test(test_oauth_client_credentials test_oauth_client_credentials)

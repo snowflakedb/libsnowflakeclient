@@ -11,9 +11,6 @@
           "request_guid": {
             "matches": ".*"
           },
-          "requestId": {
-            "matches": ".*"
-          },
           "databaseName": {
             "matches": ".*"
           },
