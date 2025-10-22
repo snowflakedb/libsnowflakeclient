@@ -324,20 +324,13 @@ static char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir)
 #else
   int result = mkdir(dir, 0700);
 #endif
-  if (result != 0)
+  if (result != 0 && errno != EEXIST)
   {
-    if (errno != EEXIST)
-    {
-      failf(data, "Failed to create %s directory. Ignored. Error: %d",
-            dir, errno);
-      return NULL;
-
-    }
+    failf(data, "Failed to create %s directory. Ignored. Error: %d",
+          dir, errno);
+    return NULL;
   }
-  else
-  {
-    infof(data, "Created %s directory.", dir);
-  }
+  infof(data, "Created %s directory.", dir);
   return dir;
 }
 
@@ -346,101 +339,99 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
 #ifdef __linux__
   char *home_env = getenv("HOME");
   if (home_env == NULL) {
-    goto err;
+    return NULL;
   }
   strcpy(cache_dir, home_env);
 
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/.cache");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/snowflake");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/crls");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/");
 #elif defined(__APPLE__)
   char *home_env = getenv("HOME");
   if (home_env == NULL) {
-    goto err;
+    return NULL;
   }
   strcpy(cache_dir, home_env);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/Library");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/Caches");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/Snowflake");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/crls");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "/");
 #elif  defined(_WIN32)
   char *home_env = getenv("USERPROFILE");
   if (home_env == NULL) {
-    goto err;
+    return NULL;
   }
   strcpy(cache_dir, home_env);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\AppData");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\Local");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\Snowflake");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\Caches");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\crls");
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
-    goto err;
+    return NULL;
   }
   strcat(cache_dir, "\\");
 #endif
   return cache_dir;
-err:
-  return NULL;
 }
 
 static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
