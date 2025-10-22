@@ -21,7 +21,7 @@ namespace Snowflake {
             std::thread thread;
             std::string command;
 
-            static double S_WIREMOCK_TIMEOUT_MS;
+            static int S_WIREMOCK_TIMEOUT;
 
             static void initMapping(const std::string& mapping);
             static void addMapping(const std::string& mapping);
