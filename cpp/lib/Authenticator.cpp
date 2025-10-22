@@ -122,7 +122,6 @@ extern "C" {
               new Snowflake::Client::AuthenticatorOAuth(conn,
                   nullptr, nullptr));
       }
-
       if (AUTH_TEST == auth_type)
       {
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(

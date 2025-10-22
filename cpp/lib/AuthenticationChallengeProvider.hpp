@@ -27,8 +27,6 @@ namespace Snowflake
             std::string generateState() const override;
             std::string generateCodeVerifier() const override;
         };//    class AuthenticationChallenge
-
-        
     } // namespace Client
 } // namespace Snowflake
 

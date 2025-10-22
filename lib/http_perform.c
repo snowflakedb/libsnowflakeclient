@@ -353,7 +353,6 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (DISABLE_VERIFY_PEER) {
             res = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-
             if (res != CURLE_OK) {
                 log_error("Failed to disable peer verification [%s]",
                           curl_easy_strerror(res));
@@ -486,6 +485,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     "Unable to get http response code",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
+
+            //TODO: SNOW-2452931: Remove redirect http code to the external HTTP call funcion.
             else if (!(http_code == 200 || (ENABLE_REDIRECT && (http_code == 302)))) {
                 // Success
                 ret = SF_BOOLEAN_TRUE;

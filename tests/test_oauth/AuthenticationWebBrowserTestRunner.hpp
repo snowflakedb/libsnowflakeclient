@@ -8,7 +8,6 @@
 #include "../../lib/connection.h"
 #include "curl_desc_pool.h"
 
-
 namespace Snowflake {
     namespace Client {
 

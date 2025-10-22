@@ -11,8 +11,6 @@
 #include "AuthenticationChallengeProvider.hpp"
 #include "AuthenticationWebBrowserRunner.hpp"
 
-
-
 namespace Snowflake {
     namespace Client {
         using namespace Snowflake::Client::IAuth;

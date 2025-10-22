@@ -21,7 +21,6 @@ namespace Snowflake {
         public:
             void startWebBrowser(const std::string&) override;
         };
-
     } // namespace Client
 } // namespace Snowflake
 #endif //AUTHENTICATIONWEBBROWSERRUNNER_HPP
