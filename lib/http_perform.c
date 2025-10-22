@@ -360,15 +360,11 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        //TODO: SNOW-2452931: Port this to the new http perform function for the extenral request.
-        //This option is not necessary for the internal request.
-        if (ENABLE_REDIRECT) {
-            res = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-            if (res != CURLE_OK) {
-                log_error("Failed to enable redirection [%s]",
-                    curl_easy_strerror(res));
-                break;
-            }
+        res = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        if (res != CURLE_OK) {
+            log_error("Failed to enable redirection [%s]",
+                curl_easy_strerror(res));
+            break;
         }
 
         if (CA_BUNDLE_FILE) {
@@ -487,7 +483,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
 
             //TODO: SNOW-2452931: Remove redirect http code to the external HTTP call funcion.
-            else if (!(http_code == 200 || (ENABLE_REDIRECT && (http_code == 302)))) {
+            else if (!(http_code == 200 || http_code == 302)) {
                 // Success
                 ret = SF_BOOLEAN_TRUE;
               retry = is_retryable_http_code(http_code);

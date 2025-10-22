@@ -246,9 +246,7 @@ void test_successful_oauth_authorization_flow_with_root_path_in_redirect_uri(voi
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     sf_bool disable_verify_peer = SF_BOOLEAN_TRUE;
-    sf_bool enable_redirect = SF_BOOLEAN_TRUE;
     snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &disable_verify_peer);
-    snowflake_global_set_attribute(SF_GLOBAL_ENALBE_REDIRECT, &enable_redirect);
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_successful_oauth_authorization_flow),
         cmocka_unit_test(test_successful_oauth_authorization_flow_with_single_use_refresh_token),
