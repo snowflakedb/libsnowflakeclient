@@ -13,7 +13,7 @@
 
 namespace Snowflake {
     namespace Client {
-        double WiremockRunner::S_WIREMOCK_TIMEOUT_MS = 2500000;
+        int WiremockRunner::S_WIREMOCK_TIMEOUT = 3;
 
         WiremockRunner::WiremockRunner()
         {
@@ -162,10 +162,10 @@ namespace Snowflake {
             auto start = std::chrono::steady_clock::now();
             while (!isRunning())
             {
-                sleep(1); // ms
+                sleep(1);
                 auto end = std::chrono::steady_clock::now();
                 double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
-                if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT_MS)
+                if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT)
                 {
                     cout << "Wiremock startup timed out!";
                     throw TimeoutException("Wiremock startup timed out!");
