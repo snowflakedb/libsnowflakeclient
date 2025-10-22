@@ -162,7 +162,7 @@ namespace Snowflake {
             auto start = std::chrono::steady_clock::now();
             while (!isRunning())
             {
-                sleep(1000); // ms
+                sleep(1); // ms
                 auto end = std::chrono::steady_clock::now();
                 double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
                 if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT_MS)
@@ -177,8 +177,8 @@ namespace Snowflake {
             std::array<char, 128> buffer{};
             std::string result;
 
-auto close_file = [](FILE* f){ if(f) pclose(f); };
-std::unique_ptr<FILE, decltype(close_file)> pipe(popen(cmd.c_str(), "r"), close_file);
+            auto close_file = [](FILE* f) { if (f) pclose(f); };
+            std::unique_ptr<FILE, decltype(close_file)> pipe(popen(cmd.c_str(), "r"), close_file);
             if (!pipe) {
                 throw std::runtime_error("popen() failed!");
             }

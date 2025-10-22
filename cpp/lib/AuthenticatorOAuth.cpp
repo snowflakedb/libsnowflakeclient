@@ -40,7 +40,7 @@
 #include "cJSON.h"
 #include "memory.h"
 #include "error.h"
-
+#include <errno.h>
 namespace {
     std::string encodeBase64(const std::string& s) {
         return Snowflake::Client::Util::IBase64::encodeURLNoPadding(std::vector<char>(s.begin(), s.end()));
@@ -170,7 +170,6 @@ namespace Snowflake {
             }
         }
 
-
         void AuthenticatorOAuth::authenticate()
         {
 #ifdef _WIN32
@@ -182,8 +181,9 @@ namespace Snowflake {
                 return;
             }
 
+            //TODO: SNOW-2452931: 
             //This try catch is to capture any AuthException thrown from the flows and get the error message
-            // The try catch in this authentication flows will be refactored in the next PR
+            //The try catch in this authentication flows needs to be refactored.
             try {
                 // try to get a new access token using the existing refresh token
                 if (refreshAccessTokenFlow())
@@ -211,9 +211,9 @@ namespace Snowflake {
 
         void AuthenticatorOAuth::authorizationCodeFlow()
         {
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::authorizationCodeFlow::OAuth authorization code flow started")
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::authorizationCodeFlow::OAuth authorization code flow started");
 
-                std::string codeVerifier = m_challengeProvider->generateCodeVerifier();
+            std::string codeVerifier = m_challengeProvider->generateCodeVerifier();
             std::string codeChallenge = m_challengeProvider->generateCodeChallenge(codeVerifier);
             std::string state = m_challengeProvider->generateState();
 
@@ -227,8 +227,8 @@ namespace Snowflake {
                                                             state,
                                                             m_challengeProvider->codeChallengeMethod() };
             CXX_LOG_DEBUG("sf::AuthenticatorOAuth::authorizationCodeFlow::executeAuthorizationCodeRequest %s",
-                maskOAuthSecret(authCodeRequest.authorizationCodeUrl()).c_str())
-                AuthorizationCodeResponse authCodeResponse = executeAuthorizationCodeRequest(authCodeRequest);
+                maskOAuthSecret(authCodeRequest.authorizationCodeUrl()).c_str());
+            AuthorizationCodeResponse authCodeResponse = executeAuthorizationCodeRequest(authCodeRequest);
             handleInvalidResponse(authCodeResponse.success, std::string("oauth authorization code request failure ") + authCodeResponse.errorMessage);
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::authorizationCodeFlow::createAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str())
@@ -241,39 +241,39 @@ namespace Snowflake {
                                                     m_redirectUri,
                                                     state,
                                                     m_singleUseRefreshTokens };
-            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::authorizationCodeFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str())
-                AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
+            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::authorizationCodeFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
             handleInvalidResponse(accessResponse.success, std::string("oauth access token request failure ") + accessResponse.errorMessage);
 
-            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::authorizationCodeFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str())
-                resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
+            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::authorizationCodeFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str());
+            resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
         }
 
         void AuthenticatorOAuth::clientCredentialsFlow()
         {
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::clientCredentialsFlow::OAuth client credentials flow started")
-                CXX_LOG_TRACE("sf::AuthenticatorOAuth::clientCredentialsFlow::createAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str())
-                AccessTokenRequest accessRequest = { m_tokenEndpoint,
-                                                    "",
-                                                    m_authScope,
-                                                    m_clientId,
-                                                    m_clientSecret,
-                                                    "",
-                                                   SFURL::parse(""),
-                                                    "",
-                                                    false };
-            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str())
-                AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
+                CXX_LOG_TRACE("sf::AuthenticatorOAuth::clientCredentialsFlow::createAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenRequest accessRequest = { m_tokenEndpoint,
+                                                "",
+                                                m_authScope,
+                                                m_clientId,
+                                                m_clientSecret,
+                                                "",
+                                               SFURL::parse(""),
+                                                "",
+                                                false };
+            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
             handleInvalidResponse(accessResponse.success, std::string("oauth access token request failure"));
 
-            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str())
-                resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
+            CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str());
+            resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
         }
 
         std::string AuthenticatorOAuth::oauthWebServerTask(IAuthWebServer* authWebServer, const SFURL& redirectUrl, const std::string& state, const int browserResponseTimeout) {
-            SF_UNUSED(browserResponseTimeout);
             SF_UNUSED(redirectUrl);
 
+            authWebServer->setTimeout(browserResponseTimeout);
             try {
                 authWebServer->startAccept(state);
                 authWebServer->receive();
@@ -281,12 +281,12 @@ namespace Snowflake {
             }
             catch (...)
             {
-                CXX_LOG_WARN("sf::AuthenticatorOAuth::oauthWebServerTask::Problem during HTTP listen.")
-                    authWebServer->stop();
-                throw AuthException("Problem during HTTP listen.");
+                CXX_LOG_WARN("sf::AuthenticatorOAuth::oauthWebServerTask::Problem during HTTP listen.");
+                authWebServer->stop();
+                throw;
             }
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::oauthWebServerTask::Token: %s", maskOAuthSecret(authWebServer->getToken()).c_str())
-                return authWebServer->getToken();
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::oauthWebServerTask::Token: %s", maskOAuthSecret(authWebServer->getToken()).c_str());
+            return authWebServer->getToken();
         }
 
         std::future<std::string> AuthenticatorOAuth::asyncStartOAuthWebserver(const AuthorizationCodeRequest& authorizationCodeRequest) const {
@@ -321,8 +321,8 @@ namespace Snowflake {
                     response.errorMessage.c_str());
             }
             else {
-                CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow", "token refresh completed")
-                    resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
+                CXX_LOG_DEBUG("sf::AuthenticatorOAuth::clientCredentialsFlow", "token refresh completed");
+                resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
             }
             return response.success;
         }
@@ -370,14 +370,14 @@ namespace Snowflake {
                 return AuthorizationCodeResponse::failed(e.cause());
             }
 
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAuthorizationCodeRequest::Received token: %s", maskOAuthSecret(token).c_str())
-                return AuthorizationCodeResponse::succeeded(token);
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAuthorizationCodeRequest::Received token: %s", maskOAuthSecret(token).c_str());
+            return AuthorizationCodeResponse::succeeded(token);
         }
 
         bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
             const std::string& body, jsonObject_t& resp) {
 
-            //TODO: This post call has the same workflows with the CIDP post calls. This code will be refactored in the next PR
+            //TODO: SNOW-2452931:  This post call has the same workflows with the CIDP post calls. This code needs to be refactored.
 
             std::string destination = endPoint.toString();
             void* curl_desc;
@@ -405,7 +405,6 @@ namespace Snowflake {
             {
                 CXX_LOG_INFO("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n",
                     snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-                m_errMsg = "sf::AuthenticatorOAuth::executeRestRequest::post call failed.";
                 return false;
             }
             else
@@ -434,8 +433,8 @@ namespace Snowflake {
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
 
             if (!executeRestRequest(tokenURL, body, resp)) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest", "OAuth error: %s", m_errMsg);
-                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest", "OAuth error: %s", m_connection->error.msg);
+                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_connection->error.msg);
             }
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
@@ -574,11 +573,11 @@ namespace Snowflake {
             if (!m_token.empty())
             {
                 CXX_LOG_TRACE("sf::AuthenticatorOAuth::updateDataMap", "Passing token to Snowflake authentication: %s",
-                    maskOAuthSecret(m_token).c_str())
-                    dataMap["TOKEN"] = picojson::value(m_token);
+                    maskOAuthSecret(m_token).c_str());
+                dataMap["TOKEN"] = picojson::value(m_token);
             }
             else
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::updateDataMap", "Token not provided!")
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::updateDataMap", "Token not provided!");
         }
 
         std::string AuthenticatorOAuth::oauthAuthorizationFlow()
@@ -597,8 +596,8 @@ namespace Snowflake {
             {
                 CXX_LOG_ERROR(
                     "sf::AuthenticatorOAuth::handleInvalidResponse::Failure during authentication: %s",
-                    errorMessage.c_str())
-                    throw AuthException("OAuth authentication failure" + errorMessage);
+                    errorMessage.c_str());
+                throw AuthException("OAuth authentication failure: " + errorMessage);
             }
         }
 
@@ -606,8 +605,8 @@ namespace Snowflake {
         /// WEB SRV
         //////////////////////////////////////////////////////////
 
-        //TODO: This Websever have redundant code with AuthWebServer for the external browser. 
-        // This code will be refactored in the next PR
+        //TODO: SNOW-2452931: This Websever have redundant code with AuthWebServer for the external browser. 
+        // This code needs to be refactored.
 
         OAuthTokenListenerWebServer::OAuthTokenListenerWebServer() : m_socket_descriptor(0),
             m_socket_desc_web_client(0),
@@ -629,11 +628,11 @@ namespace Snowflake {
             m_real_port = std::move(port);
             if (port == 0) {
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s%s, port will be randomly chosen",
-                    host.c_str(), path.c_str())
+                    host.c_str(), path.c_str());
             }
             else {
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s:%d%s",
-                    host.c_str(), port, path.c_str())
+                    host.c_str(), port, path.c_str());
             }
             start();
             return m_real_port;
@@ -653,19 +652,19 @@ namespace Snowflake {
             if ((int)m_socket_descriptor < 0)
             {
                 CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket.  err: %s", strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
 
             struct sockaddr_in recv_server;
             memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
             recv_server.sin_family = AF_INET;
             recv_server.sin_port = htons(m_port); // ephemeral port
-            if (inet_pton(AF_INET, AuthenticatorOAuth::S_LOCALHOST.c_str(), &recv_server.sin_addr.s_addr) != 1)
+            if (inet_pton(AF_INET, m_host.c_str(), &recv_server.sin_addr.s_addr) != 1)
             {
                 CXX_LOG_ERROR(
                     "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not convert buffer to a network address. err: %s",
                     strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
 
             }
             if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
@@ -674,14 +673,14 @@ namespace Snowflake {
                 CXX_LOG_ERROR(
                     "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not bind a port. err: %s",
                     strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
             socklen_t length = sizeof(struct sockaddr_in);
             if (getsockname(m_socket_descriptor, (struct sockaddr*)&recv_server, &length) < 0) {
                 CXX_LOG_ERROR(
                     "sf::OAuthTokenListenerWebServer::start::Failed to get socket name. Could not get a port. err: %s",
                     strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
             m_real_port = ntohs(recv_server.sin_port);
             if (m_real_port != m_port) {
@@ -692,7 +691,7 @@ namespace Snowflake {
                 CXX_LOG_ERROR(
                     "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not listen a port. err: %s",
                     strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
 
             }
             CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Web Server successfully started on %s:%d and path %s", m_host.c_str(), m_real_port, m_path.c_str())
@@ -715,7 +714,7 @@ namespace Snowflake {
                         CXX_LOG_ERROR(
                             "sf::OAuthTokenListenerWebServer::stop::Failed close HTTP port err: %s",
                             strerror(errno));
-                        throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                        throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
                     }
                 }
             m_socket_desc_web_client = 0;
@@ -733,7 +732,7 @@ namespace Snowflake {
                         "sf::OAuthTokenListenerWebServer::stop::Failed to stop web server. err: %s",
                         strerror(errno));
                     m_socket_descriptor = 0;
-                    throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
                 }
             }
             m_socket_descriptor = 0;
@@ -785,21 +784,20 @@ namespace Snowflake {
                     CXX_LOG_ERROR(
                         "sf::OAuthTokenListenerWebServer::startAccept::Failed to receive token. Could not accept a request. error: %s",
                         strerror(errno));
-                    throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
                 }
             }
             else if (retVal == 0)
             {
-                std::string errMsg = "Auth browser timed out";
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::startAccept:: %s", errMsg.c_str());
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::startAccept::Auth browser timed out. ");
+                throw AuthException("SFOAuthError: Auth browser timed out.");
             }
             else
             {
                 CXX_LOG_ERROR(
                     "sf::OAuthTokenListenerWebServer::startAccept::Failed to determine status of auth web server. err: %s",
                     strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
         }
 
@@ -807,7 +805,7 @@ namespace Snowflake {
         {
             CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive:::start receive")
 
-            char mesg[20000];
+                char mesg[20000];
             char* rest_mesg;
             char* method;
             int recvlen;
@@ -816,13 +814,13 @@ namespace Snowflake {
             if (recvlen < 0)
             {
                 CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive:::Could not receive a request.err: %s", strerror(errno));
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
 
             CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::%s", maskOAuthSecret(mesg).c_str())
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-            method = sf_strtok(mesg, " \t\n", &rest_mesg);
+                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::%s", maskOAuthSecret(mesg).c_str())
+                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
+                method = sf_strtok(mesg, " \t\n", &rest_mesg);
             if (strncmp(method, "GET\0", 4) == 0)
             {
                 parseAndRespondGetRequest(method, &rest_mesg);
@@ -832,7 +830,7 @@ namespace Snowflake {
             {
                 std::string errorDesc = "Unexpected method while waiting for a request: " + std::string(method);
                 CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
-                throw AuthException("SFOAuthError " + std::string(strerror(errno)));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
             }
             return false;
         }
@@ -855,7 +853,7 @@ namespace Snowflake {
             }
 
             // validate request path
-            if (strncmp(fullPath, m_path.c_str(), m_path.length()) != 0)
+            if (strncmp(m_path.c_str(), fullPath, m_path.length()) != 0)
             {
                 fail("400 Bad Request", "HTTP Request is missing URL");
             }
@@ -907,8 +905,8 @@ namespace Snowflake {
 
             m_token = receivedCode;
             CXX_LOG_TRACE("sf", "OAuthTokenListenerWebServer", "parseAndRespondGetRequest",
-                "Successfully received authorization code from Identity Provider")
-                respond("200 OK", successMessage);
+                "Successfully received authorization code from Identity Provider");
+            respond("200 OK", successMessage);
         }
 
         bool OAuthTokenListenerWebServer::isConsentCacheIdToken()
@@ -939,7 +937,7 @@ namespace Snowflake {
 
         void OAuthTokenListenerWebServer::fail(std::string httpError, std::string message)
         {
-            CXX_LOG_ERROR("sf", "OAuthTokenListenerWebServer", "fail", message.c_str())
+            CXX_LOG_ERROR("sf", "OAuthTokenListenerWebServer", "fail", message.c_str());
             respond(httpError, failureMessage); // unless error message is html-escaped it shouldn't be part of response visible in the browser
             throw AuthException(message);
         }

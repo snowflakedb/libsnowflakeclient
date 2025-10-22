@@ -11,7 +11,7 @@
       "response": {
         "status": 302,
         "headers": {
-          "Location": "http://localhost:$PORT/snowflake/oauth-redirect?code=123&state=abc123"
+          "Location": "http://172.18.175.19:$PORT/snowflake/oauth-redirect?code=123&state=abc123"
         }
       }
     },
@@ -32,7 +32,7 @@
         },
         "bodyPatterns": [
           {
-            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2Flocalhost%3A$PORT%2Fsnowflake%2Foauth-redirect&code_verifier="
+            "contains": "grant_type=authorization_code&code=123&redirect_uri=http%3A%2F%2F172.18.175.19%3A$PORT%2Fsnowflake%2Foauth-redirect&code_verifier="
           }
         ]
       },

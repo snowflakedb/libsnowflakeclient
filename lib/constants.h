@@ -8,6 +8,7 @@ extern "C" {
 #include <snowflake/basic_types.h>
 #include "snowflake/platform.h"
 extern sf_bool DISABLE_VERIFY_PEER;
+extern sf_bool ENABLE_REDIRECT;
 extern char *CA_BUNDLE_FILE;
 extern int32 SSL_VERSION;
 extern sf_bool DEBUG;

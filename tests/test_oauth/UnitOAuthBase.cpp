@@ -50,47 +50,47 @@ namespace Snowflake {
             return {};
         }
 
-    SF_CONNECT* UnitOAuthBase::createConnection(
-        AuthenticatorType flow,
-        int browserResponseTimeout,
-        std::string customAuthEndpoint,
-        std::string customTokenEndpoint,
-        std::string redirectUri,
-        bool oauthSingleUseRefreshTokens)
-    {
-        OAuthFlowTestConnectionParams params = createAuthorizationCodeParams(flow,
-            customAuthEndpoint,
-            customTokenEndpoint,
-            redirectUri,
-            oauthSingleUseRefreshTokens);
-        SF_CONNECT* sf = snowflake_init();
-        snowflake_set_attribute(sf, SF_CON_HOST, wiremockHost);
-        snowflake_set_attribute(sf, SF_CON_PORT, wiremockPort);
-        snowflake_set_attribute(sf, SF_CON_ACCOUNT, "snowdriverswarsaw.qa6.us-west-2.aws");
-        snowflake_set_attribute(sf, SF_CON_USER, "qa@snowflakecomputing.com");
-        snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, (params.authenticator).c_str());
-        snowflake_set_attribute(sf, SF_CON_DATABASE, "TEST_DB");
-        snowflake_set_attribute(sf, SF_CON_SCHEMA, "TEST_SCHEMA");
-        snowflake_set_attribute(sf, SF_CON_WAREHOUSE, "TEST_WAREHOUSE");
-        snowflake_set_attribute(sf, SF_CON_ROLE, "ANALYST");
-        snowflake_set_attribute(sf, SF_CON_OAUTH_AUTHORIZATION_ENDPOINT, (params.authEndpoint).c_str());
-        snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, (params.tokenEndpoint).c_str());
-        snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, (params.redirectURI).c_str());
-        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "123");
-        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client-secret-value");
-        snowflake_set_attribute(sf, SF_CON_OAUTH_SCOPE, "session:role:ANALYST");
-        sf->single_use_refresh_token = params.oauthSingleUseRefreshTokens;
+        SF_CONNECT* UnitOAuthBase::createConnection(
+            AuthenticatorType flow,
+            int browserResponseTimeout,
+            std::string customAuthEndpoint,
+            std::string customTokenEndpoint,
+            std::string redirectUri,
+            bool oauthSingleUseRefreshTokens)
+        {
+            OAuthFlowTestConnectionParams params = createAuthorizationCodeParams(flow,
+                customAuthEndpoint,
+                customTokenEndpoint,
+                redirectUri,
+                oauthSingleUseRefreshTokens);
+            SF_CONNECT* sf = snowflake_init();
+            snowflake_set_attribute(sf, SF_CON_HOST, wiremockHost);
+            snowflake_set_attribute(sf, SF_CON_PORT, wiremockPort);
+            snowflake_set_attribute(sf, SF_CON_ACCOUNT, "snowdriverswarsaw.qa6.us-west-2.aws");
+            snowflake_set_attribute(sf, SF_CON_USER, "qa@snowflakecomputing.com");
+            snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, (params.authenticator).c_str());
+            snowflake_set_attribute(sf, SF_CON_DATABASE, "TEST_DB");
+            snowflake_set_attribute(sf, SF_CON_SCHEMA, "TEST_SCHEMA");
+            snowflake_set_attribute(sf, SF_CON_WAREHOUSE, "TEST_WAREHOUSE");
+            snowflake_set_attribute(sf, SF_CON_ROLE, "ANALYST");
+            snowflake_set_attribute(sf, SF_CON_OAUTH_AUTHORIZATION_ENDPOINT, (params.authEndpoint).c_str());
+            snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, (params.tokenEndpoint).c_str());
+            snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, (params.redirectURI).c_str());
+            snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "123");
+            snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client-secret-value");
+            snowflake_set_attribute(sf, SF_CON_OAUTH_SCOPE, "session:role:ANALYST");
+            sf->single_use_refresh_token = params.oauthSingleUseRefreshTokens;
 
-        return sf;
-    }
+            return sf;
+        }
 
-    void UnitOAuthBase::initAuthChallengeTestProvider() {
-        AuthenticationChallengeBaseProvider::setInstance(std::make_unique<AuthenticationChallengeTestProvider>());
-    }
+        void UnitOAuthBase::initAuthChallengeTestProvider() {
+            AuthenticationChallengeBaseProvider::setInstance(std::make_unique<AuthenticationChallengeTestProvider>());
+        }
 
-    void UnitOAuthBase::initAuthWebBrowserTestRunner() {
-        IAuthenticationWebBrowserRunner::setInstance(std::make_unique<AuthenticationWebBrowserTestRunner>());
+        void UnitOAuthBase::initAuthWebBrowserTestRunner() {
+            IAuthenticationWebBrowserRunner::setInstance(std::make_unique<AuthenticationWebBrowserTestRunner>());
+        }
     }
-}
 }
     

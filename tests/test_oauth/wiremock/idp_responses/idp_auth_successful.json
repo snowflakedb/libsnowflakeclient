@@ -18,7 +18,7 @@
             "equalTo": "S256"
           },
           "redirect_uri": {
-            "equalTo": "http://localhost:$PORT/snowflake/oauth-redirect"
+            "matches": "http://localhost:$PORT/snowflake/oauth-redirect"
           },
           "code_challenge": {
             "matches": ".*"

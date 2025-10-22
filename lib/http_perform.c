@@ -353,9 +353,21 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (DISABLE_VERIFY_PEER) {
             res = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+
             if (res != CURLE_OK) {
                 log_error("Failed to disable peer verification [%s]",
                           curl_easy_strerror(res));
+                break;
+            }
+        }
+
+        //TODO: SNOW-2452931: Port this to the new http perform function for the extenral request.
+        //This option is not necessary for the internal request.
+        if (ENABLE_REDIRECT) {
+            res = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            if (res != CURLE_OK) {
+                log_error("Failed to enable redirection [%s]",
+                    curl_easy_strerror(res));
                 break;
             }
         }
@@ -473,7 +485,10 @@ sf_bool STDCALL http_perform(CURL *curl,
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
                                     "Unable to get http response code",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
-            } else if (http_code != 200) {
+            }
+            else if (!(http_code == 200 || (ENABLE_REDIRECT && (http_code == 302)))) {
+                // Success
+                ret = SF_BOOLEAN_TRUE;
               retry = is_retryable_http_code(http_code);
               if (!retry) {
                 char msg[1024];
@@ -483,31 +498,33 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_STATUS_ERROR_RETRY,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
+                ret = SF_BOOLEAN_FALSE;
               } else {
                 curl_retry_ctx.retry_reason = (uint32)http_code;
               }
-              if (retry &&
-                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
-              {
-                uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
-                log_debug(
-                    "curl_easy_perform() Got retryable error http code %d, retry count  %d "
-                    "will retry after %d seconds", http_code,
-                    curl_retry_ctx.retry_count,
-                    next_sleep_in_secs);
-                sf_sleep_ms(next_sleep_in_secs * 1000);
-              }
-              else {
-                char msg[1024];
-                sf_sprintf(msg, sizeof(msg),
-                           "Exceeded the retry_timeout , http code: [%d]",
-                           http_code);
-                SET_SNOWFLAKE_ERROR(error,
-                                    SF_STATUS_ERROR_RETRY,
-                                    msg,
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
-                retry = SF_BOOLEAN_FALSE;
+              if (retry) {
+                  if (((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                      ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
+                  {
+                      uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                      log_debug(
+                          "curl_easy_perform() Got retryable error http code %d, retry count  %d "
+                          "will retry after %d seconds", http_code,
+                          curl_retry_ctx.retry_count,
+                          next_sleep_in_secs);
+                      sf_sleep_ms(next_sleep_in_secs * 1000);
+                  }
+                  else {
+                      char msg[1024];
+                      sf_sprintf(msg, sizeof(msg),
+                          "Exceeded the retry_timeout , http code: [%d]",
+                          http_code);
+                      SET_SNOWFLAKE_ERROR(error,
+                          SF_STATUS_ERROR_RETRY,
+                          msg,
+                          SF_SQLSTATE_UNABLE_TO_CONNECT);
+                      retry = SF_BOOLEAN_FALSE;
+                  }
               }
             } else {
                 ret = SF_BOOLEAN_TRUE;
@@ -552,6 +569,9 @@ sf_bool STDCALL http_perform(CURL *curl,
         *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
             ret = SF_BOOLEAN_TRUE;
+            // TODO: SNOW-2452931: In the post call, the current beahvior is to validate whether it has a code field in the response.
+            // However, the code field validation is only requried for the snowflake-internal request, not for any other https request to external Idp.
+            // As a result, we need to create another http perform function for the external Idp request to avoid this issue and remove is_one_time_token_request check here.
             if (is_one_time_token_request(*json)) {
                 snowflake_cJSON_AddNullToObject(*json, "code");
             }

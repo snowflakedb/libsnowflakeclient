@@ -411,6 +411,128 @@ void test_sso_token_auth_renew(void** unused)
     assert_int_equal(status, SF_STATUS_SUCCESS);
     snowflake_term(sf);
 }
+void test_oauth_authorization_code(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_oauth_authorization_code") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_INTERNAL_OAUTH_USER"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE);
+    char* host, * port, * protocol, * role, * client_id, * client_secret, * redirect_uri, * oauth_authorization_url, * oauth_token_request_url;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    role = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_ROLE");
+    if (role) {
+        snowflake_set_attribute(sf, SF_CON_ROLE, role);
+    }
+    client_id = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_ID");
+    if (client_id) {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, client_id);
+    }
+    client_secret = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_CLIENT_SECRET");
+    if (client_secret) {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, client_secret);
+    }
+    redirect_uri = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_REDIRECT_URI");
+    if (redirect_uri)
+    {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, redirect_uri);
+    }
+    oauth_authorization_url = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_AUTHORIZATION");
+    if (oauth_authorization_url) 
+    {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_AUTHORIZATION_ENDPOINT, oauth_authorization_url);
+    }
+    oauth_token_request_url = getenv("SNOWFLAKE_AUTH_TEST_INTERNAL_OAUTH_SNOWFLAKE_TOKEN");
+    if (oauth_token_request_url) 
+    {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, oauth_token_request_url);
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
+
+void test_oauth_client_credentials(void** unused)
+{
+    SF_UNUSED(unused);
+    const char* manual_test = getenv("SNOWFLAKE_MANUAL_TEST_TYPE");
+    if (manual_test == NULL || strcmp(manual_test, "test_oauth_client_credentials") != 0)
+    {
+        printf("This test was skipped.\n");
+        return;
+    }
+
+    SF_CONNECT* sf = snowflake_init();
+    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
+        getenv("SNOWFLAKE_TEST_ACCOUNT"));
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+        SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS);
+    char* host, * port, * protocol, * role, * client_id, * client_secret, * oauth_token_request_url;
+    host = getenv("SNOWFLAKE_TEST_HOST");
+    if (host) {
+        snowflake_set_attribute(sf, SF_CON_HOST, host);
+    }
+    port = getenv("SNOWFLAKE_TEST_PORT");
+    if (port) {
+        snowflake_set_attribute(sf, SF_CON_PORT, port);
+    }
+    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
+    if (protocol) {
+        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
+    }
+    role = getenv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_SNOWFLAKE_ROLE");
+    if (role) {
+        snowflake_set_attribute(sf, SF_CON_ROLE, role);
+    }
+    client_id = getenv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_CLIENT_ID");
+    if (client_id) {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, client_id);
+        snowflake_set_attribute(sf, SF_CON_USER, client_id);
+
+    }
+    client_secret = getenv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_OKTA_USER_PASSWORD");
+    if (client_secret) {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, client_secret);
+    }
+
+    oauth_token_request_url = getenv("SNOWFLAKE_AUTH_TEST_EXTERNAL_OAUTH_SNOWFLAKE_TOKEN");
+    if (oauth_token_request_url) {
+        snowflake_set_attribute(sf, SF_CON_OAUTH_TOKEN_ENDPOINT, oauth_token_request_url);
+    }
+
+    SF_STATUS status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    snowflake_term(sf);
+}
 
 int main(void)
 {
@@ -424,6 +546,9 @@ int main(void)
         cmocka_unit_test(test_okta_connect),
         cmocka_unit_test(test_sso_token_auth),
         cmocka_unit_test(test_sso_token_auth_renew),
+        cmocka_unit_test(test_oauth_authorization_code),
+        cmocka_unit_test(test_oauth_client_credentials),
+
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

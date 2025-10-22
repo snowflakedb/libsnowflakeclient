@@ -31,6 +31,7 @@
 
 // Define internal constants
 sf_bool DISABLE_VERIFY_PEER;
+sf_bool ENABLE_REDIRECT;
 char *CA_BUNDLE_FILE;
 int32 SSL_VERSION;
 sf_bool DEBUG;
@@ -900,6 +901,7 @@ SF_STATUS STDCALL snowflake_global_init(
 
     // Initialize constants
     DISABLE_VERIFY_PEER = SF_BOOLEAN_FALSE;
+    ENABLE_REDIRECT = SF_BOOLEAN_FALSE;
     CA_BUNDLE_FILE = NULL;
     SF_HEADER_USER_AGENT = NULL;
     SSL_VERSION = CURL_SSLVERSION_TLSv1_2;
@@ -982,6 +984,9 @@ snowflake_global_set_attribute(SF_GLOBAL_ATTRIBUTE type, const void *value) {
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             alloc_buffer_and_copy(&CLIENT_CONFIG_FILE, value);
             break;
+        case SF_GLOBAL_ENALBE_REDIRECT:
+            ENABLE_REDIRECT = *(sf_bool *) value;
+            break;
         default:
             break;
     }
@@ -1011,6 +1016,9 @@ snowflake_global_get_attribute(SF_GLOBAL_ATTRIBUTE type, void *value, size_t siz
         case SF_GLOBAL_OCSP_CHECK:
             *((sf_bool *) value) = SF_OCSP_CHECK;
             break;
+        case SF_GLOBAL_ENALBE_REDIRECT:
+            *((sf_bool *) value) = ENABLE_REDIRECT;
+            break;    
         case SF_GLOBAL_CLIENT_CONFIG_FILE:
             if (CLIENT_CONFIG_FILE) {
               if (strlen(CLIENT_CONFIG_FILE) > size - 1) {
