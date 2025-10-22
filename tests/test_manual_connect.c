@@ -548,7 +548,6 @@ int main(void)
         cmocka_unit_test(test_sso_token_auth_renew),
         cmocka_unit_test(test_oauth_authorization_code),
         cmocka_unit_test(test_oauth_client_credentials),
-
      };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
