@@ -45,9 +45,9 @@ namespace Snowflake {
                   "",
                   false
                 };
+            default:
+                return {};
             }
-
-            return {};
         }
 
         SF_CONNECT* UnitOAuthBase::createConnection(
