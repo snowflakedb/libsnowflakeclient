@@ -185,19 +185,19 @@ void test_oauth_start_browser_url(void** unused) {
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE);
     snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "client123");
     snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client123Password");
-    snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, "http://localhost:8001/oauth2/v1/redirect_uri");
+    snowflake_set_attribute(sf, SF_CON_OAUTH_REDIRECT_URI, "http://127.0.0.1:8001/oauth2/v1/redirect_uri");
 
     auto* webServer = new OAuthTokenListenerWebServerMock();
     auto* webBrowserRunner = new WebBrowserRunnerMock();
 
-    AuthenticatorOAuth* auth = new MockOAuth(sf, webServer, webBrowserRunner);
+    MockOAuth* auth = new MockOAuth(sf, webServer, webBrowserRunner);
     auth->authenticate();
     std::string url = webBrowserRunner->getUrl();
     std::string redirectUri = getValueFromUrl(url, "redirect_uri=");
     std::string clientId = getValueFromUrl(url, "client_id=");
     std::string scope = getValueFromUrl(url, "scope=");
     std::string codeChallengeMethod = getValueFromUrl(url, "code_challenge_method=");
-    assert_string_equal(redirectUri.c_str(), "http://localhost:8001/oauth2/v1/redirect_uri");
+    assert_string_equal(redirectUri.c_str(), "http://127.0.0.1:8001/oauth2/v1/redirect_uri");
     assert_string_equal(clientId.c_str(), "client123");
     assert_string_equal(scope.c_str(), "session:role:ANALYST");
     assert_string_equal(codeChallengeMethod.c_str(), "S256");

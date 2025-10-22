@@ -347,7 +347,9 @@ namespace Snowflake {
         AuthorizationCodeResponse AuthenticatorOAuth::executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest)
         {
             SFURL redirectUrl = authorizationCodeRequest.redirectCallbackUrl;
-            m_authWebServer->setTimeout(m_connection->browser_response_timeout);
+            if (m_connection->browser_response_timeout) {
+                m_authWebServer->setTimeout(m_connection->browser_response_timeout);
+            }
             int portUsed = m_authWebServer->start(redirectUrl.host(), std::atoi(redirectUrl.port().c_str()), redirectUrl.path());
             refreshDynamicRedirectUri(portUsed, authorizationCodeRequest);
             std::string token;
