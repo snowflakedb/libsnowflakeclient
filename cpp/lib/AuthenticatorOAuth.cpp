@@ -165,8 +165,8 @@ namespace Snowflake {
             if (m_authEndpoint.host() != m_tokenEndpoint.host())
             {
                 CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
-                    m_authEndpoint.host(),
-                    m_tokenEndpoint.host());
+                    m_authEndpoint.host().c_str(),
+                    m_tokenEndpoint.host().c_str());
             }
         }
 
@@ -440,7 +440,7 @@ namespace Snowflake {
             }
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::Body: %s", maskOAuthSecret(picojson::value(resp).serialize().c_str()));
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::Body: %s", maskOAuthSecret(picojson::value(resp).serialize()).c_str());
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------")
 
                 std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
@@ -472,7 +472,7 @@ namespace Snowflake {
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest", "----------------------");
 
             if (!executeRestRequest(request.tokenEndpoint, body, resp)) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest::OAuth error: %s", m_errMsg);
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRefreshAccessTokenRequest::OAuth error: %s", m_errMsg.c_str());
                 return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
             }
 
