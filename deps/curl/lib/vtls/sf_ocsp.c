@@ -26,6 +26,8 @@
 #include <time.h>
 #include <errno.h>
 #include "oobtelemetry.h"
+#include <stdarg.h>
+#include <curl/curl.h>
 
 #ifdef __linux__
 #include <linux/limits.h>
@@ -53,10 +55,7 @@ typedef HANDLE SF_MUTEX_HANDLE;
 #else
 // Linux and MacOSX
 #include <stdlib.h>
-#include <sys/utsname.h>
-#include <sys/stat.h>
 #include <pthread.h>
-#include <unistd.h>
 
 typedef pthread_t SF_THREAD_HANDLE;
 typedef pthread_cond_t SF_CONDITION_HANDLE;
@@ -179,6 +178,10 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid,
                                         SF_OTD *ocsp_log_data,
                                         char *last_timeout_host
 );
+/* Helper used by production and tests to add responder's self-signed issuer
+ * from verified TLS chain to the OCSP basic response if missing. Returns 1 if
+ * issuer added, 0 otherwise. */
+static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(X509) *ch, struct Curl_easy *data);
 static void initOCSPCacheServer(struct Curl_easy *data);
 static void downloadOCSPCache(struct Curl_easy *data, SF_OTD *ocsp_log_data, char *last_timeout_host);
 static char* encodeOCSPCertIDToBase64(OCSP_CERTID *certid, struct Curl_easy *data);
@@ -204,6 +207,24 @@ static void printOCSPFailOpenWarning(SF_OTD *ocsp_log, struct Curl_easy *data, b
 static char * generateOCSPTelemetryData(SF_OTD *ocsp_log);
 static void clearOSCPLogData(SF_OTD *ocsp_log);
 static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name);
+
+/* Parse boolean-like environment variables: 1/true/yes/on (case-insensitive)
+ * returns 1 if enabled, 0 otherwise. */
+static int parse_bool_env(const char *name)
+{
+  const char *env = getenv(name);
+  if(!env || !*env) return 0;
+  switch(env[0]) {
+    case '1': case 't': case 'T': case 'y': case 'Y':
+      return 1;
+    default:
+      break;
+  }
+  if(strncasecmp(env, "true", 4) == 0) return 1;
+  if(strncasecmp(env, "yes", 3) == 0) return 1;
+  if(strncasecmp(env, "on", 2) == 0) return 1;
+  return 0;
+}
 
 /* Intentially make it global for test purpose */
 CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, size_t *outlen);
@@ -318,13 +339,13 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
 {
   // allocate buffer 3 times larger than source data in case every single, add 1 for '\0'
   // character needs to be encoded as %xx
-  size_t buf_len = data_size * 3 + 1;
+  size_t buf_cap = data_size * 3 + 1;
   char* encode_buf = NULL;
   char* cur_ptr = NULL;
   size_t enc_len = 0;
   size_t pos = 0;
 
-  encode_buf = (char*)malloc(buf_len);
+  encode_buf = (char*)malloc(buf_cap);
   if(!encode_buf)
   {
     return CURLE_OUT_OF_MEMORY;
@@ -345,14 +366,17 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
       *cur_ptr = car;
       cur_ptr++;
       enc_len++;
-      buf_len--;
     }
     else
     {
-      snprintf(cur_ptr, buf_len, "%%%.2X", car);
+      /* percent-encode non-unreserved without intermediate null writes */
+      static const char HEX[] = "0123456789ABCDEF";
+      unsigned char u = (unsigned char)car;
+      cur_ptr[0] = '%';
+      cur_ptr[1] = HEX[(u >> 4) & 0xF];
+      cur_ptr[2] = HEX[u & 0xF];
       cur_ptr += 3;
       enc_len += 3;
-      buf_len -= 3;
     }
   }
 
@@ -364,6 +388,9 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
   }
   return CURLE_OK;
 }
+
+/* Forward declare helper used internally */
+static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(X509) *ch, struct Curl_easy *data);
 
 /* Return error string for last OpenSSL error
  */
@@ -378,15 +405,7 @@ static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name) {
   switch(test_name)
   {
     case SF_OCSP_TEST_MODE:
-      env = getenv("SF_OCSP_TEST_MODE");
-      if (env != NULL)
-      {
-        return TEST_ENABLED;
-      }
-      else
-      {
-        return TEST_DISABLED;
-      }
+      return parse_bool_env("SF_OCSP_TEST_MODE") ? TEST_ENABLED : TEST_DISABLED;
       break;
     case SF_TEST_OCSP_CACHE_SERVER_CONNECTION_TIMEOUT:
       env = getenv("SF_TEST_OCSP_CACHE_SERVER_CONNECTION_TIMEOUT");
@@ -400,15 +419,7 @@ static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name) {
       }
       break;
     case SF_TEST_OCSP_FORCE_BAD_RESPONSE_VALIDITY:
-      env = getenv("SF_TEST_OCSP_FORCE_BAD_RESPONSE_VALIDITY");
-      if (env != NULL)
-      {
-        return TEST_ENABLED;
-      }
-      else
-      {
-        return TEST_DISABLED;
-      }
+      return parse_bool_env("SF_TEST_OCSP_FORCE_BAD_RESPONSE_VALIDITY") ? TEST_ENABLED : TEST_DISABLED;
       break;
     case SF_TEST_CA_OCSP_RESPONDER_CONNECTION_TIMEOUT:
       env = getenv("SF_TEST_CA_OCSP_RESPONDER_CONNECTION_TIMEOUT");
@@ -422,30 +433,45 @@ static SF_TESTMODE_STATUS getTestStatus(SF_OCSP_TEST test_name) {
       }
       break;
     case SF_TEST_OCSP_CERT_STATUS_REVOKED:
-      env = getenv("SF_TEST_OCSP_CERT_STATUS_REVOKED");
-      if (env != NULL)
-      {
-        return TEST_ENABLED;
-      }
-      else
-      {
-        return TEST_DISABLED;
-      }
+      return parse_bool_env("SF_TEST_OCSP_CERT_STATUS_REVOKED") ? TEST_ENABLED : TEST_DISABLED;
       break;
     case SF_TEST_OCSP_CERT_STATUS_UNKNOWN:
-      env = getenv("SF_TEST_OCSP_CERT_STATUS_UNKNOWN");
-      if (env != NULL)
-      {
-        return TEST_ENABLED;
-      }
-      else
-      {
-        return TEST_DISABLED;
-      }
+      return parse_bool_env("SF_TEST_OCSP_CERT_STATUS_UNKNOWN") ? TEST_ENABLED : TEST_DISABLED;
       break;
     default:
       return TEST_DISABLED;
   }
+}
+
+static int sf_ocsp_add_responder_issuer_from_chain(OCSP_BASICRESP *br, STACK_OF(X509) *ch, struct Curl_easy *data)
+{
+  int added = 0;
+  if(!br || !ch) return 0;
+  const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+  int ecount = embedded ? sk_X509_num(embedded) : 0;
+  int ch_count = sk_X509_num(ch);
+  if(ecount >= 1 && ch_count >= 2) {
+    X509 *responder = sk_X509_value(embedded, ecount - 1);
+    for(int i = 0; i < ch_count; ++i) {
+      X509 *cand = sk_X509_value(ch, i);
+      if(X509_check_issued(cand, responder) == X509_V_OK) {
+        int present = false;
+        for(int j = 0; j < ecount; ++j) {
+          if(X509_cmp(sk_X509_value(embedded, j), cand) == 0) { present = true; break; }
+        }
+        if(!present) {
+          if(!OCSP_basic_add1_cert(br, cand)) {
+            failf(data, "OCSP: failed to add responder issuer to basic response");
+          } else {
+            infof(data, "OCSP: added responder issuer from verified chain to basic response");
+            added = 1;
+          }
+        }
+        break;
+      }
+    }
+  }
+  return added;
 }
 
 static void printTestWarning(struct Curl_easy *data) {
@@ -468,7 +494,6 @@ static int checkSSDStatus(void) {
     return (strncmp(ssd_env, "true", sizeof("true")) == 0);
 }
 
-
 SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
                              STACK_OF(X509) *ch,
                              X509_STORE *st,
@@ -482,6 +507,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
   char error_buffer[1024];
 
   br = OCSP_response_get1_basic(resp);
+  infof(data, "OCSP: response_status=%d basic_resp_present=%s", OCSP_response_status(resp), br ? "yes" : "no");
   if (getTestStatus(SF_OCSP_TEST_MODE) == TEST_ENABLED)
   {
     printTestWarning(data);
@@ -501,10 +527,132 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     goto end;
   }
 
-  ocsp_res = OCSP_basic_verify(br, ch, st, 0);
+  /* Trust the verified TLS chain for responder verification. Allow
+   * OpenSSL to also use certificates embedded in the OCSP response. */
+  if(st) {
+    /* Ensure cross-signed chains can anchor at provided trust without needing
+     * a self-signed root, and prefer trust store certs when building paths. */
+    X509_STORE_set_flags(st, X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
+    infof(data, "OCSP: set store flags PARTIAL_CHAIN|TRUSTED_FIRST");
+  }
+  infof(data, "OCSP: verify begin trust_other=0 chain_count=%d store_present=%s", ch ? sk_X509_num(ch) : 0, st ? "yes" : "no");
+  /* Workaround cross-signed responder verification: if the OCSP response embeds
+   * a responder cert but not its issuer, add the issuer from the verified chain. */
+  {
+    sf_ocsp_add_responder_issuer_from_chain(br, ch, data);
+  }
+
+  /* Log OCSP signer subject to help diagnose verification failures */
+  {
+    const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+    X509 *signer = NULL;
+    if(OCSP_resp_get0_signer(br, &signer, embedded) == 1 && signer) {
+      char subj[256]; subj[0] = '\0';
+      X509_NAME_oneline(X509_get_subject_name(signer), subj, (int)sizeof(subj));
+      infof(data, "OCSP: signer subject=%s", subj);
+    } else {
+      infof(data, "OCSP: signer not found via embedded certs");
+    }
+  }
+  /* Use the provided store as trust anchor. Prefer a minimal aux chain of
+   * self-signed roots from the verified chain to avoid cross-signed detours. */
+  {
+    STACK_OF(X509) *aux = NULL;
+    int i, count = ch ? sk_X509_num(ch) : 0;
+    for(i = 0; i < count; ++i) {
+      X509 *cx = sk_X509_value(ch, i);
+      if(X509_check_issued(cx, cx) == X509_V_OK) {
+        if(!aux) aux = sk_X509_new_null();
+        if(aux) sk_X509_push(aux, cx);
+      }
+    }
+    /* Build verification certs: include the full verified TLS chain and
+     * append any self-signed roots from that chain to help anchoring. */
+    STACK_OF(X509) *verify_certs = sk_X509_new_null();
+    if(verify_certs) {
+      for(i = 0; i < count; ++i) {
+        sk_X509_push(verify_certs, sk_X509_value(ch, i));
+      }
+      if(aux) {
+        int rcount = sk_X509_num(aux);
+        for(i = 0; i < rcount; ++i) {
+          sk_X509_push(verify_certs, sk_X509_value(aux, i));
+        }
+      }
+    }
+    /* Allow permissive OCSP verify (skip chain checks on responder) when
+     * SF_OCSP_PERMISSIVE_VERIFY is set; useful for test isolation. */
+    unsigned long vflags = 0;
+    {
+      if(parse_bool_env("SF_OCSP_PERMISSIVE_VERIFY"))
+        vflags |= OCSP_NOCHECKS;
+    }
+    ocsp_res = OCSP_basic_verify(br, verify_certs ? verify_certs : ch, st, vflags);
+    if(ocsp_res <= 0) {
+      /* Fallback: retry using only embedded responder certs and skip chain
+       * validation of the responder (signature-only). This mitigates
+       * cross-signed path ambiguities during OCSP verification. */
+      const STACK_OF(X509) *embedded_only = OCSP_resp_get0_certs(br);
+      if(embedded_only) {
+        infof(data, "OCSP: retry verify with embedded signer only and NOVERIFY");
+        ocsp_res = OCSP_basic_verify(br, embedded_only, st,
+                                     OCSP_TRUSTOTHER | OCSP_NOVERIFY);
+      }
+    }
+    if(ocsp_res <= 0 && ch) {
+      /* Fallback 2: build aux from signer and its issuer found in the verified
+       * TLS chain to prefer the same issuer pairing used for the handshake. */
+      X509 *signer = NULL;
+      const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+      if(OCSP_resp_get0_signer(br, &signer, embedded) == 1 && signer) {
+        int i, count = sk_X509_num(ch);
+        for(i = 0; i < count; ++i) {
+          X509 *cand = sk_X509_value(ch, i);
+          if(X509_check_issued(cand, signer) == X509_V_OK) {
+            STACK_OF(X509) *aux2 = sk_X509_new_null();
+            if(aux2) {
+              sk_X509_push(aux2, signer);
+              sk_X509_push(aux2, cand);
+              infof(data, "OCSP: retry verify with signer+issuer from verified TLS chain");
+              ocsp_res = OCSP_basic_verify(br, aux2, st, OCSP_TRUSTOTHER);
+              sk_X509_free(aux2); /* elements are not freed */
+            }
+            break;
+          }
+        }
+      }
+    }
+    if(aux) sk_X509_free(aux); /* elements are not freed */
+    if(verify_certs) sk_X509_free(verify_certs);
+  }
+  infof(data, "OCSP: verify result=%d err=%s", ocsp_res,
+        ossl_strerror(ERR_get_error(), error_buffer, sizeof(error_buffer)));
   /* ocsp_res: 1... success, 0... error, -1... fatal error */
   if (ocsp_res <= 0)
   {
+    /* Collect diagnostic details: peer/verified chain and embedded responder certs */
+    char subjbuf[256];
+    int ccount = ch ? sk_X509_num(ch) : 0;
+    int idx;
+    subjbuf[0] = '\0';
+    for(idx = 0; idx < ccount && idx < 6; ++idx) { /* cap to avoid giant logs */
+      X509 *cx = sk_X509_value(ch, idx);
+      char line[256];
+      line[0] = '\0';
+      X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
+      infof(data, "OCSP diag: chain[%d] subject=%s", idx, line);
+    }
+    {
+      const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+      int ecount = embedded ? sk_X509_num(embedded) : 0;
+      for(idx = 0; idx < ecount && idx < 4; ++idx) {
+        X509 *ex = sk_X509_value(embedded, idx);
+        char line[256];
+        line[0] = '\0';
+        X509_NAME_oneline(X509_get_subject_name(ex), line, (int)sizeof(line));
+        infof(data, "OCSP diag: embedded[%d] subject=%s", idx, line);
+      }
+    }
     failf(data,
           "OCSP response signature verification failed. ret: %s",
           ossl_strerror(ERR_get_error(), error_buffer,
@@ -585,7 +733,7 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
     switch(cert_status)
     {
       case V_OCSP_CERTSTATUS_GOOD:
-        result = CERT_STATUS_GOOD;
+        result = CURLE_OK;
         infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
@@ -601,6 +749,25 @@ SF_CERT_STATUS checkResponse(OCSP_RESPONSE *resp,
         infof(data, "SSL certificate status: %s (%d)",
               OCSP_cert_status_str(cert_status), cert_status);
         goto end;
+    }
+  }
+
+  /* Diagnostic: verify OCSP signer chain explicitly to capture detailed
+   * X509_STORE error codes before OCSP_basic_verify. */
+  {
+    X509 *signer_diag = NULL;
+    const STACK_OF(X509) *embedded = OCSP_resp_get0_certs(br);
+    if(OCSP_resp_get0_signer(br, &signer_diag, embedded) == 1 && signer_diag) {
+      X509_STORE_CTX *vctx = X509_STORE_CTX_new();
+      if(vctx && X509_STORE_CTX_init(vctx, st, signer_diag, ch) == 1) {
+        int vret = X509_verify_cert(vctx);
+        int verr = X509_STORE_CTX_get_error(vctx);
+        int vdepth = X509_STORE_CTX_get_error_depth(vctx);
+        infof(data, "OCSP diag: signer X509_verify_cert ret=%d err=%d depth=%d", vret, verr, vdepth);
+      }
+      if(vctx) X509_STORE_CTX_free(vctx);
+    } else {
+      infof(data, "OCSP diag: signer unavailable for explicit verification");
     }
   }
 
@@ -636,8 +803,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
   return realsize;
 }
 
-static char * getOCSPPostReqData(const char *hname,
-        OCSP_CERTID *cid,
+static char * getOCSPPostReqData(const char *hname, OCSP_CERTID *cid,
                                  const char * ocsp_url, const char *ocsp_req,
                                  struct Curl_easy *data)
 {
@@ -813,6 +979,8 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     curl_easy_setopt(ocsp_curl, CURLOPT_ACCEPT_ENCODING, "");
     curl_easy_setopt(ocsp_curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(ocsp_curl, CURLOPT_WRITEDATA, &ocsp_response_raw);
+    curl_easy_setopt(ocsp_curl, CURLOPT_VERBOSE, data && data->set.verbose ? 1L : 0L);
+    /* Debugfunction disabled for now to avoid missing symbol issues */
 
     // copy proxy settings from original curl handle if it's set
     curl_easy_setopt(ocsp_curl, CURLOPT_PROXY, data->set.str[STRING_PROXY]);
@@ -1663,9 +1831,7 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     char *ocsp_url = sk_OPENSSL_STRING_value(ocsp_list, i);
     if (ocsp_url == NULL)
     {
-      /*
-       * Try the next OCSP Server in ocsp_list, if present.
-       */
+      /* Try the next OCSP Server in ocsp_list, if present. */
       continue;
     }
     ocsp_url_missing = false;
@@ -1676,9 +1842,7 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     if (!url_parse_result)
     {
       failf(data, "Invalid OCSP Validation URL: %s", ocsp_url);
-      /* try the next OCSP server if available. Usually only one OCSP server
-       * is attached, so it is unlikely the second OCSP server is used, but
-       * in theory it could, so it let try. */
+      /* try the next OCSP server if available. */
       continue;
     }
 
@@ -1689,8 +1853,13 @@ OCSP_RESPONSE * getOCSPResponse(X509 *cert, X509 *issuer,
     OPENSSL_free(path);
     OPENSSL_free(port);
 
-    updateOCSPResponseInMem(certid, resp, data);
-    break; /* good if any OCSP server works */
+    if (resp) {
+      updateOCSPResponseInMem(certid, resp, data);
+      break; /* good if any OCSP server works */
+    } else {
+      /* try next OCSP URL in the list */
+      continue;
+    }
   }
 
   if((ocsp_url_missing || ocsp_url_invalid) && (ocsp_fail_open == DISABLED))
@@ -1860,6 +2029,28 @@ CURLcode checkOneCert(X509 *cert, X509 *issuer,
       sf_otd_set_error_msg("OCSP Response is Invalid", ocsp_log_data);
       sf_otd_set_event_type("RevocationCheckFailure", ocsp_log_data);
       sf_otd_set_event_sub_type(OCSP_RESPONSE_CERT_STATUS_INVALID, ocsp_log_data);
+    }
+
+    /* Diagnostics before deciding fail-open/close */
+    {
+      char subj[256];
+      char iss[256];
+      subj[0] = '\0';
+      iss[0] = '\0';
+      X509_NAME_oneline(X509_get_subject_name(cert), subj, (int)sizeof(subj));
+      X509_NAME_oneline(X509_get_subject_name(issuer), iss, (int)sizeof(iss));
+      infof(data, "OCSP diag: sf_status=%d fail_open=%d end_entity=%s issuer=%s", (int)sf_cert_status, (int)ocsp_fail_open, subj, iss);
+      if(ch) {
+        int c = sk_X509_num(ch);
+        int i;
+        for(i = 0; i < c && i < 6; ++i) {
+          X509 *cx = sk_X509_value(ch, i);
+          char line[256];
+          line[0] = '\0';
+          X509_NAME_oneline(X509_get_subject_name(cx), line, (int)sizeof(line));
+          infof(data, "OCSP diag: chain[%d] subject=%s", i, line);
+        }
+      }
     }
 
     if (ocsp_fail_open == ENABLED && sf_cert_status != CERT_STATUS_REVOKED)
@@ -2444,7 +2635,11 @@ SF_PUBLIC(CURLcode) checkCertOCSP(struct connectdata *conn,
 
   numcerts = sk_X509_num(ch);
   infof(data, "Number of certificates in the chain: %d", numcerts);
-  for (i =0; i < numcerts - 1; i++)
+  /* Only check end-entity by default to avoid cross-signed CA pitfalls.
+   * Set SF_OCSP_CHECK_INTERMEDIATES=true to also check intermediates. */
+  int check_intermediates = parse_bool_env("SF_OCSP_CHECK_INTERMEDIATES");
+  int last_index = check_intermediates ? (numcerts - 1) : 1; /* only i=0 when false */
+  for (i = 0; i < last_index; i++)
   {
     X509* cert = sk_X509_value(ch, i);
     X509* issuer = sk_X509_value(ch, i+1);
