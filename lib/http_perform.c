@@ -482,8 +482,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
 
-            //TODO: SNOW-2452931: Remove redirect http code to the external HTTP call funcion.
-            else if (!(http_code == 200 || http_code == 302)) {
+            else if (http_code != 200) {
                 // Success
                 ret = SF_BOOLEAN_TRUE;
               retry = is_retryable_http_code(http_code);
