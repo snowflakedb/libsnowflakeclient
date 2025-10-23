@@ -98,7 +98,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make clean &> /dev/null || true
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
-        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -framework SystemConfiguration -framework CoreFoundation"
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm
         make > /dev/null
         make install /dev/null
@@ -106,8 +106,8 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make clean &> /dev/null || true
         export CFLAGS="-arch arm64 -Xarch_arm64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
-        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
-        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
+        export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -framework SystemConfiguration -framework CoreFoundation"
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm
         make > /dev/null
         echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
         lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a
