@@ -781,7 +781,7 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 {
   char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
-  //return;
+
   get_cache_dir(data, cache_dir);
   if (*cache_dir)
     infof(data, "CRL cache file directory: %s", cache_dir);
