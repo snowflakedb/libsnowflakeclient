@@ -5938,6 +5938,7 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 checksrc:
 	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) \
+	-Wvtls/sf_cJSON.c -Wvtls/sf_cJSON.h -Wvtls/sf_ocsp.c -Wvtls/sf_ocsp.h \
 	$(CSOURCES) $(HHEADERS))
 
 all-local: $(CHECKSOURCES)

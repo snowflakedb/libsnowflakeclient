@@ -4878,8 +4878,7 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
   }
 
   /* !!! Starting OCSP !!! */
-  if (conn_config->sf_ocsp_check)
-  {
+  if(conn_config->sf_ocsp_check) {
     STACK_OF(X509) *ch = NULL;
     X509_STORE     *st = NULL;
 
@@ -4901,13 +4900,11 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
 #else
     ch = SSL_get_peer_cert_chain(octx->ssl);
 #endif
-    if (!ch)
-    {
+    if(!ch) {
       infof(data, "OCSP validation could not get peer certificate chain");
     }
     st = SSL_CTX_get_cert_store(octx->ssl_ctx);
-    if (!st)
-    {
+    if(!st) {
       infof(data, "OCSP validation could not get certificate data store");
     }
 
@@ -4916,11 +4913,11 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
           ch ? "yes" : "no", ch ? sk_X509_num(ch) : 0);
     infof(data, "OCSP: cert_store_present=%s", st ? "yes" : "no");
 
-    if (ch && st)
-    {
-      result = checkCertOCSP(conn, data, ch, st, conn_config->sf_ocsp_failopen, conn_config->sf_oob_enable);
-      if (result)
-      {
+    if(ch && st) {
+      result = checkCertOCSP(conn, data, ch, st,
+	                         conn_config->sf_ocsp_failopen,
+							 conn_config->sf_oob_enable);
+      if(result) {
         BIO_free(mem);
         return result;
       }

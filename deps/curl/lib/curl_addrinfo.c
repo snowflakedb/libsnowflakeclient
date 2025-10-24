@@ -95,7 +95,7 @@ Curl_freeaddrinfo(struct Curl_addrinfo *cahead)
 static void Curl_print_pthread_error(int error)
 {
   printf("pthread mutex_raw error no is: %d\n", error);
-  if(error == EINVAL) {
+  if(error == SOCKEINVAL) {
     printf("the mutex has not been properly initialized.\n");
   }
 }
