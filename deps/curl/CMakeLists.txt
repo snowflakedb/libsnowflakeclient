@@ -559,10 +559,8 @@ if(DOS OR AMIGA)
   set(HAVE_TIME_T_UNSIGNED 1)
 endif()
 
-if(WIN32)
-  add_compile_options(-fsanitize=address)
-  add_link_options(-fsanitize=address)
-endif()
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
 
 if(ENABLE_THREADED_RESOLVER)
   if(WIN32)
