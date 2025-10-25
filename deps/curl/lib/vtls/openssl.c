@@ -4915,8 +4915,8 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
 
     if(ch && st) {
       result = checkCertOCSP(conn, data, ch, st,
-	                         conn_config->sf_ocsp_failopen,
-							 conn_config->sf_oob_enable);
+                             conn_config->sf_ocsp_failopen,
+                             conn_config->sf_oob_enable);
       if(result) {
         BIO_free(mem);
         return result;
