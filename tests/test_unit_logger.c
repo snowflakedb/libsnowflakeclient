@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "../lib/http_perform.c"
+// #include "../lib/connection.h"
+// #include "../include/snowflake/logger.h"
+#include <snowflake/logger.h>
+
 #ifndef _WIN32
 #include <unistd.h>
 #include <pwd.h>
@@ -412,6 +417,69 @@ void test_client_config_stdout() {
   remove(configFilePath);
 }
 
+/* Test terminal masking*/
+void test_terminal_mask(){
+  
+  char masked[450] = "\0";
+  char *token = "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"";  
+  terminal_mask(token, strlen(token), masked, sizeof(masked));
+  assert_string_not_equal(token, masked);
+
+  char *expected = "\"oldSessionToken\": ****";
+  assert_string_equal(masked, expected);
+
+  *token = "Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
+  masked[0] = '\0';
+  terminal_mask(token, strlen(token), masked, sizeof(masked));
+
+  expected = "Snowflake Token= ****";
+
+  *token = "this text is not meant to be masked";
+  masked[0] = '\0';
+  terminal_mask(token, strlen(token), masked, sizeof(masked));
+  assert_string_equal(token, masked);
+}
+
+/* Test masking in stderr */
+void test_mask_stderr(){
+  // redirecting stderr to a tmp file
+  FILE* tmp_stderr;
+  tmp_stderr = freopen("tmp_stderr.txt", "w", stderr);
+  int origin_stderr = dup(_fileno(stderr));
+  dup2(_fileno(tmp_stderr), _fileno(stderr));
+
+  //curl_easy_init();
+  enum curl_infotype infotype = 2; // CURLINFO_HEADER_OUT
+  struct data d = {'1'};
+  char *token = "Authorization: Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
+  printf("Processing curl info type: %d\n", infotype);
+  size_t size = strlen(token);
+  my_trace(NULL, infotype, token, size, &d);
+
+  // read stderr content
+  char *output_buff= calloc(size,sizeof(char));
+  fgets(output_buff, sizeof(output_buff), tmp_stderr);
+  // printf("redirected stderr: %s\n", output_buff);
+  // fprintf(tmp_stderr, "redirected stderr: %s\n", output_buff);
+  // fprintf(tmp_stderr);
+
+  //compare output
+  assert_string_equal(output_buff, "=> Send header, 0000000424 bytes (0x000001a8)\
+    0000: Authoriz........................................................\
+    0040: ................................................................\
+    0080: ................................................................\
+    00c0: ................................................................\
+    0100: ................................................................\
+    0140: ................................................................\
+    0180: ........................................");
+
+  // restore stderr
+  dup2(origin_stderr, _fileno(stderr));
+  close(origin_stderr);
+  fclose(tmp_stderr);
+
+}
+
 void test_log_creation() {
     char logname[] = "dummy.log";
 
@@ -618,19 +686,21 @@ int main(void) {
         cmocka_unit_test(test_log_str_to_level),
         cmocka_unit_test(test_invalid_client_config_path),
         cmocka_unit_test(test_client_config_log_invalid_json),
-        cmocka_unit_test(test_client_config_log_malformed_json),
+        cmocka_unit_test(test_client_config_log_malformed_json),*/
 #if (!defined(_WIN32) && !defined(_DEBUG)) || defined(_WIN64)
-        cmocka_unit_test(test_client_config_log),
+        /*cmocka_unit_test(test_client_config_log),
         cmocka_unit_test(test_client_config_log_unknown_entries),
         cmocka_unit_test(test_client_config_log_init),
         cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
-        cmocka_unit_test(test_client_config_stdout),
+        cmocka_unit_test(test_client_config_stdout),*/
+        cmocka_unit_test(test_terminal_mask),
+        //cmocka_unit_test(test_mask_stderr),
 #endif
-        cmocka_unit_test(test_log_creation),*/
+        //cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
-        //cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
+        cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif
     };
