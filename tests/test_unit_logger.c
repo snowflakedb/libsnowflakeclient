@@ -424,20 +424,20 @@ void test_terminal_mask(){
   char *token = "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"";  
   terminal_mask(token, strlen(token), masked, sizeof(masked));
   assert_string_not_equal(token, masked);
-
+  
   char *expected = "\"oldSessionToken\": ****";
   assert_string_equal(masked, expected);
 
-  *token = "Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
+  char *token1 = "Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
   masked[0] = '\0';
-  terminal_mask(token, strlen(token), masked, sizeof(masked));
+  terminal_mask(token1, strlen(token1), masked, sizeof(masked));
+  expected = "\"Snowflake Token\": ****";
+  assert_string_equal(masked, expected);
 
-  expected = "Snowflake Token= ****";
-
-  *token = "this text is not meant to be masked";
+  char *token2 = "this text is not meant to be masked";
   masked[0] = '\0';
-  terminal_mask(token, strlen(token), masked, sizeof(masked));
-  assert_string_equal(token, masked);
+  terminal_mask(token2, strlen(token2), masked, sizeof(masked));
+  assert_string_equal(token2, masked);
 }
 
 /* Test masking in stderr */
