@@ -286,6 +286,9 @@ if (MOCK)
                     ../deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         endif()
+        # Add ASAN flags for all platforms
+        target_compile_options(${T} PRIVATE -fsanitize=address)
+        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -314,13 +317,16 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/cmocka/include
             )
         endif()
+        # Add ASAN flags for all platforms
+        target_compile_options(${T} PRIVATE -fsanitize=address)
+        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -337,7 +343,6 @@ else()
         endif()
     ENDFOREACH ()
 
-
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
     # with error LNK2001: unresolved external symbol __CrtDbgReportW
@@ -350,7 +355,7 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -358,6 +363,9 @@ else()
                     ../deps-build/${PLATFORM}/openssl/include
             )
         endif()
+        # Add ASAN flags for all platforms
+        target_compile_options(${T} PRIVATE -fsanitize=address)
+        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -383,6 +391,9 @@ else()
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/cmocka/include
             )
+            # Add ASAN flags for all platforms
+            target_compile_options(${T} PRIVATE -fsanitize=address)
+            target_link_options(${T} PRIVATE -fsanitize=address)
             target_link_libraries(${T} ${TESTLIB_OPTS_C})
             add_test(${T} ${T})
             set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${SNOWFLAKE_TEST_CA_BUNDLE_FILE})
@@ -405,4 +416,3 @@ if (UNIX)
     add_subdirectory(test_auth)
 endif()
 add_subdirectory(test_bind_datastructures)
-
