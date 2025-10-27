@@ -566,7 +566,7 @@ if(WIN32)
   if (CMAKE_SIZE_OF_VOID_P EQUAL 4)
     link_directories("$ENV{VSINSTALLDIR}VC/Tools/Llvm/x86/lib/clang/${CMAKE_CXX_COMPILER_VERSION}/lib/windows")
   endif()
-  if (CMAKE_SIZE_OF_VOID_P EQUAL 4)
+  if (CMAKE_SIZE_OF_VOID_P EQUAL 8)
     link_directories("$ENV{VSINSTALLDIR}VC/Tools/Llvm/x64/lib/clang/${CMAKE_CXX_COMPILER_VERSION}/lib/windows")
   endif()
   link_libraries(
