@@ -568,6 +568,7 @@ if(WIN32)
   link_libraries(
         clang_rt.asan-preinit-x86_64
         clang_rt.asan-x86_64
+        clang_rt.asan_static_runtime_thunk-x86_64
   )
 
 endif()
