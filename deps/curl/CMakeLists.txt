@@ -563,7 +563,12 @@ if(WIN32)
   add_compile_options(/fsanitize=address)
   set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} /fsanitize=address")
-#  link_directories("$ENV{VSINSTALLDIR}VC/Tools/Llvm/x64/lib/clang/${CMAKE_CXX_COMPILER_VERSION}/lib/windows")
+  if (CMAKE_SIZE_OF_VOID_P EQUAL 4)
+    link_directories("$ENV{VSINSTALLDIR}VC/Tools/Llvm/x86/lib/clang/${CMAKE_CXX_COMPILER_VERSION}/lib/windows")
+  endif()
+  if (CMAKE_SIZE_OF_VOID_P EQUAL 4)
+    link_directories("$ENV{VSINSTALLDIR}VC/Tools/Llvm/x64/lib/clang/${CMAKE_CXX_COMPILER_VERSION}/lib/windows")
+  endif()
   link_libraries(
         clang_rt.asan-preinit-x86_64
         clang_rt.asan-x86_64
