@@ -354,9 +354,13 @@ else()
             
             # Enable AddressSanitizer for test_crl on Windows
             if(T STREQUAL "test_crl")
-                target_compile_options(${T} PRIVATE /fsanitize=address)
-                # Note: The /fsanitize=address flag automatically links the required runtime
-                message(STATUS "AddressSanitizer enabled for ${T}")
+                # Use generator expression to ensure ASAN is compile-only
+                target_compile_options(${T} PRIVATE 
+                    /fsanitize=address
+                )
+                # Suppress linker warning about unrecognized ASAN option
+                set_target_properties(${T} PROPERTIES LINK_FLAGS "/ignore:4099 /ignore:4044")
+                message(STATUS "AddressSanitizer enabled for ${T} (C++ Debug only)")
             endif()
         else()
             target_include_directories(
