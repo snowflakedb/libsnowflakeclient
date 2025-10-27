@@ -242,7 +242,7 @@ if(WIN32)
     unset(MINGW64_VERSION CACHE)  # Avoid storing in CMake cache
   endif()
 
-  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl")
+  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl /fsanitize=address")
 elseif(DOS OR AMIGA)
   set(BUILD_SHARED_LIBS OFF)
   set(BUILD_STATIC_LIBS ON)
@@ -559,19 +559,18 @@ if(DOS OR AMIGA)
   set(HAVE_TIME_T_UNSIGNED 1)
 endif()
 
-if(WIN32)
-  add_compile_options(/fsanitize=address)
-  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
-  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} /fsanitize=address")
-  MESSAGE(STATUS "Linking ASAN 64-bit runtime libraries")
-  link_directories("C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/lib/clang/19/lib/windows")
-  link_libraries(
-        clang_rt.asan-preinit-x86_64
-        clang_rt.asan-x86_64
-        clang_rt.asan_static_runtime_thunk-x86_64
-  )
-
-endif()
+#if(WIN32)
+#  add_compile_options(/fsanitize=address)
+#  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
+#  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} /fsanitize=address")
+#  MESSAGE(STATUS "Linking ASAN 64-bit runtime libraries")
+#  link_directories("C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/lib/clang/19/lib/windows")
+#  link_libraries(
+#        clang_rt.asan-preinit-x86_64
+#        clang_rt.asan-x86_64
+#  )
+#
+#endif()
 
 if(ENABLE_THREADED_RESOLVER)
   if(WIN32)
@@ -1978,7 +1977,8 @@ endif()
 
 if(MSVC)
   # Disable default manifest added by CMake
-  string(APPEND CMAKE_EXE_LINKER_FLAGS " -MANIFEST:NO -CETCOMPAT")
+  string(APPEND CMAKE_EXE_LINKER_FLAGS " -MANIFEST:NO -CETCOMPAT /fsanitize=address")
+  string(APPEND CMAKE_SHARED_LINKER_FLAGS " /fsanitize=address")
 
   if(CMAKE_C_FLAGS MATCHES "[/-]W[0-4]")
     string(REGEX REPLACE "[/-]W[0-4]" "-W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
