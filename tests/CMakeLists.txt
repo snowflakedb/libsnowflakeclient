@@ -355,7 +355,7 @@ else()
             # Enable AddressSanitizer for test_crl on Windows
             if(T STREQUAL "test_crl")
                 target_compile_options(${T} PRIVATE /fsanitize=address)
-                target_link_options(${T} PRIVATE /fsanitize=address)
+                # Note: The /fsanitize=address flag automatically links the required runtime
                 message(STATUS "AddressSanitizer enabled for ${T}")
             endif()
         else()
