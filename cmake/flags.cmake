@@ -12,9 +12,9 @@ if (UNIX)
 else()
     # Windows
     add_compile_options(/ZH:SHA_256 /guard:cf /Qspectre /sdl)
-    # Enable AddressSanitizer for Debug builds on Windows
-    add_compile_options($<$<CONFIG:Debug>:/fsanitize=address>)
-    add_link_options($<$<CONFIG:Debug>:/fsanitize=address>)
+    # Enable AddressSanitizer for builds on Windows
+    add_compile_options(/fsanitize=address>)
+    add_link_options(/fsanitize=address>)
     if ($ENV{ARROW_FROM_SOURCE})
         add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING BOOST_ALL_NO_LIB)
     endif()
