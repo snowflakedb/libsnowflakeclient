@@ -561,7 +561,8 @@ endif()
 
 if(WIN32)
   add_compile_options(/fsanitize=address)
-  add_link_options(/fsanitize=address)
+  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
+  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} /fsanitize=address")
 endif()
 
 if(ENABLE_THREADED_RESOLVER)
