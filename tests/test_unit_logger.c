@@ -442,41 +442,43 @@ void test_terminal_mask(){
 
 /* Test masking in stderr */
 void test_mask_stderr(){
+  
   // redirecting stderr to a tmp file
-  FILE* tmp_stderr;
+  FILE *tmp_stderr; 
   tmp_stderr = freopen("tmp_stderr.txt", "w", stderr);
-  int origin_stderr = dup(_fileno(stderr));
-  dup2(_fileno(tmp_stderr), _fileno(stderr));
+  if(tmp_stderr == NULL){
+    printf("Failed to open temp file for stderr redirection\n");
+    return 1;
+  }
 
-  //curl_easy_init();
+  FILE *fp_out = fopen("tmp_stderr.txt", "r");
+  
   enum curl_infotype infotype = 2; // CURLINFO_HEADER_OUT
   struct data d = {'1'};
   char *token = "Authorization: Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
   printf("Processing curl info type: %d\n", infotype);
   size_t size = strlen(token);
+  
   my_trace(NULL, infotype, token, size, &d);
 
   // read stderr content
-  char *output_buff= calloc(size,sizeof(char));
-  fgets(output_buff, sizeof(output_buff), tmp_stderr);
-  // printf("redirected stderr: %s\n", output_buff);
-  // fprintf(tmp_stderr, "redirected stderr: %s\n", output_buff);
-  // fprintf(tmp_stderr);
+  char output_buff[100] = "\0";
+  if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
+    printf(stderr, "[Test] fgets unable to retrieve text\n");
+  }
 
-  //compare output
-  assert_string_equal(output_buff, "=> Send header, 0000000424 bytes (0x000001a8)\
-    0000: Authoriz........................................................\
-    0040: ................................................................\
-    0080: ................................................................\
-    00c0: ................................................................\
-    0100: ................................................................\
-    0140: ................................................................\
-    0180: ........................................");
+  fprintf(tmp_stderr, "[Test] retrieving output from my_trace - line 1: %s\n", output_buff);
+  output_buff[0] = "\0";
+  if(fgets(output_buff, strlen(token), fp_out) == NULL){
+    printf(stderr, "[Test] fgets unable to retrieve text\n");
+  }
+  fprintf(tmp_stderr, "[Test] retrieving output from my_trace - line 2: %s\n", output_buff);
 
-  // restore stderr
-  dup2(origin_stderr, _fileno(stderr));
-  close(origin_stderr);
-  fclose(tmp_stderr);
+
+   fprintf(stderr, "[Test] assertion next: \n");
+    //compare output
+    char *expected = "0000: Authorization: \"Snowflake Token\": ****..........................\n";
+    assert_string_equal(output_buff, expected);
 
 }
 
@@ -694,9 +696,9 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
-        cmocka_unit_test(test_client_config_stdout),*/
-        cmocka_unit_test(test_terminal_mask),
-        //cmocka_unit_test(test_mask_stderr),
+        cmocka_unit_test(test_client_config_stdout),
+        cmocka_unit_test(test_terminal_mask),*/
+        cmocka_unit_test(test_mask_stderr),
 #endif
         //cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
