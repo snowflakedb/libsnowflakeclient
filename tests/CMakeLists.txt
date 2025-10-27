@@ -344,7 +344,7 @@ else()
     FOREACH(T ${TESTS_CXX})
         add_executable(${T} ${SOURCE_UTILS} ${SOURCE_UTILS_CXX} ${T}.cpp)
         if (WIN32)
-            set_target_properties(${T} PROPERTIES LINK_FLAGS "/ignore:4099 /ignore:4044")
+            set_target_properties(${T} PROPERTIES LINK_FLAGS "/ignore:4099 /ignore:4044 /ignore:1104")
             target_include_directories(
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
