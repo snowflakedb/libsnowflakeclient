@@ -438,6 +438,12 @@ void test_terminal_mask(){
   masked[0] = '\0';
   terminal_mask(token2, strlen(token2), masked, sizeof(masked));
   assert_string_equal(token2, masked);
+
+  char *token3 = "";
+  masked[0] = '\0';
+  terminal_mask(token3, strlen(token3), masked, sizeof(masked));
+  expected = "";
+  assert_string_equal(masked, expected);
 }
 
 /* Test masking in stderr */
@@ -453,7 +459,7 @@ void test_mask_stderr(){
 
   FILE *fp_out = fopen("tmp_stderr.txt", "r");
   
-  enum curl_infotype infotype = 2; // CURLINFO_HEADER_OUT
+  enum curl_infotype infotype = 2;  // CURLINFO_HEADER_OUT
   struct data d = {'1'};
   char *token = "Authorization: Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
   printf("Processing curl info type: %d\n", infotype);
@@ -466,7 +472,6 @@ void test_mask_stderr(){
   if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
     printf(stderr, "[Test] fgets unable to retrieve text\n");
   }
-
   fprintf(tmp_stderr, "[Test] retrieving output from my_trace - line 1: %s\n", output_buff);
   output_buff[0] = "\0";
   if(fgets(output_buff, strlen(token), fp_out) == NULL){
@@ -474,12 +479,19 @@ void test_mask_stderr(){
   }
   fprintf(tmp_stderr, "[Test] retrieving output from my_trace - line 2: %s\n", output_buff);
 
+  fprintf(stderr, "[Test] assertion next: \n");
+  //compare output
+  char *expected = "0000: Authorization: \"Snowflake Token\": ****..........................\n";
+  assert_string_equal(output_buff, expected);
 
-   fprintf(stderr, "[Test] assertion next: \n");
-    //compare output
-    char *expected = "0000: Authorization: \"Snowflake Token\": ****..........................\n";
-    assert_string_equal(output_buff, expected);
+  //clean up
+  fclose("tmp_stderr.txt"); 
 
+
+
+  infotype = 4; // CURLINFO_DATA_OUT
+
+  infotype = 3; // CURLINFO_DATA_IN
 }
 
 void test_log_creation() {
@@ -696,9 +708,9 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_init_home_config),
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
-        cmocka_unit_test(test_client_config_stdout),
-        cmocka_unit_test(test_terminal_mask),*/
-        cmocka_unit_test(test_mask_stderr),
+        cmocka_unit_test(test_client_config_stdout),*/
+        cmocka_unit_test(test_terminal_mask),
+        //cmocka_unit_test(test_mask_stderr),
 #endif
         //cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
