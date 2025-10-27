@@ -242,7 +242,7 @@ if(WIN32)
     unset(MINGW64_VERSION CACHE)  # Avoid storing in CMake cache
   endif()
 
-  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl /fsanitize=address")
+  string(APPEND CMAKE_C_FLAGS " /Z7 /ZH:SHA_256 /guard:cf /Qspectre /sdl")
 elseif(DOS OR AMIGA)
   set(BUILD_SHARED_LIBS OFF)
   set(BUILD_STATIC_LIBS ON)
@@ -1977,8 +1977,7 @@ endif()
 
 if(MSVC)
   # Disable default manifest added by CMake
-  string(APPEND CMAKE_EXE_LINKER_FLAGS " -MANIFEST:NO -CETCOMPAT /fsanitize=address")
-  string(APPEND CMAKE_SHARED_LINKER_FLAGS " /fsanitize=address")
+  string(APPEND CMAKE_EXE_LINKER_FLAGS " -MANIFEST:NO -CETCOMPAT")
 
   if(CMAKE_C_FLAGS MATCHES "[/-]W[0-4]")
     string(REGEX REPLACE "[/-]W[0-4]" "-W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
