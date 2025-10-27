@@ -296,6 +296,9 @@ if (APPLE)
 endif ()
 
 if (WIN32)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+
     # Windows
     option(DYNAMIC_RUNTIME "Dynamic runtime" OFF)
     set(VSDIR "vs15" CACHE STRING "Used to specify visual studio version of libsnowflakeclient dependecies")
