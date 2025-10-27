@@ -351,6 +351,13 @@ else()
             )
             set_target_properties(
 		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+            
+            # Enable AddressSanitizer for test_crl on Windows
+            if(T STREQUAL "test_crl")
+                target_compile_options(${T} PRIVATE /fsanitize=address)
+                target_link_options(${T} PRIVATE /fsanitize=address)
+                message(STATUS "AddressSanitizer enabled for ${T}")
+            endif()
         else()
             target_include_directories(
                     ${T} PUBLIC
