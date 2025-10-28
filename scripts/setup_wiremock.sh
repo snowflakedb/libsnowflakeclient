@@ -7,6 +7,7 @@ WIREMOCK_URL="https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${
 
 mkdir -p "$(dirname "$WIREMOCK_JAR")"
 curl -L -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
+chmod +r "$WIREMOCK_JAR"
 
 if [ ! -f "$WIREMOCK_JAR" ]; then
   echo "Failed to find $WIREMOCK_JAR"
