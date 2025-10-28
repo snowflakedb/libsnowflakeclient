@@ -427,6 +427,7 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
   cache_dir[0] = 0;
 
   env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
+  infof(data, "CRL cache directory from environment: %s", env_dir ? env_dir : "(not set)");
   if (env_dir) {
     strcpy(cache_dir, env_dir);
 #if defined(_WIN32)
@@ -473,8 +474,12 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
   BIO *fp;
   char file_path[PATH_MAX];
 
-  if (!data->crl_disk_caching)
+  if (!data->crl_disk_caching) {
+    infof(data->data, "CRL disk caching is disabled. Not saving CRL to disk. (URI: %s)", uri);
     return;
+  }
+
+  infof(data->data, "CRL disk caching is enabled. Saving CRL to disk: (URI: %s)", uri);
 
   if (*pcrl != NULL && data->crl_disk_caching) {
     get_file_path_by_uri(data, uri, file_path);
@@ -516,10 +521,14 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
                               X509_CRL **pcrl)
 {
   BIO *fp;
-  char file_path[PATH_MAX];
+  char file_path[PATH_MAX] = {};
 
-  if (!data->crl_disk_caching)
+  if (!data->crl_disk_caching) {
+    infof(data->data, "CRL disk caching is disabled. Not loading CRL from disk (URI: %s)", uri);
     return;
+  }
+
+  infof(data->data, "CRL disk caching is enabled. Loading CRL from disk (URI: %s)", uri);
 
   // lookup for CRL on disk
   get_file_path_by_uri(data, uri, file_path);
@@ -770,6 +779,8 @@ SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
 {
   char cache_dir[PATH_MAX] = "";
   infof(data, "Registering SF CRL Validation...");
+  infof(data, "crl_disk_caching: %s",
+        crl_disk_caching ? "enabled" : "disabled");
 
   get_cache_dir(data, cache_dir);
   if (*cache_dir)

@@ -231,15 +231,13 @@ void test_crl_cache(void **unused) {
     curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
 
-    int retry = 0;
-    CURLcode curlResult = {};
-    while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK) {}
+    CURLcode curlResult = curl_easy_perform(ch);
     assert_int_equal(curlResult, CURLE_OK);
   }
 
+  curl_easy_cleanup(ch);
   // Check if any CRL has been downloaded
   assert_true(dir_has_files(cache_dir));
-  curl_easy_cleanup(ch);
 }
 
 void test_no_crl_cache_if_disabled(void **unused) {
@@ -261,15 +259,13 @@ void test_no_crl_cache_if_disabled(void **unused) {
     curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
 
-    int retry = 0;
-    CURLcode curlResult = {};
-    while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK) {}
+    CURLcode curlResult = curl_easy_perform(ch);
     assert_int_equal(curlResult, CURLE_OK);
   }
 
+  curl_easy_cleanup(ch);
   // Check if any CRL has been downloaded
   assert_true(!dir_has_files(cache_dir));
-  curl_easy_cleanup(ch);
 }
 
 int main() {
