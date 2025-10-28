@@ -667,8 +667,8 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
 
   data->curr_crl_num = 0;
 
-  const char *env_val = getenv("SF_TEST_CRL_NO_CRL");
-  if (env_val && strcasecmp(env_val, "true") == 0)
+  const char *no_crl = getenv("SF_TEST_CRL_NO_CRL");
+  if (no_crl && strcasecmp(no_crl, "true") == 0) {
     infof(data->data, "SF_TEST_CRL_NO_CRL is set, no CRL will be loaded");
     return NULL;
   }
