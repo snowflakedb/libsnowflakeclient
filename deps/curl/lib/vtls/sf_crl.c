@@ -12,6 +12,7 @@
 
 
 #ifdef _WIN32
+#define strcasecmp _stricmp
 #include <windows.h>
 typedef HANDLE SF_MUTEX_HANDLE;
 #ifndef PATH_MAX
