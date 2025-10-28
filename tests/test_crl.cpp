@@ -227,7 +227,7 @@ void test_crl_cache(void **unused) {
 
     assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
     assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
-    // curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
     curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
 
@@ -257,7 +257,7 @@ void test_no_crl_cache_if_disabled(void **unused) {
 
     assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
     assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 0L), CURLE_OK);
-    // curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
     curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
 
