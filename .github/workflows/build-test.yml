@@ -85,7 +85,6 @@ jobs:
               with:
                 java-version: '8'
                 distribution: 'temurin'
-                cache: maven
             - name: Setup-Wiremock
               shell: bash
               run: ./ci/setup_wiremock.sh
@@ -168,7 +167,7 @@ jobs:
               with:
                 java-version: '8'
                 distribution: 'temurin'
-                cache: maven
+                
             - name: Setup-Wiremock
               shell: bash
               run: ./ci/setup_wiremock.sh
@@ -234,7 +233,7 @@ jobs:
               with:
                 java-version: '8'
                 distribution: 'temurin'
-                cache: maven
+                
             - name: Setup-Wiremock
               shell: bash
               run: ./ci/setup_wiremock.sh
@@ -282,7 +281,7 @@ jobs:
               with:
                 java-version: '8'
                 distribution: 'temurin'
-                cache: maven
+                
             - name: Setup-Wiremock
               shell: bash
               run: ./ci/setup_wiremock.sh
@@ -330,7 +329,7 @@ jobs:
               with:
                 java-version: '8'
                 distribution: 'temurin'
-                cache: maven
+                
             - name: Setup-Wiremock
               shell: bash
               run: ./ci/setup_wiremock.sh
