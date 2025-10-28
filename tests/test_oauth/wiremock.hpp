@@ -11,7 +11,7 @@ namespace Snowflake {
         using namespace std;
 
         constexpr auto wiremockHomeDir = "~/.wiremock";
-        constexpr auto wiremockPath = "~/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
+        constexpr auto wiremockPath = "~/wiremock-standalone-3.8.0.jar";
         constexpr auto wiremockPort = "63900";
         constexpr auto wiremockAdminPort = "8081";
         constexpr auto wiremockHost = "127.0.0.1";

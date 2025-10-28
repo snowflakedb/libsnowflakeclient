@@ -196,8 +196,8 @@ namespace Snowflake {
                     + " --proxy-pass-through false"
                     + " --port " + wiremockAdminPort
                     + " --https-port " + wiremockPort
-                    + " --https-keystore ./tests/test_oauth/wiremock/ca-cert.jks"
-                    + " --ca-keystore ./tests/test_oauth/wiremock/ca-cert.jks";
+                    + " --https-keystore ../../tests/test_oauth/wiremock/ca-cert.jks"
+                    + " --ca-keystore ../../tests/test_oauth/wiremock/ca-cert.jks";
                 exec(command); // blocking call, will be running in a separate thread
             }
             catch (std::exception& e) {
