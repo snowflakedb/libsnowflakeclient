@@ -11,6 +11,7 @@
 #include "client_int.h"
 #include "snowflake/CurlDescPool.hpp"
 #include "utils/test_setup.h"
+#include "EnvOverride.hpp"
 
 using namespace ::Snowflake::Client;
 
@@ -96,21 +97,26 @@ void test_fail_with_no_crl(void **unused) {
   sf_bool value = SF_BOOLEAN_FALSE;
   snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
 
-  // set env variables for test
-  sf_setenv("SF_TEST_CRL_NO_CRL", "true");
+  SF_CONNECT *sf;
+  SF_STATUS ret;
+  {
+    // set env variables for test
+    EnvOverride override("SF_TEST_CRL_NO_CRL", "true");
 
-  SF_CONNECT *sf = setup_snowflake_connection();
+    sf = setup_snowflake_connection();
 
-  // enable CRL check
-  sf_bool crl_check = SF_BOOLEAN_TRUE;
-  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
+    // enable CRL check
+    sf_bool crl_check = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
 
-  // disable advisory, disable allow no crl
-  sf_bool crl_enabled = SF_BOOLEAN_FALSE;
-  snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_enabled);
-  snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_enabled);
+    // disable advisory, disable allow no crl
+    sf_bool crl_enabled = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_enabled);
+    snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_enabled);
 
-  SF_STATUS ret = snowflake_connect(sf);
+    ret = snowflake_connect(sf);
+  }
+
 
   // must fail with CURL error
   assert_int_not_equal(ret, SF_STATUS_SUCCESS);
@@ -122,7 +128,6 @@ void test_fail_with_no_crl(void **unused) {
   assert_string_equal(sferr->msg, "curl_easy_perform() failed: SSL peer certificate or SSH remote key was not OK");
 
   snowflake_term(sf);
-  sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
 void test_success_with_no_crl_if_allow_no_crl(void **unused) {
@@ -136,25 +141,26 @@ void test_success_with_no_crl_if_allow_no_crl(void **unused) {
   sf_bool value = SF_BOOLEAN_FALSE;
   snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
 
-  // set env variables for test
-  sf_setenv("SF_TEST_CRL_NO_CRL", "true");
+  SF_STATUS ret;
+  {
+    // set env variables for test
+    EnvOverride override("SF_TEST_CRL_NO_CRL", "true");
 
-  SF_CONNECT *sf = setup_snowflake_connection();
+    SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CRL check and allow no crl
-  sf_bool crl_check = SF_BOOLEAN_TRUE;
-  sf_bool crl_advisory = SF_BOOLEAN_FALSE;
-  sf_bool crl_allow_no_crl = SF_BOOLEAN_TRUE;
-  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
-  snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_advisory);
-  snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_allow_no_crl);
+    // enable CRL check and allow no crl
+    sf_bool crl_check = SF_BOOLEAN_TRUE;
+    sf_bool crl_advisory = SF_BOOLEAN_FALSE;
+    sf_bool crl_allow_no_crl = SF_BOOLEAN_TRUE;
+    snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
+    snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_advisory);
+    snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_allow_no_crl);
 
-  SF_STATUS ret = snowflake_connect(sf);
+    ret = snowflake_connect(sf);
+    snowflake_term(sf);
+  }
 
   assert_int_equal(ret, SF_STATUS_SUCCESS);
-
-  snowflake_term(sf);
-  sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
 void test_success_with_no_crl_in_advisory_mode(void **unused) {
@@ -168,32 +174,32 @@ void test_success_with_no_crl_in_advisory_mode(void **unused) {
   sf_bool value = SF_BOOLEAN_FALSE;
   snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
 
-  // set env variables for test
-  sf_setenv("SF_TEST_CRL_NO_CRL", "true");
+  SF_STATUS ret;
+  {
+    // set env variables for test
+    EnvOverride override("SF_TEST_CRL_NO_CRL", "true");
 
-  SF_CONNECT *sf = setup_snowflake_connection();
+    SF_CONNECT *sf = setup_snowflake_connection();
 
-  // enable CRL check and advisory mode
-  sf_bool crl_check = SF_BOOLEAN_TRUE;
-  sf_bool crl_advisory = SF_BOOLEAN_TRUE;
-  sf_bool crl_allow_no_crl = SF_BOOLEAN_FALSE;
-  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
-  snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_advisory);
-  snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_allow_no_crl);
+    // enable CRL check and advisory mode
+    sf_bool crl_check = SF_BOOLEAN_TRUE;
+    sf_bool crl_advisory = SF_BOOLEAN_TRUE;
+    sf_bool crl_allow_no_crl = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
+    snowflake_set_attribute(sf, SF_CON_CRL_ADVISORY, &crl_advisory);
+    snowflake_set_attribute(sf, SF_CON_CRL_ALLOW_NO_CRL, &crl_allow_no_crl);
 
-  SF_STATUS ret = snowflake_connect(sf);
+    ret = snowflake_connect(sf);
+    snowflake_term(sf);
+  }
 
   assert_int_equal(ret, SF_STATUS_SUCCESS);
-
-  snowflake_term(sf);
-  sf_unsetenv("SF_TEST_CRL_NO_CRL");
 }
 
 void test_curl_crl_params(void **unused) {
   SF_UNUSED(unused);
 
   CURL *ch = nullptr;
-  assert_int_equal(curl_global_init(CURL_GLOBAL_ALL), CURLE_OK);
   ch = curl_easy_init();
   assert_non_null(ch);
 
@@ -204,67 +210,71 @@ void test_curl_crl_params(void **unused) {
   assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, 1L), CURLE_OK);
 
   curl_easy_cleanup(ch);
-  curl_global_cleanup();
 }
 
 void test_crl_cache(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  sf_setenv("SF_CRL_RESPONSE_CACHE_DIR", cache_dir.c_str());
-  assert_true(!dir_has_files(cache_dir));
 
   CURL *ch = nullptr;
-  curl_global_init(CURL_GLOBAL_ALL);
-  ch = curl_easy_init();
-  assert_non_null(ch);
+  {
+    EnvOverride override("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    assert_true(!dir_has_files(cache_dir));
 
-  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
-  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
-  curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
-  curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
-  curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+    ch = curl_easy_init();
+    assert_non_null(ch);
 
-  int retry = 0;
-  CURLcode curlResult;
-  while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK);
-  assert_int_equal(curlResult, CURLE_OK);
+    assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
+    assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
+    // curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+
+    int retry = 0;
+    CURLcode curlResult = {};
+    while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK) {}
+    assert_int_equal(curlResult, CURLE_OK);
+  }
 
   // Check if any CRL has been downloaded
   assert_true(dir_has_files(cache_dir));
-  sf_unsetenv("SF_CRL_RESPONSE_CACHE_DIR");
+  curl_easy_cleanup(ch);
 }
 
 void test_no_crl_cache_if_disabled(void **unused) {
   SF_UNUSED(unused);
 
   const std::string cache_dir = get_cache_dir();
-  sf_setenv("SF_CRL_RESPONSE_CACHE_DIR", cache_dir.c_str());
-  assert_true(!dir_has_files(cache_dir));
 
   CURL *ch = nullptr;
-  curl_global_init(CURL_GLOBAL_ALL);
-  ch = curl_easy_init();
-  assert_non_null(ch);
+  {
+    EnvOverride override("SF_CRL_RESPONSE_CACHE_DIR", cache_dir);
+    assert_true(!dir_has_files(cache_dir));
 
-  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
-  assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 0L), CURLE_OK);
-  curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
-  curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
-  curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+    ch = curl_easy_init();
+    assert_non_null(ch);
 
-  int retry = 0;
-  CURLcode curlResult;
-  while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK);
-  assert_int_equal(curlResult, CURLE_OK);
+    assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_CHECK, 1L), CURLE_OK);
+    assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 0L), CURLE_OK);
+    // curl_easy_setopt(ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(ch, CURLOPT_URL, "https://snowflake.com");
+
+    int retry = 0;
+    CURLcode curlResult = {};
+    while (++retry <= 3 && (curlResult = curl_easy_perform(ch)) != CURLE_OK) {}
+    assert_int_equal(curlResult, CURLE_OK);
+  }
 
   // Check if any CRL has been downloaded
   assert_true(!dir_has_files(cache_dir));
-  sf_unsetenv("SF_CRL_RESPONSE_CACHE_DIR");
+  curl_easy_cleanup(ch);
 }
 
 int main() {
     initialize_test(SF_BOOLEAN_FALSE);
+    curl_global_init(CURL_GLOBAL_ALL);
     constexpr CMUnitTest tests[] = {
       cmocka_unit_test(test_success_with_crl_check),
       cmocka_unit_test(test_fail_with_no_crl),
