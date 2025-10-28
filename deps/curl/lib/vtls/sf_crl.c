@@ -395,23 +395,8 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   }
   strcat(cache_dir, "/");
 #elif  defined(_WIN32)
-  char *home_env = getenv("USERPROFILE");
+  char *home_env = getenv("LOCALAPPDATA");
   if (home_env == NULL) {
-    return NULL;
-  }
-  strcpy(cache_dir, home_env);
-  if (mkdir_if_not_exists(data, cache_dir) == NULL)
-  {
-    return NULL;
-  }
-  strcat(cache_dir, "\\AppData");
-  if (mkdir_if_not_exists(data, cache_dir) == NULL)
-  {
-    return NULL;
-  }
-  strcat(cache_dir, "\\Local");
-  if (mkdir_if_not_exists(data, cache_dir) == NULL)
-  {
     return NULL;
   }
   strcat(cache_dir, "\\Snowflake");
@@ -682,8 +667,11 @@ static STACK_OF(X509_CRL) *lookup_crls_handler(const X509_STORE_CTX *ctx,
 
   data->curr_crl_num = 0;
 
-  if (getenv("SF_TEST_CRL_NO_CRL"))
+  const char *env_val = getenv("SF_TEST_CRL_NO_CRL");
+  if (env_val && strcasecmp(env_val, "true") == 0)
+    infof(data->data, "SF_TEST_CRL_NO_CRL is set, no CRL will be loaded");
     return NULL;
+  }
 
   crls = sk_X509_CRL_new_null();
 
