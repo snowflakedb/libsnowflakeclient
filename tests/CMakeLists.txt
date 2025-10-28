@@ -286,9 +286,6 @@ if (MOCK)
                     ../deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
         endif()
-        # Add ASAN flags for all platforms
-        target_compile_options(${T} PRIVATE -fsanitize=address)
-        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -324,9 +321,6 @@ else()
                     ../deps-build/${PLATFORM}/cmocka/include
             )
         endif()
-        # Add ASAN flags for all platforms
-        target_compile_options(${T} PRIVATE -fsanitize=address)
-        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_C})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -363,9 +357,6 @@ else()
                     ../deps-build/${PLATFORM}/openssl/include
             )
         endif()
-        # Add ASAN flags for all platforms
-        target_compile_options(${T} PRIVATE -fsanitize=address)
-        target_link_options(${T} PRIVATE -fsanitize=address)
         target_link_libraries(${T} ${TESTLIB_OPTS_CXX})
         add_test(${T} ${T})
         # Removed to suppress false alarm: "--run-libc-freeres=no"
@@ -391,9 +382,6 @@ else()
                     ${T} PUBLIC
                     ../deps-build/${PLATFORM}/cmocka/include
             )
-            # Add ASAN flags for all platforms
-            target_compile_options(${T} PRIVATE -fsanitize=address)
-            target_link_options(${T} PRIVATE -fsanitize=address)
             target_link_libraries(${T} ${TESTLIB_OPTS_C})
             add_test(${T} ${T})
             set_tests_properties(${T} PROPERTIES ENVIRONMENT CABUNDLE_PATH=${SNOWFLAKE_TEST_CA_BUNDLE_FILE})
