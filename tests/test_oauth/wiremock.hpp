@@ -10,15 +10,9 @@ namespace Snowflake
 {
     namespace Client
     {
-        using namespace std;
-
-        std::string getHomePath() {
-    const char* homeDir = std::getenv("HOME");
-    return homeDir ? std::string(homeDir) : ""; 
-}
-
-        const auto wiremockHomeDir = getHomePath() + "/.wiremock";
-        const auto wiremockPath = getHoemPath() + "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
+        std::string homepath = std::string(std::getenv("HOME"));
+        const auto wiremockHomeDir = homepath + "/.wiremock";
+        const auto wiremockPath = homepath + "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
         constexpr auto wiremockPort = "63900";
         constexpr auto wiremockAdminPort = "8081";
         constexpr auto wiremockHost = "127.0.0.1";
