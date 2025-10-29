@@ -107,10 +107,32 @@ static int sctx_ensure_capacity()
   return 1;
 }
 
+static struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx)
+{
+  for (size_t i = 0; i < sctx_registry.size; ++i) {
+    if (sctx_registry.entries[i].ctx == ctx)
+      return &sctx_registry.entries[i];
+  }
+  return NULL;
+}
+
 static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool crl_advisory,
                           bool crl_allow_no_crl, bool crl_disk_caching, bool crl_memory_caching,
                           long crl_download_timeout)
 {
+  struct store_ctx_entry *existing;
+
+  existing = sctx_lookup(ctx);
+  if (existing) {
+    existing->data = data;
+    existing->crl_advisory = crl_advisory;
+    existing->crl_allow_no_crl = crl_allow_no_crl;
+    existing->crl_disk_caching = crl_disk_caching;
+    existing->crl_memory_caching = crl_memory_caching;
+    existing->crl_download_timeout = crl_download_timeout;
+    return;
+  }
+  
   if (!sctx_ensure_capacity())
     return;
   sctx_registry.entries[sctx_registry.size].ctx = ctx;
@@ -122,15 +144,6 @@ static void sctx_register(const X509_STORE *ctx, struct Curl_easy *data, bool cr
   sctx_registry.entries[sctx_registry.size].curr_crl_num = -1;
   sctx_registry.entries[sctx_registry.size].crl_download_timeout = crl_download_timeout;
   sctx_registry.size++;
-}
-
-static struct store_ctx_entry *sctx_lookup(const X509_STORE *ctx)
-{
-  for (size_t i = 0; i < sctx_registry.size; ++i) {
-    if (sctx_registry.entries[i].ctx == ctx)
-      return &sctx_registry.entries[i];
-  }
-  return NULL;
 }
 
 static void sctx_clear()
