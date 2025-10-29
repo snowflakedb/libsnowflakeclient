@@ -232,10 +232,10 @@ static void ucrl_register(const char *uri, const X509_CRL *crl)
 {
   if (!ucrl_ensure_capacity())
     return;
-  ucrl_registry.entries[ucrl_registry.size].uri = OPENSSL_malloc(strlen(uri) + 1);
+  ucrl_registry.entries[ucrl_registry.size].uri = OPENSSL_malloc(PATH_MAX);
   if (ucrl_registry.entries[ucrl_registry.size].uri)
   {
-    strcpy(ucrl_registry.entries[ucrl_registry.size].uri, uri);
+    strncpy(ucrl_registry.entries[ucrl_registry.size].uri, uri, PATH_MAX);
     ucrl_registry.entries[ucrl_registry.size].crl = X509_CRL_dup(crl);
     ucrl_registry.size++;
   }
@@ -296,7 +296,7 @@ static int is_valid_filename_char(char c)
 {
   // Forbidden on Linux, Windows and Mac: < > : " / \ | ? *
   if (c == '<' || c == '>' || c == ':' || c == '"' ||
-      c == '/' || c == '\\' || c == '|' || c == '?' || c == '*' || c == '\0') {
+      c == '/' || c == '\\' || c == '|' || c == '?' || c == '*') {
     return 0;
   }
   return 1;
@@ -304,7 +304,7 @@ static int is_valid_filename_char(char c)
 
 static void normalize_filename(char* file_name)
 {
-  for (int i = strlen(file_name) - 1; i >= 0; --i) {
+  for (int i = strnlen(file_name, PATH_MAX) - 1; i >= 0; --i) {
     if (!is_valid_filename_char(file_name[i]))
       file_name[i] = '_';
   }
@@ -331,7 +331,7 @@ static const char *get_dp_url(DIST_POINT *dp)
   return NULL;
 }
 
-static char* mkdir_if_not_exists(const struct Curl_easy *data, char* dir)
+static const char* mkdir_if_not_exists(const struct Curl_easy *data, const char* dir)
 {
 #ifdef _WIN32
   int result = _mkdir(dir);
@@ -355,80 +355,79 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   if (home_env == NULL) {
     return NULL;
   }
-  strcpy(cache_dir, home_env);
-
+  strncpy(cache_dir, home_env, PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/.cache");
+  strncat(cache_dir, "/.cache", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/snowflake");
+  strncat(cache_dir, "/snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/crls");
+  strncat(cache_dir, "/crls", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/");
+  strncat(cache_dir, "/", PATH_MAX);
 #elif defined(__APPLE__)
   char *home_env = getenv("HOME");
   if (home_env == NULL) {
     return NULL;
   }
-  strcpy(cache_dir, home_env);
+  strncpy(cache_dir, home_env, PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Library");
+  strncat(cache_dir, "/Library", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Caches");
+  strncat(cache_dir, "/Caches", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Snowflake");
+  strncat(cache_dir, "/Snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/crls");
+  strncat(cache_dir, "/crls", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/");
+  strncat(cache_dir, "/", PATH_MAX);
 #elif  defined(_WIN32)
   char *home_env = getenv("LOCALAPPDATA");
   if (home_env == NULL) {
     return NULL;
   }
-  strcat(cache_dir, "\\Snowflake");
+  strncat(cache_dir, "\\Snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "\\Caches");
+  strncat(cache_dir, "\\Caches", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "\\crls");
+  strncat(cache_dir, "\\crls", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "\\");
+  strncat(cache_dir, "\\", PATH_MAX);
 #endif
   return cache_dir;
 }
@@ -442,16 +441,16 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
   env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
   infof(data, "CRL cache directory from environment: %s", env_dir ? env_dir : "(not set)");
   if (env_dir) {
-    strcpy(cache_dir, env_dir);
+    strncpy(cache_dir, env_dir, PATH_MAX);
 #if defined(_WIN32)
-    const size_t len = strlen(cache_dir);
+    const size_t len = strnlen(cache_dir, PATH_MAX);
     if (cache_dir[len-1] != '\\') {
-      strcat(cache_dir, "\\");
+      strncat(cache_dir, "\\", PATH_MAX);
     }
 #else
-    const size_t len = strlen(cache_dir);
+    const size_t len = strnlen(cache_dir, PATH_MAX);
     if (cache_dir[len-1] != '/') {
-      strcat(cache_dir, "/");
+      strncat(cache_dir, "/", PATH_MAX);
     }
 #endif
   }
@@ -463,11 +462,11 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
 static void get_file_path_by_uri(const struct store_ctx_entry *data, const char *uri, char* file_path)
 {
   get_cache_dir(data->data, file_path);
-
   if (*file_path) {
-    char *file_name = file_path + strlen(file_path);
-    strcpy(file_name, uri);
+    char file_name[PATH_MAX] = {};
+    strncpy(file_name, uri, PATH_MAX);
     normalize_filename(file_name);
+    strncat(file_path, file_name, PATH_MAX);
   }
 }
 
@@ -485,7 +484,7 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
                              X509_CRL **pcrl)
 {
   BIO *fp;
-  char file_path[PATH_MAX];
+  char file_path[PATH_MAX] = {};
 
   if (!data->crl_disk_caching) {
     infof(data->data, "CRL disk caching is disabled. Not saving CRL to disk. (URI: %s)", uri);
@@ -528,7 +527,16 @@ static void get_crl_from_memory(const struct store_ctx_entry *data, const char *
   }
   if (*pcrl)
     infof(data->data, "CRL loaded from memory: %s", uri);
+
 }
+
+#ifdef _WIN32
+#define sf_fstat _fstat
+#define sf_stat _stat
+#else
+#define sf_fstat fstat
+#define sf_stat stat
+#endif
 
 static void get_crl_from_disk(const struct store_ctx_entry *data, const char *uri,
                               X509_CRL **pcrl)
@@ -548,10 +556,10 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
   if (*file_path) {
     fp = BIO_new_file(file_path, "r");
     if (fp) {
-      struct stat file_stats;
+      struct sf_stat file_stats;
       long fd = BIO_get_fd(fp, NULL);
       if (fd != -1) {
-        if (fstat(fd, &file_stats) == 0) {
+        if (sf_fstat(fd, &file_stats) == 0) {
           *pcrl = PEM_read_bio_X509_CRL(fp, NULL, NULL, NULL);
         }
         else {
