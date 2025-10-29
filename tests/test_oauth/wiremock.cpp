@@ -152,7 +152,7 @@ namespace Snowflake {
         bool WiremockRunner::isRunning() {
             const std::string request = std::string("curl -s --output /dev/null -X POST http://") + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings ";
             const int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf", "WiremockRunner", "isRunning", "%d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::is Running", "%d", ret);
 
             return ret == 0;
         }
@@ -162,12 +162,14 @@ namespace Snowflake {
             auto start = std::chrono::steady_clock::now();
             while (!isRunning())
             {
+                CXX_LOG_INFO("sf::WiremockRunner::isnot running. Waiting for the execution");
                 sleep(1);
                 auto end = std::chrono::steady_clock::now();
                 double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
                 if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT)
                 {
                     cout << "Wiremock startup timed out!";
+                    CXX_LOG_INFO("sf::WiremockRunner::Wiremock startup timed out");
                     throw TimeoutException("Wiremock startup timed out!");
                 }
             }
@@ -189,7 +191,7 @@ namespace Snowflake {
 
         void WiremockRunner::setup() {
             try {
-                CXX_LOG_INFO("sf", "WiremockRunner", "setup", "starting wiremock standalone");
+                CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
                 const std::string command = std::string("java -jar ") + wiremockPath
                     + " --root-dir " + wiremockHomeDir
                     + " --enable-browser-proxying"
@@ -201,7 +203,7 @@ namespace Snowflake {
                 exec(command); // blocking call, will be running in a separate thread
             }
             catch (std::exception& e) {
-                CXX_LOG_ERROR("sf", "UnitOAuthTest", "setup", "Wiremock startup: %s", e.what());
+                CXX_LOG_ERROR("sf::UnitOAuthTest::setup::Wiremock startup: %s", e.what());
             }
         }
 
