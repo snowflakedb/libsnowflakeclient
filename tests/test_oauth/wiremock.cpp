@@ -17,42 +17,42 @@ namespace Snowflake {
 
         WiremockRunner::WiremockRunner()
         {
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "ctor");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::ctor");
             thread = std::thread(setup);
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "wiremock thread started");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
         }
 
         WiremockRunner::WiremockRunner(const std::string& idpMappingFile, const std::vector<std::string>& additionalMappingFiles)
         {
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "ctor");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::ctor");
             thread = std::thread(setup);
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "wiremock thread started");
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "Configuring Idp mapping from file %s", idpMappingFile.c_str());
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", idpMappingFile.c_str());
             waitForWiremockRunning();
             initMappingFromFile(idpMappingFile);
             for (const auto& mappingFile : additionalMappingFiles) {
-                CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "Configuring additional mapping from file %s", mappingFile.c_str());
+                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
                 addMappingFromFile(mappingFile);
             }
         }
 
         WiremockRunner::WiremockRunner(const std::string& idpMappingFile, const std::vector<std::string>& additionalMappingFiles, const int port)
         {
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "ctor");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::ctor");
             thread = std::thread(setup);
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "wiremock thread started");
-            CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "Configuring Idp mapping from file %s", idpMappingFile.c_str());
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::wiremock thread started");
+            CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring Idp mapping from file %s", idpMappingFile.c_str());
             waitForWiremockRunning();
             initMappingFromFile(idpMappingFile, port);
             for (const auto& mappingFile : additionalMappingFiles) {
-                CXX_LOG_INFO("sf", "WiremockRunner", "WiremockRunner", "Configuring additional mapping from file %s", mappingFile.c_str());
+                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner", "Configuring additional mapping from file %s", mappingFile.c_str());
                 addMappingFromFile(mappingFile, port);
             }
         }
 
         WiremockRunner::~WiremockRunner()
         {
-            CXX_LOG_INFO("sf", "WiremockRunner", "~WiremockRunner", "dtor");
+            CXX_LOG_INFO("sf::WiremockRunner::~WiremockRunner::dtor");
             resetMapping();
             terminateWiremock();
             thread.join();
@@ -67,7 +67,7 @@ namespace Snowflake {
                 + " -d '" + mapping + "'"
                 + " -X POST http://" + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings/import";
             int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf", "WiremockRunner", "resetMapping", "wiremock mappings initialized: %d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::resetMapping::wiremock mappings initialized: %d", ret);
         }
 
         void WiremockRunner::initMappingFromFile(const std::string& mappingFile)
@@ -96,7 +96,7 @@ namespace Snowflake {
                 + " -d '" + body + "'"
                 + " -X POST http://" + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings";
             int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf", "WiremockRunner", "resetMapping", "wiremock mappings modified: %d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::resetMapping::wiremock mappings modified: %d", ret);
         }
 
         void WiremockRunner::addMappingFromFile(const std::string& mappingFile)
@@ -121,7 +121,7 @@ namespace Snowflake {
             std::string request = std::string("curl -s")
                 + " -X POST http://" + wiremockHost + ":" + wiremockAdminPort + "/__admin/reset";
             int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf", "WiremockRunner", "resetMapping", "wiremock mappings reset: %d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::resetMapping::wiremock mappings reset: %d", ret);
         }
 
         std::string WiremockRunner::replaceAll(const std::string& text, const std::string& look, const std::string& replace)
@@ -182,6 +182,7 @@ namespace Snowflake {
             auto close_file = [](FILE* f) { if (f) pclose(f); };
             std::unique_ptr<FILE, decltype(close_file)> pipe(popen(cmd.c_str(), "r"), close_file);
             if (!pipe) {
+                CXX_LOG_ERROR("sf::WiremockRunner::popen() failed!");
                 throw std::runtime_error("popen() failed!");
             }
             while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
@@ -190,6 +191,15 @@ namespace Snowflake {
         }
 
         void WiremockRunner::setup() {
+            if (access(wiremockPath, F_OK) == 0) {
+                CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock standalone jar found");
+            }
+            else {
+                CXX_LOG_ERROR("sf::WiremockRunner::setup::wiremock standalone jar not found at %s", wiremockPath);
+                throw std::runtime_error("Wiremock standalone jar not found");
+            }
+
+
             try {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
                 const std::string command = std::string("java -jar ") + wiremockPath
