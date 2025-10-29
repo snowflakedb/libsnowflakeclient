@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-WIREMOCK_VERSION="2.35.0"
+WIREMOCK_VERSION="3.8.0"
 WIREMOCK_JAR="${HOME}/.m2/repository/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
 WIREMOCK_URL="https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
 
