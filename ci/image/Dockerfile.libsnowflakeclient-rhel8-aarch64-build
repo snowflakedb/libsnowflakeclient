@@ -24,7 +24,7 @@ RUN cd /tmp && git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &
     cp /usr/local/lib/libcppunit* /usr/lib64
 
 # Java
-RUN yum install -y java-1.8.0-openjdk
+RUN yum -y install java-17-openjdk-devel
 
 # gosu
 RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-arm64"
