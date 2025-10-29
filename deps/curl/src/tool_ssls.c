@@ -23,22 +23,18 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "curlx.h"
 #include "tool_cfgable.h"
 #include "tool_cb_dbg.h"
 #include "tool_msgs.h"
 #include "tool_setopt.h"
 #include "tool_ssls.h"
-#include "dynbuf.h"
-#include "curl_base64.h"
 #include "tool_parsecfg.h"
 
 /* The maximum line length for an ecoded session ticket */
 #define MAX_SSLS_LINE (64 * 1024)
 
 
-static CURLcode tool_ssls_easy(struct GlobalConfig *global,
-                               struct OperationConfig *config,
+static CURLcode tool_ssls_easy(struct OperationConfig *config,
                                CURLSH *share, CURL **peasy)
 {
   CURLcode result = CURLE_OK;
@@ -51,13 +47,12 @@ static CURLcode tool_ssls_easy(struct GlobalConfig *global,
   if(!result && (global->tracetype != TRACE_NONE)) {
     my_setopt(*peasy, CURLOPT_DEBUGFUNCTION, tool_debug_cb);
     my_setopt(*peasy, CURLOPT_DEBUGDATA, config);
-    my_setopt(*peasy, CURLOPT_VERBOSE, 1L);
+    my_setopt_long(*peasy, CURLOPT_VERBOSE, 1L);
   }
   return result;
 }
 
-CURLcode tool_ssls_load(struct GlobalConfig *global,
-                        struct OperationConfig *config,
+CURLcode tool_ssls_load(struct OperationConfig *config,
                         CURLSH *share, const char *filename)
 {
   FILE *fp;
@@ -73,11 +68,11 @@ CURLcode tool_ssls_load(struct GlobalConfig *global,
   curlx_dyn_init(&buf, MAX_SSLS_LINE);
   fp = fopen(filename, FOPEN_READTEXT);
   if(!fp) { /* ok if it does not exist */
-    notef(global, "SSL session file does not exist (yet?): %s", filename);
+    notef("SSL session file does not exist (yet?): %s", filename);
     goto out;
   }
 
-  r = tool_ssls_easy(global, config, share, &easy);
+  r = tool_ssls_easy(config, share, &easy);
   if(r)
     goto out;
 
@@ -86,23 +81,17 @@ CURLcode tool_ssls_load(struct GlobalConfig *global,
     ++i;
     curl_free(shmac);
     curl_free(sdata);
-    line = Curl_dyn_ptr(&buf);
-    while(*line && ISBLANK(*line))
-      line++;
-    if(*line == '#')
-      /* skip commented lines */
-      continue;
+    line = curlx_dyn_ptr(&buf);
 
     c = memchr(line, ':', strlen(line));
     if(!c) {
-      warnf(global, "unrecognized line %d in ssl session file %s",
-            i, filename);
+      warnf("unrecognized line %d in ssl session file %s", i, filename);
       continue;
     }
     *c = '\0';
     r = curlx_base64_decode(line, &shmac, &shmac_len);
     if(r) {
-      warnf(global, "invalid shmax base64 encoding in line %d", i);
+      warnf("invalid shmax base64 encoding in line %d", i);
       continue;
     }
     line = c + 1;
@@ -113,13 +102,13 @@ CURLcode tool_ssls_load(struct GlobalConfig *global,
     }
     r = curlx_base64_decode(line, &sdata, &sdata_len);
     if(r) {
-      warnf(global, "invalid sdata base64 encoding in line %d: %s", i, line);
+      warnf("invalid sdata base64 encoding in line %d: %s", i, line);
       continue;
     }
 
     r = curl_easy_ssls_import(easy, NULL, shmac, shmac_len, sdata, sdata_len);
     if(r) {
-      warnf(global, "import of session from line %d rejected(%d)", i, r);
+      warnf("import of session from line %d rejected(%d)", i, r);
       continue;
     }
     ++imported;
@@ -141,7 +130,6 @@ out:
 }
 
 struct tool_ssls_ctx {
-  struct GlobalConfig *global;
   FILE *fp;
   int exported;
 };
@@ -189,29 +177,27 @@ static CURLcode tool_ssls_exp(CURL *easy, void *userptr,
   ctx->exported++;
 out:
   if(r)
-    warnf(ctx->global, "Warning: error saving SSL session for '%s': %d",
-          session_key, r);
+    warnf("Warning: error saving SSL session for '%s': %d", session_key, r);
   curl_free(enc);
   return r;
 }
 
-CURLcode tool_ssls_save(struct GlobalConfig *global,
-                        struct OperationConfig *config,
+CURLcode tool_ssls_save(struct OperationConfig *config,
                         CURLSH *share, const char *filename)
 {
   struct tool_ssls_ctx ctx;
   CURL *easy = NULL;
   CURLcode r = CURLE_OK;
 
-  ctx.global = global;
   ctx.exported = 0;
   ctx.fp = fopen(filename, FOPEN_WRITETEXT);
   if(!ctx.fp) {
-    warnf(global, "Warning: Failed to create SSL session file %s", filename);
+    warnf("Warning: Failed to create SSL session file %s",
+          filename);
     goto out;
   }
 
-  r = tool_ssls_easy(global, config, share, &easy);
+  r = tool_ssls_easy(config, share, &easy);
   if(r)
     goto out;
 

@@ -6,7 +6,7 @@ RUN yum -y update
 RUN yum install -y yum-utils
 
 # dependencies & tools
-RUN yum install -y wget gettext zip bzip2 cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 re2-devel automake autoconf libtool perl-IPC-Cmd perl-Digest-SHA
+RUN yum install -y wget gettext zip bzip2 cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 re2-devel automake autoconf libtool perl-IPC-Cmd perl-Digest-SHA perl-core
 RUN ln -s /usr/bin/python3.9 /usr/bin/python
 RUN python -m pip install --upgrade pip
 RUN pip install awscli

@@ -11,12 +11,10 @@ See-also:
 Protocol:
   - TLS
 TLS-backend:
-  - BearSSL
   - GnuTLS
   - mbedTLS
   - OpenSSL
   - Schannel
-  - Secure Transport
   - wolfSSL
 Added-in: 7.48.0
 ---
@@ -58,12 +56,11 @@ struct curl_tlssessioninfo {
 };
 ~~~
 
-The *backend* struct member is one of the defines in the CURLSSLBACKEND_*
-series: CURLSSLBACKEND_NONE (when built without TLS support),
-CURLSSLBACKEND_WOLFSSL, CURLSSLBACKEND_SECURETRANSPORT, CURLSSLBACKEND_GNUTLS,
-CURLSSLBACKEND_MBEDTLS, CURLSSLBACKEND_NSS, CURLSSLBACKEND_OPENSSL or
-CURLSSLBACKEND_SCHANNEL. (Note that the OpenSSL
-forks are all reported as just OpenSSL here.)
+The *backend* struct member is one of these defines: CURLSSLBACKEND_NONE (when
+built without TLS support), CURLSSLBACKEND_WOLFSSL,
+CURLSSLBACKEND_SECURETRANSPORT, CURLSSLBACKEND_GNUTLS, CURLSSLBACKEND_MBEDTLS,
+CURLSSLBACKEND_NSS, CURLSSLBACKEND_OPENSSL or CURLSSLBACKEND_SCHANNEL. (Note
+that the OpenSSL forks are all reported as just OpenSSL here.)
 
 The *internals* struct member points to a TLS library specific pointer for
 the active ("in use") SSL connection, with the following underlying types:
@@ -87,10 +84,6 @@ as well:
 ## Secure Channel
 
 **CtxtHandle ***
-
-## Secure Transport
-
-**SSLContext ***
 
 ## wolfSSL
 

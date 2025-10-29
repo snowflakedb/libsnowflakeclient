@@ -4,7 +4,7 @@
 #include "sendf.h"
 #include "formdata.h" /* for the boundary function */
 #include "url.h" /* for the ssl config check function */
-#include "inet_pton.h"
+#include "curlx/inet_pton.h"
 #include "openssl.h"
 #include "connect.h"
 #include "slist.h"
@@ -65,7 +65,7 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define PATH_SEP "/"
 #endif
 
-#include "curl_base64.h"
+#include "curlx/base64.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 #include "sf_ocsp_telemetry_data.h"
@@ -873,7 +873,7 @@ static OCSP_RESPONSE * queryResponderUsingCurl(char *url, OCSP_CERTID *certid, c
     goto end;
   }
 
-  result = Curl_base64_encode(
+  result = curlx_base64_encode(
       (char *)ocsp_req_der, (size_t)len_ocsp_req_der,
       &ocsp_req_base64, &ocsp_req_base64_len);
   if (result != CURLE_OK)
@@ -1199,7 +1199,7 @@ char* encodeOCSPCertIDToBase64(OCSP_CERTID *certid, struct Curl_easy *data)
     infof(data, "Failed to encode OCSP CertId");
     goto end;
   }
-  result = Curl_base64_encode((char *)der_buf, (size_t)len,
+  result = curlx_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
@@ -1232,7 +1232,7 @@ char *encodeOCSPRequestToBase64(OCSP_REQUEST *reqp, struct Curl_easy *data)
     goto end;
   }
 
-  result = Curl_base64_encode((char *)der_buf, (size_t)len,
+  result = curlx_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
@@ -1267,7 +1267,7 @@ char *encodeOCSPResponseToBase64(OCSP_RESPONSE* resp, struct Curl_easy *data)
     goto end;
   }
 
-  result = Curl_base64_encode((char *)der_buf, (size_t)len,
+  result = curlx_base64_encode((char *)der_buf, (size_t)len,
                               &ret, &encode_len);
   if (result != CURLE_OK)
   {
@@ -1299,7 +1299,7 @@ OCSP_CERTID* decodeOCSPCertIDFromBase64(char* src, struct Curl_easy *data)
     return NULL;
   }
 
-  result = Curl_base64_decode(src,
+  result = curlx_base64_decode(src,
                               &ocsp_certid_der, &ocs_certid_der_len);
   if (result != CURLE_OK)
   {
@@ -1342,7 +1342,7 @@ OCSP_RESPONSE * decodeOCSPResponseFromBase64(char* src, struct Curl_easy *data)
     infof(data, "Base64 input is NULL for decoding OCSP Response");
     return NULL;
   }
-  result = Curl_base64_decode(src,
+  result = curlx_base64_decode(src,
                               &ocsp_response_der, &ocsp_response_der_len);
   if (result)
   {

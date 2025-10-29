@@ -1,5 +1,5 @@
 ---
-c: Copyright (C) Daniel Stenberg, <daniel.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Title: libcurl-symbols
 Section: 3
@@ -128,6 +128,9 @@ Introduced in 7.8. See curl_global_init(3).
 ## CURL_GLOBAL_WIN32
 Introduced in 7.8.1. See curl_global_init(3).
 
+## CURL_HAS_DECLSPEC_ATTRIBUTE
+Introduced in 8.13.0.
+
 ## CURL_HET_DEFAULT
 Introduced in 7.59.0. See CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS(3).
 
@@ -195,7 +198,7 @@ Introduced in 7.10.8. See CURLOPT_IPRESOLVE(3).
 Introduced in 7.10.8. See CURLOPT_IPRESOLVE(3).
 
 ## CURL_ISOCPP
-Introduced in 7.10.2.
+Introduced in 7.10.2. Last used in 8.14.1.
 
 ## CURL_LOCK_ACCESS_NONE
 Introduced in 7.10.3. See CURLSHOPT_SHARE(3).
@@ -321,7 +324,7 @@ Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
 Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
 
 ## CURL_REDIR_POST_303
-Introduced in 7.25.1. See CURLOPT_POSTREDIR(3).
+Introduced in 7.26.0. See CURLOPT_POSTREDIR(3).
 
 ## CURL_REDIR_POST_ALL
 Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
@@ -780,7 +783,7 @@ Introduced in 7.1. Deprecated since 7.17.0.
 Introduced in 7.1. Deprecated since 7.17.0.
 
 ## CURLE_FUNCTION_NOT_FOUND
-Introduced in 7.1. See libcurl-errors(3).
+Introduced in 7.1. Deprecated since 7.53.0.
 
 ## CURLE_GOT_NOTHING
 Introduced in 7.9.1. See libcurl-errors(3).
@@ -801,7 +804,7 @@ Introduced in 7.1. Deprecated since 7.10.3.
 Introduced in 7.3. Deprecated since 7.12.0.
 
 ## CURLE_HTTP_POST_ERROR
-Introduced in 7.1. See libcurl-errors(3).
+Introduced in 7.1. Deprecated since 7.56.0.
 
 ## CURLE_HTTP_RANGE_ERROR
 Introduced in 7.1. Deprecated since 7.17.0.
@@ -954,7 +957,7 @@ Introduced in 7.39.0. See libcurl-errors(3).
 Introduced in 7.16.1. See libcurl-errors(3).
 
 ## CURLE_TELNET_OPTION_SYNTAX
-Introduced in 7.7. See libcurl-errors(3).
+Introduced in 7.7. Deprecated since 7.78.0.
 
 ## CURLE_TFTP_DISKFULL
 Introduced in 7.15.0. Deprecated since 7.17.0.
@@ -1001,6 +1004,9 @@ Introduced in 7.16.3. See libcurl-errors(3).
 ## CURLE_URL_MALFORMAT
 Introduced in 7.1. See libcurl-errors(3).
 
+## CURLE_ECH_REQUIRED
+Introduced in 8.8.0. See libcurl-errors(3).
+
 ## CURLE_URL_MALFORMAT_USER
 Introduced in 7.1. Deprecated since 7.17.0.
 
@@ -1012,9 +1018,6 @@ Introduced in 7.51.0. See libcurl-errors(3).
 
 ## CURLE_WRITE_ERROR
 Introduced in 7.1. See libcurl-errors(3).
-
-## CURLE_ECH_REQUIRED
-Introduced in 8.8.0. See libcurl-errors(3).
 
 ## CURLFILETYPE_DEVICE_BLOCK
 Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
@@ -1066,6 +1069,15 @@ Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
 
 ## CURLFINFOFLAG_KNOWN_UID
 Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
+
+## CURLFOLLOW_ALL
+Introduced in 8.13.0.
+
+## CURLFOLLOW_OBEYCODE
+Introduced in 8.13.0.
+
+## CURLFOLLOW_FIRSTONLY
+Introduced in 8.13.0.
 
 ## CURLFORM_ARRAY
 Introduced in 7.9.1. Deprecated since 7.56.0.
@@ -1593,7 +1605,7 @@ Introduced in 7.19.6. See CURLOPT_SSH_KEYFUNCTION(3).
 Introduced in 7.81.0. See libcurl-errors(3).
 
 ## CURLM_ADDED_ALREADY
-Introduced in 7.32.1. See libcurl-errors(3).
+Introduced in 7.33.0. See libcurl-errors(3).
 
 ## CURLM_BAD_EASY_HANDLE
 Introduced in 7.9.6. See libcurl-errors(3).
@@ -1637,6 +1649,30 @@ Introduced in 7.68.0. See libcurl-errors(3).
 ## CURLMIMEOPT_FORMESCAPE
 Introduced in 7.81.0. See CURLOPT_MIME_OPTIONS(3).
 
+## CURLMINFO_NONE
+Introduced in 8.16.0.
+
+## CURLMINFO_XFERS_ADDED
+Introduced in 8.16.0.
+
+## CURLMINFO_XFERS_CURRENT
+Introduced in 8.16.0.
+
+## CURLMINFO_XFERS_DONE
+Introduced in 8.16.0.
+
+## CURLMINFO_XFERS_PENDING
+Introduced in 8.16.0.
+
+## CURLMINFO_XFERS_RUNNING
+Introduced in 8.16.0.
+
+## CURLMNWC_CLEAR_CONNS
+Introduced in 8.16.0.
+
+## CURLMNWC_CLEAR_DNS
+Introduced in 8.16.0.
+
 ## CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE
 Introduced in 7.30.0. See CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE(3).
 
@@ -1657,6 +1693,9 @@ Introduced in 7.30.0. See CURLMOPT_MAX_TOTAL_CONNECTIONS(3).
 
 ## CURLMOPT_MAXCONNECTS
 Introduced in 7.16.3. See CURLMOPT_MAXCONNECTS(3).
+
+## CURLMOPT_NETWORK_CHANGED
+Introduced in 8.16.0. See CURLMOPT_NETWORK_CHANGED(3).
 
 ## CURLMOPT_PIPELINING
 Introduced in 7.16.0. See CURLMOPT_PIPELINING(3).
@@ -2520,13 +2559,16 @@ Introduced in 7.36.0. See CURLOPT_SSL_ENABLE_ALPN(3).
 Introduced in 7.36.0. Deprecated since 7.86.0.
 
 ## CURLOPT_SSL_FALSESTART
-Introduced in 7.42.0. See CURLOPT_SSL_FALSESTART(3).
+Introduced in 7.42.0. Deprecated since 8.15.0.
 
 ## CURLOPT_SSL_OPTIONS
 Introduced in 7.25.0. See CURLOPT_SSL_OPTIONS(3).
 
 ## CURLOPT_SSL_SESSIONID_CACHE
 Introduced in 7.16.0. See CURLOPT_SSL_SESSIONID_CACHE(3).
+
+## CURLOPT_SSL_SIGNATURE_ALGORITHMS
+Introduced in 8.14.0. See CURLOPT_SSL_SIGNATURE_ALGORITHMS(3).
 
 ## CURLOPT_SSL_VERIFYHOST
 Introduced in 7.8.1. See CURLOPT_SSL_VERIFYHOST(3).
@@ -2665,6 +2707,9 @@ Introduced in 7.1. See CURLOPT_UPLOAD(3).
 
 ## CURLOPT_UPLOAD_BUFFERSIZE
 Introduced in 7.62.0. See CURLOPT_UPLOAD_BUFFERSIZE(3).
+
+## CURLOPT_UPLOAD_FLAGS
+Introduced in 8.13.0. See CURLOPT_UPLOAD_FLAGS(3).
 
 ## CURLOPT_URL
 Introduced in 7.1. See CURLOPT_URL(3).
@@ -3093,7 +3138,7 @@ Introduced in 8.1.0. See curl_global_sslset(3).
 Introduced in 7.38.0. Deprecated since 7.61.0.
 
 ## CURLSSLBACKEND_BEARSSL
-Introduced in 7.68.0. See curl_global_sslset(3).
+Introduced in 7.68.0. Deprecated since 8.15.0.
 
 ## CURLSSLBACKEND_BORINGSSL
 Introduced in 7.49.0. See curl_global_sslset(3).
@@ -3108,7 +3153,7 @@ Introduced in 7.34.0. Deprecated since 7.64.1.
 Introduced in 7.34.0. See curl_global_sslset(3).
 
 ## CURLSSLBACKEND_GSKIT
-Introduced in 7.34.0. See curl_global_sslset(3).
+Introduced in 7.34.0. Deprecated since 8.3.0.
 
 ## CURLSSLBACKEND_LIBRESSL
 Introduced in 7.49.0. See curl_global_sslset(3).
@@ -3117,13 +3162,13 @@ Introduced in 7.49.0. See curl_global_sslset(3).
 Introduced in 7.46.0. See curl_global_sslset(3).
 
 ## CURLSSLBACKEND_MESALINK
-Introduced in 7.62.0. See curl_global_sslset(3).
+Introduced in 7.62.0. Deprecated since 7.82.0.
 
 ## CURLSSLBACKEND_NONE
 Introduced in 7.34.0. See curl_global_sslset(3).
 
 ## CURLSSLBACKEND_NSS
-Introduced in 7.34.0. See curl_global_sslset(3).
+Introduced in 7.34.0. Deprecated since 8.3.0.
 
 ## CURLSSLBACKEND_OPENSSL
 Introduced in 7.34.0. See curl_global_sslset(3).
@@ -3141,7 +3186,7 @@ Introduced in 7.76.0. See curl_global_sslset(3).
 Introduced in 7.34.0. See curl_global_sslset(3).
 
 ## CURLSSLBACKEND_SECURETRANSPORT
-Introduced in 7.64.1. See curl_global_sslset(3).
+Introduced in 7.64.1. Deprecated since 8.15.0.
 
 ## CURLSSLBACKEND_WOLFSSL
 Introduced in 7.49.0. See curl_global_sslset(3).
@@ -3365,6 +3410,21 @@ Introduced in 7.62.0. See curl_url_get(3).
 ## CURLUPART_ZONEID
 Introduced in 7.65.0. See curl_url_get(3).
 
+## CURLULFLAG_ANSWERED
+Introduced in 8.13.0.
+
+## CURLULFLAG_DELETED
+Introduced in 8.13.0.
+
+## CURLULFLAG_DRAFT
+Introduced in 8.13.0.
+
+## CURLULFLAG_FLAGGED
+Introduced in 8.13.0.
+
+## CURLULFLAG_SEEN
+Introduced in 8.13.0.
+
 ## CURLUSESSL_ALL
 Introduced in 7.17.0. See CURLOPT_USE_SSL(3).
 
@@ -3427,6 +3487,9 @@ Introduced in 7.86.0. See curl_ws_send(3).
 
 ## CURLWS_CONT
 Introduced in 7.86.0. See curl_ws_send(3).
+
+## CURLWS_NOAUTOPONG
+Introduced in 8.14.0. See curl_ws_send(3).
 
 ## CURLWS_OFFSET
 Introduced in 7.86.0. See curl_ws_send(3).
