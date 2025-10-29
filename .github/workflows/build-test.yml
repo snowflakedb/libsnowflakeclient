@@ -85,6 +85,7 @@ jobs:
               with:
                 java-version: '17'
                 distribution: 'temurin'
+                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -164,6 +165,7 @@ jobs:
               with:
                 java-version: '17'
                 distribution: 'temurin'
+                java-package: 'jre'
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
@@ -226,6 +228,7 @@ jobs:
               with:
                 java-version: '17'
                 distribution: 'temurin'
+                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -270,6 +273,7 @@ jobs:
               with:
                 java-version: '17'
                 distribution: 'temurin'
+                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -314,6 +318,7 @@ jobs:
               with:
                 java-version: '17'
                 distribution: 'temurin'
+                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
