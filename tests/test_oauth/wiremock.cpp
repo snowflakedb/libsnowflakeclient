@@ -168,7 +168,6 @@ namespace Snowflake {
                 double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
                 if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT)
                 {
-                    cout << "Wiremock startup timed out!";
                     CXX_LOG_INFO("sf::WiremockRunner::Wiremock startup timed out");
                     throw TimeoutException("Wiremock startup timed out!");
                 }
