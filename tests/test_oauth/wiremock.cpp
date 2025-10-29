@@ -191,7 +191,7 @@ namespace Snowflake {
         }
 
         void WiremockRunner::setup() {
-            if (access(wiremockPath, F_OK) == 0) {
+            if (access(wiremockPath.c_str(), F_OK) == 0) {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock standalone jar found");
             }
             else {
