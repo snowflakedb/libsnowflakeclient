@@ -95,11 +95,13 @@ SET(TESTS_PUTGET
  #       test_include_aws
  #       test_parallel_upload_download
  #       test_simple_put)
+ )
 
 SET(TESTS_PERF
 #        test_perf_string_reads_and_writes
 #        test_perf_column_evaluation
 #        test_perf_type_conversion)
+)
 
 SET(TESTS_MOCK
         # TODO: Re-enable tests in SNOW-2046054
