@@ -190,19 +190,20 @@ namespace Snowflake {
         }
 
         void WiremockRunner::setup() {
-            if (access(wiremockPath.c_str(), F_OK) == 0) {
+            std::string path = addHomePath() + wiremockPath;
+            if (access(path.c_str(), F_OK) == 0) {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock standalone jar found");
             }
             else {
-                CXX_LOG_ERROR("sf::WiremockRunner::setup::wiremock standalone jar not found at %s", wiremockPath.c_str());
+                CXX_LOG_ERROR("sf::WiremockRunner::setup::wiremock standalone jar not found at %s", path.c_str());
                 throw std::runtime_error("Wiremock standalone jar not found");
             }
 
 
             try {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
-                const std::string command = std::string("java -jar ") + wiremockPath
-                    + " --root-dir " + wiremockHomeDir
+                const std::string command = std::string("java -jar ") + addHomePath() + wiremockPath
+                    + " --root-dir " + addHomePath() + wiremockHomeDir
                     + " --enable-browser-proxying"
                     + " --proxy-pass-through false"
                     + " --port " + wiremockAdminPort
@@ -230,6 +231,11 @@ namespace Snowflake {
                 in.read(&res[0], res.size());
                 in.close();
             }
+        }
+
+        std::string WiremockRunner::addHomePath()
+        {
+            return std::string(std::getenv("HOME"));
         }
 
     }

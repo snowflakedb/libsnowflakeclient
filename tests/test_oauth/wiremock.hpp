@@ -11,10 +11,8 @@ namespace Snowflake
     namespace Client
     {
         using namespace std;
-
-        std::string homepath = std::string(std::getenv("HOME"));
-        const auto wiremockHomeDir = homepath + "/.wiremock";
-        const auto wiremockPath = homepath + "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
+        constexpr auto wiremockHomeDir = "/.wiremock";
+        constexpr auto wiremockPath = "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
         constexpr auto wiremockPort = "63900";
         constexpr auto wiremockAdminPort = "8081";
         constexpr auto wiremockHost = "127.0.0.1";
@@ -38,6 +36,7 @@ namespace Snowflake
             static void exec(const std::string &cmd);
             static void readJSONFromFile(const std::string &JSONFile, std::string &res);
             static pid_t startWiremockAsync(const std::string &cmd);
+            static std::string addHomePath();
 
         public:
             WiremockRunner();
