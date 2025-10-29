@@ -6,10 +6,24 @@ WIREMOCK_JAR="${HOME}/.m2/repository/org/wiremock/wiremock-standalone/${WIREMOCK
 WIREMOCK_URL="https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
 
 mkdir -p "$(dirname "$WIREMOCK_JAR")"
+
+echo "WireMock JAR is downlaoding${WIREMOCK_URL}"
 curl -L -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
+CURL_STATUS=$? 
+
+if [ "$CURL_STATUS" -ne 0 ]; then
+    echo "🚨 ERROR: Failed to download WireMock JAR. (curl code: $CURL_STATUS)"
+    exit 1
+fi
+
 chmod +r "$WIREMOCK_JAR"
 
-if [ ! -f "$WIREMOCK_JAR" ]; then
-  echo "Failed to find $WIREMOCK_JAR"
-  exit 1
+if [ "$(uname)" == "Darwin" ]; then
+    FILE_SIZE=$(stat -f%z "$WIREMOCK_JAR")
+else
+    FILE_SIZE=$(stat -c%s "$WIREMOCK_JAR")
 fi
+
+echo "✅ SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
+echo "   - location: $WIREMOCK_JAR"
+echo "   - size: ${FILE_SIZE} bytes"
