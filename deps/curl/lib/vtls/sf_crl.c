@@ -283,7 +283,7 @@ static int is_valid_filename_char(char c)
 {
   // Forbidden on Linux, Windows and Mac: < > : " / \ | ? *
   if (c == '<' || c == '>' || c == ':' || c == '"' ||
-      c == '/' || c == '\\' || c == '|' || c == '?' || c == '*' || c == '\0') {
+      c == '/' || c == '\\' || c == '|' || c == '?' || c == '*') {
     return 0;
   }
   return 1;
@@ -342,59 +342,58 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   if (home_env == NULL) {
     return NULL;
   }
-  strcpy(cache_dir, home_env);
-
+  strncpy(cache_dir, home_env, PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/.cache");
+  strncat(cache_dir, "/.cache", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/snowflake");
+  strncat(cache_dir, "/snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/crls");
+  strncat(cache_dir, "/crls", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/");
+  strncat(cache_dir, "/", PATH_MAX);
 #elif defined(__APPLE__)
   char *home_env = getenv("HOME");
   if (home_env == NULL) {
     return NULL;
   }
-  strcpy(cache_dir, home_env);
+  strncpy(cache_dir, home_env, PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Library");
+  strncat(cache_dir, "/Library", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Caches");
+  strncat(cache_dir, "/Caches", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/Snowflake");
+  strncat(cache_dir, "/Snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/crls");
+  strncat(cache_dir, "/crls", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
     return NULL;
   }
-  strcat(cache_dir, "/");
+  strncat(cache_dir, "/", PATH_MAX);
 #elif  defined(_WIN32)
   char *home_env = getenv("LOCALAPPDATA");
   if (home_env == NULL) {
@@ -429,16 +428,16 @@ static void get_cache_dir(const struct Curl_easy *data, char* cache_dir)
   env_dir = getenv("SF_CRL_RESPONSE_CACHE_DIR");
   infof(data, "CRL cache directory from environment: %s", env_dir ? env_dir : "(not set)");
   if (env_dir) {
-    strcpy(cache_dir, env_dir);
+    strncpy(cache_dir, env_dir, PATH_MAX);
 #if defined(_WIN32)
     const size_t len = strnlen(cache_dir, PATH_MAX);
     if (cache_dir[len-1] != '\\') {
-      strncat(cache_dir, "\\", PATH_MAX - len);
+      strncat(cache_dir, "\\", PATH_MAX);
     }
 #else
     const size_t len = strnlen(cache_dir, PATH_MAX);
     if (cache_dir[len-1] != '/') {
-      strcat(cache_dir, "/");
+      strncat(cache_dir, "/", PATH_MAX);
     }
 #endif
   }
