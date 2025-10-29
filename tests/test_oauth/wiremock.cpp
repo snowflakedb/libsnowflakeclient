@@ -195,7 +195,7 @@ namespace Snowflake {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock standalone jar found");
             }
             else {
-                CXX_LOG_ERROR("sf::WiremockRunner::setup::wiremock standalone jar not found at %s", wiremockPath);
+                CXX_LOG_ERROR("sf::WiremockRunner::setup::wiremock standalone jar not found at %s", wiremockPath.c_str());
                 throw std::runtime_error("Wiremock standalone jar not found");
             }
 
