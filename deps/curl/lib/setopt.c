@@ -26,6 +26,8 @@
 
 #include <limits.h>
 
+#include "snowflake/client.h"
+
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -1444,6 +1446,11 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
   case CURLOPT_SSL_SF_CRL_MEMORY_CACHING:
     data->set.ssl.primary.sf_crl_memory_caching = (0 != arg) ?
                                          TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT:
+      data->set.ssl.primary.sf_crl_download_timeout = (arg != 0) ?
+                                         (unsigned int)arg : SF_CRL_DOWNLOAD_TIMEOUT;
     Curl_ssl_conn_config_update(data, FALSE);
     break;
   default:
