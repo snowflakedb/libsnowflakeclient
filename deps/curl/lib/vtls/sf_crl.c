@@ -539,10 +539,8 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
   infof(data->data, "CRL disk caching is enabled. Loading CRL from disk (URI: %s)", uri);
 
   // lookup for CRL on disk
-  infof(data->data, "Tweak: %s %s", __DATE__, __TIME__);
   get_file_path_by_uri(data, uri, file_path);
   if (*file_path) {
-    infof(data->data, "Reading the file");
     fp = BIO_new_file(file_path, "r");
     if (fp) {
       struct sf_stat file_stats;
