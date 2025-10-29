@@ -559,19 +559,6 @@ if(DOS OR AMIGA)
   set(HAVE_TIME_T_UNSIGNED 1)
 endif()
 
-#if(WIN32)
-#  add_compile_options(/fsanitize=address)
-#  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
-#  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} /fsanitize=address")
-#  MESSAGE(STATUS "Linking ASAN 64-bit runtime libraries")
-#  link_directories("C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/lib/clang/19/lib/windows")
-#  link_libraries(
-#        clang_rt.asan-preinit-x86_64
-#        clang_rt.asan-x86_64
-#  )
-#
-#endif()
-
 if(ENABLE_THREADED_RESOLVER)
   if(WIN32)
     set(USE_THREADS_WIN32 ON)
