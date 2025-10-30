@@ -99,7 +99,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
-        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm-apple-darwin
         make > /dev/null
         make install /dev/null
 
