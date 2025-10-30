@@ -20,33 +20,17 @@ void log_masked_va_list(FILE* fp, const char *fmt, va_list args)
   sf_fprintf(fp, "%s", maskedMsg.c_str());
 }
 
-void terminal_mask(char *in_data, size_t datasize, char *out_masked, size_t masked_size){
-  if(in_data == NULL && in_data[0] == '\0'){
-    log_error("Error in masking text on terminal; in_data is not valid \n");
+void terminal_mask(char *in_data, size_t datasize, char *out_masked, size_t masked_bufsize){
+  if(in_data == NULL || in_data[0] == '\0' || datasize == 0 || out_masked == NULL || masked_bufsize == 0){
+    log_error("Error in masking text on terminal; check values of parameters passed in\n");
     return;
   }
-  if(datasize == 0){
-    log_error("Error in masking text on terminal; size of data_in buffer is 0 \n");
-    return;
-  }
-  if(out_masked == NULL){
-    log_error("Error in masking text on terminal; data_out is not valid \n");
-    return;
-  }
-  if(masked_size == 0){
-    log_error("Error in masking text on terminal; size of data_out is 0 \n");
-    return; 
-  }
-  strncpy(out_masked, in_data, datasize);
-  std::string text(out_masked);
+  std::string text(in_data);
   std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
-  if(datasize <= masked_size){
-    std::memset(out_masked, 0, masked_size);
-    std::strncpy(out_masked, maskedMsg.c_str(), maskedMsg.length());
-  } else {
-    log_error("Error in masking text on terminal; check buffer size\n");
-  }
-  
+  if(datasize <= masked_bufsize){
+    std::memset(out_masked, 0, masked_bufsize);
+    sf_strncpy(out_masked, masked_bufsize, maskedMsg.c_str(), maskedMsg.length());
+  }  
 }
 
 std::string Snowflake::Client::SFLogger::getMaskedMsg(const char* fmt, ...)
