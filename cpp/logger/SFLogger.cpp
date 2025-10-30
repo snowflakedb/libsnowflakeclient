@@ -39,19 +39,10 @@ void terminal_mask(char *in_data, size_t datasize, char *out_masked, size_t mask
   }
   strncpy(out_masked, in_data, datasize);
   std::string text(out_masked);
-  // std::cout << "[SFLogger] the text to be masked: " << text << std::endl;
-  // std::cout << "[SFLogger] text buffer size: " << (int) datasize << std::endl;
-  // std::cout << "[SFLogger] masked buffer size: " << (int) masked_size << std::endl;
   std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
   if(datasize <= masked_size){
-    // std::cout << "[SFLogger] the Masked msg to be returned: " << maskedMsg << std::endl;
-    // std::cout << "[SFLogger] the Masked msg length: " << maskedMsg.length() << std::endl;
-    // std::strncpy(masked, maskedMsg.c_str(), datasize);
-    // std::cout << "[SFLogger] the masked buffer before copying masked msg: " << masked << std::endl;
     std::memset(out_masked, 0, masked_size);
-    // std::cout << "[SFLogger] the masked buffer after zeroing: " << masked << std::endl;
     std::strncpy(out_masked, maskedMsg.c_str(), maskedMsg.length());
-    // std::cout << "[SFLogger] the masked buffer after copying: " << masked << std::endl;
   } else {
     log_error("Error in masking text on terminal; check buffer size\n");
   }
