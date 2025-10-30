@@ -158,7 +158,7 @@ namespace Snowflake {
         bool WiremockRunner::isRunning() {
             const std::string request = std::string("curl -s --output /dev/null -X POST http://") + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings ";
             const int ret = std::system(request.c_str());
-            CXX_LOG_INFO("sf::WiremockRunner::is Running", "%d", ret);
+            CXX_LOG_INFO("sf::WiremockRunner::is Running::%d", ret);
 
             return ret == 0;
         }
@@ -168,7 +168,7 @@ namespace Snowflake {
             auto start = std::chrono::steady_clock::now();
             while (!isRunning())
             {
-                CXX_LOG_INFO("sf::WiremockRunner::isnot running. Waiting for the execution");
+                CXX_LOG_INFO("sf::WiremockRunner::is not running. Waiting for the execution");
                 sleep(1);
                 auto end = std::chrono::steady_clock::now();
                 double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
