@@ -90,14 +90,11 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make
     make install
 elif [[ "$PLATFORM" == "darwin" ]]; then
-    export OPENSSL_ENABLED=true
     # Check to see if we are doing a universal build or not.
     # If we are not doing a universal build, pick an arch to
     # build
     if [[ "$ARCH" == "universal" ]]; then
         echo "[INFO] Building Universal Binary"
-        echo "[DEBUG] $OPENSSL_ENABLED"
-        ls /Users/jenkins/jenkins/workspace/LibSfClient-Macaarch64-Universal-Release/scripts/../deps-build/darwin/Release/openssl
         make clean &> /dev/null || true
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
