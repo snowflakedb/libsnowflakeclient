@@ -3,6 +3,7 @@
 #include "utils/test_setup.h"
 #include "memory.h"
 
+#include <stdio.h>
 /**
  * Test default port
  */
@@ -235,8 +236,13 @@ void test_connect_with_renew(void** unused) {
 
     // renew session
     CURL* curl = curl_easy_init();
+    sf_bool debug = SF_BOOLEAN_TRUE;
+    // turn on DEBUG mode to test with debug mode logging as well
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
     sf_bool renew_result = renew_session(curl, sf, &sf->error);
     curl_easy_cleanup(curl);
+    debug = SF_BOOLEAN_FALSE;
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
     if (!renew_result)
     {
         dump_error(&sf->error);
@@ -276,17 +282,17 @@ void test_connection_parameters_including_cn_region(void **unused) {
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_connection_parameters_default_port),
-        cmocka_unit_test(test_connection_parameters_no_host),
-        cmocka_unit_test(test_connection_parameters_with_region),
-        cmocka_unit_test(test_connection_parameters_with_cn_region),
-        cmocka_unit_test(test_connection_parameters_including_region),
-        cmocka_unit_test(test_connection_parameters_including_region_including_dot),
-        cmocka_unit_test(test_connection_parameters_for_global_url_basic),
-        cmocka_unit_test(test_connection_parameters_for_global_url_full),
-        cmocka_unit_test(test_connection_parameters_application),
-        cmocka_unit_test(test_connect_with_renew),
-        cmocka_unit_test(test_connection_parameters_including_cn_region),
+         cmocka_unit_test(test_connection_parameters_default_port),
+         cmocka_unit_test(test_connection_parameters_no_host),
+         cmocka_unit_test(test_connection_parameters_with_region),
+         cmocka_unit_test(test_connection_parameters_with_cn_region),
+         cmocka_unit_test(test_connection_parameters_including_region),
+         cmocka_unit_test(test_connection_parameters_including_region_including_dot),
+         cmocka_unit_test(test_connection_parameters_for_global_url_basic),
+         cmocka_unit_test(test_connection_parameters_for_global_url_full),
+         cmocka_unit_test(test_connection_parameters_application),
+         cmocka_unit_test(test_connect_with_renew),
+         cmocka_unit_test(test_connection_parameters_including_cn_region),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     return ret;
