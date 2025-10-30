@@ -90,6 +90,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make
     make install
 elif [[ "$PLATFORM" == "darwin" ]]; then
+    export OPENSSL_ENABLED=1
     # Check to see if we are doing a universal build or not.
     # If we are not doing a universal build, pick an arch to
     # build
