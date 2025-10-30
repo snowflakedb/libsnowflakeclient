@@ -96,6 +96,8 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
+    char* masked[5000] = {'\0'};
+
     switch (type) {
         case CURLINFO_TEXT:
             sf_fprintf(stderr, "== Info: %s", data);
@@ -105,9 +107,11 @@ int my_trace(CURL *handle, curl_infotype type,
 
         case CURLINFO_HEADER_OUT:
             text = "=> Send header";
+            terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_DATA_OUT:
             text = "=> Send data";
+            terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_SSL_DATA_OUT:
             text = "=> Send SSL data";
@@ -117,13 +121,20 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
         case CURLINFO_DATA_IN:
             text = "<= Recv data";
+            terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_SSL_DATA_IN:
             text = "<= Recv SSL data";
             break;
     }
 
-    dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    if(strlen(masked) == 0){
+        // data not masked
+        dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    } else {
+        // data masked
+        dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+    }
     return 0;
 }
 
