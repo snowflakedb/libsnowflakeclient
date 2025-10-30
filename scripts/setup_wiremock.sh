@@ -6,6 +6,8 @@ WIREMOCK_JAR="${HOME}/.m2/repository/org/wiremock/wiremock-standalone/${WIREMOCK
 WIREMOCK_URL="https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/${WIREMOCK_VERSION}/wiremock-standalone-${WIREMOCK_VERSION}.jar"
 
 mkdir -p "$(dirname "$WIREMOCK_JAR")"
+mkdir -p "$(dirname "${HOME}/.wiremock")"
+
 
 echo "WireMock JAR is downlaoding${WIREMOCK_URL}"
 curl -L -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
