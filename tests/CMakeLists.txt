@@ -6,85 +6,85 @@ include_directories(
 )
 
 SET(TESTS_C
-#        test_unit_connect_parameters
-#        test_unit_logger
-#        test_unit_retry_context
-#        test_connect
-#        test_connect_negative
-#        test_bind_params
-#        test_bind_named_params
-#        test_change_current
-#        test_select1
-#        test_check_ctypes
-#        test_crud
-#        test_error_handlings
-#        test_large_result_set
-#        test_transaction
-#        test_ping_pong
-#        test_stmt_with_bad_connect
-#        test_binary
-#        test_bool
-#        test_null
-#        test_number
-#        test_variant
-#        test_time
-#        test_timestamp_ntz
-#        test_timestamp_ltz
-#        test_timestamp_tz
-#        test_timezone
-#        test_adjust_fetch_data
-#        test_issue_76
-#        test_column_fetch
-#        test_native_timestamp
-#        test_get_query_result_response
-#        test_get_describe_only_query_result
-#        test_stmt_functions
-#        test_unit_pat
-#        test_unit_platform
-#        test_unit_connect
-#        test_unit_mfa_auth
-#        test_ocsp_fail_open
-#        test_unit_privatelink
-#        test_multiple_statements
-#        test_async
-#        test_cancel
+        test_unit_connect_parameters
+        test_unit_logger
+        test_unit_retry_context
+        test_connect
+        test_connect_negative
+        test_bind_params
+        test_bind_named_params
+        test_change_current
+        test_select1
+        test_check_ctypes
+        test_crud
+        test_error_handlings
+        test_large_result_set
+        test_transaction
+        test_ping_pong
+        test_stmt_with_bad_connect
+        test_binary
+        test_bool
+        test_null
+        test_number
+        test_variant
+        test_time
+        test_timestamp_ntz
+        test_timestamp_ltz
+        test_timestamp_tz
+        test_timezone
+        test_adjust_fetch_data
+        test_issue_76
+        test_column_fetch
+        test_native_timestamp
+        test_get_query_result_response
+        test_get_describe_only_query_result
+        test_stmt_functions
+        test_unit_pat
+        test_unit_platform
+        test_unit_connect
+        test_unit_mfa_auth
+        test_ocsp_fail_open
+        test_unit_privatelink
+        test_multiple_statements
+        test_async
+        test_cancel
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
 #        test_stats
 # MFA, Oauth, and Okta connections are only able to run testing manually.
-#        test_manual_connect
+        test_manual_connect
 )
 
 SET(TESTS_CXX
-#        test_unit_jwt
-#        test_unit_external_browser
-#        test_unit_okta
-#        test_unit_oauth
-#        test_unit_cipher_stream_buf
-#        test_unit_cred_renew
-#        test_unit_encryption
-#        test_unit_file_metadata_init
-#        test_unit_file_type_detect
-#        test_unit_stream_splitter
-#        test_unit_put_retry
-#        test_unit_put_fast_fail
-#        test_unit_put_get_fips
-#        test_unit_put_get_gcs
-#        test_unit_thread_pool
-#        test_unit_base64
-#        test_jwt
-        #test_cpp_select1
-#        test_unit_proxy
-#        test_unit_oob
-#        test_unit_set_get_attributes
-#       test_unit_snowflake_types_to_string
-#        test_unit_azure_client
-#        test_unit_query_context_cache
-#        test_unit_sfurl
-#        test_toml_config
-#        test_manual_wif
-#        test_create_wif_attestation
+        test_unit_jwt
+        test_unit_external_browser
+        test_unit_okta
+        test_unit_oauth
+        test_unit_cipher_stream_buf
+        test_unit_cred_renew
+        test_unit_encryption
+        test_unit_file_metadata_init
+        test_unit_file_type_detect
+        test_unit_stream_splitter
+        test_unit_put_retry
+        test_unit_put_fast_fail
+        test_unit_put_get_fips
+        test_unit_put_get_gcs
+        test_unit_thread_pool
+        test_unit_base64
+        test_jwt
+       #test_cpp_select1
+        test_unit_proxy
+        test_unit_oob
+        test_unit_set_get_attributes
+        test_unit_snowflake_types_to_string
+        test_unit_azure_client
+        test_unit_query_context_cache
+        test_unit_sfurl
+        test_toml_config
+        test_manual_wif
+        test_create_wif_attestation
 )
 
 if (LINUX)
@@ -92,16 +92,15 @@ if (LINUX)
 endif()
 
 SET(TESTS_PUTGET
- #       test_include_aws
- #       test_parallel_upload_download
- #       test_simple_put)
- )
+        test_include_aws
+        test_parallel_upload_download
+        test_simple_put)
 
 SET(TESTS_PERF
-#        test_perf_string_reads_and_writes
-#        test_perf_column_evaluation
-#        test_perf_type_conversion)
-)
+        test_perf_string_reads_and_writes
+        test_perf_column_evaluation
+        test_perf_type_conversion)
+
 
 SET(TESTS_MOCK
         # TODO: Re-enable tests in SNOW-2046054
@@ -402,8 +401,11 @@ else()
 endif()
 
 if (UNIX)
-#    add_subdirectory(unit_test_ocsp)
-#    add_subdirectory(test_auth)
+    add_subdirectory(unit_test_ocsp)
+    add_subdirectory(test_auth)
+endif()
+    
+if (LINUX)
     add_subdirectory(test_oauth)
 endif()
 add_subdirectory(test_bind_datastructures)

@@ -18,12 +18,6 @@ fi
 
 chmod +r "$WIREMOCK_JAR"
 
-if [ "$(uname)" == "Darwin" ]; then
-    FILE_SIZE=$(stat -f%z "$WIREMOCK_JAR")
-else
-    FILE_SIZE=$(stat -c%s "$WIREMOCK_JAR")
-fi
-
-echo "✅ SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
+echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
 echo "   - location: $WIREMOCK_JAR"
 echo "   - size: ${FILE_SIZE} bytes"

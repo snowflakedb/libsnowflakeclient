@@ -13,12 +13,7 @@
 
 namespace Snowflake {
     namespace Client {
-
-       #ifdef __APPLE__
-        int WiremockRunner::S_WIREMOCK_TIMEOUT = 3000;
-        #else
         int WiremockRunner::S_WIREMOCK_TIMEOUT = 3;
-        #endif
 
 
         WiremockRunner::WiremockRunner()
@@ -51,7 +46,7 @@ namespace Snowflake {
             waitForWiremockRunning();
             initMappingFromFile(idpMappingFile, port);
             for (const auto& mappingFile : additionalMappingFiles) {
-                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner", "Configuring additional mapping from file %s", mappingFile.c_str());
+                CXX_LOG_INFO("sf::WiremockRunner::WiremockRunner::Configuring additional mapping from file %s", mappingFile.c_str());
                 addMappingFromFile(mappingFile, port);
             }
         }

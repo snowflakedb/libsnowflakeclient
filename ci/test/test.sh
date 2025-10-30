@@ -15,7 +15,9 @@ source $SCRIPTS_DIR/setup_wiremock.sh
 
 init_git_variables
 set_parameters $CLOUD_PROVIDER
-source $SCRIPTS_DIR/env.sh
+if [ "$(uname)" == "Darwin" ]; then
+    source $SCRIPTS_DIR/env.sh
+fi
 
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
