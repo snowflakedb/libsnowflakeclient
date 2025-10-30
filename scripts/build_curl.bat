@@ -101,7 +101,7 @@ rd /S /Q %CJSON_SOURCE_DIR%
 git clone https://github.com/DaveGamble/cJSON.git %CJSON_SOURCE_DIR%
 pushd %CJSON_SOURCE_DIR%
   git checkout tags/v%CJSON_VERSION% -b v%CJSON_VERSION%
-  git apply %CJSON_PATCH%
+  git apply --ignore-whitespace %CJSON_PATCH%
   copy /v /y .\cJSON.c "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.c"
   copy /v /y .\cJSON.h "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.h"
 popd
