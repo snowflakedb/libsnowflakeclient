@@ -447,19 +447,6 @@ void test_terminal_mask(){
 }
 
 /* Test masking in stderr */
-void save_original_stderr(int *stderr_fd){
-  *stderr_fd = dup(_fileno(stderr));
-  if(*stderr_fd == -1){
-    printf("[Test] unable to save stderr\n");
-  }
-}
-void restore_stderr(int *stderr_fd, FILE *fileptr){
-  if(dup2(stderr_fd, _fileno(stderr)) == -1){
-    printf("[Test] unable to restore stdeer\n");
-  }
-  close(stderr_fd);
-  fclose(fileptr);
-}
 void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[], const char *filename[]){
   enum curl_infotype infotype = 0;
   struct data d = {'1'};  // debug struct trace_ascii needed for CURL
@@ -510,7 +497,6 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
       my_trace(NULL, infotype, test_token[testcasenum], size, &d);
 
       // read stderr content
-      output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
         printf(stderr, "[Test] fgets unable to retrieve text\n");
       }
@@ -539,7 +525,6 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
       my_trace(NULL, infotype, test_token[testcasenum], size, &d);
 
       // read stderr content
-      output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
         printf(stderr, "[Test] fgets unable to retrieve text\n");
       }
@@ -561,17 +546,14 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
       my_trace(NULL, infotype, test_token[testcasenum], size, &d);
 
       // read stderr content
-      output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
         printf(stderr, "[Test] fgets unable to retrieve text\n");
       }
-      // fprintf(stderr, "[Test] Test case 4: line 1 content: %s\n", output_buff);
       fflush(stderr);
       output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
         printf(stderr, "[Test] fgets unable to retrieve text\n");
       }
-      // fprintf(stderr, "[Test] Test case 4: line 1 content: %s\n", output_buff);
       fflush(stderr);
 
       //compare output
@@ -592,192 +574,24 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
 }
 void test_mask_stderr(){
   int original_stderr = 0;
-  enum curl_infotype infotype = 0;
   char *filename[] = {"tmp_stderr1.txt", "tmp_stderr2.txt", "tmp_stderr3.txt", "tmp_stderr4.txt"}; 
-  struct data d = {'1'};  // debug struct trace_ascii needed for CURL
   char *test_token[] = {
     "Authorization: Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"",
     "{.  \"data\" : {.  \"sessionToken\" : \"ver:3-hint:447445930662-ETMsDgAAAZkSKHQIABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEJkiB9bmtdBmHSIGVLOyEk8AAACQ3KiabpjaByFYbBrstpaGjBPnzWDcWgOZmuzWVLjOpSftdeIdgg1Wf8wu8LWekfmp50Pskw12nQYDAn0DsfcCQDNHiLYoUX5OfJZrqRqxcFq+aMjTG9IFwiGxzGnb1g6/4cEvquM8p70XUuUworwugM3GSqOppOEWKx7skYjlXtW4vh/qToBNfXnCq+7kHgfABRUm+YOYoxpqzutzNptN5UVBHZqVw==\",.  \"validityInSecondsST\" : 3599,.  \"masterToken\" : \"ver:3-hint:447445930662-ETMsDgAAAZkSKHQIABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEAVbB7SPRmK0GbhTF+XNE2YAAACwShsU1R77NNyduqOK06Cvps4JXU+sQ9LR4yDlyUjLUJporv4mi+aH2Ha7uYmkcccbwc2EurFrd6EUi0skCvctkEmCLzdbQMeaPbfoJmnq82oIx7SBgCnhc9Q9qOszwR7Co06BHW+KFrRj77ZGVS7C7fuRZHfhpKds8tvaS99OVKcGqtV5V9M84kNcI9+Bl8TO0lIxuwMM4gF/ExLrynzGiL6k+Ga6b7OhbAXFNjZmoAAFFoyzuuNAAxM66zT1egsBOvQe0x\",.  \"validityInSecondsMT\" : 14399,.  \"sessionId\" : 114369304442287.},.  \"code\" : null,.  \"message\" : null,.  \"success\" : true.}",
     "Host: simbapartner.snowflakecomputing.com\n",
     "This message is not meant to be masked\n"
   };
-  char output_buff[100] = "\0";
-  size_t size = 0;
-  FILE *tmp_stderr;
-  int i = 0;  // current test case   
-
-  run_each_test_case(&original_stderr, i, test_token, filename);
-
-  /*// saving original stderr
-  save_original_stderr(&original_stderr);
-
-  // redirecting stderr to a tmp file
-  tmp_stderr = freopen(filename[i], "w", stderr);
-  if(tmp_stderr == NULL){
-    printf("Failed to open temp file for stderr redirection\n");
-    return 1;
-  }
-
-  run_each_test_case(&original_stderr, i, test_token, filename);
-  FILE *fp_out1 = fopen(filename[i], "r");
   
-  infotype = 2;  // CURLINFO_HEADER_OUT
-  size = strlen(test_token[i]);  
-  my_trace(NULL, infotype, test_token[i], size, &d);
-
-  // read stderr content
-  if(fgets(output_buff, sizeof(output_buff), fp_out1) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
+  for(int i = 0; i < 4; i++){
+    run_each_test_case(&original_stderr, i, test_token, filename);
   }
-  fflush(stderr);
-  output_buff[0] = '\0';
-  if(fgets(output_buff, strlen(test_token[i]), fp_out1) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-
-  //compare output
-  char *expected = "0000: Authorization: \"Snowflake Token\": ****..........................\n";
-  assert_string_equal(output_buff, expected);
-
-  // restore stderr
-  restore_stderr(original_stderr, fp_out1);
-
-  // confirm stderr has been restore
-  fprintf(stderr, "[Test] this msg is a confirmation of stderr restoration and is expected to seen on terminal\n");*/
-
-  /*fprintf(stderr, "[Test] Test case 2: CURLINFO DATA IN\n");
-  i+=1;
-  save_original_stderr(&original_stderr);
-
-  // redirecting stderr to a tmp file
-  tmp_stderr = freopen(filename[i], "w", stderr);
-  if(tmp_stderr == NULL){
-    printf("Failed to open temp file for stderr redirection\n");
-    return 1;
-  }
-
-  FILE *fp_out2 = fopen(filename[i], "r");
-  
-  infotype = 3;  // CURLINFO_DATA_IN
-  size = strlen(test_token[i]);  
-  my_trace(NULL, infotype, test_token[i], size, &d);
-
-  // read stderr content
-  output_buff[0] = '\0';
-  if(fgets(output_buff, sizeof(output_buff), fp_out2) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-  output_buff[0] = '\0';
-  if(fgets(output_buff, strlen(test_token[i]), fp_out2) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-  
-  //compare output
-  char *expected1 = "0000: {.  \"data\" : {.  \"sessionToken\": ****,.  \"validityInSecondsST\" :\n";
-  assert_string_equal(output_buff, expected1);
-  output_buff[0] = '\0';
-  if(fgets(output_buff, strlen(test_token[i]), fp_out2) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-  expected1 = "0040:  3599,.  \"masterToken\": ****,.  \"validityInSecondsMT\" : 14399,. \n";
-  assert_string_equal(output_buff, expected1);
-
-  // restore stderr
-  restore_stderr(original_stderr, fp_out2);
-
-  // confirm stderr has been restore
-  fprintf(stderr, "[Test] this msg is a confirmation of stderr restoration and is expected to seen on terminal\n");
-
-  fprintf(stderr, "[Test] Test case 3: CURLINFO_HEADER_OUT\n");
-  i+=1;
-  // saving original stderr
-  save_original_stderr(&original_stderr);
-
-  tmp_stderr = freopen(filename[i], "w", stderr);
-  if(tmp_stderr == NULL){
-    printf("Failed to open temp file for stderr redirection\n");
-    return 1;
-  }
-
-  FILE *fp_out3 = fopen(filename[i], "r");
-  
-  infotype = 2;  // CURLINFO_HEADER_OUT
-  size = strlen(test_token[i]);  
-  my_trace(NULL, infotype, test_token[i], size, &d);
-
-  // read stderr content
-  output_buff[0] = '\0';
-  if(fgets(output_buff, sizeof(output_buff), fp_out3) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-  output_buff[0] = '\0';
-  if(fgets(output_buff, sizeof(output_buff), fp_out3) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  fflush(stderr);
-
-  //compare output
-  char *expected3 = "0000: Host: simbapartner.snowflakecomputing.com.\n";
-  assert_string_equal(output_buff, expected3);
-
-  // restore stderr
-  restore_stderr(original_stderr, fp_out3);
-
-  // confirm stderr has been restore
-  fprintf(stderr, "[Test] this msg is a confirmation of stderr restoration and is expected to seen on terminal\n"); 
-
-  fprintf(stderr, "[Test] Test case 4: CURLINFO HEADER IN\n");
-  i+=1;
-  // saving original stderr
-  save_original_stderr(&original_stderr);
-
-  tmp_stderr = freopen(filename[i], "w", stderr);
-  if(tmp_stderr == NULL){
-    printf("Failed to open temp file for stderr redirection\n");
-    return 1;
-  }
-
-  FILE *fp_out4 = fopen(filename[i], "r");
-  
-  infotype = 1;  // CURLINFO_HEADER_OUT
-  size = strlen(test_token[i]);  
-  my_trace(NULL, infotype, test_token[i], size, &d);
-
-  // read stderr content
-  output_buff[0] = '\0';
-  if(fgets(output_buff, sizeof(output_buff), fp_out4) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  // fprintf(stderr, "[Test] Test case 4: line 1 content: %s\n", output_buff);
-  fflush(stderr);
-  output_buff[0] = '\0';
-  if(fgets(output_buff, sizeof(output_buff), fp_out4) == NULL){
-    printf(stderr, "[Test] fgets unable to retrieve text\n");
-  }
-  // fprintf(stderr, "[Test] Test case 4: line 1 content: %s\n", output_buff);
-  fflush(stderr);
-
-  //compare output
-  char *expected4 = "0000: This message is not meant to be masked.\n";
-  assert_string_equal(output_buff, expected4);
-
-  // restore stderr
-  restore_stderr(original_stderr, fp_out4);
-
-  // confirm stderr has been restore
-  fprintf(stderr, "[Test] this msg is a confirmation of stderr restoration and is expected to seen on terminal\n");*/  
 
   // clean up
-  /*for(int i = 0; i < 4; i++){
+  for(int i = 0; i < 4; i++){
     if(remove(filename[i]) != 0){
       fprintf(stderr, "[Test] unable to remove tmp_stderr%d\n", i);
     }
-  }*/
+  }
 
 }
 
