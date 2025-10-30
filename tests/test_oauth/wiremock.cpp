@@ -155,6 +155,7 @@ namespace Snowflake {
 
         bool WiremockRunner::isRunning() {
             const std::string request = std::string("curl -s --output /dev/null -X POST http://") + wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings ";
+            CXX_LOG_INFO("sf::WiremockRunner::isRunning::request: %s", request.c_str());
             const int ret = std::system(request.c_str());
             CXX_LOG_INFO("sf::WiremockRunner::is Running::%d", ret);
 
@@ -215,6 +216,7 @@ namespace Snowflake {
                     + " --https-port " + wiremockPort
                     + " --https-keystore ../../tests/test_oauth/wiremock/ca-cert.jks"
                     + " --ca-keystore ../../tests/test_oauth/wiremock/ca-cert.jks";
+                CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock command: %s", command.c_str());
                 exec(command); // blocking call, will be running in a separate thread
             }
             catch (std::exception& e) {
