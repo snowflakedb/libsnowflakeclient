@@ -13,8 +13,11 @@
 
 namespace Snowflake {
     namespace Client {
+        #ifdef __APPLE__
+        int WiremockRunner::S_WIREMOCK_TIMEOUT = 3000;
+        #else
         int WiremockRunner::S_WIREMOCK_TIMEOUT = 3;
-
+        #endif
 
         WiremockRunner::WiremockRunner()
         {

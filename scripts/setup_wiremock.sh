@@ -16,7 +16,7 @@ if [ "$CURL_STATUS" -ne 0 ]; then
     exit 1
 fi
 
-chmod +r "$WIREMOCK_JAR"
+chmod a=rwx "$WIREMOCK_JAR"
 
 echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
 echo "   - location: $WIREMOCK_JAR"
