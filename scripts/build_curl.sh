@@ -10,7 +10,7 @@ function usage() {
     echo "-v                 : Version"
     exit 2
 }
-set -o pipefail
+set -x -o pipefail
 
 CURL_SRC_VERSION=8.12.1
 CURL_BUILD_VERSION=5
