@@ -24,8 +24,25 @@ echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
 echo "   - location: $WIREMOCK_JAR"
 echo "   - size: ${FILE_SIZE} bytes"
 
-#!/bin/bash
 
+JAVA_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.12_7.tar.gz"
+INSTALL_DIR="/opt/java"
+
+mkdir -p $INSTALL_DIR
+
+curl -L --fail $JAVA_URL -o /tmp/java17.tar.gz
+
+tar -xzf /tmp/java17.tar.gz -C $INSTALL_DIR --strip-components=1
+
+rm /tmp/java17.tar.gz
+
+export JAVA_HOME=$INSTALL_DIR
+export PATH=$JAVA_HOME/bin:$PATH
+
+echo "JAVA_HOME: $JAVA_HOME"
+
+
+function upgrade_java(){
 JAVA_MAJOR_VERSION="17"
 JAVA_HOME_PATH=""
 
@@ -95,3 +112,4 @@ fi
 # 최종 버전 확인
 echo "--- 최종 Java 버전 확인 ---"
 java -version 2>&1
+}
