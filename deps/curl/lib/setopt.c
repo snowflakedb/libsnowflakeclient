@@ -1421,6 +1421,36 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
                                          TRUE : FALSE;
     Curl_ssl_conn_config_update(data, FALSE);
     break;
+  case CURLOPT_SSL_SF_CRL_CHECK:
+    data->set.ssl.primary.sf_crl_check = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_ADVISORY:
+    data->set.ssl.primary.sf_crl_advisory = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL:
+    data->set.ssl.primary.sf_crl_allow_no_crl = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DISK_CACHING:
+    data->set.ssl.primary.sf_crl_disk_caching = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_MEMORY_CACHING:
+    data->set.ssl.primary.sf_crl_memory_caching = (0 != arg) ?
+                                         TRUE : FALSE;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
+  case CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT:
+      data->set.ssl.primary.sf_crl_download_timeout = (arg != 0) ?
+                                         (unsigned int)arg : 120;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
   default:
     /* unknown option */
     return CURLE_UNKNOWN_OPTION;

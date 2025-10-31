@@ -1,4 +1,6 @@
+#pragma once
 #include <boost/optional.hpp>
+#include <snowflake/platform.h>
 
 class EnvOverride
 {
