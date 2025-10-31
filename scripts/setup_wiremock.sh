@@ -26,15 +26,16 @@ echo "   - size: ${FILE_SIZE} bytes"
 
 
 JAVA_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.12_7.tar.gz"
-INSTALL_DIR="/opt/java"
+INSTALL_DIR="${HOME}/.java17"
+DOWNLOAD_DIR="${HOME}java17.tar.gz"
 
 mkdir -p $INSTALL_DIR
 
-curl -L --fail $JAVA_URL -o /tmp/java17.tar.gz
+curl -L --fail $JAVA_URL -o "${DOWNLOAD_DIR}"
 
-tar -xzf /tmp/java17.tar.gz -C $INSTALL_DIR --strip-components=1
+tar -xzf /"${DOWNLOAD_DIR}" -C $INSTALL_DIR --strip-components=1
 
-rm /tmp/java17.tar.gz
+rm "${DOWNLOAD_DIR}"
 
 export JAVA_HOME=$INSTALL_DIR
 export PATH=$JAVA_HOME/bin:$PATH
