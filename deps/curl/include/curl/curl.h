@@ -2240,6 +2240,25 @@ typedef enum {
   /* Snowflake options. True if OOB telemetry is enabled. Defaults to false */
   CURLOPT(CURLOPT_SSL_SF_OOB_ENABLE, CURLOPTTYPE_LONG, 329),
 
+  /* Snowflake options. True if CRL checking is enabled. Defaults to false */
+  CURLOPT(CURLOPT_SSL_SF_CRL_CHECK, CURLOPTTYPE_LONG, 330),
+
+  /* Snowflake options. True if CRL should be in advisory mode.
+   * Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_ADVISORY, CURLOPTTYPE_LONG, 331),
+
+  /* Snowflake options. True if CRL checking allows no CRL. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, CURLOPTTYPE_LONG, 332),
+
+  /* Snowflake options. True if CRL is cached on disk. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DISK_CACHING, CURLOPTTYPE_LONG, 333),
+
+  /* Snowflake options. True if CRL is cached in memory. Defaults to true */
+  CURLOPT(CURLOPT_SSL_SF_CRL_MEMORY_CACHING, CURLOPTTYPE_LONG, 334),
+
+  /* Snowflake options. CRL download timeout */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, CURLOPTTYPE_LONG, 335),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
