@@ -44,8 +44,8 @@ if [ "$OS" == "ubuntu" ] || [ "$OS" == "debian" ]; then
         echo "OpenJDK $JAVA_MAJOR_VERSION was installed"
     else
         echo "OpenJDK $JAVA_MAJOR_VERSION is not installed. Installing now..."
-        sudo apt update
-        sudo apt install -y openjdk-$JAVA_MAJOR_VERSION-jdk
+        apt update
+        apt install -y openjdk-$JAVA_MAJOR_VERSION-jdk
     fi
     JAVA_HOME_PATH="/usr/lib/jvm/java-$JAVA_MAJOR_VERSION-openjdk-amd64"
 
@@ -60,7 +60,7 @@ elif [ "$OS" == "centos" ] || [ "$OS" == "rhel" ] || [ "$OS" == "fedora" ]; then
         echo " OpenJDK $JAVA_MAJOR_VERSION was installed."
     else
         echo "OpenJDK $JAVA_MAJOR_VERSION is not installed. Installing now..."
-        sudo $PACKAGE_MANAGER install -y java-$JAVA_MAJOR_VERSION-openjdk
+        $PACKAGE_MANAGER install -y java-$JAVA_MAJOR_VERSION-openjdk
     fi
     JAVA_HOME_PATH="/usr/lib/jvm/java-$JAVA_MAJOR_VERSION-openjdk"
 
@@ -85,10 +85,10 @@ echo "JAVA_HOME is set to $JAVA_HOME "
 if command -v alternatives &> /dev/null; then
     echo "--- 3. Setting Java $JAVA_MAJOR_VERSION as the default using alternatives ---"
     if [ "$OS" == "ubuntu" ] || [ "$OS" == "debian" ]; then
-        sudo update-alternatives --set java $JAVA_HOME/bin/java
+        update-alternatives --set java $JAVA_HOME/bin/java
         
     elif [ "$OS" == "centos" ] || [ "$OS" == "rhel" ] || [ "$OS" == "fedora" ]; then
-        sudo alternatives --set java $JAVA_HOME/bin/java
+        alternatives --set java $JAVA_HOME/bin/java
     fi
 fi
 
