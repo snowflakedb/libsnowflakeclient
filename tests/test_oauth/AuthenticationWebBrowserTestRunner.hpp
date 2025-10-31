@@ -15,7 +15,8 @@ namespace Snowflake {
         public:
             void startWebBrowser(const std::string& url) override
             {
-                CXX_LOG_TRACE("sf::AuthenticationWebBrowserTestRunner::running curl to open a browser::%s", url.c_str());
+
+                                   CXX_LOG_TRACE("sf::AuthenticationWebBrowserTestRunner::running curl to open a browser::%s", url.c_str());
                 int64 elapsedTime = 0;
                 cJSON* resp_data = NULL;
                 void* curl_desc;
@@ -26,7 +27,8 @@ namespace Snowflake {
 
                 http_perform(curl, GET_REQUEST_TYPE, (char*)url.c_str(), NULL, NULL, NULL, &resp_data,
                     NULL, NULL, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
-                    0,
+                    SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE,
+                    0, 0,
                     0, 7, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                     NULL, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
             }
