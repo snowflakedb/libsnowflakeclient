@@ -13,7 +13,7 @@
 
 namespace Snowflake {
     namespace Client {
-        int WiremockRunner::S_WIREMOCK_TIMEOUT = 3;
+        int WiremockRunner::S_WIREMOCK_TIMEOUT = 1000;
 
 
         WiremockRunner::WiremockRunner()
