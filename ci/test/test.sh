@@ -11,13 +11,14 @@ set -o pipefail
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
+if [ "$(uname)" == "Linux" ]; then
 source $SCRIPTS_DIR/setup_wiremock.sh
+fi
 
 init_git_variables
 set_parameters $CLOUD_PROVIDER
-if [ "$(uname)" == "Darwin" ]; then
+
     source $SCRIPTS_DIR/env.sh
-fi
 
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 
