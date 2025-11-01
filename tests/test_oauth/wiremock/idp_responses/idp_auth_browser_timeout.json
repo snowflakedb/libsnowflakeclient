@@ -1,0 +1,15 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Browser Authorization timeout",
+      "request": {
+        "urlPathPattern": "/auth/authorize",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 5000
+      }
+    }
+  ]
+}
