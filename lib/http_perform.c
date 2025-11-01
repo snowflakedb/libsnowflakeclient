@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
@@ -32,6 +33,9 @@ dump(const char *text, FILE *stream, unsigned char *ptr, size_t size,
 
 static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
                     void *userp);
+
+/* Enable curl verbose logging when the environment variable SF_CURL_VERBOSE is set.
+ * This allows turning on libcurl debug without recompiling with DEBUG. */
 
 static
 void dump(const char *text,
@@ -137,6 +141,12 @@ sf_bool STDCALL http_perform(CURL *curl,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
                              sf_bool fail_open,
+                             sf_bool crl_check,
+                             sf_bool crl_advisory,
+                             sf_bool crl_allow_no_crl,
+                             sf_bool crl_disk_caching,
+                             sf_bool crl_memory_caching,
+                             long crl_download_timeout,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -186,7 +196,9 @@ sf_bool STDCALL http_perform(CURL *curl,
         return SF_BOOLEAN_FALSE;
     }
 
-    //TODO set error buffer
+    // Set libcurl error buffer for detailed diagnostics
+    char curl_error_buffer[CURL_ERROR_SIZE];
+    curl_error_buffer[0] = '\0';
 
     do {
         // Reset buffer since this may not be our first rodeo
@@ -212,18 +224,25 @@ sf_bool STDCALL http_perform(CURL *curl,
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, curl_timeout);
 
         // Set parameters
+        curl_error_buffer[0] = '\0';
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer);
         res = curl_easy_setopt(curl, CURLOPT_URL, url);
         if (res != CURLE_OK) {
             log_error("Failed to set URL [%s]", curl_easy_strerror(res));
             break;
         }
 
-        if (DEBUG) {
+        {
+            int enable_verbose = DEBUG ? 1 : 0;
+            const char *sf_cv = getenv("SF_CURL_VERBOSE");
+            if (sf_cv && sf_cv[0] != '0') enable_verbose = 1;
+            if (enable_verbose) {
             curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
             curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
             /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
             curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+            }
         }
 
         if (header) {
@@ -376,12 +395,61 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_easy_strerror(res));
             break;
         }
-
         res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, fail_open);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP FAIL_OPEN [%s]",
                       curl_easy_strerror(res));
             break;
+        }
+
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, crl_check);
+        if (res != CURLE_OK) {
+          log_error("Unable to set CRL CHECK [%s]",
+                    curl_easy_strerror(res));
+          break;
+        }
+
+        if (crl_check)
+        {
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, crl_advisory);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL advisory mode [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, crl_allow_no_crl);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL allow null crl [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, crl_disk_caching);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL disk caching [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, crl_memory_caching);
+          if (res != CURLE_OK)
+          {
+            log_error("Unable to set CRL memory caching [%s]",
+                      curl_easy_strerror(res));
+            break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, crl_download_timeout);
+          if (res != CURLE_OK)
+          {
+              log_error("Unable to set CRL download timeout [%s]",
+                        curl_easy_strerror(res));
+              break;
+          }
         }
 
         // Set chunk downloader specific stuff here
@@ -419,6 +487,9 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         /* Check for errors */
         if (res != CURLE_OK) {
+          if (curl_error_buffer[0] != '\0') {
+            log_error("curl error buffer: %s", curl_error_buffer);
+          }
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
                                               retry_on_curle_couldnt_connect_count)
             {
@@ -443,6 +514,9 @@ sf_bool STDCALL http_perform(CURL *curl,
                 }
                 msg[sizeof(msg)-1] = (char)0;
                 log_error(msg);
+                if (res == CURLE_SSL_INVALIDCERTSTATUS) {
+                  log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
+                }
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
                                     msg,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);

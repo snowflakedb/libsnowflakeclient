@@ -41,6 +41,7 @@ SET(TESTS_C
         test_stmt_functions
         test_unit_oauth
         test_unit_pat
+        test_unit_platform
         test_unit_connect
         test_unit_mfa_auth
         test_ocsp_fail_open
@@ -84,6 +85,7 @@ SET(TESTS_CXX
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
+        test_crl
 )
 
 if (LINUX)
@@ -312,7 +314,7 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -335,7 +337,6 @@ else()
         endif()
     ENDFOREACH ()
 
-
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
     # with error LNK2001: unresolved external symbol __CrtDbgReportW
@@ -348,7 +349,7 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -403,4 +404,3 @@ if (UNIX)
     add_subdirectory(test_auth)
 endif()
 add_subdirectory(test_bind_datastructures)
-

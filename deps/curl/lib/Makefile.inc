@@ -61,6 +61,7 @@ LIB_VTLS_CFILES =           \
   vtls/wolfssl.c            \
   vtls/x509asn1.c           \
   vtls/sf_ocsp.c            \
+  vtls/sf_crl.c             \
   vtls/sf_cJSON.c
 
 LIB_VTLS_HFILES =           \
@@ -83,6 +84,7 @@ LIB_VTLS_HFILES =           \
   vtls/wolfssl.h            \
   vtls/x509asn1.h           \
   vtls/sf_ocsp.h            \
+  vtls/sf_crl.h             \
   vtls/sf_cJSON.h
 
 LIB_VQUIC_CFILES = \

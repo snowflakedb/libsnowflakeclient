@@ -65,6 +65,7 @@
 #include "strerror.h"
 #include "curl_printf.h"
 #include "sf_ocsp.h"
+#include "sf_crl.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -157,6 +158,14 @@
 #define ARG2_X509_signature_print (X509_ALGOR *)
 #else
 #define ARG2_X509_signature_print
+#endif
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
+    !(defined(LIBRESSL_VERSION_NUMBER) && \
+      LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
+    !defined(OPENSSL_IS_BORINGSSL) && \
+    !defined(OPENSSL_IS_AWSLC)
+#define CURL_HAS_VERIFIED_CHAIN 1
 #endif
 
 #else
@@ -1900,6 +1909,9 @@ static int ossl_init(void)
   /* init Cert OCSP revocation checks */
   initCertOCSP();
 
+  /* init Cert CRL revocation checks */
+  initCertCRL();
+
   return 1;
 }
 
@@ -3628,6 +3640,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
   cached_store = ossl_get_cached_x509_store(cf, data);
   if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
     SSL_CTX_set_cert_store(ssl_ctx, cached_store);
+    
+    /* !!! Starting Snowflake CRL !!! */
+    /* Update CRL configuration even for cached store */
+    if (conn_config->sf_crl_check) {
+      registerCRLCheck(data, cached_store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
   else {
     X509_STORE *store = SSL_CTX_get_cert_store(ssl_ctx);
@@ -3636,6 +3660,17 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
     if(result == CURLE_OK && cache_criteria_met) {
       ossl_set_cached_x509_store(cf, data, store);
     }
+
+    /* !!! Starting Snowflake CRL !!! */
+    if (conn_config->sf_crl_check) {
+      registerCRLCheck(data, store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
 
   return result;
@@ -4614,11 +4649,7 @@ static CURLcode ossl_pkp_pin_peer_pubkey(struct Curl_easy *data, X509* cert,
   return result;
 }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) &&  \
-  !(defined(LIBRESSL_VERSION_NUMBER) && \
-    LIBRESSL_VERSION_NUMBER < 0x3060000fL) && \
-  !defined(OPENSSL_IS_BORINGSSL) && \
-  !defined(OPENSSL_IS_AWSLC) && \
+#if defined(CURL_HAS_VERIFIED_CHAIN) && \
   !defined(CURL_DISABLE_VERBOSE_STRINGS)
 static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
 {
@@ -4730,13 +4761,30 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     return CURLE_PEER_FAILED_VERIFICATION;
   }
 
-  /* !!! Starting Snowflake OCSP !!! */
+  /* !!! Starting OCSP !!! */
   if (conn_config->sf_ocsp_check)
   {
     STACK_OF(X509) *ch = NULL;
     X509_STORE     *st = NULL;
 
+    /* Prefer the verified chain if available to ensure correct issuer pairing
+       for cross-signed chains; fall back to peer-provided chain otherwise. */
+    infof(data, "OCSP: preferring verified chain for issuer determination");
+#if defined(CURL_HAS_VERIFIED_CHAIN)
+    {
+      STACK_OF(X509) *verified = SSL_get0_verified_chain(octx->ssl);
+      bool used_verified = false;
+      ch = verified;
+      if(!ch)
+        ch = SSL_get_peer_cert_chain(octx->ssl);
+      else
+        used_verified = true;
+      infof(data, "OCSP: used_verified_chain=%s",
+            used_verified ? "yes" : "no");
+    }
+#else
     ch = SSL_get_peer_cert_chain(octx->ssl);
+#endif
     if (!ch)
     {
       infof(data, "OCSP validation could not get peer certificate chain");
@@ -4746,6 +4794,11 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
     {
       infof(data, "OCSP validation could not get certificate data store");
     }
+
+    /* Additional diagnostics for OCSP chain/store context */
+    infof(data, "OCSP: verified_chain_present=%s chain_count=%d",
+          ch ? "yes" : "no", ch ? sk_X509_num(ch) : 0);
+    infof(data, "OCSP: cert_store_present=%s", st ? "yes" : "no");
 
     if (ch && st)
     {
@@ -4757,7 +4810,7 @@ CURLcode Curl_oss_check_peer_cert(struct Curl_cfilter *cf,
       }
     }
   }
-  /* !!! End of Snowflake OCSP !!! */
+  /* !!! End of OCSP !!! */
 
   infof(data, "%s certificate:",
         Curl_ssl_cf_is_proxy(cf) ? "Proxy" : "Server");
