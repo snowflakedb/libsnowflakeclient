@@ -18,6 +18,7 @@ namespace Snowflake
 
             static AuthenticationChallengeBaseProvider* getInstance();
             static void setInstance(std::unique_ptr<AuthenticationChallengeBaseProvider> testInstance);
+
         private:
             static std::unique_ptr<AuthenticationChallengeBaseProvider> instance;
         };

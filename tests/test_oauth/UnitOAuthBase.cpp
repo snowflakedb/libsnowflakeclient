@@ -79,6 +79,8 @@ namespace Snowflake {
             snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_ID, "123");
             snowflake_set_attribute(sf, SF_CON_OAUTH_CLIENT_SECRET, "client-secret-value");
             snowflake_set_attribute(sf, SF_CON_OAUTH_SCOPE, "session:role:ANALYST");
+            snowflake_set_attribute(sf, SF_CON_BROWSER_RESPONSE_TIMEOUT, &browserResponseTimeout);
+
             sf_bool insecureMode = SF_BOOLEAN_TRUE;
             snowflake_set_attribute(sf, SF_CON_INSECURE_MODE, &insecureMode);
             sf->single_use_refresh_token = params.oauthSingleUseRefreshTokens;

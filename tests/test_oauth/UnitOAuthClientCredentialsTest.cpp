@@ -20,6 +20,7 @@ Snowflake::Client::WiremockRunner* wiremock;
 
 void test_successful_oauth_client_credentials_flow(void** unused)
 {
+    SF_UNUSED(unused);
     delete wiremock;
     initAuthChallengeTestProvider();
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_client_successful.json",
@@ -39,6 +40,7 @@ void test_successful_oauth_client_credentials_flow(void** unused)
 
 void test_failure_oauth_client_credentials_flow(void** unused)
 {
+    SF_UNUSED(unused);
     delete wiremock;
     initAuthChallengeTestProvider();
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_client_token_request_error.json", {});
@@ -51,6 +53,7 @@ void test_failure_oauth_client_credentials_flow(void** unused)
 
 void test_re_authentication_and_refresh_token_is_valid(void** unused)
 {
+    SF_UNUSED(unused);
     delete wiremock;
     initAuthChallengeTestProvider();
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_failed.json", {
@@ -75,6 +78,7 @@ void test_re_authentication_and_refresh_token_is_valid(void** unused)
 
 void test_re_authentication_and_refresh_token_is_expired(void** unused)
 {
+    SF_UNUSED(unused);
     delete wiremock;
     initAuthChallengeTestProvider();
     CXX_LOG_INFO("sf::UnitOAuthTest::ExpiredRefreshToken::Prepare wiremock mapping");

@@ -209,12 +209,8 @@ namespace Snowflake
             try
             {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
-#if __APPLE__
-                std::string javaCommand = "/user/bin/java -jar ";
-#else
-                std::string javaCommand = "java -jar ";
-#endif 
-                const std::string command = javaCommand + addHomePath() + wiremockPath
+
+                const std::string command = "java -jar " + addHomePath() + wiremockPath
                     + " --root-dir " + addHomePath() + wiremockHomeDir
                     + " --enable-browser-proxying"
                     + " --proxy-pass-through false"

@@ -17,7 +17,6 @@ namespace Snowflake {
             {
 
                 CXX_LOG_TRACE("sf::AuthenticationWebBrowserTestRunner::running curl to open a browser::%s", url.c_str());
-                int64 elapsedTime = 0;
                 cJSON* resp_data = NULL;
                 void* curl_desc;
                 CURL* curl;
