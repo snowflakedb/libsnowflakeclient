@@ -12,7 +12,7 @@ curl -L -o "${WIREMOCK_JAR}" "${WIREMOCK_URL}"
 CURL_STATUS=$? 
 
 if [ "$CURL_STATUS" -ne 0 ]; then
-    echo "🚨 ERROR: Failed to download WireMock JAR. (curl code: $CURL_STATUS)"
+    echo "ERROR: Failed to download WireMock JAR. (curl code: $CURL_STATUS)"
     exit 1
 fi
 
@@ -28,13 +28,10 @@ DOWNLOAD_DIR="${HOME}/java17.tar.gz"
 
 mkdir -p $INSTALL_DIR
 
-# curl로 다운로드
 curl -L --fail $JAVA_URL -o "${DOWNLOAD_DIR}"
 
-# 압축 해제 및 설치 디렉토리로 이동 (폴더 구조에 따라 --strip-components=1 필요)
 tar -xzf "${DOWNLOAD_DIR}" -C $INSTALL_DIR --strip-components=1
 
-# 임시 파일 삭제
 rm "${DOWNLOAD_DIR}"
 
 export JAVA_HOME=$INSTALL_DIR
