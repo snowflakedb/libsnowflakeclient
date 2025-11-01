@@ -627,8 +627,8 @@ namespace Snowflake {
             m_path = std::move(path);
             m_port = std::move(port);
             m_real_port = std::move(port);
-            if (sf_strncasecmp("localhost",m_host.c_str(), 9)) {
-                CXX_LOG_DEBUG("LOCALHOST is. Change the value")
+            if (sf_strncasecmp("localhost",m_host.c_str(), 9) == 0) {
+                CXX_LOG_DEBUG("LOCALHOST")
 
                 m_host = AuthenticatorOAuth::S_LOCALHOST;
             }
