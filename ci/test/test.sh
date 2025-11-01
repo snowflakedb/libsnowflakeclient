@@ -11,7 +11,7 @@ set -o pipefail
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE
 echo "CMAKE: $CMAKE, CTEST: $CTEST"
 source $SCRIPTS_DIR/utils.sh
-if [ "$(uname)" == "Linux" && ENABLE_MOCK_OBJECTS ]; then
+if [ "$(uname)" == "Linux" && !ENABLE_MOCK_OBJECTS ]; then
     source $SCRIPTS_DIR/setup_wiremock.sh
 fi
 
