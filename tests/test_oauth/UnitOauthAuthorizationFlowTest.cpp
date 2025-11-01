@@ -46,10 +46,10 @@ void test_successful_oauth_authorization_flow(void** unused) {
     log_set_quiet(SF_BOOLEAN_FALSE);
     configureRunners();
 
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_successful.json",
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful.json",
         {
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
     );
@@ -68,10 +68,10 @@ void test_successful_oauth_authorization_flow_with_single_use_refresh_token(void
     delete wiremock;
     configureRunners();
 
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_successful_with_single_use_refresh_token.json",
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful_with_single_use_refresh_token.json",
         {
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
     );
@@ -94,10 +94,10 @@ void test_custom_urls_oauth_authorization_flow(void** unused) {
     log_set_quiet(SF_BOOLEAN_FALSE);
     configureRunners();
 
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_custom_urls.json",
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_custom_urls.json",
         {
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
-            "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
     );
@@ -122,7 +122,7 @@ void test_invalid_scope_oauth_authorization_flow_in_redirect_url(void** unused)
 {
     delete wiremock;
     SF_UNUSED(unused);
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_invalid_scope.json", {}, randomPort);
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_invalid_scope.json", {}, randomPort);
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++);
 
@@ -138,7 +138,7 @@ void test_token_request_error_oauth_authorization_flow(void** unused) {
     SF_UNUSED(unused);
 
     delete wiremock;
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_token_request_error.json", {}, randomPort);
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_token_request_error.json", {}, randomPort);
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++);
 
@@ -155,7 +155,7 @@ void test_browser_timeout_oauth_authorization_flow(void** unused) {
     SF_UNUSED(unused);
 
     delete wiremock;
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_browser_timeout.json", {}, randomPort);
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_browser_timeout.json", {}, randomPort);
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++, 1);
 
@@ -172,7 +172,7 @@ void test_invalid_access_token_in_oauth_authorization_flow(void** unused)
     SF_UNUSED(unused);
 
     delete wiremock;
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_invalid_access_token.json", {}, randomPort);
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_invalid_access_token.json", {}, randomPort);
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++);
 
@@ -188,7 +188,7 @@ void test_missing_access_token_in_oauth_authorization_flow(void** unused)
     SF_UNUSED(unused);
 
     delete wiremock;
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_missing_access_token.json", {}, randomPort);
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_missing_access_token.json", {}, randomPort);
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++);
 
@@ -223,10 +223,10 @@ void test_successful_oauth_authorization_flow_with_root_path_in_redirect_uri(voi
     SF_UNUSED(unused);
     configureRunners();
 
-    wiremock = new WiremockRunner("./tests/test_oauth/wiremock/idp_responses/idp_auth_successful_root_redirect_uri_path.json",
+    wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful_root_redirect_uri_path.json",
         {
-                "./tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
-                "./tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
+                "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+                "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
     );
