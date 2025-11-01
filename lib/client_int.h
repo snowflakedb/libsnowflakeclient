@@ -66,6 +66,7 @@
 #define SESSION_TOKEN_EXPIRED_CODE "390112"
 #define MASTER_TOKEN_EXPIRED_CODE "390114"
 #define SF_GS_ERROR_CODE_ID_TOKEN_INVALID "390195"
+#define SF_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE "390318"
 
 #define QUERY_IN_PROGRESS_CODE "333333"
 #define QUERY_IN_PROGRESS_ASYNC_CODE "333334"
@@ -83,7 +84,7 @@
 #define TIMEZONE_OFFSET_RANGE  (int64)(24 * 60);
 
 int uuid4_generate_non_terminated(char *dst);
-int uuid4_generate(char *dst);
+int uuid4_generate(char* dst);
 
 /**
  * Encryption material
