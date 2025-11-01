@@ -209,7 +209,19 @@ namespace Snowflake
             try
             {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
-                const std::string command = "java -jar " + addHomePath() + wiremockPath + " --root-dir " + addHomePath() + wiremockHomeDir + " --enable-browser-proxying" + " --proxy-pass-through false" + " --port " + wiremockAdminPort + " --https-port " + wiremockPort + " --https-keystore ../../tests/test_oauth/wiremock/ca-cert.jks" + " --ca-keystore ../../tests/test_oauth/wiremock/ca-cert.jks";
+                #if __APPLE__
+                std::string javaCommand = "/user/bin/java -jar ";
+                #else
+                std::string javaCommand = "java -jar ";
+                #endif 
+                const std::string command = javaCommand + addHomePath() + wiremockPath
+                    + " --root-dir " + addHomePath() + wiremockHomeDir
+                    + " --enable-browser-proxying"
+                    + " --proxy-pass-through false"
+                    + " --port " + wiremockAdminPort
+                    + " --https-port " + wiremockPort
+                    + " --https-keystore ../../tests/test_oauth/wiremock/ca-cert.jks"
+                    + " --ca-keystore ../../tests/test_oauth/wiremock/ca-cert.jks";
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock command: %s", command.c_str());
                 exec(command); // blocking call, will be running in a separate thread
             }

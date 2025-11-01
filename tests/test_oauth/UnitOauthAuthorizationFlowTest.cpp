@@ -43,7 +43,6 @@ Snowflake::Client::WiremockRunner* wiremock;
 
 void test_successful_oauth_authorization_flow(void** unused) {
     SF_UNUSED(unused);
-    log_set_quiet(SF_BOOLEAN_FALSE);
     configureRunners();
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful.json",
@@ -91,7 +90,6 @@ void test_successful_oauth_authorization_flow_with_single_use_refresh_token(void
 void test_custom_urls_oauth_authorization_flow(void** unused) {
     delete wiremock;
     SF_UNUSED(unused);
-    log_set_quiet(SF_BOOLEAN_FALSE);
     configureRunners();
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_custom_urls.json",
