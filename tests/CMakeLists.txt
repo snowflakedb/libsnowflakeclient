@@ -405,6 +405,9 @@ endif()
 if (UNIX)
     add_subdirectory(unit_test_ocsp)
     add_subdirectory(test_auth)
+endif()
+
+if (LINUX AND NOT MOCK)
     add_subdirectory(test_oauth)
 endif()
     

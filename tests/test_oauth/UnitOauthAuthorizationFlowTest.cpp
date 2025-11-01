@@ -147,7 +147,6 @@ void test_token_request_error_oauth_authorization_flow(void** unused) {
 
     assert_false(status == SF_STATUS_SUCCESS);
     CXX_LOG_ERROR("sf::UnitOAuthAuthorizationFlow::TokenRequestError::Exception: %s", sf->error.msg);
-    //
     assert_true(std::string(sf->error.msg).find("Received unretryable http code: [400]") != string::npos);
 }
 
