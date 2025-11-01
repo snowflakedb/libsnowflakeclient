@@ -81,11 +81,6 @@ jobs:
                 path: dep-cache
                 key: ${{ matrix.build_type }}-${{ github.sha }}-Linux-dep-cache
               if: github.ref_name == github.event.repository.default_branch && matrix.cloud_provider == 'AWS'
-            - uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -161,11 +156,6 @@ jobs:
                 cloud_provider: [ 'AWS', 'AZURE', 'GCP' ]
         steps:
             - uses: actions/checkout@v4
-            - uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-                java-package: 'jre'
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
@@ -224,11 +214,6 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
-            - uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -269,11 +254,6 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
-            - uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151
@@ -314,11 +294,6 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLIENT_CODE_COVERAGE: 1
               run: ci/build_linux.sh
-            - uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-                java-package: 'jre'
             - uses: actions/setup-python@v5
               with:
                 python-version: '>=3.13.5' # temporary bound until it becomes the default, https://github.com/python/cpython/issues/135151

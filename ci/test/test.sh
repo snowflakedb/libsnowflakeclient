@@ -17,8 +17,7 @@ fi
 
 init_git_variables
 set_parameters $CLOUD_PROVIDER
-
-    source $SCRIPTS_DIR/env.sh
+source $SCRIPTS_DIR/env.sh
 
 CLIENT_CODE_COVERAGE=${CLIENT_CODE_COVERAGE:-0}
 

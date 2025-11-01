@@ -21,7 +21,6 @@ echo "UPLOAD_TO_S3=${UPLOAD_TO_S3}"
 
 source $SCRIPTS_DIR/_init.sh -t $BUILD_TYPE "$@"
 source $SCRIPTS_DIR/utils.sh
-source $SCRIPTS_DIR/setup_wiremock.sh
 init_git_variables
 
 function download_build_component()

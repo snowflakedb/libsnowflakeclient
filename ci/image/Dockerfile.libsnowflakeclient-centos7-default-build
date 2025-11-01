@@ -61,7 +61,7 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Java
-RUN yum -y install java-17-openjdk-devel
+RUN yum -y install java-1.8.0-openjdk-devel
 
 # gcc
 RUN yum -y install which wget bzip2 gcc gcc-c++ make libtool file perl-Thread-Queue
