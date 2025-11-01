@@ -659,6 +659,7 @@ namespace Snowflake {
             memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
             recv_server.sin_family = AF_INET;
             recv_server.sin_port = htons(m_port); // ephemeral port
+            CXX_LOG_INFO("HOST is %s", m_host.c_str())
             if (inet_pton(AF_INET, m_host.c_str(), &recv_server.sin_addr.s_addr) != 1)
             {
                 CXX_LOG_ERROR(
