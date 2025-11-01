@@ -186,7 +186,7 @@ void test_idp_authenticator(void**)
 
     idp.isCurrentCallFailed = true;
     idp.getIDPInfo(dataMap);
-    assert_string_equal(idp.getErrorMessage(), "Fail to get authenticator info.");
+    assert_string_equal(idp.getErrorMessage(), "Fail to get authenticator info in getIDPInfo.");
 
     snowflake_term(sf);
 }
@@ -271,7 +271,7 @@ void test_okta_authenticator_fail(void**)
 
     MockOkta okta = MockOkta(sf);
     okta.authenticate();
-    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed.");
+    assert_string_equal(okta.getErrorMessage(), "SFSamlResponseVerificationFailed: The specified authenticator and destination URL in Saml Assertion did not match.");
 
     okta.setCurlGetRequestFailed(true);
     okta.authenticate();
