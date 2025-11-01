@@ -41,6 +41,7 @@
 #include "memory.h"
 #include "error.h"
 #include <errno.h>
+#include <cctype>
 namespace {
     std::string encodeBase64(const std::string& s) {
         return Snowflake::Client::Util::IBase64::encodeURLNoPadding(std::vector<char>(s.begin(), s.end()));
@@ -626,13 +627,17 @@ namespace Snowflake {
             m_path = std::move(path);
             m_port = std::move(port);
             m_real_port = std::move(port);
+            if (sf_strncasecmp(m_host.c_str(),"localhost", 9)) {
+                m_host = AuthenticatorOAuth::S_LOCALHOST;
+            }
+
             if (port == 0) {
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s%s, port will be randomly chosen",
-                    host.c_str(), path.c_str());
+                    m_host.c_str(), path.c_str());
             }
             else {
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s:%d%s",
-                    host.c_str(), port, path.c_str());
+                    m_host.c_str(), port, path.c_str());
             }
             start();
             return m_real_port;
