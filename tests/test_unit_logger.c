@@ -568,9 +568,6 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
   }
   close(*stderr_fd);
   fclose(fp_out);
-
-  // confirm stderr has been restore
-  /*fprintf(stderr, "[Test] this msg is a confirmation of stderr restoration and is expected to seen on terminal\n");*/
 }
 void test_mask_stderr(){
   int original_stderr = 0;
