@@ -96,7 +96,7 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
-    char* masked[5000] = {'\0'};
+    char masked[5000] = {'\0'};
 
     switch (type) {
         case CURLINFO_TEXT:
