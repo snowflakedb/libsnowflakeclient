@@ -147,11 +147,7 @@ void test_no_trailing_null(void **)
   std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> key
     {generate_key(), [](EVP_PKEY *k) { EVP_PKEY_free(k); }};
 
-  if (key == nullptr)
-  {
-    assert_true(false);
-    return;
-  }
+  assert_non_null(key.get());
 
   std::string token = jwt.serialize(key.get());
 
@@ -164,6 +160,9 @@ void test_no_trailing_null(void **)
 
   std::vector<char> header_bytes = Snowflake::Client::Util::IBase64::decodeURLNoPadding(header_b64);
   std::vector<char> claimset_bytes = Snowflake::Client::Util::IBase64::decodeURLNoPadding(claimset_b64);
+
+  assert_false(header_bytes.empty());
+  assert_false(claimset_bytes.empty());
 
   assert_true(header_bytes.back() != '\0');
   assert_true(claimset_bytes.back() != '\0');
