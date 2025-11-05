@@ -1622,10 +1622,10 @@ SF_STATUS STDCALL snowflake_set_attribute(
           sf->crl_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_ADVISORY:
-          sf->crl_advisory = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          sf->crl_advisory = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_ALLOW_NO_CRL:
-          sf->crl_allow_no_crl = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          sf->crl_allow_no_crl = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_DISK_CACHING:
           sf->crl_disk_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
