@@ -3,7 +3,7 @@
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
-// #include <io.h>
+#include "../deps/curl/include/curl/curl.h"
 #include <fcntl.h>
 
 #include "../lib/http_perform.c"
@@ -447,7 +447,7 @@ void test_terminal_mask(){
 }
 
 /* Test masking in stderr */
-void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[], const char *filename[]){
+void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], char *filename[]){
   enum curl_infotype infotype = 0;
   struct data d = {'1'};  // debug struct trace_ascii needed for CURL
   size_t size = 0;
@@ -477,12 +477,12 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       output_buff[0] = '\0';
       if(fgets(output_buff, strlen(test_token[testcasenum]), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
 
@@ -498,12 +498,12 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       output_buff[0] = '\0';
       if(fgets(output_buff, strlen(test_token[testcasenum]), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       
@@ -512,7 +512,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
       assert_string_equal(output_buff, expected1);
       output_buff[0] = '\0';
       if(fgets(output_buff, strlen(test_token[testcasenum]), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       expected1 = "0040:  3599,.  \"masterToken\": ****,.  \"validityInSecondsMT\" : 14399,. \n";
@@ -526,12 +526,12 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
 
@@ -547,12 +547,12 @@ void run_each_test_case(int *stderr_fd, int testcasenum, const char *test_token[
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
       output_buff[0] = '\0';
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
-        printf(stderr, "[Test] fgets unable to retrieve text\n");
+        fprintf(stderr, "[Test] fgets unable to retrieve text\n");
       }
       fflush(stderr);
 
