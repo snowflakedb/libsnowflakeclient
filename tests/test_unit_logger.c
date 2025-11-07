@@ -13,7 +13,9 @@
 #include <unistd.h>
 #include <pwd.h>
 #define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
+#define GET_FD _fileno
 #else
+#define GET_FD fileno
 #define F_OK 0
 inline int access(const char* pathname, int mode){
   return _access(pathname, mode);
@@ -454,7 +456,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
   char output_buff[100] = "\0";
   
   // saving original stderr
-  *stderr_fd = dup(_fileno(stderr));
+  *stderr_fd = dup(GET_FD(stderr));
   if(*stderr_fd == -1){
     printf("[Test] unable to save stderr\n");
   }
@@ -463,7 +465,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
   FILE *tmp_stderr = freopen(filename[testcasenum], "w", stderr);
   if(tmp_stderr == NULL){
     printf("Failed to open temp file for stderr redirection\n");
-    return 1;
+    return;
   }
 
   // file descriptor for reading tmp file
@@ -563,7 +565,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
   }
 
   // restore stderr
-  if(dup2(*stderr_fd, _fileno(stderr)) == -1){
+  if(dup2(*stderr_fd, GET_FD(stderr)) == -1){
     printf("[Test] unable to restore stdeer\n");
   }
   close(*stderr_fd);
