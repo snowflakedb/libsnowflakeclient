@@ -13,11 +13,12 @@
 #include <unistd.h>
 #include <pwd.h>
 #define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
+#define GET_STREM_FD _fileno
 #elif _WIN64
-#define GET_FD _fileno
+#define GET_STREM_FD _fileno
 #define F_OK 0
 #else
-#define GET_FD fileno
+#define GET_STREM_FD fileno
 #define F_OK 0
 inline int access(const char* pathname, int mode){
   return _access(pathname, mode);
@@ -458,7 +459,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
   char output_buff[100] = "\0";
   
   // saving original stderr
-  *stderr_fd = dup(GET_FD(stderr));
+  *stderr_fd = dup(GET_STREM_FD(stderr));
   if(*stderr_fd == -1){
     printf("[Test] unable to save stderr\n");
   }
@@ -567,7 +568,7 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
   }
 
   // restore stderr
-  if(dup2(*stderr_fd, GET_FD(stderr)) == -1){
+  if(dup2(*stderr_fd, GET_STREM_FD(stderr)) == -1){
     printf("[Test] unable to restore stdeer\n");
   }
   close(*stderr_fd);
