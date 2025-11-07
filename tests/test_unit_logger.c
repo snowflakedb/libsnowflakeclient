@@ -452,7 +452,7 @@ void test_terminal_mask(){
 
 /* Test masking in stderr */
 void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], char *filename[]){
-  enum curl_infotype infotype = 0;
+  // enum curl_infotype infotype = 0;
   struct data d = {'1'};  // debug struct trace_ascii needed for CURL
   size_t size = 0;
   char output_buff[100] = "\0";
@@ -475,9 +475,9 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
 
     switch(testcasenum){
       case 0:
-      infotype = 2;  // CURLINFO_HEADER_OUT
+      // infotype = 2;  // CURLINFO_HEADER_OUT
       size = strlen(test_token[testcasenum]);  
-      my_trace(NULL, infotype, test_token[testcasenum], size, &d);
+      my_trace(NULL, CURLINFO_HEADER_OUT, test_token[testcasenum], size, &d);
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
@@ -496,9 +496,9 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
       break;
 
     case 1:
-      infotype = 3;  // CURLINFO_DATA_IN
+      // infotype = 3;  // CURLINFO_DATA_IN
       size = strlen(test_token[testcasenum]);  
-      my_trace(NULL, infotype, test_token[testcasenum], size, &d);
+      my_trace(NULL, CURLINFO_DATA_IN, test_token[testcasenum], size, &d);
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
@@ -524,9 +524,9 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
     break;
 
     case 2:
-      infotype = 2;  // CURLINFO_HEADER_OUT
+      // infotype = 2;  // CURLINFO_HEADER_OUT
       size = strlen(test_token[testcasenum]);  
-      my_trace(NULL, infotype, test_token[testcasenum], size, &d);
+      my_trace(NULL, CURLINFO_HEADER_OUT, test_token[testcasenum], size, &d);
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
@@ -545,9 +545,9 @@ void run_each_test_case(int *stderr_fd, int testcasenum, char *test_token[], cha
     break;
 
     case 3:
-      infotype = 1;  // CURLINFO_HEADER_OUT
+      // infotype = 1;  // CURLINFO_HEADER_OUT
       size = strlen(test_token[testcasenum]);  
-      my_trace(NULL, infotype, test_token[testcasenum], size, &d);
+      my_trace(NULL, CURLINFO_HEADER_OUT, test_token[testcasenum], size, &d);
 
       // read stderr content
       if(fgets(output_buff, sizeof(output_buff), fp_out) == NULL){
