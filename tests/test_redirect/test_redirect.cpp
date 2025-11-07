@@ -5,17 +5,22 @@
 
 using namespace Snowflake::Client;
 
-WiremockRunner* wiremock;
+Snowflake::Client::WiremockRunner* wiremock = NULL;
 
 void test_redirect_307(void** unused) {
   SF_UNUSED(unused);
 
-  wiremock = new WiremockRunner();
-  wiremock->initMappingFromFile("http_307_retry.json", std::stoi(wiremockPort));
+  wiremock = new WiremockRunner("http_307_retry.json", {});
+
+  snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &SF_BOOLEAN_TRUE);
+  snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &SF_BOOLEAN_TRUE);
+  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_FALSE);
 
   SF_CONNECT *sf = setup_snowflake_connection();
   snowflake_set_attribute(sf, SF_CON_HOST, wiremockHost);
   snowflake_set_attribute(sf, SF_CON_PORT, wiremockPort);
+  int64 timeout = 5;
+  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   SF_STATUS status = snowflake_connect(sf);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
@@ -45,6 +50,8 @@ void test_redirect_307(void** unused) {
   assert_int_equal(status, SF_STATUS_EOF);
   snowflake_stmt_term(sfstmt);
   snowflake_term(sf);
+  
+  delete(wiremock);
 }
 
 int main(void) {
