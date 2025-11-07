@@ -13,7 +13,9 @@
 #include <unistd.h>
 #include <pwd.h>
 #define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
+#elif _WIN64
 #define GET_FD _fileno
+#define F_OK 0
 #else
 #define GET_FD fileno
 #define F_OK 0
