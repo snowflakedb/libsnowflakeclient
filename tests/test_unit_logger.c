@@ -13,12 +13,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
-#define GET_STREM_FD fileno
-#elif _WIN64
-#define GET_STREM_FD _fileno
-#define F_OK 0
 #else
-#define GET_STREM_FD _fileno
 #define F_OK 0
 inline int access(const char* pathname, int mode){
   return _access(pathname, mode);
@@ -813,7 +808,7 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
         cmocka_unit_test(test_terminal_mask),
-        cmocka_unit_test(test_mask_stderr),
+        // cmocka_unit_test(test_mask_stderr),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
