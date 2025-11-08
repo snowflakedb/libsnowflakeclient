@@ -78,7 +78,7 @@ namespace Client
                 SecretDetector::maskPassword(
                   SecretDetector::maskEncryptioncCredsInJson(
                     SecretDetector::maskTokenInJson(
-                        text
+                      text
                       )
                     )
                   )

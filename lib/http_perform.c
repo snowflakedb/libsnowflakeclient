@@ -128,13 +128,6 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
     }
 
-    /*if(strlen(masked) == 0){
-        // data not masked
-        dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
-    } else {
-        // data masked
-        dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
-    }*/
     dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
     return 0;
 }
