@@ -6,7 +6,6 @@
 #include <curl/curl.h>
 #include <fcntl.h>
 
-#include "../lib/http_perform.c"
 #include <snowflake/logger.h>
 
 #ifndef _WIN32
