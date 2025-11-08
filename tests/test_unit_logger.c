@@ -3,10 +3,6 @@
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
-#include <curl/curl.h>
-#include <fcntl.h>
-
-#include <snowflake/logger.h>
 
 #ifndef _WIN32
 #include <unistd.h>
