@@ -107,11 +107,11 @@ int my_trace(CURL *handle, curl_infotype type,
 
         case CURLINFO_HEADER_OUT:
             text = "=> Send header";
-            terminal_mask(data, size, masked, sizeof(masked));
+            // terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_DATA_OUT:
             text = "=> Send data";
-            terminal_mask(data, size, masked, sizeof(masked));
+            // terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_SSL_DATA_OUT:
             text = "=> Send SSL data";
@@ -121,14 +121,16 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
         case CURLINFO_DATA_IN:
             text = "<= Recv data";
-            terminal_mask(data, size, masked, sizeof(masked));
+            // terminal_mask(data, size, masked, sizeof(masked));
             break;
         case CURLINFO_SSL_DATA_IN:
             text = "<= Recv SSL data";
             break;
     }
 
-    dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+    terminal_mask(data, size, masked, sizeof(masked));
+    // dump(text, stderr, (unsigned char *) masked, size, config->trace_ascii);
+    dump(text, stderr, (unsigned char *) masked, strlen(masked), config->trace_ascii);
     return 0;
 }
 

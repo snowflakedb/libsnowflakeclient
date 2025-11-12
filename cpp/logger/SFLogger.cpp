@@ -28,7 +28,7 @@ void terminal_mask(char *in_data, size_t datasize, char *out_masked, size_t mask
   std::string text(in_data, datasize);
   std::string maskedMsg = Snowflake::Client::SecretDetector::maskSecrets(text);
   std::memset(out_masked, 0, masked_bufsize);
-  if(maskedMsg.length() <= masked_bufsize -1){    
+  if(maskedMsg.length() <= masked_bufsize){    
     sf_strncpy(out_masked, masked_bufsize -1, maskedMsg.c_str(), maskedMsg.length());
   } else {
     sf_strncpy(out_masked, masked_bufsize -1, maskedMsg.c_str(), masked_bufsize);
