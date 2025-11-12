@@ -10,7 +10,7 @@
 #define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 #else
 #define F_OK 0
-inline int access(const char* pathname, int mode){
+inline int access(const char* pathname, int mode) {
   return _access(pathname, mode);
 }
 #endif
@@ -18,7 +18,7 @@ inline int access(const char* pathname, int mode){
 /**
  * Tests converting a string representation of log level to the log level enum
  */
-void test_log_str_to_level(){
+void test_log_str_to_level() {
     assert_int_equal(log_from_str_to_level("TRACE"), SF_LOG_TRACE);
     assert_int_equal(log_from_str_to_level("DEBUG"), SF_LOG_DEBUG);
     assert_int_equal(log_from_str_to_level("INFO"), SF_LOG_INFO);
@@ -31,7 +31,7 @@ void test_log_str_to_level(){
     assert_int_equal(log_from_str_to_level(NULL), SF_LOG_FATAL);
 }
 
-void test_null_log_path(){
+void test_null_log_path() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_LEVEL[64] = { 0 };
 
@@ -67,7 +67,7 @@ void test_null_log_path(){
   remove(log_path_dir);
 }
 
-void test_default_log_path(){
+void test_default_log_path() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_LEVEL[64] = { 0 };
 
@@ -103,7 +103,7 @@ void test_default_log_path(){
   remove(log_path_dir);
 }
 
-void test_invalid_client_config_path(){
+void test_invalid_client_config_path() {
   char configFilePath[] = "fakePath.json";
 
   // Parse client config for log details
@@ -112,7 +112,7 @@ void test_invalid_client_config_path(){
   assert_false(result);
 }
 
-void test_client_config_log_invalid_json(){
+void test_client_config_log_invalid_json() {
   char clientConfigJSON[] = "{{{\"invalid json\"}";
   char configFilePath[] = "sf_client_config.json";
   FILE* file;
@@ -129,7 +129,7 @@ void test_client_config_log_invalid_json(){
   remove(configFilePath);
 }
 
-void test_client_config_log_malformed_json(){
+void test_client_config_log_malformed_json() {
   char clientConfigJSON[] = "[]";
   char configFilePath[] = "sf_client_config.json";
   FILE* file;
@@ -146,7 +146,7 @@ void test_client_config_log_malformed_json(){
   remove(configFilePath);
 }
 
-void test_client_config_log(){
+void test_client_config_log() {
     char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
     char configFilePath[] = "sf_client_config.json";
     FILE *file;
@@ -186,7 +186,7 @@ void test_client_config_log(){
     SF_FREE(LOG_PATH);
 }
 
-void test_client_config_log_unknown_entries(){
+void test_client_config_log_unknown_entries() {
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\",\"unknownEntry\":\"fakeValue\"}}";
   char configFilePath[] = "sf_client_config.json";
   char logPath[] = "./test/";
@@ -235,7 +235,7 @@ void test_client_config_log_unknown_entries(){
   SF_FREE(LOG_PATH);
 }
 
-void test_client_config_log_init(){
+void test_client_config_log_init() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_LEVEL[64] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
@@ -270,7 +270,7 @@ void test_client_config_log_init(){
   remove(LOG_PATH);
 }
 
-void test_client_config_log_init_home_config(){
+void test_client_config_log_init_home_config() {
   char LOG_PATH[MAX_PATH] = { 0 };
 
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\",\"log_path\":\"./test/\"}}";
@@ -314,7 +314,7 @@ void test_client_config_log_init_home_config(){
   SF_FREE(configFilePath);
 }
 
-void test_client_config_log_no_level(){
+void test_client_config_log_no_level() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_path\":\"./test/\"}}";
   char configFilePath[] = "sf_client_config.json";
@@ -349,7 +349,7 @@ void test_client_config_log_no_level(){
   remove(LOG_PATH);
 }
 
-void test_client_config_log_no_path(){
+void test_client_config_log_no_path() {
   char LOG_PATH[MAX_PATH] = { 0 };
   char LOG_SUBPATH[MAX_PATH] = { 0 };
   char clientConfigJSON[] = "{\"common\":{\"log_level\":\"warn\"}}";
@@ -413,7 +413,7 @@ void test_client_config_stdout() {
 }
 
 /* Test terminal masking*/
-void test_terminal_mask(){
+void test_terminal_mask() {
   
   char masked[450] = "\0";
   char *token = "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"";  
@@ -441,7 +441,7 @@ void test_terminal_mask(){
   assert_string_equal(masked, expected);
 }
 
-void test_log_creation(){
+void test_log_creation() {
     char logname[] = "dummy.log";
 
     // ensure the log file doesn't exist at the beginning
@@ -470,7 +470,7 @@ void test_log_creation(){
 /**
  * Test that generate exception
  */
-void test_log_creation_no_permission_to_home_folder(){
+void test_log_creation_no_permission_to_home_folder() {
 
   // check if current user is root. If so, exit test
   char *name;
@@ -517,7 +517,7 @@ void test_log_creation_no_permission_to_home_folder(){
 /**
  * Tests masking secret information in log
  */
-void test_mask_secret_log(){
+void test_mask_secret_log() {
     FILE* fp = fopen("dummy.log", "w+");
     assert_non_null(fp);
     log_set_lock(NULL);
