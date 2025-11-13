@@ -470,7 +470,7 @@ void test_log_creation() {
 /**
  * Test that generate exception
  */
-void test_log_creation_no_permission_to_home_folder() {
+void test_log_creation_no_permission_to_home_folder(){
 
   // check if current user is root. If so, exit test
   char *name;
