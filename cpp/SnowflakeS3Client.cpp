@@ -170,7 +170,7 @@ SnowflakeS3Client::SnowflakeS3Client(StageInfo *stageInfo,
     m_stageInfo->location.push_back('/');
   }
 
-  CXX_LOG_TRACE("Successfully created s3 client. End of constructor.");
+  CXX_LOG_DEBUG("Successfully created s3 client. End of constructor.");
 }
 
 SnowflakeS3Client::~SnowflakeS3Client()
@@ -274,7 +274,7 @@ void Snowflake::Client::SnowflakeS3Client::uploadParts(MultiUploadCtx * uploadCt
   {
     uploadCtx->m_outcome = RemoteStorageRequestOutcome::SUCCESS;
     uploadCtx->m_etag = outcome.GetResult().GetETag();
-    CXX_LOG_INFO("Upload parts request succeed. part number %d, etag %s",
+    CXX_LOG_DEBUG("Upload parts request succeed. part number %d, etag %s",
                 uploadCtx->m_partNumber, uploadCtx->m_etag.c_str());
   }
   else
@@ -317,7 +317,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::doMultiPartUpload(FileMetadata *f
     Util::StreamSplitter splitter(dataStream, m_parallel, m_uploadThreshold);
     unsigned int totalParts = splitter.getTotalParts(
       fileMetadata->encryptionMetadata.cipherStreamSize);
-    CXX_LOG_INFO("Total file size: %d, split into %d parts.",
+    CXX_LOG_DEBUG("Total file size: %d, split into %d parts.",
                 fileMetadata->encryptionMetadata.cipherStreamSize, totalParts);
 
     std::vector<MultiUploadCtx> uploadParts;
@@ -594,7 +594,7 @@ RemoteStorageRequestOutcome SnowflakeS3Client::GetRemoteFileMetadata(
   if (outcome.IsSuccess())
   {
     fileMetadata->srcFileSize = (size_t)outcome.GetResult().GetContentLength();
-    CXX_LOG_INFO("Remote file %s content length: %ld.",
+    CXX_LOG_DEBUG("Remote file %s content length: %ld.",
                   key.c_str(), fileMetadata->srcFileSize);
 
     std::string iv = outcome.GetResult().GetMetadata().at(AMZ_IV);

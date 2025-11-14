@@ -46,7 +46,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
       if( ! sf_strcpy(caBundleFile, (size_t)MAX_PATH, transferConfig->caBundleFile) ) {
         caBundleFile[0] = 0;
       }
-      CXX_LOG_TRACE("ca bundle file from TransferConfig *%s*", caBundleFile);
+      CXX_LOG_TRACE("CA bundle file from TransferConfig *%s*", caBundleFile);
   }
   else if( caBundleFile[0] == 0 ) {
       SF_STATUS status = snowflake_global_get_attribute(SF_GLOBAL_CA_BUNDLE_FILE, caBundleFile, sizeof(caBundleFile));
@@ -54,7 +54,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
           throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
               "CA bundle file path too long.");
       }
-      CXX_LOG_TRACE("ca bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
+      CXX_LOG_TRACE("CA bundle file from SF_GLOBAL_CA_BUNDLE_FILE *%s*", caBundleFile);
   }
   if( caBundleFile[0] == 0 ) {
       char capath_buf[MAX_PATH + 2];
@@ -67,7 +67,7 @@ SnowflakeAzureClient::SnowflakeAzureClient(StageInfo *stageInfo,
           if (!sf_strcpy(caBundleFile, (size_t)MAX_PATH, capath)) {
               caBundleFile[0] = 0;
           }
-          CXX_LOG_TRACE("ca bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
+          CXX_LOG_TRACE("CA bundle file from SNOWFLAKE_TEST_CA_BUNDLE_FILE *%s*", caBundleFile);
       }
   }
   if(caBundleFile[0] == 0) {
