@@ -2,6 +2,7 @@
 #include "utils/test_setup.h"
 
 void test_stats(void **unused) {
+    SF_UNUSED(unused);
     SF_STATUS status;
     SF_CONNECT *sf = setup_snowflake_connection();
 
