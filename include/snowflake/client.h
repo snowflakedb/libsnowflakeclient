@@ -46,6 +46,15 @@ extern "C" {
 #define SF_AUTHENTICATOR_PAT "programmatic_access_token"
 
  /**
+ * Authenticator, oauth_authorization_code
+ */
+#define SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE "oauth_authorization_code"
+
+/**
+* Authenticator, oauth_client_credentials
+*/
+#define SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS "oauth_client_credentials"
+ /**
  * Authenticator, SSO token
  */
 #define SF_AUTHENTICATOR_ID_TOKEN "ID_TOKEN"
@@ -308,9 +317,17 @@ typedef enum SF_ATTRIBUTE {
     SF_RETRY_ON_CURLE_COULDNT_CONNECT_COUNT,
     SF_QUERY_RESULT_TYPE,
     SF_CON_OAUTH_TOKEN,
+    SF_CON_OAUTH_REFRESH_TOKEN,
     SF_CON_DISABLE_CONSOLE_LOGIN,
     SF_CON_BROWSER_RESPONSE_TIMEOUT,
     SF_CON_PAT,
+    SF_CON_OAUTH_TOKEN_ENDPOINT,
+    SF_CON_OAUTH_AUTHORIZATION_ENDPOINT,
+    SF_CON_OAUTH_REDIRECT_URI,
+    SF_CON_OAUTH_CLIENT_ID,
+    SF_CON_OAUTH_CLIENT_SECRET,
+    SF_CON_OAUTH_SCOPE,
+    SF_CON_SINGLE_USE_REFRESH_TOKEN,
     SF_CON_CRL_CHECK,
     SF_CON_CRL_ADVISORY,
     SF_CON_CRL_ALLOW_NO_CRL,
@@ -455,6 +472,16 @@ typedef struct SF_CONNECT {
     // For token cache auth.
     char* sso_token;
     char* mfa_token;
+
+    // Oauth authentication
+    char* oauth_authorization_endpoint;
+    char* oauth_token_endpoint;
+    char* oauth_redirect_uri;
+    char* oauth_client_id;
+    char* oauth_client_secret;
+    char* oauth_scope;
+    char* oauth_refresh_token;
+    sf_bool single_use_refresh_token;
 
     int64 login_timeout;
     int64 network_timeout;
@@ -646,6 +673,7 @@ typedef struct {
     SF_DB_TYPE type; /* (optional) target Snowflake data type */
     int* len_ind; /* (optional) The array of length indicator to support array binding*/
 } SF_BIND_INPUT;
+
 
 /**
  *

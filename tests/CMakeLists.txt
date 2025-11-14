@@ -39,7 +39,6 @@ SET(TESTS_C
         test_get_query_result_response
         test_get_describe_only_query_result
         test_stmt_functions
-        test_unit_oauth
         test_unit_pat
         test_unit_platform
         test_unit_connect
@@ -61,6 +60,7 @@ SET(TESTS_CXX
         test_unit_jwt
         test_unit_external_browser
         test_unit_okta
+        test_unit_oauth
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_encryption
@@ -74,7 +74,7 @@ SET(TESTS_CXX
         test_unit_thread_pool
         test_unit_base64
         test_jwt
-        #test_cpp_select1
+       #test_cpp_select1
         test_unit_proxy
         test_unit_oob
         test_unit_set_get_attributes
@@ -101,6 +101,7 @@ SET(TESTS_PERF
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)
+
 
 SET(TESTS_MOCK
         # TODO: Re-enable tests in SNOW-2046054
@@ -402,5 +403,9 @@ endif()
 if (UNIX)
     add_subdirectory(unit_test_ocsp)
     add_subdirectory(test_auth)
+endif()
+    
+if (LINUX AND NOT MOCK)
+    add_subdirectory(test_oauth)
 endif()
 add_subdirectory(test_bind_datastructures)
