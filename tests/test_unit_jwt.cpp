@@ -1,6 +1,7 @@
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 #include <jwt/Jwt.hpp>
+#include "snowflake/IBase64.hpp"
 #include "utils/TestSetup.hpp"
 #include "utils/test_setup.h"
 
@@ -130,12 +131,50 @@ void test_sign_verify(void **)
   assert_string_equal(jwtFromString->getClaimSet().get()->serialize().c_str(), claim_set->serialize().c_str());
 }
 
+void test_no_trailing_null(void **)
+{
+  JWTObject jwt;
+
+  IHeaderSptr header(IHeader::buildHeader());
+  IClaimSetSptr claim_set(IClaimSet::buildClaimSet());
+  header->setAlgorithm(AlgorithmType::RS256);
+  claim_set->addClaim("string", "value");
+  claim_set->addClaim("number", 200L);
+
+  jwt.setHeader(header);
+  jwt.setClaimSet(claim_set);
+
+  std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>> key
+    {generate_key(), [](EVP_PKEY *k) { EVP_PKEY_free(k); }};
+
+  assert_non_null(key.get());
+
+  std::string token = jwt.serialize(key.get());
+
+  // Decode header and claim set to verify no trailing NUL
+  size_t first_dot = token.find('.');
+  size_t second_dot = token.find('.', first_dot + 1);
+
+  std::string header_b64 = token.substr(0, first_dot);
+  std::string claimset_b64 = token.substr(first_dot + 1, second_dot - first_dot -1);
+
+  std::vector<char> header_bytes = Snowflake::Client::Util::IBase64::decodeURLNoPadding(header_b64);
+  std::vector<char> claimset_bytes = Snowflake::Client::Util::IBase64::decodeURLNoPadding(claimset_b64);
+
+  assert_false(header_bytes.empty());
+  assert_false(claimset_bytes.empty());
+
+  assert_true(header_bytes.back() != '\0');
+  assert_true(claimset_bytes.back() != '\0');
+}
+
 int main()
 {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_claim_set),
     cmocka_unit_test(test_header),
     cmocka_unit_test(test_sign_verify),
+    cmocka_unit_test(test_no_trailing_null),
   };
   return cmocka_run_group_tests(tests, nullptr, nullptr);
 }

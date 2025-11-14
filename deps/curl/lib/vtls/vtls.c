@@ -390,6 +390,12 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
     dest->verifystatus = src->verifystatus;
     dest->sf_ocsp_check = src->sf_ocsp_check;
     dest->sf_ocsp_failopen = src->sf_ocsp_failopen;
+    dest->sf_crl_check = src->sf_crl_check;
+    dest->sf_crl_advisory = src->sf_crl_advisory;
+    dest->sf_crl_allow_no_crl = src->sf_crl_allow_no_crl;
+    dest->sf_crl_disk_caching = src->sf_crl_disk_caching;
+    dest->sf_crl_memory_caching = src->sf_crl_memory_caching;
+    dest->sf_crl_download_timeout = src->sf_crl_download_timeout;
     dest->sf_oob_enable = src->sf_oob_enable;
   }
 }

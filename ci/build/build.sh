@@ -108,6 +108,7 @@ download_build_component tomlplusplus "$SCRIPTS_DIR/build_tomlplusplus.sh" "$tar
 # very tight diskspace limit on github runners, clear deps folder with all .o files
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     rm -rf $SCRIPTS_DIR/../deps/*
+    git checkout deps
 fi
 
 build_component libsnowflakeclient "$SCRIPTS_DIR/build_libsnowflakeclient.sh" "$target" "$@"
