@@ -21,6 +21,12 @@ CMake's GUIs.
 A CMake configuration of curl is similar to the autotools build of curl.
 It consists of the following steps after you have unpacked the source.
 
+We recommend building with CMake on Windows. For instructions on migrating
+from the `projects/Windows` Visual Studio solution files, see
+[this section](#migrating-from-visual-studio-ide-project-files). For
+instructions on migrating from the winbuild builds, see
+[the following section](#migrating-from-winbuild-builds).
+
 ## Using `cmake`
 
 You can configure for in source tree builds or for a build tree
@@ -31,9 +37,13 @@ that is apart from the source tree.
        $ cmake -B .
 
  - Build in a separate directory (parallel to the curl source tree in this
-   example). The build directory is created for you.
+   example). The build directory is created for you. This is recommended over
+   building in the source tree to separate source and build artifacts.
 
        $ cmake -B ../curl-build
+
+For the full list of CMake build configuration variables see
+[the corresponding section](#cmake-build-options).
 
 ### Fallback for CMake before version 3.13
 
@@ -129,6 +139,12 @@ Install to default location (you have to specify the build directory).
 
     $ cmake --install ../curl-build
 
+Do not use `--prefix` to change the installation prefix as the output produced
+by the `curl-config` script is determined at CMake configure time. If you want
+to set a custom install prefix for curl, set
+[`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html)
+when configuring the CMake build.
+
 ### Fallback for CMake before version 3.15
 
 CMake before version 3.15 does not support the `--install` option. In that
@@ -138,6 +154,68 @@ assumes that CMake generates `Makefile`:
 
     $ cd ../curl-build
     $ make install
+
+# CMake usage
+
+Just as curl can be built and installed using CMake, it can also be used from
+CMake.
+
+## Using `find_package`
+
+To locate libcurl from CMake, one can use the standard
+[`find_package`](https://cmake.org/cmake/help/latest/command/find_package.html)
+command in the typical fashion:
+
+```cmake
+find_package(CURL 8.12.0 REQUIRED)  # FATAL_ERROR if CURL is not found
+```
+
+This invokes the CMake-provided
+[FindCURL](https://cmake.org/cmake/help/latest/module/FindCURL.html) find module,
+which first performs a search using the `find_package`
+[config mode](https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure).
+This is supported by the `CURLConfig.cmake` CMake config script which is
+available if the given CURL was built and installed using CMake.
+
+### Detecting CURL features/protocols
+
+Since version 8.12.0, `CURLConfig.cmake` publishes the supported CURL features
+and protocols (see [release notes](https://curl.se/ch/8.12.0.html)). These can
+be specified using the `find_package` keywords `COMPONENTS` and
+`OPTIONAL_COMPONENTS`, with protocols in all caps, e.g. `HTTPS`, `LDAP`, while
+features should be in their original sentence case, e.g. `AsynchDNS`,
+`UnixSockets`. If any of the `COMPONENTS` are missing, then CURL is considered
+as *not* found.
+
+Here is an example of using `COMPONENTS` and `OPTIONAL_COMPONENTS` in
+`find_package` with CURL:
+
+```cmake
+# CURL_FOUND is FALSE if no HTTPS but brotli and zstd can be missing
+find_package(CURL 8.12.0 COMPONENTS HTTPS OPTIONAL_COMPONENTS brotli zstd)
+```
+
+One can also check the defined `CURL_SUPPORTS_<feature-or-protocol>` variables
+if a particular feature/protocol is supported. For example:
+
+```cmake
+# check HTTPS
+if(CURL_SUPPORTS_HTTPS)
+  message(STATUS "CURL supports HTTPS")
+else()
+  message(STATUS "CURL does NOT support HTTPS")
+endif()
+```
+
+### Linking against libcurl
+
+To link a CMake target against libcurl one can use
+[`target_link_libraries`](https://cmake.org/cmake/help/latest/command/target_link_libraries.html)
+as usual:
+
+```cmake
+target_link_libraries(my_target PRIVATE CURL::libcurl)
+```
 
 # CMake build options
 
@@ -151,32 +229,36 @@ assumes that CMake generates `Makefile`:
 - `BUILD_TESTING`:                          Build tests. Default: `ON`
 - `CURL_CLANG_TIDY`:                        Run the build through `clang-tidy`. Default: `OFF`
 - `CURL_CLANG_TIDYFLAGS`:                   Custom options to pass to `clang-tidy`. Default: (empty)
+- `CURL_COMPLETION_FISH`:                   Install fish completions. Default: `OFF`
+- `CURL_COMPLETION_FISH_DIR`:               Custom fish completion install directory.
+- `CURL_COMPLETION_ZSH`:                    Install zsh completions. Default: `OFF`
+- `CURL_COMPLETION_ZSH_DIR`:                Custom zsh completion install directory.
 - `CURL_DEFAULT_SSL_BACKEND`:               Override default TLS backend in MultiSSL builds.
                                             Accepted values in order of default priority:
-                                            `wolfssl`, `gnutls`, `mbedtls`, `openssl`, `secure-transport`, `schannel`, `bearssl`, `rustls`
+                                            `wolfssl`, `gnutls`, `mbedtls`, `openssl`, `schannel`, `rustls`
 - `CURL_ENABLE_EXPORT_TARGET`:              Enable CMake export target. Default: `ON`
 - `CURL_HIDDEN_SYMBOLS`:                    Hide libcurl internal symbols (=hide all symbols that are not officially external). Default: `ON`
 - `CURL_LIBCURL_SOVERSION`:                 Enable libcurl SOVERSION. Default: `ON` for supported platforms
 - `CURL_LIBCURL_VERSIONED_SYMBOLS`:         Enable libcurl versioned symbols. Default: `OFF`
 - `CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX`:  Override default versioned symbol prefix. Default: `<TLS-BACKEND>_` or `MULTISSL_`
 - `CURL_LTO`:                               Enable compiler Link Time Optimizations. Default: `OFF`
-- `CURL_STATIC_CRT`:                        Build libcurl with static CRT with MSVC (`/MT`). Default: `OFF`
+- `CURL_STATIC_CRT`:                        Build libcurl with static CRT with MSVC (`/MT`) (requires UCRT, static libcurl or no curl executable). Default: `OFF`
 - `CURL_TARGET_WINDOWS_VERSION`:            Minimum target Windows version as hex string.
-- `CURL_TEST_BUNDLES`:                      Bundle `libtest` and `unittest` tests into single binaries. Default: `OFF`
 - `CURL_WERROR`:                            Turn compiler warnings into errors. Default: `OFF`
 - `ENABLE_CURLDEBUG`:                       Enable TrackMemory debug feature. Default: =`ENABLE_DEBUG`
 - `ENABLE_CURL_MANUAL`:                     Build the man page for curl and enable its `-M`/`--manual` option. Default: `ON`
 - `ENABLE_DEBUG`:                           Enable curl debug features (for developing curl itself). Default: `OFF`
-- `IMPORT_LIB_SUFFIX`:                      Import library suffix. Default: `_imp`
+- `IMPORT_LIB_SUFFIX`:                      Import library suffix. Default: `_imp` for MSVC-like toolchains, otherwise empty.
 - `LIBCURL_OUTPUT_NAME`:                    Basename of the curl library. Default: `libcurl`
 - `PICKY_COMPILER`:                         Enable picky compiler options. Default: `ON`
+- `SHARE_LIB_OBJECT`:                       Build shared and static libcurl in a single pass (requires CMake 3.12 or newer). Default: `ON` for Windows
 - `STATIC_LIB_SUFFIX`:                      Static library suffix. Default: (empty)
 
 ## CA bundle options
 
 - `CURL_CA_BUNDLE`:                         Path to the CA bundle. Set `none` to disable or `auto` for auto-detection. Default: `auto`
 - `CURL_CA_EMBED`:                          Path to the CA bundle to embed in the curl tool. Default: (disabled)
-- `CURL_CA_FALLBACK`:                       Use built-in CA store of TLS backend. Default: `OFF`
+- `CURL_CA_FALLBACK`:                       Use built-in CA store of OpenSSL. Default: `OFF`
 - `CURL_CA_PATH`:                           Location of default CA path. Set `none` to disable or `auto` for auto-detection. Default: `auto`
 - `CURL_CA_SEARCH_SAFE`:                    Enable safe CA bundle search (within the curl tool directory) on Windows. Default: `OFF`
 
@@ -270,7 +352,6 @@ Details via CMake
 ## Dependencies
 
 - `CURL_BROTLI`:                            Use brotli (`ON`, `OFF` or `AUTO`). Default: `AUTO`
-- `CURL_USE_BEARSSL`:                       Enable BearSSL for SSL/TLS. Default: `OFF`
 - `CURL_USE_GNUTLS`:                        Enable GnuTLS for SSL/TLS. Default: `OFF`
 - `CURL_USE_GSASL`:                         Use libgsasl. Default: `OFF`
 - `CURL_USE_GSSAPI`:                        Use GSSAPI implementation. Default: `OFF`
@@ -283,7 +364,6 @@ Details via CMake
 - `CURL_USE_PKGCONFIG`:                     Enable `pkg-config` to detect dependencies. Default: `ON` for Unix (except Android, Apple devices), vcpkg, MinGW if not cross-compiling.
 - `CURL_USE_RUSTLS`:                        Enable Rustls for SSL/TLS. Default: `OFF`
 - `CURL_USE_SCHANNEL`:                      Enable Windows native SSL/TLS (Schannel). Default: `OFF`
-- `CURL_USE_SECTRANSP`:                     Enable Apple OS native SSL/TLS (Secure Transport). Default: `OFF`
 - `CURL_USE_WOLFSSH`:                       Use wolfSSH. Default: `OFF`
 - `CURL_USE_WOLFSSL`:                       Enable wolfSSL for SSL/TLS. Default: `OFF`
 - `CURL_ZLIB`:                              Use zlib (`ON`, `OFF` or `AUTO`). Default: `AUTO`
@@ -292,7 +372,6 @@ Details via CMake
 - `USE_APPLE_IDN`:                          Use Apple built-in IDN support. Default: `OFF`
 - `USE_LIBIDN2`:                            Use libidn2 for IDN support. Default: `ON`
 - `USE_LIBRTMP`:                            Enable librtmp from rtmpdump. Default: `OFF`
-- `USE_MSH3`:                               Use msh3/msquic library for HTTP/3 support. Default: `OFF`
 - `USE_NGHTTP2`:                            Use nghttp2 library. Default: `ON`
 - `USE_NGTCP2`:                             Use ngtcp2 and nghttp3 libraries for HTTP/3 support. Default: `OFF`
 - `USE_QUICHE`:                             Use quiche library for HTTP/3 support. Default: `OFF`
@@ -302,19 +381,24 @@ Details via CMake
 ## Dependency options (via CMake)
 
 - `OPENSSL_ROOT_DIR`:                       Set this variable to the root installation of OpenSSL (and forks).
+- `OPENSSL_INCLUDE_DIR`:                    The OpenSSL include directory.
+- `OPENSSL_SSL_LIBRARY`:                    Path to `ssl` library. With MSVC, CMake uses variables `SSL_EAY_DEBUG`/`SSL_EAY_RELEASE` instead.
+- `OPENSSL_CRYPTO_LIBRARY`:                 Path to `crypto` library. With MSVC, CMake uses variables `LIB_EAY_DEBUG`/`LIB_EAY_RELEASE` instead.
 - `OPENSSL_USE_STATIC_LIBS`:                Look for static OpenSSL libraries.
 - `ZLIB_INCLUDE_DIR`:                       The zlib include directory.
 - `ZLIB_LIBRARY`:                           Path to `zlib` library.
+- `ZLIB_USE_STATIC_LIBS`:                   Look for static ZLIB library (requires CMake v3.24).
 
-## Dependency options
+## Dependency options (tools)
 
 - `CLANG_TIDY`:                             `clang-tidy` tool used with `CURL_CLANG_TIDY=ON`. Default: `clang-tidy`
-- `PERL_EXECUTABLE`                         Perl binary used throughout the build and tests.
+- `PERL_EXECUTABLE`:                        Perl binary used throughout the build and tests.
+
+## Dependency options (libraries)
+
 - `AMISSL_INCLUDE_DIR`:                     The AmiSSL include directory.
 - `AMISSL_STUBS_LIBRARY`:                   Path to `amisslstubs` library.
 - `AMISSL_AUTO_LIBRARY`:                    Path to `amisslauto` library.
-- `BEARSSL_INCLUDE_DIR`:                    The BearSSL include directory.
-- `BEARSSL_LIBRARY`:                        Path to `bearssl` library.
 - `BROTLI_INCLUDE_DIR`:                     The brotli include directory.
 - `BROTLICOMMON_LIBRARY`:                   Path to `brotlicommon` library.
 - `BROTLIDEC_LIBRARY`:                      Path to `brotlidec` library.
@@ -344,14 +428,18 @@ Details via CMake
 - `MBEDTLS_LIBRARY`:                        Path to `mbedtls` library.
 - `MBEDX509_LIBRARY`:                       Path to `mbedx509` library.
 - `MBEDCRYPTO_LIBRARY`:                     Path to `mbedcrypto` library.
-- `MSH3_INCLUDE_DIR`:                       The msh3 include directory.
-- `MSH3_LIBRARY`:                           Path to `msh3` library.
 - `NGHTTP2_INCLUDE_DIR`:                    The nghttp2 include directory.
 - `NGHTTP2_LIBRARY`:                        Path to `nghttp2` library.
 - `NGHTTP3_INCLUDE_DIR`:                    The nghttp3 include directory.
 - `NGHTTP3_LIBRARY`:                        Path to `nghttp3` library.
 - `NGTCP2_INCLUDE_DIR`:                     The ngtcp2 include directory.
 - `NGTCP2_LIBRARY`:                         Path to `ngtcp2` library.
+- `NGTCP2_CRYPTO_BORINGSSL_LIBRARY`:        Path to `ngtcp2_crypto_boringssl` library. (also for AWS-LC)
+- `NGTCP2_CRYPTO_GNUTLS_LIBRARY`:           Path to `ngtcp2_crypto_gnutls` library.
+- `NGTCP2_CRYPTO_LIBRESSL_LIBRARY`:         Path to `ngtcp2_crypto_libressl` library. (requires ngtcp2 1.15.0+)
+- `NGTCP2_CRYPTO_OSSL_LIBRARY`:             Path to `ngtcp2_crypto_ossl` library.
+- `NGTCP2_CRYPTO_QUICTLS_LIBRARY`:          Path to `ngtcp2_crypto_quictls` library. (also for LibreSSL with ngtcp2 <1.15.0)
+- `NGTCP2_CRYPTO_WOLFSSL_LIBRARY`:          Path to `ngtcp2_crypto_wolfssl` library.
 - `NETTLE_INCLUDE_DIR`:                     The nettle include directory.
 - `NETTLE_LIBRARY`:                         Path to `nettle` library.
 - `PTHREAD_LIBRARY`:                        Path to `pthread` library. (for Rustls)
@@ -373,15 +461,53 @@ Details via CMake
 - `CADDY`:                                  Default: `caddy`
 - `HTTPD_NGHTTPX`:                          Default: `nghttpx`
 - `HTTPD`:                                  Default: `apache2`
+- `DANTED`:                                 Default: `danted`
 - `TEST_NGHTTPX`:                           Default: `nghttpx`
 - `VSFTPD`:                                 Default: `vsftps`
 
+## Feature detection variables
+
+By default this CMake build script detects the version of some dependencies
+using `check_symbol_exists`. Those checks do not work in the case that both
+CURL and its dependency are included as sub-projects in a larger build using
+`FetchContent`. To support that case, additional variables may be defined by
+the parent project, ideally in the "extra" find package redirect file:
+<https://cmake.org/cmake/help/latest/module/FetchContent.html#integrating-with-find-package>
+
+Available variables:
+
+- `HAVE_GNUTLS_SRP`:                        `gnutls_srp_verifier` present in GnuTLS.
+- `HAVE_GSS_C_NT_HOSTBASED_SERVICE`:        `GSS_C_NT_HOSTBASED_SERVICE` present in GSS/Heimdal/Kerberos.
+- `HAVE_LDAP_INIT_FD`:                      `ldap_init_fd` present in LDAP library.
+- `HAVE_LDAP_URL_PARSE`:                    `ldap_url_parse` present in LDAP library.
+- `HAVE_OPENSSL_SRP`:                       `SSL_CTX_set_srp_username` present in OpenSSL (or fork).
+- `HAVE_QUICHE_CONN_SET_QLOG_FD`:           `quiche_conn_set_qlog_fd` present in quiche.
+- `HAVE_RUSTLS_SUPPORTED_HPKE`:             `rustls_supported_hpke` present in Rustls (unused if Rustls is detected via `pkg-config`).
+- `HAVE_SSL_SET0_WBIO`:                     `SSL_set0_wbio` present in OpenSSL (or fork).
+- `HAVE_SSL_SET1_ECH_CONFIG_LIST`:          `SSL_set1_ech_config_list` present in OpenSSL (or fork).
+- `HAVE_SSL_SET_QUIC_TLS_CBS`:              `SSL_set_quic_tls_cbs` in OpenSSL.
+- `HAVE_SSL_SET_QUIC_USE_LEGACY_CODEPOINT`: `SSL_set_quic_use_legacy_codepoint` in OpenSSL fork.
+- `HAVE_WOLFSSL_BIO_NEW`:                   `wolfSSL_BIO_new` present in wolfSSL.
+- `HAVE_WOLFSSL_BIO_SET_SHUTDOWN`:          `wolfSSL_BIO_set_shutdown` present in wolfSSL.
+- `HAVE_WOLFSSL_CTX_GENERATEECHCONFIG`:     `wolfSSL_CTX_GenerateEchConfig` present in wolfSSL.
+- `HAVE_WOLFSSL_DES_ECB_ENCRYPT`:           `wolfSSL_DES_ecb_encrypt` present in wolfSSL.
+- `HAVE_WOLFSSL_GET_PEER_CERTIFICATE`:      `wolfSSL_get_peer_certificate` present in wolfSSL.
+- `HAVE_WOLFSSL_SET_QUIC_USE_LEGACY_CODEPOINT`:
+                                            `wolfSSL_set_quic_use_legacy_codepoint` present in wolfSSL.
+- `HAVE_WOLFSSL_USEALPN`:                   `wolfSSL_UseALPN` present in wolfSSL.
+
+For each of the above variables, if the variable is *defined* (either to `ON`
+or `OFF`), the symbol detection is skipped. If the variable is *not defined*,
+the feature detection is performed.
+
+Note: These variables are internal and subject to change.
+
 # Migrating from Visual Studio IDE Project Files
 
-We recommend CMake to build curl with MSVC.
+We recommend using CMake to build curl with MSVC.
 
-The project build files reside in project/Windows/VC\* for VS2010, VS2010 and
-VS2013 respectively.
+The project build files reside in project/Windows/VC\* for VS2010, VS2012 and
+VS2013.
 
 These CMake Visual Studio generators require CMake v3.24 or older. You can
 download them from <https://cmake.org/files/v3.24/>.
@@ -398,8 +524,8 @@ Configuration element             | Equivalent CMake options
 `Win32`                           | `-A Win32`
 `DLL`                             | `BUILD_SHARED_LIBS=ON`, `BUILD_STATIC_LIBS=OFF`, (default)
 `LIB`                             | `BUILD_SHARED_LIBS=OFF`, `BUILD_STATIC_LIBS=ON`
-`Debug`                           | `CMAKE_BUILD_TYPE=Debug`
-`Release`                         | `CMAKE_BUILD_TYPE=Release`
+`Debug`                           | `CMAKE_BUILD_TYPE=Debug` (`-G "NMake Makefiles"` only)
+`Release`                         | `CMAKE_BUILD_TYPE=Release` (`-G "NMake Makefiles"` only)
 `DLL Windows SSPI`                | `CURL_USE_SCHANNEL=ON` (with SSPI enabled by default)
 `DLL OpenSSL`                     | `CURL_USE_OPENSSL=ON`, optional: `OPENSSL_ROOT_DIR`, `OPENSSL_USE_STATIC_LIBS=ON`
 `DLL libssh2`                     | `CURL_USE_LIBSSH2=ON`, optional: `LIBSSH2_INCLUDE_DIR`, `LIBSSH2_LIBRARY`
@@ -413,12 +539,19 @@ For example these commands:
 
 translate to:
 
-    > cmake . -G "Visual Studio 12 2013" -A x64 -DCMAKE_BUILD_TYPE=Debug -DCURL_USE_SCHANNEL=ON -DUSE_WIN32_IDN=ON -DCURL_USE_LIBPSL=OFF
+    > cmake . -G "Visual Studio 12 2013" -A x64 -DCURL_USE_SCHANNEL=ON -DUSE_WIN32_IDN=ON -DCURL_USE_LIBPSL=OFF
+    > cmake --build . --config Debug --parallel
+
+We do *not* specify `-DCMAKE_BUILD_TYPE=Debug` here as we might do for the
+`"NMake Makefiles"` generator because the Visual Studio generators are
+[multi-config generators](https://cmake.org/cmake/help/latest/prop_gbl/GENERATOR_IS_MULTI_CONFIG.html)
+and therefore ignore the value of `CMAKE_BUILD_TYPE`.
 
 # Migrating from winbuild builds
 
-We recommend CMake to build curl with MSVC. The winbuild build method is
-deprecated and may be dropped in a future release.
+We recommend CMake to build curl with MSVC. The winbuild build system is
+deprecated and is going to be removed in September 2025 in favor of the CMake
+build system.
 
 In CMake you can customize the path of dependencies by passing the absolute
 header path and the full path of the library via `*_INCLUDE_DIR` and
@@ -436,13 +569,12 @@ winbuild options                  | Equivalent CMake options
 `DEBUG`                           | `CMAKE_BUILD_TYPE=Debug`
 `GEN_PDB`                         | `CMAKE_EXE_LINKER_FLAGS=/Fd<path>`, `CMAKE_SHARED_LINKER_FLAGS=/Fd<path>`
 `LIB_NAME_DLL`, `LIB_NAME_STATIC` | `IMPORT_LIB_SUFFIX`, `LIBCURL_OUTPUT_NAME`, `STATIC_LIB_SUFFIX`
-`VC`                              | see CMake `-G` [options](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html)
+`VC`: `<N>`                       | see the CMake [Visual Studio generators](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators)
 `MACHINE`: `x64`, `x86`           | `-A x64`, `-A Win32`
 `MODE`: `dll`, `static`           | `BUILD_SHARED_LIBS=ON/OFF`, `BUILD_STATIC_LIBS=ON/OFF`, `BUILD_STATIC_CURL=ON/OFF` (default: dll)
 `RTLIBCFG`: `static`              | `CURL_STATIC_CRT=ON`
 `ENABLE_IDN`                      | `USE_WIN32_IDN=ON`
 `ENABLE_IPV6`                     | `ENABLE_IPV6=ON`
-`ENABLE_MSH3`                     | `USE_MSH3=ON`
 `ENABLE_NGHTTP2`                  | `USE_NGHTTP2=ON`
 `ENABLE_OPENSSL_AUTO_LOAD_CONFIG` | `CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG=OFF` (default)
 `ENABLE_SCHANNEL`                 | `CURL_USE_SCHANNEL=ON`
@@ -452,7 +584,6 @@ winbuild options                  | Equivalent CMake options
 `WITH_DEVEL`                      | see individual `*_INCLUDE_DIR` and `*_LIBRARY` options and `OPENSSL_ROOT_DIR`
 `WITH_CARES`, `CARES_PATH`        | `ENABLE_ARES=ON`, optional: `CARES_INCLUDE_DIR`, `CARES_LIBRARY`
 `WITH_MBEDTLS`, `MBEDTLS_PATH`    | `CURL_USE_MBEDTLS=ON`, optional: `MBEDTLS_INCLUDE_DIR`, `MBEDTLS_LIBRARY`, `MBEDX509_LIBRARY`, `MBEDCRYPTO_LIBRARY`
-`WITH_MSH3`, `MSH_PATH`           | `USE_MSH3=ON`, optional: `MSH3_INCLUDE_DIR`, `MSH3_LIBRARY`
 `WITH_NGHTTP2`, `NGHTTP2_PATH`    | `USE_NGHTTP2=ON`, optional: `NGHTTP2_INCLUDE_DIR`, `NGHTTP2_LIBRARY`
 `WITH_SSH`, `SSH_PATH`            | `CURL_USE_LIBSSH=ON`, optional: `LIBSSH_INCLUDE_DIR`, `LIBSSH_LIBRARY`
 `WITH_SSH2`, `SSH2_PATH`          | `CURL_USE_LIBSSH2=ON`, optional: `LIBSSH2_INCLUDE_DIR`, `LIBSSH2_LIBRARY`
@@ -466,4 +597,8 @@ For example this command-line:
 
 translates to:
 
-    > cmake . -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -DOPENSSL_ROOT_DIR=C:\OpenSSL -DCURL_USE_OPENSSL=ON -DENABLE_UNICODE=ON -DCURL_USE_LIBPSL=OFF
+    > cmake . -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=ON -DOPENSSL_ROOT_DIR=C:\OpenSSL -DCURL_USE_OPENSSL=ON -DENABLE_UNICODE=ON -DCURL_USE_LIBPSL=OFF
+    > cmake --build . --config Debug
+
+We use `--config` with `cmake --build` because the Visual Studio CMake
+generators are multi-config and therefore ignore `CMAKE_BUILD_TYPE`.

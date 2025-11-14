@@ -29,9 +29,9 @@
  * filter IP addresses.
  */
 
-#ifdef __AMIGA__
+#if defined(__AMIGA__) || defined(UNDER_CE)
 #include <stdio.h>
-int main(void) { printf("AmigaOS is not supported.\n"); return 1; }
+int main(void) { printf("Platform not supported.\n"); return 1; }
 #else
 
 #ifdef _WIN32
@@ -41,8 +41,9 @@ int main(void) { printf("AmigaOS is not supported.\n"); return 1; }
 #ifndef _CRT_NONSTDC_NO_DEPRECATE
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600  /* Requires Windows Vista */
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -154,7 +155,7 @@ static struct ip *ip_list_append(struct ip *list, const char *data)
     ip->maskbits = 128;
 #endif
 
-  if(1 != inet_pton(ip->family, ip->str, &ip->netaddr)) {
+  if(inet_pton(ip->family, ip->str, &ip->netaddr) != 1) {
     free(ip->str);
     free(ip);
     return NULL;
@@ -253,7 +254,7 @@ static curl_socket_t opensocket(void *clientp,
       struct connection_filter *filter = (struct connection_filter *)clientp;
 #ifdef AF_INET6
       int mapped = !filter->ipv6_v6only &&
-        is_ipv4_mapped_ipv6_address(address->family, cinaddr);
+                   is_ipv4_mapped_ipv6_address(address->family, cinaddr);
 #endif
 
       for(ip = filter->list; ip; ip = ip->next) {
@@ -280,7 +281,7 @@ static curl_socket_t opensocket(void *clientp,
           char buf[128] = {0};
           inet_ntop(address->family, cinaddr, buf, sizeof(buf));
           fprintf(stderr,
-            "* Rejecting IP %s due to missing whitelist entry.\n", buf);
+                  "* Rejecting IP %s due to missing whitelist entry.\n", buf);
         }
         return CURL_SOCKET_BAD;
       }
@@ -298,14 +299,19 @@ int main(void)
 
   filter = (struct connection_filter *)calloc(1, sizeof(*filter));
   if(!filter)
-    exit(1);
+    return 1;
 
-  if(curl_global_init(CURL_GLOBAL_DEFAULT))
-    exit(1);
+  if(curl_global_init(CURL_GLOBAL_DEFAULT)) {
+    free(filter);
+    return 1;
+  }
 
   curl = curl_easy_init();
-  if(!curl)
-    exit(1);
+  if(!curl) {
+    curl_global_cleanup();
+    free(filter);
+    return 1;
+  }
 
   /* Set the target URL */
   curl_easy_setopt(curl, CURLOPT_URL, "http://localhost");

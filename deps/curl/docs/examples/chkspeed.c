@@ -56,8 +56,8 @@ static size_t WriteCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
   /* we are not interested in the downloaded bytes itself,
      so we only return the size we would have saved ... */
-  (void)ptr;  /* unused */
-  (void)data; /* unused */
+  (void)ptr;
+  (void)data;
   return (size_t)(size * nmemb);
 }
 
@@ -79,12 +79,12 @@ int main(int argc, char *argv[])
           fprintf(stderr,
                   "\rUsage: %s [-m=1|2|5|10|20|50|100] [-t] [-x] [url]\n",
                   appname);
-          exit(1);
+          return 1;
         case 'v':
         case 'V':
           fprintf(stderr, "\r%s %s - %s\n",
                   appname, CHKSPEED_VERSION, curl_version());
-          exit(1);
+          return 1;
         case 'a':
         case 'A':
           prtall = 1;
