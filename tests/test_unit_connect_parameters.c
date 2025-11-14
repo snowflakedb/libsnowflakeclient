@@ -235,8 +235,13 @@ void test_connect_with_renew(void** unused) {
 
     // renew session
     CURL* curl = curl_easy_init();
+    sf_bool debug = SF_BOOLEAN_TRUE;
+    // turn on DEBUG mode to test with debug mode logging as well
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
     sf_bool renew_result = renew_session(curl, sf, &sf->error);
     curl_easy_cleanup(curl);
+    debug = SF_BOOLEAN_FALSE;
+    snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &debug);
     if (!renew_result)
     {
         dump_error(&sf->error);
