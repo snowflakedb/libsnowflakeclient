@@ -68,6 +68,7 @@
 #include "../strerror.h"
 #include "../curl_printf.h"
 #include "sf_ocsp.h"
+#include "sf_crl.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -1902,6 +1903,9 @@ static int ossl_init(void)
   /* init Cert OCSP revocation checks */
   initCertOCSP();
 
+  /* init Cert CRL revocation checks */
+  initCertCRL();
+
   return 1;
 }
 
@@ -3629,6 +3633,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
   cached_store = ossl_get_cached_x509_store(cf, data);
   if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
     SSL_CTX_set_cert_store(ssl_ctx, cached_store);
+    
+    /* !!! Starting Snowflake CRL !!! */
+    /* Update CRL configuration even for cached store */
+    if (conn_config->sf_crl_check) {
+      registerCRLCheck(data, cached_store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
   else {
     X509_STORE *store = SSL_CTX_get_cert_store(ssl_ctx);
@@ -3637,6 +3653,17 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
     if(result == CURLE_OK && cache_criteria_met) {
       ossl_set_cached_x509_store(cf, data, store);
     }
+
+    /* !!! Starting Snowflake CRL !!! */
+    if (conn_config->sf_crl_check) {
+      registerCRLCheck(data, store,
+                       conn_config->sf_crl_advisory,
+                       conn_config->sf_crl_allow_no_crl,
+                       conn_config->sf_crl_disk_caching,
+                       conn_config->sf_crl_memory_caching,
+                       conn_config->sf_crl_download_timeout);
+    }
+    /* !!! End of Snowflake CRL !!! */
   }
 
   ERR_pop_to_mark();

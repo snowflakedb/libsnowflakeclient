@@ -10,10 +10,10 @@ function usage() {
     echo "-v                 : Version"
     exit 2
 }
-set -o pipefail
+set -x -o pipefail
 
 CURL_SRC_VERSION=8.16.0
-CURL_BUILD_VERSION=4
+CURL_BUILD_VERSION=5
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -99,7 +99,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
-        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
+        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm-apple-darwin
         make > /dev/null
         make install /dev/null
 
@@ -131,14 +131,8 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         make > /dev/null
         make install /dev/null
     else
-        echo "[INFO] Building $ARCH Binary"
-        make clean &> /dev/null || true
-        export CFLAGS="-arch $ARCH -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-        export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
-        export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
-        PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
-        make > /dev/null
-        make install /dev/null
+        echo "[ERROR] Unsupported $ARCH"
+        exit 1
     fi
 fi
 echo === zip_file "curl" "$CURL_VERSION" "$target"

@@ -4,7 +4,7 @@
 
 @echo off
 set CURL_SRC_VERSION=8.16.0
-set CURL_BUILD_VERSION=4
+set CURL_BUILD_VERSION=5
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
@@ -101,7 +101,7 @@ rd /S /Q %CJSON_SOURCE_DIR%
 git clone https://github.com/DaveGamble/cJSON.git %CJSON_SOURCE_DIR%
 pushd %CJSON_SOURCE_DIR%
   git checkout tags/v%CJSON_VERSION% -b v%CJSON_VERSION%
-  git apply %CJSON_PATCH%
+  git apply --ignore-whitespace %CJSON_PATCH%
   copy /v /y .\cJSON.c "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.c"
   copy /v /y .\cJSON.h "%currdir%\deps\%CURL_DIR%\lib\vtls\sf_cJSON.h"
 popd
