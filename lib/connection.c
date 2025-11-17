@@ -872,7 +872,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool *is_renew,
                         sf_bool renew_injection) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    int url_size = strlen(sf->protocol) + strlen(sf->host) + strlen(sf->port) + 5;
+    int url_size = (sf->protocol ? strlen(sf->protocol) : 0) +
+      (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
     char *url = (char *)SF_CALLOC(1, url_size);
     sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
     void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
