@@ -402,7 +402,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, crl_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_check);
         if (res != CURLE_OK) {
           log_error("Unable to set CRL CHECK [%s]",
                     curl_easy_strerror(res));
@@ -411,7 +411,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (crl_check)
         {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, crl_advisory);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_advisory);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL advisory mode [%s]",
@@ -419,7 +419,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, crl_allow_no_crl);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_allow_no_crl);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL allow null crl [%s]",
@@ -427,7 +427,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, crl_disk_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_disk_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL disk caching [%s]",
@@ -435,7 +435,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, crl_memory_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_memory_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL memory caching [%s]",
