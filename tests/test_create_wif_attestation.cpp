@@ -446,6 +446,138 @@ void test_unit_azure_attestation_request_failed(void **) {
   assert_true(!attestationOpt);
 }
 
+void test_unit_azure_attestation_vm_with_client_id(void **) {
+  EnvOverride clientIdOverride("MANAGED_IDENTITY_CLIENT_ID", AZURE_TEST_MANAGED_IDENTITY_CLIENT_ID);
+  auto token = makeAzureToken(AZURE_TEST_ISSUER_MICROSOFT, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
+  auto fakeHttpClient = FakeHttpClient([token](Snowflake::Client::HttpRequest req) {
+    auto clientIdParam = req.url.params().find("client_id");
+    assert_true(clientIdParam != req.url.params().end());
+    assert_true((*clientIdParam).value == AZURE_TEST_MANAGED_IDENTITY_CLIENT_ID);
+    assert_true((*req.url.params().find("api-version")).value == AZURE_TEST_API_VERSION_VM);
+    assert_true((*req.url.params().find("resource")).value == AZURE_TEST_RESOURCE);
+    assert_true(req.headers.find("Metadata")->second == "True");
+    assert_true(req.url.host() == AZURE_TEST_DEFAULT_ENDPOINT_HOST);
+    assert_true(req.url.scheme() == AZURE_TEST_DEFAULT_ENDPOINT_PROTOCOL);
+    auto obj = picojson::object();
+    obj["access_token"] = picojson::value(token);
+    std::string response_body = picojson::value(obj).serialize();
+    Snowflake::Client::HttpResponse response;
+    response.code = 200;
+    response.buffer = std::vector<char>(response_body.begin(), response_body.end());
+    return response;
+  });
+  AttestationConfig config;
+  config.type = AttestationType::AZURE;
+  config.httpClient = &fakeHttpClient;
+  config.snowflakeEntraResource = AZURE_TEST_RESOURCE;
+  auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  auto &attestation = attestationOpt.value();
+  assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
+  assert_true(attestation.credential == token);
+  assert_true(attestation.issuer == AZURE_TEST_ISSUER_MICROSOFT);
+  assert_true(attestation.subject == AZURE_TEST_SUBJECT);
+}
+
+void test_unit_azure_attestation_vm_without_client_id(void **) {
+  auto token = makeAzureToken(AZURE_TEST_ISSUER_MICROSOFT, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
+  auto fakeHttpClient = FakeHttpClient([token](Snowflake::Client::HttpRequest req) {
+    auto clientIdParam = req.url.params().find("client_id");
+    assert_true(clientIdParam == req.url.params().end());
+    assert_true((*req.url.params().find("api-version")).value == AZURE_TEST_API_VERSION_VM);
+    assert_true((*req.url.params().find("resource")).value == AZURE_TEST_RESOURCE);
+    assert_true(req.headers.find("Metadata")->second == "True");
+    assert_true(req.url.host() == AZURE_TEST_DEFAULT_ENDPOINT_HOST);
+    assert_true(req.url.scheme() == AZURE_TEST_DEFAULT_ENDPOINT_PROTOCOL);
+    auto obj = picojson::object();
+    obj["access_token"] = picojson::value(token);
+    std::string response_body = picojson::value(obj).serialize();
+    Snowflake::Client::HttpResponse response;
+    response.code = 200;
+    response.buffer = std::vector<char>(response_body.begin(), response_body.end());
+    return response;
+  });
+  AttestationConfig config;
+  config.type = AttestationType::AZURE;
+  config.httpClient = &fakeHttpClient;
+  config.snowflakeEntraResource = AZURE_TEST_RESOURCE;
+  auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  auto &attestation = attestationOpt.value();
+  assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
+  assert_true(attestation.credential == token);
+  assert_true(attestation.issuer == AZURE_TEST_ISSUER_MICROSOFT);
+  assert_true(attestation.subject == AZURE_TEST_SUBJECT);
+}
+
+void test_unit_azure_attestation_function_with_client_id(void **) {
+  EnvOverride headerOverride("IDENTITY_HEADER", AZURE_TEST_IDENTITY_HEADER);
+  EnvOverride endpointOverride("IDENTITY_ENDPOINT", AZURE_TEST_IDENTITY_ENDPOINT);
+  EnvOverride clientIdOverride("MANAGED_IDENTITY_CLIENT_ID", AZURE_TEST_MANAGED_IDENTITY_CLIENT_ID);
+  auto token = makeAzureToken(AZURE_TEST_ISSUER_STS, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
+  auto fakeHttpClient = FakeHttpClient([token](Snowflake::Client::HttpRequest req) {
+    auto clientIdParam = req.url.params().find("client_id");
+    assert_true(clientIdParam != req.url.params().end());
+    assert_true((*clientIdParam).value == AZURE_TEST_MANAGED_IDENTITY_CLIENT_ID);
+    assert_true((*req.url.params().find("api-version")).value == AZURE_TEST_API_VERSION_FUNCTION);
+    assert_true((*req.url.params().find("resource")).value == AZURE_TEST_RESOURCE);
+    assert_true(req.headers.find("X-IDENTITY-HEADER")->second == AZURE_TEST_IDENTITY_HEADER.value());
+    assert_true(req.url.host() == AZURE_TEST_IDENTITY_ENDPOINT_HOST);
+    assert_true(req.url.scheme() == AZURE_TEST_IDENTITY_ENDPOINT_PROTOCOL);
+    auto obj = picojson::object();
+    obj["access_token"] = picojson::value(token);
+    std::string response_body = picojson::value(obj).serialize();
+    Snowflake::Client::HttpResponse response;
+    response.code = 200;
+    response.buffer = std::vector<char>(response_body.begin(), response_body.end());
+    return response;
+  });
+  AttestationConfig config;
+  config.type = AttestationType::AZURE;
+  config.snowflakeEntraResource = AZURE_TEST_RESOURCE;
+  config.httpClient = &fakeHttpClient;
+  auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  auto &attestation = attestationOpt.value();
+  assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
+  assert_true(attestation.credential == token);
+  assert_true(attestation.issuer == AZURE_TEST_ISSUER_STS);
+  assert_true(attestation.subject == AZURE_TEST_SUBJECT);
+}
+
+void test_unit_azure_attestation_function_without_client_id(void **) {
+  EnvOverride headerOverride("IDENTITY_HEADER", AZURE_TEST_IDENTITY_HEADER);
+  EnvOverride endpointOverride("IDENTITY_ENDPOINT", AZURE_TEST_IDENTITY_ENDPOINT);
+  auto token = makeAzureToken(AZURE_TEST_ISSUER_STS, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
+  auto fakeHttpClient = FakeHttpClient([token](Snowflake::Client::HttpRequest req) {
+    auto clientIdParam = req.url.params().find("client_id");
+    assert_true(clientIdParam == req.url.params().end());
+    assert_true((*req.url.params().find("api-version")).value == AZURE_TEST_API_VERSION_FUNCTION);
+    assert_true((*req.url.params().find("resource")).value == AZURE_TEST_RESOURCE);
+    assert_true(req.headers.find("X-IDENTITY-HEADER")->second == AZURE_TEST_IDENTITY_HEADER.value());
+    assert_true(req.url.host() == AZURE_TEST_IDENTITY_ENDPOINT_HOST);
+    assert_true(req.url.scheme() == AZURE_TEST_IDENTITY_ENDPOINT_PROTOCOL);
+    auto obj = picojson::object();
+    obj["access_token"] = picojson::value(token);
+    std::string response_body = picojson::value(obj).serialize();
+    Snowflake::Client::HttpResponse response;
+    response.code = 200;
+    response.buffer = std::vector<char>(response_body.begin(), response_body.end());
+    return response;
+  });
+  AttestationConfig config;
+  config.type = AttestationType::AZURE;
+  config.snowflakeEntraResource = AZURE_TEST_RESOURCE;
+  config.httpClient = &fakeHttpClient;
+  auto attestationOpt = Snowflake::Client::createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  auto &attestation = attestationOpt.value();
+  assert_true(attestation.type == Snowflake::Client::AttestationType::AZURE);
+  assert_true(attestation.credential == token);
+  assert_true(attestation.issuer == AZURE_TEST_ISSUER_STS);
+  assert_true(attestation.subject == AZURE_TEST_SUBJECT);
+}
+
 void test_unit_oidc_attestation_success(void **) {
   auto jwtObj = Jwt::JWTObject();
   jwtObj.getHeader()->setAlgorithm(Jwt::AlgorithmType::RS256);
@@ -494,6 +626,10 @@ int main() {
       cmocka_unit_test(test_unit_azure_attestation_missing_subject),
       cmocka_unit_test(test_unit_azure_attestation_request_failed),
       cmocka_unit_test(test_unit_azure_attestation_function_success),
+      cmocka_unit_test(test_unit_azure_attestation_vm_with_client_id),
+      cmocka_unit_test(test_unit_azure_attestation_vm_without_client_id),
+      cmocka_unit_test(test_unit_azure_attestation_function_with_client_id),
+      cmocka_unit_test(test_unit_azure_attestation_function_without_client_id),
       cmocka_unit_test(test_unit_oidc_attestation_success),
       cmocka_unit_test(test_unit_oidc_attestation_missing_token)
   };
