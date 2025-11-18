@@ -463,7 +463,7 @@ static void get_file_path_by_uri(const struct store_ctx_entry *data, const char 
 {
   get_cache_dir(data->data, file_path);
   if (*file_path) {
-    char file_name[PATH_MAX] = {};
+    char file_name[PATH_MAX] = {0};
     strncpy(file_name, uri, PATH_MAX);
     normalize_filename(file_name);
     strncat(file_path, file_name, PATH_MAX);
@@ -484,7 +484,7 @@ static void save_crl_to_disk(const struct store_ctx_entry *data, const char *uri
                              X509_CRL **pcrl)
 {
   BIO *fp;
-  char file_path[PATH_MAX] = {};
+  char file_path[PATH_MAX] = {0};
 
   if (!data->crl_disk_caching) {
     infof(data->data, "CRL disk caching is disabled. Not saving CRL to disk. (URI: %s)", uri);
@@ -542,7 +542,7 @@ static void get_crl_from_disk(const struct store_ctx_entry *data, const char *ur
                               X509_CRL **pcrl)
 {
   BIO *fp;
-  char file_path[PATH_MAX] = {};
+  char file_path[PATH_MAX] = {0};
 
   if (!data->crl_disk_caching) {
     infof(data->data, "CRL disk caching is disabled. Not loading CRL from disk (URI: %s)", uri);
