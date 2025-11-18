@@ -412,6 +412,7 @@ static char* ensure_cache_dir(const struct Curl_easy *data, char* cache_dir)
   if (home_env == NULL) {
     return NULL;
   }
+  strncat(cache_dir, home_env, PATH_MAX);
   strncat(cache_dir, "\\Snowflake", PATH_MAX);
   if (mkdir_if_not_exists(data, cache_dir) == NULL)
   {
