@@ -294,6 +294,58 @@ void test_skip_warn(void **unused) {
   remove(logPath.c_str());
 }
 
+void test_skip_permissions_verification(void **unused) {
+  SF_UNUSED(unused);
+  // Create toml file
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  // Set logging
+  std::string logPath = "logs/snowflake_toml_skip_verification.txt";
+  remove(logPath.c_str());
+  log_set_level(SF_LOG_INFO);
+  log_set_path(logPath.c_str());
+
+  EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
+  EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
+
+  // Set bad permissions that would normally fail (group and others can write)
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_all | others_all);
+  
+  // Should succeed despite bad permissions due to skip flag
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
+  assert_string_equal(boost::get<std::string>(connectionParams["key2"]).c_str(), "value2");
+
+  // Verify the skip message appears in the log
+  bool isSkipMessageFound = false;
+  std::string line;
+  std::fstream logfile;
+  logfile.open(logPath);
+  if (logfile.is_open())
+  {
+    while (getline(logfile, line))
+    {
+      if (line.find("Skipping token file permissions verification") != std::string::npos)
+      {
+        isSkipMessageFound = true;
+        break;
+      }
+    }
+    logfile.close();
+  }
+  log_close();
+  assert_true(isSkipMessageFound);
+
+  remove(tomlFilePath.c_str());
+  remove(logPath.c_str());
+}
+
 
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -307,7 +359,8 @@ int main(void) {
       cmocka_unit_test(test_data_types),
 #ifndef _WIN32
       cmocka_unit_test(test_permissions),
-      cmocka_unit_test(test_skip_warn)
+      cmocka_unit_test(test_skip_warn),
+      cmocka_unit_test(test_skip_permissions_verification)
 #endif
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
