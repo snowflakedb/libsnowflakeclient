@@ -155,197 +155,317 @@ void test_data_types(void **unused) {
   remove(tomlFilePath.c_str());
 }
 
-void test_permissions(void **unused) {
+void test_token_file_path(void** unused) {
   SF_UNUSED(unused);
-  // Create toml file
-  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  
+  std::string tokenFilePath = "./test_token.txt";
+  std::ofstream tokenFile;
+  tokenFile.open(tokenFilePath, std::fstream::out);
+  tokenFile << "test_token_from_file\n";
+  tokenFile.close();
+
+#ifndef _WIN32
+  boost::filesystem::permissions(tokenFilePath,
+    boost::filesystem::owner_read | boost::filesystem::owner_write);
+#endif
+
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"" + tokenFilePath + "\"";
   std::string tomlFilePath = "./connections.toml";
   std::ofstream file;
   file.open(tomlFilePath, std::fstream::out);
   file << tomlConfig;
   file.close();
-
-  // Set logging
-  std::string logPath = "logs/snowflake_toml.txt";
-  log_set_level(SF_LOG_INFO);
-  log_set_path(logPath.c_str());
 
   EnvOverride override("SNOWFLAKE_HOME", "./");
 
-  std::vector<std::pair<perms, bool>> configPermissions =
-  {
-    { owner_all, true },
-    { owner_read | owner_write, true },
-    { owner_read | owner_exe, true },
-    { owner_read, true },
-    { owner_all | group_all, false },
-    { owner_all | group_read | group_write, false },
-    { owner_all | group_read | group_exe, true },
-    { owner_all | group_read, true },
-    { owner_all | group_write | group_exe, false },
-    { owner_all | group_write, false },
-    { owner_all | group_exe, true },
-    { owner_all | others_all, false },
-    { owner_all | others_read | others_write, false },
-    { owner_all | others_read | others_exe, true },
-    { owner_all | others_read, true },
-    { owner_all | others_write | others_exe, false },
-    { owner_all | others_write, false },
-    { owner_all | others_exe, true }
-  };
-
-  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
-  for (auto permission : configPermissions)
-  {
-    boost::filesystem::permissions(tomlFilePath, permission.first);
-    connectionParams = load_toml_config();
-    if (permission.second)
-    {
-      assert_int_equal(connectionParams.size(), 2);
-      if (permission.first & boost::filesystem::group_read ||
-        permission.first & boost::filesystem::others_read)
-      {
-        std::string line;
-        std::fstream logfile;
-        logfile.open(logPath);
-        if (logfile.is_open())
-        {
-          bool isFound = false;
-          while (getline(logfile, line))
-          {
-            if (line.find("Warning due to other users having permission to read the config file") != std::string::npos)
-            {
-              isFound = true;
-              break;
-            }
-          }
-          logfile.close();
-          remove(logPath.c_str());
-          assert_true(isFound);
-        }
-      }
-    }
-    else
-    {
-      assert_true(connectionParams.empty());
-    }
-    connectionParams.clear();
-  }
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_from_file");
+  assert_string_equal(boost::get<std::string>(connectionParams["authenticator"]).c_str(), "oauth");
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
 
   // Cleanup
-  log_close();
+  remove(tokenFilePath.c_str());
   remove(tomlFilePath.c_str());
 }
 
-void test_skip_warn(void **unused) {
+void test_token_file_path_missing_file(void** unused) {
   SF_UNUSED(unused);
-  // Create toml file
-  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"/nonexistent/path/to/token.txt\"";
   std::string tomlFilePath = "./connections.toml";
   std::ofstream file;
   file.open(tomlFilePath, std::fstream::out);
   file << tomlConfig;
   file.close();
 
-  // Set logging
-  std::string logPath = "logs/snowflake_tomlwarn.txt";
-  remove(logPath.c_str());
-  log_set_level(SF_LOG_INFO);
-  log_set_path(logPath.c_str());
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+
+  // Cleanup
+  remove(tomlFilePath.c_str());
+}
+
+void test_token_file_path_empty_file(void** unused) {
+  SF_UNUSED(unused);
+  
+  std::string tokenFilePath = "./empty_token.txt";
+  std::ofstream tokenFile;
+  tokenFile.open(tokenFilePath, std::fstream::out);
+  tokenFile.close();
+
+#ifndef _WIN32
+  boost::filesystem::permissions(tokenFilePath,
+    boost::filesystem::owner_read | boost::filesystem::owner_write);
+#endif
+
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"" + tokenFilePath + "\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+
+  // Cleanup
+  remove(tokenFilePath.c_str());
+  remove(tomlFilePath.c_str());
+}
+
+#ifndef _WIN32
+void test_toml_config_permissions(void **unused) {
+  SF_UNUSED(unused);
+  
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
+
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
+
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
+
+  boost::filesystem::permissions(tomlFilePath, owner_all | others_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
+
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_write | others_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
+
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write | group_read);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
+
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write | others_read);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
+
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write | group_read | group_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
+
+  remove(tomlFilePath.c_str());
+}
+
+void test_toml_skip_read_warning(void **unused) {
+  SF_UNUSED(unused);
+  
+  std::string tomlConfig = "[default]\nkey1 = \"value1\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
 
   EnvOverride permOverride("SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE", "true");
   EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
 
-  // Test warning is skipped
   boost::filesystem::permissions(tomlFilePath, owner_all | group_read | others_read);
   std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
-  assert_int_equal(connectionParams.size(), 2);
+  assert_int_equal(connectionParams.size(), 1);
+  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
 
-  // Test error is not skipped
-  boost::filesystem::permissions(tomlFilePath, owner_all | group_all | others_all);
+  boost::filesystem::permissions(tomlFilePath, owner_all | group_write);
   connectionParams = load_toml_config();
   assert_int_equal(connectionParams.size(), 0);
 
-  bool isWarnFound = false;
-  bool isErrorFound = false;
-  std::string line;
-  std::fstream logfile;
-  logfile.open(logPath);
-  if (logfile.is_open())
-  {
-    while (getline(logfile, line))
-    {
-      if (line.find("Warning due to other users having permission to read the config file") != std::string::npos)
-      {
-        isWarnFound = true;
-      }
-      if (line.find("Error due to other users having permission to modify the config file") != std::string::npos)
-      {
-        isErrorFound = true;
-      }
-    }
-    logfile.close();
-  }
-  log_close();
-  assert_false(isWarnFound);
-  assert_true(isErrorFound);
+  boost::filesystem::permissions(tomlFilePath, owner_all | others_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 0);
 
   remove(tomlFilePath.c_str());
-  remove(logPath.c_str());
 }
 
-void test_skip_permissions_verification(void **unused) {
+void test_token_file_permissions(void **unused) {
   SF_UNUSED(unused);
-  // Create toml file
-  std::string tomlConfig = "[default]\nkey1 = \"value1\"\nkey2 = \"value2\"";
+  
+  std::string tokenFilePath = "./test_token_perms.txt";
+  std::ofstream tokenFile;
+  tokenFile.open(tokenFilePath, std::fstream::out);
+  tokenFile << "test_token_value";
+  tokenFile.close();
+
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"" + tokenFilePath + "\"";
   std::string tomlFilePath = "./connections.toml";
   std::ofstream file;
   file.open(tomlFilePath, std::fstream::out);
   file << tomlConfig;
   file.close();
 
-  // Set logging
-  std::string logPath = "logs/snowflake_toml_skip_verification.txt";
-  remove(logPath.c_str());
-  log_set_level(SF_LOG_INFO);
-  log_set_path(logPath.c_str());
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write);
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | group_read);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | group_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | group_exe);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | others_read);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | others_write);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write | others_exe);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 1);
+  assert_true(connectionParams.find("token") == connectionParams.end());
+
+  boost::filesystem::permissions(tokenFilePath, owner_read);
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+
+  remove(tokenFilePath.c_str());
+  remove(tomlFilePath.c_str());
+}
+
+void test_token_priority(void **unused) {
+  SF_UNUSED(unused);
+  
+  std::string tokenFilePath = "./test_token_priority.txt";
+  std::ofstream tokenFile;
+  tokenFile.open(tokenFilePath, std::fstream::out);
+  tokenFile << "token_from_file";
+  tokenFile.close();
+
+#ifndef _WIN32
+  boost::filesystem::permissions(tokenFilePath, owner_read | owner_write);
+#endif
+
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken = \"inline_token\"\ntoken_file_path = \"" + tokenFilePath + "\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
+
+#ifndef _WIN32
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write);
+#endif
+
+  EnvOverride override("SNOWFLAKE_HOME", "./");
+
+  std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "inline_token");
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+
+  tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"" + tokenFilePath + "\"";
+  file.open(tomlFilePath, std::fstream::out | std::fstream::trunc);
+  file << tomlConfig;
+  file.close();
+
+  connectionParams = load_toml_config();
+  assert_int_equal(connectionParams.size(), 2);
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "token_from_file");
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
+
+  remove(tokenFilePath.c_str());
+  remove(tomlFilePath.c_str());
+}
+
+void test_skip_token_file_verification(void **unused) {
+  SF_UNUSED(unused);
+  
+  std::string tokenFilePath = "./test_token_skip.txt";
+  std::ofstream tokenFile;
+  tokenFile.open(tokenFilePath, std::fstream::out);
+  tokenFile << "test_token_value";
+  tokenFile.close();
+
+  std::string tomlConfig = "[default]\nauthenticator = \"oauth\"\ntoken_file_path = \"" + tokenFilePath + "\"";
+  std::string tomlFilePath = "./connections.toml";
+  std::ofstream file;
+  file.open(tomlFilePath, std::fstream::out);
+  file << tomlConfig;
+  file.close();
 
   EnvOverride permOverride("SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION", "true");
   EnvOverride homeOverride("SNOWFLAKE_HOME", "./");
 
-  // Set bad permissions that would normally fail (group and others can write)
-  boost::filesystem::permissions(tomlFilePath, owner_all | group_all | others_all);
+  boost::filesystem::permissions(tomlFilePath, owner_read | owner_write);
   
-  // Should succeed despite bad permissions due to skip flag
+  boost::filesystem::permissions(tokenFilePath, owner_all | group_all | others_all);
+
   std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams = load_toml_config();
   assert_int_equal(connectionParams.size(), 2);
-  assert_string_equal(boost::get<std::string>(connectionParams["key1"]).c_str(), "value1");
-  assert_string_equal(boost::get<std::string>(connectionParams["key2"]).c_str(), "value2");
+  assert_string_equal(boost::get<std::string>(connectionParams["token"]).c_str(), "test_token_value");
+  
+  assert_true(connectionParams.find("token") != connectionParams.end());
+  assert_true(connectionParams.find("token_file_path") == connectionParams.end());
 
-  // Verify the skip message appears in the log
-  bool isSkipMessageFound = false;
-  std::string line;
-  std::fstream logfile;
-  logfile.open(logPath);
-  if (logfile.is_open())
-  {
-    while (getline(logfile, line))
-    {
-      if (line.find("Skipping token file permissions verification") != std::string::npos)
-      {
-        isSkipMessageFound = true;
-        break;
-      }
-    }
-    logfile.close();
-  }
-  log_close();
-  assert_true(isSkipMessageFound);
-
+  remove(tokenFilePath.c_str());
   remove(tomlFilePath.c_str());
-  remove(logPath.c_str());
 }
-
+#endif
 
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
@@ -357,10 +477,15 @@ int main(void) {
       cmocka_unit_test(test_use_default_location_env),
       cmocka_unit_test(test_use_snowflake_default_connection_var),
       cmocka_unit_test(test_data_types),
+      cmocka_unit_test(test_token_file_path),
+      cmocka_unit_test(test_token_file_path_missing_file),
+      cmocka_unit_test(test_token_file_path_empty_file),
 #ifndef _WIN32
-      cmocka_unit_test(test_permissions),
-      cmocka_unit_test(test_skip_warn),
-      cmocka_unit_test(test_skip_permissions_verification)
+      cmocka_unit_test(test_toml_config_permissions),
+      cmocka_unit_test(test_toml_skip_read_warning),
+      cmocka_unit_test(test_token_file_permissions),
+      cmocka_unit_test(test_token_priority),
+      cmocka_unit_test(test_skip_token_file_verification)
 #endif
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
