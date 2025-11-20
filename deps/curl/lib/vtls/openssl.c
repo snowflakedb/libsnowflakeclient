@@ -3633,10 +3633,10 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
   cached_store = ossl_get_cached_x509_store(cf, data);
   if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
     SSL_CTX_set_cert_store(ssl_ctx, cached_store);
-    
+
     /* !!! Starting Snowflake CRL !!! */
     /* Update CRL configuration even for cached store */
-    if (conn_config->sf_crl_check) {
+    if(conn_config->sf_crl_check) {
       registerCRLCheck(data, cached_store,
                        conn_config->sf_crl_advisory,
                        conn_config->sf_crl_allow_no_crl,
@@ -3655,7 +3655,7 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
     }
 
     /* !!! Starting Snowflake CRL !!! */
-    if (conn_config->sf_crl_check) {
+    if(conn_config->sf_crl_check) {
       registerCRLCheck(data, store,
                        conn_config->sf_crl_advisory,
                        conn_config->sf_crl_allow_no_crl,
