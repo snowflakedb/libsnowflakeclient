@@ -23,12 +23,9 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "strcase.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
-#include "curlx.h"
 
 #include "tool_cfgable.h"
 #include "tool_doswin.h"
@@ -37,6 +34,7 @@
 #include "tool_cb_wrt.h"
 #include "tool_operate.h"
 #include "tool_libinfo.h"
+#include "tool_strdup.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
@@ -59,7 +57,7 @@ static char *parse_filename(const char *ptr, size_t len);
 
 #ifdef LINK
 static void write_linked_location(CURL *curl, const char *location,
-    size_t loclen, FILE *stream);
+                                  size_t loclen, FILE *stream);
 #endif
 
 int tool_write_headers(struct HdrCbData *hdrcbdata, FILE *stream)
@@ -84,7 +82,6 @@ fail:
 /*
 ** callback for CURLOPT_HEADERFUNCTION
 */
-
 size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
   struct per_transfer *per = userdata;
@@ -102,7 +99,7 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 #ifdef DEBUGBUILD
   if(size * nmemb > (size_t)CURL_MAX_HTTP_HEADER) {
-    warnf(per->config->global, "Header data exceeds single call write limit");
+    warnf("Header data exceeds write limit");
     return CURL_WRITEFUNC_ERROR;
   }
 #endif
@@ -123,8 +120,7 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
       return rc;
     /* flush the stream to send off what we got earlier */
     if(fflush(heads->stream)) {
-      errorf(per->config->global, "Failed writing headers to %s",
-             per->config->headerfile);
+      errorf("Failed writing headers to %s", per->config->headerfile);
       return CURL_WRITEFUNC_ERROR;
     }
   }
@@ -158,7 +154,7 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
           /*
            * Truncate the etag save stream, it can have an existing etag value.
            */
-#ifdef HAVE_FTRUNCATE
+#if defined(HAVE_FTRUNCATE) && !defined(__MINGW32CE__)
           if(ftruncate(fileno(etag_save->stream), 0)) {
             return CURL_WRITEFUNC_ERROR;
           }
@@ -249,8 +245,8 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
       if(hdrcbdata->honor_cd_filename &&
          hdrcbdata->config->show_headers) {
         /* still awaiting the Content-Disposition header, store the header in
-           memory. Since it is not zero terminated, we need an extra dance. */
-        char *clone = aprintf("%.*s", (int)cb, (char *)str);
+           memory. Since it is not null-terminated, we need an extra dance. */
+        char *clone = aprintf("%.*s", (int)cb, str);
         if(clone) {
           struct curl_slist *old = hdrcbdata->headlist;
           hdrcbdata->headlist = curl_slist_append(old, clone);
@@ -289,11 +285,11 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
     if(!outs->stream && !tool_create_output_file(outs, per->config))
       return CURL_WRITEFUNC_ERROR;
 
-    if(hdrcbdata->global->isatty &&
+    if(global->isatty &&
 #ifdef _WIN32
        tool_term_has_bold &&
 #endif
-       hdrcbdata->global->styled_output)
+       global->styled_output)
       value = memchr(ptr, ':', cb);
     if(value) {
       size_t namelen = value - ptr;
@@ -326,12 +322,9 @@ static char *parse_filename(const char *ptr, size_t len)
   char *q;
   char  stop = '\0';
 
-  /* simple implementation of strndup() */
-  copy = malloc(len + 1);
+  copy = memdup0(ptr, len);
   if(!copy)
     return NULL;
-  memcpy(copy, ptr, len);
-  copy[len] = '\0';
 
   p = copy;
   if(*p == '\'' || *p == '"') {
@@ -352,7 +345,7 @@ static char *parse_filename(const char *ptr, size_t len)
   if(q) {
     p = q + 1;
     if(!*p) {
-      Curl_safefree(copy);
+      tool_safefree(copy);
       return NULL;
     }
   }
@@ -364,7 +357,7 @@ static char *parse_filename(const char *ptr, size_t len)
   if(q) {
     p = q + 1;
     if(!*p) {
-      Curl_safefree(copy);
+      tool_safefree(copy);
       return NULL;
     }
   }
@@ -385,7 +378,7 @@ static char *parse_filename(const char *ptr, size_t len)
   {
     char *sanitized;
     SANITIZEcode sc = sanitize_file_name(&sanitized, copy, 0);
-    Curl_safefree(copy);
+    tool_safefree(copy);
     if(sc)
       return NULL;
     copy = sanitized;
@@ -405,22 +398,23 @@ static char *parse_filename(const char *ptr, size_t len)
  * should not be needed but the real world returns plenty of relative
  * URLs here.
  */
-static
-void write_linked_location(CURL *curl, const char *location, size_t loclen,
-                           FILE *stream) {
+static void write_linked_location(CURL *curl, const char *location,
+                                  size_t loclen, FILE *stream)
+{
   /* This would so simple if CURLINFO_REDIRECT_URL were available here */
   CURLU *u = NULL;
   char *copyloc = NULL, *locurl = NULL, *scheme = NULL, *finalurl = NULL;
   const char *loc = location;
   size_t llen = loclen;
   int space_skipped = 0;
-  char *vver = getenv("VTE_VERSION");
+  const char *vver = getenv("VTE_VERSION");
 
   if(vver) {
-    long vvn = strtol(vver, NULL, 10);
-    /* Skip formatting for old versions of VTE <= 0.48.1 (Mar 2017) since some
-       of those versions have formatting bugs. (#10428) */
-    if(0 < vvn && vvn <= 4801)
+    curl_off_t num;
+    if(curlx_str_number(&vver, &num, CURL_OFF_T_MAX) ||
+       /* Skip formatting for old versions of VTE <= 0.48.1 (Mar 2017) since
+          some of those versions have formatting bugs. (#10428) */
+       (num <= 4801))
       goto locout;
   }
 
@@ -440,12 +434,10 @@ void write_linked_location(CURL *curl, const char *location, size_t loclen,
   if(!u)
     goto locout;
 
-  /* Create a NUL-terminated and whitespace-stripped copy of Location: */
-  copyloc = malloc(llen + 1);
+  /* Create a null-terminated and whitespace-stripped copy of Location: */
+  copyloc = memdup0(loc, llen);
   if(!copyloc)
     goto locout;
-  memcpy(copyloc, loc, llen);
-  copyloc[llen] = 0;
 
   /* The original URL to use as a base for a relative redirect URL */
   if(curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &locurl))

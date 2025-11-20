@@ -2,7 +2,7 @@
 <info>
 <keywords>
 HTTP
-etags
+etag
 </keywords>
 </info>
 
@@ -14,9 +14,6 @@ etags
 #
 # Client-side
 <client>
-<server>
-none
-</server>
 <name>
 Use --etag-compare and -save with more than one URL, URLs specified first
 </name>

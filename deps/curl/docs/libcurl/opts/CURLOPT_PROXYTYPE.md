@@ -35,8 +35,7 @@ HTTP Proxy. Default.
 ## CURLPROXY_HTTPS
 
 HTTPS Proxy using HTTP/1. (Added in 7.52.0 for OpenSSL and GnuTLS. Since
-7.87.0, it also works for BearSSL, mbedTLS, Rustls, Schannel, Secure Transport
-and wolfSSL.)
+7.87.0, it also works for mbedTLS, Rustls, Schannel and wolfSSL.)
 
 ## CURLPROXY_HTTPS2
 
@@ -92,6 +91,11 @@ int main(void)
   }
 }
 ~~~
+
+# HISTORY
+
+**CURLPROXY_*** enums became `long` types in 8.16.0, prior to this version
+a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # %AVAILABILITY%
 

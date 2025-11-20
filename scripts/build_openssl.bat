@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/openssl/openssl.git
 
 @echo off
-set OPENSSL_SRC_VERSION=3.0.15
+set OPENSSL_SRC_VERSION=3.0.18
 set OPENSSL_BUILD_VERSION=1
 set OPENSSL_VERSION=%OPENSSL_SRC_VERSION%.%OPENSSL_BUILD_VERSION%
 call %*

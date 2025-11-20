@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef UNDER_CE
+#define strerror(e) "?"
+#else
 #include <errno.h>
+#endif
 
 /* curl stuff */
 #include <curl/curl.h>
@@ -38,7 +42,7 @@
 /* This little trick makes sure that we do not enable pipelining for libcurls
    old enough to not have this symbol. It is _not_ defined to zero in a recent
    libcurl header. */
-#define CURLPIPE_MULTIPLEX 0
+#define CURLPIPE_MULTIPLEX 0L
 #endif
 
 struct transfer {
@@ -106,7 +110,7 @@ int my_trace(CURL *handle, curl_infotype type,
   const char *text;
   struct transfer *t = (struct transfer *)userp;
   unsigned int num = t->num;
-  (void)handle; /* prevent compiler warning */
+  (void)handle;
 
   switch(type) {
   case CURLINFO_TEXT:
@@ -138,7 +142,7 @@ int my_trace(CURL *handle, curl_infotype type,
   return 0;
 }
 
-static void setup(struct transfer *t, int num)
+static int setup(struct transfer *t, int num)
 {
   char filename[128];
   CURL *hnd;
@@ -151,7 +155,7 @@ static void setup(struct transfer *t, int num)
   if(!t->out) {
     fprintf(stderr, "error: could not open file %s for writing: %s\n",
             filename, strerror(errno));
-    exit(1);
+    return 1;
   }
 
   /* write to this file */
@@ -175,6 +179,7 @@ static void setup(struct transfer *t, int num)
   /* wait for pipe connection to confirm */
   curl_easy_setopt(hnd, CURLOPT_PIPEWAIT, 1L);
 #endif
+  return 0;
 }
 
 /*
@@ -200,7 +205,8 @@ int main(int argc, char **argv)
   multi_handle = curl_multi_init();
 
   for(i = 0; i < num_transfers; i++) {
-    setup(&trans[i], i);
+    if(setup(&trans[i], i))
+      return 1;
 
     /* add the individual transfer */
     curl_multi_add_handle(multi_handle, trans[i].easy);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -190,7 +190,7 @@ static int compare_hex_encoded_buffer(const char *hex_encoded,
         return 1;
 
     for (i = j = 0; i < raw_length && j + 1 < hex_length; i++, j += 2) {
-        sprintf(hexed, "%02x", raw[i]);
+        BIO_snprintf(hexed, sizeof(hexed), "%02x", raw[i]);
         if (!TEST_int_eq(hexed[0], hex_encoded[j])
                 || !TEST_int_eq(hexed[1], hex_encoded[j + 1]))
             return 1;
@@ -10918,6 +10918,7 @@ static int npn_advert_cb(SSL *ssl, const unsigned char **out,
         return SSL_TLSEXT_ERR_OK;
 
     case 1:
+        *out = NULL;
         *outlen = 0;
         return SSL_TLSEXT_ERR_OK;
 
@@ -11115,6 +11116,79 @@ static int test_alpn(int idx)
             goto end;
         }
     }
+
+    testresult = 1;
+ end:
+    SSL_free(serverssl);
+    SSL_free(clientssl);
+    SSL_CTX_free(sctx);
+    SSL_CTX_free(cctx);
+
+    return testresult;
+}
+
+static int test_no_renegotiation(int idx)
+{
+    SSL_CTX *sctx = NULL, *cctx = NULL;
+    SSL *serverssl = NULL, *clientssl = NULL;
+    int testresult = 0, ret;
+    int max_proto;
+    const SSL_METHOD *sm, *cm;
+    unsigned char buf[5];
+
+    if (idx == 0) {
+#ifndef OPENSSL_NO_TLS1_2
+        max_proto = TLS1_2_VERSION;
+        sm = TLS_server_method();
+        cm = TLS_client_method();
+#else
+        return TEST_skip("TLSv1.2 is disabled in this build");
+#endif
+    } else {
+#ifndef OPENSSL_NO_DTLS1_2
+        max_proto = DTLS1_2_VERSION;
+        sm = DTLS_server_method();
+        cm = DTLS_client_method();
+#else
+        return TEST_skip("DTLSv1.2 is disabled in this build");
+#endif
+    }
+    if (!TEST_true(create_ssl_ctx_pair(libctx, sm, cm, 0, max_proto,
+                                       &sctx, &cctx, cert, privkey)))
+        goto end;
+
+    SSL_CTX_set_options(sctx, SSL_OP_NO_RENEGOTIATION);
+
+    if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl, &clientssl, NULL,
+                                      NULL)))
+        goto end;
+
+    if (!TEST_true(create_ssl_connection(serverssl, clientssl, SSL_ERROR_NONE)))
+        goto end;
+
+    if (!TEST_true(SSL_renegotiate(clientssl))
+            || !TEST_int_le(ret = SSL_connect(clientssl), 0)
+            || !TEST_int_eq(SSL_get_error(clientssl, ret), SSL_ERROR_WANT_READ))
+        goto end;
+
+    /*
+     * We've not sent any application data, so we expect this to fail. It should
+     * also read the renegotiation attempt, and send back a no_renegotiation
+     * warning alert because we have renegotiation disabled.
+     */
+    if (!TEST_int_le(ret = SSL_read(serverssl, buf, sizeof(buf)), 0))
+        goto end;
+    if (!TEST_int_eq(SSL_get_error(serverssl, ret), SSL_ERROR_WANT_READ))
+        goto end;
+
+    /*
+     * The client should now see the no_renegotiation warning and fail the
+     * connection
+     */
+    if (!TEST_int_le(ret = SSL_connect(clientssl), 0)
+            || !TEST_int_eq(SSL_get_error(clientssl, ret), SSL_ERROR_SSL)
+            || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), SSL_R_NO_RENEGOTIATION))
+        goto end;
 
     testresult = 1;
  end:
@@ -11407,6 +11481,7 @@ int setup_tests(void)
     ADD_ALL_TESTS(test_npn, 5);
 #endif
     ADD_ALL_TESTS(test_alpn, 4);
+    ADD_ALL_TESTS(test_no_renegotiation, 2);
     return 1;
 
  err:

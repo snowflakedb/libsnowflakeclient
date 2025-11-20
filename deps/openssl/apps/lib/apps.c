@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -89,54 +89,6 @@ int load_key_certs_crls_suppress(const char *uri, int format, int maybe_stdin,
                                  int suppress_decode_errors);
 
 int app_init(long mesgwin);
-
-int chopup_args(ARGS *arg, char *buf)
-{
-    int quoted;
-    char c = '\0', *p = NULL;
-
-    arg->argc = 0;
-    if (arg->size == 0) {
-        arg->size = 20;
-        arg->argv = app_malloc(sizeof(*arg->argv) * arg->size, "argv space");
-    }
-
-    for (p = buf;;) {
-        /* Skip whitespace. */
-        while (*p && isspace(_UC(*p)))
-            p++;
-        if (*p == '\0')
-            break;
-
-        /* The start of something good :-) */
-        if (arg->argc >= arg->size) {
-            char **tmp;
-            arg->size += 20;
-            tmp = OPENSSL_realloc(arg->argv, sizeof(*arg->argv) * arg->size);
-            if (tmp == NULL)
-                return 0;
-            arg->argv = tmp;
-        }
-        quoted = *p == '\'' || *p == '"';
-        if (quoted)
-            c = *p++;
-        arg->argv[arg->argc++] = p;
-
-        /* now look for the end of this */
-        if (quoted) {
-            while (*p && *p != c)
-                p++;
-            *p++ = '\0';
-        } else {
-            while (*p && !isspace(_UC(*p)))
-                p++;
-            if (*p)
-                *p++ = '\0';
-        }
-    }
-    arg->argv[arg->argc] = NULL;
-    return 1;
-}
 
 #ifndef APP_INIT
 int app_init(long mesgwin)
@@ -1688,6 +1640,9 @@ CA_DB *load_index(const char *dbfile, DB_ATTR *db_attr)
     }
 
     retdb->dbfname = OPENSSL_strdup(dbfile);
+    if (retdb->dbfname == NULL)
+        goto err;
+
 #ifndef OPENSSL_NO_POSIX_IO
     retdb->dbst = dbst;
 #endif
