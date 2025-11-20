@@ -16,6 +16,7 @@ namespace
   const std::string ENV_SNOWFLAKE_HOME = "SNOWFLAKE_HOME";
   const std::string ENV_SNOWFLAKE_DEF_CONN_NAME = "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
   const std::string ENV_SKIP_WARNING_FOR_READ_PERM = "SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE";
+  const std::string ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION = "SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION";
   const std::string SNOWFLAKE_HOME_DIR = ".snowflake";
   const std::string TOML_FILENAME = "connections.toml";
 
@@ -31,6 +32,14 @@ namespace
 
   sf_bool checkIfValidPermissions(const boost::filesystem::path &filePath)
   {
+    std::string skipPermVerification = getEnvironmentVariableValue(ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
+    if (boost::iequals(skipPermVerification, "true"))
+    {
+      CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
+        ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
+      return true;
+    }
+
     boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
     boost::filesystem::perms permissions = fileStatus.permissions();
     std::string skipWarningForReadPermission = getEnvironmentVariableValue(ENV_SKIP_WARNING_FOR_READ_PERM);

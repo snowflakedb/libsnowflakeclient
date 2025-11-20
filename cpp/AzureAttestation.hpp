@@ -23,6 +23,7 @@ namespace Snowflake {
 
       std::string snowflakeEntraResource;
       boost::optional<AzureFunctionsManagedIdentityConfig> managedIdentity;
+      boost::optional<std::string> clientId;
     };
 
     boost::optional<Attestation> createAzureAttestation(AttestationConfig& config);
