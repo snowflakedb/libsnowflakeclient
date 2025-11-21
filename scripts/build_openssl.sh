@@ -12,7 +12,7 @@ function usage() {
 }
 set -o pipefail
 
-OPENSSL_SRC_VERSION=3.0.15
+OPENSSL_SRC_VERSION=3.0.18
 OPENSSL_BUILD_VERSION=2
 OPENSSL_VERSION=$OPENSSL_SRC_VERSION.$OPENSSL_BUILD_VERSION
 
@@ -23,6 +23,9 @@ source $DIR/utils.sh
 [[ -n "$GET_VERSION" ]] && echo $OPENSSL_VERSION && exit 0
 
 OPENSSL_SOURCE_DIR=$DEPS_DIR/openssl/
+
+rm -rf $OPENSSL_SOURCE_DIR
+git clone --single-branch --branch openssl-$OPENSSL_SRC_VERSION --recursive https://github.com/openssl/openssl.git $OPENSSL_SOURCE_DIR
 
 # build openssl
 OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
