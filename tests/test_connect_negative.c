@@ -126,7 +126,7 @@ void test_connect_login_timeout(void** unused) {
   if (sferr->error_code != SF_STATUS_ERROR_CURL) {
     dump_error(sferr);
   }
-  assert_int_equal(sferr->error_code, SF_STATUS_ERROR_CURL);
+  assert_int_equal(sferr->error_code, SF_STATUS_ERROR_RETRY);
   assert_in_range(end_time - start_time, timeout - delta, timeout + delta);
   snowflake_term(sf);
 }
