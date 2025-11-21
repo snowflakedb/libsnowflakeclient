@@ -187,6 +187,10 @@ sf_bool STDCALL http_perform(CURL *curl,
             network_timeout = 1;
         }
     }
+    if (retry_timeout < network_timeout)
+    {
+        network_timeout = retry_timeout;
+    }
 
     RETRY_CONTEXT curl_retry_ctx = {
             retried_count ? *retried_count : 0,      //retry_count
