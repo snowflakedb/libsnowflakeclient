@@ -12,12 +12,15 @@ typedef enum authenticator_type
     {
         AUTH_SNOWFLAKE,
         AUTH_OAUTH,
+        AUTH_OAUTH_AUTHORIZATION_CODE,
+        AUTH_OAUTH_CLIENT_CREDENTIALS,
         AUTH_OKTA,
         AUTH_EXTERNALBROWSER,
         AUTH_ID_TOKEN,
         AUTH_JWT,
         AUTH_USR_PWD_MFA,
         AUTH_PAT,
+
         AUTH_TEST,
         AUTH_UNSUPPORTED
     } AuthenticatorType;
