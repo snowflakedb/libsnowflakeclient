@@ -516,11 +516,6 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               sf_sleep_ms(next_sleep_in_secs*1000);
-            } else if ((res == CURLE_OPERATION_TIMEDOUT) &&
-                       (renew_timeout > 0) &&
-                       (curl_timeout == renew_timeout)) {
-              // retry directly without backoff when timeout is triggered by renew
-              retry = SF_BOOLEAN_TRUE;
             } else if (res == CURLE_OPERATION_TIMEDOUT) {
               // retry directly without backoff when timeout is triggered by renew
               if ((renew_timeout > 0) && (curl_timeout == renew_timeout))
@@ -564,8 +559,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                   log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
                 }
                 SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                  msg,
-                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
             }
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
