@@ -192,7 +192,7 @@ bool StatementPutGet::http_put(std::string const& url,
   sf_bool success = SF_BOOLEAN_FALSE;
 
   success = http_perform(curl, PUT_REQUEST_TYPE, urlbuf, &reqHeaders, NULL, &putPayload, NULL,
-                         NULL, &respHeaders, get_retry_timeout(sf),
+                         NULL, &respHeaders, get_retry_timeout(sf), get_retry_timeout(sf),
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode,sf->ocsp_fail_open,
                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                          sf->crl_disk_caching, sf->crl_memory_caching,
@@ -255,7 +255,7 @@ bool StatementPutGet::http_get(std::string const& url,
   sf_bool success = SF_BOOLEAN_FALSE;
 
   success = http_perform(curl, reqType, urlbuf, &reqHeaders, NULL, NULL, NULL,
-                         &resp, &respHeaders, get_retry_timeout(sf),
+                         &resp, &respHeaders, get_retry_timeout(sf), get_retry_timeout(sf),
                          SF_BOOLEAN_FALSE, &m_stmt->error, sf->insecure_mode, sf->ocsp_fail_open,
                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                          sf->crl_disk_caching, sf->crl_memory_caching,
