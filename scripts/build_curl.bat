@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_SRC_VERSION=8.12.1
+set CURL_SRC_VERSION=8.16.0
 set CURL_BUILD_VERSION=5
 set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
@@ -70,6 +70,15 @@ if "%vs_version%"=="VS15" (
 )
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+
+set CURL_SOURCE_DIR=%scriptdir%..\deps\%CURL_DIR%
+set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
+
+rd /S /Q %CURL_SOURCE_DIR%
+git clone --single-branch --branch curl-%CURL_SRC_VERSION_GIT% --recursive https://github.com/curl/curl.git %CURL_SOURCE_DIR%
+pushd %CURL_SOURCE_DIR%
+  git apply ..\..\patches\curl-%CURL_SRC_VERSION%.patch
+popd
 
 echo === staging openssl and zlib for curl
 set curl_dep=%TMP%\curl_dep

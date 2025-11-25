@@ -12,7 +12,7 @@ function usage() {
 }
 set -x -o pipefail
 
-CURL_SRC_VERSION=8.12.1
+CURL_SRC_VERSION=8.16.0
 CURL_BUILD_VERSION=5
 CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
@@ -25,6 +25,13 @@ source $DIR/utils.sh
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
+CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
+
+rm -rf $LIBCURL_SOURCE_DIR
+git clone --single-branch --branch curl-$CURL_SRC_VERSION_GIT --recursive https://github.com/curl/curl.git $LIBCURL_SOURCE_DIR
+pushd $LIBCURL_SOURCE_DIR
+  git apply ../../patches/curl-$CURL_SRC_VERSION.patch
+popd
 
 # staging cJSON for curl
 CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
