@@ -12,13 +12,13 @@ function usage() {
 }
 set -x -o pipefail
 
-CURL_SRC_VERSION=8.16.0
-CURL_BUILD_VERSION=5
-CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
+
+CURL_SRC_VERSION=$CURL_VERSION
+CURL_BUILD_VERSION=5
+CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 [[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
 
@@ -93,6 +93,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export CFLAGS="-pthread -fPIC" # required to build with gcc52 or OpenSSL check will fail
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
+    autoreconf -fi
     PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
     make
     make install
@@ -106,6 +107,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        autoreconf -fi
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm-apple-darwin
         make > /dev/null
         make install /dev/null
@@ -114,6 +116,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch arm64 -Xarch_arm64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        autoreconf -fi
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
@@ -125,6 +128,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch i386 -Xarch_i386 -DSIZEOF_LONG_INT=4 -Xarch_i386 -DHAVE_LONG_LONG -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        autoreconf -fi
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null
@@ -134,6 +138,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CFLAGS="-arch x86_64 -Xarch_x86_64 -DSIZEOF_LONG_INT=8 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
+        autoreconf -fi
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
         make > /dev/null
         make install /dev/null

@@ -3,9 +3,6 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_SRC_VERSION=8.16.0
-set CURL_BUILD_VERSION=5
-set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 call %*
 goto :EOF
 
@@ -28,6 +25,10 @@ set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set currdir=%cd%
+
+set CURL_SRC_VERSION=%CURL_VERSION%
+set CURL_BUILD_VERSION=5
+set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 
 if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
