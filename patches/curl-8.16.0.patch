@@ -29,7 +29,7 @@ index 0265162e7..7b8b0b4b4 100644
    if(NOT WINCE AND NOT WINDOWS_STORE)
      list(APPEND CURL_NETWORK_AND_TIME_LIBS "iphlpapi")
 diff --git a/configure b/configure
-new file mode 100644
+new file mode 100755
 index 000000000..9d298f28e
 --- /dev/null
 +++ b/configure
