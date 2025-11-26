@@ -687,7 +687,8 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         }
         sf_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
-        if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0 || strcmp(item, "sessionToken") == 0) {
+        if (strstr(item, "token") || strstr(item, "Token") || strstr(item, "TOKEN") ||
+            strstr(item, "key") || strstr(item, "Key") || strstr(item, "KEY")) {
             log_debug("Item and Value; %s: ******", item);
         } else {
             log_debug("Item and Value; %s: %s", item, *dest);
