@@ -3,11 +3,15 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
+set CURL_BUILD_VERSION=6
 call %*
 goto :EOF
 
 :get_version
-    set version=%CURL_VERSION%
+    call "%scriptdir%_init.bat" x64 Release VS17
+    set CURL_SRC_VERSION=%CURL_VERSION%
+    set CURL_FULL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
+    set version=%CURL_FULL_VERSION%
     goto :EOF
 
 :build
@@ -27,8 +31,7 @@ if %ERRORLEVEL% NEQ 0 goto :error
 set currdir=%cd%
 
 set CURL_SRC_VERSION=%CURL_VERSION%
-set CURL_BUILD_VERSION=5
-set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
+set CURL_FULL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 
 if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
@@ -184,7 +187,7 @@ copy /v /y ^
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === archiving the library
-call "%scriptdir%utils.bat" :zip_file curl %curl_version%
+call "%scriptdir%utils.bat" :zip_file curl %curl_full_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
