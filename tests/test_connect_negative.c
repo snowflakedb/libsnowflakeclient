@@ -123,10 +123,10 @@ void test_connect_login_timeout(void** unused) {
   unsigned long end_time = (unsigned long)time(NULL);
   assert_int_not_equal(ret, SF_STATUS_SUCCESS); // must fail
   SF_ERROR_STRUCT* sferr = snowflake_error(sf);
-  if (sferr->error_code != SF_STATUS_ERROR_CURL) {
+  if (sferr->error_code != SF_STATUS_ERROR_RETRY) {
     dump_error(sferr);
   }
-  assert_int_equal(sferr->error_code, SF_STATUS_ERROR_CURL);
+  assert_int_equal(sferr->error_code, SF_STATUS_ERROR_RETRY);
   assert_in_range(end_time - start_time, timeout - delta, timeout + delta);
   snowflake_term(sf);
 }
@@ -157,7 +157,9 @@ void test_chunk_downloading_timeout(void** unused) {
   /* query */
   sfstmt = snowflake_stmt(sf);
 
-  snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
+  // can't set retry timeout lower than 300 through snowflake_set_attribute
+  sf->retry_timeout = timeout;
+
   // sometime this could get timeout
   for (int i = 0; i < 3; i++)
   {
