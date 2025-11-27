@@ -97,6 +97,8 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
+    char masked[5000] = {'\0'};
+
     switch (type) {
         case CURLINFO_TEXT:
             sf_fprintf(stderr, "== Info: %s", data);
@@ -124,7 +126,8 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
     }
 
-    dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    terminal_mask(data, size, masked, sizeof(masked));
+    dump(text, stderr, (unsigned char *) masked, strlen(masked), config->trace_ascii);
     return 0;
 }
 
