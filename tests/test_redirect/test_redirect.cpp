@@ -7,10 +7,9 @@ using namespace Snowflake::Client;
 
 Snowflake::Client::WiremockRunner* wiremock = NULL;
 
-void test_redirect_307(void** unused) {
-  SF_UNUSED(unused);
-
-  wiremock = new WiremockRunner("http_307_retry.json", {});
+void test_redirect_core(const std::string& mappingFile)
+{
+  wiremock = new WiremockRunner(mappingFile, {});
 
   snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &SF_BOOLEAN_TRUE);
   snowflake_global_set_attribute(SF_GLOBAL_DEBUG, &SF_BOOLEAN_TRUE);
@@ -52,6 +51,16 @@ void test_redirect_307(void** unused) {
   snowflake_term(sf);
   
   delete(wiremock);
+}
+
+void test_redirect_307(void** unused) {
+  SF_UNUSED(unused);
+  test_redirect_core("http_307_retry.json");
+}
+
+void test_redirect_308(void** unused) {
+  SF_UNUSED(unused);
+  test_redirect_core("http_308_retry.json");
 }
 
 int main(void) {

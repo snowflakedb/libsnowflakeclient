@@ -36,7 +36,7 @@ namespace Snowflake
             static void exec(const std::string &cmd);
             static void readJSONFromFile(const std::string &JSONFile, std::string &res);
             static pid_t startWiremockAsync(const std::string &cmd);
-            static std::string addHomePath();
+            static std::string getHomePath();
 
         public:
             WiremockRunner();

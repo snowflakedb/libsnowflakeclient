@@ -195,7 +195,7 @@ namespace Snowflake
 
         void WiremockRunner::setup()
         {
-            std::string path = addHomePath() + wiremockPath;
+            std::string path = getHomePath() + wiremockPath;
             if (access(path.c_str(), F_OK) == 0)
             {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::wiremock standalone jar found");
@@ -210,8 +210,8 @@ namespace Snowflake
             {
                 CXX_LOG_INFO("sf::WiremockRunner::setup::starting wiremock standalone");
 
-                const std::string command = "java -jar " + addHomePath() + wiremockPath
-                    + " --root-dir " + addHomePath() + wiremockHomeDir
+                const std::string command = "java -jar " + getHomePath() + wiremockPath
+                    + " --root-dir " + getHomePath() + wiremockHomeDir
                     + " --enable-browser-proxying"
                     + " --proxy-pass-through false"
                     + " --port " + wiremockAdminPort
@@ -243,7 +243,7 @@ namespace Snowflake
             }
         }
 
-        std::string WiremockRunner::addHomePath()
+        std::string WiremockRunner::getHomePath()
         {
             return std::string(std::getenv("HOME"));
         }
