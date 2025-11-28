@@ -7,6 +7,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <sstream>
 
 namespace
 {
@@ -16,6 +18,7 @@ namespace
   const std::string ENV_SNOWFLAKE_HOME = "SNOWFLAKE_HOME";
   const std::string ENV_SNOWFLAKE_DEF_CONN_NAME = "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
   const std::string ENV_SKIP_WARNING_FOR_READ_PERM = "SF_SKIP_WARNING_FOR_READ_PERMISSIONS_ON_CONFIG_FILE";
+  const std::string ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION = "SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION";
   const std::string SNOWFLAKE_HOME_DIR = ".snowflake";
   const std::string TOML_FILENAME = "connections.toml";
 
@@ -51,6 +54,67 @@ namespace
       }
     }
     return true;
+  }
+
+  sf_bool checkTokenFilePermissions(const boost::filesystem::path &filePath)
+  {
+    std::string skipPermVerification = getEnvironmentVariableValue(ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION);
+    if (boost::iequals(skipPermVerification, "true"))
+    {
+      CXX_LOG_INFO("Skipping token file permissions verification due to environment variable: %s",
+        ENV_SKIP_TOKEN_FILE_PERM_VERIFICATION.c_str());
+      return true;
+    }
+
+    boost::filesystem::file_status fileStatus = boost::filesystem::status(filePath);
+    boost::filesystem::perms permissions = fileStatus.permissions();
+    
+    if (permissions & boost::filesystem::group_read ||
+        permissions & boost::filesystem::group_write ||
+        permissions & boost::filesystem::group_exe ||
+        permissions & boost::filesystem::others_read ||
+        permissions & boost::filesystem::others_write ||
+        permissions & boost::filesystem::others_exe)
+    {
+      CXX_LOG_ERROR("Error: token file has invalid permissions (should be owner-only read/write, e.g., 600): %s",
+        filePath.c_str());
+      return false;
+    }
+    return true;
+  }
+
+  std::string readTokenFromFile(const std::string& tokenFilePath)
+  {
+    boost::filesystem::path filePath(tokenFilePath);
+    
+    if (!boost::filesystem::exists(filePath))
+    {
+      CXX_LOG_ERROR("Token file does not exist: %s", tokenFilePath.c_str());
+      return "";
+    }
+
+#if !defined(_WIN32) && !defined(_WIN64)
+    if (!checkTokenFilePermissions(filePath))
+    {
+      CXX_LOG_ERROR("Token file has invalid permissions: %s", tokenFilePath.c_str());
+      return "";
+    }
+#endif
+
+    std::ifstream tokenFile(tokenFilePath);
+    std::stringstream buffer;
+    buffer << tokenFile.rdbuf();
+    std::string token = buffer.str();
+    tokenFile.close();
+
+    boost::algorithm::trim(token);
+    
+    if (!token.empty())
+    {
+      CXX_LOG_INFO("Successfully read token from file: %s", tokenFilePath.c_str());
+    }
+    
+    return token;
   }
 
   boost::filesystem::path resolveTomlPath() {
@@ -134,6 +198,37 @@ namespace
         CXX_LOG_TRACE("Ignoring key in toml file due to unsupported data type: %s", key.data());
       }
     }
+
+    auto tokenIt = connectionParams.find("token");
+    auto tokenFilePathIt = connectionParams.find("token_file_path");
+    
+    if (tokenFilePathIt != connectionParams.end())
+    {
+      if (tokenIt != connectionParams.end())
+      {
+        CXX_LOG_INFO("Token is specified inline, ignoring token_file_path");
+      }
+      else
+      {
+        std::string tokenFilePath = boost::get<std::string>(tokenFilePathIt->second);
+        CXX_LOG_INFO("Found token_file_path in TOML config: %s", tokenFilePath.c_str());
+        
+        std::string token = readTokenFromFile(tokenFilePath);
+        
+        if (!token.empty())
+        {
+          connectionParams["token"] = token;
+          CXX_LOG_INFO("Token successfully loaded from file and set in configuration");
+        }
+        else
+        {
+          CXX_LOG_ERROR("Failed to read token from file: %s", tokenFilePath.c_str());
+        }
+      }
+      
+      connectionParams.erase(tokenFilePathIt);
+    }
+
     return connectionParams;
   }
 }

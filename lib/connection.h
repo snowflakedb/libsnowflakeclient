@@ -451,6 +451,7 @@ size_t char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_
  *                      Used only when json is set to NULL.
  * @param resp_headers A reference to retrieve response headers. Needs to be freed with SF_FREE.
  *                     Set to NULL if it's not needed.
+ * @param retry_timeout The retry timeout to use for all retry attempts of one request.
  * @param network_timeout The network request timeout to use for each request try.
  * @param chunk_downloader A boolean value determining whether or not we are running this request from the chunk
  *                         downloader. Each chunk that we download from AWS is invalid JSON so we need to add an
@@ -482,15 +483,17 @@ size_t char_resp_cb(char *data, size_t size, size_t nmemb, RAW_CHAR_BUFFER *raw_
  */
 sf_bool STDCALL http_perform(CURL *curl, SF_REQUEST_TYPE request_type, char *url, SF_HEADER *header,
                              char *body, PUT_PAYLOAD* put_payload, cJSON **json, NON_JSON_RESP* non_json_resp,
-                             char** resp_headers, int64 network_timeout, sf_bool chunk_downloader,
+                             char** resp_headers, int64 retry_timeout, int64 network_timeout, sf_bool chunk_downloader,
                              SF_ERROR_STRUCT* error, sf_bool insecure_mode, sf_bool fail_open,
-                             int8 retry_on_curle_couldnt_connect_count,
-                             int64 renew_timeout, int8 retry_max_count,
-                             int64 *elapsed_time, int8 *retried_count,
-                             sf_bool *is_renew, sf_bool renew_injection,
-                             const char *proxy, const char *no_proxy,
-                             sf_bool include_retry_reason,
-                             sf_bool is_login_request);
+                             sf_bool crl_check, sf_bool crl_advisory, sf_bool crl_allow_no_crl,
+                             sf_bool crl_disk_caching, sf_bool crl_memory_caching,
+                             long crl_download_timeout,
+                             int8 retry_on_curle_couldnt_connect_count, int64 renew_timeout,
+                             int8 retry_max_count, int64 *elapsed_time,
+                             int8 *retried_count, sf_bool *is_renew,
+                             sf_bool renew_injection, const char *proxy,
+                             const char *no_proxy,
+                             sf_bool include_retry_reason, sf_bool is_login_request);
 
 /**
  * Returns true if HTTP code is retryable, false otherwise.
@@ -515,7 +518,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  *
  * @param sf The Snowflake Connection object to use for connection details.
  * @param json A reference to a cJSON pointer. Holds the response of the request.
- * @param url The URL path for the request. A full URL will be constructed using this path.
+ * @param url_path The URL path for the request. A full URL will be constructed using this path.
  * @param url_params URL parameters to add to the encoded URL.
  * @param num_url_params Number of URL parameters.
  * @param body JSON body text to send as part of the request. If running a GET request, set to NULL.
@@ -540,7 +543,7 @@ sf_bool STDCALL renew_session(CURL * curl, SF_CONNECT *sf, SF_ERROR_STRUCT *erro
  * @param renew_injection For test purpose only. Forcely trigger renew timeout.
  * @return Success/failure status of request. 1 = Success; 0 = Failure
  */
-sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url, URL_KEY_VALUE* url_params, int num_url_params,
+sf_bool STDCALL request(SF_CONNECT *sf, cJSON **json, const char *url_path, URL_KEY_VALUE* url_params, int num_url_params,
                         char *body, SF_HEADER *header, SF_REQUEST_TYPE request_type, SF_ERROR_STRUCT *error,
                         sf_bool use_application_json_accept_type,
                         int64 renew_timeout, int8 retry_max_count, int64 retry_timeout,
