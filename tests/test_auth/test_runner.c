@@ -11,6 +11,16 @@ extern void test_external_browser_successful_connection(void **state);
 extern void test_external_browser_mismatched_username(void **state);
 extern void test_external_browser_wrong_credentials(void **state);
 extern void test_mfa_totp_authentication(void **state);
+extern void test_aws_wif_authentication(void **state);
+extern void test_gcp_wif_authentication(void **state);
+extern void test_azure_wif_authentication(void **state);
+extern void test_wif_no_cloud_credentials(void **state);
+extern void test_wif_invalid_authenticator(void **state);
+extern void test_wif_valid_authenticator(void **state);
+extern void test_wif_multiple_connections(void **state);
+extern void test_wif_explicit_provider_integration(void **state);
+extern void test_wif_invalid_provider_fallback(void **state);
+extern void test_wif_get_attributes(void **state);
 
 
 int main(void) {
@@ -27,7 +37,17 @@ int main(void) {
             cmocka_unit_test(test_external_browser_successful_connection),
             cmocka_unit_test(test_external_browser_mismatched_username),
             cmocka_unit_test(test_external_browser_wrong_credentials),
-            cmocka_unit_test(test_mfa_totp_authentication)
+            cmocka_unit_test(test_mfa_totp_authentication),
+            cmocka_unit_test(test_aws_wif_authentication),
+            cmocka_unit_test(test_gcp_wif_authentication),
+            cmocka_unit_test(test_azure_wif_authentication),
+            cmocka_unit_test(test_wif_no_cloud_credentials),
+            cmocka_unit_test(test_wif_invalid_authenticator),
+            cmocka_unit_test(test_wif_valid_authenticator),
+            cmocka_unit_test(test_wif_multiple_connections),
+            cmocka_unit_test(test_wif_explicit_provider_integration),
+            cmocka_unit_test(test_wif_invalid_provider_fallback),
+            cmocka_unit_test(test_wif_get_attributes)
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
