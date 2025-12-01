@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/openssl/openssl.git
 
 @echo off
-set OPENSSL_SRC_VERSION=3.0.15
+set OPENSSL_SRC_VERSION=3.0.18
 set OPENSSL_BUILD_VERSION=1
 set OPENSSL_VERSION=%OPENSSL_SRC_VERSION%.%OPENSSL_BUILD_VERSION%
 call %*
@@ -57,6 +57,11 @@ set crypto_target_name=libcrypto_a.lib
 set ssl_target_name=libssl_a.lib
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+
+set OPENSSL_SOURCE_DIR=%scriptdir%..\deps\%OPENSSL_DIR%
+
+rd /S /Q %OPENSSL_SOURCE_DIR%
+git clone --single-branch --branch openssl-%OPENSSL_SRC_VERSION% --recursive https://github.com/openssl/openssl.git %OPENSSL_SOURCE_DIR%
 
 echo === building openssl: %currdir%\..\deps\%OPENSSL_DIR%
 cd "%scriptdir%..\deps\%OPENSSL_DIR%"
