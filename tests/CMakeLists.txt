@@ -396,6 +396,10 @@ else()
         ENDFOREACH ()
     endif ()
 
+    if (LINUX)
+        add_subdirectory(wiremock)
+        add_subdirectory(test_redirect)
+    endif()
 
 endif()
 

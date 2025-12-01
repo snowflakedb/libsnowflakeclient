@@ -20,7 +20,7 @@ namespace Client
 
   boost::regex SecretDetector::ENCRYPTION_CREDS_IN_JSON_PATTERN = boost::regex("\"(encryptionMaterial|creds)\"\\s*:\\s*\\{.*?\\}", boost::regex::icase);
 
-  boost::regex SecretDetector::TOKEN_IN_JSON_PATTERN = boost::regex("\"(mastertoken|token)\":(\\t|\\s+)\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
+  boost::regex SecretDetector::TOKEN_IN_JSON_PATTERN = boost::regex("\"?(mastertoken|token|Snowflake Token|oldSessionToken|sessionToken)\"?(\\s*)?(:|=)(\\.*)?(\\t|\\s+)?\"[a-zA-Z0-9=/_+-:]+\"", boost::regex::icase);
 
   std::string SecretDetector::maskAwsKeys(std::string text)
   {

@@ -287,7 +287,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
-                          retry_timeout, SF_BOOLEAN_FALSE, error,
+                          retry_timeout, sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
@@ -432,7 +432,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
-                          get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
+                          get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
@@ -687,7 +687,8 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         }
         sf_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
-        if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0) {
+        if (strstr(item, "token") || strstr(item, "Token") || strstr(item, "TOKEN") ||
+            strstr(item, "key") || strstr(item, "Key") || strstr(item, "KEY")) {
             log_debug("Item and Value; %s: ******", item);
         } else {
             log_debug("Item and Value; %s: %s", item, *dest);
@@ -1294,7 +1295,7 @@ int64 get_login_timeout(SF_CONNECT *sf)
 
 int64 get_retry_timeout(SF_CONNECT *sf)
 {
-  return get_less_one(sf->network_timeout, sf->retry_timeout);
+  return sf->retry_timeout;
 }
 
 int8 get_login_retry_count(SF_CONNECT *sf)
