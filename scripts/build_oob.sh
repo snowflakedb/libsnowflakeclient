@@ -25,6 +25,12 @@ export OOB_SOURCE_DIR=$DEPS_DIR/oob-$OOB_SRC_VERSION/
 
 # staging cJSON for curl
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
+CURL_SRC_VERSION_GIT=${CURL_VERSION//./_}
+rm -rf $LIBCURL_SOURCE_DIR
+git clone --single-branch --branch curl-$CURL_SRC_VERSION_GIT --recursive https://github.com/curl/curl.git $LIBCURL_SOURCE_DIR
+pushd $LIBCURL_SOURCE_DIR
+  git apply ../../patches/curl-$CURL_VERSION.patch
+popd
 CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
 CJSON_PATCH=$DEPS_DIR/../patches/curl-cJSON-${CJSON_VERSION}.patch
 rm -rf $CJSON_SOURCE_DIR

@@ -12,19 +12,26 @@ function usage() {
 }
 set -x -o pipefail
 
-CURL_SRC_VERSION=8.12.1
-CURL_BUILD_VERSION=5
-CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
+CURL_SRC_VERSION=$CURL_VERSION
+CURL_BUILD_VERSION=6
+CURL_FULL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
+
+[[ -n "$GET_VERSION" ]] && echo $CURL_FULL_VERSION && exit 0
 
 LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
+CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
+
+rm -rf $LIBCURL_SOURCE_DIR
+git clone --single-branch --branch curl-$CURL_SRC_VERSION_GIT --recursive https://github.com/curl/curl.git $LIBCURL_SOURCE_DIR
+pushd $LIBCURL_SOURCE_DIR
+  git apply ../../patches/curl-$CURL_SRC_VERSION.patch
+popd
 
 # staging cJSON for curl
 CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
@@ -135,5 +142,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         exit 1
     fi
 fi
-echo === zip_file "curl" "$CURL_VERSION" "$target"
-zip_file "curl" "$CURL_VERSION" "$target"
+echo === zip_file "curl" "$CURL_FULL_VERSION" "$target"
+zip_file "curl" "$CURL_FULL_VERSION" "$target"

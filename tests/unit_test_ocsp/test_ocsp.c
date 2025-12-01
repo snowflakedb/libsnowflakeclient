@@ -173,7 +173,7 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_URL, url));
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_CAINFO, cacert));
     dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_CAPATH, NULL));
-    dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_CHECK, 1));
+    dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_CHECK, 1L));
 
     if (proxy)
     {
@@ -186,20 +186,20 @@ checkCertificateRevocationStatus(char *host, char *port, char *cacert, char *pro
 
     if (oob_enable != 0)
     {
-        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OOB_ENABLE, 1));
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OOB_ENABLE, 1L));
     }
     else
     {
-        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OOB_ENABLE, 0));
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OOB_ENABLE, 0L));
     }
 
     if (failopen != 0)
     {
-        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 1));
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 1L));
     }
     else
     {
-        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 0));
+        dieIfNotSuccess(curl_easy_setopt(ch, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, 0L));
     }
 
     CURLcode ret = curl_easy_perform(ch);
