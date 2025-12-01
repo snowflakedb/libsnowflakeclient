@@ -1047,7 +1047,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->token = NULL;
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
-        sf->network_timeout = 0;
+        sf->network_timeout = SF_NETWORK_TIMEOUT;
         sf->browser_response_timeout = SF_BROWSER_RESPONSE_TIMEOUT;
         sf->retry_timeout = SF_RETRY_TIMEOUT;
         sf->sequence_counter = 0;
@@ -1541,7 +1541,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
         case SF_CON_NETWORK_TIMEOUT:
-            sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
+            sf->network_timeout = value ? *((int64 *) value) : SF_NETWORK_TIMEOUT;
             break;
         case SF_CON_BROWSER_RESPONSE_TIMEOUT:
             sf->browser_response_timeout = value ? *((int64*)value) : SF_BROWSER_RESPONSE_TIMEOUT;
