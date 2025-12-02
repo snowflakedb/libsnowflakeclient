@@ -198,6 +198,11 @@ extern "C" {
       if (AUTH_WIF == authenticator)
       {
           Snowflake::Client::AttestationConfig config;
+          // Pass workload identity impersonation path
+          if (conn->workload_identity_impersonation_path)
+          {
+              config.workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
+          }
           if (auto attestationOpt = Snowflake::Client::createAttestation(config))
           {
               const Snowflake::Client::Attestation &attestation = attestationOpt.value();
