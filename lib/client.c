@@ -1177,6 +1177,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->wif_provider);
     SF_FREE(sf->wif_token);
     SF_FREE(sf->wif_azure_resource);
+    SF_FREE(sf->programmatic_access_token);
     SF_FREE(sf);
 
     stopwatch_stop(&stopwatch);
@@ -1757,6 +1758,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             *value = sf->oauth_token;
+            break;
+        case SF_CON_PAT:
+            *value = sf->programmatic_access_token;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;
