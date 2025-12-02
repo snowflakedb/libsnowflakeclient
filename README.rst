@@ -92,7 +92,9 @@ where:
 Proxy
 ^^^^^^^^^^
 
-Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment variables. To use a proxy server configure the following environment variables:
+Libsnowflakeclient supports HTTP and HTTPS proxy connections. Proxy settings can be configured either through environment variables or connection parameters.
+
+**Method 1: Environment Variables**
 
 - http_proxy
 - https_proxy
@@ -102,10 +104,30 @@ Libsnowflakeclient supports HTTP and HTTPS proxy connections using environment v
 
     export http_proxy="[protocol://][user:password@]machine[:port]"
     export https_proxy="[protocol://][user:password@]machine[:port]"
+    export no_proxy="machine1,machine2,..."
 
 More info can be found on the `libcurl tutorial`__ page.
 
 .. __: https://curl.haxx.se/libcurl/c/libcurl-tutorial.html#Proxies
+
+**Method 2: Connection Parameters**
+
+This method takes precedence over environment variables.
+
+- SF_CON_PROXY
+- SF_CON_NO_PROXY
+
+.. code-block:: c
+
+    snowflake_set_attribute(sf, SF_CON_PROXY, "[protocol://][user:password@]machine[:port]");
+    snowflake_set_attribute(sf, SF_CON_NO_PROXY, "machine1,machine2,...");
+
+Proxy can be disabled, overriding the environment varibales, by setting the proxy parameter to an empty string or by bypassing proxy for all hosts by setting the no_proxy parameter to `*`.
+
+.. code-block:: c
+
+    snowflake_set_attribute(sf, SF_CON_PROXY, "");
+    snowflake_set_attribute(sf, SF_CON_NO_PROXY, "*");
 
 Run Tests
 ----------------------------------------------------------------------
