@@ -163,27 +163,27 @@ void Snowflake::Client::FileMetadataInitializer::initCompressionMetadata(
                   sizeof(COMPRESSION_AUTO)))
   {
     // guess
-    CXX_LOG_INFO("Auto detect on compression type");
+    CXX_LOG_DEBUG("Auto detect on compression type");
     fileMetadata.sourceCompression = FileCompressionType::guessCompressionType(
       fileMetadata.srcFileName);
   }
   else if (!sf_strncasecmp(m_sourceCompression, COMPRESSION_NONE, 
                         sizeof(COMPRESSION_NONE)))
   {
-    CXX_LOG_INFO("No compression in source file");
+    CXX_LOG_DEBUG("No compression in source file");
     fileMetadata.sourceCompression = &FileCompressionType::NONE;
   }
   else
   {
     // look up
-    CXX_LOG_INFO("Compression type lookup by name.");
+    CXX_LOG_DEBUG("Compression type lookup by name.");
     fileMetadata.sourceCompression = FileCompressionType::lookUpByName(
       m_sourceCompression);
 
     if (!fileMetadata.sourceCompression)
     {
       // no compression found
-      CXX_LOG_INFO("Compression type %s not found.", m_sourceCompression);
+      CXX_LOG_DEBUG("Compression type %s not found.", m_sourceCompression);
       throw SnowflakeTransferException(TransferError::COMPRESSION_NOT_SUPPORTED,
         m_sourceCompression);
     }
@@ -224,7 +224,7 @@ void Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata(
   }
 
   std::string randDev = (getRandomDev() == Crypto::CryptoRandomDevice::DEV_RANDOM)? "DEV_RANDOM" : "DEV_URANDOM";
-  CXX_LOG_INFO("Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata using random device %s.", randDev.c_str());
+  CXX_LOG_DEBUG("Snowflake::Client::FileMetadataInitializer::initEncryptionMetadata using random device %s.", randDev.c_str());
   EncryptionProvider::populateFileKeyAndIV(fileMetadata, &(m_encMat->at(0)), getRandomDev());
   EncryptionProvider::encryptFileKey(fileMetadata, &(m_encMat->at(0)), getRandomDev());
   EncryptionProvider::serializeEncMatDecriptor(fileMetadata, &(m_encMat->at(0)));

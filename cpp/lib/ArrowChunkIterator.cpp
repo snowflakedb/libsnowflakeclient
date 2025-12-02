@@ -57,7 +57,7 @@ ArrowChunkIterator::ArrowChunkIterator(arrow::BufferBuilder * chunk,
 
     for (int col = 0; col < m_columnCount; ++col) {
         m_arrowColumnDataTypes.push_back(m_currentSchema->field(col)->type()->id());
-        CXX_LOG_TRACE("ArrowChunkIterator: col:%d arrow::Type: %s",
+        CXX_LOG_DEBUG("ArrowChunkIterator: col:%d arrow::Type: %s",
             col, m_currentSchema->field(col)->type()->name().c_str());
     }
 }
@@ -77,14 +77,14 @@ bool ArrowChunkIterator::next()
     }
     else
     {
-        CXX_LOG_TRACE("ArrowChunkIterator: recordBatch %d with %ld rows.",
+        CXX_LOG_DEBUG("ArrowChunkIterator: recordBatch %d with %ld rows.",
             m_currBatchIndex, m_rowCountInBatch);
         m_currBatchIndex++;
         if (m_currBatchIndex < m_batchCount)
         {
             m_currRowIndexInBatch = 0;
             m_rowCountInBatch = (m_cRecordBatches)[m_currBatchIndex]->num_rows();
-            CXX_LOG_TRACE("ArrowChunkIterator: Initiating record batch %d with %ld rows.",
+            CXX_LOG_DEBUG("ArrowChunkIterator: Initiating record batch %d with %ld rows.",
                 m_currBatchIndex, m_rowCountInBatch);
             this->initColumnChunks();
             return true;

@@ -35,7 +35,7 @@ namespace Client {
       std::this_thread::sleep_for(lock_retry_sleep);
     }
     if (locked) {
-      CXX_LOG_TRACE("Created file lock(path=%s)", path.c_str())
+      CXX_LOG_DEBUG("Created file lock(path=%s)", path.c_str())
     }
   }
 
@@ -47,7 +47,7 @@ namespace Client {
         CXX_LOG_ERROR("Failed to release file lock(path=%s)", path.c_str());
       }
       else {
-        CXX_LOG_TRACE("Released file lock(path=%s)", path.c_str());
+        CXX_LOG_DEBUG("Released file lock(path=%s)", path.c_str());
       }
     }
   }
