@@ -1271,7 +1271,9 @@ std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEn
         }
         digits.push_back(char('0' + static_cast<int>(carry)));
         // remove leading zero limbs
-        while (!be.empty() && be.front() == 0) be.erase(be.begin());
+        while (!be.empty() && be.front() == 0) {
+            be.erase(be.begin());
+        }
     }
 
     // digits now decimal mantissa (no leading zeros)

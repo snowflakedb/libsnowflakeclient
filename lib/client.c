@@ -4112,10 +4112,6 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
         break;
       case SF_DB_TYPE_DECFLOAT:;
           sf_bool convert_to_scientific = SF_BOOLEAN_TRUE;
-          if (const_str_val == NULL || *const_str_val == NULL) {
-              convert_to_scientific = SF_BOOLEAN_FALSE;
-          }
-
           size_t len = strlen(const_str_val);
           if (len == 0) {
               convert_to_scientific = SF_BOOLEAN_FALSE;
