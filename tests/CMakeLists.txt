@@ -397,12 +397,6 @@ else()
                     ./${T})
         ENDFOREACH ()
     endif ()
-
-    if (LINUX)
-        add_subdirectory(wiremock)
-        add_subdirectory(test_redirect)
-    endif()
-
 endif()
 
 if (UNIX)
@@ -411,6 +405,8 @@ if (UNIX)
 endif()
     
 if (LINUX AND NOT MOCK)
+    add_subdirectory(wiremock)
+    add_subdirectory(test_redirect)
     add_subdirectory(test_oauth)
 endif()
 add_subdirectory(test_bind_datastructures)

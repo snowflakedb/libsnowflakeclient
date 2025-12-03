@@ -628,14 +628,9 @@ namespace Snowflake {
             m_port = std::move(port);
             m_real_port = std::move(port);
             if (sf_strncasecmp("localhost",m_host.c_str(), 9) == 0) {
-                CXX_LOG_DEBUG("LOCALHOST")
-
+                CXX_LOG_DEBUG("sf::OAuthTokenListenerWebServer::start:: The host name is localhost. Cast this host to 127.0.0.1");
                 m_host = AuthenticatorOAuth::S_LOCALHOST;
             }
-            else {
-                CXX_LOG_DEBUG("NOT LOCALHOST")
-            }
-
             if (port == 0) {
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s%s, port will be randomly chosen",
                     m_host.c_str(), path.c_str());

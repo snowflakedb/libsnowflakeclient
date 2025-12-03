@@ -7,8 +7,8 @@ set(OAUTH_COMMON_SOURCES
     UnitOAuthBase.hpp
     AuthenticationChallengeTestProvider.hpp
     AuthenticationWebBrowserTestRunner.hpp
-    wiremock.cpp
-    wiremock.hpp
+    ../wiremock/wiremock.cpp
+    ../wiremock/wiremock.hpp
     ../utils/test_setup.h
     ../utils/TestSetup.hpp
     ../utils/test_setup.c
