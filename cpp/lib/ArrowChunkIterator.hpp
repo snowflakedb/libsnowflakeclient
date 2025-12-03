@@ -359,7 +359,7 @@ public:
 
     static void twosComplementLittleEndian(uint8_t* littleEndian, int bytelen);
 
-    static std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
+    static std::string formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
 
 
 protected:
