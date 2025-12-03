@@ -1342,6 +1342,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
             break;
         default:
+            break;
         }
     }
 
@@ -1630,7 +1631,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->oauth_scope, value);
             break;
         case SF_CON_SINGLE_USE_REFRESH_TOKEN:
-            alloc_buffer_and_copy(&sf->single_use_refresh_token, value);
+            value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
