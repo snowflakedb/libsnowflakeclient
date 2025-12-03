@@ -122,7 +122,7 @@ This method takes precedence over environment variables.
     snowflake_set_attribute(sf, SF_CON_PROXY, "[protocol://][user:password@]machine[:port]");
     snowflake_set_attribute(sf, SF_CON_NO_PROXY, "machine1,machine2,...");
 
-Proxy can be disabled, overriding the environment varibales, by setting the proxy parameter to an empty string or by bypassing proxy for all hosts by setting the no_proxy parameter to `*`.
+Proxy can be disabled by setting the proxy parameter to an empty string, or bypass the proxy for all hosts by setting the no_proxy parameter to `*`. As connection parameters take precedence to environment variables, the following settings will disable proxy usage even if the environment variables are set.
 
 .. code-block:: c
 
