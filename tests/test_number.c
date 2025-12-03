@@ -16,7 +16,7 @@ typedef struct test_case_to_string {
 
 typedef struct decfloat_testing_case {
     const int64 id;
-    const char c1in[1000];
+    char c1in[1000];
     const int64 c2in;
 
     const char* c1strout;
