@@ -22,7 +22,22 @@ echo "SUCCESS: WireMock JAR (${WIREMOCK_VERSION}) downloaded successfully."
 echo "   - location: $WIREMOCK_JAR"
 echo "   - size: ${FILE_SIZE} bytes"
 
-JAVA_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.12_7.tar.gz"
+# Detect VM architecture and choose the correct JDK artifact
+ARCH="$(uname -m)"
+case "$ARCH" in
+  aarch64|arm64)
+    ARCH_ID="aarch64"
+    ;;
+  x86_64|amd64)
+    ARCH_ID="x64"
+    ;;
+  *)
+    ARCH_ID="x64"
+    echo "WARNING: Unrecognized arch '$ARCH', defaulting to x64"
+    ;;
+esac
+
+JAVA_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_${ARCH_ID}_linux_hotspot_17.0.12_7.tar.gz"
 INSTALL_DIR="${HOME}/.java17"
 DOWNLOAD_DIR="${HOME}/java17.tar.gz"
 
