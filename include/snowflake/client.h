@@ -126,7 +126,8 @@ typedef enum SF_DB_TYPE {
     SF_DB_TYPE_BINARY,
     SF_DB_TYPE_TIME,
     SF_DB_TYPE_BOOLEAN,
-    SF_DB_TYPE_ANY
+    SF_DB_TYPE_DECFLOAT,
+    SF_DB_TYPE_ANY,
 } SF_DB_TYPE;
 
 /**

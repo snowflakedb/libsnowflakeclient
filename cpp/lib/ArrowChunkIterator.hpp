@@ -59,6 +59,7 @@ namespace Client
 struct ArrowColumn
 {
     // The array data of the columns. Each instance of ArrowColumn should only have one populated.
+    arrow::StructArray     * arrowStructArray;
     arrow::BinaryArray     * arrowBinary;
     arrow::BooleanArray    * arrowBoolean;
     arrow::Date32Array     * arrowDate32;
@@ -324,6 +325,7 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
+
     SF_STATUS STDCALL getCellAsString(
         size_t colIdx,
         std::string& outString);
@@ -354,6 +356,11 @@ public:
     {
         return m_columnCount;
     }
+
+    static void twosComplementLittleEndian(uint8_t* littleEndian, int bytelen);
+
+    static std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
+
 
 protected:
     /** schema of current record batch */

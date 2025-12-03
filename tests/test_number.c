@@ -14,6 +14,15 @@ typedef struct test_case_to_string {
     const char *c4out;
 } TEST_CASE_TO_STRING;
 
+typedef struct decfloat_testing_case {
+    const int64 id;
+    const char c1in[1000];
+    const int64 c2in;
+
+    const char* c1strout;
+    const char* c2strout;
+} DECFLOAT_TESTING_CASE;
+
 void test_number_helper(sf_bool use_arrow) {
 
     TEST_CASE_TO_STRING test_cases[] = {
@@ -170,13 +179,161 @@ void test_number_helper(sf_bool use_arrow) {
     snowflake_term(sf);
 }
 
+void test_decfloat_helper(sf_bool use_arrow) {
+
+    DECFLOAT_TESTING_CASE test_cases[] = {
+      {.id = 1, .c1in = "0", .c2in = 0, .c1strout = "0",.c2strout = "0"},
+      {.id = 2, .c1in = "-3456.789", .c2in = 123456789, .c1strout = "-3.456789e3", .c2strout = "1.23456789e8"},
+      {.id = 3,.c1in = "12345678901234567890123456789012345678", .c2in = -987654321, .c1strout = "1.2345678901234567890123456789012345678e37", .c2strout = "-9.87654321e8"},
+      {.id = 4,.c1in = "999999999999999999999999999999999999999999 ", .c2in = -922337203685477580, .c1strout = "1e42", .c2strout = "-9.2233720368547758e17"},
+      {.id = 5, .c1in = "1.234567e10", .c2in = 9, .c1strout = "1.234567e10", .c2strout = "9"},
+      {.id = 6, .c1in = "0.00123456789", .c2in = 10, .c1strout = "1.23456789e-3", .c2strout = "1e1"},
+      {.id = 7, .c1in = "9.2345678901", .c2in = -5, .c1strout = "9.2345678901", .c2strout = "-5"},
+    };
+
+    SF_STATUS status;
+    SF_CONNECT* sf = setup_snowflake_connection();
+
+    status = snowflake_connect(sf);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sf->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* Create a statement once and reused */
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+    status = snowflake_query(sfstmt,
+        use_arrow == SF_BOOLEAN_TRUE
+        ? "alter session set C_API_QUERY_RESULT_FORMAT=ARROW_FORCE"
+        : "alter session set C_API_QUERY_RESULT_FORMAT=JSON",
+        0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_query(
+        sfstmt,
+        "create or replace table t (id int, c1 decfloat, c2 decfloat)",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* insert data */
+    status = snowflake_prepare(
+        sfstmt,
+        "insert into t(id, c1,c2) values(?,?,?)",
+        0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    size_t i;
+    size_t len;
+    for (i = 0, len = sizeof(test_cases) / sizeof(DECFLOAT_TESTING_CASE);
+        i < len; i++) {
+        DECFLOAT_TESTING_CASE v = test_cases[i];
+
+        SF_BIND_INPUT ic1 = { 0 };
+        ic1.idx = 1;
+        ic1.name = NULL;
+        ic1.c_type = SF_C_TYPE_INT64;
+        ic1.value = (void*)&v.id;
+        ic1.len = sizeof(v.id);
+        status = snowflake_bind_param(sfstmt, &ic1);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        SF_BIND_INPUT ic2 = { 0 };
+        ic2.idx = 2;
+        ic2.name = NULL;
+        ic2.c_type = SF_C_TYPE_STRING;
+        ic2.value = v.c1in;
+        ic2.len = sizeof(v.c1in);
+        status = snowflake_bind_param(sfstmt, &ic2);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        SF_BIND_INPUT ic3 = { 0 };
+        ic3.idx = 3;
+        ic3.name = NULL;
+        ic3.c_type = SF_C_TYPE_INT64;
+        ic3.value = (void*)&v.c2in;
+        ic3.len = sizeof(v.c2in);
+        status = snowflake_bind_param(sfstmt, &ic3);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+
+        status = snowflake_execute(sfstmt);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sfstmt->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+    }
+    /* query */
+    status = snowflake_query(sfstmt, "select * from t order by id", 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt),
+        sizeof(test_cases) / sizeof(DECFLOAT_TESTING_CASE));
+
+    int64 c1 = 0;
+    char* str = NULL;
+    size_t str_len = 0;
+    size_t max_str_len = 0;
+    int64 int_val = 0;
+    while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
+        snowflake_column_as_int64(sfstmt, 1, &c1);
+        DECFLOAT_TESTING_CASE v = test_cases[c1 - 1];
+        snowflake_column_as_str(sfstmt, 2, &str, &str_len, &max_str_len);
+        assert_string_equal(v.c1strout, str);
+
+        snowflake_column_as_str(sfstmt, 3, &str, &str_len, &max_str_len);
+        assert_string_equal(v.c2strout, str);
+    }
+
+    if (status != SF_STATUS_EOF) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_EOF);
+
+    free(str);
+    str = NULL;
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+}
+
 
 void test_number_arrow(void **unused) {
+    SF_UNUSED(unused);
     test_number_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_number_json(void **unused) {
+    SF_UNUSED(unused);
     test_number_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_decfloat_arrow(void **unused) {
+    SF_UNUSED(unused);
+    test_decfloat_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_decfloat_json(void **unused) {
+    SF_UNUSED(unused);
+    test_decfloat_helper(SF_BOOLEAN_FALSE);
 }
 
 int main(void) {
@@ -184,6 +341,8 @@ int main(void) {
     const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_number_arrow),
       cmocka_unit_test(test_number_json),
+      cmocka_unit_test(test_decfloat_arrow),
+      cmocka_unit_test(test_decfloat_json),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

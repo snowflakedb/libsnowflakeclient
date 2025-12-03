@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <sstream>
+#include <iomanip>
+#include <vector>
 
 #include "../logger/SFLogger.hpp"
 #include "snowflake/platform.h"
@@ -154,7 +157,7 @@ bool ArrowChunkIterator::isCellNull(int32 col)
     }
     case (arrow::Type::type::STRUCT):
     {
-        return (m_columns[col].arrowTimestamp->sse->IsNull(m_currRowIndexInBatch));
+        return m_columns[col].arrowStructArray->IsNull(m_currRowIndexInBatch);
         break;
     }
     default:
@@ -821,6 +824,39 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
         return SF_STATUS_SUCCESS;
     }
 
+    if (SF_DB_TYPE_DECFLOAT == snowType)
+    {
+        if (m_columns[colIdx].arrowStructArray->num_fields() == 2)
+        {
+            int16_t exponent = std::static_pointer_cast<arrow::Int16Array>(
+                m_columns[colIdx].arrowStructArray->field(0))->Value(m_currRowIndexInBatch);
+            int len = 0;
+            const uint8_t* value = std::static_pointer_cast<arrow::BinaryArray>(
+                m_columns[colIdx].arrowStructArray->field(1))->GetValue(m_currRowIndexInBatch, &len);
+            if ((len < 0) || (len > 16))
+            {
+                CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Possible invalid data, row index in batch: %d, col: %d, length: %d", m_currRowIndexInBatch, (int)colIdx, len);
+                return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+            }
+
+            uint8_t littleEndian[16];
+            for (int i = 0; i < len; i++)
+            {
+                littleEndian[i] = value[len - i - 1];
+            }
+
+            bool isPositive = !(value[0] & 0x80);
+            if (!isPositive)
+            {
+                twosComplementLittleEndian(littleEndian, len);
+            }
+
+            outString = formatDecFloatScientific(littleEndian, len, exponent, isPositive);
+            return SF_STATUS_SUCCESS;
+        }
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
+
     switch (m_arrowColumnDataTypes[colIdx])
     {
     case arrow::Type::type::STRING:
@@ -1095,14 +1131,17 @@ void ArrowChunkIterator::initColumnChunks()
         switch (dt->id())
         {
             case arrow::Type::STRUCT: {
-                auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
-                std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
-                ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
-                if (values->num_fields() > 1)
-                    ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
-                if (values->num_fields() > 2)
-                    ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
-                arrowcol.arrowTimestamp = ts;
+                arrowcol.arrowStructArray = std::static_pointer_cast<arrow::StructArray>(columnArray).get();
+                if (m_metadata[i].type != SF_DB_TYPE_DECFLOAT) {
+                    auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
+                    std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
+                    ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
+                    if (values->num_fields() > 1)
+                        ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
+                    if (values->num_fields() > 2)
+                        ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
+                    arrowcol.arrowTimestamp = ts;
+                }
                 m_columns.emplace_back(arrowcol);
                 break;
             }
@@ -1169,6 +1208,106 @@ void ArrowChunkIterator::initColumnChunks()
             }
         }
     }
+}
+
+void ArrowChunkIterator::twosComplementLittleEndian(uint8_t* littleEndian, int bytelen)
+{
+    bool found = false;
+    for (int i = 0; i < bytelen; i++) {
+        if (!found) {
+            if (littleEndian[i] == 0) continue;
+            littleEndian[i] = ~(littleEndian[i]) + 1;
+            found = true;
+            continue;
+        }
+        littleEndian[i] = ~(littleEndian[i]);
+    }
+}
+
+std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive)
+{
+    // handle zero
+    bool allZero = true;
+    for (int i = 0; i < len; ++i) 
+        if (littleEndian[i] != 0) { 
+            allZero = false; break; 
+        }
+    if (allZero) {
+        return std::string("0");
+    }
+
+    // build little-endian 32-bit limbs
+    int nl = (len + 3) / 4;
+    std::vector<uint32_t> limbs(nl, 0);
+    for (int i = 0; i < len; ++i)
+    {
+        int limbIdx = i / 4;
+        int byteShift = (i % 4) * 8;
+        limbs[limbIdx] |= (uint32_t)littleEndian[i] << byteShift;
+    }
+
+    // convert to big-endian limb vector for division
+    std::vector<uint32_t> be;
+    be.reserve(nl);
+    for (int i = nl - 1; i >= 0; --i) {
+        be.push_back(limbs[i]);
+    }
+    // remove leading zero limbs
+    while (!be.empty() && be.front() == 0) {
+        be.erase(be.begin());
+    }
+
+    // extract decimal digits by repeated divmod 10
+    std::string digits;
+    while (!be.empty())
+    {
+        uint64_t carry = 0;
+        for (size_t i = 0; i < be.size(); ++i)
+        {
+            uint64_t cur = (carry << 32) | be[i];
+            uint32_t q = static_cast<uint32_t>(cur / 10);
+            carry = cur % 10;
+            be[i] = q;
+        }
+        digits.push_back(char('0' + static_cast<int>(carry)));
+        // remove leading zero limbs
+        while (!be.empty() && be.front() == 0) be.erase(be.begin());
+    }
+
+    // digits now decimal mantissa (no leading zeros)
+    std::reverse(digits.begin(), digits.end()); 
+
+    // normalized exponent for scientific notation
+    int mantissaDigits = static_cast<int>(digits.size());
+    int sciExp = (mantissaDigits - 1) + exponent; // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
+
+    // build mantissa with requested significant digits
+    std::string mantissa;
+    mantissa.push_back(digits[0]);
+    if (digits.size() > 1)
+    {
+        mantissa.push_back('.');
+        // append next sigDigits-1 digits, pad with zeros if needed
+        for (int i = 1; i < digits.size(); ++i)
+        {
+            mantissa.push_back(digits[i]);
+        }
+    }
+
+    // assemble final
+    std::ostringstream oss;
+    if (!isPositive) {
+        oss << '-';
+    }
+    oss << mantissa;
+
+    if (sciExp != 0)
+    {
+        oss << 'e';
+        oss << sciExp;
+    }
+    return oss.str();
+
 }
 } // namespace Client
 } // namespace Snowflake

@@ -4044,7 +4044,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
       case SF_DB_TYPE_TIME:
       case SF_DB_TYPE_TIMESTAMP_NTZ:
       case SF_DB_TYPE_TIMESTAMP_LTZ:
-      case SF_DB_TYPE_TIMESTAMP_TZ: ;
+      case SF_DB_TYPE_TIMESTAMP_TZ:;
         SF_TIMESTAMP ts;
         if (scale < 0)
         {
@@ -4110,6 +4110,168 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
         }
 
         break;
+      case SF_DB_TYPE_DECFLOAT:;
+          sf_bool convert_to_scientific = SF_BOOLEAN_TRUE;
+          if (const_str_val == NULL || *const_str_val == NULL) {
+              convert_to_scientific = SF_BOOLEAN_FALSE;
+          }
+
+          size_t len = strlen(const_str_val);
+          if (len == 0) {
+              convert_to_scientific = SF_BOOLEAN_FALSE;
+          }
+
+          if (strcmp(const_str_val, "0") == 0) {
+              convert_to_scientific = SF_BOOLEAN_FALSE;
+          }
+
+          for (int8 i = 0; i < len; i++) {
+              // If already in scientific notation, nothing to do
+              if (const_str_val[i] == 'e') {
+                  convert_to_scientific = SF_BOOLEAN_FALSE;
+                  break;
+              }
+          }
+
+          /* Track sign without modifying the original string. */
+          sf_bool negative = SF_BOOLEAN_FALSE;
+          size_t start_non_zero_pos = 0;
+          if (const_str_val[0] == '-') {
+              negative = SF_BOOLEAN_TRUE;
+              start_non_zero_pos = 1;
+          }
+
+          /* If only one character remains (e.g. "5" or "-5"), nothing to do. */
+          if (len - start_non_zero_pos == 1) {
+              convert_to_scientific = SF_BOOLEAN_FALSE;
+          }
+
+          /* Find decimal point (index in orig). If none, decimalPos == len. */
+          size_t decimalPos = start_non_zero_pos + strcspn(const_str_val + start_non_zero_pos, ".");
+          if (decimalPos > len) {
+              decimalPos = len;
+          }
+
+          if (decimalPos == start_non_zero_pos + 1 && const_str_val[start_non_zero_pos] != '0') {
+              /* e.g. "5.xxxxx" or "-1.xxx" - nothing to do */
+              convert_to_scientific = SF_BOOLEAN_FALSE;
+          }
+
+          if (convert_to_scientific == SF_BOOLEAN_FALSE) {
+              value_len = strlen(const_str_val);
+              if (value_len + 1 > init_value_len) {
+                  if (preallocated) {
+                      value = global_hooks.realloc(value, value_len + 1);
+                  }
+                  else {
+                      value = global_hooks.calloc(1, value_len + 1);
+                  }
+                  // If we have to allocate memory, then we need to set max_value_size
+                  // otherwise we leave max_value_size as is
+                  max_value_size = value_len + 1;
+              }
+              else {
+                  max_value_size = init_value_len;
+              }
+              sf_strncpy(value, max_value_size, const_str_val, value_len + 1);
+              break;
+          }
+
+          /* Handle 0.xxxx case where leading '0' followed by '.' should skip zeros and dots */
+          if (decimalPos == start_non_zero_pos + 1 && const_str_val[start_non_zero_pos] == '0') {
+              /* find first char not '0' or '.' starting at start_non_zero_pos */
+              size_t i = start_non_zero_pos;
+              while (i < len) {
+                  if (const_str_val[i] != '0' && const_str_val[i] != '.')
+                  {
+                      start_non_zero_pos = i;
+                      break;
+                  }
+                  ++i;
+              }
+          }
+
+          /* Find last non-zero from the back (index in orig). If all zeros, we'll stop at start_non_zero_pos. */
+          size_t nonZeroPosFromBack = (size_t)len - 1;
+          while (nonZeroPosFromBack >= (size_t)start_non_zero_pos && const_str_val[nonZeroPosFromBack] == '0') {
+              --nonZeroPosFromBack;
+          }
+
+          /* Build digitPart: concatenate digits from start_non_zero_pos..nonZeroPosFromBack excluding decimal point */
+          size_t digitCount = 0;
+          for (size_t i = start_non_zero_pos; i <= (size_t)nonZeroPosFromBack; ++i)
+          {
+              if (i == decimalPos) {
+                  continue;
+              }
+              ++digitCount;
+          }
+
+          char digitPart[40];
+
+          size_t digit_index = 0;
+          for (size_t i = start_non_zero_pos; i <= (size_t)nonZeroPosFromBack; ++i)
+          {
+              if (i == decimalPos) {
+                  continue;
+              }
+              digitPart[digit_index++] = const_str_val[i];
+          }
+          digitPart[digit_index] = '\0';
+
+          /* Calculate exponent */
+          int exponent = (int)decimalPos - (int)start_non_zero_pos;
+          if (decimalPos > start_non_zero_pos)
+          {
+              exponent--;
+          }
+
+          /* Build result string: sign + first digit + "." + remaining digits + "e" + exponent */
+          const char* remaining = (digitCount > 1) ? (digitPart + 1) : "";
+          /* Reserve space: sign + 1 digit + '.' + remaining digits + 'e' + exponent (allow up to 12 chars for exponent) + null */
+          size_t result_buf_size = (negative ? 1 : 0) + strlen(digitPart) + 14;
+
+          char result[100];
+          char* format;
+          
+          /* If there are no remaining digits after the first, omit the decimal point.
+           Format: "%ce%d" when remaining is empty, otherwise "%c.%se%d". */
+          if (remaining[0] == '\0') {
+              if (negative) {
+                  sf_snprintf(result, result_buf_size, result_buf_size - 1, "-%ce%d", digitPart[0], exponent);
+              }
+              else {
+                  sf_snprintf(result, result_buf_size, result_buf_size - 1, "%ce%d", digitPart[0], exponent);
+              }
+          }
+          else {
+              if (negative) {
+                  sf_snprintf(result, result_buf_size, result_buf_size - 1, "-%c.%se%d", digitPart[0], remaining, exponent);
+              }
+              else {
+                  sf_snprintf(result, result_buf_size, result_buf_size - 1, "%c.%se%d", digitPart[0], remaining, exponent);
+              }
+          }
+
+          value_len = strlen(result);
+          if (value_len + 1 > init_value_len) {
+              if (preallocated) {
+                  value = global_hooks.realloc(value, value_len + 1);
+              }
+              else {
+                  value = global_hooks.calloc(1, value_len + 1);
+              }
+              // If we have to allocate memory, then we need to set max_value_size
+              // otherwise we leave max_value_size as is
+              max_value_size = value_len + 1;
+          }
+          else {
+              max_value_size = init_value_len;
+          }
+          /* Format safely */
+          sf_strncpy(value, max_value_size, result, value_len + 1);
+          break;
+
       default:
         value_len = strlen(const_str_val);
         if (value_len + 1 > init_value_len) {
