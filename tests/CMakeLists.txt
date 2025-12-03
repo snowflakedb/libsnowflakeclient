@@ -49,6 +49,7 @@ SET(TESTS_C
         test_multiple_statements
         test_async
         test_cancel
+        test_stopwatch
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
@@ -396,6 +397,10 @@ else()
         ENDFOREACH ()
     endif ()
 
+    if (LINUX)
+        add_subdirectory(wiremock)
+        add_subdirectory(test_redirect)
+    endif()
 
 endif()
 

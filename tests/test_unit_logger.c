@@ -1,5 +1,6 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
+#include "log_file_util.h"
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
@@ -14,7 +15,7 @@ inline int access(const char* pathname, int mode) {
   return _access(pathname, mode);
 }
 #endif
-
+#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 /**
  * Tests converting a string representation of log level to the log level enum
  */
@@ -412,6 +413,35 @@ void test_client_config_stdout() {
   remove(configFilePath);
 }
 
+/* Test terminal masking*/
+void test_terminal_mask() {
+  
+  char masked[450] = "\0";
+  char *token = "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"";  
+  terminal_mask(token, strlen(token), masked, sizeof(masked));
+  assert_string_not_equal(token, masked);
+  
+  char *expected = "\"oldSessionToken\": ****";
+  assert_string_equal(masked, expected);
+
+  char *token1 = "Snowflake Token=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0MlmFrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/kvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"";
+  masked[0] = '\0';
+  terminal_mask(token1, strlen(token1), masked, sizeof(masked));
+  expected = "\"Snowflake Token\": ****";
+  assert_string_equal(masked, expected);
+
+  char *token2 = "this text is not meant to be masked";
+  masked[0] = '\0';
+  terminal_mask(token2, strlen(token2), masked, sizeof(masked));
+  assert_string_equal(token2, masked);
+
+  char *token3 = "";
+  masked[0] = '\0';
+  terminal_mask(token3, strlen(token3), masked, sizeof(masked));
+  expected = "";
+  assert_string_equal(masked, expected);
+}
+
 void test_log_creation() {
     char logname[] = "dummy.log";
 
@@ -437,6 +467,74 @@ void test_log_creation() {
 }
 
 #ifndef _WIN32
+
+/*
+ * Test no permission to file with log file util
+ */
+void test_log_file_util_no_permission_file() {
+  // check if current user is root. If so, exit test
+  char *name;
+  struct passwd *pwd;
+  pwd = getpwuid(getuid());
+  name = pwd->pw_name;
+
+  if (strcmp(name, "root") == 0) {
+    return;
+  }
+
+  // clean up tmp folder if necessary
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);
+
+  // creating SF_client_config_folder
+  sf_create_directory_if_not_exists(SF_TMP_FOLDER);
+
+  char logname[] = "dummy.log";
+  char configFile[] = "/sf_client_config.json";
+  size_t log_path_size = strlen(SF_TMP_FOLDER) + strlen(configFile) + 1;
+  char *configFilePath = (char *)SF_CALLOC(1, log_path_size);
+  sf_strcat(configFilePath, log_path_size, SF_TMP_FOLDER);
+  sf_strcat(configFilePath, log_path_size, configFile);
+  FILE *file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "test");
+  fclose(file);
+
+  // ensure the log file doesn't exist at the beginning
+  remove(logname);
+  assert_int_not_equal(access(logname, F_OK), 0);
+
+  log_set_lock(NULL);
+  log_set_level(SF_LOG_WARN);
+  log_set_quiet(1);
+  log_set_path(logname);
+
+  // getting $HOME dir
+  char *homedirOrig = getenv("HOME");
+
+  // setting $HOME to point at /tmp/sf_client_config_folder
+  setenv("HOME", SF_TMP_FOLDER, 1);
+
+  // setting SF_CLIENT_CONFIG dir to be inaccessible to all
+  mode_t newPermission = 0x0000;
+  chmod(SF_TMP_FOLDER, newPermission);
+
+  log_file_usage(configFilePath, "TestContext", true);
+  assert_int_equal(access(logname, F_OK), 0);
+  log_close();
+
+  // changing permission of tmp folder to ensure cleanup is possible
+  chmod(SF_TMP_FOLDER, 0750);
+
+  // clean up /tmp/SF_client_config_folder
+  remove(configFilePath);
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);
+
+  // resetting HOME
+  setenv("HOME", homedirOrig, 1);
+
+  remove(logname);
+}
+
 
 /**
  * Test that generate exception
@@ -483,6 +581,7 @@ void test_log_creation_no_permission_to_home_folder(){
   // resetting HOME 
   setenv("HOME", homedirOrig, 1);   
 }
+
 
 /**
  * Tests masking secret information in log
@@ -580,6 +679,14 @@ void test_mask_secret_log() {
             "\"masterToken\":\t\"ETM:sDgAAA-XI0IS9NABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwCAABAAEEb/xAQlmT+mwIx9G32E+ikAAACA/CPlEkq//+jWZnQkOj5VhjayruDsCVRGS/B6GzHUugXLc94EfEwuto94gS/oKSVrUg/JRPekypLAx4Afa1KW8n1RqXRF9Hzy1VVLmVEBMtei3yFJPNSHtfbeFHSr9eVB/OL8dOGbxQluGCh6XmaqTjyrh3fqUTWz7+n74+gu2ugAFFZ18iT+DStK0TTdmy4vBC6xUcHQ==\"",
             "\"masterToken\": ****"
         },
+        {//21
+             "\"Snowflake Token\"=\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZDdABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEE8nWQwJCW8+y71MmS0MTiQAAADAKKvKBOXVEWiCRMEHtrZlROAljOWTb1wDD6rIgPC8odgqH9ieZZuxfm5GmPkP2DasqFfBMDxk0sw1ZWqE2c7Sos+tUSh09EKraNoANaMSMsL71u7JKMtSIPJ907FVM0xeDw924bYTY1+D3gKvVn93nzdAZto8pOPVs9ag0Mlm+FrQQH0RLuLAMgAx4ZBkyeoeuTco0A3PNoedb/HkvIpfIQWtukVDuXJmCetZQxATxXVuu3cXisGg7I8Mu/VJqd/iABScY0nslPWxaodfF0nwZ4fquJWUaQ==\"",
+            "\"Snowflake Token\": ****"
+        },
+        {//22
+            "\"oldSessionToken\":.\"ver:3-hint:92019686956010-ETMsDgAAAZnuCZEqABRBRVMvQ0JDL1BLQ1M1UGFkZGluZwEAABAAEFvTRpZh3vTIN0aeQGHgtZUAAACgEe4rGMIhP+9VB6W02vfgNxd7TzjF7V9CFNiobWsPKfRaVm0e+Pgan+NKiWqJGeYPY0kNDKc+iZZArOgYb3bj0JaU2ovmSRTzEKF4/oQdunFrob66HU+x5piBINNQ327tcSglCOBKxAmjHwQxv+C3t7Yzsaa1I10VUA3fRwGcMlluuCC/7ucFnLUeSESYzImlmWBtftQS/giLDli9CyghpgAUblZOu/WGGryesNxqKCr2qHxYUrQ=\"",
+            "\"masterToken\": ****"
+        },
     };
 
     char * line = NULL;
@@ -618,9 +725,11 @@ int main(void) {
         cmocka_unit_test(test_client_config_log_no_level),
         cmocka_unit_test(test_client_config_log_no_path),
         cmocka_unit_test(test_client_config_stdout),
+        cmocka_unit_test(test_terminal_mask),
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
+        cmocka_unit_test(test_log_file_util_no_permission_file),
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif

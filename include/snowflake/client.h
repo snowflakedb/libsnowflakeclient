@@ -82,6 +82,11 @@ extern "C" {
  */
 #define SF_RETRY_TIMEOUT 300
 
+ /**
+ * network timeout in seconds
+ */
+#define SF_NETWORK_TIMEOUT 90
+
     /**
      * CRL download timeout in seconds
      */
