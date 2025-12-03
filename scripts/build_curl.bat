@@ -75,11 +75,16 @@ if "%vs_version%"=="VS15" (
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
-set CURL_SOURCE_DIR=%scriptdir%..\deps\%CURL_DIR%
+set DEPS_DIR=%scriptdir%..\deps
+set CURL_SOURCE_DIR=%DEPS_DIR%\%CURL_DIR%
 set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
 
 rd /S /Q %CURL_SOURCE_DIR%
-git clone --single-branch --branch curl-%CURL_SRC_VERSION_GIT% --recursive https://github.com/curl/curl.git %CURL_SOURCE_DIR%
+curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
+pushd %DEPS_DIR%
+  tar -xf curl-8.16.0.zip
+  move %DEPS_DIR%\curl-8.16.0 curl
+popd
 pushd %CURL_SOURCE_DIR%
   git apply ..\..\patches\curl-%CURL_SRC_VERSION%.patch
 popd
