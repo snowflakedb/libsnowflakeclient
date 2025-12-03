@@ -49,6 +49,7 @@ SET(TESTS_C
         test_multiple_statements
         test_async
         test_cancel
+        test_stopwatch
         test_lob
         test_stats
 # MFA, Oauth, and Okta connections are only able to run testing manually.

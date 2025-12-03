@@ -18,6 +18,7 @@
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
+#include <snowflake/Stopwatch.h>
 
 #include "connection.h"
 #include "mock_http_perform.h"
@@ -174,6 +175,9 @@ sf_bool STDCALL http_perform(CURL *curl,
     {
       djb.cap = SF_NEW_STRATEGY_BACKOFF_CAP;
     }
+    log_debug("Starting http_perform");
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
 
     retry_timeout = (retry_timeout > 0) ? retry_timeout : SF_RETRY_TIMEOUT;
     if (elapsed_time) {
@@ -675,7 +679,8 @@ sf_bool STDCALL http_perform(CURL *curl,
     {
         SF_FREE(headerBuffer.buffer);
     }
-
+    stopwatch_stop(&stopwatch);
+    log_debug("Complete http_perform. It took %ld milliseconds.", stopwatch_elapsedMillis(&stopwatch));
     return ret;
 }
 
