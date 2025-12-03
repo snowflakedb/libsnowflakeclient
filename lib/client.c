@@ -1241,7 +1241,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
+SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     if (!sf) {
@@ -1264,14 +1264,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     sf_os_version(os_version, sizeof(os_version));
 
     log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
-             SF_API_VERSION,
-             sf_os_name(),
-             os_version);
+        SF_API_VERSION,
+        sf_os_name(),
+        os_version);
 
     if (!is_string_empty(sf->directURL))
     {
         if (is_string_empty(sf->directURL_param) ||
-                is_string_empty(sf->direct_query_token))
+            is_string_empty(sf->direct_query_token))
         {
             return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
         }
@@ -1279,18 +1279,18 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     }
 
 
-    cJSON *body = NULL;
-    cJSON *data = NULL;
-    cJSON *resp = NULL;
-    char *s_body = NULL;
-    char *s_resp = NULL;
+    cJSON* body = NULL;
+    cJSON* data = NULL;
+    cJSON* resp = NULL;
+    char* s_body = NULL;
+    char* s_resp = NULL;
     // Encoded URL to use with libcurl
     URL_KEY_VALUE url_params[] = {
-        {.key = "request_id=", .value=sf->request_id, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "databaseName=", .value=sf->database, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "schemaName=", .value=sf->schema, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "warehouse=", .value=sf->warehouse, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "roleName=", .value=sf->role, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
+        {.key = "request_id=", .value = sf->request_id, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "databaseName=", .value = sf->database, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "schemaName=", .value = sf->schema, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "warehouse=", .value = sf->warehouse, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "roleName=", .value = sf->role, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
     };
     SF_STATUS ret = _snowflake_check_connection_parameters(sf);
     if (ret != SF_STATUS_SUCCESS) {
@@ -1302,31 +1302,35 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    if (sf->client_request_mfa_token) 
-    {
-        if (sf->token_cache == NULL) {
-            sf->token_cache = secure_storage_init();
-        }
-
-        sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-    }
-
     AuthenticatorType authtype = getAuthenticatorType(sf->authenticator);
-    if (sf->client_store_temporary_credential)
+    if (is_secure_storage_auth(authtype))
     {
-        if (sf->token_cache == NULL) 
+        switch (authtype)
         {
-            sf->token_cache = secure_storage_init();
-        }
+        case AUTH_USR_PWD_MFA:
+            if (sf->token_cache == NULL) {
+                sf->token_cache = secure_storage_init();
+            }
 
+            sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            break;
 
-        if (authtype == AUTH_EXTERNALBROWSER) {
+        case AUTH_EXTERNALBROWSER:
+            if (sf->token_cache == NULL)
+            {
+                sf->token_cache = secure_storage_init();
+            }
             sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
-        }
-
-        if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE) {
+            break;
+        case AUTH_OAUTH_AUTHORIZATION_CODE:
+            if (sf->token_cache == NULL)
+            {
+                sf->token_cache = secure_storage_init();
+            }
             sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
             sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+            break;
+        default:
         }
     }
 
@@ -1607,7 +1611,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             alloc_buffer_and_copy(&sf->oauth_scope, value);
             break;
         case SF_CON_SINGLE_USE_REFRESH_TOKEN:
-            alloc_buffer_and_copy(&sf->oauth_scope, value);
+            alloc_buffer_and_copy(&sf->single_use_refresh_token, value);
             break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
@@ -1863,7 +1867,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = sf->oauth_scope;
             break;
         case SF_CON_SINGLE_USE_REFRESH_TOKEN:
-            *value = &sf->client_store_temporary_credential;
+            *value = &sf->single_use_refresh_token;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;

@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "scenarioName": "Refresh expired access token",
+      "scenarioName": "snowflake_oauth_login_failed_expired_token",
       "requiredScenarioState": "Started",
       "newScenarioState": "Expired access token",
       "request": {

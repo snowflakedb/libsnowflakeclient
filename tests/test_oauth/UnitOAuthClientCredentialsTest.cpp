@@ -25,7 +25,7 @@ void test_successful_oauth_client_credentials_flow(void** unused)
     initAuthChallengeTestProvider();
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_client_successful.json",
         {
-          "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+          "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
           "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         });
     SF_CONNECT* sf = createConnection();
@@ -58,7 +58,7 @@ void test_re_authentication_and_refresh_token_is_valid(void** unused)
     initAuthChallengeTestProvider();
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_failed.json", {
       "../../tests/test_oauth/wiremock/idp_responses/idp_refresh_successful.json",
-      "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+      "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
       "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json",
         });
     CXX_LOG_INFO("sf::UnitOAuthTest::RefreshTokenAndConnect::Prepare wiremock mapping");
@@ -85,7 +85,7 @@ void test_re_authentication_and_refresh_token_is_expired(void** unused)
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_failed.json", {
        "../../tests/test_oauth/wiremock/idp_responses/idp_refresh_failed.json",
        "../../tests/test_oauth/wiremock/idp_responses/idp_client_successful_after_refresh.json",
-       "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+       "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
        "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json",
         });
 

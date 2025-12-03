@@ -47,7 +47,7 @@ void test_successful_oauth_authorization_flow(void** unused) {
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful.json",
         {
-            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
             "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
@@ -69,7 +69,7 @@ void test_successful_oauth_authorization_flow_with_single_use_refresh_token(void
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful_with_single_use_refresh_token.json",
         {
-            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
             "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
@@ -94,7 +94,7 @@ void test_custom_urls_oauth_authorization_flow(void** unused) {
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_custom_urls.json",
         {
-            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+            "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
             "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
@@ -222,7 +222,7 @@ void test_successful_oauth_authorization_flow_with_root_path_in_redirect_uri(voi
 
     wiremock = new WiremockRunner("../../tests/test_oauth/wiremock/idp_responses/idp_auth_successful_root_redirect_uri_path.json",
         {
-                "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_login_successful.json",
+                "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_oauth_login_successful.json",
                 "../../tests/test_oauth/wiremock/snowflake_responses/snowflake_disconnect_successful.json"
         },
         randomPort
