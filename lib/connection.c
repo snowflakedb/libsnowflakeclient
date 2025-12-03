@@ -239,10 +239,10 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
     }
     else
     {
-      log_trace("SF_HEADER_USER_AGENT is null");
+      log_debug("SF_HEADER_USER_AGENT is null");
     }
 
-    log_trace("Created header");
+    log_debug("Created header");
 
     // All good :dancingpenguin:
     ret = SF_BOOLEAN_TRUE;
@@ -372,7 +372,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_trace("ping pong starting...");
+            log_debug("Ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
                          0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
@@ -873,7 +873,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool *is_renew,
                         sf_bool renew_injection) {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    int url_size = strlen(sf->protocol) + strlen(sf->host) + strlen(sf->port) + 5;
+    int url_size = (sf->protocol ? strlen(sf->protocol) : 0) +
+      (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
     char *url = (char *)SF_CALLOC(1, url_size);
     sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
     void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
@@ -1252,7 +1253,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
     header->header = curl_slist_append(header->header, header->header_app_version);
   }
 
-  log_trace("Added application infor header");
+  log_debug("Added application infor header");
 
   ret = SF_BOOLEAN_TRUE;
 

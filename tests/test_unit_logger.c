@@ -1,5 +1,6 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
+#include "log_file_util.h"
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
@@ -14,7 +15,7 @@ inline int access(const char* pathname, int mode) {
   return _access(pathname, mode);
 }
 #endif
-
+#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 /**
  * Tests converting a string representation of log level to the log level enum
  */
@@ -467,6 +468,74 @@ void test_log_creation() {
 
 #ifndef _WIN32
 
+/*
+ * Test no permission to file with log file util
+ */
+void test_log_file_util_no_permission_file() {
+  // check if current user is root. If so, exit test
+  char *name;
+  struct passwd *pwd;
+  pwd = getpwuid(getuid());
+  name = pwd->pw_name;
+
+  if (strcmp(name, "root") == 0) {
+    return;
+  }
+
+  // clean up tmp folder if necessary
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);
+
+  // creating SF_client_config_folder
+  sf_create_directory_if_not_exists(SF_TMP_FOLDER);
+
+  char logname[] = "dummy.log";
+  char configFile[] = "/sf_client_config.json";
+  size_t log_path_size = strlen(SF_TMP_FOLDER) + strlen(configFile) + 1;
+  char *configFilePath = (char *)SF_CALLOC(1, log_path_size);
+  sf_strcat(configFilePath, log_path_size, SF_TMP_FOLDER);
+  sf_strcat(configFilePath, log_path_size, configFile);
+  FILE *file;
+  file = fopen(configFilePath, "w");
+  fprintf(file, "test");
+  fclose(file);
+
+  // ensure the log file doesn't exist at the beginning
+  remove(logname);
+  assert_int_not_equal(access(logname, F_OK), 0);
+
+  log_set_lock(NULL);
+  log_set_level(SF_LOG_WARN);
+  log_set_quiet(1);
+  log_set_path(logname);
+
+  // getting $HOME dir
+  char *homedirOrig = getenv("HOME");
+
+  // setting $HOME to point at /tmp/sf_client_config_folder
+  setenv("HOME", SF_TMP_FOLDER, 1);
+
+  // setting SF_CLIENT_CONFIG dir to be inaccessible to all
+  mode_t newPermission = 0x0000;
+  chmod(SF_TMP_FOLDER, newPermission);
+
+  log_file_usage(configFilePath, "TestContext", true);
+  assert_int_equal(access(logname, F_OK), 0);
+  log_close();
+
+  // changing permission of tmp folder to ensure cleanup is possible
+  chmod(SF_TMP_FOLDER, 0750);
+
+  // clean up /tmp/SF_client_config_folder
+  remove(configFilePath);
+  sf_delete_directory_if_exists(SF_TMP_FOLDER);
+
+  // resetting HOME
+  setenv("HOME", homedirOrig, 1);
+
+  remove(logname);
+}
+
+
 /**
  * Test that generate exception
  */
@@ -660,6 +729,7 @@ int main(void) {
 #endif
         cmocka_unit_test(test_log_creation),
 #ifndef _WIN32
+        cmocka_unit_test(test_log_file_util_no_permission_file),
         cmocka_unit_test(test_log_creation_no_permission_to_home_folder),
         cmocka_unit_test(test_mask_secret_log),
 #endif

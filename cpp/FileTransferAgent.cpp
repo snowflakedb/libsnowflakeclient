@@ -93,7 +93,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
       "Failed to parse response.");
   }
-  CXX_LOG_INFO("Parse response succeed");
+  CXX_LOG_DEBUG("Parse response succeed");
 
   // init storage client
   m_storageClient = StorageClientFactory::getClient(&response.stageInfo,
@@ -179,7 +179,7 @@ void Snowflake::Client::FileTransferAgent::initFileMetadata(std::string *command
           if (m_transferConfig &&
             (m_transferConfig->getSizeThreshold > DOWNLOAD_DATA_SIZE_THRESHOLD))
           {
-            CXX_LOG_INFO("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
+            CXX_LOG_DEBUG("Set downloading threshold: %ld", m_transferConfig->getSizeThreshold);
             getThreshold = m_transferConfig->getSizeThreshold;
           }
           RemoteStorageRequestOutcome outcome =
@@ -411,7 +411,7 @@ void Snowflake::Client::FileTransferAgent::renewToken(std::string *command)
   // sure that some other thread has already renewed the token
   if (now - m_lastRefreshTokenSec > 10 * 60)
   {
-    CXX_LOG_INFO("Renew aws token");
+    CXX_LOG_DEBUG("Renew aws token");
     if (!m_stmtPutGet->parsePutGetCommand(command, &response))
     {
       throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
@@ -443,13 +443,13 @@ RemoteStorageRequestOutcome Snowflake::Client::FileTransferAgent::uploadSingleFi
     fileMetadata->srcFileToUpload = fileMetadata->srcFileName;
     fileMetadata->srcFileToUploadSize = fileMetadata->srcFileSize;
   }
-  CXX_LOG_TRACE("Update File digest metadata start");
+  CXX_LOG_DEBUG("Update File digest metadata start");
 
   // calculate digest
   updateFileDigest(fileMetadata);
-  CXX_LOG_TRACE("Encryption metadata init start");
+  CXX_LOG_DEBUG("Encryption metadata init start");
   m_FileMetadataInitializer.initEncryptionMetadata(fileMetadata);
-  CXX_LOG_TRACE("Encryption metadata init done");
+  CXX_LOG_DEBUG("Encryption metadata init done");
 
   RemoteStorageRequestOutcome outcome = RemoteStorageRequestOutcome::SUCCESS;
   RetryContext putRetryCtx(fileMetadata->srcFileName, m_maxPutRetries);
@@ -877,7 +877,7 @@ void Snowflake::Client::FileTransferAgent::getPresignedUrlForUploading(
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
       "Failed to parse response.");
   }
-  CXX_LOG_INFO("Parse response succeed");
+  CXX_LOG_DEBUG("Parse response succeed");
 
   fileMetadata.presignedUrl = rsp.stageInfo.presignedUrl;
 }
