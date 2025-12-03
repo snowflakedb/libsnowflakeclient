@@ -18,6 +18,7 @@
 #include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
+#include "log_file_util.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -299,6 +300,7 @@ namespace Client
   void AuthenticatorJWT::loadPrivateKey(const std::string &privateKeyFile,
                                         const std::string &passcode)
   {
+    log_file_usage(privateKeyFile.c_str(), "Extracting private key file.", false);
     FILE *file = nullptr;
     if (sf_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
     {
@@ -366,6 +368,7 @@ namespace Client
 
   void AuthenticatorJWT::authenticate()
   {
+    CXX_LOG_INFO("Authenticating with JWT.");
     using namespace std::chrono;
     const auto now = system_clock::now().time_since_epoch();
     const auto seconds = duration_cast<std::chrono::seconds>(now);
@@ -456,6 +459,7 @@ namespace Client
 
   void AuthenticatorOKTA::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with OKTA.");
       IAuthenticatorOKTA::authenticate();
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
@@ -511,7 +515,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -577,7 +581,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -587,7 +591,7 @@ namespace Client
           if (parseJSON) 
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                                           raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
                                            m_connection->insecure_mode, m_connection->ocsp_fail_open,
                                            m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
                                            m_connection->crl_disk_caching, m_connection->crl_memory_caching,
@@ -598,7 +602,7 @@ namespace Client
           else
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-                                           raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
+                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
                                            m_connection->insecure_mode, m_connection->ocsp_fail_open,
                                            m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
                                            m_connection->crl_disk_caching, m_connection->crl_memory_caching,
@@ -675,6 +679,7 @@ namespace Client
 
   void AuthenticatorExternalBrowser::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with external browser.");
       IAuthenticatorExternalBrowser::authenticate();
       if (m_authWebServer->isError())
       {
@@ -719,6 +724,7 @@ namespace Client
    */
   void AuthWebServer::start()
   {
+      CXX_LOG_INFO("AuthWebServer starting.");
       m_socket_desc_web_client = 0;
       m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       if ((int)m_socket_descriptor < 0)
@@ -770,6 +776,7 @@ namespace Client
    */
   void AuthWebServer::stop()
   {
+      CXX_LOG_INFO("AuthWebServer stopping.");
       if ((int)m_socket_desc_web_client > 0)
       {
 #ifndef _WIN32

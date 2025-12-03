@@ -254,10 +254,10 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
     }
     else
     {
-        log_trace("SF_HEADER_USER_AGENT is null");
+      log_debug("SF_HEADER_USER_AGENT is null");
     }
 
-    log_trace("Created header");
+    log_debug("Created header");
 
     // All good :dancingpenguin:
     ret = SF_BOOLEAN_TRUE;
@@ -305,7 +305,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     do
     {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
-                          retry_timeout, SF_BOOLEAN_FALSE, error,
+                          retry_timeout, sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
@@ -406,15 +406,14 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                     break;
                 }
 
-                log_trace("ping pong starting...");
-                if (!request(sf, json, result_url, NULL, 0, NULL, header,
-                             GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
-                             0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE))
-                {
-                    // Error came from request up, just break
-                    stop = SF_BOOLEAN_TRUE;
-                    break;
-                }
+            log_debug("Ping pong starting...");
+            if (!request(sf, json, result_url, NULL, 0, NULL, header,
+                         GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
+                         0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
+                // Error came from request up, just break
+                stop = SF_BOOLEAN_TRUE;
+                break;
+            }
 
                 if (
                     (json_error = json_copy_string_no_alloc(query_code, *json, "code",
@@ -470,7 +469,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     do
     {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
-                          get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
+                          get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
                           sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
                           sf->crl_disk_caching, sf->crl_memory_caching,
@@ -757,8 +756,8 @@ json_copy_string(char **dest, cJSON *data, const char *item)
         }
         sf_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
-        if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0)
-        {
+        if (strstr(item, "token") || strstr(item, "Token") || strstr(item, "TOKEN") ||
+            strstr(item, "key") || strstr(item, "Key") || strstr(item, "KEY")) {
             log_debug("Item and Value; %s: ******", item);
         }
         else
@@ -1005,7 +1004,8 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         sf_bool renew_injection)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    int url_size = strlen(sf->protocol) + strlen(sf->host) + strlen(sf->port) + 5;
+    int url_size = (sf->protocol ? strlen(sf->protocol) : 0) +
+      (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
     char *url = (char *)SF_CALLOC(1, url_size);
     sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
     void *curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
@@ -1430,7 +1430,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
         header->header = curl_slist_append(header->header, header->header_app_version);
     }
 
-    log_trace("Added application infor header");
+  log_debug("Added application infor header");
 
     ret = SF_BOOLEAN_TRUE;
 
@@ -1474,7 +1474,7 @@ int64 get_login_timeout(SF_CONNECT *sf)
 
 int64 get_retry_timeout(SF_CONNECT *sf)
 {
-    return get_less_one(sf->network_timeout, sf->retry_timeout);
+  return sf->retry_timeout;
 }
 
 int8 get_login_retry_count(SF_CONNECT *sf)

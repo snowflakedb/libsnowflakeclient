@@ -9,6 +9,7 @@
 #include "../logger/SFLogger.hpp"
 #include <chrono>
 #include "SnowflakeCommon.hpp"
+#include "log_file_util.h"
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
@@ -42,6 +43,7 @@ sf_bool validate_application(const char* application)
 
 int STDCALL sf_delete_directory_if_exists(const char * directoryName)
 {
+  log_file_usage(directoryName, "Deleting directory", false);
   if (!sf_is_directory_exist(directoryName))
   {
     return 0;
@@ -55,24 +57,24 @@ int STDCALL sf_delete_directory_if_exists(const char * directoryName)
   catch (...)
   {
     // should not happen as we use the function with output parameter of error code
-    CXX_LOG_ERROR("removing folder %s failed with unknown exception",
+    CXX_LOG_ERROR("Removing folder %s failed with unknown exception",
                   directoryName);
     return -1;
   }
 
   if (err.value() != boost::system::errc::success)
   {
-    CXX_LOG_ERROR("removing folder %s failed with error code: %d",
+    CXX_LOG_ERROR("Removing folder %s failed with error code: %d",
                   directoryName, err.value());
   }
   else if (sf_is_directory_exist(directoryName))
   {
-    CXX_LOG_ERROR("removing folder %s failed. Function call succeeded but the folder is still there.",
+    CXX_LOG_ERROR("Removing folder %s failed. Function call succeeded but the folder is still there.",
                   directoryName);
     return -1;
   }
 
-  CXX_LOG_TRACE("removing folder %s succeeded.", directoryName);
+  CXX_LOG_TRACE("Removing folder %s succeeded.", directoryName);
 
   return err.value();
 }

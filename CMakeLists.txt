@@ -31,6 +31,7 @@ set(SOURCE_FILES
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
         include/snowflake/client_config_parser.h
+        include/snowflake/Stopwatch.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -65,6 +66,8 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
+        lib/log_file_util.h
+		lib/log_file_util.c
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -102,6 +105,7 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
         cpp/util/entities.cpp
+        cpp/util/Stopwatch.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp

@@ -125,7 +125,7 @@ void ClientQueryContextCache::deserializeQueryContext(cJSON * data)
       }
       else
       {
-        CXX_LOG_TRACE("ClientQueryContextCache::deserializeQueryContext: "
+        CXX_LOG_DEBUG("ClientQueryContextCache::deserializeQueryContext: "
                       "meets mismatch field type. Clear the QueryContextCache.");
         clearCache();
         return;
@@ -159,7 +159,7 @@ void ClientQueryContextCache::deserializeQueryContextReq(cJSON * data)
       }
       else
       {
-        CXX_LOG_TRACE("ClientQueryContextCache::deserializeQueryContextReq: "
+        CXX_LOG_DEBUG("ClientQueryContextCache::deserializeQueryContextReq: "
           "meets mismatch field type. Clear the QueryContextCache.");
         clearCache();
         return;

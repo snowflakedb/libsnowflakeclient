@@ -23,6 +23,11 @@ namespace Snowflake {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, SimpleHttpClient::write);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
 
+        if (!req.body.empty()) {
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req.body.size());
+        }
+
         struct curl_slist *header_list = nullptr;
         for (const auto &h: req.headers) {
           std::string hdr = h.first + ": " + h.second;
