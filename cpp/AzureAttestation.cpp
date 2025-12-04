@@ -13,6 +13,12 @@ namespace {
 namespace Snowflake {
   namespace Client {
     boost::optional<Attestation> createAzureAttestation(AttestationConfig& config) {
+      if (config.workloadIdentityImpersonationPath &&
+      !config.workloadIdentityImpersonationPath.get().empty()) {
+        CXX_LOG_ERROR("Workload identity impersonation is not supported for Azure");
+        return boost::none;
+      }
+
       auto azureConfigOpt = AzureAttestationConfig::fromConfig(config);
       if (!azureConfigOpt) {
         return boost::none;

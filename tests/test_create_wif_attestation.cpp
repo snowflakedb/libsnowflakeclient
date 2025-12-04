@@ -210,10 +210,12 @@ const std::string GCP_TEST_ISSUER = "https://accounts.google.com";
 const std::string GCP_TEST_SUBJECT = "107562638633288735786";
 const std::string GCP_TEST_AUDIENCE = "snowflakecomputing.com";
 
+const std::string GCP_TEST_METADATA_ENDPOINT_HOST = "169.254.169.254";
+
 FakeHttpClient makeSuccessfulGCPHttpClient(const std::vector<char> &token) {
   return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
     assert_true((*req.url.params().find("audience")).value == GCP_TEST_AUDIENCE);
-    assert_true(req.url.host() == "169.254.169.254");
+    assert_true(req.url.host() == GCP_TEST_METADATA_ENDPOINT_HOST);
     assert_true(req.url.scheme() == "http");
     HttpResponse response;
     response.code = 200;
@@ -282,6 +284,261 @@ void test_unit_gcp_attestation_bad_request(void **) {
   config.httpClient = &fakeHttpClient;
   auto attestationOpt = createAttestation(config);
   assert_true(!attestationOpt);
+}
+
+const std::string GCP_TEST_SUBJECT_ACCESS = "107562638633288735787";
+
+const std::string GCP_TEST_IAM_ENDPOINT_HOST = "iamcredentials.googleapis.com";
+
+// Multi-path fake HTTP client for GCP service account impersonation
+enum class AcceptedHosts {
+  Metadata,
+  Iam,
+  Other
+};
+
+auto getHost(const std::string& host) -> AcceptedHosts {
+  if (host == GCP_TEST_METADATA_ENDPOINT_HOST) return AcceptedHosts::Metadata;
+  if (host == GCP_TEST_IAM_ENDPOINT_HOST) return AcceptedHosts::Iam;
+  return AcceptedHosts::Other;
+}
+
+FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
+    const std::vector<char>& accessToken,
+    const std::vector<char>& idToken,
+    const std::vector<std::string>& expectedDelegates,
+    const std::string& expectedTargetServiceAccount) {
+  return FakeHttpClient([=](Snowflake::Client::HttpRequest req) {
+    HttpResponse response;
+    response.code = 200;
+
+    switch (getHost(req.url.host())) {
+      case AcceptedHosts::Metadata: {
+        if (req.url.encoded_path() == "/computeMetadata/v1/instance/service-accounts/default/token") {
+          assert_true(req.headers.find("Metadata-Flavor")->second == "Google");
+          response.buffer = accessToken;
+        }
+        break;
+      }
+      case AcceptedHosts::Iam: {
+        std::string expectedPath = "/v1/projects/-/serviceAccounts/" +
+                                   expectedTargetServiceAccount + ":generateIdToken";
+        assert_true(req.url.encoded_path() == expectedPath);
+        assert_true(req.method == HttpRequest::Method::POST);
+        const auto accessTokenStr = std::string(accessToken.data(), accessToken.size());
+        assert_true(req.headers.find("Authorization")->second == "Bearer " + accessTokenStr);
+        assert_true(req.headers.find("Content-Type")->second == "application/json");
+
+        picojson::value bodyJson;
+        std::string err = picojson::parse(bodyJson, req.body);
+        assert_true(err.empty());
+        assert_true(bodyJson.is<picojson::object>());
+
+        auto bodyObj = bodyJson.get<picojson::object>();
+        assert_true(bodyObj["audience"].get<std::string>() == GCP_TEST_AUDIENCE);
+        assert_true(bodyObj["includeEmail"].get<bool>() == true);
+
+        if (!expectedDelegates.empty()) {
+          assert_true(bodyObj.find("delegates") != bodyObj.end());
+          auto delegates = bodyObj["delegates"].get<picojson::array>();
+          assert_true(delegates.size() == expectedDelegates.size());
+          for (size_t i = 0; i < expectedDelegates.size(); ++i) {
+            std::string expected = "projects/-/serviceAccounts/" + expectedDelegates[i];
+            assert_true(delegates[i].get<std::string>() == expected);
+          }
+        }
+
+        response.buffer = idToken;
+        break;
+      }
+      case AcceptedHosts::Other: {
+        // Leave response as default.
+        break;
+      }
+    }
+
+    return response;
+  });
+}
+
+void test_unit_gcp_impersonation_single_account_success(void **) {
+  const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+  const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+  const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
+
+  auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
+      accessToken,
+      idToken,
+      {},
+      targetServiceAccount);
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+  config.workloadIdentityImpersonationPath = targetServiceAccount;
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  const auto &[type, credential, issuer, subject] = attestationOpt.get();
+  assert_true(type == AttestationType::GCP);
+  assert_true(credential == std::string(idToken.data(), idToken.size()));
+  assert_true(subject == GCP_TEST_SUBJECT);
+  assert_true(issuer == GCP_TEST_ISSUER);
+}
+
+void test_unit_gcp_impersonation_chain_success(void **) {
+  const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+  const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+  const std::vector<std::string> delegates = {
+    "delegate1@project.iam.gserviceaccount.com",
+    "delegate2@project.iam.gserviceaccount.com"
+  };
+  const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
+
+  auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
+      accessToken,
+      idToken,
+      delegates,
+      targetServiceAccount);
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+
+  std::string workloadIdentityImpersonationPath;
+  for (const auto &delegate: delegates) {
+    workloadIdentityImpersonationPath += delegate + ",";
+  }
+  workloadIdentityImpersonationPath += targetServiceAccount;
+  config.workloadIdentityImpersonationPath = workloadIdentityImpersonationPath;
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  const auto &[type, credential, issuer, subject] = attestationOpt.get();
+  assert_true(type == AttestationType::GCP);
+  assert_true(credential == std::string(idToken.data(), idToken.size()));
+  assert_true(subject == GCP_TEST_SUBJECT);
+}
+
+void test_unit_gcp_impersonation_whitespace_in_path(void **) {
+  const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+  const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+  const std::vector<std::string> delegates = {
+    "delegate1@project.iam.gserviceaccount.com",
+    "delegate2@project.iam.gserviceaccount.com"
+  };
+  const std::string targetServiceAccount = "target@project.iam.gserviceaccount.com";
+
+  auto fakeHttpClient = makeSuccessfulGCPImpersonationHttpClient(
+      accessToken,
+      idToken,
+      delegates,
+      targetServiceAccount);
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+
+  std::string workloadIdentityImpersonationPath = "  ";
+  for (const auto &delegate: delegates) {
+    workloadIdentityImpersonationPath += " " + delegate + ", ";
+  }
+  workloadIdentityImpersonationPath += targetServiceAccount + "   ";
+  config.workloadIdentityImpersonationPath = workloadIdentityImpersonationPath;
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+}
+
+void test_unit_gcp_impersonation_access_token_failed(void **) {
+  auto fakeHttpClient = FakeHttpClient([](const HttpRequest &req) {
+    if (req.url.host() == GCP_TEST_METADATA_ENDPOINT_HOST) {
+      HttpResponse response;
+      response.code = 404;
+      return boost::optional<HttpResponse>(response);
+    }
+    return boost::optional<HttpResponse>(boost::none);
+  });
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+  config.workloadIdentityImpersonationPath = "target@project.iam.gserviceaccount.com";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
+}
+
+void test_unit_gcp_impersonation_id_token_failed(void **) {
+  const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+
+  auto fakeHttpClient = FakeHttpClient([=](const HttpRequest &req) {
+    if (req.url.host() == GCP_TEST_METADATA_ENDPOINT_HOST) {
+      HttpResponse response;
+      response.code = 200;
+      response.buffer = accessToken;
+      return boost::optional<HttpResponse>(response);
+    }
+    if (req.url.host() == GCP_TEST_IAM_ENDPOINT_HOST) {
+      HttpResponse response;
+      response.code = 403;
+      const std::string error = "Forbidden";
+      response.buffer = std::vector<char>(error.begin(), error.end());
+      return boost::optional<HttpResponse>(response);
+    }
+    return boost::optional<HttpResponse>(boost::none);
+  });
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+  config.workloadIdentityImpersonationPath = "target@project.iam.gserviceaccount.com";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
+}
+
+void test_unit_gcp_impersonation_empty_path(void **) {
+  const auto idToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
+  auto fakeHttpClient = makeSuccessfulGCPHttpClient(idToken);
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+  // Empty path should use direct flow
+  config.workloadIdentityImpersonationPath = "";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+}
+
+void test_unit_gcp_impersonation_missing_token_in_response(void **) {
+  const auto accessToken = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT_ACCESS);
+
+  auto fakeHttpClient = FakeHttpClient([=](const HttpRequest &req) {
+    if (req.url.host() == GCP_TEST_METADATA_ENDPOINT_HOST) {
+      HttpResponse response;
+      response.code = 200;
+      response.buffer = accessToken;
+      return boost::optional<HttpResponse>(response);
+    }
+    if (req.url.host() == GCP_TEST_IAM_ENDPOINT_HOST) {
+      HttpResponse response;
+      response.code = 200;
+      const std::string body = "{\"invalid_field\": \"value\"}";
+      response.buffer = std::vector<char>(body.begin(), body.end());
+      return boost::optional<HttpResponse>(response);
+    }
+    return boost::optional<HttpResponse>(boost::none);
+  });
+
+  AttestationConfig config;
+  config.type = AttestationType::GCP;
+  config.httpClient = &fakeHttpClient;
+  config.workloadIdentityImpersonationPath = "target@project.iam.gserviceaccount.com";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
 }
 
 const std::string AZURE_TEST_ISSUER_ID = "123bdcc4-50e7-4fea-958d-32cdb3ad3aca";

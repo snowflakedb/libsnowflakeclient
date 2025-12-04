@@ -22,6 +22,12 @@ namespace Snowflake {
     };
 
     boost::optional<Attestation> createAwsAttestation(const AttestationConfig& config) {
+      if (config.workloadIdentityImpersonationPath &&
+      !config.workloadIdentityImpersonationPath.get().empty()) {
+        CXX_LOG_ERROR("Workload identity impersonation is not supported for AWS");
+        return boost::none;
+      }
+
       auto awsSdkInit = AwsUtils::initAwsSdk();
       auto creds = config.awsSdkWrapper->getCredentials();
       if (creds.IsEmpty()) {
