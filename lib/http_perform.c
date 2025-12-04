@@ -513,7 +513,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             log_error("curl error buffer: %s", curl_error_buffer);
           }
           if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
-                                              retry_on_curle_couldnt_connect_count)
+                                              (unsigned)retry_on_curle_couldnt_connect_count)
             {
               retry = SF_BOOLEAN_TRUE;
               uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
@@ -523,9 +523,11 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               sf_sleep_ms(next_sleep_in_secs*1000);
-            } else if (res == CURLE_OPERATION_TIMEDOUT) {
+            } else if ((res == CURLE_OPERATION_TIMEDOUT) ||
+                       (res == CURLE_PARTIAL_FILE)) {
               // retry directly without backoff when timeout is triggered by renew
-              if ((renew_timeout > 0) && (curl_timeout == renew_timeout))
+              if ((res == CURLE_OPERATION_TIMEDOUT) &&
+                  (renew_timeout > 0) && (curl_timeout == renew_timeout))
               {
                 retry = SF_BOOLEAN_TRUE;
               }
@@ -591,8 +593,8 @@ sf_bool STDCALL http_perform(CURL *curl,
                 curl_retry_ctx.retry_reason = (uint32)http_code;
               }
               if (retry &&
-                  ((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
+                  ((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
