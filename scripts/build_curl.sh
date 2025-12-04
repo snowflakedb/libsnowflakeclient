@@ -37,6 +37,7 @@ pushd $DEPS_DIR/../
   git add -f deps/curl
   git commit -m "Temporary commit"
   git apply patches/curl-$CURL_SRC_VERSION.patch
+  git reset HEAD~1
 popd
 
 # staging cJSON for curl

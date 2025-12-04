@@ -75,7 +75,7 @@ if "%vs_version%"=="VS15" (
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
 
-set DEPS_DIR=%scriptdir%..\deps
+set DEPS_DIR=%scriptdir%\..\deps
 set CURL_SOURCE_DIR=%DEPS_DIR%\%CURL_DIR%
 set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
 
@@ -86,9 +86,16 @@ pushd %DEPS_DIR%
   move %DEPS_DIR%\curl-8.16.0 curl
 popd
 pushd %DEPS_DIR%\..\
+  FOR /F "tokens=*" %%i IN ('git config user.name') do (set GIT_USERNAME="%%i")
+  FOR /F "tokens=*" %%i IN ('git config user.email') do (set GIT_USER_EMAIL="%%i")
+  git config user.name testuser
+  git config user.email test@test.com
   git add -f deps/curl
   git commit -m "Temporary commit"
   git apply patches\curl-%CURL_SRC_VERSION%.patch
+  git reset HEAD~1
+  git config user.name %GIT_USERNAME%
+  git config user.email %GIT_USER_EMAIL%
 popd
 
 echo === staging openssl and zlib for curl
