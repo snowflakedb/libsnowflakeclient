@@ -28,7 +28,7 @@ UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
 CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
 
 rm -rf $LIBCURL_SOURCE_DIR
-curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
+curl https://curl.se/download/curl-8.16.0.zip -o $DEPS_DIR\curl-8.16.0.zip
 pushd $DEPS_DIR
   tar -xf curl-8.16.0.zip
   move $DEPS_DIR/curl-8.16.0 curl
