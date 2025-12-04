@@ -4268,7 +4268,6 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
           size_t result_buf_size = (negative ? 1 : 0) + strlen(digitPart) + 14;
 
           char result[100];
-          char* format;
           
           /* If there are no remaining digits after the first, omit the decimal point.
            Format: "%ce%d" when remaining is empty, otherwise "%c.%se%d". */

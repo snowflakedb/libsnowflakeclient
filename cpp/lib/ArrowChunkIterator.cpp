@@ -1290,7 +1290,7 @@ std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEn
     {
         mantissa.push_back('.');
         // append next sigDigits-1 digits, pad with zeros if needed
-        for (int i = 1; i < digits.size(); ++i)
+        for (size_t i = 1; i < digits.size(); ++i)
         {
             mantissa.push_back(digits[i]);
         }

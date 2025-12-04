@@ -293,7 +293,6 @@ void test_decfloat_helper(sf_bool use_arrow) {
     char* str = NULL;
     size_t str_len = 0;
     size_t max_str_len = 0;
-    int64 int_val = 0;
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         snowflake_column_as_int64(sfstmt, 1, &c1);
         DECFLOAT_TESTING_CASE v = test_cases[c1 - 1];
