@@ -1320,27 +1320,29 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         {
         case AUTH_SNOWFLAKE:
         case AUTH_USR_PWD_MFA:
-            if (sf->token_cache == NULL) {
-                sf->token_cache = secure_storage_init();
-            }
+            if (sf->client_request_mfa_token) {
+                if (sf->token_cache == NULL) {
+                    sf->token_cache = secure_storage_init();
+                }
 
-            sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+                sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            }
             break;
 
         case AUTH_EXTERNALBROWSER:
-            if (sf->token_cache == NULL)
-            {
-                sf->token_cache = secure_storage_init();
-            }
-            sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
-            break;
         case AUTH_OAUTH_AUTHORIZATION_CODE:
-            if (sf->token_cache == NULL)
-            {
-                sf->token_cache = secure_storage_init();
+            if (sf->client_store_temporary_credential)
+                if (sf->token_cache == NULL)
+                {
+                    sf->token_cache = secure_storage_init();
+                }
+            if (authtype == AUTH_EXTERNALBROWSER) {
+                sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
             }
-            sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
-            sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+            else {
+                sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
+                sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+            }
             break;
         default:
             break;

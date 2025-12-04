@@ -80,7 +80,7 @@ void test_successful_oauth_authorization_flow_with_single_use_refresh_token(void
     SF_STATUS status = snowflake_connect(sf);
     assert_true(status == SF_STATUS_SUCCESS);
 
-    CXX_LOG_INFO("sf", "UnitOAuthAuthorizationFlow", "Successful", "Connected to Snowflake successfully");
+    CXX_LOG_INFO("sf::UnitOAuthAuthorizationFlow::Successful::Connected to Snowflake successfully");
 
     assert_false(std::string(sf->token).empty());
     assert_string_equal(sf->token, "token-t1");
@@ -106,10 +106,10 @@ void test_custom_urls_oauth_authorization_flow(void** unused) {
         "http://localhost:" + std::to_string(randomPort++) + "/snowflake/oauth-redirect"
     );
 
-    CXX_LOG_INFO("sf", "UnitOAuthAuthorizationFlow", "CustomURLs", "Connecting to Snowflake");
+    CXX_LOG_INFO("sf::UnitOAuthAuthorizationFlow::CustomURLs::Connecting to Snowflake");
     SF_STATUS status = snowflake_connect(sf);
     assert_true(status == SF_STATUS_SUCCESS);
-    CXX_LOG_INFO("sf", "UnitOAuthAuthorizationFlow", "CustomURLs", "Connected to Snowflake successfully");
+    CXX_LOG_INFO("sf", "UnitOAuthAuthorizationFlow::CustomURLs::Connected to Snowflake successfully");
 
     assert_false(std::string(sf->token).empty());
     assert_string_equal(sf->token, "token-t1");
@@ -124,7 +124,7 @@ void test_invalid_scope_oauth_authorization_flow_in_redirect_url(void** unused)
     configureRunners();
     SF_CONNECT* sf = createConnection(randomPort++);
 
-    CXX_LOG_INFO("sf", "UnitOAuthAuthorizationFlow", "Invalid scope", "Connecting to Snowflake");
+    CXX_LOG_INFO("sf::UnitOAuthAuthorizationFlow::Invalid scope::Connecting to Snowflake");
     SF_STATUS status = snowflake_connect(sf);
     assert_false(status == SF_STATUS_SUCCESS);
 
