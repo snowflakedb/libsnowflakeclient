@@ -22,7 +22,7 @@ CURL_FULL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 [[ -n "$GET_VERSION" ]] && echo $CURL_FULL_VERSION && exit 0
 
-LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
+LIBCURL_SOURCE_DIR=$DEPS_DIR/curl
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
 CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
@@ -33,8 +33,10 @@ pushd $DEPS_DIR
   tar -xf curl-8.16.0.zip
   move $DEPS_DIR/curl-8.16.0 curl
 popd
-pushd $LIBCURL_SOURCE_DIR
-  git apply ../../patches/curl-$CURL_SRC_VERSION.patch
+pushd $DEPS_DIR/../
+  git add -f deps/curl
+  git commit -m "Temporary commit"
+  git apply patches/curl-$CURL_SRC_VERSION.patch
 popd
 
 # staging cJSON for curl
