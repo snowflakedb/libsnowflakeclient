@@ -17,7 +17,7 @@ source $DIR/_init.sh $@
 source $DIR/utils.sh
 
 CURL_SRC_VERSION=$CURL_VERSION
-CURL_BUILD_VERSION=6
+CURL_BUILD_VERSION=1
 CURL_FULL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
 [[ -n "$GET_VERSION" ]] && echo $CURL_FULL_VERSION && exit 0
@@ -31,7 +31,7 @@ rm -rf $LIBCURL_SOURCE_DIR
 curl https://curl.se/download/curl-8.16.0.zip -o $DEPS_DIR/curl-8.16.0.zip
 pushd $DEPS_DIR
   tar -xf curl-8.16.0.zip
-  move $DEPS_DIR/curl-8.16.0 curl
+  mv $DEPS_DIR/curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
   git add -f deps/curl
