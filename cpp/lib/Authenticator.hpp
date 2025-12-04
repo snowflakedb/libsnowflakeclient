@@ -35,6 +35,8 @@ namespace Client
 
     void updateDataMap(jsonObject_t& dataMap);
 
+    static std::vector<char> SHA256(const std::vector<char>& message);
+
   private:
     void loadPrivateKey(const std::string &privateKeyFile, const std::string &passcode);
 
@@ -50,7 +52,6 @@ namespace Client
 
     static std::string extractPublicKey(EVP_PKEY *privKey);
 
-    static std::vector<char> SHA256(const std::vector<char> &message);
   };
 
   class CIDPAuthenticator : public IDPAuthenticator
@@ -118,14 +119,19 @@ namespace Client
 
       virtual ~AuthWebServer();
 
-      virtual void start();
-      virtual void stop();
-      virtual int getPort();
-      virtual void startAccept();
-      virtual bool receive();
-      virtual std::string getSAMLToken();
-      virtual bool isConsentCacheIdToken();
-      virtual void setTimeout(int timeout);
+      void start() override;
+      int start(std::string host, int port, std::string path) override;
+      void stop() override;
+      int getPort() override;
+      void startAccept() override;
+      void startAccept(std::string state) override {
+          SF_UNUSED(state);
+      };
+      bool receive() override;
+      std::string getToken() override;
+      bool isConsentCacheIdToken() override;
+      void setTimeout(int timeout) override;
+      static std::vector<std::string> splitString(const std::string& s, char delimiter);
 
   protected:
 #ifdef _WIN32
@@ -148,7 +154,6 @@ namespace Client
       void respond(std::string queryParameters);
       void respondJson(picojson::value& json);
 
-      std::vector<std::string> splitString(const std::string& s, char delimiter);
       std::string unquote(std::string src);
       std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
   };
