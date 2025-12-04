@@ -1,5 +1,5 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0265162e7..7b8b0b4b4 100644
+diff --git a/deps/curl/CMakeLists.txt b/deps/curl/CMakeLists.txt
+index 0265162e74..7b8b0b4b40 100644
 --- a/deps/curl/CMakeLists.txt
 +++ b/deps/curl/CMakeLists.txt
 @@ -253,6 +253,7 @@ if(WIN32)
@@ -28,8 +28,8 @@ index 0265162e7..7b8b0b4b4 100644
    list(APPEND CURL_NETWORK_AND_TIME_LIBS "${_win32_winsock}")
    if(NOT WINCE AND NOT WINDOWS_STORE)
      list(APPEND CURL_NETWORK_AND_TIME_LIBS "iphlpapi")
-diff --git a/include/curl/curl.h b/include/curl/curl.h
-index 6f4aa90f1..940d45c9e 100644
+diff --git a/deps/curl/include/curl/curl.h b/deps/curl/include/curl/curl.h
+index 6f4aa90f13..940d45c9e5 100644
 --- a/deps/curl/include/curl/curl.h
 +++ b/deps/curl/include/curl/curl.h
 @@ -109,6 +109,9 @@ extern "C" {
@@ -77,37 +77,15 @@ index 6f4aa90f1..940d45c9e 100644
    CURLOPT_LASTENTRY /* the last unused */
  } CURLoption;
  
-diff --git a/deps/curl/include/curl/curlver.h b/deps/curl/include/curl/curlver.h
-index 48fb81df8..3c7a91941 100644
---- a/include/curl/curlver.h
-+++ b/include/curl/curlver.h
-@@ -32,7 +32,7 @@
- 
- /* This is the version number of the libcurl package from which this header
-    file origins: */
--#define LIBCURL_VERSION "8.16.0-DEV"
-+#define LIBCURL_VERSION "8.16.0"
- 
- /* The numeric version number is also available "in parts" by using these
-    defines: */
-@@ -69,7 +69,7 @@
-  *
-  * "2007-11-23"
-  */
--#define LIBCURL_TIMESTAMP "[unreleased]"
-+#define LIBCURL_TIMESTAMP "2025-09-10"
- 
- #define CURL_VERSION_BITS(x,y,z) ((x)<<16|(y)<<8|(z))
- #define CURL_AT_LEAST_VERSION(x,y,z) \
 diff --git a/deps/curl/lib/CMakeLists.txt b/deps/curl/lib/CMakeLists.txt
-index 3476d55b0..1586dbec7 100644
+index 3476d55b09..d60bff2b14 100644
 --- a/deps/curl/lib/CMakeLists.txt
 +++ b/deps/curl/lib/CMakeLists.txt
 @@ -141,6 +141,7 @@ if(BUILD_STATIC_LIBS)
    add_library(${PROJECT_NAME}::${LIB_STATIC} ALIAS ${LIB_STATIC})
    if(WIN32)
      set_property(TARGET ${LIB_STATIC} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
-+	list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
++    list(APPEND CURL_LIBS "ws2_32.lib" "crypt32.lib" "msvcrt.lib")
    endif()
    target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
    # Remove the "lib" prefix since the library is already named "libcurl".
@@ -126,7 +104,7 @@ index 3476d55b0..1586dbec7 100644
  
  if(BUILD_SHARED_LIBS)
 diff --git a/deps/curl/lib/Makefile.in b/deps/curl/lib/Makefile.in
-index a7f8065d96..3e3602dead 100644
+index a7f8065d96..51cbe15ee2 100644
 --- a/deps/curl/lib/Makefile.in
 +++ b/deps/curl/lib/Makefile.in
 @@ -366,7 +366,8 @@ am__objects_3 = vtls/libcurl_la-cipher_suite.lo \
@@ -135,7 +113,7 @@ index a7f8065d96..3e3602dead 100644
  	vtls/libcurl_la-vtls_spack.lo vtls/libcurl_la-wolfssl.lo \
 -	vtls/libcurl_la-x509asn1.lo
 +	vtls/libcurl_la-x509asn1.lo vtls/libcurl_la-sf_ocsp.lo \
-+	vtls/libcurl_la-sf_crl.lo vtls/libcurl_la-sf_cJSON.lo
++    vtls/libcurl_la-sf_crl.lo vtls/libcurl_la-sf_cJSON.lo
  am__objects_4 = vquic/libcurl_la-curl_ngtcp2.lo \
  	vquic/libcurl_la-curl_osslq.lo vquic/libcurl_la-curl_quiche.lo \
  	vquic/libcurl_la-vquic.lo vquic/libcurl_la-vquic-tls.lo
@@ -145,8 +123,8 @@ index a7f8065d96..3e3602dead 100644
  	curlx/timediff.h curlx/timeval.h curlx/version_win32.h \
 -	curlx/wait.h curlx/warnless.h curlx/winapi.h
 +	curlx/wait.h curlx/warnless.h curlx/winapi.h \
-+	vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_crl.lo \
-+	vtls/libcurl_la-sf_cJSON.lo
++    vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_crl.lo \
++    vtls/libcurl_la-sf_cJSON.lo
  am__objects_13 = libcurlu_la-altsvc.lo libcurlu_la-amigaos.lo \
  	libcurlu_la-asyn-ares.lo libcurlu_la-asyn-base.lo \
  	libcurlu_la-asyn-thrdd.lo libcurlu_la-bufq.lo \
@@ -156,8 +134,8 @@ index a7f8065d96..3e3602dead 100644
  	libcurlu_la-uint-table.lo libcurlu_la-url.lo \
 -	libcurlu_la-urlapi.lo libcurlu_la-version.lo libcurlu_la-ws.lo
 +	libcurlu_la-urlapi.lo libcurlu_la-version.lo libcurlu_la-ws.lo \
-+	vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_crl.lo \
-+	vtls/libcurl_la-sf_cJSON.lo
++    vtls/libcurl_la-sf_ocsp.lo vtls/libcurl_la-sf_crl.lo \
++    vtls/libcurl_la-sf_cJSON.lo
  am__objects_14 = vauth/libcurlu_la-cleartext.lo \
  	vauth/libcurlu_la-cram.lo vauth/libcurlu_la-digest.lo \
  	vauth/libcurlu_la-digest_sspi.lo vauth/libcurlu_la-gsasl.lo \
@@ -165,9 +143,9 @@ index a7f8065d96..3e3602dead 100644
  	vtls/$(DEPDIR)/libcurl_la-rustls.Plo \
  	vtls/$(DEPDIR)/libcurl_la-schannel.Plo \
  	vtls/$(DEPDIR)/libcurl_la-schannel_verify.Plo \
-+	vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo \
-+	vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo \
-+	vtls/$(DEPDIR)/libcurl_la-sf_crl.Plo \
++    vtls/$(DEPDIR)/libcurl_la-sf_cJSON.Plo \
++    vtls/$(DEPDIR)/libcurl_la-sf_ocsp.Plo \
++    vtls/$(DEPDIR)/libcurl_la-sf_crl.Plo \
  	vtls/$(DEPDIR)/libcurl_la-vtls.Plo \
  	vtls/$(DEPDIR)/libcurl_la-vtls_scache.Plo \
  	vtls/$(DEPDIR)/libcurl_la-vtls_spack.Plo \
@@ -175,9 +153,9 @@ index a7f8065d96..3e3602dead 100644
  	vtls/$(DEPDIR)/libcurlu_la-rustls.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-schannel.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-schannel_verify.Plo \
-+	vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Plo \
-+	vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Plo \
-+	vtls/$(DEPDIR)/libcurlu_la-sf_crl.Plo \
++    vtls/$(DEPDIR)/libcurlu_la-sf_cJSON.Plo \
++    vtls/$(DEPDIR)/libcurlu_la-sf_ocsp.Plo \
++    vtls/$(DEPDIR)/libcurlu_la-sf_crl.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-vtls.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-vtls_scache.Plo \
  	vtls/$(DEPDIR)/libcurlu_la-vtls_spack.Plo \
@@ -205,43 +183,6 @@ index a7f8065d96..3e3602dead 100644
  
  LIB_VQUIC_CFILES = \
    vquic/curl_ngtcp2.c   \
-@@ -1593,7 +1610,7 @@ EXTRA_DIST = config-mac.h config-os400.h config-plan9.h config-riscos.h \
-   $(CMAKE_DIST) Makefile.soname optiontable.pl $(CHECKSRC_DIST)
- 
- lib_LTLIBRARIES = libcurl.la
--@BUILD_UNITTESTS_FALSE@noinst_LTLIBRARIES = 
-+@BUILD_UNITTESTS_FALSE@noinst_LTLIBRARIES =
- @BUILD_UNITTESTS_TRUE@noinst_LTLIBRARIES = libcurlu.la
- 
- # generate a file with "private" prototypes for unit testing
-@@ -1609,15 +1626,15 @@ lib_LTLIBRARIES = libcurl.la
- # $(srcdir) for the generated unity source to find included sources
- AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
- 	-I$(srcdir) $(am__append_1) $(am__append_2) -DBUILDING_LIBCURL
--AM_LDFLAGS = 
--AM_CFLAGS = 
-+AM_LDFLAGS =
-+AM_CFLAGS =
- @USE_UNITY_TRUE@nodist_libcurl_la_SOURCES = libcurl_unity.c
- @USE_UNITY_FALSE@libcurl_la_SOURCES = $(CSOURCES) $(HHEADERS) \
- @USE_UNITY_FALSE@	$(am__append_10)
- @USE_UNITY_TRUE@libcurl_la_SOURCES = $(am__append_10)
- @USE_UNITY_TRUE@nodist_libcurlu_la_SOURCES = libcurl_unity.c
- @USE_UNITY_FALSE@libcurlu_la_SOURCES = $(CSOURCES) $(HHEADERS)
--@USE_UNITY_TRUE@libcurlu_la_SOURCES = 
-+@USE_UNITY_TRUE@libcurlu_la_SOURCES =
- @USE_UNITY_FALSE@CLEANFILES = $(UNITPROTOS)
- @USE_UNITY_TRUE@CLEANFILES = libcurl_unity.c $(UNITPROTOS)
- libcurl_la_CPPFLAGS_EXTRA = $(am__append_9) $(am__append_11)
-@@ -1647,7 +1664,7 @@ CS_ = $(CS_0)
- @DEBUGBUILD_TRUE@@NOT_CURL_CI_TRUE@CHECKSOURCES = checksrc
- UNIT_V = $(UNITV_$(V))
- UNITV_0 = @echo "  UNITPR  " $@;
--UNITV_1 = 
-+UNITV_1 =
- UNITV_ = $(UNITV_0)
- 
- # disable the tests that are mostly causing false positives
 @@ -1820,6 +1837,12 @@ vtls/libcurl_la-wolfssl.lo: vtls/$(am__dirstamp) \
  	vtls/$(DEPDIR)/$(am__dirstamp)
  vtls/libcurl_la-x509asn1.lo: vtls/$(am__dirstamp) \
@@ -353,8 +294,9 @@ index a7f8065d96..3e3602dead 100644
 +	-Wvtls/sf_crl.c -Wvtls/sf_crl.h $(CSOURCES) $(HHEADERS))
  
  all-local: $(CHECKSOURCES)
+ 
 diff --git a/deps/curl/lib/Makefile.inc b/deps/curl/lib/Makefile.inc
-index 524fdcc53..7bea95e8f 100644
+index 524fdcc53d..7bea95e8f4 100644
 --- a/deps/curl/lib/Makefile.inc
 +++ b/deps/curl/lib/Makefile.inc
 @@ -89,7 +89,10 @@ LIB_VTLS_CFILES =           \
@@ -382,9 +324,9 @@ index 524fdcc53..7bea95e8f 100644
  LIB_VQUIC_CFILES = \
    vquic/curl_ngtcp2.c   \
 diff --git a/deps/curl/lib/curl_addrinfo.c b/deps/curl/lib/curl_addrinfo.c
-index 22212ac86..e1cf99a93 100644
---- a/lib/curl_addrinfo.c
-+++ b/lib/curl_addrinfo.c
+index 22212ac86f..e1cf99a937 100644
+--- a/deps/curl/lib/curl_addrinfo.c
++++ b/deps/curl/lib/curl_addrinfo.c
 @@ -47,6 +47,10 @@
  #  include <inet.h>
  #endif
@@ -470,7 +412,7 @@ index 22212ac86..e1cf99a93 100644
    if(error) {
      Curl_freeaddrinfo(cafirst);
 diff --git a/deps/curl/lib/setopt.c b/deps/curl/lib/setopt.c
-index 5adfe4dbe..cc2bdba31 100644
+index 5adfe4dbeb..cc2bdba315 100644
 --- a/deps/curl/lib/setopt.c
 +++ b/deps/curl/lib/setopt.c
 @@ -1282,6 +1282,51 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
@@ -525,8 +467,8 @@ index 5adfe4dbe..cc2bdba31 100644
    default:
      return CURLE_UNKNOWN_OPTION;
    }
-diff --git a/lib/url.c b/lib/url.c
-index b52267cb6..5b6a08528 100644
+diff --git a/deps/curl/lib/url.c b/deps/curl/lib/url.c
+index b52267cb67..5b6a085288 100644
 --- a/deps/curl/lib/url.c
 +++ b/deps/curl/lib/url.c
 @@ -1443,6 +1443,36 @@ static struct connectdata *allocate_conn(struct Curl_easy *data)
@@ -567,7 +509,7 @@ index b52267cb6..5b6a08528 100644
    Curl_uint_spbset_init(&conn->xfers_attached);
  
 diff --git a/deps/curl/lib/urldata.h b/deps/curl/lib/urldata.h
-index cf181af64..e17fcb658 100644
+index cf181af641..e17fcb658f 100644
 --- a/deps/curl/lib/urldata.h
 +++ b/deps/curl/lib/urldata.h
 @@ -258,6 +258,17 @@ struct ssl_backend_data;
@@ -589,7 +531,7 @@ index cf181af64..e17fcb658 100644
    char *CAfile;          /* certificate to verify peer against */
    char *issuercert;      /* optional issuer certificate filename */
 diff --git a/deps/curl/lib/vtls/openssl.c b/deps/curl/lib/vtls/openssl.c
-index a49203ab0..3ab701300 100644
+index a49203ab07..3ab7013002 100644
 --- a/deps/curl/lib/vtls/openssl.c
 +++ b/deps/curl/lib/vtls/openssl.c
 @@ -67,6 +67,8 @@
@@ -734,7 +676,7 @@ index a49203ab0..3ab701300 100644
  
 diff --git a/deps/curl/lib/vtls/sf_crl.c b/deps/curl/lib/vtls/sf_crl.c
 new file mode 100644
-index 000000000..bbfe69773
+index 0000000000..bbfe697737
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_crl.c
 @@ -0,0 +1,831 @@
@@ -1571,7 +1513,7 @@ index 000000000..bbfe69773
 +}
 diff --git a/deps/curl/lib/vtls/sf_crl.h b/deps/curl/lib/vtls/sf_crl.h
 new file mode 100644
-index 000000000..a2bf9ac74
+index 0000000000..a2bf9ac743
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_crl.h
 @@ -0,0 +1,22 @@
@@ -1599,7 +1541,7 @@ index 000000000..a2bf9ac74
 +#endif
 diff --git a/deps/curl/lib/vtls/sf_ocsp.c b/deps/curl/lib/vtls/sf_ocsp.c
 new file mode 100644
-index 000000000..6514b57aa
+index 0000000000..6514b57aad
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_ocsp.c
 @@ -0,0 +1,2657 @@
@@ -4263,7 +4205,7 @@ index 000000000..6514b57aa
 \ No newline at end of file
 diff --git a/deps/curl/lib/vtls/sf_ocsp.h b/deps/curl/lib/vtls/sf_ocsp.h
 new file mode 100644
-index 000000000..26b9ae7b5
+index 0000000000..26b9ae7b5a
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_ocsp.h
 @@ -0,0 +1,23 @@
@@ -4291,7 +4233,7 @@ index 000000000..26b9ae7b5
 +#endif
 +
 diff --git a/deps/curl/lib/vtls/vtls.c b/deps/curl/lib/vtls/vtls.c
-index f17f9142b..4ab4bf505 100644
+index f17f9142be..4ab4bf5055 100644
 --- a/deps/curl/lib/vtls/vtls.c
 +++ b/deps/curl/lib/vtls/vtls.c
 @@ -394,6 +394,15 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
@@ -4310,16 +4252,3 @@ index f17f9142b..4ab4bf505 100644
    }
  }
  
-diff --git a/deps/curl/src/tool_version.h b/deps/curl/src/tool_version.h
-index 00be7799e..6ab8afd63 100644
---- a/deps/curl/src/tool_version.h
-+++ b/deps/curl/src/tool_version.h
-@@ -27,7 +27,7 @@
- 
- #define CURL_NAME "curl"
- #define CURL_COPYRIGHT LIBCURL_COPYRIGHT
--#define CURL_VERSION LIBCURL_VERSION
-+#define CURL_VERSION "8.16.0"
- #define CURL_VERSION_MAJOR LIBCURL_VERSION_MAJOR
- #define CURL_VERSION_MINOR LIBCURL_VERSION_MINOR
- #define CURL_VERSION_PATCH LIBCURL_VERSION_PATCH

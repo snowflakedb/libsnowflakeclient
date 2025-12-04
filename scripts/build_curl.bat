@@ -85,8 +85,10 @@ pushd %DEPS_DIR%
   tar -xf curl-8.16.0.zip
   move %DEPS_DIR%\curl-8.16.0 curl
 popd
-pushd %CURL_SOURCE_DIR%
-  git apply ..\..\patches\curl-%CURL_SRC_VERSION%.patch
+pushd %DEPS_DIR%\..\
+  git add -f deps/curl
+  git commit -m "Temporary commit"
+  git apply patches\curl-%CURL_SRC_VERSION%.patch
 popd
 
 echo === staging openssl and zlib for curl
