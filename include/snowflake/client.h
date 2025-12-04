@@ -45,6 +45,11 @@ extern "C" {
  */
 #define SF_AUTHENTICATOR_PAT "programmatic_access_token"
 
+/**
+ * Workload Identity Federation authenticator
+ */
+#define SF_AUTHENTICATOR_WORKLOAD_IDENTITY "workload_identity"
+
  /**
  * Authenticator, SSO token
  */
@@ -321,7 +326,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_CRL_ALLOW_NO_CRL,
     SF_CON_CRL_DISK_CACHING,
     SF_CON_CRL_MEMORY_CACHING,
-    SF_CON_CRL_DOWNLOAD_TIMEOUT
+    SF_CON_CRL_DOWNLOAD_TIMEOUT,
+    SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH
 } SF_ATTRIBUTE;
 
 /**
@@ -499,6 +505,9 @@ typedef struct SF_CONNECT {
 
     //programmatic access token
     char *programmatic_access_token;
+
+    // WIF impersonation path
+    char *workload_identity_impersonation_path;
 
     // put get configurations
     sf_bool use_s3_regional_url;

@@ -30,6 +30,7 @@
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
+#include "snowflake/WifAttestation.hpp"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -74,6 +75,10 @@ extern "C" {
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_PAT) == 0)
     {
         return AUTH_PAT;
+    }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_WORKLOAD_IDENTITY) == 0)
+    {
+        return AUTH_WIF;
     }
 
     if (strcasecmp(authenticator, "test") == 0)
@@ -190,6 +195,29 @@ extern "C" {
               snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
           }
       }
+      if (AUTH_WIF == authenticator)
+      {
+          Snowflake::Client::AttestationConfig config;
+          // Pass workload identity impersonation path
+          if (conn->workload_identity_impersonation_path)
+          {
+              config.workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
+          }
+          if (auto attestationOpt = Snowflake::Client::createAttestation(config))
+          {
+              const Snowflake::Client::Attestation &attestation = attestationOpt.value();
+
+              snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+              snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+
+              snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+              snowflake_cJSON_AddStringToObject(data, "TOKEN", attestation.credential.c_str());
+              snowflake_cJSON_AddStringToObject(data, "PROVIDER",
+                  Snowflake::Client::stringFromAttestationType(attestation.type));
+          } else {
+              log_error("Failed to create WIF attestation - not running in a supported cloud environment?");
+          }
+      }
 
       if (conn->sso_token)
       {
@@ -222,8 +250,6 @@ extern "C" {
       {
           ; // Do nothing
       }
-
-      return;
   }
 
   void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
@@ -246,8 +272,6 @@ extern "C" {
     {
       ; // Do nothing
     }
-
-    return;
   }
 
   void STDCALL auth_terminate(SF_CONNECT * conn)
