@@ -1309,7 +1309,6 @@ std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEn
         oss << sciExp;
     }
     return oss.str();
-
 }
 } // namespace Client
 } // namespace Snowflake

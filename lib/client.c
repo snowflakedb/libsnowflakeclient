@@ -4161,7 +4161,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               convert_to_scientific = SF_BOOLEAN_FALSE;
           }
 
-          for (int8 i = 0; i < len; i++) {
+          for (size_t i = 0; i < len; i++) {
               // If already in scientific notation, nothing to do
               if (const_str_val[i] == 'e') {
                   convert_to_scientific = SF_BOOLEAN_FALSE;
