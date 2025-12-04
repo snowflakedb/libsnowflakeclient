@@ -24,7 +24,7 @@ namespace Snowflake {
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 
                 http_perform(curl, GET_REQUEST_TYPE, (char*)url.c_str(), NULL, NULL, NULL, &resp_data,
-                    NULL, NULL, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE,
+                    NULL, NULL, 120, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE,
                     SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE,
                     SF_CRL_DOWNLOAD_TIMEOUT, 0,
                     0, 7, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
