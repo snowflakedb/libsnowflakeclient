@@ -35,7 +35,7 @@ COPY scripts/aws.sh /usr/local/bin/aws
 RUN chmod a+x /usr/local/bin/aws
 
 # dependencies for building openssl3
-RUN yum -y install perl-IPC-Cmd perl-Digest-SHA
+RUN yum -y install perl-IPC-Cmd perl-Digest-SHA perl-core
 
 # Dependencies for tests
 # cppunit

@@ -12,19 +12,33 @@ function usage() {
 }
 set -x -o pipefail
 
-CURL_SRC_VERSION=8.12.1
-CURL_BUILD_VERSION=5
-CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
+CURL_SRC_VERSION=$CURL_VERSION
+CURL_BUILD_VERSION=1
+CURL_FULL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
-LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
+[[ -n "$GET_VERSION" ]] && echo $CURL_FULL_VERSION && exit 0
+
+LIBCURL_SOURCE_DIR=$DEPS_DIR/curl
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
+CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
+
+rm -rf $LIBCURL_SOURCE_DIR
+curl https://curl.se/download/curl-8.16.0.zip -o $DEPS_DIR/curl-8.16.0.zip
+pushd $DEPS_DIR
+  tar -xf curl-8.16.0.zip
+  mv curl-8.16.0 curl
+popd
+pushd $DEPS_DIR/../
+  git add -f deps/curl
+  git commit -m "Temporary commit"
+  git apply patches/curl-$CURL_SRC_VERSION.patch
+  git reset HEAD~1
+popd
 
 # staging cJSON for curl
 CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
@@ -135,5 +149,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         exit 1
     fi
 fi
-echo === zip_file "curl" "$CURL_VERSION" "$target"
-zip_file "curl" "$CURL_VERSION" "$target"
+echo === zip_file "curl" "$CURL_FULL_VERSION" "$target"
+zip_file "curl" "$CURL_FULL_VERSION" "$target"
