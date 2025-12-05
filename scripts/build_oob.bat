@@ -55,9 +55,6 @@ set CURL_DIR=curl
 set CURL_SRC_VERSION_GIT=%CURL_VERSION:.=_%
 rd /S /Q %scriptdir%..\deps\%CURL_DIR%
 git clone --single-branch --branch curl-%CURL_SRC_VERSION_GIT% --recursive https://github.com/curl/curl.git %scriptdir%..\deps\%CURL_DIR%
-pushd %scriptdir%..\deps\%CURL_DIR%
-  git apply %scriptdir%..\patches\curl-%CURL_VERSION%.patch
-popd
 set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
 set CJSON_PATCH=%scriptdir%..\patches\curl-cJSON-%CJSON_VERSION%.patch
 rd /S /Q %CJSON_SOURCE_DIR%
