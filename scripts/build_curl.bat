@@ -83,15 +83,18 @@ rd /S /Q %CURL_SOURCE_DIR%
 curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
 pushd %DEPS_DIR%
   tar -xf curl-8.16.0.zip
-  move %DEPS_DIR%\curl-8.16.0 curl
+  move curl-8.16.0 curl
 popd
 pushd %DEPS_DIR%\..\
   FOR /F "tokens=*" %%i IN ('git config user.name') do (set GIT_USERNAME="%%i")
   FOR /F "tokens=*" %%i IN ('git config user.email') do (set GIT_USER_EMAIL="%%i")
   git config user.name testuser
   git config user.email test@test.com
-  git add -f deps/curl
+  git add -f deps\curl
   git commit -m "Temporary commit"
+:: Set to windows line endings for patch file to work
+  rd /S /Q %CURL_SOURCE_DIR%
+  git restore deps\curl
   git apply patches\curl-%CURL_SRC_VERSION%.patch
   git reset HEAD~1
   git config user.name %GIT_USERNAME%

@@ -31,7 +31,7 @@ rm -rf $LIBCURL_SOURCE_DIR
 curl https://curl.se/download/curl-8.16.0.zip -o $DEPS_DIR/curl-8.16.0.zip
 pushd $DEPS_DIR
   tar -xf curl-8.16.0.zip
-  mv $DEPS_DIR/curl-8.16.0 curl
+  mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
   git add -f deps/curl
