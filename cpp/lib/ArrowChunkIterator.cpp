@@ -562,7 +562,6 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
         status = Conversion::Arrow::StringToUint64(strData, out_data);
         break;
     }
-
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -1256,11 +1255,13 @@ std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndi
     for (int i = 0; i < len; ++i)
     {
         if (littleEndian[i] != 0) {
-            allZero = false; break;
+            allZero = false; 
+            break;
         }
     }
         
-    if (allZero) {
+    if (allZero) 
+    {
         return std::string("0");
     }
 
@@ -1277,11 +1278,13 @@ std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndi
     // convert to big-endian limb vector for division
     std::vector<uint32_t> be;
     be.reserve(nl);
-    for (int i = nl - 1; i >= 0; --i) {
+    for (int i = nl - 1; i >= 0; --i) 
+    {
         be.push_back(limbs[i]);
     }
     // remove leading zero limbs
-    while (!be.empty() && be.front() == 0) {
+    while (!be.empty() && be.front() == 0) 
+    {
         be.erase(be.begin());
     }
 
@@ -1299,7 +1302,8 @@ std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndi
         }
         digits.push_back(char('0' + static_cast<int>(carry)));
         // remove leading zero limbs
-        while (!be.empty() && be.front() == 0) {
+        while (!be.empty() && be.front() == 0) 
+        {
             be.erase(be.begin());
         }
     }
@@ -1314,22 +1318,26 @@ std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndi
     int sciExp = (mantissaDigits - 1) + exponent;
 
     if (sciExp < 38 && sciExp > -38 ) {
-        if (exponent >= 0) {
+        if (exponent > 0) {
             digits.append(exponent, '0');
         }
-        else {
+        else 
+        {
             int pointPos = mantissaDigits + exponent;
-            if (pointPos > 0) {
+            if (pointPos > 0) 
+            {
                 digits.insert(pointPos, 1, '.');
             }
-            else {
+            else 
+            {
                 std::string leadingZeros(-pointPos, '0');
                 digits = "0." + leadingZeros + digits;
             }
         }
         return (isPositive ? "" : "-") + digits;
     }
-    else {
+    else 
+    {
         // it means that the number is too big or too small, use scientific notation
         std::string m = digits.size() > 1
             ? std::string(1, digits[0]) + '.' + digits.substr(1)
