@@ -167,7 +167,7 @@ public:
      * 
      * @return the formatted decimal string.
      */
-    static std::string formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
+    static std::string formatDecFloatToString(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
 
     /**
      * Destructor.

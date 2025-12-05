@@ -349,7 +349,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         return SF_STATUS_SUCCESS;
     }
 
-    if ((!rawData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
+    if (!rawData && ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type && m_metadata[colIdx].scale != 0) || SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type))
     {
         float64 floatData;
         SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
@@ -368,6 +368,10 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         }
 
         *out_data = (int64)floatData;
+        if (*out_data == 0 && floatData != 0.0)
+        {
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
         return SF_STATUS_SUCCESS;
     }
 
@@ -486,6 +490,7 @@ ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
     {
         m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for uint32.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     *out_data = static_cast<int32>(rawData);
@@ -529,6 +534,7 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
     case arrow::Type::type::INT8:
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
+    case arrow::Type::type::STRUCT:
     {
         status = getCellAsInt64(colIdx, &data);
         if (status)
@@ -556,6 +562,7 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
         status = Conversion::Arrow::StringToUint64(strData, out_data);
         break;
     }
+
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -631,6 +638,7 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
     case arrow::Type::type::INT64:
+    case arrow::Type::type::STRUCT:
     {
         float64 data;
         status = getCellAsFloat64(colIdx, &data);
@@ -639,6 +647,16 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
             return status;
         }
         *out_data = (float32)data;
+        if (*out_data == INFINITY || *out_data == -INFINITY)
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+
+        if (*out_data == 0.0f && data != 0.0)
+        {
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+
         return SF_STATUS_SUCCESS;
     }
     case arrow::Type::type::DECIMAL:
@@ -741,6 +759,13 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
     case arrow::Type::type::DECIMAL:
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
+        status = Conversion::Arrow::StringToDouble(strData, out_data);
+        break;
+    }
+    case arrow::Type::type::STRUCT:
+    {
+        std::string strData;
+        getCellAsString(colIdx, strData);
         status = Conversion::Arrow::StringToDouble(strData, out_data);
         break;
     }
@@ -851,7 +876,7 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
                 twosComplementLittleEndian(littleEndian, len);
             }
 
-            outString = formatDecFloatScientific(littleEndian, len, exponent, isPositive);
+            outString = formatDecFloatToString(littleEndian, len, exponent, isPositive);
             return SF_STATUS_SUCCESS;
         }
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
@@ -1224,14 +1249,17 @@ void ArrowChunkIterator::twosComplementLittleEndian(uint8_t* littleEndian, int b
     }
 }
 
-std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEndian, int len, int exponent, bool isPositive)
+std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndian, int len, int exponent, bool isPositive)
 {
     // handle zero
     bool allZero = true;
-    for (int i = 0; i < len; ++i) 
-        if (littleEndian[i] != 0) { 
-            allZero = false; break; 
+    for (int i = 0; i < len; ++i)
+    {
+        if (littleEndian[i] != 0) {
+            allZero = false; break;
         }
+    }
+        
     if (allZero) {
         return std::string("0");
     }
@@ -1277,38 +1305,38 @@ std::string ArrowChunkIterator::formatDecFloatScientific(const uint8_t* littleEn
     }
 
     // digits now decimal mantissa (no leading zeros)
-    std::reverse(digits.begin(), digits.end()); 
+    std::reverse(digits.begin(), digits.end());
 
     // normalized exponent for scientific notation
     int mantissaDigits = static_cast<int>(digits.size());
-    int sciExp = (mantissaDigits - 1) + exponent; // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
 
-    // build mantissa with requested significant digits
-    std::string mantissa;
-    mantissa.push_back(digits[0]);
-    if (digits.size() > 1)
-    {
-        mantissa.push_back('.');
-        // append next sigDigits-1 digits, pad with zeros if needed
-        for (size_t i = 1; i < digits.size(); ++i)
-        {
-            mantissa.push_back(digits[i]);
+    // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
+    int sciExp = (mantissaDigits - 1) + exponent;
+
+    if (sciExp < 38 && sciExp > -38 ) {
+        if (exponent >= 0) {
+            digits.append(exponent, '0');
         }
+        else {
+            int pointPos = mantissaDigits + exponent;
+            if (pointPos > 0) {
+                digits.insert(pointPos, 1, '.');
+            }
+            else {
+                std::string leadingZeros(-pointPos, '0');
+                digits = "0." + leadingZeros + digits;
+            }
+        }
+        return (isPositive ? "" : "-") + digits;
     }
+    else {
+        // it means that the number is too big or too small, use scientific notation
+        std::string m = digits.size() > 1
+            ? std::string(1, digits[0]) + '.' + digits.substr(1)
+            : std::string(1, digits[0]);
 
-    // assemble final
-    std::ostringstream oss;
-    if (!isPositive) {
-        oss << '-';
+        return (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
     }
-    oss << mantissa;
-
-    if (sciExp != 0)
-    {
-        oss << 'e';
-        oss << sciExp;
-    }
-    return oss.str();
 }
 } // namespace Client
 } // namespace Snowflake
