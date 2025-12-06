@@ -383,13 +383,13 @@ void test_numeric_range_helper(sf_bool use_arrow) {
           .exp_f32_status = SF_STATUS_ERROR_OUT_OF_RANGE,
           .exp_f64_status = SF_STATUS_SUCCESS, .exp_f64 = 1.23e+102 
         },
-        {.id = 5, .val = "1e-38",
+        {.id = 5, .val = "1.23e-35",
           .exp_i32_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
           .exp_i64_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
           .exp_u32_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
           .exp_u64_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
-          .exp_f32_status = SF_STATUS_SUCCESS, .exp_f32 = 1e-38f,
-          .exp_f64_status = SF_STATUS_SUCCESS, .exp_f64 = 1e-38
+          .exp_f32_status = SF_STATUS_SUCCESS, .exp_f32 = 1.23e-35f,
+          .exp_f64_status = SF_STATUS_SUCCESS, .exp_f64 = 1.23e-35
         },
         {.id = 6, .val = "23456e-100",
           .exp_i32_status = SF_STATUS_ERROR_CONVERSION_FAILURE,

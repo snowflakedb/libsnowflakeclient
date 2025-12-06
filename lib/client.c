@@ -4084,7 +4084,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
       case SF_DB_TYPE_TIME:
       case SF_DB_TYPE_TIMESTAMP_NTZ:
       case SF_DB_TYPE_TIMESTAMP_LTZ:
-      case SF_DB_TYPE_TIMESTAMP_TZ:;
+      case SF_DB_TYPE_TIMESTAMP_TZ: ;
         SF_TIMESTAMP ts;
         if (scale < 0)
         {
@@ -4150,8 +4150,6 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
         }
 
         break;
-
-      case SF_DB_TYPE_DECFLOAT:
       default:
         value_len = strlen(const_str_val);
         if (value_len + 1 > init_value_len) {
