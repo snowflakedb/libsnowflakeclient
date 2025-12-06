@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <sstream>
+#include <iomanip>
+#include <vector>
 
 #include "../logger/SFLogger.hpp"
 #include "snowflake/platform.h"
@@ -154,7 +157,7 @@ bool ArrowChunkIterator::isCellNull(int32 col)
     }
     case (arrow::Type::type::STRUCT):
     {
-        return (m_columns[col].arrowTimestamp->sse->IsNull(m_currRowIndexInBatch));
+        return m_columns[col].arrowStructArray->IsNull(m_currRowIndexInBatch);
         break;
     }
     default:
@@ -346,7 +349,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         return SF_STATUS_SUCCESS;
     }
 
-    if ((!rawData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
+    if (!rawData && ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type && m_metadata[colIdx].scale != 0) || SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type))
     {
         float64 floatData;
         SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
@@ -365,6 +368,10 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         }
 
         *out_data = (int64)floatData;
+        if (*out_data == 0 && floatData != 0.0)
+        {
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
         return SF_STATUS_SUCCESS;
     }
 
@@ -483,6 +490,7 @@ ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
     {
         m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for uint32.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     *out_data = static_cast<int32>(rawData);
@@ -526,6 +534,7 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
     case arrow::Type::type::INT8:
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
+    case arrow::Type::type::STRUCT:
     {
         status = getCellAsInt64(colIdx, &data);
         if (status)
@@ -628,6 +637,7 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
     case arrow::Type::type::INT64:
+    case arrow::Type::type::STRUCT:
     {
         float64 data;
         status = getCellAsFloat64(colIdx, &data);
@@ -636,6 +646,16 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
             return status;
         }
         *out_data = (float32)data;
+        if (*out_data == INFINITY || *out_data == -INFINITY)
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+
+        if (*out_data == 0.0f && data != 0.0)
+        {
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+
         return SF_STATUS_SUCCESS;
     }
     case arrow::Type::type::DECIMAL:
@@ -741,6 +761,13 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
         status = Conversion::Arrow::StringToDouble(strData, out_data);
         break;
     }
+    case arrow::Type::type::STRUCT:
+    {
+        std::string strData;
+        getCellAsString(colIdx, strData);
+        status = Conversion::Arrow::StringToDouble(strData, out_data);
+        break;
+    }
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -819,6 +846,39 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
 
         outString = std::string(buf);
         return SF_STATUS_SUCCESS;
+    }
+
+    if (SF_DB_TYPE_DECFLOAT == snowType)
+    {
+        if (m_columns[colIdx].arrowStructArray->num_fields() == 2)
+        {
+            int16_t exponent = std::static_pointer_cast<arrow::Int16Array>(
+                m_columns[colIdx].arrowStructArray->field(0))->Value(m_currRowIndexInBatch);
+            int len = 0;
+            const uint8_t* value = std::static_pointer_cast<arrow::BinaryArray>(
+                m_columns[colIdx].arrowStructArray->field(1))->GetValue(m_currRowIndexInBatch, &len);
+            if ((len < 0) || (len > 16))
+            {
+                CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Possible invalid data, row index in batch: %d, col: %d, length: %d", m_currRowIndexInBatch, (int)colIdx, len);
+                return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+            }
+
+            uint8_t littleEndian[16];
+            for (int i = 0; i < len; i++)
+            {
+                littleEndian[i] = value[len - i - 1];
+            }
+
+            bool isPositive = !(value[0] & 0x80);
+            if (!isPositive)
+            {
+                twosComplementLittleEndian(littleEndian, len);
+            }
+
+            outString = formatDecFloatToString(littleEndian, len, exponent, isPositive);
+            return SF_STATUS_SUCCESS;
+        }
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     switch (m_arrowColumnDataTypes[colIdx])
@@ -1095,14 +1155,18 @@ void ArrowChunkIterator::initColumnChunks()
         switch (dt->id())
         {
             case arrow::Type::STRUCT: {
-                auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
-                std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
-                ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
-                if (values->num_fields() > 1)
-                    ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
-                if (values->num_fields() > 2)
-                    ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
-                arrowcol.arrowTimestamp = ts;
+                arrowcol.arrowStructArray = std::static_pointer_cast<arrow::StructArray>(columnArray).get();
+                if (m_metadata[i].type != SF_DB_TYPE_DECFLOAT)
+                {
+                    auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
+                    std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
+                    ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
+                    if (values->num_fields() > 1)
+                        ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
+                    if (values->num_fields() > 2)
+                        ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
+                    arrowcol.arrowTimestamp = ts;
+                }
                 m_columns.emplace_back(arrowcol);
                 break;
             }
@@ -1168,6 +1232,125 @@ void ArrowChunkIterator::initColumnChunks()
                 return;
             }
         }
+    }
+}
+
+void ArrowChunkIterator::twosComplementLittleEndian(uint8_t* littleEndian, int bytelen)
+{
+    bool found = false;
+    for (int i = 0; i < bytelen; i++) 
+    {
+        if (!found) 
+        {
+            if (littleEndian[i] == 0) continue;
+            littleEndian[i] = ~(littleEndian[i]) + 1;
+            found = true;
+            continue;
+        }
+        littleEndian[i] = ~(littleEndian[i]);
+    }
+}
+
+std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndian, int len, int exponent, bool isPositive)
+{
+    // handle zero
+    bool allZero = true;
+    for (int i = 0; i < len; ++i)
+    {
+        if (littleEndian[i] != 0) {
+            allZero = false; 
+            break;
+        }
+    }
+        
+    if (allZero) 
+    {
+        return std::string("0");
+    }
+
+    // build little-endian 32-bit limbs
+    int nl = (len + 3) / 4;
+    std::vector<uint32_t> limbs(nl, 0);
+    for (int i = 0; i < len; ++i)
+    {
+        int limbIdx = i / 4;
+        int byteShift = (i % 4) * 8;
+        limbs[limbIdx] |= (uint32_t)littleEndian[i] << byteShift;
+    }
+
+    // convert to big-endian limb vector for division
+    std::vector<uint32_t> be;
+    be.reserve(nl);
+    for (int i = nl - 1; i >= 0; --i) 
+    {
+        be.push_back(limbs[i]);
+    }
+    // remove leading zero limbs
+    while (!be.empty() && be.front() == 0) 
+    {
+        be.erase(be.begin());
+    }
+
+    // extract decimal digits by repeated divmod 10
+    std::string digits;
+    while (!be.empty())
+    {
+        uint64_t carry = 0;
+        for (size_t i = 0; i < be.size(); ++i)
+        {
+            uint64_t cur = (carry << 32) | be[i];
+            uint32_t q = static_cast<uint32_t>(cur / 10);
+            carry = cur % 10;
+            be[i] = q;
+        }
+        digits.push_back(char('0' + static_cast<int>(carry)));
+        // remove leading zero limbs
+        while (!be.empty() && be.front() == 0) 
+        {
+            be.erase(be.begin());
+        }
+    }
+
+    // digits now decimal mantissa (no leading zeros)
+    std::reverse(digits.begin(), digits.end());
+
+    // normalized exponent for scientific notation
+    int mantissaDigits = static_cast<int>(digits.size());
+
+    // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
+    int sciExp = (mantissaDigits - 1) + exponent;
+
+    if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
+        // it means that the number is too big or too small, use scientific notation
+        std::string m = digits.size() > 1
+            ? std::string(1, digits[0]) + '.' + digits.substr(1)
+            : std::string(1, digits[0]);
+
+        return (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
+        
+    }
+    else 
+    {
+        if (exponent > 0) {
+            digits.append(exponent, '0');
+        }
+        else
+        {
+            int pointPos = mantissaDigits + exponent;
+            if (pointPos != mantissaDigits)
+            {
+                if (pointPos > 0)
+                {
+                    digits.insert(pointPos, 1, '.');
+                }
+                else
+                {
+                    std::string leadingZeros(-pointPos, '0');
+                    digits = "0." + leadingZeros + digits;
+                }
+            }
+        }
+        return (isPositive ? "" : "-") + digits;
     }
 }
 } // namespace Client
