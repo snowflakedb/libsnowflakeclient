@@ -1320,33 +1320,37 @@ std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndi
     // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
     int sciExp = (mantissaDigits - 1) + exponent;
 
-    if (sciExp < 38 && sciExp > -38 ) {
-        if (exponent > 0) {
-            digits.append(exponent, '0');
-        }
-        else 
-        {
-            int pointPos = mantissaDigits + exponent;
-            if (pointPos > 0) 
-            {
-                digits.insert(pointPos, 1, '.');
-            }
-            else 
-            {
-                std::string leadingZeros(-pointPos, '0');
-                digits = "0." + leadingZeros + digits;
-            }
-        }
-        return (isPositive ? "" : "-") + digits;
-    }
-    else 
-    {
+    if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
         // it means that the number is too big or too small, use scientific notation
         std::string m = digits.size() > 1
             ? std::string(1, digits[0]) + '.' + digits.substr(1)
             : std::string(1, digits[0]);
 
         return (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
+        
+    }
+    else 
+    {
+        if (exponent > 0) {
+            digits.append(exponent, '0');
+        }
+        else
+        {
+            int pointPos = mantissaDigits + exponent;
+            if (pointPos != mantissaDigits)
+            {
+                if (pointPos > 0)
+                {
+                    digits.insert(pointPos, 1, '.');
+                }
+                else
+                {
+                    std::string leadingZeros(-pointPos, '0');
+                    digits = "0." + leadingZeros + digits;
+                }
+            }
+        }
+        return (isPositive ? "" : "-") + digits;
     }
 }
 } // namespace Client

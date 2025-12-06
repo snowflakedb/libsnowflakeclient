@@ -251,7 +251,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32* out_data)
     }
     else
     {
-        value = std::strtoull(cell->valuestring, &endptr, 10);
+        value = std::strtoll(cell->valuestring, &endptr, 10);
     }
 
     if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
@@ -318,7 +318,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
     }
     else
     {
-        value = std::strtoull(cell->valuestring, &endptr, 10);
+        value = std::strtoll(cell->valuestring, &endptr, 10);
     }
 
     if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
@@ -329,6 +329,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
             "Cannot convert value to int64.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
+
 
     if ((value == SF_INT64_MIN || value == SF_INT64_MAX) && errno == ERANGE)
     {
@@ -406,7 +407,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
     }
     else
     {
-        value = std::strtoull(cell->valuestring, &endptr, 10);
+        value = std::strtoll(cell->valuestring, &endptr, 10);
     }
 
 
@@ -480,7 +481,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
     }
     else 
     {
-        value = std::strtoull(cell->valuestring, &endptr, 10);
+        value = std::strtoll(cell->valuestring, &endptr, 10);
     }
 
 
