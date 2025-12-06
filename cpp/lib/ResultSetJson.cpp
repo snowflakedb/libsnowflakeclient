@@ -407,7 +407,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
     }
     else
     {
-        value = std::strtoll(cell->valuestring, &endptr, 10);
+        value = std::strtoull(cell->valuestring, &endptr, 10);
     }
 
 
@@ -481,7 +481,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
     }
     else 
     {
-        value = std::strtoll(cell->valuestring, &endptr, 10);
+        value = std::strtoull(cell->valuestring, &endptr, 10);
     }
 
 
