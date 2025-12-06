@@ -1156,7 +1156,8 @@ void ArrowChunkIterator::initColumnChunks()
         {
             case arrow::Type::STRUCT: {
                 arrowcol.arrowStructArray = std::static_pointer_cast<arrow::StructArray>(columnArray).get();
-                if (m_metadata[i].type != SF_DB_TYPE_DECFLOAT) {
+                if (m_metadata[i].type != SF_DB_TYPE_DECFLOAT)
+                {
                     auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
                     std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
                     ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
@@ -1237,8 +1238,10 @@ void ArrowChunkIterator::initColumnChunks()
 void ArrowChunkIterator::twosComplementLittleEndian(uint8_t* littleEndian, int bytelen)
 {
     bool found = false;
-    for (int i = 0; i < bytelen; i++) {
-        if (!found) {
+    for (int i = 0; i < bytelen; i++) 
+    {
+        if (!found) 
+        {
             if (littleEndian[i] == 0) continue;
             littleEndian[i] = ~(littleEndian[i]) + 1;
             found = true;

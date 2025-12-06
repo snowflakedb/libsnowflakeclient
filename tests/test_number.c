@@ -476,10 +476,6 @@ void test_numeric_range_helper(sf_bool use_arrow) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt), sizeof(cases) / sizeof(NUMERIC_CASE));
 
-    char* str = NULL;
-    size_t str_len = 0;
-    size_t max_str_len = 0;
-
     while ((status = snowflake_fetch(sfstmt)) == SF_STATUS_SUCCESS) {
         int64 rid = 0;
         status = snowflake_column_as_int64(sfstmt, 1, &rid);
