@@ -512,28 +512,58 @@ sf_bool STDCALL http_perform(CURL *curl,
           if (curl_error_buffer[0] != '\0') {
             log_error("curl error buffer: %s", curl_error_buffer);
           }
-          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
-                                              (unsigned)retry_on_curle_couldnt_connect_count)
+          if (res == CURLE_COULDNT_CONNECT &&
+              curl_retry_ctx.retry_count < (unsigned)retry_on_curle_couldnt_connect_count)
+          {
+            retry = SF_BOOLEAN_TRUE;
+            uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+            log_error(
+                    "curl_easy_perform() failed connecting to server on attempt %d, "
+                    "will retry after %d second",
+                    curl_retry_ctx.retry_count,
+                    next_sleep_in_secs);
+            sf_sleep_ms(next_sleep_in_secs*1000);
+          } else if ((res == CURLE_OPERATION_TIMEDOUT) &&
+                     ((renew_timeout > 0) && (curl_timeout == renew_timeout)))
+          // retry directly without backoff when timeout is triggered by renew
+          {
+            retry = SF_BOOLEAN_TRUE;
+          }
+          // retry with backoff on any other curl error except particular non-retryable ones
+          else {
+            char msg[1024];
+            if (res == CURLE_SSL_CACERT_BADFILE) {
+              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
+              msg[sizeof(msg) - 1] = (char)0;
+              log_error(msg);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                  msg,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            else if (res == CURLE_SSL_INVALIDCERTSTATUS) {
+              log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                  msg,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            else if (res == CURLE_PEER_FAILED_VERIFICATION)
             {
-              retry = SF_BOOLEAN_TRUE;
-              uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
-              log_error(
-                      "curl_easy_perform() failed connecting to server on attempt %d, "
-                      "will retry after %d second",
-                      curl_retry_ctx.retry_count,
-                      next_sleep_in_secs);
-              sf_sleep_ms(next_sleep_in_secs*1000);
-            } else if ((res == CURLE_OPERATION_TIMEDOUT) ||
-                       (res == CURLE_PARTIAL_FILE)) {
-              // retry directly without backoff when timeout is triggered by renew
-              if ((res == CURLE_OPERATION_TIMEDOUT) &&
-                  (renew_timeout > 0) && (curl_timeout == renew_timeout))
-              {
-                retry = SF_BOOLEAN_TRUE;
-              }
-              // otherwise retry with backoff
-              else if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                       ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
+              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+              msg[sizeof(msg) - 1] = (char)0;
+              log_error(msg);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                  msg,
+                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            // otherwise retry with backoff
+            else {
+              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+              msg[sizeof(msg) - 1] = (char)0;
+              log_warn(msg);
+
+              if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                 ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
@@ -553,24 +583,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
               }
             }
-            else {
-              char msg[1024];
-              if (res == CURLE_SSL_CACERT_BADFILE) {
-                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
-                        curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
-                }
-                else {
-                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-                }
-                msg[sizeof(msg)-1] = (char)0;
-                log_error(msg);
-                if (res == CURLE_SSL_INVALIDCERTSTATUS) {
-                  log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
-                }
-                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                    msg,
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
-            }
+          }
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
                 CURLE_OK) {
