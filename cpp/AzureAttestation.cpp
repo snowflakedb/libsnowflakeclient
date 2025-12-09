@@ -13,6 +13,12 @@ namespace {
 namespace Snowflake {
   namespace Client {
     boost::optional<Attestation> createAzureAttestation(AttestationConfig& config) {
+      if (config.workloadIdentityImpersonationPath &&
+      !config.workloadIdentityImpersonationPath.get().empty()) {
+        CXX_LOG_ERROR("Workload identity impersonation is not supported for Azure");
+        return boost::none;
+      }
+
       auto azureConfigOpt = AzureAttestationConfig::fromConfig(config);
       if (!azureConfigOpt) {
         return boost::none;
@@ -73,6 +79,9 @@ namespace Snowflake {
         url.params().append({"api-version", "2019-08-01"});
       }
       else {
+        if (clientId) {
+          url.params().append({"client_id", clientId.get()});
+        }
         url.params().append({"api-version", "2018-02-01"});
       }
 
@@ -94,6 +103,11 @@ namespace Snowflake {
       AzureAttestationConfig azureConfig;
       azureConfig.snowflakeEntraResource = config.snowflakeEntraResource.get_value_or(defaultSnowflakeEntraResource);
       azureConfig.managedIdentity = AzureFunctionsManagedIdentityConfig::fromEnv();
+      if (!azureConfig.managedIdentity) {
+        auto clientId = std::getenv("MANAGED_IDENTITY_CLIENT_ID");
+        azureConfig.clientId = clientId ? boost::optional<std::string>{clientId} : boost::none;
+      }
+      
       return azureConfig;
     }
 

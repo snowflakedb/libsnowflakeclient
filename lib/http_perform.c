@@ -18,6 +18,7 @@
 #include <snowflake/basic_types.h>
 #include <snowflake/client.h>
 #include <snowflake/logger.h>
+#include <snowflake/Stopwatch.h>
 
 #include "connection.h"
 #include "mock_http_perform.h"
@@ -96,6 +97,8 @@ int my_trace(CURL *handle, curl_infotype type,
     const char *text;
     (void) handle; /* prevent compiler warning */
 
+    char masked[5000] = {'\0'};
+
     switch (type) {
         case CURLINFO_TEXT:
             sf_fprintf(stderr, "== Info: %s", data);
@@ -123,7 +126,8 @@ int my_trace(CURL *handle, curl_infotype type,
             break;
     }
 
-    dump(text, stderr, (unsigned char *) data, size, config->trace_ascii);
+    terminal_mask(data, size, masked, sizeof(masked));
+    dump(text, stderr, (unsigned char *) masked, strlen(masked), config->trace_ascii);
     return 0;
 }
 
@@ -136,6 +140,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              cJSON **json,
                              NON_JSON_RESP *non_json_resp,
                              char** resp_headers,
+                             int64 retry_timeout,
                              int64 network_timeout,
                              sf_bool chunk_downloader,
                              SF_ERROR_STRUCT *error,
@@ -170,18 +175,34 @@ sf_bool STDCALL http_perform(CURL *curl,
     {
       djb.cap = SF_NEW_STRATEGY_BACKOFF_CAP;
     }
+    log_debug("Starting http_perform");
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
 
-    network_timeout = (network_timeout > 0) ? network_timeout : SF_RETRY_TIMEOUT;
+    retry_timeout = (retry_timeout > 0) ? retry_timeout : SF_RETRY_TIMEOUT;
+    if (elapsed_time) {
+        retry_timeout -= *elapsed_time;
+        if (retry_timeout <= 0) {
+            retry_timeout = 1;
+        }
+    }
+
+    network_timeout = (network_timeout > 0) ? network_timeout : SF_NETWORK_TIMEOUT;
     if (elapsed_time) {
         network_timeout -= *elapsed_time;
         if (network_timeout <= 0) {
             network_timeout = 1;
         }
     }
+    if (retry_timeout < network_timeout)
+    {
+        network_timeout = retry_timeout;
+    }
+
     RETRY_CONTEXT curl_retry_ctx = {
             retried_count ? *retried_count : 0,      //retry_count
             0,      // retry reason
-            network_timeout,
+            retry_timeout,
             djb.base,      // time to sleep
             &djb,    // Decorrelate jitter
             sf_get_current_time_millis() // start time
@@ -487,6 +508,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         /* Check for errors */
         if (res != CURLE_OK) {
+          char msg[1024];
           if (curl_error_buffer[0] != '\0') {
             log_error("curl error buffer: %s", curl_error_buffer);
           }
@@ -501,9 +523,35 @@ sf_bool STDCALL http_perform(CURL *curl,
                       curl_retry_ctx.retry_count,
                       next_sleep_in_secs);
               sf_sleep_ms(next_sleep_in_secs*1000);
-            } else if ((res == CURLE_OPERATION_TIMEDOUT) && (renew_timeout > 0)) {
-               retry = SF_BOOLEAN_TRUE;
-            } else {
+            } else if (res == CURLE_OPERATION_TIMEDOUT) {
+              // retry directly without backoff when timeout is triggered by renew
+              if ((renew_timeout > 0) && (curl_timeout == renew_timeout))
+              {
+                retry = SF_BOOLEAN_TRUE;
+              }
+              // otherwise retry with backoff
+              else if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                       ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
+              {
+                uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                log_debug(
+                    "retry on network timeout, retry count  %d "
+                    "will retry after %d seconds", res,
+                    curl_retry_ctx.retry_count,
+                    next_sleep_in_secs);
+                sf_sleep_ms(next_sleep_in_secs * 1000);
+                retry = SF_BOOLEAN_TRUE;
+              }
+              else {
+                sf_sprintf(msg, sizeof(msg),
+                          "Exceeded the retry_timeout , curl code: [%d]",
+                          res);
+                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_RETRY,
+                                    msg,
+                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+              }
+            }
+            else {
               char msg[1024];
               if (res == CURLE_SSL_CACERT_BADFILE) {
                 sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
@@ -629,7 +677,8 @@ sf_bool STDCALL http_perform(CURL *curl,
     {
         SF_FREE(headerBuffer.buffer);
     }
-
+    stopwatch_stop(&stopwatch);
+    log_debug("Complete http_perform. It took %ld milliseconds.", stopwatch_elapsedMillis(&stopwatch));
     return ret;
 }
 
@@ -644,6 +693,7 @@ sf_bool STDCALL __wrap_http_perform(CURL *curl,
                                     cJSON **json,
                                     NON_JSON_RESP *non_json_resp,
                                     char** resp_headers,
+                                    int64 retry_timeout,
                                     int64 network_timeout,
                                     sf_bool chunk_downloader,
                                     SF_ERROR_STRUCT *error,
