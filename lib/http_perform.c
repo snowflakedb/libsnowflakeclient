@@ -508,7 +508,6 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         /* Check for errors */
         if (res != CURLE_OK) {
-          char msg[1024];
           if (curl_error_buffer[0] != '\0') {
             log_error("curl error buffer: %s", curl_error_buffer);
           }
@@ -532,6 +531,8 @@ sf_bool STDCALL http_perform(CURL *curl,
           // retry with backoff on any other curl error except particular non-retryable ones
           else {
             char msg[1024];
+            sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            msg[sizeof(msg) - 1] = (char)0;
             if (res == CURLE_SSL_CACERT_BADFILE) {
               sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
                     curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
@@ -549,8 +550,6 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
             else if (res == CURLE_PEER_FAILED_VERIFICATION)
             {
-              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-              msg[sizeof(msg) - 1] = (char)0;
               log_error(msg);
               SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
                   msg,
@@ -558,10 +557,6 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
             // otherwise retry with backoff
             else {
-              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-              msg[sizeof(msg) - 1] = (char)0;
-              log_warn(msg);
-
               if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
               {
@@ -575,6 +570,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                 retry = SF_BOOLEAN_TRUE;
               }
               else {
+                log_error(msg);
                 sf_sprintf(msg, sizeof(msg),
                           "Exceeded the retry_timeout , curl code: [%d]",
                           res);
