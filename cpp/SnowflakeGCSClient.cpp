@@ -39,12 +39,12 @@ SnowflakeGCSClient::SnowflakeGCSClient(StageInfo *stageInfo, unsigned int parall
 {
   if (!m_gcsAccessToken.empty())
   {
-    CXX_LOG_INFO("Using GCS down scoped token.");
+    CXX_LOG_DEBUG("Using GCS down scoped token.");
   }
 
   if (!m_stageInfo)
   {
-    CXX_LOG_INFO("Internal error: invalid stage info");
+    CXX_LOG_DEBUG("Internal error: invalid stage info");
     return;
   }
 

@@ -1,6 +1,7 @@
 #include "snowflake/TomlConfigParser.hpp"
 #include "../logger/SFLogger.hpp"
 #include "memory.h"
+#include "log_file_util.h"
 
 #define TOML_EXCEPTIONS 0
 #include <toml++/toml.hpp>
@@ -156,6 +157,7 @@ namespace
 
   std::map<std::string, boost::variant<std::string, int, bool, double>> parseTomlFile(const boost::filesystem::path& filePath) {
     std::map<std::string, boost::variant<std::string, int, bool, double>> connectionParams;
+	log_file_usage(filePath.string().c_str(), "Reading TOML config file.", true);
     if (!boost::filesystem::exists(filePath))
     {
       CXX_LOG_ERROR("Could not find toml file. The file may not exist: %s",
