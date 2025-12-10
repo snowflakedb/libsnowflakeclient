@@ -330,7 +330,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_CRL_DOWNLOAD_TIMEOUT,
     SF_CON_WIF_PROVIDER,
     SF_CON_WIF_TOKEN,
-    SF_CON_WIF_AZURE_RESOURCE
+    SF_CON_WIF_AZURE_RESOURCE,
+    SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH
 } SF_ATTRIBUTE;
 
 /**
@@ -513,6 +514,9 @@ typedef struct SF_CONNECT {
     char *wif_provider;
     char *wif_token;
     char *wif_azure_resource;
+
+    // WIF impersonation path
+    char *workload_identity_impersonation_path;
 
     // put get configurations
     sf_bool use_s3_regional_url;
