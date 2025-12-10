@@ -6,6 +6,7 @@ add_executable(
         test_okta.c
         test_external_browser.c
         test_mfa.c
+        test_wif.c
         test_runner.c
         auth_utils.c
         ../utils/test_setup.c

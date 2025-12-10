@@ -31,6 +31,7 @@
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
+#include "snowflake/WifAttestation.hpp"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -83,6 +84,10 @@ extern "C" {
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS) == 0)
     {
         return AUTH_OAUTH_CLIENT_CREDENTIALS;
+    }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_WORKLOAD_IDENTITY) == 0)
+    {
+        return AUTH_WIF;
     }
     if (strcasecmp(authenticator, "test") == 0)
     {
@@ -209,6 +214,46 @@ extern "C" {
               snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
           }
       }
+      if (AUTH_WIF == authenticator)
+      {
+          Snowflake::Client::AttestationConfig config;
+          
+          // Populate config from SF_CONNECT fields
+          if (conn->wif_provider) {
+              auto typeOpt = Snowflake::Client::attestationTypeFromString(conn->wif_provider);
+              if (typeOpt) {
+                  config.type = typeOpt;
+                  log_debug("Using explicit WIF provider: %s", conn->wif_provider);
+              } else {
+                  log_warn("Invalid WIF provider specified: %s, falling back to auto-detection", conn->wif_provider);
+              }
+          }
+          
+          if (conn->wif_token) {
+              config.token = std::string(conn->wif_token);
+              log_debug("Using explicit WIF token");
+          }
+          
+          if (conn->wif_azure_resource) {
+              config.snowflakeEntraResource = std::string(conn->wif_azure_resource);
+              log_debug("Using Azure resource: %s", conn->wif_azure_resource);
+          }
+          
+          if (auto attestationOpt = Snowflake::Client::createAttestation(config))
+          {
+              const Snowflake::Client::Attestation &attestation = attestationOpt.value();
+
+              snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+              snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+
+              snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+              snowflake_cJSON_AddStringToObject(data, "TOKEN", attestation.credential.c_str());
+              snowflake_cJSON_AddStringToObject(data, "PROVIDER",
+                  Snowflake::Client::stringFromAttestationType(attestation.type));
+          } else {
+              log_error("Failed to create WIF attestation - not running in a supported cloud environment?");
+          }
+      }
 
       if (conn->sso_token)
       {
@@ -241,8 +286,6 @@ extern "C" {
       {
           ; // Do nothing
       }
-
-      return;
   }
 
   void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
@@ -265,8 +308,6 @@ extern "C" {
     {
       ; // Do nothing
     }
-
-    return;
   }
 
   void STDCALL auth_terminate(SF_CONNECT * conn)
