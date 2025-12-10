@@ -131,7 +131,7 @@ SF_STATUS STDCALL StringToUint64(
     }
     // All checks passed. Proceed to write to buffer.
     *out_data = convData;
-    if ((*out_data == 0 && str_data != "0") || charsProcessed == str_data[0])
+    if ((*out_data == 0 && str_data != "0"))
     {
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }

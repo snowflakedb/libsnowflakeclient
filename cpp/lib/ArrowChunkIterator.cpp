@@ -912,21 +912,13 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
             );
 
             std::vector<uint8_t> bec(value, value + len);
-
-            uint8_t littleEndian[16];
-            for (int i = 0; i < len; i++)
-            {
-                littleEndian[i] = value[len - i - 1];
-            }
-
-            arrow::Result<arrow::Decimal128> maybe_dec = arrow::Decimal128::FromBigEndian(bec.data(), len);
-            if (!maybe_dec.ok()) {
+            arrow::Result<arrow::Decimal128> res = arrow::Decimal128::FromBigEndian(bec.data(), len);
+            if (!res.ok()) {
                 CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Failed to convert from big endian to Decimal128, row index in batch: %d, col: %d", m_currRowIndexInBatch, (int)colIdx);
                 return SF_STATUS_ERROR_CONVERSION_FAILURE;
             };
 
-            arrow::Decimal128 dec = *maybe_dec;
-
+            arrow::Decimal128 dec = *res;
             std::string digits = dec.ToString(0);
             bool isPositive = true;
             if (digits[0] == '-') {
@@ -935,10 +927,9 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
             }
 
             int mantissaDigits = static_cast<int>(digits.size());
-
+            
             // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
             int sciExp = (mantissaDigits - 1) + exponent;
-
             if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
                 // it means that the number is too big or too small, use scientific notation
                 std::string m = digits.size() > 1
@@ -946,7 +937,6 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
                     : std::string(1, digits[0]);
 
                 outString = (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
-
             }
             else
             {
@@ -971,7 +961,6 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
                 }
                 outString = (isPositive ? "" : "-") + digits;
             }
-
             return SF_STATUS_SUCCESS;
         }
         return SF_STATUS_ERROR_CONVERSION_FAILURE;

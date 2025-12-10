@@ -325,7 +325,6 @@ public:
      *
      * @return 0 if successful, otherwise an error is returned.
      */
-
     SF_STATUS STDCALL getCellAsString(
         size_t colIdx,
         std::string& outString);
