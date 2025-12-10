@@ -144,32 +144,6 @@ public:
                        ResultSetArrow * parent);
 
     /**
-     * Compute the two's-complement of a little-endian byte buffer in-place.
-     *
-     * Interprets the bytes at `littleEndian` as an unsigned integer in
-     * little-endian order, computes its two's-complement (i.e. negates the
-     * integer) and writes the resulting bytes back into the same buffer.
-
-     * @param littleEndian Pointer to the least-significant byte of the buffer.
-     *                     Must be non-null and writable for `bytelen` bytes.
-     * @param bytelen      Number of bytes in the buffer (must be > 0).
-     */
-    static void twosComplementLittleEndian(uint8_t* littleEndian, int bytelen);
-
-    /**
-     * Format a DECIMAL/NUMERIC value encoded as a little-endian byte buffer into a
-     * human-readable decimal string.
-     * 
-     * @param littleEndian pointer to the little-endian bytes representing the coefficient.
-     * @param len          number of bytes in the buffer.
-     * @param exponent     decimal scale (number of fractional digits).
-     * @param isPositive   true if the value is positive; false for negative.
-     * 
-     * @return the formatted decimal string.
-     */
-    static std::string formatDecFloatToString(const uint8_t* littleEndian, int len, int exponent, bool isPositive);
-
-    /**
      * Destructor.
      */
     ~ArrowChunkIterator() = default;

@@ -534,7 +534,6 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
     case arrow::Type::type::INT8:
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
-    case arrow::Type::type::STRUCT:
     {
         status = getCellAsInt64(colIdx, &data);
         if (status)
@@ -562,6 +561,24 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
         status = Conversion::Arrow::StringToUint64(strData, out_data);
         break;
     }
+    case arrow::Type::type::STRUCT:
+    {
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type)
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToUint64(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to UINT64 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+        break;
+    }
+
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -637,7 +654,6 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
     case arrow::Type::type::INT16:
     case arrow::Type::type::INT32:
     case arrow::Type::type::INT64:
-    case arrow::Type::type::STRUCT:
     {
         float64 data;
         status = getCellAsFloat64(colIdx, &data);
@@ -662,6 +678,23 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
         status = Conversion::Arrow::StringToFloat(strData, out_data);
+        break;
+    }
+    case arrow::Type::type::STRUCT:
+    {
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type) 
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToFloat(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to float32 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
         break;
     }
     case arrow::Type::type::STRING:
@@ -763,10 +796,21 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
     }
     case arrow::Type::type::STRUCT:
     {
-        std::string strData;
-        getCellAsString(colIdx, strData);
-        status = Conversion::Arrow::StringToDouble(strData, out_data);
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type) 
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToDouble(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to float64 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
         break;
+
     }
     case arrow::Type::type::STRING:
     {
@@ -863,19 +907,71 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
                 return SF_STATUS_ERROR_OUT_OF_BOUNDS;
             }
 
+            auto bytes_arr = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(
+                m_columns[colIdx].arrowStructArray->field(0)
+            );
+
+            std::vector<uint8_t> bec(value, value + len);
+
             uint8_t littleEndian[16];
             for (int i = 0; i < len; i++)
             {
                 littleEndian[i] = value[len - i - 1];
             }
 
-            bool isPositive = !(value[0] & 0x80);
-            if (!isPositive)
-            {
-                twosComplementLittleEndian(littleEndian, len);
+            arrow::Result<arrow::Decimal128> maybe_dec = arrow::Decimal128::FromBigEndian(bec.data(), len);
+            if (!maybe_dec.ok()) {
+                CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Failed to convert from big endian to Decimal128, row index in batch: %d, col: %d", m_currRowIndexInBatch, (int)colIdx);
+                return SF_STATUS_ERROR_CONVERSION_FAILURE;
+            };
+
+            arrow::Decimal128 dec = *maybe_dec;
+
+            std::string digits = dec.ToString(0);
+            bool isPositive = true;
+            if (digits[0] == '-') {
+                isPositive = false;
+                digits = digits.substr(1);
             }
 
-            outString = formatDecFloatToString(littleEndian, len, exponent, isPositive);
+            int mantissaDigits = static_cast<int>(digits.size());
+
+            // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
+            int sciExp = (mantissaDigits - 1) + exponent;
+
+            if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
+                // it means that the number is too big or too small, use scientific notation
+                std::string m = digits.size() > 1
+                    ? std::string(1, digits[0]) + '.' + digits.substr(1)
+                    : std::string(1, digits[0]);
+
+                outString = (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
+
+            }
+            else
+            {
+                if (exponent > 0) {
+                    digits.append(exponent, '0');
+                }
+                else
+                {
+                    int pointPos = mantissaDigits + exponent;
+                    if (pointPos != mantissaDigits)
+                    {
+                        if (pointPos > 0)
+                        {
+                            digits.insert(pointPos, 1, '.');
+                        }
+                        else
+                        {
+                            std::string leadingZeros(-pointPos, '0');
+                            digits = "0." + leadingZeros + digits;
+                        }
+                    }
+                }
+                outString = (isPositive ? "" : "-") + digits;
+            }
+
             return SF_STATUS_SUCCESS;
         }
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
@@ -1232,125 +1328,6 @@ void ArrowChunkIterator::initColumnChunks()
                 return;
             }
         }
-    }
-}
-
-void ArrowChunkIterator::twosComplementLittleEndian(uint8_t* littleEndian, int bytelen)
-{
-    bool found = false;
-    for (int i = 0; i < bytelen; i++) 
-    {
-        if (!found) 
-        {
-            if (littleEndian[i] == 0) continue;
-            littleEndian[i] = ~(littleEndian[i]) + 1;
-            found = true;
-            continue;
-        }
-        littleEndian[i] = ~(littleEndian[i]);
-    }
-}
-
-std::string ArrowChunkIterator::formatDecFloatToString(const uint8_t* littleEndian, int len, int exponent, bool isPositive)
-{
-    // handle zero
-    bool allZero = true;
-    for (int i = 0; i < len; ++i)
-    {
-        if (littleEndian[i] != 0) {
-            allZero = false; 
-            break;
-        }
-    }
-        
-    if (allZero) 
-    {
-        return std::string("0");
-    }
-
-    // build little-endian 32-bit limbs
-    int nl = (len + 3) / 4;
-    std::vector<uint32_t> limbs(nl, 0);
-    for (int i = 0; i < len; ++i)
-    {
-        int limbIdx = i / 4;
-        int byteShift = (i % 4) * 8;
-        limbs[limbIdx] |= (uint32_t)littleEndian[i] << byteShift;
-    }
-
-    // convert to big-endian limb vector for division
-    std::vector<uint32_t> be;
-    be.reserve(nl);
-    for (int i = nl - 1; i >= 0; --i) 
-    {
-        be.push_back(limbs[i]);
-    }
-    // remove leading zero limbs
-    while (!be.empty() && be.front() == 0) 
-    {
-        be.erase(be.begin());
-    }
-
-    // extract decimal digits by repeated divmod 10
-    std::string digits;
-    while (!be.empty())
-    {
-        uint64_t carry = 0;
-        for (size_t i = 0; i < be.size(); ++i)
-        {
-            uint64_t cur = (carry << 32) | be[i];
-            uint32_t q = static_cast<uint32_t>(cur / 10);
-            carry = cur % 10;
-            be[i] = q;
-        }
-        digits.push_back(char('0' + static_cast<int>(carry)));
-        // remove leading zero limbs
-        while (!be.empty() && be.front() == 0) 
-        {
-            be.erase(be.begin());
-        }
-    }
-
-    // digits now decimal mantissa (no leading zeros)
-    std::reverse(digits.begin(), digits.end());
-
-    // normalized exponent for scientific notation
-    int mantissaDigits = static_cast<int>(digits.size());
-
-    // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
-    int sciExp = (mantissaDigits - 1) + exponent;
-
-    if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
-        // it means that the number is too big or too small, use scientific notation
-        std::string m = digits.size() > 1
-            ? std::string(1, digits[0]) + '.' + digits.substr(1)
-            : std::string(1, digits[0]);
-
-        return (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
-        
-    }
-    else 
-    {
-        if (exponent > 0) {
-            digits.append(exponent, '0');
-        }
-        else
-        {
-            int pointPos = mantissaDigits + exponent;
-            if (pointPos != mantissaDigits)
-            {
-                if (pointPos > 0)
-                {
-                    digits.insert(pointPos, 1, '.');
-                }
-                else
-                {
-                    std::string leadingZeros(-pointPos, '0');
-                    digits = "0." + leadingZeros + digits;
-                }
-            }
-        }
-        return (isPositive ? "" : "-") + digits;
     }
 }
 } // namespace Client

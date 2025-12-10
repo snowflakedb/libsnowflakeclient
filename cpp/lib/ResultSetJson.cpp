@@ -234,33 +234,30 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32* out_data)
     char* endptr;
     errno = 0;
     if (std::strchr(cell->valuestring, 'e') != NULL) {
-        //Scientific notation minimum scale is 38 in the snowflake db, which menas it is out of int64 range or too small like 1e38 or 1e-38
-        float64 v = std::strtod(cell->valuestring, &endptr);
+        //Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
+        float64 v;
+        SF_STATUS ret = getCellAsFloat64(idx, &v);
+        if (ret != SF_STATUS_SUCCESS) {
+            return ret;
+        }
         if (v < 1 && v > -1)
         {
-            // The conversion error will be occurred in below check
-            value = 0;
+            CXX_LOG_ERROR("Value is too small to convert.");
+            setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Value is too small to convert.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
         else
         {
-            CXX_LOG_ERROR("Cannot convert value to uint32. Scientific notion value is too big or too small to convert to uint32");
+            CXX_LOG_ERROR("Cannot convert value to int32. Scientific notion value is too big or too small to convert to uint32");
             setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                "Cannot convert value to uint32.");
+                "Cannot convert value to int32.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
     }
     else
     {
         value = std::strtoll(cell->valuestring, &endptr, 10);
-    }
-
-    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
-        || endptr == cell->valuestring)
-    {
-        CXX_LOG_ERROR("Cannot convert value to int32.");
-        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-            "Cannot convert value to int32.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     if (((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE)
@@ -270,6 +267,15 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32* out_data)
         setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for int32.");
         return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
+    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
+        || endptr == cell->valuestring)
+    {
+        CXX_LOG_ERROR("Cannot convert value to int32.");
+        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "Cannot convert value to int32.");
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     *out_data = static_cast<int32>(value);
@@ -301,24 +307,38 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
     char * endptr;
     errno = 0;
     if (std::strchr(cell->valuestring, 'e') != NULL) {
-        //Scientific notation minimum scale is 38 in the snowflake db, which menas it is out of int64 range or too small like 1e38 or 1e-38
-        float64 v = std::strtod(cell->valuestring, &endptr);
+        //Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
+        float64 v;
+        SF_STATUS ret = getCellAsFloat64(idx, &v);
+        if (ret != SF_STATUS_SUCCESS) {
+            return ret;
+        }
         if (v < 1 && v > -1)
         {
-            // The conversion error will be occurred in below check
-            value = 0;
+            CXX_LOG_ERROR("Value is too small to convert.");
+            setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Value is too small to convert.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
         else
         {
-            CXX_LOG_ERROR("Cannot convert value to uint32. Scientific notion value is too big or too small to convert to uint32");
+            CXX_LOG_ERROR("Cannot convert value to int64. Scientific notion value is too big or too small to convert to uint32");
             setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                "Cannot convert value to uint32.");
+                "Cannot convert value to int64.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
     }
     else
     {
         value = std::strtoll(cell->valuestring, &endptr, 10);
+    }
+
+    if ((value == SF_INT64_MIN || value == SF_INT64_MAX) && errno == ERANGE)
+    {
+        CXX_LOG_ERROR("Value out of range for int64.");
+        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+            "Value out of range for int64.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
@@ -328,15 +348,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt64(size_t idx, int64 * out_data)
         setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
             "Cannot convert value to int64.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-
-    if ((value == SF_INT64_MIN || value == SF_INT64_MAX) && errno == ERANGE)
-    {
-        CXX_LOG_ERROR("Value out of range for int64.");
-        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-            "Value out of range for int64.");
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     *out_data = value;
@@ -390,12 +401,18 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
     char* endptr = NULL;
     errno = 0;
     if (std::strchr(cell->valuestring, 'e') != NULL) {
-        //Scientific notation minimum scale is 38 in the snowflake db, which menas it is out of int64 range or too small like 1e38 or 1e-38
-        float64 v = std::strtod(cell->valuestring, &endptr);
+        //Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
+        float64 v;
+        SF_STATUS ret = getCellAsFloat64(idx, &v);
+        if (ret != SF_STATUS_SUCCESS) {
+            return ret;
+        }
         if (v < 1 && v > -1)
         {
-            // The conversion error will be occurred in below check
-            value = 0;
+            CXX_LOG_ERROR("Value is too small to convert.");
+            setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Value is too small to convert.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
         else
         {
@@ -410,16 +427,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
         value = std::strtoull(cell->valuestring, &endptr, 10);
     }
 
-
-    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0) 
-        || endptr == cell->valuestring)
-    {
-        CXX_LOG_ERROR("Cannot convert value to uint32.");
-        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-            "Cannot convert value to uint32.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
     bool isNeg = (std::strchr(cell->valuestring, '-') != NULL) ? true : false;
 
     if (((value == 0 || value == ULONG_MAX) && errno == ERANGE)
@@ -430,6 +437,15 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint32(size_t idx, uint32 * out_data)
         setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for uint32.");
         return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
+    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0) 
+        || endptr == cell->valuestring)
+    {
+        CXX_LOG_ERROR("Cannot convert value to uint32.");
+        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "Cannot convert value to uint32.");
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     // If the input was negative, do a little trickery to get it into uint32.
@@ -464,18 +480,24 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
     char * endptr;
     errno = 0;
     if (std::strchr(cell->valuestring, 'e') != NULL) {
-        //Scientific notation minimum scale is 38 in the snowflake db, which menas it is out of int64 range or too small like 1e38 or 1e-38
-        float64 v = std::strtod(cell->valuestring, &endptr);
-        if (v < 1 && v > -1) 
+        //Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
+        float64 v;
+        SF_STATUS ret = getCellAsFloat64(idx, &v);
+        if (ret != SF_STATUS_SUCCESS) {
+            return ret;
+        }
+        if (v < 1 && v > -1)
         {
-            // The conversion error will be occurred in below check
-            value = 0;
+            CXX_LOG_ERROR("Value is too small to convert.");
+            setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "Value is too small to convert.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
         else 
         {
-            CXX_LOG_ERROR("Cannot convert value to uint32. Scientific notion value is too big or too small to convert to uint32");
+            CXX_LOG_ERROR("Cannot convert value to uint64. Scientific notion value is too big or too small to convert to uint32");
             setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                "Cannot convert value to uint32.");
+                "Cannot convert value to uint64.");
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
     }
@@ -484,6 +506,13 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
         value = std::strtoull(cell->valuestring, &endptr, 10);
     }
 
+    if ((value == 0 || value == SF_UINT64_MAX) && errno == ERANGE)
+    {
+        CXX_LOG_ERROR("Value out of range for uint64.");
+        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+            "Value out of range for uint64.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
 
     if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
         || endptr == cell->valuestring)
@@ -494,13 +523,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsUint64(size_t idx, uint64 * out_data)
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
-    if ((value == 0 || value == SF_UINT64_MAX) && errno == ERANGE)
-    {
-        CXX_LOG_ERROR("Value out of range for uint64.");
-        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-            "Value out of range for uint64.");
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
-    }
 
     *out_data = value;
     return SF_STATUS_SUCCESS;
@@ -531,6 +553,14 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat32(size_t idx, float32 * out_data
     errno = 0;
     value = std::strtof(cell->valuestring, &endptr);
 
+    if (errno == ERANGE || value == INFINITY || value == -INFINITY)
+    {
+        CXX_LOG_ERROR("Value out of range for float32.");
+        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+            "Value out of range for float32.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
     if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
         || endptr == cell->valuestring)
     {
@@ -538,14 +568,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat32(size_t idx, float32 * out_data
         setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
             "Cannot convert value to float32.");
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
-
-    if (errno == ERANGE || value == INFINITY || value == -INFINITY)
-    {
-        CXX_LOG_ERROR("Value out of range for float32.");
-        setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-            "Value out of range for float32.");
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     *out_data = value;
@@ -577,14 +599,6 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat64(size_t idx, float64 * out_data
     errno = 0;
     value = std::strtod(cell->valuestring, &endptr);
 
-    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
-        || endptr == cell->valuestring)
-    {
-        CXX_LOG_ERROR("Cannot convert value to float64.");
-        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-            "Cannot convert value to float64.");
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
-    }
 
     if (errno == ERANGE || value == -INFINITY || value == INFINITY)
     {
@@ -592,6 +606,15 @@ SF_STATUS STDCALL ResultSetJson::getCellAsFloat64(size_t idx, float64 * out_data
         setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for float64.");
         return SF_STATUS_ERROR_OUT_OF_RANGE;
+    }
+
+    if ((value == 0 && std::strcmp(cell->valuestring, "0") != 0)
+        || endptr == cell->valuestring)
+    {
+        CXX_LOG_ERROR("Cannot convert value to float64.");
+        setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+            "Cannot convert value to float64.");
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     *out_data = value;

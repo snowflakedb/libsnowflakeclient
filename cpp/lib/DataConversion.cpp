@@ -94,11 +94,27 @@ SF_STATUS STDCALL StringToInteger(
 
 SF_STATUS STDCALL StringToUint64(
     const std::string& str_data,
-    uint64 * out_data
+    uint64* out_data
 )
 {
     size_t charsProcessed;
     uint64 convData;
+    if (str_data.find('e')) {
+        float64 v;
+        StringToDouble(str_data, &v);
+        if (v < 1 && v > -1)
+        {
+            // The conversion error will be occurred in below check
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+
+        if (v > static_cast<float64>(SF_UINT64_MAX))
+        {
+            CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+    }
+
     try
     {
         convData = static_cast<int64>(std::stoull(str_data, &charsProcessed, 10));
@@ -113,10 +129,14 @@ SF_STATUS STDCALL StringToUint64(
         CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
-
     // All checks passed. Proceed to write to buffer.
     *out_data = convData;
+    if ((*out_data == 0 && str_data != "0") || charsProcessed == str_data[0])
+    {
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+    }
     return SF_STATUS_SUCCESS;
+
 }
 
 SF_STATUS STDCALL StringToDouble(

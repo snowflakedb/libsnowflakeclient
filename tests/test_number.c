@@ -364,7 +364,7 @@ void test_numeric_range_helper(sf_bool use_arrow) {
           .exp_f32_status = SF_STATUS_SUCCESS, .exp_f32 = 20000000000.0f,
           .exp_f64_status = SF_STATUS_SUCCESS, .exp_f64 = 20000000000.0
         },
-        ////Where the scientific notion starts in db
+        //////Where the scientific notion starts in db
         {.id = 3, .val = "123e36",
           .exp_i32_status = SF_STATUS_ERROR_OUT_OF_RANGE,
           .exp_i64_status = SF_STATUS_ERROR_OUT_OF_RANGE,
@@ -396,7 +396,7 @@ void test_numeric_range_helper(sf_bool use_arrow) {
           .exp_i64_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
           .exp_u32_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
           .exp_u64_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
-          .exp_f32_status = SF_STATUS_ERROR_CONVERSION_FAILURE,
+          .exp_f32_status = SF_STATUS_ERROR_OUT_OF_RANGE,
           .exp_f64_status = SF_STATUS_SUCCESS, .exp_f64 = 23456e-100
         },
     };
