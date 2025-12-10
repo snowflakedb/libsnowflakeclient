@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "platform.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,7 +63,7 @@ extern "C" {
     }
 
     // helper function for sf_strcat and sf_strncat
-    static inline char* sf_cat(char* dst, size_t dstsize, char const* src, size_t srclen)
+    static inline char* sf_cat(char* dst, size_t dstsize, char const* src, long long srclen)
     {
         size_t dstlen = strlen(dst);
         return dstsize < dstlen ?
@@ -188,8 +190,10 @@ extern "C" {
         va_list in_argPtr)
     {
 #if defined(_WIN32) || defined(_WIN64)
+        SF_UNUSED(in_sizeToWrite)
         int ret = _vsnprintf_s(out_buffer, in_sizeOfBuffer, _TRUNCATE, in_format, in_argPtr);
 #else
+        SF_UNUSED(in_sizeOfBuffer);
         int ret = vsnprintf(out_buffer, in_sizeToWrite + 1, in_format, in_argPtr);
         if ((size_t)ret > in_sizeToWrite)
         {

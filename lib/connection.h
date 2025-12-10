@@ -21,9 +21,11 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
 #pragma comment(lib, "wldap32.lib" )
 #pragma comment(lib, "crypt32.lib" )
 #pragma comment(lib, "Ws2_32.lib")
+#endif
 
 #define CURL_STATICLIB 
 #include <stdio.h>

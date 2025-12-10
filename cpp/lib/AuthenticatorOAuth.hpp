@@ -64,10 +64,6 @@ namespace Snowflake {
             SF_CONNECT* m_connection;
             AuthenticationChallengeBaseProvider* m_challengeProvider;
             IAuthenticationWebBrowserRunner* m_webBrowserRunner;
-
-            std::unique_ptr<IAuthWebServer> m_authWebServer;
-            typedef Snowflake::Client::Util::IBase64 Base64;
-
             AuthenticatorType m_oauthFlow;
             SFURL m_authEndpoint;
             SFURL m_tokenEndpoint;
@@ -76,7 +72,10 @@ namespace Snowflake {
             std::string m_authScope;
             SFURL m_redirectUri;
             bool m_redirectUriDynamicDefault;
+            std::unique_ptr<IAuthWebServer> m_authWebServer;
             bool m_singleUseRefreshTokens;
+
+            typedef Snowflake::Client::Util::IBase64 Base64;
 
             std::string m_token;
         };
