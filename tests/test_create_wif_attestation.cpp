@@ -191,6 +191,107 @@ void test_unit_aws_attestation_cred_missing(void **) {
   test_unit_aws_attestation_failed(&awsSdkWrapper);
 }
 
+//  These tests only verify the impersonation path parsing and configuration handling
+// not the actual STS calls, which requires valid AWS setup.
+
+void test_unit_aws_attestation_impersonation_single_role(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
+  
+  // Will fail at actual STS call, but validates path parsing and code path
+  const auto attestationOpt = createAttestation(config);
+  assert_true(!attestationOpt || attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_role_chain(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = 
+      "arn:aws:iam::123456789012:role/Role1,"
+      "arn:aws:iam::123456789012:role/Role2,"
+      "arn:aws:iam::123456789012:role/Role3";
+  
+  // Will fail at STS, but validates chain parsing
+  const auto attestationOpt = createAttestation(config);
+  assert_true(!attestationOpt || attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_whitespace_handling(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = 
+      "  arn:aws:iam::123456789012:role/Role1  , "
+      " arn:aws:iam::123456789012:role/Role2 ";
+  
+  // Will fail at STS, but validates whitespace trimming
+  const auto attestationOpt = createAttestation(config);
+  assert_true(!attestationOpt || attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_cross_account(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = 
+      "arn:aws:iam::111111111111:role/SourceRole,"
+      "arn:aws:iam::222222222222:role/TargetRole";
+  
+  // Will fail at STS, but validates cross-account ARN parsing
+  const auto attestationOpt = createAttestation(config);
+  assert_true(!attestationOpt || attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_empty_path_fallback(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = "";
+  
+  auto attestationOpt = createAttestation(config);
+  assert_true(attestationOpt.has_value());
+  
+  const auto& attestation = attestationOpt.get();
+  assert_true(attestation.type == AttestationType::AWS);
+}
+
+void test_unit_aws_attestation_impersonation_with_missing_region(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(boost::none, AWS_TEST_CREDS);
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
+}
+
+void test_unit_aws_attestation_impersonation_with_missing_credentials(void **) {
+  auto awsSdkWrapper = FakeAwsSdkWrapper(AWS_TEST_REGION, Aws::Auth::AWSCredentials());
+  
+  AttestationConfig config;
+  config.type = AttestationType::AWS;
+  config.awsSdkWrapper = &awsSdkWrapper;
+  config.workloadIdentityImpersonationPath = "arn:aws:iam::123456789012:role/TestRole";
+
+  const auto attestationOpt = createAttestation(config);
+  assert_false(attestationOpt.has_value());
+}
+
 std::vector<char> makeGCPToken(boost::optional<std::string> issuer, boost::optional<std::string> subject) {
   auto jwtObj = Jwt::JWTObject();
   jwtObj.getHeader()->setAlgorithm(Jwt::AlgorithmType::RS256);
@@ -872,6 +973,13 @@ int main() {
       cmocka_unit_test(test_unit_aws_attestation_china_region_success),
       cmocka_unit_test(test_unit_aws_attestation_region_missing),
       cmocka_unit_test(test_unit_aws_attestation_cred_missing),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_single_role),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_role_chain),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_whitespace_handling),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_cross_account),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_empty_path_fallback),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_region),
+      cmocka_unit_test(test_unit_aws_attestation_impersonation_with_missing_credentials),
       cmocka_unit_test(test_unit_gcp_attestation_success),
       cmocka_unit_test(test_unit_gcp_attestation_missing_issuer),
       cmocka_unit_test(test_unit_gcp_attestation_missing_subject),

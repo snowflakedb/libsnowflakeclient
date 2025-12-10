@@ -1,5 +1,11 @@
 import groovy.json.JsonOutput
 
+// Skip older builds when new commits are pushed to the same branch (except master)
+if (env.BRANCH_NAME != 'master') {
+  properties([
+    disableConcurrentBuilds(abortPrevious: true)
+  ])
+}
 
 timestamps {
   node('regular-memory-node') {

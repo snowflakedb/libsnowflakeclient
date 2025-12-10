@@ -389,3 +389,49 @@ void test_wif_get_attributes(void **unused) {
     fprintf(stderr, "WIF get_attribute tests passed\n");
 }
 
+// Test that workload identity impersonation path can be set and retrieved
+void test_wif_impersonation_path_set_and_get(void **unused) {
+    SF_UNUSED(unused);
+
+    SF_CONNECT *sf = snowflake_init();
+    assert_non_null(sf);
+
+    // Test setting the workload identity impersonation path
+    const char *test_path = "service-account-1@project.iam.gserviceaccount.com,service-account-2@project.iam.gserviceaccount.com";
+    SF_STATUS status = snowflake_set_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, test_path);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Test getting the workload identity impersonation path
+    char *retrieved_path = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, (void **)&retrieved_path);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_non_null(retrieved_path);
+    assert_string_equal(retrieved_path, test_path);
+
+    snowflake_term(sf);
+}
+
+// Test that workload identity impersonation path can be cleared
+void test_wif_impersonation_path_clear(void **unused) {
+    SF_UNUSED(unused);
+
+    SF_CONNECT *sf = snowflake_init();
+    assert_non_null(sf);
+
+    const char *test_path = "service-account@project.iam.gserviceaccount.com";
+    SF_STATUS status = snowflake_set_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, test_path);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Clear value by setting to NULL
+    status = snowflake_set_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, NULL);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // Verify NULL
+    char *retrieved_path = NULL;
+    status = snowflake_get_attribute(sf, SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH, (void **)&retrieved_path);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+    assert_null(retrieved_path);
+
+    snowflake_term(sf);
+}
+
