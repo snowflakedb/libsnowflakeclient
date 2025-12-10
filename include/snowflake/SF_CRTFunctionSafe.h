@@ -56,7 +56,7 @@ extern "C" {
     // helper function for sf_strcpy, sf_strncpy and sbcat on non-Windows
     static inline char* sf_copy(void* dst, size_t dstsize, char const* src, long long srclen)
     {
-        const size_t copyLen = (srclen < 0) ? strlen(src) + 1 : srclen;
+        const size_t copyLen = (srclen < 0) ? strlen(src) + 1 : (size_t)srclen;
 
         //NOTE: this copies the terminul:
         return (char*)sf_memcpy(dst, dstsize, src, copyLen);
@@ -69,7 +69,7 @@ extern "C" {
         return dstsize < dstlen ?
             NULL :
             sf_copy(dst + dstlen, dstsize - dstlen,
-                        src, srclen < 0 ? strlen(src) + 1 : srclen);
+                        src, srclen < 0 ? strlen(src) + 1 : (size_t)srclen);
     }
 
 /// @brief Copy a string.
