@@ -217,7 +217,7 @@ extern "C" {
       if (AUTH_WIF == authenticator)
       {
           Snowflake::Client::AttestationConfig config;
-          
+
           // Populate config from SF_CONNECT fields
           if (conn->wif_provider) {
               auto typeOpt = Snowflake::Client::attestationTypeFromString(conn->wif_provider);
@@ -228,17 +228,23 @@ extern "C" {
                   log_warn("Invalid WIF provider specified: %s, falling back to auto-detection", conn->wif_provider);
               }
           }
-          
+
           if (conn->wif_token) {
               config.token = std::string(conn->wif_token);
               log_debug("Using explicit WIF token");
           }
-          
+
           if (conn->wif_azure_resource) {
               config.snowflakeEntraResource = std::string(conn->wif_azure_resource);
               log_debug("Using Azure resource: %s", conn->wif_azure_resource);
           }
-          
+
+          // Pass workload identity impersonation path
+          if (conn->workload_identity_impersonation_path)
+          {
+              config.workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
+          }
+
           if (auto attestationOpt = Snowflake::Client::createAttestation(config))
           {
               const Snowflake::Client::Attestation &attestation = attestationOpt.value();

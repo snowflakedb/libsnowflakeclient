@@ -1135,6 +1135,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->disable_console_login = SF_BOOLEAN_TRUE;
         sf->disable_saml_url_check = SF_BOOLEAN_FALSE;
         sf->programmatic_access_token = NULL;
+        sf->workload_identity_impersonation_path = NULL;
 
         sf->wif_provider = NULL;
         sf->wif_token = NULL;
@@ -1246,6 +1247,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->wif_provider);
     SF_FREE(sf->wif_token);
     SF_FREE(sf->wif_azure_resource);
+    SF_FREE(sf->programmatic_access_token);
+    SF_FREE(sf->workload_identity_impersonation_path);
     SF_FREE(sf);
 
     stopwatch_stop(&stopwatch);
@@ -1434,7 +1437,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 }
 
                 if (code == strtol(SF_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE, NULL, 10))
-                { 
+                {
                     log_error("OAUTH acess token expired or invalid. Reauthenticate.");
                     SF_FREE(sf->oauth_token);
                     auth_renew_json_body(sf, body);
@@ -1645,6 +1648,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
+            break;
+        case SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH:
+            alloc_buffer_and_copy(&sf->workload_identity_impersonation_path, value);
             break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
@@ -1907,6 +1913,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_SINGLE_USE_REFRESH_TOKEN:
             *value = &sf->single_use_refresh_token;
+            break;
+        case SF_CON_PAT:
+            *value = sf->programmatic_access_token;
+            break;
+        case SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH:
+            *value = sf->workload_identity_impersonation_path;
             break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;
