@@ -190,7 +190,7 @@ extern "C" {
         va_list in_argPtr)
     {
 #if defined(_WIN32) || defined(_WIN64)
-        SF_UNUSED(in_sizeToWrite)
+        SF_UNUSED(in_sizeToWrite);
         int ret = _vsnprintf_s(out_buffer, in_sizeOfBuffer, _TRUNCATE, in_format, in_argPtr);
 #else
         SF_UNUSED(in_sizeOfBuffer);
