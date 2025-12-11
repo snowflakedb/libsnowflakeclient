@@ -696,7 +696,6 @@ typedef struct {
     int* len_ind; /* (optional) The array of length indicator to support array binding*/
 } SF_BIND_INPUT;
 
-
 /**
  *
  */

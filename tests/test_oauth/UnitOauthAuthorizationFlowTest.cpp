@@ -5,8 +5,7 @@
 #include "test_setup.h"
 #include "TestSetup.hpp"
 
-namespace {
-    using namespace Snowflake::Client;
+namespace Snowflake::Client {
 
     void configureRunners() {
         UnitOAuthBase::initAuthChallengeTestProvider();

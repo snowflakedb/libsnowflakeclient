@@ -381,10 +381,8 @@ namespace Snowflake {
             //TODO: SNOW-2452931:  This post call has the same workflows with the CIDP post calls. This code needs to be refactored.
 
             std::string destination = endPoint.toString();
-            void* curl_desc;
-            CURL* curl;
-            curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
-            curl = get_curl_from_desc(curl_desc);
+            void* curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
+            CURL* curl = get_curl_from_desc(curl_desc);
             SF_ERROR_STRUCT* err = &m_connection->error;
 
             int64 elapsedTime = 0;

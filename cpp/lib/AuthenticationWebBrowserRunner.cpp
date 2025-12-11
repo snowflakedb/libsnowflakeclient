@@ -57,13 +57,14 @@ namespace Snowflake
 #elif _WIN32
             HINSTANCE ret = ShellExecuteA(NULL, "open", ssoUrl.c_str(), NULL, NULL,
                 SW_SHOWNORMAL);
-            if (ret > (HINSTANCE)32)
+            if ((INT_PTR)ret > 32)
             {
                 // success
                 return;
             }
-            CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser. err: %d", (int)(unsigned long long)ret);
-            throw AuthException("SFOAuthError " + std::to_string((int)(unsigned long long)ret));
+            const auto failure_code = static_cast<int>(static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(ret)));
+            CXX_LOG_ERROR("sf::AuthenticationWebBrowserRunner::startWebBrowser::Failed to start web browser. err: %d", failure_code);
+            throw AuthException("SFOAuthError " + failure_code);
 #else
             // use fork to avoid using system() call and prevent command injection
             char* argv[3];

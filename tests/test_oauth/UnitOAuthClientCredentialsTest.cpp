@@ -7,8 +7,7 @@
 
 using namespace std;
 
-namespace {
-    using namespace Snowflake::Client;
+namespace Snowflake::Client {
     using UnitOAuthBase::initAuthChallengeTestProvider;
 
     SF_CONNECT* createConnection() {
