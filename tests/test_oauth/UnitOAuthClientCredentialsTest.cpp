@@ -1,6 +1,6 @@
 #include "../cpp/lib/AuthenticatorOAuth.hpp"
 #include "UnitOAuthBase.hpp"
-#include "wiremock.hpp"
+#include "../wiremock/wiremock.hpp"
 #include "../cpp/logger/SFLogger.hpp"
 #include "test_setup.h"
 #include "TestSetup.hpp"

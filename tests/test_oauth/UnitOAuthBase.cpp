@@ -6,7 +6,7 @@
 
 #include "AuthenticationChallengeTestProvider.hpp"
 #include "AuthenticationWebBrowserTestRunner.hpp"
-#include "wiremock.hpp"
+#include "../wiremock/wiremock.hpp"
 
 namespace Snowflake {
     namespace Client
