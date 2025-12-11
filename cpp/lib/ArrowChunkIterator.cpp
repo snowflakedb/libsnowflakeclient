@@ -349,7 +349,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         return SF_STATUS_SUCCESS;
     }
 
-    if (!rawData && ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type && m_metadata[colIdx].scale != 0) 
+    if (!rawData && ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type && m_metadata[colIdx].scale != 0)
         || SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type))
     {
         std::string val;
@@ -385,7 +385,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
                 return SF_STATUS_ERROR_OUT_OF_RANGE;
             }
         }
-   
+
         if (floatData > static_cast<float64>(SF_INT64_MAX) || floatData < static_cast<float64>(SF_INT64_MIN))
         {
             m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
@@ -403,20 +403,29 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         {
             // Need to round up or down
             std::string digits = val.substr(0, dotPos);
-            Conversion::Arrow::StringToInt64(digits, out_data);
+            status = Conversion::Arrow::StringToInt64(digits, out_data);
+            if (SF_STATUS_SUCCESS != status)
+            {
+                m_parent->setError(status,
+                    "Cannot convert value to int64.");
+                return status;
+            }
             if (val[dotPos + 1] >= '5')
             {
+                if (*out_data >= SF_INT64_MAX) 
+                {
+                    m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
+                        "Value out of range for int64.");
+                    return SF_STATUS_ERROR_OUT_OF_RANGE;
+                }
+
                 // Round up
-                *out_data+=1;
+                *out_data += 1;
+                return SF_STATUS_SUCCESS
             }
         }
-        else
-        {
-            //No decimal point, just convert directly
-           Conversion::Arrow::StringToInt64(val, out_data);
-        }
-
-        return SF_STATUS_SUCCESS;
+        //No decimal point, just convert directly
+        return Conversion::Arrow::StringToInt64(val, out_data);
     }
 
     int64 data;

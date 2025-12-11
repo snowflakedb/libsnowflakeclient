@@ -108,7 +108,7 @@ SF_STATUS STDCALL StringToInt64(
             return SF_STATUS_ERROR_CONVERSION_FAILURE;
         }
 
-        if (v > static_cast<float64>(SF_UINT64_MAX))
+        if (v > static_cast<float64>(SF_INT64_MAX))
         {
             CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
             return SF_STATUS_ERROR_OUT_OF_RANGE;
