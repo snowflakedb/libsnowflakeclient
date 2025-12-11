@@ -407,7 +407,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             if (val[dotPos + 1] >= '5')
             {
                 // Round up
-                *(out_data)++;
+                *out_data+=1;
             }
         }
         else
