@@ -1342,16 +1342,18 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         case AUTH_EXTERNALBROWSER:
         case AUTH_OAUTH_AUTHORIZATION_CODE:
             if (sf->client_store_temporary_credential)
+            {
                 if (sf->token_cache == NULL)
                 {
                     sf->token_cache = secure_storage_init();
                 }
-            if (authtype == AUTH_EXTERNALBROWSER) {
-                sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
-            }
-            else {
-                sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
-                sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+                if (authtype == AUTH_EXTERNALBROWSER) {
+                    sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                }
+                else {
+                    sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
+                    sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+                }
             }
             break;
         default:
