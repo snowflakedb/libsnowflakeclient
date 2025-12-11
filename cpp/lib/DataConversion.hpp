@@ -122,6 +122,19 @@ namespace Arrow
         uint64 * out_data);
 
     /**
+     * Function to convert a string value into a uint64 value.
+     *
+     * @param str_data             The string needs to be converted
+     * @param out_data             The buffer to which to write the converted value.
+     *
+     * @return 0 if successful, otherwise an error is returned.
+     */
+    SF_STATUS STDCALL StringToInt64(
+        const std::string& str_data,
+        int64* out_data);
+
+
+    /**
      * Function to convert a string value into a float64 value.
      *
      * @param str_data             The string value needs to be converted.
