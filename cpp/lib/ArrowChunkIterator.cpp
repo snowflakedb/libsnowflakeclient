@@ -421,7 +421,7 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
 
                 // Round up
                 *out_data += 1;
-                return SF_STATUS_SUCCESS
+                return SF_STATUS_SUCCESS;
             }
         }
         //No decimal point, just convert directly
