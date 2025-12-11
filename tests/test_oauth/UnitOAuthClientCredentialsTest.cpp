@@ -6,16 +6,14 @@
 #include "TestSetup.hpp"
 
 using namespace std;
+using namespace Snowflake::Client;
+using UnitOAuthBase::initAuthChallengeTestProvider;
 
-namespace Snowflake::Client {
-    using UnitOAuthBase::initAuthChallengeTestProvider;
-
-    SF_CONNECT* createConnection() {
-        return UnitOAuthBase::createConnection(AUTH_OAUTH_CLIENT_CREDENTIALS);
-    }
+SF_CONNECT* createConnection() {
+    return UnitOAuthBase::createConnection(AUTH_OAUTH_CLIENT_CREDENTIALS);
 }
 
-Snowflake::Client::WiremockRunner* wiremock;
+WiremockRunner* wiremock;
 
 void test_successful_oauth_client_credentials_flow(void** unused)
 {
@@ -114,4 +112,3 @@ int main(void) {
     delete wiremock;
     return ret;
 }
-

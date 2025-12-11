@@ -5,40 +5,41 @@
 #include "test_setup.h"
 #include "TestSetup.hpp"
 
-namespace Snowflake::Client {
+using namespace Snowflake::Client;
 
-    void configureRunners() {
-        UnitOAuthBase::initAuthChallengeTestProvider();
-        UnitOAuthBase::initAuthWebBrowserTestRunner();
-    }
-
-    SF_CONNECT* createConnection(int port,
-        int browserResponseTimeout = SF_BROWSER_RESPONSE_TIMEOUT,
-        bool oauthSingleUseRefreshTokens = false)
-    {
-        return UnitOAuthBase::createConnection(AUTH_OAUTH_AUTHORIZATION_CODE,
-            browserResponseTimeout,
-            "",
-            "",
-            "http://localhost:" + std::to_string(port) + "/snowflake/oauth-redirect",
-            oauthSingleUseRefreshTokens);
-    }
-
-    SF_CONNECT* createConnection(int browserResponseTimeout,
-        std::string customAuthEndpoint,
-        std::string customTokenEndpoint,
-        std::string redirectUri) {
-        return UnitOAuthBase::createConnection(AUTH_OAUTH_AUTHORIZATION_CODE,
-            browserResponseTimeout,
-            std::move(customAuthEndpoint),
-            std::move(customTokenEndpoint),
-            std::move(redirectUri));
-    }
-
-    int randomPort = 65000;
+void configureRunners()
+{
+    UnitOAuthBase::initAuthChallengeTestProvider();
+    UnitOAuthBase::initAuthWebBrowserTestRunner();
 }
 
-Snowflake::Client::WiremockRunner* wiremock;
+SF_CONNECT* createConnection(int port,
+    int browserResponseTimeout = SF_BROWSER_RESPONSE_TIMEOUT,
+    bool oauthSingleUseRefreshTokens = false)
+{
+    return UnitOAuthBase::createConnection(AUTH_OAUTH_AUTHORIZATION_CODE,
+        browserResponseTimeout,
+        "",
+        "",
+        "http://localhost:" + std::to_string(port) + "/snowflake/oauth-redirect",
+        oauthSingleUseRefreshTokens);
+}
+
+SF_CONNECT* createConnection(int browserResponseTimeout,
+    std::string customAuthEndpoint,
+    std::string customTokenEndpoint,
+    std::string redirectUri)
+{
+    return UnitOAuthBase::createConnection(AUTH_OAUTH_AUTHORIZATION_CODE,
+        browserResponseTimeout,
+        std::move(customAuthEndpoint),
+        std::move(customTokenEndpoint),
+        std::move(redirectUri));
+}
+
+    int randomPort = 65000;
+
+WiremockRunner* wiremock;
 
 void test_successful_oauth_authorization_flow(void** unused) {
     SF_UNUSED(unused);
