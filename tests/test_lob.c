@@ -99,7 +99,7 @@ void test_lob_setup(SF_CONNECT **out_sf, SF_STMT **out_sfstmt, sf_bool use_arrow
 {
   SF_CONNECT *sf = setup_snowflake_connection();
   /* extend timeout to retrive large query response with LOB data */
-  int64 timeout = 1200;
+  int64 timeout = 600;
   snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
   SF_STATUS status = snowflake_connect(sf);
