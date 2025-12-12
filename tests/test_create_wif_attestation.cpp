@@ -103,8 +103,7 @@ const Aws::Auth::AWSCredentials AWS_TEST_CREDS = Aws::Auth::AWSCredentials("AKIA
                                                                            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"); // pragma: allowlist secret
 
 void test_integration_aws_attestation(void **) {
-  char *gh_actions = std::getenv("GITHUB_ACTIONS");
-  if (gh_actions) {
+  if (std::getenv("GITHUB_ACTIONS")) {
     std::cerr << "Skipping test_aws_attestation on GitHub Actions since it requires AWS credentials" << std::endl;
     return;
   }
@@ -116,7 +115,7 @@ void test_integration_aws_attestation(void **) {
   assert_true(attestationOpt.has_value());
   auto &attestation = attestationOpt.value();
   assert_true(attestation.type == Snowflake::Client::AttestationType::AWS);
-  assert_true(attestation.credential.size() > 0);
+  assert_false(attestation.credential.empty());
   std::string json_string;
   Snowflake::Client::Util::Base64::decodePadding(attestation.credential.begin(), attestation.credential.end(),
                                                  std::back_inserter(json_string));
@@ -301,10 +300,10 @@ std::vector<char> makeGCPToken(boost::optional<std::string> issuer, boost::optio
   if (subject) {
     jwtObj.getClaimSet()->addClaim("sub", subject.value());
   }
-  auto key = std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>>(generate_key(),
+  const auto key = std::unique_ptr<EVP_PKEY, std::function<void(EVP_PKEY *)>>(generate_key(),
                                                                         [](EVP_PKEY *k) { EVP_PKEY_free(k); });
   auto string = jwtObj.serialize(key.get());
-  return std::vector<char>(string.begin(), string.end());
+  return {string.begin(), string.end()};
 }
 
 const std::string GCP_TEST_ISSUER = "https://accounts.google.com";
@@ -340,41 +339,41 @@ void test_unit_gcp_attestation_success(void **) {
 }
 
 void test_unit_gcp_attestation_missing_issuer(void **) {
-  auto token = makeGCPToken(boost::none, GCP_TEST_SUBJECT);
+  const auto token = makeGCPToken(boost::none, GCP_TEST_SUBJECT);
   auto fakeHttpClient = makeSuccessfulGCPHttpClient(token);
   AttestationConfig config;
   config.type = AttestationType::GCP;
   config.httpClient = &fakeHttpClient;
-  auto attestationOpt = createAttestation(config);
+  const auto attestationOpt = createAttestation(config);
   assert_true(!attestationOpt);
 }
 
 void test_unit_gcp_attestation_missing_subject(void **) {
-  auto token = makeGCPToken(GCP_TEST_ISSUER, boost::none);
+  const auto token = makeGCPToken(GCP_TEST_ISSUER, boost::none);
   auto fakeHttpClient = makeSuccessfulGCPHttpClient(token);
   AttestationConfig config;
   config.type = AttestationType::GCP;
   config.httpClient = &fakeHttpClient;
-  auto attestationOpt = createAttestation(config);
+  const auto attestationOpt = createAttestation(config);
   assert_true(!attestationOpt);
 }
 
 void test_unit_gcp_attestation_failed_request(void **) {
   auto token = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
-  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest) {
+  auto fakeHttpClient = FakeHttpClient([&](const Snowflake::Client::HttpRequest&) {
     return boost::none;
   });
 
   AttestationConfig config;
   config.type = AttestationType::GCP;
   config.httpClient = &fakeHttpClient;
-  auto attestationOpt = createAttestation(config);
+  const auto attestationOpt = createAttestation(config);
   assert_true(!attestationOpt);
 }
 
 void test_unit_gcp_attestation_bad_request(void **) {
   auto token = makeGCPToken(GCP_TEST_ISSUER, GCP_TEST_SUBJECT);
-  auto fakeHttpClient = FakeHttpClient([&](Snowflake::Client::HttpRequest) {
+  auto fakeHttpClient = FakeHttpClient([&](const Snowflake::Client::HttpRequest&) {
     HttpResponse response;
     response.code = 400;
     return response;
@@ -383,7 +382,7 @@ void test_unit_gcp_attestation_bad_request(void **) {
   AttestationConfig config;
   config.type = AttestationType::GCP;
   config.httpClient = &fakeHttpClient;
-  auto attestationOpt = createAttestation(config);
+  const auto attestationOpt = createAttestation(config);
   assert_true(!attestationOpt);
 }
 
@@ -626,7 +625,7 @@ void test_unit_gcp_impersonation_missing_token_in_response(void **) {
     if (req.url.host() == GCP_TEST_IAM_ENDPOINT_HOST) {
       HttpResponse response;
       response.code = 200;
-      const std::string body = "{\"invalid_field\": \"value\"}";
+      const std::string body = R"({"invalid_field": "value"})";
       response.buffer = std::vector<char>(body.begin(), body.end());
       return boost::optional<HttpResponse>(response);
     }
@@ -850,7 +849,7 @@ void test_unit_azure_attestation_missing_subject(void **) {
 
 void test_unit_azure_attestation_request_failed(void **) {
   auto token = makeAzureToken(AZURE_TEST_ISSUER_MICROSOFT, AZURE_TEST_SUBJECT, AZURE_TEST_RESOURCE);
-  auto fakeHttpClient = FakeHttpClient([](Snowflake::Client::HttpRequest) {
+  auto fakeHttpClient = FakeHttpClient([](const Snowflake::Client::HttpRequest&) {
     return boost::none;
   });
   AttestationConfig config;
@@ -999,5 +998,5 @@ int main() {
       cmocka_unit_test(test_unit_oidc_attestation_missing_token)
   };
 
-  return cmocka_run_group_tests(tests, NULL, NULL);
+  return cmocka_run_group_tests(tests, nullptr, nullptr);
 }
