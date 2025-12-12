@@ -98,36 +98,36 @@ SF_STATUS STDCALL StringToInt64(
 )
 {
     size_t charsProcessed;
-    uint64 convData;
-    if (str_data.find('e')) {
+    int64 convData = 0;
+    if (str_data.find('e') != std::string::npos) {
         float64 v;
-        StringToDouble(str_data, &v);
-        if (v < 1 && v > -1)
-        {
-            // The conversion error will be occurred in below check
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        SF_STATUS status = StringToDouble(str_data, &v);
+        if (status != SF_STATUS_SUCCESS) {
+            return status;
         }
 
-        if (v > static_cast<float64>(SF_INT64_MAX))
+        if (v > static_cast<float64>(SF_INT64_MAX) || v < static_cast<float64>(SF_INT64_MIN))
         {
             CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
     }
-
-    try
+    else
     {
-        convData = static_cast<int64>(std::stoll(str_data, &charsProcessed, 10));
-    }
-    catch (const std::out_of_range& e)
-    {
-        CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
-    }
-    catch (...)
-    {
-        CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        try
+        {
+            convData = static_cast<int64>(std::stoll(str_data, &charsProcessed, 10));
+        }
+        catch (const std::out_of_range& e)
+        {
+            CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+        catch (...)
+        {
+            CXX_LOG_ERROR("Conversion from STRING to INT64 failed %s.", str_data.c_str());
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
     }
     // All checks passed. Proceed to write to buffer.
     *out_data = convData;
@@ -136,7 +136,6 @@ SF_STATUS STDCALL StringToInt64(
         return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
     return SF_STATUS_SUCCESS;
-
 }
 
 SF_STATUS STDCALL StringToUint64(
@@ -145,36 +144,35 @@ SF_STATUS STDCALL StringToUint64(
 )
 {
     size_t charsProcessed;
-    uint64 convData;
-    if (str_data.find('e')) {
+    uint64 convData = 0;
+    if (str_data.find('e') != std::string::npos) {
         float64 v;
-        StringToDouble(str_data, &v);
-        if (v < 1 && v > -1)
-        {
-            // The conversion error will be occurred in below check
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        SF_STATUS status = StringToDouble(str_data, &v);
+        if (status != SF_STATUS_SUCCESS) {
+            return status;
         }
-
-        if (v > static_cast<float64>(SF_UINT64_MAX))
+        if (v > static_cast<float64>(SF_UINT64_MAX) || v < 0)
         {
             CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
             return SF_STATUS_ERROR_OUT_OF_RANGE;
         }
     }
-
-    try
+    else
     {
-        convData = static_cast<uint64>(std::stoull(str_data, &charsProcessed, 10));
-    }
-    catch (const std::out_of_range& e)
-    {
-        CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
-        return SF_STATUS_ERROR_OUT_OF_RANGE;
-    }
-    catch (...)
-    {
-        CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
-        return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        try
+        {
+            convData = static_cast<uint64>(std::stoull(str_data, &charsProcessed, 10));
+        }
+        catch (const std::out_of_range& e)
+        {
+            CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+        catch (...)
+        {
+            CXX_LOG_ERROR("Conversion from STRING to UINT64 failed %s.", str_data.c_str());
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
     }
     // All checks passed. Proceed to write to buffer.
     *out_data = convData;

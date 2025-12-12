@@ -361,69 +361,6 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             return status;
         }
 
-        float64 floatData;
-        status = getCellAsFloat64(colIdx, &floatData);
-        if (SF_STATUS_SUCCESS != status)
-        {
-            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-                "Cannot convert value to int64.");
-            return status;
-        }
-        if (val.find('e') != std::string::npos)
-        {
-            // Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
-            if (floatData < 1 && floatData > -1)
-            {
-                m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-                    "Value is too small to convert.");
-                return SF_STATUS_ERROR_CONVERSION_FAILURE;
-            }
-            else
-            {
-                m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                    "Cannot convert value to int64. Scientific notation value is too big or too small to convert to int64.");
-                return SF_STATUS_ERROR_OUT_OF_RANGE;
-            }
-        }
-
-        if (floatData > static_cast<float64>(SF_INT64_MAX) || floatData < static_cast<float64>(SF_INT64_MIN))
-        {
-            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                "Value out of range for int64.");
-            return SF_STATUS_ERROR_OUT_OF_RANGE;
-        }
-
-        if ((int64)floatData == 0 && floatData != 0.0)
-        {
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-
-        size_t dotPos = val.find('.');
-        if (dotPos != std::string::npos)
-        {
-            // Need to round up or down
-            std::string digits = val.substr(0, dotPos);
-            status = Conversion::Arrow::StringToInt64(digits, out_data);
-            if (SF_STATUS_SUCCESS != status)
-            {
-                m_parent->setError(status,
-                    "Cannot convert value to int64.");
-                return status;
-            }
-            if (val[dotPos + 1] >= '5')
-            {
-                if (*out_data >= SF_INT64_MAX) 
-                {
-                    m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                        "Value out of range for int64.");
-                    return SF_STATUS_ERROR_OUT_OF_RANGE;
-                }
-
-                // Round up
-                *out_data += 1;
-                return SF_STATUS_SUCCESS;
-            }
-        }
         //No decimal point, just convert directly
         return Conversion::Arrow::StringToInt64(val, out_data);
     }

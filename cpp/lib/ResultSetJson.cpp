@@ -231,7 +231,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32* out_data)
     }
 
     int64 value = 0;
-    char* endptr;
+    char* endptr = NULL;
     errno = 0;
     if (std::strchr(cell->valuestring, 'e') != NULL) {
         //Scientific notation minimum scale is 38 in the snowflake db, which means it is out of int64 range or too small like 1e38 or 1e-38
@@ -240,14 +240,7 @@ SF_STATUS STDCALL ResultSetJson::getCellAsInt32(size_t idx, int32* out_data)
         if (ret != SF_STATUS_SUCCESS) {
             return ret;
         }
-        if (v < 1 && v > -1)
-        {
-            CXX_LOG_ERROR("Value is too small to convert.");
-            setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
-                "Value is too small to convert.");
-            return SF_STATUS_ERROR_CONVERSION_FAILURE;
-        }
-        else
+        if (v >= 1 || v <= -1)
         {
             CXX_LOG_ERROR("Cannot convert value to int32. Scientific notion value is too big or too small to convert to uint32");
             setError(SF_STATUS_ERROR_OUT_OF_RANGE,
