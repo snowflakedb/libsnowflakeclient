@@ -416,7 +416,12 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
       case AcceptedHosts::Metadata: {
         if (req.url.encoded_path() == "/computeMetadata/v1/instance/service-accounts/default/token") {
           assert_true(req.headers.find("Metadata-Flavor")->second == "Google");
-          response.buffer = accessToken;
+          picojson::object tokenResponse;
+          tokenResponse["access_token"] = picojson::value(std::string(accessToken.data(), accessToken.size()));
+          tokenResponse["expires_in"] = picojson::value(static_cast<double>(3600));
+          tokenResponse["token_type"] = picojson::value("Bearer");
+          std::string jsonStr = picojson::value(tokenResponse).serialize();
+          response.buffer = std::vector<char>(jsonStr.begin(), jsonStr.end());
         }
         break;
       }
@@ -448,7 +453,10 @@ FakeHttpClient makeSuccessfulGCPImpersonationHttpClient(
           }
         }
 
-        response.buffer = idToken;
+        picojson::object idTokenResponse;
+        idTokenResponse["token"] = picojson::value(std::string(idToken.data(), idToken.size()));
+        std::string jsonStr = picojson::value(idTokenResponse).serialize();
+        response.buffer = std::vector<char>(jsonStr.begin(), jsonStr.end());
         break;
       }
       case AcceptedHosts::Other: {
