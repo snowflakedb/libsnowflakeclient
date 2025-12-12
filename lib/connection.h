@@ -21,9 +21,11 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
 #pragma comment(lib, "wldap32.lib" )
 #pragma comment(lib, "crypt32.lib" )
 #pragma comment(lib, "Ws2_32.lib")
+#endif
 
 #define CURL_STATICLIB 
 #include <stdio.h>
@@ -675,6 +677,8 @@ sf_bool is_one_time_token_request(cJSON *resp);
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 
 sf_bool is_password_required(AuthenticatorType auth);
+
+sf_bool is_secure_storage_auth(AuthenticatorType auth);
 #ifdef __cplusplus
 }
 #endif

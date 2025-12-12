@@ -1,0 +1,21 @@
+{
+  "requiredScenarioState": "Connected",
+  "newScenarioState": "Disconnected",
+  "request": {
+    "urlPathPattern": "/session",
+    "method": "POST",
+    "queryParameters": {
+      "request_guid": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "code": 200,
+      "message": "done",
+      "success": true
+    }
+  }
+}

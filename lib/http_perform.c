@@ -387,6 +387,13 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
+        res = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        if (res != CURLE_OK) {
+            log_error("Failed to enable redirection [%s]",
+                curl_easy_strerror(res));
+            break;
+        }
+
         if (CA_BUNDLE_FILE) {
             res = curl_easy_setopt(curl, CURLOPT_CAINFO, CA_BUNDLE_FILE);
             if (res != CURLE_OK) {
@@ -589,40 +596,43 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     "Unable to get http response code",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
             } else if (http_code != 200) {
+              ret = SF_BOOLEAN_TRUE;
               retry = is_retryable_http_code(http_code);
               if (!retry) {
-                char msg[1024];
-                sf_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
-                           http_code);
-                SET_SNOWFLAKE_ERROR(error,
-                                    SF_STATUS_ERROR_RETRY,
-                                    msg,
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
+                  char msg[1024];
+                  sf_sprintf(msg, sizeof(msg), "Received unretryable http code: [%d]",
+                      http_code);
+                  SET_SNOWFLAKE_ERROR(error,
+                      SF_STATUS_ERROR_RETRY,
+                      msg,
+                      SF_SQLSTATE_UNABLE_TO_CONNECT);
+                  ret = SF_BOOLEAN_FALSE;
               } else {
                 curl_retry_ctx.retry_reason = (uint32)http_code;
               }
-              if (retry &&
-                  ((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                  ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
-              {
-                uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
-                log_debug(
-                    "curl_easy_perform() Got retryable error http code %d, retry count  %d "
-                    "will retry after %d seconds", http_code,
-                    curl_retry_ctx.retry_count,
-                    next_sleep_in_secs);
-                sf_sleep_ms(next_sleep_in_secs * 1000);
-              }
-              else {
-                char msg[1024];
-                sf_sprintf(msg, sizeof(msg),
-                           "Exceeded the retry_timeout , http code: [%d]",
-                           http_code);
-                SET_SNOWFLAKE_ERROR(error,
-                                    SF_STATUS_ERROR_RETRY,
-                                    msg,
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
-                retry = SF_BOOLEAN_FALSE;
+              if (retry) {
+                  if (((time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                      ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < retry_max_count)))
+                  {
+                      uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+                      log_debug(
+                          "curl_easy_perform() Got retryable error http code %d, retry count  %d "
+                          "will retry after %d seconds", http_code,
+                          curl_retry_ctx.retry_count,
+                          next_sleep_in_secs);
+                      sf_sleep_ms(next_sleep_in_secs * 1000);
+                  }
+                  else {
+                      char msg[1024];
+                      sf_sprintf(msg, sizeof(msg),
+                          "Exceeded the retry_timeout , http code: [%d]",
+                          http_code);
+                      SET_SNOWFLAKE_ERROR(error,
+                          SF_STATUS_ERROR_RETRY,
+                          msg,
+                          SF_SQLSTATE_UNABLE_TO_CONNECT);
+                      retry = SF_BOOLEAN_FALSE;
+                  }
               }
             } else {
                 ret = SF_BOOLEAN_TRUE;
