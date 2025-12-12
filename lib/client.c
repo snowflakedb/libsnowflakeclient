@@ -692,6 +692,59 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
+        sf_bool invalid = SF_BOOLEAN_FALSE;
+
+        if (is_string_empty(sf->oauth_client_id))
+        {
+            log_error("The client_id parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+        if (is_string_empty(sf->oauth_client_secret))
+        {
+            log_error("The client_secret parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (auth_type == AUTH_OAUTH_AUTHORIZATION_CODE)
+
+        {
+            if (is_string_empty(sf->oauth_redirect_uri)) {
+                log_info("The auth_redirect_uri parameter is not configured. 127.0.0.1 will be used");
+            }
+
+            if (is_string_empty(sf->oauth_authorization_endpoint)) {
+                log_info("The oauth_authorization_endpoint parameter is not configured. Using the default endpoint instead.");
+            }
+
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_info("The oauth_token_endpointparameter is not configured. Using the default endpoint instead.");
+            }
+        }
+        else {
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_error("The oauth_token_endpoint parameter is required for the OAuth Client Credentials authentication");
+                invalid = SF_BOOLEAN_TRUE;
+            }
+        }
+
+        if (is_string_empty(sf->oauth_scope) && is_string_empty(sf->role)) {
+            log_error("Both the 'oauth_scope' and 'role' parameters are not configured. At least one of them must be configured.");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (invalid)
+        {
+            SET_SNOWFLAKE_ERROR(
+                &sf->error,
+                SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                ERR_MSG_OAUTH_PARAMETER_IS_MISSING,
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_GENERAL;
+        }
+
+    }
+
     // split account and region if connected by a dot.
     char* dot_ptr = strchr(sf->account, (int)'.');
     if (dot_ptr) {
@@ -1104,6 +1157,15 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;
+
+        sf->oauth_authorization_endpoint = NULL;
+        sf->oauth_token_endpoint = NULL;
+        sf->oauth_redirect_uri = NULL;
+        sf->oauth_client_id = NULL;
+        sf->oauth_client_secret = NULL;
+        sf->oauth_scope = NULL;
+        sf->oauth_refresh_token = NULL;
+        sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1175,6 +1237,13 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
     SF_FREE(sf->oauth_token);
+    SF_FREE(sf->oauth_authorization_endpoint);
+    SF_FREE(sf->oauth_token_endpoint);
+    SF_FREE(sf->oauth_redirect_uri);
+    SF_FREE(sf->oauth_client_id);
+    SF_FREE(sf->oauth_client_secret);
+    SF_FREE(sf->oauth_scope);
+    SF_FREE(sf->oauth_refresh_token);
     SF_FREE(sf->wif_provider);
     SF_FREE(sf->wif_token);
     SF_FREE(sf->wif_azure_resource);
@@ -1189,7 +1258,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
+SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     if (!sf) {
@@ -1216,14 +1285,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     sf_os_version(os_version, sizeof(os_version));
 
     log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
-             SF_API_VERSION,
-             sf_os_name(),
-             os_version);
+        SF_API_VERSION,
+        sf_os_name(),
+        os_version);
 
     if (!is_string_empty(sf->directURL))
     {
         if (is_string_empty(sf->directURL_param) ||
-                is_string_empty(sf->direct_query_token))
+            is_string_empty(sf->direct_query_token))
         {
             return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
         }
@@ -1231,18 +1300,18 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     }
 
 
-    cJSON *body = NULL;
-    cJSON *data = NULL;
-    cJSON *resp = NULL;
-    char *s_body = NULL;
-    char *s_resp = NULL;
+    cJSON* body = NULL;
+    cJSON* data = NULL;
+    cJSON* resp = NULL;
+    char* s_body = NULL;
+    char* s_resp = NULL;
     // Encoded URL to use with libcurl
     URL_KEY_VALUE url_params[] = {
-        {.key = "request_id=", .value=sf->request_id, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "databaseName=", .value=sf->database, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "schemaName=", .value=sf->schema, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "warehouse=", .value=sf->warehouse, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "roleName=", .value=sf->role, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
+        {.key = "request_id=", .value = sf->request_id, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "databaseName=", .value = sf->database, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "schemaName=", .value = sf->schema, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "warehouse=", .value = sf->warehouse, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "roleName=", .value = sf->role, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
     };
     SF_STATUS ret = _snowflake_check_connection_parameters(sf);
     if (ret != SF_STATUS_SUCCESS) {
@@ -1254,23 +1323,42 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    if (sf->client_request_mfa_token) 
+    AuthenticatorType authtype = getAuthenticatorType(sf->authenticator);
+    if (is_secure_storage_auth(authtype))
     {
-        if (sf->token_cache == NULL) {
-            sf->token_cache = secure_storage_init();
-        }
-
-        sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-    }
-
-    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) 
-    {
-        if (sf->token_cache == NULL) 
+        switch (authtype)
         {
-            sf->token_cache = secure_storage_init();
-        }
+        case AUTH_SNOWFLAKE:
+        case AUTH_USR_PWD_MFA:
+            if (sf->client_request_mfa_token) {
+                if (sf->token_cache == NULL) {
+                    sf->token_cache = secure_storage_init();
+                }
 
-        sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            }
+            break;
+
+        case AUTH_EXTERNALBROWSER:
+        case AUTH_OAUTH_AUTHORIZATION_CODE:
+            if (sf->client_store_temporary_credential)
+            {
+                if (sf->token_cache == NULL)
+                {
+                    sf->token_cache = secure_storage_init();
+                }
+                if (authtype == AUTH_EXTERNALBROWSER) {
+                    sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                }
+                else {
+                    sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
+                    sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+                }
+            }
+            break;
+        default:
+            break;
+        }
     }
 
     ret = auth_authenticate(sf);
@@ -1350,6 +1438,16 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     continue;
                 }
 
+                if (code == strtol(SF_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE, NULL, 10))
+                {
+                    log_error("OAUTH acess token expired or invalid. Reauthenticate.");
+                    SF_FREE(sf->oauth_token);
+                    auth_renew_json_body(sf, body);
+                    s_body = snowflake_cJSON_Print(body);
+                    retried_count++;
+                    continue;
+                }
+
                 SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code,
                                     message ? message : "Query was not successful",
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
@@ -1362,13 +1460,19 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             }
 
             char* auth_token = NULL;
-            if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+            if (sf->token_cache) {
+                if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+                }
+                else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
+                }
+                else if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, sf->oauth_token);
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, sf->oauth_refresh_token);
+                }
             }
 
-            else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
-            }
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
@@ -1519,6 +1623,30 @@ SF_STATUS STDCALL snowflake_set_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_token, value);
+            break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            alloc_buffer_and_copy(&sf->oauth_refresh_token, value);
+            break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_authorization_endpoint, value);
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_token_endpoint, value);
+            break;
+        case SF_CON_OAUTH_REDIRECT_URI:
+            alloc_buffer_and_copy(&sf->oauth_redirect_uri, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            alloc_buffer_and_copy(&sf->oauth_client_id, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            alloc_buffer_and_copy(&sf->oauth_client_secret, value);
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            alloc_buffer_and_copy(&sf->oauth_scope, value);
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
+            sf->single_use_refresh_token = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
@@ -1763,6 +1891,30 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_OAUTH_TOKEN:
             *value = sf->oauth_token;
+            break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            *value = sf->oauth_refresh_token;
+            break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            *value = sf->oauth_authorization_endpoint;
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            *value = sf->oauth_token_endpoint;
+            break;
+        case SF_CON_OAUTH_REDIRECT_URI:
+            *value = sf->oauth_redirect_uri;
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            *value = sf->oauth_client_id;
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            *value = sf->oauth_client_secret;
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            *value = sf->oauth_scope;
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
+            *value = &sf->single_use_refresh_token;
             break;
         case SF_CON_PAT:
             *value = sf->programmatic_access_token;

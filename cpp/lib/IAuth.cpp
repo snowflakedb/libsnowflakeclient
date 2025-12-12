@@ -147,7 +147,7 @@ namespace Client
                 return;
             }
 
-            m_token = m_authWebServer->getSAMLToken();
+            m_token = m_authWebServer->getToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();
         }
 
