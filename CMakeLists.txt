@@ -179,9 +179,15 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetArrow.hpp
         cpp/lib/ResultSetJson.cpp
         cpp/lib/ResultSetJson.hpp
-        cpp/lib/Authenticator.cpp
-        cpp/lib/IAuth.cpp
         cpp/lib/Authenticator.hpp
+        cpp/lib/Authenticator.cpp
+        cpp/lib/AuthenticatorOAuth.cpp
+        cpp/lib/AuthenticatorOAuth.hpp
+        cpp/lib/AuthenticationWebBrowserRunner.cpp
+        cpp/lib/AuthenticationWebBrowserRunner.hpp
+        cpp/lib/AuthenticationChallengeProvider.cpp
+        cpp/lib/AuthenticationChallengeProvider.hpp
+        cpp/lib/IAuth.cpp
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
