@@ -312,9 +312,11 @@ SF_COLUMN_DESC * set_description(SF_STMT* sfstmt, const cJSON *rowtype) {
         case SF_DB_TYPE_ARRAY:
           default_size = sfstmt->connection->max_variant_size;
           break;
+        case SF_DB_TYPE_DECFLOAT:
+            default_size = 50;
+            break;
         // treat any unknown type as string impossible to hit default though.
         case SF_DB_TYPE_TEXT:
-        case SF_DB_TYPE_DECFLOAT:
         case SF_DB_TYPE_ANY:
         default:
           default_size = sfstmt->connection->max_varchar_size;

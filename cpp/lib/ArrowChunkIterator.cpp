@@ -897,12 +897,8 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
                 return SF_STATUS_ERROR_OUT_OF_BOUNDS;
             }
 
-            auto bytes_arr = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(
-                m_columns[colIdx].arrowStructArray->field(0)
-            );
-
-            std::vector<uint8_t> bec(value, value + len);
-            arrow::Result<arrow::Decimal128> res = arrow::Decimal128::FromBigEndian(bec.data(), len);
+            std::vector<uint8_t> rawBytes(value, value + len);
+            arrow::Result<arrow::Decimal128> res = arrow::Decimal128::FromBigEndian(rawBytes.data(), len);
             if (!res.ok()) {
                 CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Failed to convert from big endian to Decimal128, row index in batch: %d, col: %d", m_currRowIndexInBatch, (int)colIdx);
                 return SF_STATUS_ERROR_CONVERSION_FAILURE;
