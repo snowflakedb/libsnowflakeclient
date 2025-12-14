@@ -1,0 +1,33 @@
+{
+  "mappings": [
+    {
+      "name": "Request with custom headers",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/authenticated",
+        "headers": {
+          "Authorization": {
+            "equalTo": "Bearer test-token-123"
+          },
+          "X-Custom-Header": {
+            "equalTo": "custom-value"
+          },
+          "X-Request-ID": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "authenticated": true,
+          "user": "test-user"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    }
+  ]
+}
+
