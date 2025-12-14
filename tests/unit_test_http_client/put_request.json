@@ -1,0 +1,27 @@
+{
+  "mappings": [
+    {
+      "name": "PUT request",
+      "request": {
+        "method": "PUT",
+        "urlPathPattern": "/api/update",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.status"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "updated": true,
+          "timestamp": "2024-01-01T00:00:00Z"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    }
+  ]
+}
+

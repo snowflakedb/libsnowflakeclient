@@ -1,0 +1,20 @@
+{
+  "mappings": [
+    {
+      "name": "Large response body (simulating real-world data)",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/large"
+      },
+      "response": {
+        "status": 200,
+        "body": "{{randomValue length=2048 type='ALPHANUMERIC'}}",
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "transformers": ["response-template"]
+      }
+    }
+  ]
+}
+
