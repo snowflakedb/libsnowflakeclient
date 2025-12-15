@@ -65,7 +65,7 @@ public:
         return false;
     }
 
-    inline std::string getSAMLToken()
+    inline std::string getToken()
     {
         return std::string(REF_SAML_TOKEN);
     }

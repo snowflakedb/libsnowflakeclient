@@ -1306,7 +1306,7 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 
 sf_bool is_one_time_token_request(cJSON* resp)
 {
-  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || snowflake_cJSON_HasObjectItem(resp, "token_type");;
 }
 
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
@@ -1316,5 +1316,30 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 
 sf_bool is_password_required(AuthenticatorType auth)
 {
-    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
+    switch (auth)
+    {
+      case AUTH_JWT:
+      case AUTH_OAUTH:
+      case AUTH_PAT:
+      case AUTH_EXTERNALBROWSER:
+      case AUTH_OAUTH_AUTHORIZATION_CODE:
+      case AUTH_OAUTH_CLIENT_CREDENTIALS:
+        return 0;
+      default:
+        return 1;
+    }
+}
+
+sf_bool is_secure_storage_auth(AuthenticatorType auth)
+{
+    switch (auth)
+    {
+      case AUTH_USR_PWD_MFA:
+      case AUTH_SNOWFLAKE:
+      case AUTH_EXTERNALBROWSER:
+      case AUTH_OAUTH_AUTHORIZATION_CODE:
+        return 1;
+      default:
+        return 0;
+    }
 }

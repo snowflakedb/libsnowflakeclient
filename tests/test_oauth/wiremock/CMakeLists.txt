@@ -1,0 +1,2 @@
+add_subdirectory(idp_responses)
+add_subdirectory(snowflake_responses)

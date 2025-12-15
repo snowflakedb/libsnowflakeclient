@@ -183,6 +183,12 @@ SFURL &SFURL::operator= (const SFURL &copy)
   return *this;
 }
 
+SFURL SFURL::parse(const char* url)
+{
+    std::string value = url;
+    return parse(value);
+}
+
 SFURL SFURL::parse(const std::string &url)
 {
   SFURL sfurl;
