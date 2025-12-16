@@ -21,25 +21,27 @@ namespace Snowflake
             _heartbeatreq_s(SF_CONNECT* sf, const std::string& url,
                 SF_HEADER* header)
                 : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header),
-                maxRetryCount(get_login_retry_count(sf)), networkTimeout(sf->network_timeout), 
-                isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count) {
-                if (sf->proxy)
-                {
-                    proxy = sf->proxy;
-                }
-                if (sf->no_proxy)
-                {
-                    noProxy = sf->no_proxy;
-                }
-            }
+                maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_login_timeout(sf)), networkTimeout(sf->network_timeout), 
+                isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count),
+                proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""),
+                crlAdvisory(sf->crl_advisory), crlCheck(sf->crl_check), crlAllowNoCrl(sf->crl_allow_no_crl),
+                crlDiskCaching(sf->crl_disk_caching), crlMemoryCaching(sf->crl_memory_caching), crlDownloadTimeout(sf->crl_download_timeout)
+            {}
             std::string sessionId;
             std::string heartBeatURL;
             SF_HEADER* httpExtraHeaders;
             int8 maxRetryCount;
+            int64 retryTimeout;
             int64 networkTimeout;
             sf_bool isOcspOpen;
             sf_bool isInsecuremode;
             sf_bool retryCurlCount;
+            sf_bool crlCheck;
+            sf_bool crlAdvisory;
+            sf_bool crlAllowNoCrl;
+            sf_bool crlDiskCaching;
+            sf_bool crlMemoryCaching;
+            int64 crlDownloadTimeout;
             std::string proxy;
             std::string noProxy;
         } heartbeatReq;

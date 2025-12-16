@@ -142,18 +142,15 @@ namespace Snowflake
             for (size_t i = 0; i < HeartBeatQueue.size(); i++)
             {
                 heartbeatReq conn = HeartBeatQueue[i];
+                const std::string& destination = conn.heartBeatURL;
                 const std::string& sid = conn.sessionId;
-                int maxRetryCount = conn.maxRetryCount;
-                std::string destination = conn.heartBeatURL;
                 SF_HEADER* httpExtraHeaders = conn.httpExtraHeaders;
 
                 const char* proxy = conn.proxy.c_str();
                 const char* noProxy = conn.noProxy.c_str();
 
-                void* curl_desc;
-                CURL* curl;
-                curl_desc = get_curl_desc_from_pool(destination.c_str(), proxy, noProxy);
-                curl = get_curl_from_desc(curl_desc);
+                void* curl_desc = get_curl_desc_from_pool(destination.c_str(), proxy, noProxy);
+                CURL* curl = get_curl_from_desc(curl_desc);
 
                 int8 retried_count = 0;
                 int64 elapsedTime = 0;
@@ -163,9 +160,10 @@ namespace Snowflake
                 CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", conn.sessionId.c_str());
 
                 if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                    NULL, NULL, conn.networkTimeout, SF_BOOLEAN_FALSE, err,
-                    conn.isInsecuremode, conn.isOcspOpen, conn.retryCurlCount,
-                    0, maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
+                    NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, err,
+                    conn.isInsecuremode, conn.isOcspOpen, conn.crlCheck,conn.crlAdvisory, conn.crlAllowNoCrl,
+                    conn.crlDiskCaching, conn.crlMemoryCaching,conn.crlDownloadTimeout,
+                    conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
                     proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
                 {
                     sf_bool success = SF_BOOLEAN_FALSE;
