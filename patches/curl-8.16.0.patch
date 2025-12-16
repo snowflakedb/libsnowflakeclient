@@ -679,7 +679,7 @@ new file mode 100644
 index 0000000000..bbfe697737
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_crl.c
-@@ -0,0 +1,831 @@
+@@ -0,0 +1,834 @@
 +#include "curl_setup.h"
 +#include "urldata.h"
 +#include "sendf.h"
@@ -720,6 +720,9 @@ index 0000000000..bbfe697737
 +	FALSE, // initially not owned
 +	NULL   // unnamed mutext
 +  );
++ if (*lock == NULL) {
++       return 1;
++ }
 +  return 0;
 +#else
 +  return pthread_mutex_init(lock, NULL);
