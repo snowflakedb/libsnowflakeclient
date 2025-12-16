@@ -39,7 +39,6 @@ SET(TESTS_C
         test_get_query_result_response
         test_get_describe_only_query_result
         test_stmt_functions
-        test_unit_oauth
         test_unit_pat
         test_unit_platform
         test_unit_connect
@@ -49,6 +48,7 @@ SET(TESTS_C
         test_multiple_statements
         test_async
         test_cancel
+        test_stopwatch
 # FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
 # will enable lob test when the change on server side will be published
 #        test_lob
@@ -61,6 +61,7 @@ SET(TESTS_CXX
         test_unit_jwt
         test_unit_external_browser
         test_unit_okta
+        test_unit_oauth
         test_unit_cipher_stream_buf
         test_unit_cred_renew
         test_unit_encryption
@@ -86,6 +87,7 @@ SET(TESTS_CXX
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
+        test_crl
 )
 
 if (LINUX)
@@ -101,6 +103,7 @@ SET(TESTS_PERF
         test_perf_string_reads_and_writes
         test_perf_column_evaluation
         test_perf_type_conversion)
+
 
 SET(TESTS_MOCK
         # TODO: Re-enable tests in SNOW-2046054
@@ -314,7 +317,7 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -341,7 +344,6 @@ else()
         endif()
     ENDFOREACH ()
 
-
     if (NOT WIN32_DEBUG)
     # Skip building CXX tests for Win32 Debug. The build fails
     # with error LNK2001: unresolved external symbol __CrtDbgReportW
@@ -354,7 +356,7 @@ else()
                     ../deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/openssl/include
             )
             set_target_properties(
-		    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
+	    ${T} PROPERTIES LINK_FLAGS "/ignore:4099")
         else()
             target_include_directories(
                     ${T} PUBLIC
@@ -400,13 +402,16 @@ else()
                     ./${T})
         ENDFOREACH ()
     endif ()
-
-
 endif()
 
 if (UNIX)
     add_subdirectory(unit_test_ocsp)
     add_subdirectory(test_auth)
 endif()
+    
+if (LINUX AND NOT MOCK)
+    add_subdirectory(wiremock)
+    add_subdirectory(test_redirect)
+    add_subdirectory(test_oauth)
+endif()
 add_subdirectory(test_bind_datastructures)
-

@@ -240,10 +240,10 @@ sf_bool STDCALL create_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT
     }
     else
     {
-      log_trace("SF_HEADER_USER_AGENT is null");
+      log_debug("SF_HEADER_USER_AGENT is null");
     }
 
-    log_trace("Created header");
+    log_debug("Created header");
 
     // All good :dancingpenguin:
     ret = SF_BOOLEAN_TRUE;
@@ -288,13 +288,15 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
-                          retry_timeout, SF_BOOLEAN_FALSE, error,
+                          retry_timeout, sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
-                          sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time,
-                          retried_count, is_renew, renew_injection,
-                          sf->proxy, sf->no_proxy, sf->include_retry_reason,
-                          is_new_strategy_url) ||
+                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+                          sf->crl_disk_caching, sf->crl_memory_caching,
+                          sf->crl_download_timeout,
+                          sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
+                          elapsed_time, retried_count, is_renew,
+                          renew_injection, sf->proxy, sf->no_proxy,
+                          sf->include_retry_reason, is_new_strategy_url) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -371,7 +373,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
                 break;
             }
 
-            log_trace("ping pong starting...");
+            log_debug("Ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header,
                          GET_REQUEST_TYPE, error, SF_BOOLEAN_FALSE,
                          0, retry_max_count, retry_timeout, NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
@@ -431,11 +433,13 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 
     do {
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
-                          get_retry_timeout(sf), SF_BOOLEAN_FALSE, error,
+                          get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
-                          sf->retry_on_curle_couldnt_connect_count,
-                          renew_timeout, retry_max_count, elapsed_time, retried_count, NULL, SF_BOOLEAN_FALSE,
-                          sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
+                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+                          sf->crl_disk_caching, sf->crl_memory_caching,
+                          sf->crl_download_timeout,
+                          sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count, elapsed_time, retried_count, NULL,
+                          SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
             // Error is set in the perform function
             break;
@@ -684,7 +688,8 @@ json_copy_string(char **dest, cJSON *data, const char *item) {
         }
         sf_strncpy(*dest, blob_size, blob->valuestring, blob_size);
 
-        if (strcmp(item, "token") == 0 || strcmp(item, "masterToken") == 0) {
+        if (strstr(item, "token") || strstr(item, "Token") || strstr(item, "TOKEN") ||
+            strstr(item, "key") || strstr(item, "Key") || strstr(item, "KEY")) {
             log_debug("Item and Value; %s: ******", item);
         } else {
             log_debug("Item and Value; %s: %s", item, *dest);
@@ -853,7 +858,7 @@ sf_bool STDCALL is_retryable_http_code(long int code) {
 
 sf_bool STDCALL request(SF_CONNECT *sf,
                         cJSON **json,
-                        const char *url,
+                        const char *url_path,
                         URL_KEY_VALUE *url_params,
                         int num_url_params,
                         char *body,
@@ -868,7 +873,11 @@ sf_bool STDCALL request(SF_CONNECT *sf,
                         int8 *retried_count,
                         sf_bool *is_renew,
                         sf_bool renew_injection) {
-  sf_bool ret = SF_BOOLEAN_FALSE;
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    int url_size = (sf->protocol ? strlen(sf->protocol) : 0) +
+      (sf->host ? strlen(sf->host) : 0) + (sf->port ? strlen(sf->port) : 0) + 5;
+    char *url = (char *)SF_CALLOC(1, url_size);
+    sf_sprintf(url, url_size, "%s://%s:%s", sf->protocol, sf->host, sf->port);
     void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
     CURL *curl = get_curl_from_desc(curl_desc);
     char *encoded_url = NULL;
@@ -888,7 +897,7 @@ sf_bool STDCALL request(SF_CONNECT *sf,
         }
 
         encoded_url = encode_url(curl, sf->protocol, sf->host,
-                                 sf->port, url, url_params, num_url_params,
+                                 sf->port, url_path, url_params, num_url_params,
                                  error, sf->directURL_param);
         if (encoded_url == NULL) {
             goto cleanup;
@@ -918,6 +927,7 @@ cleanup:
     }
     free_curl_desc(curl_desc);
     SF_FREE(encoded_url);
+    SF_FREE(url);
 
     return ret;
 }
@@ -1244,7 +1254,7 @@ sf_bool add_appinfo_header(SF_CONNECT *sf, SF_HEADER *header, SF_ERROR_STRUCT *e
     header->header = curl_slist_append(header->header, header->header_app_version);
   }
 
-  log_trace("Added application infor header");
+  log_debug("Added application infor header");
 
   ret = SF_BOOLEAN_TRUE;
 
@@ -1287,7 +1297,7 @@ int64 get_login_timeout(SF_CONNECT *sf)
 
 int64 get_retry_timeout(SF_CONNECT *sf)
 {
-  return get_less_one(sf->network_timeout, sf->retry_timeout);
+  return sf->retry_timeout;
 }
 
 int8 get_login_retry_count(SF_CONNECT *sf)
@@ -1297,7 +1307,7 @@ int8 get_login_retry_count(SF_CONNECT *sf)
 
 sf_bool is_one_time_token_request(cJSON* resp)
 {
-  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken");
+  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || snowflake_cJSON_HasObjectItem(resp, "token_type");;
 }
 
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
@@ -1307,5 +1317,30 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 
 sf_bool is_password_required(AuthenticatorType auth)
 {
-    return (AUTH_JWT != auth) && (AUTH_OAUTH != auth) && (AUTH_PAT != auth) && (AUTH_EXTERNALBROWSER != auth);
+    switch (auth)
+    {
+      case AUTH_JWT:
+      case AUTH_OAUTH:
+      case AUTH_PAT:
+      case AUTH_EXTERNALBROWSER:
+      case AUTH_OAUTH_AUTHORIZATION_CODE:
+      case AUTH_OAUTH_CLIENT_CREDENTIALS:
+        return 0;
+      default:
+        return 1;
+    }
+}
+
+sf_bool is_secure_storage_auth(AuthenticatorType auth)
+{
+    switch (auth)
+    {
+      case AUTH_USR_PWD_MFA:
+      case AUTH_SNOWFLAKE:
+      case AUTH_EXTERNALBROWSER:
+      case AUTH_OAUTH_AUTHORIZATION_CODE:
+        return 1;
+      default:
+        return 0;
+    }
 }

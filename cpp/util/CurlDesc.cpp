@@ -45,7 +45,7 @@ namespace Client
       if (m_curl)
       {
         curl_easy_cleanup(m_curl);
-        CXX_LOG_TRACE("CurDesc::reset(): cleacurl_easy_cleanupnup %p", m_curl);
+        CXX_LOG_TRACE("CurDesc::reset(): curl_easy_cleanup %p", m_curl);
       }
 
       // create
@@ -64,6 +64,9 @@ namespace Client
       curl_easy_reset(m_curl);
       CXX_LOG_TRACE("CurDesc::reset(): curl_easy_reset %p", m_curl);
     }
+
+    // allow redirect
+    curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, true);
   }
 
 }

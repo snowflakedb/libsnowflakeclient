@@ -15,8 +15,10 @@
 #endif
 
 #include "Authenticator.hpp"
+#include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
+#include "log_file_util.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -29,6 +31,7 @@
 #include <fstream>
 
 #include "snowflake/SF_CRTFunctionSafe.h"
+#include "snowflake/WifAttestation.hpp"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -74,7 +77,18 @@ extern "C" {
     {
         return AUTH_PAT;
     }
-
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE) == 0)
+    {
+        return AUTH_OAUTH_AUTHORIZATION_CODE;
+    }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS) == 0)
+    {
+        return AUTH_OAUTH_CLIENT_CREDENTIALS;
+    }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_WORKLOAD_IDENTITY) == 0)
+    {
+        return AUTH_WIF;
+    }
     if (strcasecmp(authenticator, "test") == 0)
     {
         return AUTH_TEST;
@@ -107,6 +121,12 @@ extern "C" {
       {
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorOKTA(conn));
+      }
+      if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type)
+      {
+          conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
+              new Snowflake::Client::AuthenticatorOAuth(conn,
+                  nullptr, nullptr));
       }
       if (AUTH_TEST == auth_type)
       {
@@ -153,6 +173,11 @@ extern "C" {
     try
     {
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->authenticate();
+
+      if (conn->error.error_code != SF_STATUS_SUCCESS)
+      {
+        return SF_STATUS_ERROR_GENERAL;
+      }
     }
     catch (...)
     {
@@ -189,6 +214,52 @@ extern "C" {
               snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->oauth_token);
           }
       }
+      if (AUTH_WIF == authenticator)
+      {
+          Snowflake::Client::AttestationConfig config;
+
+          // Populate config from SF_CONNECT fields
+          if (conn->wif_provider) {
+              auto typeOpt = Snowflake::Client::attestationTypeFromString(conn->wif_provider);
+              if (typeOpt) {
+                  config.type = typeOpt;
+                  log_debug("Using explicit WIF provider: %s", conn->wif_provider);
+              } else {
+                  log_warn("Invalid WIF provider specified: %s, falling back to auto-detection", conn->wif_provider);
+              }
+          }
+
+          if (conn->wif_token) {
+              config.token = std::string(conn->wif_token);
+              log_debug("Using explicit WIF token");
+          }
+
+          if (conn->wif_azure_resource) {
+              config.snowflakeEntraResource = std::string(conn->wif_azure_resource);
+              log_debug("Using Azure resource: %s", conn->wif_azure_resource);
+          }
+
+          // Pass workload identity impersonation path
+          if (conn->workload_identity_impersonation_path)
+          {
+              config.workloadIdentityImpersonationPath = conn->workload_identity_impersonation_path;
+          }
+
+          if (auto attestationOpt = Snowflake::Client::createAttestation(config))
+          {
+              const Snowflake::Client::Attestation &attestation = attestationOpt.value();
+
+              snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
+              snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
+
+              snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+              snowflake_cJSON_AddStringToObject(data, "TOKEN", attestation.credential.c_str());
+              snowflake_cJSON_AddStringToObject(data, "PROVIDER",
+                  Snowflake::Client::stringFromAttestationType(attestation.type));
+          } else {
+              log_error("Failed to create WIF attestation - not running in a supported cloud environment?");
+          }
+      }
 
       if (conn->sso_token)
       {
@@ -221,8 +292,6 @@ extern "C" {
       {
           ; // Do nothing
       }
-
-      return;
   }
 
   void auth_renew_json_body(SF_CONNECT * conn, cJSON* body)
@@ -245,8 +314,6 @@ extern "C" {
     {
       ; // Do nothing
     }
-
-    return;
   }
 
   void STDCALL auth_terminate(SF_CONNECT * conn)
@@ -280,6 +347,7 @@ namespace Client
   void AuthenticatorJWT::loadPrivateKey(const std::string &privateKeyFile,
                                         const std::string &passcode)
   {
+    log_file_usage(privateKeyFile.c_str(), "Extracting private key file.", false);
     FILE *file = nullptr;
     if (sf_fopen(&file, privateKeyFile.c_str(), "r") == nullptr)
     {
@@ -347,6 +415,7 @@ namespace Client
 
   void AuthenticatorJWT::authenticate()
   {
+    CXX_LOG_INFO("Authenticating with JWT.");
     using namespace std::chrono;
     const auto now = system_clock::now().time_since_epoch();
     const auto seconds = duration_cast<std::chrono::seconds>(now);
@@ -437,6 +506,7 @@ namespace Client
 
   void AuthenticatorOKTA::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with OKTA.");
       IAuthenticatorOKTA::authenticate();
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
@@ -492,7 +562,7 @@ namespace Client
       cJSON* resp_data = NULL;
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error)) {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::post_curl_call::Failed to create the header for the request to get the token URL and the SSO URL");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -558,7 +628,7 @@ namespace Client
       httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
       if (!create_header(m_connection, httpExtraHeaders, &m_connection->error))
       {
-          CXX_LOG_TRACE("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
+          CXX_LOG_WARN("sf::CIDPAuthenticator::curlGetCall::Failed to create the header for the request to get onetime token");
           m_errMsg = "OktaConnectionFailed: failed to create the header.";
           ret = false;
       }
@@ -568,20 +638,24 @@ namespace Client
           if (parseJSON) 
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
-                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                  m_connection->retry_on_curle_couldnt_connect_count,
-                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
-                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
+                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
+                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
+                                           m_connection->crl_download_timeout,
+                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
+                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
           }
           else
           {
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-                  raw_resp, NULL, curlTimeout, SF_BOOLEAN_FALSE, err,
-                  m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                  m_connection->retry_on_curle_couldnt_connect_count,
-                  renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL, SF_BOOLEAN_FALSE,
-                  m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
+                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
+                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
+                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
+                                           m_connection->crl_download_timeout,
+                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
+                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
           }
 
           if (!isHttpSuccess)
@@ -652,6 +726,7 @@ namespace Client
 
   void AuthenticatorExternalBrowser::authenticate()
   {
+      CXX_LOG_INFO("Authenticating with external browser.");
       IAuthenticatorExternalBrowser::authenticate();
       if (m_authWebServer->isError())
       {
@@ -696,6 +771,7 @@ namespace Client
    */
   void AuthWebServer::start()
   {
+      CXX_LOG_INFO("AuthWebServer starting.");
       m_socket_desc_web_client = 0;
       m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       if ((int)m_socket_descriptor < 0)
@@ -735,11 +811,19 @@ namespace Client
       CXX_LOG_INFO("sf::AuthWebServer::start::Web Server successfully started with port %d.", m_port);
   }
 
+  int AuthWebServer::start(std::string host, int port, std::string path) {
+      SF_UNUSED(host);
+      SF_UNUSED(port);
+      SF_UNUSED(path);
+      return 0;
+  };
+
   /**
    * Stop web server
    */
   void AuthWebServer::stop()
   {
+      CXX_LOG_INFO("AuthWebServer stopping.");
       if ((int)m_socket_desc_web_client > 0)
       {
 #ifndef _WIN32
@@ -1099,7 +1183,7 @@ namespace Client
       return ret;
   }
 
-  std::string AuthWebServer::getSAMLToken()
+  std::string AuthWebServer::getToken()
   {
       return m_saml_token;
   }

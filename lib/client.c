@@ -6,6 +6,7 @@
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
+#include <snowflake/Stopwatch.h>
 #include "constants.h"
 #include "client_int.h"
 #include "connection.h"
@@ -126,7 +127,7 @@ SF_QUERY_METADATA *get_query_metadata(SF_STMT *sfstmt) {
       NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
 
       s_resp = snowflake_cJSON_Print(resp);
-      log_trace("GET %s returned response:\n%s", status_query, s_resp);
+      log_debug("GET %s returned response:\n%s", status_query, s_resp);
 
       data = snowflake_cJSON_GetObjectItem(resp, "data");
 
@@ -701,6 +702,59 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
+        sf_bool invalid = SF_BOOLEAN_FALSE;
+
+        if (is_string_empty(sf->oauth_client_id))
+        {
+            log_error("The client_id parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+        if (is_string_empty(sf->oauth_client_secret))
+        {
+            log_error("The client_secret parameter is required for OAuth authentication");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (auth_type == AUTH_OAUTH_AUTHORIZATION_CODE)
+
+        {
+            if (is_string_empty(sf->oauth_redirect_uri)) {
+                log_info("The auth_redirect_uri parameter is not configured. 127.0.0.1 will be used");
+            }
+
+            if (is_string_empty(sf->oauth_authorization_endpoint)) {
+                log_info("The oauth_authorization_endpoint parameter is not configured. Using the default endpoint instead.");
+            }
+
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_info("The oauth_token_endpointparameter is not configured. Using the default endpoint instead.");
+            }
+        }
+        else {
+            if (is_string_empty(sf->oauth_token_endpoint)) {
+                log_error("The oauth_token_endpoint parameter is required for the OAuth Client Credentials authentication");
+                invalid = SF_BOOLEAN_TRUE;
+            }
+        }
+
+        if (is_string_empty(sf->oauth_scope) && is_string_empty(sf->role)) {
+            log_error("Both the 'oauth_scope' and 'role' parameters are not configured. At least one of them must be configured.");
+            invalid = SF_BOOLEAN_TRUE;
+        }
+
+        if (invalid)
+        {
+            SET_SNOWFLAKE_ERROR(
+                &sf->error,
+                SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+                ERR_MSG_OAUTH_PARAMETER_IS_MISSING,
+                SF_SQLSTATE_UNABLE_TO_CONNECT);
+            return SF_STATUS_ERROR_GENERAL;
+        }
+
+    }
+
     // split account and region if connected by a dot.
     char* dot_ptr = strchr(sf->account, (int)'.');
     if (dot_ptr) {
@@ -778,7 +832,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
                 "Replace SF_OCSP_RESPONSE_CACHE_SERVER_URL from %s to %s",
                 getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"),url_buf);
         }
-        log_trace(
+        log_debug(
             "sf", "Connection", "connect",
             "Setting SF_OCSP_RESPONSE_CACHE_SERVER_URL to %s",
             url_buf);
@@ -794,8 +848,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         alloc_buffer_and_copy(&sf->port, "443");
     }
 
-    log_debug("application name: %s", sf->application_name);
-    log_debug("application version: %s", sf->application_version);
+    log_debug("Application name: %s", sf->application_name);
+    log_debug("Application version: %s", sf->application_version);
     log_debug("authenticator: %s", sf->authenticator);
     log_debug("user: %s", sf->user);
     log_debug("password: %s", sf->password ? "****" : sf->password);
@@ -830,6 +884,11 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("autocommit: %s", sf->autocommit ? "true": "false");
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
+    log_debug("crl_check: %s", sf->crl_check ? "true" : "false");
+    log_debug("crl_advisory: %s", sf->crl_advisory ? "true" : "false");
+    log_debug("crl_allow_no_crl: %s", sf->crl_allow_no_crl ? "true" : "false");
+    log_debug("crl_disk_caching: %s", sf->crl_disk_caching ? "true" : "false");
+    log_debug("crl_memory_caching: %s", sf->crl_memory_caching ? "true" : "false");
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
@@ -1023,6 +1082,12 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->ocsp_fail_open = SF_BOOLEAN_TRUE;
+        sf->crl_check = SF_BOOLEAN_FALSE;
+        sf->crl_advisory = SF_BOOLEAN_TRUE;
+        sf->crl_allow_no_crl = SF_BOOLEAN_TRUE;
+        sf->crl_disk_caching = SF_BOOLEAN_TRUE;
+        sf->crl_memory_caching = SF_BOOLEAN_TRUE;
+        sf->crl_download_timeout = SF_CRL_DOWNLOAD_TIMEOUT;
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
@@ -1047,7 +1112,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->token = NULL;
         sf->master_token = NULL;
         sf->login_timeout = SF_LOGIN_TIMEOUT;
-        sf->network_timeout = 0;
+        sf->network_timeout = SF_NETWORK_TIMEOUT;
         sf->browser_response_timeout = SF_BROWSER_RESPONSE_TIMEOUT;
         sf->retry_timeout = SF_RETRY_TIMEOUT;
         sf->sequence_counter = 0;
@@ -1082,6 +1147,11 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->disable_console_login = SF_BOOLEAN_TRUE;
         sf->disable_saml_url_check = SF_BOOLEAN_FALSE;
         sf->programmatic_access_token = NULL;
+        sf->workload_identity_impersonation_path = NULL;
+
+        sf->wif_provider = NULL;
+        sf->wif_token = NULL;
+        sf->wif_azure_resource = NULL;
 
         sf->use_s3_regional_url = SF_BOOLEAN_FALSE;
         sf->put_use_urand_dev = SF_BOOLEAN_FALSE;
@@ -1106,6 +1176,15 @@ SF_CONNECT *STDCALL snowflake_init() {
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;
+
+        sf->oauth_authorization_endpoint = NULL;
+        sf->oauth_token_endpoint = NULL;
+        sf->oauth_redirect_uri = NULL;
+        sf->oauth_client_id = NULL;
+        sf->oauth_client_secret = NULL;
+        sf->oauth_scope = NULL;
+        sf->oauth_refresh_token = NULL;
+        sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1118,6 +1197,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     }
     cJSON *resp = NULL;
     char *s_resp = NULL;
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
     clear_snowflake_error(&sf->error);
 
     stop_heart_beat_for_this_session(sf);
@@ -1132,7 +1213,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
                     POST_REQUEST_TYPE, &sf->error, SF_BOOLEAN_FALSE,
                     0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
             s_resp = snowflake_cJSON_Print(resp);
-            log_trace("JSON response:\n%s", s_resp);
+            log_debug("JSON response:\n%s", s_resp);
             /* Even if the session deletion fails, it will be cleaned after 7 days.
              * Catching error here won't help
              */
@@ -1181,12 +1262,28 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->no_proxy);
     SF_FREE(sf->oauth_token);
     SF_FREE(sf->session_id);
+    SF_FREE(sf->oauth_authorization_endpoint);
+    SF_FREE(sf->oauth_token_endpoint);
+    SF_FREE(sf->oauth_redirect_uri);
+    SF_FREE(sf->oauth_client_id);
+    SF_FREE(sf->oauth_client_secret);
+    SF_FREE(sf->oauth_scope);
+    SF_FREE(sf->oauth_refresh_token);
+    SF_FREE(sf->wif_provider);
+    SF_FREE(sf->wif_token);
+    SF_FREE(sf->wif_azure_resource);
+    SF_FREE(sf->programmatic_access_token);
+    SF_FREE(sf->workload_identity_impersonation_path);
     SF_FREE(sf);
+
+    stopwatch_stop(&stopwatch);
+    log_info("Snowflake connection termination time: %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
 
     return SF_STATUS_SUCCESS;
 }
 
-SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
+SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     sf_bool success = SF_BOOLEAN_FALSE;
     SF_JSON_ERROR json_error;
     if (!sf) {
@@ -1202,6 +1299,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             SF_SQLSTATE_CONNECTION_ALREADY_EXIST);
         return SF_STATUS_ERROR_GENERAL;
     }
+
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+
     // Reset error context
     clear_snowflake_error(&sf->error);
 
@@ -1209,14 +1310,14 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     sf_os_version(os_version, sizeof(os_version));
 
     log_info("Snowflake C/C++ API: %s, OS: %s, OS Version: %s",
-             SF_API_VERSION,
-             sf_os_name(),
-             os_version);
+        SF_API_VERSION,
+        sf_os_name(),
+        os_version);
 
     if (!is_string_empty(sf->directURL))
     {
         if (is_string_empty(sf->directURL_param) ||
-                is_string_empty(sf->direct_query_token))
+            is_string_empty(sf->direct_query_token))
         {
             return SF_STATUS_ERROR_BAD_CONNECTION_PARAMS;
         }
@@ -1224,18 +1325,18 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
     }
 
 
-    cJSON *body = NULL;
-    cJSON *data = NULL;
-    cJSON *resp = NULL;
-    char *s_body = NULL;
-    char *s_resp = NULL;
+    cJSON* body = NULL;
+    cJSON* data = NULL;
+    cJSON* resp = NULL;
+    char* s_body = NULL;
+    char* s_resp = NULL;
     // Encoded URL to use with libcurl
     URL_KEY_VALUE url_params[] = {
-        {.key = "request_id=", .value=sf->request_id, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "databaseName=", .value=sf->database, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "schemaName=", .value=sf->schema, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "warehouse=", .value=sf->warehouse, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
-        {.key = "roleName=", .value=sf->role, .formatted_key=NULL, .formatted_value=NULL, .key_size=0, .value_size=0},
+        {.key = "request_id=", .value = sf->request_id, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "databaseName=", .value = sf->database, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "schemaName=", .value = sf->schema, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "warehouse=", .value = sf->warehouse, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
+        {.key = "roleName=", .value = sf->role, .formatted_key = NULL, .formatted_value = NULL, .key_size = 0, .value_size = 0},
     };
     SF_STATUS ret = _snowflake_check_connection_parameters(sf);
     if (ret != SF_STATUS_SUCCESS) {
@@ -1247,23 +1348,42 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         goto cleanup;
     }
 
-    if (sf->client_request_mfa_token) 
+    AuthenticatorType authtype = getAuthenticatorType(sf->authenticator);
+    if (is_secure_storage_auth(authtype))
     {
-        if (sf->token_cache == NULL) {
-            sf->token_cache = secure_storage_init();
-        }
-
-        sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
-    }
-
-    if (sf->client_store_temporary_credential && getAuthenticatorType(sf->authenticator) == AUTH_EXTERNALBROWSER) 
-    {
-        if (sf->token_cache == NULL) 
+        switch (authtype)
         {
-            sf->token_cache = secure_storage_init();
-        }
+        case AUTH_SNOWFLAKE:
+        case AUTH_USR_PWD_MFA:
+            if (sf->client_request_mfa_token) {
+                if (sf->token_cache == NULL) {
+                    sf->token_cache = secure_storage_init();
+                }
 
-        sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                sf->mfa_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN);
+            }
+            break;
+
+        case AUTH_EXTERNALBROWSER:
+        case AUTH_OAUTH_AUTHORIZATION_CODE:
+            if (sf->client_store_temporary_credential)
+            {
+                if (sf->token_cache == NULL)
+                {
+                    sf->token_cache = secure_storage_init();
+                }
+                if (authtype == AUTH_EXTERNALBROWSER) {
+                    sf->sso_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN);
+                }
+                else {
+                    sf->oauth_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN);
+                    sf->oauth_refresh_token = secure_storage_get_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN);
+                }
+            }
+            break;
+        default:
+            break;
+        }
     }
 
     ret = auth_authenticate(sf);
@@ -1283,7 +1403,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
         sf->application_version,
         sf->timezone,
         sf->autocommit);
-    log_trace("Created body");
+    log_debug("Created body");
     s_body = snowflake_cJSON_Print(body);
     // TODO delete password before printing
     if (DEBUG) {
@@ -1310,7 +1430,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                     renew_timeout, get_login_retry_count(sf), get_login_timeout(sf), &elapsed_time,
                     &retried_count, &is_renew, renew_injection)) {
             s_resp = snowflake_cJSON_Print(resp);
-            log_trace("Here is JSON response:\n%s", s_resp);
+            log_debug("Here is JSON response:\n%s", s_resp);
             if ((json_error = json_copy_bool(&success, resp, "success")) !=
                 SF_JSON_ERROR_NONE) {
                 log_error("JSON error: %d", json_error);
@@ -1331,12 +1451,22 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
                 if (codeJson) {
                     code = strtol(codeJson->valuestring, NULL, 10);
                 } else {
-                    log_debug("no code element.");
+                    log_debug("No code element.");
                 }
 
                 if (code == strtol(SF_GS_ERROR_CODE_ID_TOKEN_INVALID, NULL, 10))
                 { 
                     log_error("ID token expired or invalid. Reauthenticate.");
+                    auth_renew_json_body(sf, body);
+                    s_body = snowflake_cJSON_Print(body);
+                    retried_count++;
+                    continue;
+                }
+
+                if (code == strtol(SF_OAUTH_ACCESS_TOKEN_EXPIRED_GS_CODE, NULL, 10))
+                {
+                    log_error("OAUTH acess token expired or invalid. Reauthenticate.");
+                    SF_FREE(sf->oauth_token);
                     auth_renew_json_body(sf, body);
                     s_body = snowflake_cJSON_Print(body);
                     retried_count++;
@@ -1366,12 +1496,19 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             // SNOW-715510: TODO Enable token cache
 
             char* auth_token = NULL;
-            if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+            if (sf->token_cache) {
+                if (json_copy_string(&auth_token, data, "idToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, auth_token);
+                }
+                else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
+                }
+                else if (authtype == AUTH_OAUTH_AUTHORIZATION_CODE) {
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_ACCESS_TOKEN, sf->oauth_token);
+                    secure_storage_save_credential(sf->token_cache, sf->host, sf->user, OAUTH_REFRESH_TOKEN, sf->oauth_refresh_token);
+                }
             }
-            else if (json_copy_string(&auth_token, data, "mfaToken") == SF_JSON_ERROR_NONE && sf->token_cache) {
-              secure_storage_save_credential(sf->token_cache, sf->host, sf->user, MFA_TOKEN, auth_token);
-            }
+
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
             if (sf->client_session_keep_alive)
@@ -1403,6 +1540,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT *sf) {
             goto cleanup;
         }
     }
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Snowflake connected in %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
     /* we are done... */
     ret = SF_STATUS_SUCCESS;
 
@@ -1427,6 +1568,10 @@ cleanup:
     snowflake_cJSON_Delete(resp);
     SF_FREE(s_body);
     SF_FREE(s_resp);
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Snowflake connection failed in %ld ms",
+      stopwatch_elapsedMillis(&stopwatch));
 
     return ret;
 }
@@ -1523,8 +1668,35 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_OAUTH_TOKEN:
             alloc_buffer_and_copy(&sf->oauth_token, value);
             break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            alloc_buffer_and_copy(&sf->oauth_refresh_token, value);
+            break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_authorization_endpoint, value);
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            alloc_buffer_and_copy(&sf->oauth_token_endpoint, value);
+            break;
+        case SF_CON_OAUTH_REDIRECT_URI:
+            alloc_buffer_and_copy(&sf->oauth_redirect_uri, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            alloc_buffer_and_copy(&sf->oauth_client_id, value);
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            alloc_buffer_and_copy(&sf->oauth_client_secret, value);
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            alloc_buffer_and_copy(&sf->oauth_scope, value);
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
+            sf->single_use_refresh_token = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         case SF_CON_PAT:
             alloc_buffer_and_copy(&sf->programmatic_access_token, value);
+            break;
+        case SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH:
+            alloc_buffer_and_copy(&sf->workload_identity_impersonation_path, value);
             break;
         case SF_CON_INSECURE_MODE:
             sf->insecure_mode = value ? *((sf_bool *) value) : SF_BOOLEAN_FALSE;
@@ -1532,11 +1704,29 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_OCSP_FAIL_OPEN:
           sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
+        case SF_CON_CRL_CHECK:
+          sf->crl_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
+        case SF_CON_CRL_ADVISORY:
+          sf->crl_advisory = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
+        case SF_CON_CRL_ALLOW_NO_CRL:
+          sf->crl_allow_no_crl = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          break;
+        case SF_CON_CRL_DISK_CACHING:
+          sf->crl_disk_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          break;
+        case SF_CON_CRL_MEMORY_CACHING:
+          sf->crl_memory_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          break;
+        case SF_CON_CRL_DOWNLOAD_TIMEOUT:
+          sf->crl_download_timeout = value ? *((int64*)value) : SF_CRL_DOWNLOAD_TIMEOUT;
+          break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
             break;
         case SF_CON_NETWORK_TIMEOUT:
-            sf->network_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
+            sf->network_timeout = value ? *((int64 *) value) : SF_NETWORK_TIMEOUT;
             break;
         case SF_CON_BROWSER_RESPONSE_TIMEOUT:
             sf->browser_response_timeout = value ? *((int64*)value) : SF_BROWSER_RESPONSE_TIMEOUT;
@@ -1672,6 +1862,15 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
             sf->client_session_keep_alive_heartbeat_frequency = value ? (*((uint64*)value)) : SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
             break;
+        case SF_CON_WIF_PROVIDER:
+            alloc_buffer_and_copy(&sf->wif_provider, value);
+            break;
+        case SF_CON_WIF_TOKEN:
+            alloc_buffer_and_copy(&sf->wif_token, value);
+            break;
+        case SF_CON_WIF_AZURE_RESOURCE:
+            alloc_buffer_and_copy(&sf->wif_azure_resource, value);
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -1743,11 +1942,59 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_OAUTH_TOKEN:
             *value = sf->oauth_token;
             break;
+        case SF_CON_OAUTH_REFRESH_TOKEN:
+            *value = sf->oauth_refresh_token;
+            break;
+        case SF_CON_OAUTH_AUTHORIZATION_ENDPOINT:
+            *value = sf->oauth_authorization_endpoint;
+            break;
+        case SF_CON_OAUTH_TOKEN_ENDPOINT:
+            *value = sf->oauth_token_endpoint;
+            break;
+        case SF_CON_OAUTH_REDIRECT_URI:
+            *value = sf->oauth_redirect_uri;
+            break;
+        case SF_CON_OAUTH_CLIENT_ID:
+            *value = sf->oauth_client_id;
+            break;
+        case SF_CON_OAUTH_CLIENT_SECRET:
+            *value = sf->oauth_client_secret;
+            break;
+        case SF_CON_OAUTH_SCOPE:
+            *value = sf->oauth_scope;
+            break;
+        case SF_CON_SINGLE_USE_REFRESH_TOKEN:
+            *value = &sf->single_use_refresh_token;
+            break;
+        case SF_CON_PAT:
+            *value = sf->programmatic_access_token;
+            break;
+        case SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH:
+            *value = sf->workload_identity_impersonation_path;
+            break;
         case SF_CON_INSECURE_MODE:
             *value = &sf->insecure_mode;
             break;
         case SF_CON_OCSP_FAIL_OPEN:
           *value = &sf->ocsp_fail_open;
+          break;
+        case SF_CON_CRL_CHECK:
+          *value = &sf->crl_check;
+          break;
+        case SF_CON_CRL_ADVISORY:
+          *value = &sf->crl_advisory;
+          break;
+        case SF_CON_CRL_ALLOW_NO_CRL:
+          *value = &sf->crl_allow_no_crl;
+          break;
+        case SF_CON_CRL_DISK_CACHING:
+          *value = &sf->crl_disk_caching;
+          break;
+        case SF_CON_CRL_MEMORY_CACHING:
+          *value = &sf->crl_memory_caching;
+          break;
+        case SF_CON_CRL_DOWNLOAD_TIMEOUT:
+          *value = &sf->crl_download_timeout;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             *value = &sf->login_timeout;
@@ -1864,6 +2111,15 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = &sf->client_session_keep_alive_heartbeat_frequency;
         case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
             *value = &sf->client_store_temporary_credential;
+            break;
+        case SF_CON_WIF_PROVIDER:
+            *value = sf->wif_provider;
+            break;
+        case SF_CON_WIF_TOKEN:
+            *value = sf->wif_token;
+            break;
+        case SF_CON_WIF_AZURE_RESOURCE:
+            *value = sf->wif_azure_resource;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -2013,19 +2269,25 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
           callback_create_resp = callback_create_arrow_resp;
         }
         sfstmt->chunk_downloader = chunk_downloader_init(
-          qrmk,
-          chunk_headers,
-          chunks,
-          2, // thread count
-          4, // fetch slot
-          &sfstmt->error,
-          sfstmt->connection->insecure_mode,
-          sfstmt->connection->ocsp_fail_open,
-          callback_create_resp,
-          sfstmt->connection->proxy,
-          sfstmt->connection->no_proxy,
-          get_retry_timeout(sfstmt->connection),
-          sfstmt->connection->retry_count);
+            qrmk,
+            chunk_headers,
+            chunks,
+            2, // thread count
+            4, // fetch slot
+            &sfstmt->error,
+            sfstmt->connection->insecure_mode,
+            sfstmt->connection->ocsp_fail_open,
+            sfstmt->connection->crl_check,
+            sfstmt->connection->crl_advisory,
+            sfstmt->connection->crl_allow_no_crl,
+            sfstmt->connection->crl_disk_caching,
+            sfstmt->connection->crl_memory_caching,
+            sfstmt->connection->crl_download_timeout,
+            callback_create_resp,
+            sfstmt->connection->proxy,
+            sfstmt->connection->no_proxy,
+            get_retry_timeout(sfstmt->connection),
+            sfstmt->connection->retry_count);
         SF_FREE(qrmk);
         if (!sfstmt->chunk_downloader) {
           // Unable to create chunk downloader.
@@ -2201,7 +2463,7 @@ SF_STATUS STDCALL snowflake_next_result(SF_STMT* sfstmt)
         if (codeJson) {
             code = (int64) strtol(codeJson->valuestring, NULL, 10);
         } else {
-            log_debug("no code element.");
+            log_debug("No code element.");
         }
         SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                  message ? message
@@ -2819,15 +3081,24 @@ SF_STATUS STDCALL snowflake_query(
     if (!sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+    log_debug("Starting snowflake query");
     clear_snowflake_error(&sfstmt->error);
     SF_STATUS ret = snowflake_prepare(sfstmt, command, command_size);
     if (ret != SF_STATUS_SUCCESS) {
+      log_debug("Failed snowflake prepare. Total time: %ld ms.", stopwatch_elapsedMillis(&stopwatch));
         return ret;
     }
     ret = snowflake_execute(sfstmt);
+    stopwatch_stop(&stopwatch);
     if (ret != SF_STATUS_SUCCESS) {
+        log_debug("Failed snowflake execute query with id %s. Total time: %ld ms.",
+          sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
         return ret;
     }
+    log_debug("Finished snowflake query with id %s. Total time: %ld ms.",
+      sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
     return SF_STATUS_SUCCESS;
 }
 
@@ -2836,7 +3107,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         return SF_STATUS_ERROR_STATEMENT_NOT_EXIST;
     }
     if (!sfstmt->sql_text || (strlen(sfstmt->request_id) == 0)) {
-        log_trace("No queries found or query has not been executed yet.");
+        log_debug("No queries found or query has not been executed yet.");
         return SF_STATUS_SUCCESS;
     }
     clear_snowflake_error(&sfstmt->error);
@@ -2845,7 +3116,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         if (!is_query_still_running(metadata->status) &&
             (metadata->status != SF_QUERY_STATUS_UNKNOWN) &&
             (sfstmt->error.error_code == SF_STATUS_SUCCESS)) {
-            log_trace("Query is no longer running.");
+            log_debug("Query is no longer running.");
             return SF_STATUS_SUCCESS;
         }
     }
@@ -2886,7 +3157,7 @@ SF_STATUS STDCALL snowflake_cancel_query(SF_STMT *sfstmt) {
         0, sfstmt->connection->retry_count, get_retry_timeout(sfstmt->connection),
         NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         s_resp = snowflake_cJSON_Print(resp);
-        log_trace("Here is JSON response:\n%s", s_resp);
+        log_debug("Here is JSON response:\n%s", s_resp);
 
         //cJSON *success = snowflake_cJSON_GetObjectItem(resp, "success");
         sf_bool success = SF_BOOLEAN_FALSE;
@@ -2989,6 +3260,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
     // If no more results, set return to SF_STATUS_EOF
     if (sfstmt->chunk_rowcount == 0) {
         if (sfstmt->chunk_downloader) {
+            Stopwatch stopwatch;
+            stopwatch_start(&stopwatch);
             log_debug("Fetching next chunk from chunk downloader.");
             _critical_section_lock(&sfstmt->chunk_downloader->queue_lock);
             do {
@@ -3052,6 +3325,8 @@ SF_STATUS STDCALL snowflake_fetch(SF_STMT *sfstmt) {
             }
             while (0);
             _critical_section_unlock(&sfstmt->chunk_downloader->queue_lock);
+            stopwatch_stop(&stopwatch);
+            log_debug("Fetching chunk took %ld ms.", stopwatch_elapsedMillis(&stopwatch));
         } else {
             // If there is no chunk downloader set, then we've truly reached the end of the results and should set EOL
             log_debug("No chunk downloader set, end of results.");
@@ -3262,7 +3537,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_trace("Here is constructed body:\n%s", s_body);
+    log_debug("Here is constructed body:\n%s", s_body);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
@@ -3275,7 +3550,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 NULL, NULL, NULL, SF_BOOLEAN_FALSE)) {
         // s_resp will be freed by snowflake_query_result_capture_term
         s_resp = snowflake_cJSON_Print(resp);
-        log_trace("Here is JSON response:\n%s", s_resp);
+        log_debug("Here is JSON response:\n%s", s_resp);
 
         // Store the full query-response text in the capture buffer, if defined.
         if (result_capture != NULL) {
@@ -3438,7 +3713,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             if (codeJson) {
                 code = (int64) strtol(codeJson->valuestring, NULL, 10);
             } else {
-                log_debug("no code element.");
+                log_debug("No code element.");
             }
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                      message ? message
@@ -3447,7 +3722,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             goto cleanup;
         }
     } else {
-        log_trace("Connection failed");
+        log_debug("Connection failed");
         // Set the return status to the error code
         // that we got from the connection layer
         ret = sfstmt->error.error_code;
@@ -3530,6 +3805,9 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         return _snowflake_execute_put_get_native(sfstmt, NULL, 0, 0, result_capture);
     }
 
+    Stopwatch stopwatch;
+    stopwatch_start(&stopwatch);
+
     clear_snowflake_error(&sfstmt->error);
 
     _mutex_lock(&sfstmt->connection->mutex_sequence_counter);
@@ -3585,13 +3863,18 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
         return _batch_dml_execute(sfstmt, result_capture);
     }
 
-    return _snowflake_execute_with_binds_ex(sfstmt,
+    ret =  _snowflake_execute_with_binds_ex(sfstmt,
                                             is_put_get_command,
                                             result_capture,
                                             is_describe_only,
                                             bind_stage,
                                             bindings,
                                             is_async_exec);
+
+    stopwatch_stop(&stopwatch);
+    log_debug("Query execution with id %s took %ld ms.",
+      sfstmt->sfqid, stopwatch_elapsedMillis(&stopwatch));
+    return ret;
 }
 
 SF_ERROR_STRUCT *STDCALL snowflake_error(SF_CONNECT *sf) {
@@ -4069,7 +4352,7 @@ SF_STATUS STDCALL snowflake_raw_value_to_str_rep(SF_STMT *sfstmt, const char* co
               scale = tzOffsetPtr - scalePtr - 1;
             }
           }
-          log_info("scale is calculated as %d", scale);
+          log_debug("Scale is calculated as %d", scale);
         }
 
         if (snowflake_timestamp_from_epoch_seconds(&ts,

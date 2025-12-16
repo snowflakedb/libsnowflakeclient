@@ -35,6 +35,7 @@ set(SOURCE_FILES
         include/snowflake/platform.h
         include/snowflake/secure_storage.h
         include/snowflake/client_config_parser.h
+        include/snowflake/Stopwatch.h
         lib/client.c
         lib/constants.h
         lib/cJSON.h
@@ -70,6 +71,8 @@ set(SOURCE_FILES
         lib/mock_http_perform.h
         lib/http_perform.c
         lib/mutex.h
+        lib/log_file_util.h
+		lib/log_file_util.c
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -107,6 +110,7 @@ set (SOURCE_FILES_PUT_GET
         cpp/util/ThreadPool.hpp
         cpp/util/SnowflakeCommon.hpp
         cpp/util/entities.cpp
+        cpp/util/Stopwatch.cpp
         cpp/crypto/CryptoTypes.hpp
         cpp/crypto/Cryptor.hpp
         cpp/crypto/CipherContext.hpp
@@ -180,9 +184,15 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ResultSetArrow.hpp
         cpp/lib/ResultSetJson.cpp
         cpp/lib/ResultSetJson.hpp
-        cpp/lib/Authenticator.cpp
-        cpp/lib/IAuth.cpp
         cpp/lib/Authenticator.hpp
+        cpp/lib/Authenticator.cpp
+        cpp/lib/AuthenticatorOAuth.cpp
+        cpp/lib/AuthenticatorOAuth.hpp
+        cpp/lib/AuthenticationWebBrowserRunner.cpp
+        cpp/lib/AuthenticationWebBrowserRunner.hpp
+        cpp/lib/AuthenticationChallengeProvider.cpp
+        cpp/lib/AuthenticationChallengeProvider.hpp
+        cpp/lib/IAuth.cpp
         cpp/lib/BindUploader.cpp
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
@@ -502,7 +512,7 @@ elseif(WIN32)
     if(MOCK)
         link_directories("${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${VSDIR}/${CMAKE_BUILD_TYPE}/cmocka/lib")
     endif()
-elseif()
+else()
     link_directories(
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/oob/lib"
             "${CMAKE_CURRENT_SOURCE_DIR}/deps-build/${PLATFORM}/${CMAKE_BUILD_TYPE}/curl/lib"
