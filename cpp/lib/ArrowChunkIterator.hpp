@@ -59,6 +59,7 @@ namespace Client
 struct ArrowColumn
 {
     // The array data of the columns. Each instance of ArrowColumn should only have one populated.
+    arrow::StructArray     * arrowStructArray;
     arrow::BinaryArray     * arrowBinary;
     arrow::BooleanArray    * arrowBoolean;
     arrow::Date32Array     * arrowDate32;

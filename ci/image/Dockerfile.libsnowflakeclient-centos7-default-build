@@ -3,10 +3,19 @@ FROM centos:7
 RUN mkdir -p /usr/lib64/ccache
 ENV PATH="/usr/lib64/ccache:${PATH}"
 
-RUN yum -y update
-RUN yum -y install epel-release
-RUN yum install -y centos-release-scl
-RUN yum install -y yum-utils
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+
+RUN yum -y update && \
+    yum -y install epel-release && \
+    yum install -y centos-release-scl && \
+    for file in /etc/yum.repos.d/CentOS-SCLo-*.repo; do \
+        sed -i 's/mirrorlist/#mirrorlist/g' "$file"; \
+        sed -i 's|# baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' "$file"; \
+        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' "$file"; \
+    done && \
+    yum clean all && \
+    yum install -y yum-utils
 
 # zlib for libsnowflakeclient as build_zlib.sh is not called in its build script
 RUN yum install -y zlib zlib-devel
@@ -73,7 +82,7 @@ RUN cd /tmp/gcc-build && wget https://ftp.gnu.org/gnu/gcc/gcc-8.3.0/gcc-8.3.0.ta
     ./contrib/download_prerequisites
 
 RUN cd /tmp/gcc-build/gcc-8.3.0 && ./configure --prefix=/usr --disable-multilib --enable-languages=c,c++ && \
-    make && \
+    make -j$(nproc) && \
     make install && cd /usr/local/bin && rm -rf /tmp/gcc-build
 
 WORKDIR /usr/local/bin
