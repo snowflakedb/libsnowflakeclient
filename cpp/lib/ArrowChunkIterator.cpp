@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <sstream>
+#include <iomanip>
+#include <vector>
 
 #include "../logger/SFLogger.hpp"
 #include "snowflake/platform.h"
@@ -154,7 +157,7 @@ bool ArrowChunkIterator::isCellNull(int32 col)
     }
     case (arrow::Type::type::STRUCT):
     {
-        return (m_columns[col].arrowTimestamp->sse->IsNull(m_currRowIndexInBatch));
+        return m_columns[col].arrowStructArray->IsNull(m_currRowIndexInBatch);
         break;
     }
     default:
@@ -346,10 +349,11 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
         return SF_STATUS_SUCCESS;
     }
 
-    if ((!rawData) && (SF_DB_TYPE_FIXED == m_metadata[colIdx].type) && (m_metadata[colIdx].scale != 0))
+    if (!rawData && ((SF_DB_TYPE_FIXED == m_metadata[colIdx].type && m_metadata[colIdx].scale != 0)
+        || SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type))
     {
-        float64 floatData;
-        SF_STATUS status = getCellAsFloat64(colIdx, &floatData);
+        std::string val;
+        SF_STATUS status = getCellAsString(colIdx, val);
         if (SF_STATUS_SUCCESS != status)
         {
             m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
@@ -357,15 +361,8 @@ ArrowChunkIterator::getCellAsInt64(size_t colIdx, int64 * out_data, bool rawData
             return status;
         }
 
-        if (floatData > static_cast<float64>(SF_INT64_MAX) || floatData < static_cast<float64>(SF_INT64_MIN))
-        {
-            m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
-                "Value out of range for int64.");
-            return SF_STATUS_ERROR_OUT_OF_RANGE;
-        }
-
-        *out_data = (int64)floatData;
-        return SF_STATUS_SUCCESS;
+        //No decimal point, just convert directly
+        return Conversion::Arrow::StringToInt64(val, out_data);
     }
 
     int64 data;
@@ -483,6 +480,7 @@ ArrowChunkIterator::getCellAsUint32(size_t colIdx, uint32 * out_data)
     {
         m_parent->setError(SF_STATUS_ERROR_OUT_OF_RANGE,
             "Value out of range for uint32.");
+        return SF_STATUS_ERROR_OUT_OF_RANGE;
     }
 
     *out_data = static_cast<int32>(rawData);
@@ -553,6 +551,24 @@ ArrowChunkIterator::getCellAsUint64(size_t colIdx, uint64 * out_data)
         status = Conversion::Arrow::StringToUint64(strData, out_data);
         break;
     }
+    case arrow::Type::type::STRUCT:
+    {
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type)
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToUint64(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to UINT64.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to UINT64 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+        break;
+    }
+
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -636,12 +652,39 @@ ArrowChunkIterator::getCellAsFloat32(size_t colIdx, float32 * out_data)
             return status;
         }
         *out_data = (float32)data;
+        if (*out_data == INFINITY || *out_data == -INFINITY)
+        {
+            return SF_STATUS_ERROR_OUT_OF_RANGE;
+        }
+
+        if (*out_data == 0.0f && data != 0.0)
+        {
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+
         return SF_STATUS_SUCCESS;
     }
     case arrow::Type::type::DECIMAL:
     {
         std::string strData = m_columns[colIdx].arrowDecimal128->FormatValue(m_currRowIndexInBatch);
         status = Conversion::Arrow::StringToFloat(strData, out_data);
+        break;
+    }
+    case arrow::Type::type::STRUCT:
+    {
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type) 
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToFloat(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT32.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to float32 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
         break;
     }
     case arrow::Type::type::STRING:
@@ -741,6 +784,24 @@ ArrowChunkIterator::getCellAsFloat64(size_t colIdx, float64 * out_data)
         status = Conversion::Arrow::StringToDouble(strData, out_data);
         break;
     }
+    case arrow::Type::type::STRUCT:
+    {
+        if (SF_DB_TYPE_DECFLOAT == m_metadata[colIdx].type) 
+        {
+            std::string strData;
+            getCellAsString(colIdx, strData);
+            status = Conversion::Arrow::StringToDouble(strData, out_data);
+        }
+        else
+        {
+            CXX_LOG_ERROR("Unsupported conversion from %d to FLOAT64.", m_arrowColumnDataTypes[colIdx]);
+            m_parent->setError(SF_STATUS_ERROR_CONVERSION_FAILURE,
+                "No valid conversion to float64 from data type.");
+            return SF_STATUS_ERROR_CONVERSION_FAILURE;
+        }
+        break;
+
+    }
     case arrow::Type::type::STRING:
     {
         std::string strData = m_columns[colIdx].arrowString->GetString(m_currRowIndexInBatch);
@@ -819,6 +880,76 @@ SF_STATUS STDCALL ArrowChunkIterator::getCellAsString(
 
         outString = std::string(buf);
         return SF_STATUS_SUCCESS;
+    }
+
+    if (SF_DB_TYPE_DECFLOAT == snowType)
+    {
+        if (m_columns[colIdx].arrowStructArray->num_fields() == 2)
+        {
+            int16_t exponent = std::static_pointer_cast<arrow::Int16Array>(
+                m_columns[colIdx].arrowStructArray->field(0))->Value(m_currRowIndexInBatch);
+            int len = 0;
+            const uint8_t* value = std::static_pointer_cast<arrow::BinaryArray>(
+                m_columns[colIdx].arrowStructArray->field(1))->GetValue(m_currRowIndexInBatch, &len);
+            if ((len < 0) || (len > 16))
+            {
+                CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Possible invalid data, row index in batch: %d, col: %d, length: %d", m_currRowIndexInBatch, (int)colIdx, len);
+                return SF_STATUS_ERROR_OUT_OF_BOUNDS;
+            }
+
+            std::vector<uint8_t> rawBytes(value, value + len);
+            arrow::Result<arrow::Decimal128> res = arrow::Decimal128::FromBigEndian(rawBytes.data(), len);
+            if (!res.ok()) {
+                CXX_LOG_ERROR("sf::arrowChunkIterator::getDecimal::Failed to convert from big endian to Decimal128, row index in batch: %d, col: %d", m_currRowIndexInBatch, (int)colIdx);
+                return SF_STATUS_ERROR_CONVERSION_FAILURE;
+            };
+
+            arrow::Decimal128 dec = *res;
+            std::string digits = dec.ToString(0);
+            bool isPositive = true;
+            if (digits[0] == '-') {
+                isPositive = false;
+                digits = digits.substr(1);
+            }
+
+            int mantissaDigits = static_cast<int>(digits.size());
+            
+            // value = (digits) * 10^exponent => normalized exponent = digits-1 + exponent
+            int sciExp = (mantissaDigits - 1) + exponent;
+            if (sciExp >= 38 || (exponent < 0 && (exponent) <= -38)) {
+                // it means that the number is too big or too small, use scientific notation
+                std::string m = digits.size() > 1
+                    ? std::string(1, digits[0]) + '.' + digits.substr(1)
+                    : std::string(1, digits[0]);
+
+                outString = (isPositive ? "" : "-") + m + (sciExp ? "e" + std::to_string(sciExp) : "");
+            }
+            else
+            {
+                if (exponent > 0) {
+                    digits.append(exponent, '0');
+                }
+                else
+                {
+                    int pointPos = mantissaDigits + exponent;
+                    if (pointPos != mantissaDigits)
+                    {
+                        if (pointPos > 0)
+                        {
+                            digits.insert(pointPos, 1, '.');
+                        }
+                        else
+                        {
+                            std::string leadingZeros(-pointPos, '0');
+                            digits = "0." + leadingZeros + digits;
+                        }
+                    }
+                }
+                outString = (isPositive ? "" : "-") + digits;
+            }
+            return SF_STATUS_SUCCESS;
+        }
+        return SF_STATUS_ERROR_CONVERSION_FAILURE;
     }
 
     switch (m_arrowColumnDataTypes[colIdx])
@@ -1095,14 +1226,18 @@ void ArrowChunkIterator::initColumnChunks()
         switch (dt->id())
         {
             case arrow::Type::STRUCT: {
-                auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
-                std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
-                ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
-                if (values->num_fields() > 1)
-                    ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
-                if (values->num_fields() > 2)
-                    ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
-                arrowcol.arrowTimestamp = ts;
+                arrowcol.arrowStructArray = std::static_pointer_cast<arrow::StructArray>(columnArray).get();
+                if (m_metadata[i].type != SF_DB_TYPE_DECFLOAT)
+                {
+                    auto values = std::static_pointer_cast<arrow::StructArray>(columnArray);
+                    std::shared_ptr<ArrowTimestampArray> ts(new ArrowTimestampArray);
+                    ts->sse = std::static_pointer_cast<arrow::Int64Array>(values->field(0)).get();
+                    if (values->num_fields() > 1)
+                        ts->fs = std::static_pointer_cast<arrow::Int32Array>(values->field(1)).get();
+                    if (values->num_fields() > 2)
+                        ts->tz = std::static_pointer_cast<arrow::Int32Array>(values->field(2)).get();
+                    arrowcol.arrowTimestamp = ts;
+                }
                 m_columns.emplace_back(arrowcol);
                 break;
             }
