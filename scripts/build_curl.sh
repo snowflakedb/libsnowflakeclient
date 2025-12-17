@@ -28,16 +28,22 @@ UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
 CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
 
 rm -rf $LIBCURL_SOURCE_DIR
-curl https://curl.se/download/curl-8.16.0.zip -o $DEPS_DIR/curl-8.16.0.zip
+curl https://curl.se/download/curl-8.16.0.tar.gz -o $DEPS_DIR/curl-8.16.0.tar.gz
 pushd $DEPS_DIR
-  tar -xf curl-8.16.0.zip
+  tar -xf curl-8.16.0.tar.gz
   mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
+  GIT_USERNAME="$(git config user.name)"
+  GIT_USER_EMAIL="$(git config user.email)"
+  git config user.name testuser
+  git config user.email test@test.com
   git add -f deps/curl
   git commit -m "Temporary commit"
   git apply patches/curl-$CURL_SRC_VERSION.patch
   git reset HEAD~1
+  git config user.name $GIT_USERNAME
+  git config user.email $GIT_USER_EMAIL
 popd
 
 # staging cJSON for curl
