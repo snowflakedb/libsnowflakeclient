@@ -34,8 +34,8 @@ pushd $DEPS_DIR
   mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
-  GIT_USERNAME="$(git config user.name)"
-  GIT_USER_EMAIL="$(git config user.email)"
+  output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
+  output=$(git config user.email) && [ -n "output" ] && GIT_USER_EMAIL="$output"
   git config user.name testuser
   git config user.email test@test.com
   git add -f deps/curl
