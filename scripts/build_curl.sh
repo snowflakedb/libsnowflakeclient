@@ -45,10 +45,16 @@ pushd $DEPS_DIR/../
     # Remove any corrupted .git directory
     rm -rf .git
     git init
+    # Explicitly set GIT_DIR to current directory's .git
+    export GIT_DIR=$(pwd)/.git
+    export GIT_WORK_TREE=$(pwd)
     git config user.name testuser
     git config user.email test@test.com
     git add -A
     git commit -m "Initial commit for patching"
+    # Unset again to let git auto-detect
+    unset GIT_DIR
+    unset GIT_WORK_TREE
   fi
   
   output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
