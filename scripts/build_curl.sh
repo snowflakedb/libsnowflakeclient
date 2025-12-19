@@ -34,10 +34,14 @@ pushd $DEPS_DIR
   mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
+  # Unset any git environment variables that might interfere
+  unset GIT_DIR
+  unset GIT_WORK_TREE
+  unset GIT_INDEX_FILE
+  
   # Ensure we're in a working git repository
   if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "[WARN] Not in a git repository, initializing..."
-    ls -al | grep .git
     # Remove any corrupted .git directory
     rm -rf .git
     git init
