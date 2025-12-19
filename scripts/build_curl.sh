@@ -34,21 +34,26 @@ pushd $DEPS_DIR
   mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
-  if git rev-parse --git-dir > /dev/null 2>&1; then
-    output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
-    output=$(git config user.email) && [ -n "$output" ] && GIT_USER_EMAIL="$output"
+  # Ensure we're in a git repository - initialize if needed
+  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "[WARN] Not in a git repository, initializing..."
+    git init
     git config user.name testuser
     git config user.email test@test.com
-    git add -f deps/curl
-    git commit -m "Temporary commit"
-    git apply patches/curl-$CURL_SRC_VERSION.patch
-    git reset HEAD~1
-    [ -n "$GIT_USERNAME" ] && git config user.name $GIT_USERNAME
-    [ -n "$GIT_USER_EMAIL" ] && git config user.email $GIT_USER_EMAIL
-  else
-    echo "Not in a git repository, applying patch directly"
-    patch -p1 < patches/curl-$CURL_SRC_VERSION.patch
+    git add -A
+    git commit -m "Initial commit for patching"
   fi
+  
+  output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
+  output=$(git config user.email) && [ -n "$output" ] && GIT_USER_EMAIL="$output"
+  git config user.name testuser
+  git config user.email test@test.com
+  git add -f deps/curl
+  git commit -m "Temporary commit"
+  git apply patches/curl-$CURL_SRC_VERSION.patch
+  git reset HEAD~1
+  [ -n "$GIT_USERNAME" ] && git config user.name $GIT_USERNAME
+  [ -n "$GIT_USER_EMAIL" ] && git config user.email $GIT_USER_EMAIL
 popd
 
 # staging cJSON for curl
