@@ -34,9 +34,12 @@ pushd $DEPS_DIR
   mv curl-8.16.0 curl
 popd
 pushd $DEPS_DIR/../
-  # Ensure we're in a git repository - initialize if needed
+  # Ensure we're in a working git repository
   if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "[WARN] Not in a git repository, initializing..."
+    ls -al | grep .git
+    # Remove any corrupted .git directory
+    rm -rf .git
     git init
     git config user.name testuser
     git config user.email test@test.com
