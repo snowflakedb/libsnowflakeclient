@@ -39,6 +39,9 @@ pushd $DEPS_DIR/../
   unset GIT_WORK_TREE
   unset GIT_INDEX_FILE
   
+  # Add current directory to git safe.directory to handle ownership differences in Docker
+  git config --global --add safe.directory $(pwd)
+  
   # Ensure we're in a working git repository
   if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "[WARN] Not in a git repository, initializing..."
