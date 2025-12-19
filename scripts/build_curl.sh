@@ -45,17 +45,13 @@ pushd $DEPS_DIR/../
     # Remove any corrupted .git directory
     rm -rf .git
     git init
-    # Explicitly set GIT_DIR to current directory's .git
-    export GIT_DIR=$(pwd)/.git
-    export GIT_WORK_TREE=$(pwd)
-    git config user.name testuser
-    git config user.email test@test.com
     git add -A
     git commit -m "Initial commit for patching"
-    # Unset again to let git auto-detect
-    unset GIT_DIR
-    unset GIT_WORK_TREE
   fi
+  
+  # Explicitly set GIT_DIR and GIT_WORK_TREE for all git operations
+  export GIT_DIR=$(pwd)/.git
+  export GIT_WORK_TREE=$(pwd)
   
   output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
   output=$(git config user.email) && [ -n "$output" ] && GIT_USER_EMAIL="$output"
@@ -67,6 +63,10 @@ pushd $DEPS_DIR/../
   git reset HEAD~1
   [ -n "$GIT_USERNAME" ] && git config user.name $GIT_USERNAME
   [ -n "$GIT_USER_EMAIL" ] && git config user.email $GIT_USER_EMAIL
+  
+  # Clean up environment variables
+  unset GIT_DIR
+  unset GIT_WORK_TREE
 popd
 
 # staging cJSON for curl
