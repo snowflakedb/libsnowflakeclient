@@ -49,13 +49,12 @@ SET(TESTS_C
         test_async
         test_cancel
         test_stopwatch
-# FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
-# will enable lob test when the change on server side will be published
-#        test_lob
-#        test_stats
+        test_lob
+        test_stats
 # MFA, Oauth, and Okta connections are only able to run testing manually.
-        test_manual_connect
+       test_manual_connect
 )
+
 
 SET(TESTS_CXX
         test_unit_jwt
