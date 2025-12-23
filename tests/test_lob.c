@@ -105,7 +105,7 @@ void test_lob_setup(SF_CONNECT **out_sf, SF_STMT **out_sfstmt, sf_bool use_arrow
 {
   SF_CONNECT *sf = setup_snowflake_connection();
   // lower the timeout to speed up test and ignore possible timeout
-  int64 timeout = 150;
+  int64 timeout = 90;
   snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
   snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
   SF_STATUS status = snowflake_connect(sf);
