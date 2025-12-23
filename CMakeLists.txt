@@ -66,8 +66,6 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
-        lib/log_file_util.h
-		lib/log_file_util.c
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -207,11 +205,13 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/Sha256.cpp
         cpp/util/Sha256.hpp
         cpp/util/SnowflakeCppUtil.cpp
+        cpp/util/LogFileUtil.cpp
         cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
+        lib/log_file_util.h
         include/snowflake/WifAttestation.hpp
         cpp/WifAttestation.cpp
         cpp/AwsAttestation.cpp
