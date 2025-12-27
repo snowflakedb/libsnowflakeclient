@@ -1324,6 +1324,7 @@ sf_bool is_password_required(AuthenticatorType auth)
       case AUTH_EXTERNALBROWSER:
       case AUTH_OAUTH_AUTHORIZATION_CODE:
       case AUTH_OAUTH_CLIENT_CREDENTIALS:
+      case AUTH_WIF:
         return 0;
       default:
         return 1;
