@@ -225,8 +225,12 @@ extern "C" {
                   config.type = typeOpt;
                   log_debug("Using explicit WIF provider: %s", conn->wif_provider);
               } else {
-                  log_warn("Invalid WIF provider specified: %s, falling back to auto-detection", conn->wif_provider);
+                  log_error("Invalid WIF provider specified: %s. Valid values: AWS, AZURE, GCP, OIDC", conn->wif_provider);
+                  return;
               }
+          } else {
+              log_error("WIF provider is required but not specified");
+              return;
           }
 
           if (conn->wif_token) {
