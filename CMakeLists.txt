@@ -72,7 +72,7 @@ set(SOURCE_FILES
         lib/http_perform.c
         lib/mutex.h
         lib/log_file_util.h
-		lib/log_file_util.c
+		    lib/log_file_util.c
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -216,12 +216,14 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/util/Sha256.cpp
         cpp/util/Sha256.hpp
         cpp/util/SnowflakeCppUtil.cpp
+        cpp/util/LogFileUtil.cpp
         cpp/platform/SecureStorage.cpp
         lib/result_set.h
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
         lib/heart_beat_background.h
+        lib/log_file_util.h
         include/snowflake/WifAttestation.hpp
         cpp/WifAttestation.cpp
         cpp/AwsAttestation.cpp
