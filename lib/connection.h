@@ -270,6 +270,8 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
                                int64 *elapsed_time, int8 *retried_count,
                                sf_bool *is_renew, sf_bool renew_injection);
 
+sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** resp);
+
 /**
  * Used to issue a cURL GET call to Snowflake. Includes support for renew session. If the request was successful,
  * we return 1, otherwise 0

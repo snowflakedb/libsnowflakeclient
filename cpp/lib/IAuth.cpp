@@ -420,6 +420,19 @@ namespace Client
             CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
             return std::string(unescaped_url);
         }
+
+        std::vector<std::string> IAuthWebServer::splitString(const std::string& s, char delimiter)
+        {
+            std::vector<std::string> tokens;
+            std::string token;
+            std::istringstream tokenStream(s);
+            while (std::getline(tokenStream, token, delimiter))
+            {
+                tokens.push_back(token);
+            }
+            return tokens;
+        }
+
     }// namespace IAuth
 } // namespace Client
 } // namespace Snowflake

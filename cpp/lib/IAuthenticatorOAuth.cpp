@@ -141,6 +141,11 @@ namespace Snowflake::Client
 
         void IAuthenticatorOAuth::authenticate()
         {
+            // already has an access token
+            if (!m_token.empty()) {
+                return;
+            }
+
 #ifdef _WIN32
             AuthWinSock authWinSock;
 #endif
@@ -258,7 +263,7 @@ namespace Snowflake::Client
         }
 
         bool IAuthenticatorOAuth::refreshAccessTokenFlow() {
-            if (!m_oauth_refresh_token.empty()) {
+            if (m_oauth_refresh_token.empty()) {
                 CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
                 return false;
             }
@@ -283,10 +288,6 @@ namespace Snowflake::Client
                 resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
             }
             return response.success;
-        }
-
-        void IAuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) {
-            m_token = accessToken;
         }
 
         AuthorizationCodeResponse IAuthenticatorOAuth::executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest)

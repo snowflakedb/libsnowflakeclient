@@ -96,6 +96,23 @@ namespace Client
       SF_CONNECT* m_connection;
   };
 
+  class AuthenticatorOAuth : public IAuthenticatorOAuth
+  {
+  public:
+
+      AuthenticatorOAuth(SF_CONNECT* connection,
+          IAuthWebServer* authWebServer = nullptr,
+          IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
+
+      void authenticate() override;
+
+  private:
+      bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) override;
+      void resetTokens(std::string accessToken, std::string refreshToken) override;
+
+      SF_CONNECT* m_connection;
+  };
+
   class AuthenticatorTest : public IAuthenticator
   {
   public:
@@ -131,7 +148,6 @@ namespace Client
       std::string getToken() override;
       bool isConsentCacheIdToken() override;
       void setTimeout(int timeout) override;
-      static std::vector<std::string> splitString(const std::string& s, char delimiter);
 
   protected:
 #ifdef _WIN32

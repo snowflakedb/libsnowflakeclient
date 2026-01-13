@@ -338,9 +338,23 @@ extern "C" {
 
 } // extern "C"
 
-namespace Snowflake
-{
-namespace Client
+namespace {
+    std::string encodeBase64(const std::string& s) {
+        return Snowflake::Client::Util::IBase64::encodeURLNoPadding(std::vector<char>(s.begin(), s.end()));
+    }
+
+    SF_HEADER* createTokenRequestExternalHeaders(const std::string& clientId, const std::string& clientSecret) {
+        SF_HEADER* oauth_header = sf_header_create();
+        std::string auth = "Authorization: Basic " + encodeBase64(clientId + ":" + clientSecret);
+        oauth_header->header = curl_slist_append(oauth_header->header, auth.c_str());
+        oauth_header->header = curl_slist_append(oauth_header->header, "Content-Type: application/x-www-form-urlencoded");
+        return oauth_header;
+
+    }
+
+}
+
+namespace Snowflake::Client
 {
   using namespace picojson;
 
@@ -744,6 +758,79 @@ namespace Client
 #endif
   }
 
+  AuthenticatorOAuth::AuthenticatorOAuth(SF_CONNECT* connection,
+      IAuthWebServer* authWebServer,
+      IAuthenticationWebBrowserRunner* webBrowserRunner)
+      : m_connection(connection), IAuthenticatorOAuth(authWebServer, webBrowserRunner)
+  {
+      m_challengeProvider = AuthenticationChallengeBaseProvider::getInstance();
+      m_webBrowserRunner = webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner;
+      m_oauthFlow = getAuthenticatorType(connection->authenticator);
+      m_authEndpoint = SFURL::parse(connection->oauth_authorization_endpoint ? connection->oauth_authorization_endpoint : "https://" + std::string(connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_AUTHORIZATION_URL_POSTFIX);
+      m_tokenEndpoint = SFURL::parse(connection->oauth_token_endpoint ? connection->oauth_token_endpoint : "https://" + std::string(connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_TOKEN_URL_POSTFIX);
+      m_clientId = connection->oauth_client_id;
+      m_clientSecret = connection->oauth_client_secret;
+      m_authScope = connection->oauth_scope ? connection->oauth_scope : "session:role:" + std::string(connection->role);
+      m_redirectUri = SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
+      m_redirectUriDynamicDefault = is_string_empty(connection->oauth_redirect_uri);
+      m_singleUseRefreshTokens = connection->single_use_refresh_token;
+      m_token = m_connection->oauth_token;
+
+      if (m_authEndpoint.host() != m_tokenEndpoint.host())
+      {
+          CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
+              +m_authEndpoint.host().c_str(),
+              +m_tokenEndpoint.host().c_str());
+      }
+  }
+  
+  void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) 
+  {
+      m_token = accessToken;
+      m_oauth_refresh_token = refreshToken;
+
+      if (m_connection->oauth_token) {
+          SF_FREE(m_connection->oauth_token);
+      }
+      size_t str_size = strlen(accessToken.c_str()) + 1;
+      m_connection->oauth_token = (char*)SF_CALLOC(1, str_size);
+      std::strcpy(m_connection->oauth_token, accessToken.c_str());
+
+      if (m_connection->oauth_refresh_token) {
+          SF_FREE(m_connection->oauth_refresh_token);
+      }
+      str_size = strlen(refreshToken.c_str()) + 1;
+      m_connection->oauth_refresh_token = (char*)SF_CALLOC(1, str_size);
+      std::strcpy(m_connection->oauth_refresh_token, refreshToken.c_str());
+  }
+
+  bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
+      const std::string& body, jsonObject_t& resp) {
+      std::string destination = endPoint.toString();
+      SF_HEADER* httpExtraHeaders = createTokenRequestExternalHeaders(m_clientId, m_clientSecret);
+      struct curl_slist* current = httpExtraHeaders->header;
+      while (current != nullptr) 
+      {
+          CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeRestRequest %s", maskOAuthSecret(std::string(current->data)).c_str());
+          current = current->next;
+      }
+      cJSON* resp_data = NULL;
+      int8 retried_count = 0;
+
+      if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)body.c_str(), &resp_data))
+      {
+          CXX_LOG_INFO("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n",
+              snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+          return false;
+      }
+      else
+      {
+          cJSONtoPicoJson(resp_data, resp);
+      }
+      return true;
+  }
+  
+
   /**
 * Constructor for AuthWebServer
 */
@@ -1046,18 +1133,6 @@ namespace Client
       return true;
   }
 
-  std::vector<std::string> AuthWebServer::splitString(const std::string& s, char delimiter)
-  {
-      std::vector<std::string> tokens;
-      std::string token;
-      std::istringstream tokenStream(s);
-      while (std::getline(tokenStream, token, delimiter))
-      {
-          tokens.push_back(token);
-      }
-      return tokens;
-  }
-
   void AuthWebServer::parseAndRespondGetRequest(char** rest_mesg)
   {
       char* path = sf_strtok(NULL, " \t", rest_mesg);
@@ -1212,5 +1287,4 @@ namespace Client
       dataMap["test"] = picojson::value(count);
       count++;
   }
-} // namespace Client
-} // namespace Snowflake
+} // namespace Snowflake::Client
