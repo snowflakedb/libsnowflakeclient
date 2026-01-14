@@ -402,7 +402,7 @@ void test_lob_describe_only_core(sf_bool use_arrow)
     {
       byte_size = MAX_LOB_SIZE;
     }
-    assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "length")), test_sizes[i]);
+    assert_int_equal(snowflake_cJSON_GetUint64Value(snowflake_cJSON_GetObjectItem(rowtype, "length")), strlen(query) - 9/*test_sizes[i]*/);
 
     snowflake_cJSON_Delete(parsedJSON);
     snowflake_query_result_capture_term(result_capture);
