@@ -1,0 +1,63 @@
+{
+  "mappings": [
+    {
+      "name": "404 Not Found",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/notfound"
+      },
+      "response": {
+        "status": 404,
+        "jsonBody": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Resource not found"
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "name": "500 Internal Server Error",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/servererror"
+      },
+      "response": {
+        "status": 500,
+        "jsonBody": {
+          "error": {
+            "code": "INTERNAL_ERROR",
+            "message": "An internal error occurred"
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "name": "401 Unauthorized",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/unauthorized"
+      },
+      "response": {
+        "status": 401,
+        "jsonBody": {
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "Authentication required"
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": "Bearer"
+        }
+      }
+    }
+  ]
+}
+
