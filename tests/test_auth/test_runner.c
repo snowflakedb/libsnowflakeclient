@@ -25,7 +25,7 @@ extern void test_wif_get_attributes(void **state);
 
 
 int main(void) {
-    snowflake_global_init(NULL, SF_LOG_INFO, NULL);
+    snowflake_global_init(NULL, SF_LOG_DEBUG, NULL);
     snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_oauth_successful_connection),
