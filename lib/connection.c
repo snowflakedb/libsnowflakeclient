@@ -1316,16 +1316,32 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 
 sf_bool is_password_required(AuthenticatorType auth)
 {
+    log_debug("[AUTH_DEBUG] is_password_required called with auth=%d", auth);
     switch (auth)
     {
       case AUTH_JWT:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_JWT -> 0 (no password needed)");
+        return 0;
       case AUTH_OAUTH:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_OAUTH -> 0 (no password needed)");
+        return 0;
       case AUTH_PAT:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_PAT -> 0 (no password needed)");
+        return 0;
       case AUTH_EXTERNALBROWSER:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_EXTERNALBROWSER -> 0 (no password needed)");
+        return 0;
       case AUTH_OAUTH_AUTHORIZATION_CODE:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_OAUTH_AUTHORIZATION_CODE -> 0 (no password needed)");
+        return 0;
       case AUTH_OAUTH_CLIENT_CREDENTIALS:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_OAUTH_CLIENT_CREDENTIALS -> 0 (no password needed)");
+        return 0;
+      case AUTH_WIF:
+        log_debug("[AUTH_DEBUG] is_password_required: AUTH_WIF -> 0 (no password needed)");
         return 0;
       default:
+        log_debug("[AUTH_DEBUG] is_password_required: auth=%d -> 1 (password required)", auth);
         return 1;
     }
 }

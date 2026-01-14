@@ -15,16 +15,17 @@ extern void test_aws_wif_authentication(void **state);
 extern void test_gcp_wif_authentication(void **state);
 extern void test_azure_wif_authentication(void **state);
 extern void test_wif_no_cloud_credentials(void **state);
+extern void test_wif_missing_provider(void **state);
 extern void test_wif_invalid_authenticator(void **state);
 extern void test_wif_valid_authenticator(void **state);
 extern void test_wif_multiple_connections(void **state);
 extern void test_wif_explicit_provider_integration(void **state);
-extern void test_wif_invalid_provider_fallback(void **state);
+extern void test_wif_invalid_provider_fails(void **state);
 extern void test_wif_get_attributes(void **state);
 
 
 int main(void) {
-    snowflake_global_init(NULL, SF_LOG_INFO, NULL);
+    snowflake_global_init(NULL, SF_LOG_DEBUG, NULL);
     snowflake_global_set_attribute(SF_GLOBAL_CA_BUNDLE_FILE, getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE"));
     const struct CMUnitTest tests[] = {
             cmocka_unit_test(test_oauth_successful_connection),
@@ -42,11 +43,12 @@ int main(void) {
             cmocka_unit_test(test_gcp_wif_authentication),
             cmocka_unit_test(test_azure_wif_authentication),
             cmocka_unit_test(test_wif_no_cloud_credentials),
+            cmocka_unit_test(test_wif_missing_provider),
             cmocka_unit_test(test_wif_invalid_authenticator),
             cmocka_unit_test(test_wif_valid_authenticator),
             cmocka_unit_test(test_wif_multiple_connections),
             cmocka_unit_test(test_wif_explicit_provider_integration),
-            cmocka_unit_test(test_wif_invalid_provider_fallback),
+            cmocka_unit_test(test_wif_invalid_provider_fails),
             cmocka_unit_test(test_wif_get_attributes)
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);

@@ -604,9 +604,15 @@ static void STDCALL log_term() {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    log_debug("[AUTH_DEBUG] _snowflake_check_connection_parameters called");
+    log_debug("[AUTH_DEBUG] authenticator='%s'", sf->authenticator ? sf->authenticator : "(null)");
+    
     AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
+    log_debug("[AUTH_DEBUG] auth_type=%d, is_password_required=%d", auth_type, is_password_required(auth_type));
+    
     if (AUTH_UNSUPPORTED == auth_type) {
         // Invalid authenticator
+        log_error("[AUTH_DEBUG] AUTH_UNSUPPORTED - invalid authenticator");
         log_error(ERR_MSG_AUTHENTICATOR_UNSUPPORTED);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -618,6 +624,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if (is_string_empty(sf->account)) {
         // Invalid account
+        log_error("[AUTH_DEBUG] Account is missing");
         log_error(ERR_MSG_ACCOUNT_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -629,6 +636,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && is_string_empty(sf->user)) {
         // Invalid user name
+        log_error("[AUTH_DEBUG] User is missing");
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -638,8 +646,11 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    log_debug("[AUTH_DEBUG] Checking password requirement: auth_type=%d, is_password_required=%d, password_empty=%d",
+              auth_type, is_password_required(auth_type), is_string_empty(sf->password));
     if (is_password_required(auth_type) && (is_string_empty(sf->password))) {
         // Invalid password
+        log_error("[AUTH_DEBUG] Password is required but missing for auth_type=%d", auth_type);
         log_error(ERR_MSG_PASSWORD_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -651,6 +662,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if ((AUTH_JWT == auth_type) && (is_string_empty(sf->priv_key_file))) {
         // Invalid key file path
+        log_error("[AUTH_DEBUG] JWT private key file is missing");
         log_error(ERR_MSG_PRIVKEYFILE_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -662,6 +674,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if ((AUTH_OAUTH == auth_type) && (is_string_empty(sf->oauth_token))) {
         // Invalid token
+        log_error("[AUTH_DEBUG] OAuth token is missing");
         log_error(ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -672,6 +685,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if ((AUTH_PAT == auth_type) && (is_string_empty(sf->programmatic_access_token))) {
+        log_error("[AUTH_DEBUG] PAT token is missing");
         log_error(ERR_MSG_PAT_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
             &sf->error,
@@ -680,6 +694,21 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             SF_SQLSTATE_UNABLE_TO_CONNECT);
         return SF_STATUS_ERROR_GENERAL;
     }
+
+    log_debug("[AUTH_DEBUG] Checking WIF provider: auth_type=%d (AUTH_WIF=%d), wif_provider='%s'",
+              auth_type, AUTH_WIF, sf->wif_provider ? sf->wif_provider : "(null)");
+    if ((AUTH_WIF == auth_type) && is_string_empty(sf->wif_provider)) {
+        log_error("[AUTH_DEBUG] WIF provider is missing");
+        log_error(ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+    
+    log_debug("[AUTH_DEBUG] All basic auth parameter checks passed");
 
     if (SF_BOOLEAN_FALSE == validate_application(sf->application)) {
         // Invalid parnter application name

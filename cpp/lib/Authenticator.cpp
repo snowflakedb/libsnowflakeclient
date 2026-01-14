@@ -54,88 +54,130 @@
 // wrapper functions for C
 extern "C" {
 
+  static const char* authTypeToString(AuthenticatorType type) {
+    switch(type) {
+      case AUTH_SNOWFLAKE: return "AUTH_SNOWFLAKE";
+      case AUTH_JWT: return "AUTH_JWT";
+      case AUTH_OAUTH: return "AUTH_OAUTH";
+      case AUTH_EXTERNALBROWSER: return "AUTH_EXTERNALBROWSER";
+      case AUTH_PAT: return "AUTH_PAT";
+      case AUTH_OAUTH_AUTHORIZATION_CODE: return "AUTH_OAUTH_AUTHORIZATION_CODE";
+      case AUTH_OAUTH_CLIENT_CREDENTIALS: return "AUTH_OAUTH_CLIENT_CREDENTIALS";
+      case AUTH_WIF: return "AUTH_WIF";
+      case AUTH_TEST: return "AUTH_TEST";
+      case AUTH_OKTA: return "AUTH_OKTA";
+      case AUTH_USR_PWD_MFA: return "AUTH_USR_PWD_MFA";
+      case AUTH_UNSUPPORTED: return "AUTH_UNSUPPORTED";
+      default: return "UNKNOWN";
+    }
+  }
+
   AuthenticatorType getAuthenticatorType(const char* authenticator)
   {
+    log_debug("[AUTH_DEBUG] getAuthenticatorType called with authenticator='%s'", 
+              authenticator ? authenticator : "(null)");
+    
     if ((!authenticator) || (strlen(authenticator) == 0) ||
         (strcasecmp(authenticator, SF_AUTHENTICATOR_DEFAULT) == 0))
     {
+      log_debug("[AUTH_DEBUG] Returning AUTH_SNOWFLAKE (default/empty authenticator)");
       return AUTH_SNOWFLAKE;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_JWT) == 0)
     {
+      log_debug("[AUTH_DEBUG] Returning AUTH_JWT");
       return AUTH_JWT;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH) == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_OAUTH");
         return AUTH_OAUTH;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_EXTERNAL_BROWSER) == 0)
     {
+      log_debug("[AUTH_DEBUG] Returning AUTH_EXTERNALBROWSER");
       return AUTH_EXTERNALBROWSER;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_PAT) == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_PAT");
         return AUTH_PAT;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE) == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_OAUTH_AUTHORIZATION_CODE");
         return AUTH_OAUTH_AUTHORIZATION_CODE;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS) == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_OAUTH_CLIENT_CREDENTIALS");
         return AUTH_OAUTH_CLIENT_CREDENTIALS;
     }
     if (strcasecmp(authenticator, SF_AUTHENTICATOR_WORKLOAD_IDENTITY) == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_WIF");
         return AUTH_WIF;
     }
     if (strcasecmp(authenticator, "test") == 0)
     {
+        log_debug("[AUTH_DEBUG] Returning AUTH_TEST");
         return AUTH_TEST;
     }
 
+    log_debug("[AUTH_DEBUG] Returning AUTH_OKTA (URL-based authenticator fallback)");
     return AUTH_OKTA;
   }
 
   SF_STATUS STDCALL auth_initialize(SF_CONNECT * conn)
   {
+    log_debug("[AUTH_DEBUG] auth_initialize called");
     if (!conn)
     {
+      log_error("[AUTH_DEBUG] auth_initialize: conn is NULL");
       return SF_STATUS_ERROR_NULL_POINTER;
     }
 
     AuthenticatorType auth_type = getAuthenticatorType(conn->authenticator);
+    log_debug("[AUTH_DEBUG] auth_initialize: auth_type=%s (%d)", authTypeToString(auth_type), auth_type);
+    
     try
     {
       if (AUTH_JWT == auth_type)
       {
+        log_debug("[AUTH_DEBUG] Creating AuthenticatorJWT");
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorJWT(conn));
       }
       if (AUTH_EXTERNALBROWSER == auth_type)
       {
+          log_debug("[AUTH_DEBUG] Creating AuthenticatorExternalBrowser");
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
               new Snowflake::Client::AuthenticatorExternalBrowser(conn));
       }
       if (AUTH_OKTA == auth_type)
       {
+        log_debug("[AUTH_DEBUG] Creating AuthenticatorOKTA");
         conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
                               new Snowflake::Client::AuthenticatorOKTA(conn));
       }
       if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type)
       {
+          log_debug("[AUTH_DEBUG] Creating AuthenticatorOAuth");
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
               new Snowflake::Client::AuthenticatorOAuth(conn,
                   nullptr, nullptr));
       }
       if (AUTH_TEST == auth_type)
       {
+          log_debug("[AUTH_DEBUG] Creating AuthenticatorTest");
           conn->auth_object = static_cast<Snowflake::Client::IAuthenticator*>(
               new Snowflake::Client::AuthenticatorTest(conn));
       }
+      log_debug("[AUTH_DEBUG] auth_initialize: auth_object=%p", conn->auth_object);
     }
     catch (...)
     {
+      log_error("[AUTH_DEBUG] auth_initialize: exception caught during authenticator creation");
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
                           "authenticator initialization failed",
                           SF_SQLSTATE_GENERAL_ERROR);
@@ -165,43 +207,63 @@ extern "C" {
 
   SF_STATUS STDCALL auth_authenticate(SF_CONNECT * conn)
   {
+    log_debug("[AUTH_DEBUG] auth_authenticate called");
+    log_debug("[AUTH_DEBUG] conn=%p, auth_object=%p, sso_token=%p", 
+              (void*)conn, conn ? conn->auth_object : nullptr, conn ? (void*)conn->sso_token : nullptr);
+    
     if (!conn || !conn->auth_object || conn->sso_token != NULL)
     {
+      log_debug("[AUTH_DEBUG] auth_authenticate: early return (conn=%d, auth_object=%d, sso_token=%d)",
+                !conn, conn ? !conn->auth_object : 1, conn ? (conn->sso_token != NULL) : 0);
       return SF_STATUS_SUCCESS;
     }
 
     try
     {
+      log_debug("[AUTH_DEBUG] Calling authenticator->authenticate()");
       static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->authenticate();
+      log_debug("[AUTH_DEBUG] authenticate() completed, error_code=%d", conn->error.error_code);
 
       if (conn->error.error_code != SF_STATUS_SUCCESS)
       {
+        log_error("[AUTH_DEBUG] auth_authenticate: error after authenticate(), error_code=%d, msg=%s",
+                  conn->error.error_code, conn->error.msg ? conn->error.msg : "(null)");
         return SF_STATUS_ERROR_GENERAL;
       }
     }
     catch (...)
     {
+      log_error("[AUTH_DEBUG] auth_authenticate: exception caught");
       SET_SNOWFLAKE_ERROR(&conn->error, SF_STATUS_ERROR_GENERAL,
                           "authentication failed",
                           SF_SQLSTATE_GENERAL_ERROR);
       return SF_STATUS_ERROR_GENERAL;
     }
 
+    log_debug("[AUTH_DEBUG] auth_authenticate: success");
     return SF_STATUS_SUCCESS;
   }
 
   void auth_update_json_body(SF_CONNECT* conn, cJSON* body)
   {
+      log_debug("[AUTH_DEBUG] auth_update_json_body called");
+      log_debug("[AUTH_DEBUG] conn=%p, conn->authenticator='%s'", 
+                (void*)conn, conn ? (conn->authenticator ? conn->authenticator : "(null)") : "(conn null)");
+      
       cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
       if (!data)
       {
+          log_debug("[AUTH_DEBUG] Creating new 'data' JSON object");
           data = snowflake_cJSON_CreateObject();
           snowflake_cJSON_AddItemToObject(body, "data", data);
       }
       auto authenticator = getAuthenticatorType(conn->authenticator);
+      log_debug("[AUTH_DEBUG] auth_update_json_body: authenticator type=%s (%d)", 
+                authTypeToString(authenticator), authenticator);
+      
       if (AUTH_OAUTH == authenticator || AUTH_PAT == authenticator)
-
       {
+          log_debug("[AUTH_DEBUG] Entering AUTH_OAUTH/AUTH_PAT block");
           snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
           snowflake_cJSON_DeleteItemFromObject(data, "TOKEN");
 
@@ -216,17 +278,25 @@ extern "C" {
       }
       if (AUTH_WIF == authenticator)
       {
+          log_debug("[AUTH_DEBUG] Entering AUTH_WIF block");
           Snowflake::Client::AttestationConfig config;
 
           // Populate config from SF_CONNECT fields
           if (conn->wif_provider) {
+              log_debug("[AUTH_DEBUG] WIF provider specified: '%s'", conn->wif_provider);
               auto typeOpt = Snowflake::Client::attestationTypeFromString(conn->wif_provider);
               if (typeOpt) {
                   config.type = typeOpt;
                   log_debug("Using explicit WIF provider: %s", conn->wif_provider);
               } else {
-                  log_warn("Invalid WIF provider specified: %s, falling back to auto-detection", conn->wif_provider);
+                  log_error("[AUTH_DEBUG] Invalid WIF provider specified: %s. Valid values: AWS, AZURE, GCP, OIDC", conn->wif_provider);
+                  log_debug("[AUTH_DEBUG] Early return from auth_update_json_body due to invalid WIF provider");
+                  return;
               }
+          } else {
+              log_error("[AUTH_DEBUG] WIF provider is required but not specified");
+              log_debug("[AUTH_DEBUG] Early return from auth_update_json_body due to missing WIF provider");
+              return;
           }
 
           if (conn->wif_token) {
@@ -256,13 +326,19 @@ extern "C" {
               snowflake_cJSON_AddStringToObject(data, "TOKEN", attestation.credential.c_str());
               snowflake_cJSON_AddStringToObject(data, "PROVIDER",
                   Snowflake::Client::stringFromAttestationType(attestation.type));
+              log_debug("[AUTH_DEBUG] WIF attestation created successfully");
           } else {
-              log_error("Failed to create WIF attestation - not running in a supported cloud environment?");
+              log_error("[AUTH_DEBUG] Failed to create WIF attestation - not running in a supported cloud environment?");
           }
+      }
+      else
+      {
+          log_debug("[AUTH_DEBUG] Skipping AUTH_WIF block (authenticator=%s)", authTypeToString(authenticator));
       }
 
       if (conn->sso_token)
       {
+          log_debug("[AUTH_DEBUG] Processing sso_token");
           snowflake_cJSON_DeleteItemFromObject(data, "AUTHENTICATOR");
           snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->sso_token);
           snowflake_cJSON_AddStringToObject(data, "AUTHENTICATOR", SF_AUTHENTICATOR_ID_TOKEN);
@@ -271,15 +347,22 @@ extern "C" {
 
       if (conn->mfa_token)
       {
+          log_debug("[AUTH_DEBUG] Processing mfa_token");
           snowflake_cJSON_AddStringToObject(data, "TOKEN", conn->mfa_token);
           secure_storage_free_credential(conn->mfa_token);
       }
 
+      log_debug("[AUTH_DEBUG] Checking auth_object: conn=%p, auth_object=%p, sso_token=%p",
+                (void*)conn, conn ? conn->auth_object : nullptr, conn ? (void*)conn->sso_token : nullptr);
+      
       if (!conn || !conn->auth_object || conn->sso_token != NULL)
       {
+          log_debug("[AUTH_DEBUG] Early return: conn=%d, auth_object=%d, sso_token=%d",
+                    !conn, conn ? !conn->auth_object : 1, conn ? (conn->sso_token != NULL) : 0);
           return;
       }
 
+      log_debug("[AUTH_DEBUG] Calling auth_object->updateDataMap");
       try
       {
           jsonObject_t picoBody;
@@ -287,9 +370,11 @@ extern "C" {
           static_cast<Snowflake::Client::IAuthenticator*>(conn->auth_object)->
               updateDataMap(picoBody);
           picoJsonTocJson(picoBody, &body);
+          log_debug("[AUTH_DEBUG] updateDataMap completed successfully");
       }
       catch (...)
       {
+          log_error("[AUTH_DEBUG] Exception in updateDataMap");
           ; // Do nothing
       }
   }
@@ -506,13 +591,22 @@ namespace Client
 
   void AuthenticatorOKTA::authenticate()
   {
+      CXX_LOG_INFO("[AUTH_DEBUG] AuthenticatorOKTA::authenticate() called");
+      log_debug("[AUTH_DEBUG] OKTA authenticator URL: %s", m_connection->authenticator ? m_connection->authenticator : "(null)");
       CXX_LOG_INFO("Authenticating with OKTA.");
       IAuthenticatorOKTA::authenticate();
+      log_debug("[AUTH_DEBUG] OKTA IAuthenticatorOKTA::authenticate() completed");
+      log_debug("[AUTH_DEBUG] OKTA error state: connection_error=%d, isError=%d, idp_isError=%d",
+                (m_connection->error).error_code, isError(), m_idp->isError());
       if ((m_connection->error).error_code == SF_STATUS_SUCCESS && (isError() || m_idp->isError()))
       {
           const char* err = isError() ? getErrorMessage() : m_idp->getErrorMessage();
+          log_error("[AUTH_DEBUG] OKTA authentication error: %s", err ? err : "(null)");
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, err, SF_SQLSTATE_GENERAL_ERROR);
       }
+      log_debug("[AUTH_DEBUG] OKTA authenticate() finished, final error_code=%d, msg=%s",
+                (m_connection->error).error_code, 
+                (m_connection->error).msg ? (m_connection->error).msg : "(null)");
   }
 
   void AuthenticatorOKTA::updateDataMap(jsonObject_t& dataMap)
@@ -726,22 +820,34 @@ namespace Client
 
   void AuthenticatorExternalBrowser::authenticate()
   {
+      CXX_LOG_INFO("[AUTH_DEBUG] AuthenticatorExternalBrowser::authenticate() called");
+      log_debug("[AUTH_DEBUG] ExternalBrowser: user=%s, timeout=%d", 
+                m_user.c_str(), m_browser_response_timeout);
       CXX_LOG_INFO("Authenticating with external browser.");
       IAuthenticatorExternalBrowser::authenticate();
+      log_debug("[AUTH_DEBUG] ExternalBrowser IAuthenticatorExternalBrowser::authenticate() completed");
+      log_debug("[AUTH_DEBUG] ExternalBrowser error state: webServer_isError=%d, isError=%d",
+                m_authWebServer->isError(), isError());
       if (m_authWebServer->isError())
       {
+          log_error("[AUTH_DEBUG] ExternalBrowser webServer error: %s", m_authWebServer->getErrorMessage());
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
       else if (isError())
       {
+          log_error("[AUTH_DEBUG] ExternalBrowser auth error: %s", getErrorMessage());
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
 #ifdef _WIN32
       else if (m_authWinSock.isError())
       {
+          log_error("[AUTH_DEBUG] ExternalBrowser WinSock error: %s", m_authWinSock.getErrorMessage());
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWinSock.getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
 #endif
+      log_debug("[AUTH_DEBUG] ExternalBrowser authenticate() finished, error_code=%d, msg=%s",
+                (m_connection->error).error_code,
+                (m_connection->error).msg ? (m_connection->error).msg : "(null)");
   }
 
   /**
