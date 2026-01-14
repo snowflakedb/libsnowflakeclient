@@ -421,6 +421,171 @@ namespace Client
             return std::string(unescaped_url);
         }
 
+        /**
+ * Start http listener
+ */
+        void IAuthWebServer::start()
+        {
+            m_socket_desc_web_client = 0;
+            m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+            /*               TODO: On Windows, socket functions don't set errno and the error code
+                           should be retrieved by WSAGetLastError(). Therefore for now the error
+                           message won't be logged correctly on Windows.
+                           Leave it for now since it won't affect the functionality.*/
+            if ((int)m_socket_descriptor < 0)
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket.  err: %s", strerror(errno));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+            }
+
+            struct sockaddr_in recv_server;
+            memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
+            recv_server.sin_family = AF_INET;
+            recv_server.sin_port = htons(m_port); // ephemeral port
+            CXX_LOG_INFO("HOST is %s", m_host.c_str())
+                if (inet_pton(AF_INET, m_host.c_str(), &recv_server.sin_addr.s_addr) != 1)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not convert buffer to a network address. err: %s",
+                        strerror(errno));
+                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+
+                }
+            if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
+                sizeof(struct sockaddr_in)) < 0)
+            {
+                CXX_LOG_ERROR(
+                    "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not bind a port. err: %s",
+                    strerror(errno));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+            }
+            socklen_t length = sizeof(struct sockaddr_in);
+            if (getsockname(m_socket_descriptor, (struct sockaddr*)&recv_server, &length) < 0) {
+                CXX_LOG_ERROR(
+                    "sf::OAuthTokenListenerWebServer::start::Failed to get socket name. Could not get a port. err: %s",
+                    strerror(errno));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+            }
+            m_real_port = ntohs(recv_server.sin_port);
+            if (m_real_port != m_port) {
+                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Started on port: %d for %s:%d%s", m_real_port, m_host.c_str(), m_real_port, m_path.c_str());
+            }
+            if (listen(m_socket_descriptor, 0) < 0)
+            {
+                CXX_LOG_ERROR(
+                    "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not listen a port. err: %s",
+                    strerror(errno));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+
+            }
+            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Web Server successfully started on %s:%d and path %s", m_host.c_str(), m_real_port, m_path.c_str())
+        }
+
+        void IAuthWebServer::stop()
+        {
+            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::stop::Stopping HTTP listener: %s:%d%s", m_host.c_str(), m_real_port, m_path.c_str())
+                if ((int)m_socket_desc_web_client > 0)
+                {
+#ifndef _WIN32
+                    shutdown(m_socket_desc_web_client, SHUT_RDWR);
+                    int ret = close(m_socket_desc_web_client);
+#else
+                    shutdown(m_socket_desc_web_client, SD_BOTH);
+                    int ret = closesocket(m_socket_desc_web_client);
+#endif
+                    if (ret < 0)
+                    {
+                        CXX_LOG_ERROR(
+                            "sf::OAuthTokenListenerWebServer::stop::Failed close HTTP port err: %s",
+                            strerror(errno));
+                        throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+                    }
+                }
+            m_socket_desc_web_client = 0;
+
+            if ((int)m_socket_descriptor > 0)
+            {
+#ifndef _WIN32
+                int ret = close(m_socket_descriptor);
+#else
+                int ret = closesocket(m_socket_descriptor);
+#endif
+                if (ret < 0)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::OAuthTokenListenerWebServer::stop::Failed to stop web server. err: %s",
+                        strerror(errno));
+                    m_socket_descriptor = 0;
+                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+                }
+            }
+            m_socket_descriptor = 0;
+        }
+
+
+        void IAuthWebServer::startAccept()
+        {
+            struct sockaddr_in client = { 0, 0, 0, {} };
+            memset((char*)&client, 0, sizeof(struct sockaddr_in));
+            socklen_t len = sizeof(client);
+
+            fd_set fd;
+            timeval timeout;
+            FD_ZERO(&fd);
+            FD_SET(m_socket_descriptor, &fd);
+            timeout.tv_sec = m_timeout;
+            timeout.tv_usec = 0;
+            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::startAccept::select(m_socket_descriptor,...");
+            int retVal = select(m_socket_descriptor + 1, &fd, NULL, NULL, &timeout);
+            if (retVal > 0)
+            {
+                m_socket_desc_web_client = accept(
+                    m_socket_descriptor, (struct sockaddr*)&client, &len);
+                if ((int)m_socket_desc_web_client < 0)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::OAuthTokenListenerWebServer::startAccept::Failed to receive token. Could not accept a request. error: %s",
+                        strerror(errno));
+                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+                }
+            }
+            else if (retVal == 0)
+            {
+                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::startAccept::Auth browser timed out. ");
+                throw AuthException("SFOAuthError: Auth browser timed out.");
+            }
+            else
+            {
+                CXX_LOG_ERROR(
+                    "sf::OAuthTokenListenerWebServer::startAccept::Failed to determine status of auth web server. err: %s",
+                    strerror(errno));
+                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+            }
+        }
+
+        /**
+         * Get port number listening
+         * @return port number
+         */
+        int IAuthWebServer::getPort()
+        {
+            return m_real_port;
+        }
+
+        std::string IAuthWebServer::getToken()
+        {
+            return m_token;
+        }
+
+        /**
+         * Set the timeout for the web server.
+         */
+        void IAuthWebServer::setTimeout(int timeout)
+        {
+            m_timeout = timeout;
+        }
+
         std::vector<std::string> IAuthWebServer::splitString(const std::string& s, char delimiter)
         {
             std::vector<std::string> tokens;

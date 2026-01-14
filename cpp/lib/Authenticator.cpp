@@ -774,7 +774,7 @@ namespace Snowflake::Client
       m_redirectUri = SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
       m_redirectUriDynamicDefault = is_string_empty(connection->oauth_redirect_uri);
       m_singleUseRefreshTokens = connection->single_use_refresh_token;
-      m_token = m_connection->oauth_token;
+      m_token = connection->oauth_token ? std::string(connection->oauth_token) : "";
 
       if (m_authEndpoint.host() != m_tokenEndpoint.host())
       {
@@ -834,12 +834,8 @@ namespace Snowflake::Client
   /**
 * Constructor for AuthWebServer
 */
-  AuthWebServer::AuthWebServer() : m_socket_descriptor(0),
-      m_port(0),
-      m_saml_token(""),
-      m_consent_cache_id_token(true),
-      m_origin(""),
-      m_timeout(SF_BROWSER_RESPONSE_TIMEOUT)
+  AuthWebServer::AuthWebServer() :
+      m_consent_cache_id_token(true)
   {
       // nop
   }
@@ -851,154 +847,12 @@ namespace Snowflake::Client
   {
       // nop
   }
-
-
-  /**
-   * Start web server that accepts SAML token from Snowflake
-   */
-  void AuthWebServer::start()
-  {
-      CXX_LOG_INFO("AuthWebServer starting.");
-      m_socket_desc_web_client = 0;
-      m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-      if ((int)m_socket_descriptor < 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not create a socket.";
-          return;
-      }
-
-      struct sockaddr_in recv_server;
-      memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
-      recv_server.sin_family = AF_INET;
-      inet_pton(AF_INET, "127.0.0.1", &recv_server.sin_addr.s_addr);
-      recv_server.sin_port = 0; // ephemeral port
-      if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
-          sizeof(struct sockaddr_in)) < 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Failed to start web server. Could not bind a port.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not bind a port.";
-          return;
-      }
-      if (listen(m_socket_descriptor, 0) < 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Failed to start web server. Could not listen a port.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not listen a port.";
-          return;
-      }
-      socklen_t len = sizeof(recv_server);
-      if (getsockname(m_socket_descriptor,
-          (struct sockaddr*)&recv_server, &len) < 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Failed to start web server. Could not get the port.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to start web server. Could not get the port.";
-          return;
-      }
-      m_port = ntohs(recv_server.sin_port);
-      CXX_LOG_INFO("sf::AuthWebServer::start::Web Server successfully started with port %d.", m_port);
-  }
-
   int AuthWebServer::start(std::string host, int port, std::string path) {
       SF_UNUSED(host);
       SF_UNUSED(port);
       SF_UNUSED(path);
       return 0;
   };
-
-  /**
-   * Stop web server
-   */
-  void AuthWebServer::stop()
-  {
-      CXX_LOG_INFO("AuthWebServer stopping.");
-      if ((int)m_socket_desc_web_client > 0)
-      {
-#ifndef _WIN32
-          shutdown(m_socket_desc_web_client, SHUT_RDWR);
-          int ret = close(m_socket_desc_web_client);
-#else
-          shutdown(m_socket_desc_web_client, SD_BOTH);
-          int ret = closesocket(m_socket_desc_web_client);
-#endif
-          if (ret < 0)
-          {
-              CXX_LOG_ERROR("sf::AuthWebServer::stop::Failed to accept the SAML token.");
-              m_errMsg = "SFAuthWebBrowserFailed:Failed to accept the SAML token.";
-              return;
-          }
-      }
-      m_socket_desc_web_client = 0;
-
-      if ((int)m_socket_descriptor > 0)
-      {
-#ifndef _WIN32
-          int ret = close(m_socket_descriptor);
-#else
-          int ret = closesocket(m_socket_descriptor);
-#endif
-          if (ret < 0)
-          {
-             CXX_LOG_ERROR("sf::AuthWebServer::stop:Failed to stop web server.");
-             m_socket_descriptor = 0;
-             m_errMsg = "SFAuthWebBrowserFailed.";
-             return;
-          }
-      }
-      m_socket_descriptor = 0;
-  }
-
-  /**
-   * Get port number listening
-   * @return port number
-   */
-  int AuthWebServer::getPort()
-  {
-      return m_port;
-  }
-
-  /**
-   * Set the timeout for the web server.
-   */
-  void AuthWebServer::setTimeout(int timeout)
-  {
-      m_timeout = timeout;
-  }
-
-  void AuthWebServer::startAccept()
-  {
-      struct sockaddr_in client = { 0, 0, 0, 0 };
-      memset((char*)&client, 0, sizeof(struct sockaddr_in));
-      socklen_t len = sizeof(client);
-
-      fd_set fd;
-      timeval timeout;
-      FD_ZERO(&fd);
-      FD_SET(m_socket_descriptor, &fd);
-      timeout.tv_sec = m_timeout;
-      timeout.tv_usec = 0;
-      int retVal = select(m_socket_descriptor + 1, &fd, NULL, NULL, &timeout);
-      if (retVal > 0)
-      {
-          m_socket_desc_web_client = accept(
-              m_socket_descriptor, (struct sockaddr*)&client, &len);
-          if ((int)m_socket_desc_web_client < 0)
-          {
-              CXX_LOG_ERROR("sf::AuthWebServer::startAccept::Failed to receive SAML token. Could not accept a request.");
-              m_errMsg = "Failed to receive SAML token. Could not accept a request.";
-          }
-      }
-      else if (retVal == 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::startAccept::Auth browser timed out.");
-          m_errMsg = "SFAuthWebBrowserFailed. Auth browser timed out.";
-
-      }
-      else
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::startAccept::Failed to determine status of auth web server.");
-          m_errMsg = "SFAuthWebBrowserFailed. Failed to determine status of auth web server.";
-      }
-  }
 
   bool AuthWebServer::receive()
   {
@@ -1160,7 +1014,7 @@ namespace Snowflake::Client
   void AuthWebServer::respondJson(picojson::value& json)
   {
       jsonObject_t& obj = json.get<picojson::object>();
-      m_saml_token = obj["token"].get<std::string>();
+      m_token = obj["token"].get<std::string>();
       m_consent_cache_id_token = obj["consent"].get<bool>();
 
       jsonObject_t payloadBody;
@@ -1185,7 +1039,7 @@ namespace Snowflake::Client
       {
           if (p.first == "token")
           {
-              m_saml_token = p.second;
+              m_token = p.second;
               break;
           }
       }
@@ -1256,11 +1110,6 @@ namespace Snowflake::Client
               std::make_pair(name, unquote(query.substr(prevPos, i - prevPos))));
       }
       return ret;
-  }
-
-  std::string AuthWebServer::getToken()
-  {
-      return m_saml_token;
   }
 
   bool AuthWebServer::isConsentCacheIdToken()

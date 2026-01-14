@@ -104,8 +104,6 @@ namespace Client
           IAuthWebServer* authWebServer = nullptr,
           IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
-      void authenticate() override;
-
   private:
       bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) override;
       void resetTokens(std::string accessToken, std::string refreshToken) override;
@@ -136,33 +134,17 @@ namespace Client
 
       virtual ~AuthWebServer();
 
-      void start() override;
       int start(std::string host, int port, std::string path) override;
-      void stop() override;
-      int getPort() override;
-      void startAccept() override;
       void startAccept(std::string state) override {
           SF_UNUSED(state);
       };
       bool receive() override;
-      std::string getToken() override;
       bool isConsentCacheIdToken() override;
-      void setTimeout(int timeout) override;
 
   protected:
-#ifdef _WIN32
-      SOCKET m_socket_descriptor; // socket
-      SOCKET m_socket_desc_web_client; // socket (client)
-#else
-      int m_socket_descriptor; // socket
-      int m_socket_desc_web_client; // socket (client)
-#endif
 
-      int m_port; // port to listen
-      std::string m_saml_token;
       bool m_consent_cache_id_token;
       std::string m_origin;
-      int m_timeout;
 
       bool parseAndRespondOptionsRequest(std::string response);
       void parseAndRespondPostRequest(std::string response);
