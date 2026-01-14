@@ -76,6 +76,12 @@ long run_request_curl(
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
 
+  // Configure CA bundle for SSL verification
+  const char *ca_bundle = std::getenv("SNOWFLAKE_TEST_CA_BUNDLE_FILE");
+  if (ca_bundle) {
+    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle);
+  }
+
   struct curl_slist *header_list = nullptr;
   for (const auto &h: headers) {
     std::string hdr = h.first + ": " + h.second;

@@ -52,6 +52,9 @@ if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === staging cJSON for curl
 set CURL_DIR=curl
+set CURL_SRC_VERSION_GIT=%CURL_VERSION:.=_%
+rd /S /Q %scriptdir%..\deps\%CURL_DIR%
+git clone --single-branch --branch curl-%CURL_SRC_VERSION_GIT% --recursive https://github.com/curl/curl.git %scriptdir%..\deps\%CURL_DIR%
 set CJSON_SOURCE_DIR=%scriptdir%..\deps\cJSON-%CJSON_VERSION%\
 set CJSON_PATCH=%scriptdir%..\patches\curl-cJSON-%CJSON_VERSION%.patch
 rd /S /Q %CJSON_SOURCE_DIR%

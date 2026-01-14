@@ -262,7 +262,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
             /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
             }
         }
 
@@ -283,7 +283,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         // Post type stuffs
         if (request_type == POST_REQUEST_TYPE) {
-            res = curl_easy_setopt(curl, CURLOPT_POST, 1);
+            res = curl_easy_setopt(curl, CURLOPT_POST, 1L);
             if (res != CURLE_OK) {
                 log_error("Failed to set post [%s]", curl_easy_strerror(res));
                 break;
@@ -403,7 +403,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, SSL_VERSION);
+        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
         if (res != CURLE_OK) {
             log_error("Unable to set SSL Version [%s]",
                       curl_easy_strerror(res));
@@ -417,20 +417,20 @@ sf_bool STDCALL http_perform(CURL *curl,
         } else {
             ocsp_check = SF_OCSP_CHECK;
         }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, (long)ocsp_check);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP check enable/disable [%s]",
                       curl_easy_strerror(res));
             break;
         }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, fail_open);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, (long)fail_open);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP FAIL_OPEN [%s]",
                       curl_easy_strerror(res));
             break;
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, crl_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_check);
         if (res != CURLE_OK) {
           log_error("Unable to set CRL CHECK [%s]",
                     curl_easy_strerror(res));
@@ -439,7 +439,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (crl_check)
         {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, crl_advisory);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_advisory);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL advisory mode [%s]",
@@ -447,7 +447,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, crl_allow_no_crl);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_allow_no_crl);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL allow null crl [%s]",
@@ -455,7 +455,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, crl_disk_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_disk_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL disk caching [%s]",
@@ -463,7 +463,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, crl_memory_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_memory_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL memory caching [%s]",
@@ -471,7 +471,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, crl_download_timeout);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, (long)crl_download_timeout);
           if (res != CURLE_OK)
           {
               log_error("Unable to set CRL download timeout [%s]",
