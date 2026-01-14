@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <string.h>
+#include <ctype.h>
 #include "auth_utils.h"
 
 // Checks if running in a specific cloud environment
@@ -304,7 +304,7 @@ void test_wif_explicit_provider_integration(void **unused) {
     
     // Azure resource if available
     if (strcmp(attestation_type, "AZURE") == 0) {
-        char *resource = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_RESOURCE");
+        const char *resource = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_RESOURCE");
         if (resource) {
             snowflake_set_attribute(sf, SF_CON_WIF_AZURE_RESOURCE, resource);
         }
@@ -348,6 +348,67 @@ void test_wif_invalid_provider_fallback(void **unused) {
     assert_int_equal(status, SF_STATUS_SUCCESS);
     
     verify_connection_works(sf);
+    snowflake_term(sf);
+}
+
+// Test that WIF authentication does not require username parameter
+void test_wif_without_username(void **unused) {
+    SF_UNUSED(unused);
+    fprintf(stderr, "Testing WIF authentication without username parameter\n");
+    
+    SF_CONNECT *sf = snowflake_init();
+    const char *attestation_type = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
+
+    set_all_snowflake_attributes(sf);
+    snowflake_set_attribute(sf, SF_CON_USER, NULL);
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, attestation_type ? attestation_type : "AWS");
+
+    // Running in cloud environment
+    if (attestation_type) {
+        if (strcmp(attestation_type, "AZURE") == 0) {
+            const char *resource = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_RESOURCE");
+            if (resource) {
+                snowflake_set_attribute(sf, SF_CON_WIF_AZURE_RESOURCE, resource);
+            }
+        }
+
+        const SF_STATUS status = snowflake_connect(sf);
+        if (status != SF_STATUS_SUCCESS) {
+            dump_error(&(sf->error));
+        }
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+        
+        fprintf(stderr, "WIF connection without username successful\n");
+        
+        verify_connection_works(sf);
+        
+        // Verify we got a user from WIF
+        char *user = get_current_user(sf);
+        fprintf(stderr, "Authenticated as (via WIF): %s\n", user);
+        assert_non_null(user);
+        assert_true(strlen(user) > 0);
+        free(user);
+    }
+    // Not in cloud
+    else {
+        const SF_STATUS status = snowflake_connect(sf);
+        assert_int_not_equal(status, SF_STATUS_SUCCESS);
+        
+        const SF_ERROR_STRUCT *error = snowflake_error(sf);
+        assert_non_null(error);
+        assert_non_null(error->msg);
+        
+        // Error should not be about missing username
+        char *error_lower = strdup(error->msg);
+        for (char *p = error_lower; *p; ++p) *p = (char)tolower((unsigned char)*p);
+        
+        assert_null(strstr(error_lower, "user parameter"));
+        
+        fprintf(stderr, "Confirmed error is not about missing username: %s\n", error->msg);
+        free(error_lower);
+    }
+    
     snowflake_term(sf);
 }
 
@@ -435,3 +496,35 @@ void test_wif_impersonation_path_clear(void **unused) {
     snowflake_term(sf);
 }
 
+// Test to verify other auth types still require username
+void test_other_auth_requires_username(void **unused) {
+    SF_UNUSED(unused);
+    
+    fprintf(stderr, "Testing that non-WIF auth still requires username\n");
+    
+    SF_CONNECT *sf = snowflake_init();
+    assert_non_null(sf);
+ 
+    set_all_snowflake_attributes(sf);
+    snowflake_set_attribute(sf, SF_CON_USER, NULL);
+    snowflake_set_attribute(sf, SF_CON_PASSWORD, "test_password");
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_DEFAULT);
+ 
+    const SF_STATUS status = snowflake_connect(sf);
+    
+    // Connection should fail due to missing username
+    assert_int_not_equal(status, SF_STATUS_SUCCESS);
+    
+    // Error should be about missing username
+    const SF_ERROR_STRUCT *error = snowflake_error(sf);
+    assert_non_null(error);
+    assert_non_null(error->msg);
+    char *error_lower = strdup(error->msg);
+    for (char *p = error_lower; *p; ++p) *p = (char)tolower((unsigned char)*p);
+    assert_non_null(strstr(error_lower, "user"));
+    
+    fprintf(stderr, "Error correctly mentions missing user: '%s'\n", error->msg);
+    free(error_lower);
+    
+    snowflake_term(sf);
+}
