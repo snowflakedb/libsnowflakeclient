@@ -199,19 +199,16 @@ namespace Snowflake::Client
             IAuthenticatorOKTA(IDPAuthenticator* idp = nullptr);
 
             virtual ~IAuthenticatorOKTA() {};
-
             virtual void authenticate();
-
             virtual void updateDataMap(jsonObject_t& dataMap);
 
-
+            std::unique_ptr<IDPAuthenticator> m_idp;
             /**
              * Extract post back url from samel response. Input is in HTML format.
             */
             std::string extractPostBackUrlFromSamlResponse(std::string html);
 
         protected:
-            std::unique_ptr<IDPAuthenticator> m_idp;
             std::string m_user;
             std::string m_password;
             std::string m_appID;
