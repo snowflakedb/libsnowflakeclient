@@ -128,7 +128,7 @@ namespace Client
                 {
                     // nop
                 }
-
+                m_authWebServer->stop();
             }
             catch (const AuthException& e) {
                 m_errMsg = e.cause();
