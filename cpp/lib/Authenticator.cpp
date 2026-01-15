@@ -48,9 +48,6 @@
 {                                                   \
   throw Snowflake::Client::Jwt::JwtException(msg);  \
 }
-
-#define SOCKET_BUFFER_SIZE 20000
-
 // wrapper functions for C
 extern "C" {
 
@@ -707,18 +704,13 @@ namespace Snowflake::Client
   }
 
   AuthenticatorExternalBrowser::AuthenticatorExternalBrowser(
-      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection)
+      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection), IAuthenticatorExternalBrowser(authWebServer)
   {
       m_proofKey = "";
       m_token = "";
       m_consentCacheIdToken = true;
       m_origin = "";
-      m_authWebServer = authWebServer;
 
-      if (m_authWebServer == NULL)
-      {
-          m_authWebServer = new AuthWebServer();
-      }
       m_idp = new CIDPAuthenticator(m_connection);
 
       m_connection->disable_console_login ?  m_user = "" : m_user = m_connection->user;
@@ -728,10 +720,7 @@ namespace Snowflake::Client
 
   AuthenticatorExternalBrowser::~AuthenticatorExternalBrowser()
   {
-      if (m_authWebServer != NULL)
-      {
-          delete m_authWebServer;
-      }
+   
       if (m_idp != NULL)
       {
           delete m_idp;
@@ -742,11 +731,7 @@ namespace Snowflake::Client
   {
       CXX_LOG_INFO("Authenticating with external browser.");
       IAuthenticatorExternalBrowser::authenticate();
-      if (m_authWebServer->isError())
-      {
-          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, m_authWebServer->getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
-      }
-      else if (isError())
+      if (isError())
       {
           SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
       }
@@ -829,293 +814,7 @@ namespace Snowflake::Client
       }
       return true;
   }
-  
 
-  /**
-* Constructor for AuthWebServer
-*/
-  AuthWebServer::AuthWebServer() :
-      m_consent_cache_id_token(true)
-  {
-      // nop
-  }
-
-  /**
-   * Destructor for AuthWebServer
-   */
-  AuthWebServer::~AuthWebServer()
-  {
-      // nop
-  }
-  int AuthWebServer::start(std::string host, int port, std::string path) {
-      SF_UNUSED(host);
-      SF_UNUSED(port);
-      SF_UNUSED(path);
-      return 0;
-  };
-
-  bool AuthWebServer::receive()
-  {
-      bool is_options = false;
-      char* mesg = new char[SOCKET_BUFFER_SIZE]();
-      char* reqline;
-      char* rest_mesg;
-      int recvlen;
-
-      if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, SOCKET_BUFFER_SIZE, 0)) < 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::receive::Failed to receive SAML token. Could not receive a request.");
-          m_errMsg = "SFAuthWebBrowserFailed: Failed to receive SAML token. Could not receive a request.";
-          return false;
-      }
-      reqline = sf_strtok(mesg, " \t\n", &rest_mesg);
-      if (strncmp(reqline, "GET\0", 4) == 0)
-      {
-          parseAndRespondGetRequest(&rest_mesg);
-      }
-      else if (strncmp(reqline, "POST\0", 5) == 0)
-      {
-          parseAndRespondPostRequest(std::string(rest_mesg, (unsigned long)recvlen));
-      }
-      else if (strncmp(reqline, "OPTIONS\0", 8) == 0)
-      {
-          is_options = parseAndRespondOptionsRequest(std::string(rest_mesg, (unsigned long)recvlen));
-      }
-      else
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::receive::Failed to receive SAML token. Could not get HTTP request. err: %s.", reqline);
-          m_errMsg = "SFAuthWebBrowserFailed: Not HTTP request.";
-      }
-      delete[] mesg;
-      return is_options;
-  }
-
-  void AuthWebServer::parseAndRespondPostRequest(std::string response)
-  {
-      auto ret = splitString(response, '\n');
-      if (ret.empty()) 
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:No token parameter is found %s.",response.c_str());
-          send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          m_errMsg = "AuthWebServer:parseAndRespondPostRequest:No token parameter is found.";
-          return;
-      }
-      if (m_origin.empty())
-      {
-          respond(ret[ret.size() - 1]);
-      }
-      else
-      {
-          jsonValue_t json;
-          std::string& payload = ret[ret.size() - 1];
-          std::string err;
-          picojson::parse(json, payload.begin(), payload.end(), &err);
-          if (!err.empty())
-          {
-              CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:Error in parsing JSON : % s, err : % s.", payload.c_str(), err.c_str());
-              m_errMsg = "AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON.";
-              return;
-          }
-          respondJson(json);
-      }
-  }
-
-  bool AuthWebServer::parseAndRespondOptionsRequest(std::string response)
-  {
-      std::string requested_header;
-      auto ret = splitString(response, '\n');
-      if (ret.empty())
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:No token parameter is found. %s.",response.c_str());
-          send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:No token parameter is found.";
-
-          return false;
-      }
-
-      for (auto const& value : ret)
-      {
-          if (value.find("Access-Control-Request-Method") != std::string::npos)
-          {
-              auto v = value.substr(value.find(':') + 1);
-              trim(v, ' ');
-              if (v != "POST")
-              {
-                  CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:POST method is not requested. %s.",value.c_str());
-                  send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-                  m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested.";
-
-                  return false;
-              }
-          }
-          else if (value.find("Access-Control-Request-Headers") != std::string::npos)
-          {
-              requested_header = value.substr(value.find(':') + 1);
-              trim(requested_header, ' ');
-          }
-          else if (value.find("Origin") != std::string::npos)
-          {
-              m_origin = value.substr(value.find(':') + 1);
-              trim(m_origin, ' ');
-          }
-      }
-      if (requested_header.empty() || m_origin.empty())
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header. %s.",response.c_str());
-          send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          m_errMsg = "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.";
-
-          return false;
-      }
-      std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch()
-      );
-      char current_timestamp[50];
-      std::time_t t = (time_t)ms.count() / 1000;
-      std::tm tms;
-      strftime(current_timestamp, sizeof(current_timestamp), "%a, %d %b %Y %H:%M:%S GMT", sf_gmtime(&t, &tms));
-
-      std::stringstream buf;
-      buf << "HTTP/1.0 200 OK" << "\r\n"
-          << "Date: " << current_timestamp << "\r\n"
-          << "Access-Control-Allow-Methods: POST, GET" << "\r\n"
-          << "Access-Control-Allow-Headers: " << requested_header << "\r\n"
-          << "Access-Control-Max-Age: 86400" << "\r\n"
-          << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
-          << "\r\n\r\n";
-      send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-      return true;
-  }
-
-  void AuthWebServer::parseAndRespondGetRequest(char** rest_mesg)
-  {
-      char* path = sf_strtok(NULL, " \t", rest_mesg);
-      char* protocol = sf_strtok(NULL, " \t\n", rest_mesg);
-      if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
-          strncmp(protocol, "HTTP/1.1", 8) != 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:Not HTTP request.");
-
-          send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          m_errMsg = "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.";
-          return;
-      }
-
-      if (strncmp(path, "/?", 2) != 0)
-      {
-          CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:No token parameter is found.");
-          send(m_socket_desc_web_client, "HTTP/1.0 400 Bad Request\n", 25, 0);
-          m_errMsg = "AuthWebServer:parseAndRespondGetRequest:No token parameter is found.";
-          return;
-      }
-      respond(std::string(&path[2]));
-  }
-
-  void AuthWebServer::respondJson(picojson::value& json)
-  {
-      jsonObject_t& obj = json.get<picojson::object>();
-      m_token = obj["token"].get<std::string>();
-      m_consent_cache_id_token = obj["consent"].get<bool>();
-
-      jsonObject_t payloadBody;
-      payloadBody["consent"] = picojson::value(m_consent_cache_id_token);
-      auto payloadBodyString = picojson::value(payloadBody).serialize();
-
-      std::stringstream buf;
-      buf << "HTTP/1.0 200 OK" << "\r\n"
-          << "Content-Type: text/html" << "\r\n"
-          << "Content-Length: " << payloadBodyString.size() << "\r\n"
-          << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
-          << "Vary: Accept-Encoding, Origin" << "\r\n"
-          << "\r\n"
-          << payloadBodyString;
-      send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-  }
-
-  void AuthWebServer::respond(std::string queryParameters)
-  {
-      auto params = splitQuery(queryParameters);
-      for (auto& p : params)
-      {
-          if (p.first == "token")
-          {
-              m_token = p.second;
-              break;
-          }
-      }
-      const char* message =
-          "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
-          "<title>SAML Response for Snowflake</title></head>\n"
-          "<body>\n"
-          "Your identity was confirmed and propagated to Snowflake "
-          "ODBC driver. You can close this window now and go back where you "
-          "started from.\n"
-          "</body></html>";
-      std::stringstream buf;
-      buf << "HTTP/1.0 200 OK" << "\r\n"
-          << "Content-Type: text/html" << "\r\n"
-          << "Content-Length: " << strlen(message) << "\r\n\r\n"
-          << message;
-      send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-  }
-
-  std::string AuthWebServer::unquote(std::string src)
-  {
-      std::string ret;
-      char ch;
-      int i, ii;
-      for (i = 0; i < (int)src.length(); i++)
-      {
-          if (src[i] == '%')
-          {
-              sf_sscanf(src.substr((unsigned long)(i + 1), 2).c_str(), "%x", &ii);
-              ch = static_cast<char>(ii);
-              ret += ch;
-              i = i + 2;
-          }
-          else
-          {
-              ret += src[i];
-          }
-      }
-      return ret;
-  }
-
-  std::vector<std::pair<std::string, std::string>> AuthWebServer::splitQuery(std::string query)
-  {
-      std::vector<std::pair<std::string, std::string>> ret;
-      std::string name;
-      bool inValue = false;
-      int prevPos = 0;
-      int i;
-      for (i = 0; i < (int)query.length(); ++i)
-      {
-          if (query[i] == '=' && !inValue) {
-              name = query.substr(prevPos, i - prevPos);
-              prevPos = i + 1;
-              inValue = true;
-          }
-          else if (query[i] == '&')
-          {
-              ret.emplace_back(
-                  std::make_pair(name, unquote(query.substr(prevPos, i - prevPos))));
-              name = "";
-              prevPos = i + 1;
-              inValue = false;
-          }
-      }
-      if (!name.empty())
-      {
-          ret.emplace_back(
-              std::make_pair(name, unquote(query.substr(prevPos, i - prevPos))));
-      }
-      return ret;
-  }
-
-  bool AuthWebServer::isConsentCacheIdToken()
-  {
-      return m_consent_cache_id_token;
-  }
 
   AuthenticatorTest::AuthenticatorTest(SF_CONNECT* conn) : m_connection(conn)
   {

@@ -73,7 +73,7 @@ public:
     void startAccept(std::string state) override {
         SF_UNUSED(state);
     }
-    bool receive() override { return true; }
+    bool receive() { return true; }
 };
 
 class WebBrowserRunnerMock : public IAuthenticationWebBrowserRunner {

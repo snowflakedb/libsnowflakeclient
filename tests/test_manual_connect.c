@@ -305,6 +305,9 @@ void test_external_browser(void** unused)
         snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
     }
 
+    sf_bool client_store_temporary_credential = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL, &client_store_temporary_credential);
+
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));

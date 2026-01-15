@@ -10,6 +10,8 @@
 #include "authenticator.h" 
 #include <future>
 
+#define SOCKET_BUFFER_SIZE 20000
+
 namespace Snowflake::Client
 {
     namespace IAuth
@@ -47,7 +49,7 @@ namespace Snowflake::Client
         /**
       * Web Server for external Browser authentication
       */
-        class IAuthWebServer : public AuthErrorHandler
+        class IAuthWebServer
         {
         public:
 #ifdef _WIN32
@@ -66,11 +68,18 @@ namespace Snowflake::Client
             void startAccept();
             std::string getToken();
             void setTimeout(int timeout);
+            bool receive();
+            void respond(std::string httpError, std::string message);
+            void fail(std::string httpError, std::string message, std::string failureResponse);
 
             virtual int start(std::string host, int port, std::string path) = 0;
             virtual void startAccept(std::string state) = 0;
-            virtual bool receive() = 0;
+
             virtual bool isConsentCacheIdToken() = 0;
+            virtual void parseAndRespondGetRequest(char** rest_mesg) = 0;
+            virtual bool parseAndRespondOptionsRequest(std::string response) = 0;
+            virtual void parseAndRespondPostRequest(std::string response) = 0;
+
             std::vector<std::string> splitString(const std::string& s, char delimiter);
 
         protected:
@@ -81,6 +90,10 @@ namespace Snowflake::Client
             std::string m_host = "127.0.0.1";
             std::string m_path;
             std::string m_token;
+            char* m_className;
+
+            const char* HTTP_OK = "200 OK";
+            const char* HTTP_BAD_REQUEST = "400 Bad Request";
         };
 
         class OAuthTokenListenerWebServer : public IAuthWebServer
@@ -89,19 +102,17 @@ namespace Snowflake::Client
 
             std::string m_state;
             std::string m_redirectUri;
-            std::string m_origin;
 
         public:
             OAuthTokenListenerWebServer();
             int start(std::string host, int port, std::string path) override;
             void startAccept(std::string state) override;
-            bool receive() override;
             bool isConsentCacheIdToken() override;
         private:
-            void parseAndRespondGetRequest(char* method, char** rest_mesg);
-            void respond(std::string);
-            void respond(std::string httpError, std::string message);
-            void fail(std::string httpError, std::string message);
+            bool parseAndRespondOptionsRequest(std::string response) override;
+            void parseAndRespondPostRequest(std::string response) override;
+            void parseAndRespondGetRequest(char** rest_mesg) override;
+            void respondUnsupportedRequest(std::string method);
             constexpr static const char* successMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
                 "<title>Authorization Code Granted for Snowflake</title></head>\n"
                 "<body><h4>Your identity was confirmed</h4>"
@@ -215,7 +226,7 @@ namespace Snowflake::Client
         class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
         {
         public:
-            IAuthenticatorExternalBrowser() {};
+            IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer = nullptr, IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
             virtual ~IAuthenticatorExternalBrowser() {};
 
@@ -251,7 +262,8 @@ namespace Snowflake::Client
 #ifdef _WIN32
             AuthWinSock m_authWinSock;
 #endif
-            IAuthWebServer* m_authWebServer;
+            std::unique_ptr<IAuthWebServer> m_authWebServer;
+            IAuthenticationWebBrowserRunner* m_webBrowserRunner;
             IDPAuthenticator* m_idp;
             std::string m_proofKey;
             std::string m_token;
@@ -264,6 +276,52 @@ namespace Snowflake::Client
 #ifdef __APPLE__
             void openURL(const std::string& url_str);
 #endif
+        };
+
+        class AuthWebServer : public IAuthWebServer
+        {
+        public:
+            AuthWebServer();
+
+            virtual ~AuthWebServer();
+
+            int start(std::string host, int port, std::string path) override;
+            void startAccept(std::string state) override {
+                SF_UNUSED(state);
+            };
+            bool isConsentCacheIdToken() override;
+
+        protected:
+
+            bool m_consent_cache_id_token;
+            std::string m_origin;
+
+
+            void respond(std::string queryParameters);
+            void respondJson(picojson::value& json);
+
+            std::string unquote(std::string src);
+            std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
+        private:
+            bool parseAndRespondOptionsRequest(std::string response) override;
+            void parseAndRespondPostRequest(std::string response) override;
+            void parseAndRespondGetRequest(char** rest_mesg) override;
+
+            constexpr static const char* successMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
+                "<title>SAML Response for Snowflake</title></head>\n"
+                "<body>\n"
+                "Your identity was confirmed and propagated to Snowflake "
+                "libsnowflakeclient. You can close this window now and go back where you "
+                "started from.\n"
+                "</body></html>";
+
+            constexpr static const char* failureMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
+                "<title>SAML Response for Snowflake</title></head>\n"
+                "<body><h4>Could not validate your identity</h4>"
+                "Access to Snowflake could not have been granted to libsnowflakeclient.\n"
+                "You can close this window now and try again.\n"
+                "</body></html>";
+
         };
 
         class IAuthenticatorOAuth : public IAuthenticator, public AuthErrorHandler

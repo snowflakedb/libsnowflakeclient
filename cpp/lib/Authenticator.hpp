@@ -127,34 +127,6 @@ namespace Client
       double count = 0;
   };
 
-  class AuthWebServer : public IAuthWebServer
-  {
-  public:
-      AuthWebServer();
-
-      virtual ~AuthWebServer();
-
-      int start(std::string host, int port, std::string path) override;
-      void startAccept(std::string state) override {
-          SF_UNUSED(state);
-      };
-      bool receive() override;
-      bool isConsentCacheIdToken() override;
-
-  protected:
-
-      bool m_consent_cache_id_token;
-      std::string m_origin;
-
-      bool parseAndRespondOptionsRequest(std::string response);
-      void parseAndRespondPostRequest(std::string response);
-      void parseAndRespondGetRequest(char** rest_mesg);
-      void respond(std::string queryParameters);
-      void respondJson(picojson::value& json);
-
-      std::string unquote(std::string src);
-      std::vector<std::pair<std::string, std::string>> splitQuery(std::string query);
-  };
 } // namespace Client
 } // namespace Snowflake
 #endif //PROJECT_AUTHENTICATOR_HPP

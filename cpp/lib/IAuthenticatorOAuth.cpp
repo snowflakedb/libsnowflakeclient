@@ -136,8 +136,7 @@ namespace Snowflake::Client
             IAuthWebServer* authWebServer,
             IAuthenticationWebBrowserRunner* webBrowserRunner)
             : m_authWebServer(authWebServer != nullptr ? authWebServer : new OAuthTokenListenerWebServer()),
-            m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner) {
-        }
+            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
 
         void IAuthenticatorOAuth::authenticate()
         {
@@ -345,9 +344,9 @@ namespace Snowflake::Client
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::Body: %s", maskOAuthSecret(picojson::value(resp).serialize()).c_str());
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------")
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
 
-                std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
+            std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
             std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
 
 
@@ -382,7 +381,6 @@ namespace Snowflake::Client
 
             std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
             std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
-
 
             if (accessToken.empty()) {
                 return AccessTokenResponse::failed("Invalid Identity Provider response: access token not provided");
@@ -450,13 +448,11 @@ namespace Snowflake::Client
                 "browser window should have opened for you to complete the "
                 "login. If you can't see it, check existing browser windows, "
                 "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
-            // need double quotes to reserve ampasand characters
-            std::stringstream urlBuf;
 
             if (m_webBrowserRunner == nullptr)
             {
                 CXX_LOG_ERROR("sf::AuthenticatorOAuth::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
-                throw AuthException("SFOAuthError. Unable to open SSO URL.");
+                throw AuthException("sf::AuthenticatorOAuth::Error. Unable to open SSO URL.");
             }
 
             m_webBrowserRunner->startWebBrowser(ssoUrl);
@@ -510,11 +506,7 @@ namespace Snowflake::Client
         //    ////////////////////////////////////////////////////////
         //     WEB SRV
         //    ////////////////////////////////////////////////////////
-        //
-        //    TODO: SNOW-2452931: This Websever have redundant code with AuthWebServer for the external browser. 
-        //     This code needs to be refactored.
-        //
-        OAuthTokenListenerWebServer::OAuthTokenListenerWebServer() 
+        OAuthTokenListenerWebServer::OAuthTokenListenerWebServer()
         {
             // nop;
         }
@@ -550,43 +542,26 @@ namespace Snowflake::Client
             IAuthWebServer::startAccept();
         }
 
-        bool OAuthTokenListenerWebServer::receive()
+        void OAuthTokenListenerWebServer::respondUnsupportedRequest(std::string method)
         {
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive:::start receive")
+            std::string errorDesc = "Unexpected method while waiting for a request: " + method;
+            CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
+            throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+        }
 
-                char mesg[20000];
-            char* rest_mesg;
-            char* method;
-            int recvlen;
-            memset((void*)mesg, (int)'\0', sizeof(mesg));
-            recvlen = (int)recv(m_socket_desc_web_client, mesg, sizeof(mesg) - 1, 0);
-            if (recvlen < 0)
-            {
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive:::Could not receive a request.err: %s", strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
-
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::%s", maskOAuthSecret(mesg).c_str())
-                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-                method = sf_strtok(mesg, " \t\n", &rest_mesg);
-            if (strncmp(method, "GET\0", 4) == 0)
-            {
-                parseAndRespondGetRequest(method, &rest_mesg);
-                return true;
-            }
-            else
-            {
-                std::string errorDesc = "Unexpected method while waiting for a request: " + std::string(method);
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
+        bool OAuthTokenListenerWebServer::parseAndRespondOptionsRequest(std::string response)
+        {
+            respondUnsupportedRequest("Option");
             return false;
         }
 
-        void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char* method, char** rest_mesg)
+        void OAuthTokenListenerWebServer::parseAndRespondPostRequest(std::string response)
         {
-            SF_UNUSED(method);
+            respondUnsupportedRequest("Post");
+        }
+
+        void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char** rest_mesg)
+        {
             char** position = rest_mesg;
             char* fullPath = sf_strtok(NULL, " \t\n", position);
             char* protocol = sf_strtok(NULL, " \t\n", position);
@@ -598,13 +573,13 @@ namespace Snowflake::Client
             if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
                 strncmp(protocol, "HTTP/1.1", 8) != 0)
             {
-                fail("400 Bad Request", "HTTP Request has unexpected protocol");
+                fail(HTTP_BAD_REQUEST, "HTTP Request has unexpected protocol", failureMessage);
             }
 
             // validate request path
             if (strncmp(m_path.c_str(), fullPath, m_path.length()) != 0)
             {
-                fail("400 Bad Request", "HTTP Request is missing URL");
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing URL", failureMessage);
             }
 
             // validate request parameters exist
@@ -612,7 +587,7 @@ namespace Snowflake::Client
             expectedPath = expectedPath.append("?");
             if (strncmp(fullPath, expectedPath.c_str(), expectedPath.length()) != 0)
             {
-                fail("400 Bad Request", "HTTP Request has invalid endpoint path");
+                fail(HTTP_BAD_REQUEST, "HTTP Request has invalid endpoint path", failureMessage);
             }
 
             // extract request parameters
@@ -620,7 +595,7 @@ namespace Snowflake::Client
             char* path = sf_strtok(fullPath, "?", &paramsPtr);
             if (path == nullptr)
             {
-                fail("400 Bad Request", "HTTP Request is missing parameters");
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing parameters", failureMessage);
             }
 
             std::vector<std::string> params = splitString(paramsPtr, '&');
@@ -643,47 +618,24 @@ namespace Snowflake::Client
 
             if (!error.empty()) {
                 std::string fullError = "Identity Provider responded with error: " + error + ": " + errorDescription;
-                fail("400 Bad Request", fullError);
+                fail(HTTP_BAD_REQUEST, fullError, failureMessage);
             }
 
             // validate state and non-empty authorization code
             if (receivedState != m_state || receivedState.empty())
             {
-                fail("400 Bad Request", "Identity Provider did not provide expected state parameter!It might indicate an XSS attack.");
+                fail(HTTP_BAD_REQUEST, "Identity Provider did not provide expected state parameter!It might indicate an XSS attack.", failureMessage);
             }
 
             m_token = receivedCode;
             CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::parseAndRespondGetRequest",
                 "Successfully received authorization code from Identity Provider");
-            respond("200 OK", successMessage);
+            respond(HTTP_OK, successMessage);
         }
 
         bool OAuthTokenListenerWebServer::isConsentCacheIdToken()
         {
             return true;
-        }
-
-        void OAuthTokenListenerWebServer::respond(std::string)
-        {
-            respond("200 OK", successMessage);
-        }
-
-        void OAuthTokenListenerWebServer::respond(std::string errorCode, std::string message)
-        {
-            std::stringstream buf;
-            buf << "HTTP/1.0 " << errorCode << "\r\n"
-                << "Content-Type: text/html" << "\r\n"
-                << "Content-Length: " << message.length() << "\r\n\r\n"
-                << message;
-            send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-            buf.clear();
-        }
-
-        void OAuthTokenListenerWebServer::fail(std::string httpError, std::string message)
-        {
-            CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::fail", message.c_str());
-            respond(httpError, failureMessage); // unless error message is html-escaped it shouldn't be part of response visible in the browser
-            throw AuthException(message);
         }
     };
 
