@@ -549,15 +549,6 @@ namespace Snowflake::Client
   {
       bool ret = true;
       std::string destination = url.toString();
-      void* curl_desc;
-      CURL* curl;
-      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
-      curl = get_curl_from_desc(curl_desc);
-      SF_ERROR_STRUCT* err = &m_connection->error;
-
-      int64 elapsedTime = 0;
-      int8 maxRetryCount = get_login_retry_count(m_connection);
-      int64 renewTimeout = auth_get_renew_timeout(m_connection);
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
@@ -572,9 +563,8 @@ namespace Snowflake::Client
 
       if (ret)
       {
-          if (!curl_post_call(m_connection, curl, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(),
-              &resp_data, err, renewTimeout, maxRetryCount, m_retryTimeout, &elapsedTime,
-              &m_retriedCount, NULL, SF_BOOLEAN_TRUE))
+
+          if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(), &resp_data))
           {
               CXX_LOG_INFO("sf::CIDPAuthenticator::post_curl_call::post call failed, response body=%s\n",
                   snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
@@ -587,17 +577,7 @@ namespace Snowflake::Client
           }
       }
 
-      if (ret && elapsedTime >= m_retryTimeout)
-      {
-          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-              m_retryTimeout, elapsedTime);
-
-          m_errMsg = "OktaConnectionFailed: timeout reached.";
-          ret = false;
-      }
-
       sf_header_destroy(httpExtraHeaders);
-      free_curl_desc(curl_desc);
       snowflake_cJSON_Delete(resp_data);
       return ret;
   }
@@ -607,24 +587,13 @@ namespace Snowflake::Client
       isRetry = false;
       bool ret = true;
       sf_bool isHttpSuccess = SF_BOOLEAN_TRUE;
-      int64 maxRetryCount = get_login_retry_count(m_connection);
-      int64 elapsedTime = 0;
-      int64 renewTimeout = auth_get_renew_timeout(m_connection);
-      int64 curlTimeout = m_connection->network_timeout;
 
       std::string destination = url.toString();
-      void* curl_desc;
-      CURL* curl;
-      curl_desc = get_curl_desc_from_pool(destination.c_str(), m_connection->proxy, m_connection->no_proxy);
-      curl = get_curl_from_desc(curl_desc);
-
-      SF_ERROR_STRUCT* err = &m_connection->error;
 
       NON_JSON_RESP* raw_resp = (NON_JSON_RESP*)SF_MALLOC(sizeof(NON_JSON_RESP));
       raw_resp->write_callback = non_json_resp_write_callback;
       RAW_CHAR_BUFFER buf = { NULL,0 };
       raw_resp->buffer = (void*)&buf;
-      cJSON* resp_data = NULL;
 
       // add headers for account and authentication
       SF_HEADER* httpExtraHeaders = sf_header_create();
@@ -638,30 +607,7 @@ namespace Snowflake::Client
 
       if (ret)
       {
-          if (parseJSON) 
-          {
-              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
-                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
-                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
-                                           m_connection->crl_download_timeout,
-                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
-                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
-          }
-          else
-          {
-              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
-                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
-                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
-                                           m_connection->crl_download_timeout,
-                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
-                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
-          }
-
-          if (!isHttpSuccess)
+          if (!curl_external_get_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp, SF_BOOLEAN_FALSE))
           {
               //Fail to get the saml response. Retry.
               isRetry = true;
@@ -669,28 +615,11 @@ namespace Snowflake::Client
           }
           else
           {
-              if (parseJSON)
-              {
-                  cJSONtoPicoJson(resp_data, resp);
-              }
-              else 
-              {
                   rawData = buf.buffer;
-              }
           }
       }
 
-      if (ret && elapsedTime >= m_retryTimeout)
-      {
-          CXX_LOG_WARN("sf::CIDPAuthenticator::get_curl_call::Fail to get SAML response, timeout reached: %d, elapsed time: %d",
-              m_retryTimeout, elapsedTime);
-
-          m_errMsg = "OktaConnectionFailed: timeout reached.";
-          ret = false;
-      }
-
       sf_header_destroy(httpExtraHeaders);
-      free_curl_desc(curl_desc);
       SF_FREE(raw_resp);
       return ret;
   }
@@ -758,6 +687,16 @@ namespace Snowflake::Client
           return;
       }
       IAuthenticatorOAuth::authenticate();
+  }
+
+  bool AuthenticatorOAuth::refreshAccessTokenFlow()
+  {
+      if (!m_connection->oauth_refresh_token) {
+          CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
+          return false;
+      }
+
+      return IAuthenticatorOAuth::refreshAccessTokenFlow();
   }
   
   void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) 
