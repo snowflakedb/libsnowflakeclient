@@ -166,8 +166,8 @@ namespace Snowflake::Client
                     m_errMsg = "Unsupported OAuth flow type";
                 }
             }
-            catch (std::exception& e) {
-                m_errMsg = e.what();
+            catch (const AuthException& e) {
+                m_errMsg = e.cause();
             }
         }
 
@@ -508,7 +508,7 @@ namespace Snowflake::Client
         //    ////////////////////////////////////////////////////////
         OAuthTokenListenerWebServer::OAuthTokenListenerWebServer()
         {
-            // nop;
+            m_className = std::string("AuthenticatorOAuth").c_str();
         }
 
         /**

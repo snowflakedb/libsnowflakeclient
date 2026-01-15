@@ -696,7 +696,7 @@ namespace Snowflake::Client
   }
 
   AuthenticatorExternalBrowser::AuthenticatorExternalBrowser(
-      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection), IAuthenticatorExternalBrowser(new CIDPAuthenticator(connection), authWebServer)
+      SF_CONNECT* connection, IAuthWebServer* authWebServer, IDPAuthenticator* idp) : m_connection(connection), IAuthenticatorExternalBrowser(authWebServer, idp != nullptr ? idp : new CIDPAuthenticator(connection))
   {
       m_proofKey = "";
       m_token = "";

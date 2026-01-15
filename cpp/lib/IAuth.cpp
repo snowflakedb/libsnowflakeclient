@@ -93,9 +93,9 @@ namespace Client
             return url;
         }
 
-        IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IDPAuthenticator* idp, IAuthWebServer* authWebServer, IAuthenticationWebBrowserRunner* webBrowserRunner) :
-            m_idp(idp),
+        IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer, IDPAuthenticator* idp, IAuthenticationWebBrowserRunner* webBrowserRunner) :
             m_authWebServer(authWebServer != nullptr ? authWebServer : new AuthWebServer()),
+            m_idp(idp),
             m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
 
         int IAuthenticatorExternalBrowser::getPort()
@@ -132,7 +132,7 @@ namespace Client
 
             }
             catch (const AuthException& e) {
-                m_errMsg = e.what();
+                m_errMsg = e.cause();
                 return;
             }
             m_token = m_authWebServer->getToken();
@@ -359,7 +359,7 @@ namespace Client
             if ((int)m_socket_descriptor < 0)
             {
                 CXX_LOG_ERROR("sf::%s::WebServer::start::Failed to start web server. Could not create a socket.  err: %s", m_className, strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
 
             struct sockaddr_in recv_server;
@@ -372,7 +372,7 @@ namespace Client
                 CXX_LOG_ERROR(
                     "sf::%s::WebServer::start::Failed to start web server. Could not convert buffer to a network address. err: %s",
                     m_className, strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
             if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
                 sizeof(struct sockaddr_in)) < 0)
@@ -380,14 +380,14 @@ namespace Client
                 CXX_LOG_ERROR(
                     "sf::%s::WebServer::start::Failed to start web server. Could not bind a port. err: %s",
                     m_className, strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
             socklen_t length = sizeof(struct sockaddr_in);
             if (getsockname(m_socket_descriptor, (struct sockaddr*)&recv_server, &length) < 0) {
                 CXX_LOG_ERROR(
                     "sf::%s::WebServer::start::Failed to get socket name. Could not get a port. err: %s",
                     m_className, strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
             m_real_port = ntohs(recv_server.sin_port);
             if (m_real_port != m_port) {
@@ -398,7 +398,7 @@ namespace Client
                 CXX_LOG_ERROR(
                     "sf::%s::WebServer::start::Failed to start web server. Could not listen a port. err: %s",
                     m_className, strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
             CXX_LOG_TRACE("sf::%s::WebServer::start::Web Server successfully started on %s:%d and path %s", m_className, m_host.c_str(), m_real_port, m_path.c_str());
         }
@@ -420,7 +420,7 @@ namespace Client
                     CXX_LOG_ERROR(
                         "sf::%s::WebServer::stop::Failed close HTTP port err: %s",
                         m_className, strerror(errno));
-                    throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
                 }
             }
             m_socket_desc_web_client = 0;
@@ -438,7 +438,7 @@ namespace Client
                         "sf::%s::WebServer::stop::Failed to stop web server. err: %s",
                         m_className, strerror(errno));
                     m_socket_descriptor = 0;
-                    throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
                 }
             }
             m_socket_descriptor = 0;
@@ -467,20 +467,20 @@ namespace Client
                     CXX_LOG_ERROR(
                         "sf::%s::WebServer::startAccept::Failed to receive token. Could not accept a request. error: %s",
                         m_className, strerror(errno));
-                    throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
                 }
             }
             else if (retVal == 0)
             {
                 CXX_LOG_ERROR("sf::%s::WebServer::startAccept::Auth browser timed out. ", m_className);
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
             }
             else
             {
                 CXX_LOG_ERROR(
                     "sf::%s::WebServer::startAccept::Failed to determine status of auth web server. err: %s",
                     m_className,strerror(errno));
-                throw AuthException("sf::" + std::string(m_className) + "WebServer:: " + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
 
             }
         }
@@ -488,7 +488,7 @@ namespace Client
         bool IAuthWebServer::receive()
         {
             bool is_options = false;
-            char mesg[SOCKET_BUFFER_SIZE];
+            char* mesg = new char[SOCKET_BUFFER_SIZE]();
             char* reqline;
             char* rest_mesg;
             int recvlen;
@@ -496,7 +496,7 @@ namespace Client
             if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, SOCKET_BUFFER_SIZE, 0)) < 0)
             {
                 CXX_LOG_ERROR("sf::%s::WebServer::receive::Failed to receive SAML token. Could not receive a request.", m_className);
-                throw AuthException("sf::" + std::string(m_className) + "WebServer::Failed to receive SAML token. Could not receive a request.");
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Failed to receive SAML token. Could not receive a request.");
             }
             reqline = sf_strtok(mesg, " \t\n", &rest_mesg);
             if (strncmp(reqline, "GET\0", 4) == 0)
@@ -514,8 +514,9 @@ namespace Client
             else
             {
                 CXX_LOG_ERROR("sf::%s::WebServer::receive::Failed to receive SAML token. Could not get HTTP request. err: %s.", m_className, reqline);
-                throw AuthException("sf::" + std::string(m_className) + "WebServer::Not HTTP Request");
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Not HTTP request");
             }
+            delete[] mesg;
             return is_options;
         }
 
@@ -602,7 +603,7 @@ namespace Client
             if (ret.empty())
             {
                 CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:No token parameter is found %s.", response.c_str());
-                fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondPostRequest:No token parameter is found.", failureMessage);
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:No token parameter is found", failureMessage);
             }
             if (m_origin.empty())
             {
@@ -617,7 +618,7 @@ namespace Client
                 if (!err.empty())
                 {
                     CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:Error in parsing JSON : % s, err : % s.", payload.c_str(), err.c_str());
-                    fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON.", failureMessage);
+                    fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON", failureMessage);
                 }
                 respondJson(json);
             }
@@ -630,7 +631,7 @@ namespace Client
             if (ret.empty())
             {
                 CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:No token parameter is found. %s.", response.c_str());
-                fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondPostRequest:No token parameter is found.", failureMessage);
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:No token parameter is found", failureMessage);
             }
 
             for (auto const& value : ret)
@@ -642,7 +643,7 @@ namespace Client
                     if (v != "POST")
                     {
                         CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:POST method is not requested. %s.", value.c_str());
-                        fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested.", failureMessage);
+                        fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested", failureMessage);
                     }
                 }
                 else if (value.find("Access-Control-Request-Headers") != std::string::npos)
@@ -659,7 +660,7 @@ namespace Client
             if (requested_header.empty() || m_origin.empty())
             {
                 CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header. %s.", response.c_str());
-                fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.", failureMessage);
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header", failureMessage);
             }
             std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()
@@ -689,14 +690,14 @@ namespace Client
             if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
                 strncmp(protocol, "HTTP/1.1", 8) != 0)
             {
-                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:Not HTTP request.");
-                fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.", failureMessage);
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request.");
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request", failureMessage);
             }
 
             if (strncmp(path, "/?", 2) != 0)
             {
                 CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:No token parameter is found.");
-                fail(HTTP_BAD_REQUEST, "AuthWebServer:parseAndRespondGetRequest:No token parameter is found.", failureMessage);
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondGetRequest:No token parameter is found", failureMessage);
             }
             respond(std::string(&path[2]));
         }

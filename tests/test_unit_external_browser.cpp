@@ -169,10 +169,8 @@ void test_external_browser_authenticate(void**)
     public:
         MockExternalBrowser(
             SF_CONNECT* connection, IAuthWebServer* authWebServer)
-            : AuthenticatorExternalBrowser(connection, authWebServer)
-        {
-            m_idp = new MockIDP(connection);
-        }
+            : AuthenticatorExternalBrowser(connection, authWebServer, new MockIDP(connection))
+        {}
 
         ~MockExternalBrowser()
         {}
@@ -268,10 +266,8 @@ class MockExternalBrowser : public AuthenticatorExternalBrowser
 public:
     MockExternalBrowser(
         SF_CONNECT* connection, IAuthWebServer* authWebServer)
-        : AuthenticatorExternalBrowser(connection, authWebServer)
-    {
-        m_idp = new MockIDP(connection);
-    }
+        : AuthenticatorExternalBrowser(connection, authWebServer, new MockIDP(connection))
+    {}
 
     ~MockExternalBrowser()
     {}
@@ -319,8 +315,6 @@ void test_auth_web_server_success(void**)
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
 
     snowflake_term(sf);
-    log_set_quiet(1);
-
 }
 
 void test_auth_web_server_fail(void**)
@@ -335,31 +329,31 @@ void test_auth_web_server_fail(void**)
     MockExternalBrowser* auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "wrong request";
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "SFAuthWebBrowserFailed: Not HTTP request.");
+    assert_string_equal(sf->error.msg, "sf::AuthenticatorExternalBrowser::WebServer::Not HTTP request");
     delete auth;
 
     auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "GET /?token=Snowflake-token-12345 HTTP/1.3";
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondGetRequest:Not HTTP request.");
+    assert_string_equal(sf->error.msg, "sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request");
     delete auth;
 
     auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "GET /!token=Snowflake-token-12345 HTTP/1.1";
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondGetRequest:No token parameter is found.");
+    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondGetRequest:No token parameter is found");
     delete auth;
 
     auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "OPTIONS ";
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header.");
+    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header");
     delete auth;
 
     auth = new MockExternalBrowser(sf, nullptr);
     auth->m_response = "OPTIONS / api / data HTTP / 1.1 \n Host: api.example.com \n Origin : https ://client.example.com \nAccess-Control-Request-Method : GET";
     auth->authenticate();
-    assert_string_equal(sf->error.msg, "AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested.");
+    assert_string_equal(sf->error.msg, "sf::AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested");
     delete auth;
 
     snowflake_term(sf);
@@ -484,9 +478,8 @@ void test_sso_token_cache(void**)
     public:
         MockExternalBrowser(
             SF_CONNECT* connection, IAuthWebServer* authWebServer)
-            : AuthenticatorExternalBrowser(connection, authWebServer)
+            : AuthenticatorExternalBrowser(connection, authWebServer, new MockIDP(connection))
         {
-            m_idp = new MockIDP(connection);
             m_proofKey = "RENEW_PROOF_KEY";
             m_token = "RENEW_SAML_TOKEN";
         }

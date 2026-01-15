@@ -73,7 +73,7 @@ namespace Client
   {
   public:
       AuthenticatorExternalBrowser(
-          SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr);
+          SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr, IDPAuthenticator* = nullptr);
       virtual ~AuthenticatorExternalBrowser() {};
 
       void authenticate();

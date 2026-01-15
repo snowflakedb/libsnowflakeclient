@@ -62,14 +62,14 @@ namespace Snowflake::Client
             IAuthWebServer(){}
             virtual ~IAuthWebServer(){}
 
-            void start();
-            void stop();
-            int getPort();
-            void startAccept();
-            std::string getToken();
+            virtual void start();
+            virtual void stop();
+            virtual int getPort();
+            virtual void startAccept();
+            virtual std::string getToken();
             void setTimeout(int timeout);
-            bool receive();
-            void respond(std::string httpError, std::string message);
+            virtual bool receive();
+            virtual void respond(std::string httpError, std::string message);
             void fail(std::string httpError, std::string message, std::string failureResponse);
 
             virtual int start(std::string host, int port, std::string path) = 0;
@@ -90,7 +90,7 @@ namespace Snowflake::Client
             std::string m_host = "127.0.0.1";
             std::string m_path;
             std::string m_token;
-            char* m_className;
+            const char* m_className;
 
             const char* HTTP_OK = "200 OK";
             const char* HTTP_BAD_REQUEST = "400 Bad Request";
@@ -222,7 +222,7 @@ namespace Snowflake::Client
         class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
         {
         public:
-            IAuthenticatorExternalBrowser(IDPAuthenticator* idp = nullptr, IAuthWebServer* authWebServer = nullptr, IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
+            IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer = nullptr, IDPAuthenticator* idp = nullptr, IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
             virtual ~IAuthenticatorExternalBrowser() {};
 
@@ -268,10 +268,6 @@ namespace Snowflake::Client
             bool m_disable_console_login;
             std::string m_origin;
             int64 m_browser_response_timeout;
-
-#ifdef __APPLE__
-            void openURL(const std::string& url_str);
-#endif
         };
 
         class AuthWebServer : public IAuthWebServer
