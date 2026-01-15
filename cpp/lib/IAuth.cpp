@@ -128,13 +128,13 @@ namespace Client
                 {
                     // nop
                 }
-                m_authWebServer->stop();
 
             }
             catch (const AuthException& e) {
                 m_errMsg = e.cause();
                 return;
             }
+            
             m_token = m_authWebServer->getToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();
         }
