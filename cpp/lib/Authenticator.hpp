@@ -32,7 +32,7 @@ namespace Client
     ~AuthenticatorJWT();
 
     void authenticate();
-
+    
     void updateDataMap(jsonObject_t& dataMap);
 
     static std::vector<char> SHA256(const std::vector<char>& message);
@@ -51,18 +51,20 @@ namespace Client
     JwtPtr m_jwt;
 
     static std::string extractPublicKey(EVP_PKEY *privKey);
-
   };
 
   class CIDPAuthenticator : public IDPAuthenticator
   {
   public:
       CIDPAuthenticator(SF_CONNECT* conn);
+
       ~CIDPAuthenticator();
 
       // If the function fails, ensure to define and return an appropriate error message at m_errMsg.
       bool curlPostCall(SFURL& url, const jsonObject_t& body, jsonObject_t& resp);
+
       bool curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& raw_data, bool& isRetry);
+
   private:
       SF_CONNECT* m_connection;
   };
@@ -72,7 +74,6 @@ namespace Client
   public:
       AuthenticatorExternalBrowser(
           SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr);
-
       virtual ~AuthenticatorExternalBrowser() {};
 
       void authenticate();
@@ -87,9 +88,9 @@ namespace Client
       AuthenticatorOKTA(SF_CONNECT *conn);
 
       ~AuthenticatorOKTA() {};
-
+      
       void authenticate();
-
+      
       void updateDataMap(jsonObject_t& dataMap);
 
   private:
@@ -99,13 +100,13 @@ namespace Client
   class AuthenticatorOAuth : public IAuthenticatorOAuth
   {
   public:
-
       AuthenticatorOAuth(SF_CONNECT* connection,
           IAuthWebServer* authWebServer = nullptr,
           IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
   private:
       bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) override;
+
       void resetTokens(std::string accessToken, std::string refreshToken) override;
 
       SF_CONNECT* m_connection;
@@ -119,7 +120,7 @@ namespace Client
       ~AuthenticatorTest();
 
       void authenticate();
-
+      
       void updateDataMap(jsonObject_t& dataMap);
 
   private:

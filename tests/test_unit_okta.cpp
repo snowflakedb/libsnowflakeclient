@@ -129,6 +129,7 @@ bool MockOkta::getCurrentCallFailed()
     if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
         return idp->isCurrentCallFailed;
     }
+    return false;
 }
 
 bool MockOkta::getPostCallFailed()
@@ -136,6 +137,7 @@ bool MockOkta::getPostCallFailed()
     if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
         return idp->isPostCallFailed;
     }
+    return false;
 }
 
 bool MockOkta::getCurlGetRequestFailed()
@@ -143,6 +145,7 @@ bool MockOkta::getCurlGetRequestFailed()
     if (auto idp = dynamic_cast<MockIDP*>(m_idp.get())) {
         return idp->isCurlGetRequestFailed;
     }
+    return false;
 }
 
 void MockOkta::setCurrentCallFailed(bool value)

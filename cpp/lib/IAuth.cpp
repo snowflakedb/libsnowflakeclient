@@ -577,7 +577,7 @@ namespace Client
         AuthWebServer::AuthWebServer() :
             m_consent_cache_id_token(true)
         {
-            // nop
+            m_className = "AuthenticatorExternalBrowser";
         }
 
         /**
