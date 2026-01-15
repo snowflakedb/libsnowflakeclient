@@ -104,7 +104,7 @@ namespace Client
           IAuthWebServer* authWebServer = nullptr,
           IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
-      void authenticate();
+      void authenticate() override;
 
   private:
       bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) override;
