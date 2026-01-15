@@ -330,7 +330,7 @@ namespace Snowflake::Client
 
             virtual ~IAuthenticatorOAuth() {};
 
-            void authenticate() override;
+            virtual void authenticate() override;
             void updateDataMap(jsonObject_t& dataMap) override;
 
         protected:
