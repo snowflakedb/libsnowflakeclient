@@ -740,14 +740,24 @@ namespace Snowflake::Client
       m_redirectUri = SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
       m_redirectUriDynamicDefault = is_string_empty(connection->oauth_redirect_uri);
       m_singleUseRefreshTokens = connection->single_use_refresh_token;
-      m_token = connection->oauth_token ? std::string(connection->oauth_token) : "";
 
       if (m_authEndpoint.host() != m_tokenEndpoint.host())
       {
           CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
-              +m_authEndpoint.host().c_str(),
-              +m_tokenEndpoint.host().c_str());
+              m_authEndpoint.host().c_str(),
+              m_tokenEndpoint.host().c_str());
       }
+  }
+
+  void AuthenticatorOAuth::authenticate()
+  {
+      // already has an access token
+      if (!is_string_empty(m_connection->oauth_token))
+      {
+          m_token = m_connection->oauth_token;
+          return;
+      }
+      IAuthenticatorOAuth::authenticate();
   }
   
   void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) 

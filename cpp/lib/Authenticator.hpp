@@ -105,6 +105,9 @@ namespace Client
           IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
   private:
+
+      void authenticate();
+
       bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) override;
 
       void resetTokens(std::string accessToken, std::string refreshToken) override;

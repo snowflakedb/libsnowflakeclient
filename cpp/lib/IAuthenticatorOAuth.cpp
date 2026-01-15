@@ -140,10 +140,6 @@ namespace Snowflake::Client
 
         void IAuthenticatorOAuth::authenticate()
         {
-            // already has an access token
-            if (!m_token.empty()) {
-                return;
-            }
 
 #ifdef _WIN32
             AuthWinSock authWinSock;
