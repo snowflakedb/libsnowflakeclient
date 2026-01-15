@@ -123,7 +123,7 @@ void test_simple_put_core(const char * fileName,
   if (!connection) {
     sf = setup_snowflake_connection();
     // extend timeout to fix possible timeout failure
-    int64 timeout = 600;
+    int64 timeout = 1200;
     snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
     snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
     status = snowflake_connect(sf);
