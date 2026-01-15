@@ -69,11 +69,11 @@ void test_json_data_in_oauth(void** unused)
 class OAuthTokenListenerWebServerMock : public OAuthTokenListenerWebServer {
 public:
     OAuthTokenListenerWebServerMock() : OAuthTokenListenerWebServer() {}
-    std::string getToken() { return std::string("authorisationCode123"); }
+    std::string getToken() override { return std::string("authorisationCode123"); }
     void startAccept(std::string state) override {
         SF_UNUSED(state);
     }
-    bool receive() { return true; }
+    bool receive() override { return true; }
 };
 
 class WebBrowserRunnerMock : public IAuthenticationWebBrowserRunner {
