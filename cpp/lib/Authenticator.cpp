@@ -346,9 +346,7 @@ namespace {
         oauth_header->header = curl_slist_append(oauth_header->header, auth.c_str());
         oauth_header->header = curl_slist_append(oauth_header->header, "Content-Type: application/x-www-form-urlencoded");
         return oauth_header;
-
     }
-
 }
 
 namespace Snowflake::Client
@@ -500,19 +498,13 @@ namespace Snowflake::Client
   }
 
   AuthenticatorOKTA::AuthenticatorOKTA(
-      SF_CONNECT* connection) : m_connection(connection)
+      SF_CONNECT* connection) : m_connection(connection), IAuthenticatorOKTA(new CIDPAuthenticator(connection))
   {
-      m_idp = new CIDPAuthenticator(connection);
       m_user = m_connection->user;
       m_password = m_connection->password;
       m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
       m_appID = m_connection->application_name;
       m_appVersion = m_connection->application_version;
-  }
-
-  AuthenticatorOKTA::~AuthenticatorOKTA()
-  {
-      delete m_idp;
   }
 
   void AuthenticatorOKTA::authenticate()
@@ -704,28 +696,17 @@ namespace Snowflake::Client
   }
 
   AuthenticatorExternalBrowser::AuthenticatorExternalBrowser(
-      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection), IAuthenticatorExternalBrowser(authWebServer)
+      SF_CONNECT* connection, IAuthWebServer* authWebServer) : m_connection(connection), IAuthenticatorExternalBrowser(new CIDPAuthenticator(connection), authWebServer)
   {
       m_proofKey = "";
       m_token = "";
       m_consentCacheIdToken = true;
       m_origin = "";
 
-      m_idp = new CIDPAuthenticator(m_connection);
-
       m_connection->disable_console_login ?  m_user = "" : m_user = m_connection->user;
       m_browser_response_timeout = connection->browser_response_timeout;
       m_disable_console_login = connection->disable_console_login;
   };
-
-  AuthenticatorExternalBrowser::~AuthenticatorExternalBrowser()
-  {
-   
-      if (m_idp != NULL)
-      {
-          delete m_idp;
-      }
-  }
 
   void AuthenticatorExternalBrowser::authenticate()
   {
@@ -806,6 +787,7 @@ namespace Snowflake::Client
       {
           CXX_LOG_INFO("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n",
               snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+          m_errMsg = "OAuthConnectionFailed: Fail to execute OAuth request.";
           return false;
       }
       else

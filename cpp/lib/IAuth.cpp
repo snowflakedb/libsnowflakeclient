@@ -93,7 +93,8 @@ namespace Client
             return url;
         }
 
-        IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer, IAuthenticationWebBrowserRunner* webBrowserRunner) :
+        IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IDPAuthenticator* idp, IAuthWebServer* authWebServer, IAuthenticationWebBrowserRunner* webBrowserRunner) :
+            m_idp(idp),
             m_authWebServer(authWebServer != nullptr ? authWebServer : new AuthWebServer()),
             m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
 
@@ -243,6 +244,9 @@ namespace Client
             WSACleanup();
         }
 #endif
+
+        IAuthenticatorOKTA::IAuthenticatorOKTA(IDPAuthenticator* idp) : 
+            m_idp(idp){}
 
         void IAuthenticatorOKTA::authenticate()
         {

@@ -196,7 +196,7 @@ namespace Snowflake::Client
         class IAuthenticatorOKTA : public IAuthenticator, public AuthErrorHandler
         {
         public:
-            IAuthenticatorOKTA() {};
+            IAuthenticatorOKTA(IDPAuthenticator* idp = nullptr);
 
             virtual ~IAuthenticatorOKTA() {};
 
@@ -204,7 +204,6 @@ namespace Snowflake::Client
 
             virtual void updateDataMap(jsonObject_t& dataMap);
 
-            IDPAuthenticator* m_idp;
 
             /**
              * Extract post back url from samel response. Input is in HTML format.
@@ -212,7 +211,7 @@ namespace Snowflake::Client
             std::string extractPostBackUrlFromSamlResponse(std::string html);
 
         protected:
-            //These fields should be definied in the child class.
+            std::unique_ptr<IDPAuthenticator> m_idp;
             std::string m_user;
             std::string m_password;
             std::string m_appID;
@@ -226,7 +225,7 @@ namespace Snowflake::Client
         class IAuthenticatorExternalBrowser : public IAuthenticator, public AuthErrorHandler
         {
         public:
-            IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer = nullptr, IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
+            IAuthenticatorExternalBrowser(IDPAuthenticator* idp = nullptr, IAuthWebServer* authWebServer = nullptr, IAuthenticationWebBrowserRunner* webBrowserRunner = nullptr);
 
             virtual ~IAuthenticatorExternalBrowser() {};
 
@@ -264,7 +263,7 @@ namespace Snowflake::Client
 #endif
             std::unique_ptr<IAuthWebServer> m_authWebServer;
             IAuthenticationWebBrowserRunner* m_webBrowserRunner;
-            IDPAuthenticator* m_idp;
+            std::unique_ptr<IDPAuthenticator> m_idp;
             std::string m_proofKey;
             std::string m_token;
             std::string m_user;

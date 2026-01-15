@@ -338,8 +338,8 @@ namespace Snowflake::Client
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
 
             if (!executeRestRequest(tokenURL, body, resp)) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest::OAuth error: %s", m_errMsg);
-                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest::OAuth error: %s", m_errMsg.c_str());
+                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg.c_str());
             }
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");

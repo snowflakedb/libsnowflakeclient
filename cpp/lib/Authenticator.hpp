@@ -73,7 +73,7 @@ namespace Client
       AuthenticatorExternalBrowser(
           SF_CONNECT* connection, IAuthWebServer* authWebServer = nullptr);
 
-      virtual ~AuthenticatorExternalBrowser();
+      virtual ~AuthenticatorExternalBrowser() {};
 
       void authenticate();
   private:
@@ -86,7 +86,7 @@ namespace Client
   public:
       AuthenticatorOKTA(SF_CONNECT *conn);
 
-      ~AuthenticatorOKTA();
+      ~AuthenticatorOKTA() {};
 
       void authenticate();
 
