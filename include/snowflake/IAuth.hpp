@@ -336,7 +336,6 @@ namespace Snowflake::Client
         protected:
             virtual void resetTokens(std::string accessToken, std::string refreshToken) = 0;
             virtual bool executeRestRequest(SFURL& endPoint, const std::string& body, jsonObject_t& resp) = 0;
-            virtual bool refreshAccessTokenFlow();
 
             AuthenticatorType m_oauthFlow;
             SFURL m_authEndpoint;

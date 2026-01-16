@@ -258,6 +258,11 @@ namespace Snowflake::Client
         }
 
         bool IAuthenticatorOAuth::refreshAccessTokenFlow() {
+            if (m_oauth_refresh_token.empty()) {
+                CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
+                return false;
+            }
+
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token flow started");
 
             RefreshAccessTokenRequest request{

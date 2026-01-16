@@ -680,25 +680,24 @@ namespace Snowflake::Client
 
   void AuthenticatorOAuth::authenticate()
   {
+      m_token = "";
+      m_oauth_refresh_token = "";
+
       // already has an access token
       if (!is_string_empty(m_connection->oauth_token))
       {
           m_token = m_connection->oauth_token;
           return;
       }
+
+      if (!is_string_empty(m_connection->oauth_refresh_token))
+      {
+          m_oauth_refresh_token = m_connection->oauth_refresh_token;
+      }
+
       IAuthenticatorOAuth::authenticate();
   }
 
-  bool AuthenticatorOAuth::refreshAccessTokenFlow()
-  {
-      if (!m_connection->oauth_refresh_token) {
-          CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
-          return false;
-      }
-
-      return IAuthenticatorOAuth::refreshAccessTokenFlow();
-  }
-  
   void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) 
   {
       m_token = accessToken;

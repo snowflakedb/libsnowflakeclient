@@ -111,8 +111,6 @@ namespace Client
 
       void resetTokens(std::string accessToken, std::string refreshToken) override;
 
-      bool refreshAccessTokenFlow() override;
-
       SF_CONNECT* m_connection;
   };
 
