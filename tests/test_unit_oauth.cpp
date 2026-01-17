@@ -70,7 +70,6 @@ class OAuthTokenListenerWebServerMock : public OAuthTokenListenerWebServer {
 public:
     OAuthTokenListenerWebServerMock() : OAuthTokenListenerWebServer() {}
     std::string getToken() override { return std::string("authorisationCode123"); }
-    void startAccept() override {}
     void startAccept(std::string state) override {
         SF_UNUSED(state);
     }

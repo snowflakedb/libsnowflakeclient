@@ -136,11 +136,11 @@ namespace Snowflake::Client
             IAuthWebServer* authWebServer,
             IAuthenticationWebBrowserRunner* webBrowserRunner)
             : m_authWebServer(authWebServer != nullptr ? authWebServer : new OAuthTokenListenerWebServer()),
-            m_webBrowserRunner(webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner) {
-        }
+            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
 
         void IAuthenticatorOAuth::authenticate()
         {
+
 #ifdef _WIN32
             AuthWinSock authWinSock;
 #endif
@@ -162,8 +162,8 @@ namespace Snowflake::Client
                     m_errMsg = "Unsupported OAuth flow type";
                 }
             }
-            catch (std::exception& e) {
-                m_errMsg = e.what();
+            catch (const AuthException& e) {
+                m_errMsg = e.cause();
             }
         }
 
@@ -258,10 +258,11 @@ namespace Snowflake::Client
         }
 
         bool IAuthenticatorOAuth::refreshAccessTokenFlow() {
-            if (!m_oauth_refresh_token.empty()) {
+            if (m_oauth_refresh_token.empty()) {
                 CXX_LOG_DEBUG("sf::AuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
                 return false;
             }
+
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token flow started");
 
             RefreshAccessTokenRequest request{
@@ -283,10 +284,6 @@ namespace Snowflake::Client
                 resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
             }
             return response.success;
-        }
-
-        void IAuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) {
-            m_token = accessToken;
         }
 
         AuthorizationCodeResponse IAuthenticatorOAuth::executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest)
@@ -338,15 +335,15 @@ namespace Snowflake::Client
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
 
             if (!executeRestRequest(tokenURL, body, resp)) {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest::OAuth error: %s", m_errMsg);
-                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
+                CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeAccessTokenRequest::OAuth error: %s", m_errMsg.c_str());
+                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg.c_str());
             }
 
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
             CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::Body: %s", maskOAuthSecret(picojson::value(resp).serialize()).c_str());
-            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------")
+            CXX_LOG_TRACE("sf::AuthenticatorOAuth::executeAccessTokenRequest::------------------------");
 
-                std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
+            std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
             std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
 
 
@@ -381,7 +378,6 @@ namespace Snowflake::Client
 
             std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
             std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
-
 
             if (accessToken.empty()) {
                 return AccessTokenResponse::failed("Invalid Identity Provider response: access token not provided");
@@ -449,13 +445,11 @@ namespace Snowflake::Client
                 "browser window should have opened for you to complete the "
                 "login. If you can't see it, check existing browser windows, "
                 "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
-            // need double quotes to reserve ampasand characters
-            std::stringstream urlBuf;
 
             if (m_webBrowserRunner == nullptr)
             {
                 CXX_LOG_ERROR("sf::AuthenticatorOAuth::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
-                throw AuthException("SFOAuthError. Unable to open SSO URL.");
+                throw AuthException("sf::AuthenticatorOAuth::Error. Unable to open SSO URL.");
             }
 
             m_webBrowserRunner->startWebBrowser(ssoUrl);
@@ -509,17 +503,9 @@ namespace Snowflake::Client
         //    ////////////////////////////////////////////////////////
         //     WEB SRV
         //    ////////////////////////////////////////////////////////
-        //
-        //    TODO: SNOW-2452931: This Websever have redundant code with AuthWebServer for the external browser. 
-        //     This code needs to be refactored.
-        //
-        OAuthTokenListenerWebServer::OAuthTokenListenerWebServer() : m_socket_descriptor(0),
-            m_socket_desc_web_client(0),
-            m_port(0),
-            m_real_port(0),
-            m_token(""),
-            m_origin(""),
-            m_timeout(SF_BROWSER_RESPONSE_TIMEOUT) {
+        OAuthTokenListenerWebServer::OAuthTokenListenerWebServer()
+        {
+            m_className = std::string("AuthenticatorOAuth").c_str();
         }
 
         /**
@@ -543,212 +529,38 @@ namespace Snowflake::Client
                 CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s:%d%s",
                     m_host.c_str(), port, path.c_str());
             }
-            start();
+            IAuthWebServer::start();
             return m_real_port;
-        }
-
-        /**
-         * Start http listener
-         */
-        void OAuthTokenListenerWebServer::start()
-        {
-            m_socket_desc_web_client = 0;
-            m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-            /*               TODO: On Windows, socket functions don't set errno and the error code
-                           should be retrieved by WSAGetLastError(). Therefore for now the error
-                           message won't be logged correctly on Windows.
-                           Leave it for now since it won't affect the functionality.*/
-            if ((int)m_socket_descriptor < 0)
-            {
-                CXX_LOG_ERROR("sf::AuthWebServer::start::Failed to start web server. Could not create a socket.  err: %s", strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
-
-            struct sockaddr_in recv_server;
-            memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
-            recv_server.sin_family = AF_INET;
-            recv_server.sin_port = htons(m_port); // ephemeral port
-            CXX_LOG_INFO("HOST is %s", m_host.c_str())
-                if (inet_pton(AF_INET, m_host.c_str(), &recv_server.sin_addr.s_addr) != 1)
-                {
-                    CXX_LOG_ERROR(
-                        "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not convert buffer to a network address. err: %s",
-                        strerror(errno));
-                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-
-                }
-            if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
-                sizeof(struct sockaddr_in)) < 0)
-            {
-                CXX_LOG_ERROR(
-                    "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not bind a port. err: %s",
-                    strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
-            socklen_t length = sizeof(struct sockaddr_in);
-            if (getsockname(m_socket_descriptor, (struct sockaddr*)&recv_server, &length) < 0) {
-                CXX_LOG_ERROR(
-                    "sf::OAuthTokenListenerWebServer::start::Failed to get socket name. Could not get a port. err: %s",
-                    strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
-            m_real_port = ntohs(recv_server.sin_port);
-            if (m_real_port != m_port) {
-                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Started on port: %d for %s:%d%s", m_real_port, m_host.c_str(), m_real_port, m_path.c_str());
-            }
-            if (listen(m_socket_descriptor, 0) < 0)
-            {
-                CXX_LOG_ERROR(
-                    "sf::OAuthTokenListenerWebServer::start::Failed to start web server. Could not listen a port. err: %s",
-                    strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-
-            }
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Web Server successfully started on %s:%d and path %s", m_host.c_str(), m_real_port, m_path.c_str())
-        }
-
-        void OAuthTokenListenerWebServer::stop()
-        {
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::stop::Stopping HTTP listener: %s:%d%s", m_host.c_str(), m_real_port, m_path.c_str())
-                if ((int)m_socket_desc_web_client > 0)
-                {
-#ifndef _WIN32
-                    shutdown(m_socket_desc_web_client, SHUT_RDWR);
-                    int ret = close(m_socket_desc_web_client);
-#else
-                    shutdown(m_socket_desc_web_client, SD_BOTH);
-                    int ret = closesocket(m_socket_desc_web_client);
-#endif
-                    if (ret < 0)
-                    {
-                        CXX_LOG_ERROR(
-                            "sf::OAuthTokenListenerWebServer::stop::Failed close HTTP port err: %s",
-                            strerror(errno));
-                        throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-                    }
-                }
-            m_socket_desc_web_client = 0;
-
-            if ((int)m_socket_descriptor > 0)
-            {
-#ifndef _WIN32
-                int ret = close(m_socket_descriptor);
-#else
-                int ret = closesocket(m_socket_descriptor);
-#endif
-                if (ret < 0)
-                {
-                    CXX_LOG_ERROR(
-                        "sf::OAuthTokenListenerWebServer::stop::Failed to stop web server. err: %s",
-                        strerror(errno));
-                    m_socket_descriptor = 0;
-                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-                }
-            }
-            m_socket_descriptor = 0;
-        }
-
-        /**
-         * Get port number listening
-         * @return port number
-         */
-        int OAuthTokenListenerWebServer::getPort()
-        {
-            return m_real_port;
-        }
-
-        /**
-         * Set the timeout for the web server.
-         */
-        void OAuthTokenListenerWebServer::setTimeout(int timeout)
-        {
-            m_timeout = timeout;
         }
 
         void OAuthTokenListenerWebServer::startAccept(std::string state)
         {
             m_state = state;
-            startAccept();
+            IAuthWebServer::startAccept();
         }
 
-        void OAuthTokenListenerWebServer::startAccept()
+        void OAuthTokenListenerWebServer::respondUnsupportedRequest(std::string method)
         {
-            struct sockaddr_in client = { 0, 0, 0, {} };
-            memset((char*)&client, 0, sizeof(struct sockaddr_in));
-            socklen_t len = sizeof(client);
-
-            fd_set fd;
-            timeval timeout;
-            FD_ZERO(&fd);
-            FD_SET(m_socket_descriptor, &fd);
-            timeout.tv_sec = m_timeout;
-            timeout.tv_usec = 0;
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::startAccept::select(m_socket_descriptor,...");
-            int retVal = select(m_socket_descriptor + 1, &fd, NULL, NULL, &timeout);
-            if (retVal > 0)
-            {
-                m_socket_desc_web_client = accept(
-                    m_socket_descriptor, (struct sockaddr*)&client, &len);
-                if ((int)m_socket_desc_web_client < 0)
-                {
-                    CXX_LOG_ERROR(
-                        "sf::OAuthTokenListenerWebServer::startAccept::Failed to receive token. Could not accept a request. error: %s",
-                        strerror(errno));
-                    throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-                }
-            }
-            else if (retVal == 0)
-            {
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::startAccept::Auth browser timed out. ");
-                throw AuthException("SFOAuthError: Auth browser timed out.");
-            }
-            else
-            {
-                CXX_LOG_ERROR(
-                    "sf::OAuthTokenListenerWebServer::startAccept::Failed to determine status of auth web server. err: %s",
-                    strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
+            std::string errorDesc = "Unexpected method while waiting for a request: " + method;
+            CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
+            throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
         }
 
-        bool OAuthTokenListenerWebServer::receive()
+        bool OAuthTokenListenerWebServer::parseAndRespondOptionsRequest(std::string response)
         {
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive:::start receive")
-
-                char mesg[20000];
-            char* rest_mesg;
-            char* method;
-            int recvlen;
-            memset((void*)mesg, (int)'\0', sizeof(mesg));
-            recvlen = (int)recv(m_socket_desc_web_client, mesg, sizeof(mesg) - 1, 0);
-            if (recvlen < 0)
-            {
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive:::Could not receive a request.err: %s", strerror(errno));
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
-
-            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::%s", maskOAuthSecret(mesg).c_str())
-                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::receive::---------")
-                method = sf_strtok(mesg, " \t\n", &rest_mesg);
-            if (strncmp(method, "GET\0", 4) == 0)
-            {
-                parseAndRespondGetRequest(method, &rest_mesg);
-                return true;
-            }
-            else
-            {
-                std::string errorDesc = "Unexpected method while waiting for a request: " + std::string(method);
-                CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
-                throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
-            }
+            SF_UNUSED(response);
+            respondUnsupportedRequest("Option");
             return false;
         }
 
-        void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char* method, char** rest_mesg)
+        void OAuthTokenListenerWebServer::parseAndRespondPostRequest(std::string response)
         {
-            SF_UNUSED(method);
+            SF_UNUSED(response);
+            respondUnsupportedRequest("Post");
+        }
+
+        void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char** rest_mesg)
+        {
             char** position = rest_mesg;
             char* fullPath = sf_strtok(NULL, " \t\n", position);
             char* protocol = sf_strtok(NULL, " \t\n", position);
@@ -760,13 +572,13 @@ namespace Snowflake::Client
             if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
                 strncmp(protocol, "HTTP/1.1", 8) != 0)
             {
-                fail("400 Bad Request", "HTTP Request has unexpected protocol");
+                fail(HTTP_BAD_REQUEST, "HTTP Request has unexpected protocol", failureMessage);
             }
 
             // validate request path
             if (strncmp(m_path.c_str(), fullPath, m_path.length()) != 0)
             {
-                fail("400 Bad Request", "HTTP Request is missing URL");
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing URL", failureMessage);
             }
 
             // validate request parameters exist
@@ -774,7 +586,7 @@ namespace Snowflake::Client
             expectedPath = expectedPath.append("?");
             if (strncmp(fullPath, expectedPath.c_str(), expectedPath.length()) != 0)
             {
-                fail("400 Bad Request", "HTTP Request has invalid endpoint path");
+                fail(HTTP_BAD_REQUEST, "HTTP Request has invalid endpoint path", failureMessage);
             }
 
             // extract request parameters
@@ -782,7 +594,7 @@ namespace Snowflake::Client
             char* path = sf_strtok(fullPath, "?", &paramsPtr);
             if (path == nullptr)
             {
-                fail("400 Bad Request", "HTTP Request is missing parameters");
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing parameters", failureMessage);
             }
 
             std::vector<std::string> params = splitString(paramsPtr, '&');
@@ -805,52 +617,24 @@ namespace Snowflake::Client
 
             if (!error.empty()) {
                 std::string fullError = "Identity Provider responded with error: " + error + ": " + errorDescription;
-                fail("400 Bad Request", fullError);
+                fail(HTTP_BAD_REQUEST, fullError, failureMessage);
             }
 
             // validate state and non-empty authorization code
             if (receivedState != m_state || receivedState.empty())
             {
-                fail("400 Bad Request", "Identity Provider did not provide expected state parameter!It might indicate an XSS attack.");
+                fail(HTTP_BAD_REQUEST, "Identity Provider did not provide expected state parameter!It might indicate an XSS attack.", failureMessage);
             }
 
             m_token = receivedCode;
             CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::parseAndRespondGetRequest",
                 "Successfully received authorization code from Identity Provider");
-            respond("200 OK", successMessage);
+            respond(HTTP_OK, successMessage);
         }
 
         bool OAuthTokenListenerWebServer::isConsentCacheIdToken()
         {
             return true;
-        }
-
-        std::string OAuthTokenListenerWebServer::getToken()
-        {
-            return m_token;
-        }
-
-        void OAuthTokenListenerWebServer::respond(std::string)
-        {
-            respond("200 OK", successMessage);
-        }
-
-        void OAuthTokenListenerWebServer::respond(std::string errorCode, std::string message)
-        {
-            std::stringstream buf;
-            buf << "HTTP/1.0 " << errorCode << "\r\n"
-                << "Content-Type: text/html" << "\r\n"
-                << "Content-Length: " << message.length() << "\r\n\r\n"
-                << message;
-            send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
-            buf.clear();
-        }
-
-        void OAuthTokenListenerWebServer::fail(std::string httpError, std::string message)
-        {
-            CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::fail", message.c_str());
-            respond(httpError, failureMessage); // unless error message is html-escaped it shouldn't be part of response visible in the browser
-            throw AuthException(message);
         }
     };
 
