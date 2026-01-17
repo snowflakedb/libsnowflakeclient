@@ -95,8 +95,8 @@ namespace Client
 
         IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer, IDPAuthenticator* idp, IAuthenticationWebBrowserRunner* webBrowserRunner) :
             m_authWebServer(authWebServer != nullptr ? authWebServer : new AuthWebServer()),
-            m_idp(idp),
-            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
+            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()),
+            m_idp(idp){}
 
         int IAuthenticatorExternalBrowser::getPort()
         {
@@ -128,9 +128,17 @@ namespace Client
                 {
                     // nop
                 }
+            }
+            catch (const AuthException& e) {
+                m_errMsg = e.cause();
+                return;
+            }
+
+            try {
                 m_authWebServer->stop();
             }
             catch (const AuthException& e) {
+                CXX_LOG_WARN("sf::IAuthenticatorExternalBrowser::authenticate::Failed to stop auth web server: %s.", e.cause().c_str());
                 m_errMsg = e.cause();
                 return;
             }

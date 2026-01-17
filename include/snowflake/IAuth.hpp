@@ -350,8 +350,8 @@ namespace Snowflake::Client
             std::string m_oauth_refresh_token;
             std::string m_token;
             AuthenticationChallengeBaseProvider* m_challengeProvider;
-            IAuthenticationWebBrowserRunner* m_webBrowserRunner;
             std::unique_ptr<IAuthWebServer> m_authWebServer;
+            IAuthenticationWebBrowserRunner* m_webBrowserRunner;
 
         private:
             void authorizationCodeFlow();

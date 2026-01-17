@@ -548,12 +548,14 @@ namespace Snowflake::Client
 
         bool OAuthTokenListenerWebServer::parseAndRespondOptionsRequest(std::string response)
         {
+            SF_UNUSED(response);
             respondUnsupportedRequest("Option");
             return false;
         }
 
         void OAuthTokenListenerWebServer::parseAndRespondPostRequest(std::string response)
         {
+            SF_UNUSED(response);
             respondUnsupportedRequest("Post");
         }
 

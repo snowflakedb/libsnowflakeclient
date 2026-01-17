@@ -93,7 +93,7 @@ std::string MockIDP::getSSOURL() {
 class MockOkta : public IAuthenticatorOKTA {
 
 public:
-    MockOkta(SF_CONNECT* connection) : m_connection(connection), IAuthenticatorOKTA(new MockIDP(connection))
+    MockOkta(SF_CONNECT* connection) : IAuthenticatorOKTA(new MockIDP(connection)), m_connection(connection)
     {
         m_disableSamlUrlCheck = m_connection->disable_saml_url_check;
     };

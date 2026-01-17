@@ -498,7 +498,7 @@ namespace Snowflake::Client
   }
 
   AuthenticatorOKTA::AuthenticatorOKTA(
-      SF_CONNECT* connection) : m_connection(connection), IAuthenticatorOKTA(new CIDPAuthenticator(connection))
+      SF_CONNECT* connection) : IAuthenticatorOKTA(new CIDPAuthenticator(connection)), m_connection(connection)
   {
       m_user = m_connection->user;
       m_password = m_connection->password;
@@ -582,12 +582,11 @@ namespace Snowflake::Client
       return ret;
   }
 
-  bool CIDPAuthenticator::curlGetCall(SFURL& url, jsonObject_t& resp, bool parseJSON, std::string& rawData, bool& isRetry)
+  bool CIDPAuthenticator::curlGetCall(SFURL& url, jsonObject_t& resp, bool is_json_format, std::string& rawData, bool& isRetry)
   {
+      SF_UNUSED(resp);
       isRetry = false;
       bool ret = true;
-      sf_bool isHttpSuccess = SF_BOOLEAN_TRUE;
-
       std::string destination = url.toString();
 
       NON_JSON_RESP* raw_resp = (NON_JSON_RESP*)SF_MALLOC(sizeof(NON_JSON_RESP));
@@ -607,7 +606,7 @@ namespace Snowflake::Client
 
       if (ret)
       {
-          if (!curl_external_get_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, raw_resp, SF_BOOLEAN_FALSE))
+          if (!curl_external_get_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, NULL, raw_resp, is_json_format))
           {
               //Fail to get the saml response. Retry.
               isRetry = true;
@@ -625,7 +624,7 @@ namespace Snowflake::Client
   }
 
   AuthenticatorExternalBrowser::AuthenticatorExternalBrowser(
-      SF_CONNECT* connection, IAuthWebServer* authWebServer, IDPAuthenticator* idp) : m_connection(connection), IAuthenticatorExternalBrowser(authWebServer, idp != nullptr ? idp : new CIDPAuthenticator(connection))
+      SF_CONNECT* connection, IAuthWebServer* authWebServer, IDPAuthenticator* idp) :IAuthenticatorExternalBrowser(authWebServer, idp != nullptr ? idp : new CIDPAuthenticator(connection)), m_connection(connection)
   {
       m_proofKey = "";
       m_token = "";
@@ -656,7 +655,7 @@ namespace Snowflake::Client
   AuthenticatorOAuth::AuthenticatorOAuth(SF_CONNECT* connection,
       IAuthWebServer* authWebServer,
       IAuthenticationWebBrowserRunner* webBrowserRunner)
-      : m_connection(connection), IAuthenticatorOAuth(authWebServer, webBrowserRunner)
+      : IAuthenticatorOAuth(authWebServer, webBrowserRunner), m_connection(connection)
   {
       m_challengeProvider = AuthenticationChallengeBaseProvider::getInstance();
       m_webBrowserRunner = webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner;
@@ -696,6 +695,10 @@ namespace Snowflake::Client
       }
 
       IAuthenticatorOAuth::authenticate();
+      if (isError())
+      {
+          SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, getErrorMessage(), SF_SQLSTATE_GENERAL_ERROR);
+      }
   }
 
   void AuthenticatorOAuth::resetTokens(std::string accessToken, std::string refreshToken) 
@@ -729,7 +732,6 @@ namespace Snowflake::Client
           current = current->next;
       }
       cJSON* resp_data = NULL;
-      int8 retried_count = 0;
 
       if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)body.c_str(), &resp_data))
       {
