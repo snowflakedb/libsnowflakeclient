@@ -678,8 +678,11 @@ sf_bool STDCALL http_perform(CURL *curl,
                 snowflake_cJSON_AddNullToObject(*json, "code");
             }
         } else {
+            char msg[1024];
+            sf_sprintf(msg, sizeof(msg), "Unable to parse JSON text response. Http code: [%ld]",
+                last_http_code);
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
-                                "Unable to parse JSON text response.",
+                                msg,
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
             ret = SF_BOOLEAN_FALSE;
         }
