@@ -668,6 +668,7 @@ namespace Snowflake::Client
       m_redirectUri = SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
       m_redirectUriDynamicDefault = is_string_empty(connection->oauth_redirect_uri);
       m_singleUseRefreshTokens = connection->single_use_refresh_token;
+      m_browserResponseTimeout = connection->browser_response_timeout;
 
       if (m_authEndpoint.host() != m_tokenEndpoint.host())
       {
@@ -717,7 +718,7 @@ namespace Snowflake::Client
           SF_FREE(m_connection->oauth_refresh_token);
       }
       str_size = strlen(refreshToken.c_str()) + 1;
-      m_connection->oauth_refresh_token = (char*)SF_CALLOC(1, str_size);
+      m_connection->oauth_refresh_token = (char*)SF_CALLOC(1, str_size); 
       std::strcpy(m_connection->oauth_refresh_token, refreshToken.c_str());
   }
 
@@ -737,7 +738,7 @@ namespace Snowflake::Client
       {
           CXX_LOG_INFO("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n",
               snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-          m_errMsg = "OAuthConnectionFailed: Fail to execute OAuth request.";
+          m_errMsg = m_connection->error.msg;
           return false;
       }
       else

@@ -481,7 +481,7 @@ namespace Client
             else if (retVal == 0)
             {
                 CXX_LOG_ERROR("sf::%s::WebServer::startAccept::Auth browser timed out. ", m_className);
-                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Auth browser timed out.");
             }
             else
             {
