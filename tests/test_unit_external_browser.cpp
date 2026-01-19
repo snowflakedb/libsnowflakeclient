@@ -319,6 +319,7 @@ void test_auth_web_server_success(void**)
 
 void test_auth_web_server_fail(void**)
 {
+    log_set_quiet(SF_BOOLEAN_FALSE);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT, "test_account");
     snowflake_set_attribute(sf, SF_CON_HOST, "wronghost.com");
@@ -357,6 +358,7 @@ void test_auth_web_server_fail(void**)
     delete auth;
 
     snowflake_term(sf);
+    log_set_quiet(SF_BOOLEAN_TRUE);
 }
 
 void unit_authenticator_external_browser_privatelink(const std::string& topDomain = "com")
