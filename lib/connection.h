@@ -270,10 +270,18 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER 
                                int64 *elapsed_time, int8 *retried_count,
                                sf_bool *is_renew, sf_bool renew_injection);
 
-sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** resp);
-
-sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** resp, NON_JSON_RESP* raw_resp, sf_bool is_json_format);
-
+/**
+ * Used to issue a cURL POST call to External.
+ * successful, we return 1, otherwise 0
+ *
+ * @param sf Snowflake Connection object. Used to get network timeout.
+ * @param url URL to send the request to
+ * @param header Header passed to cURL for use in the request
+ * @param body Body passed to cURL for use in the request
+ * @param json Reference to a cJSON pointer that is used to store the JSON response upon a successful request
+ * @return Success/failure status of post call. 1 = Success; 0 = Failure
+ */
+sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON**json);
 
 /**
  * Used to issue a cURL GET call to Snowflake. Includes support for renew session. If the request was successful,
@@ -305,6 +313,20 @@ sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* hea
  */
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf, CURL *curl, char *url, SF_HEADER *header, cJSON **json,
                               SF_ERROR_STRUCT *error, int64 renew_timeout, int8 retry_max_count, int64 retry_timeout, int64* elapsed_time, int8* retried_count);
+
+/**
+ * Used to issue a cURL GET call to External.
+ * successful, we return 1, otherwise 0
+ *
+ * @param sf Snowflake Connection object. Used to get network timeout.
+ * @param url URL to send the request to
+ * @param header Header passed to cURL for use in the request
+ * @param json Reference to a cJSON pointer that is used to store the JSON response upon a successful request
+ * @param raw_resp Non-JSON response struct to retrieve non-json response
+ * @param is_json_format whether the response is json format or raw format. True means json format. False means raw format.
+ * @return Success/failure status of post call. 1 = Success; 0 = Failure
+ */
+sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** json, NON_JSON_RESP* raw_resp, sf_bool is_json_format);
 
 /**
  * Used to determine the sleep time during the next backoff caused by request failure.

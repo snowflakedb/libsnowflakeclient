@@ -130,18 +130,19 @@ namespace Client
                 }
             }
             catch (const AuthException& e) {
+                try {
+                    m_authWebServer->stop();
+                }
+                catch (const AuthException& e) {
+                    CXX_LOG_WARN("sf::IAuthenticatorExternalBrowser::authenticate::Failed to stop auth web server: %s.", e.cause().c_str());
+                    m_errMsg = e.cause();
+                    return;
+                }
                 m_errMsg = e.cause();
                 return;
             }
 
-            try {
-                m_authWebServer->stop();
-            }
-            catch (const AuthException& e) {
-                CXX_LOG_WARN("sf::IAuthenticatorExternalBrowser::authenticate::Failed to stop auth web server: %s.", e.cause().c_str());
-                m_errMsg = e.cause();
-                return;
-            }
+
             
             m_token = m_authWebServer->getToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();
