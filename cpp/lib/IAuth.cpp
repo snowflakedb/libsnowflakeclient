@@ -210,14 +210,14 @@ namespace Client
             char regexStr[] = "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
             if (!std::regex_match(ssoUrl, std::regex(regexStr)))
             {
-                CXX_LOG_ERROR("sf::AuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL. %s", ssoUrl.c_str());
-                throw AuthException("sf::AuthenticatorExternalBrowser::Error. Invalid SSO URL.");
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL. %s", ssoUrl.c_str());
+                throw AuthException("sf::IAuthenticatorExternalBrowser::Error. Invalid SSO URL.");
             }
 
             if (m_webBrowserRunner == nullptr)
             {
-                CXX_LOG_ERROR("sf::AuthenticatorOAuth::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
-                throw AuthException("sf::AuthenticatorExternalBrowser::Error. Unable to open SSO URL.");
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
+                throw AuthException("sf::IAuthenticatorExternalBrowser::Error. Unable to open SSO URL.");
             }
 
             m_webBrowserRunner->startWebBrowser(ssoUrl);

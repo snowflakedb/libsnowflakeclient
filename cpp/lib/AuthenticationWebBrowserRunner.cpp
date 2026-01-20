@@ -1,7 +1,8 @@
 #include "AuthenticationWebBrowserRunner.hpp"
-#include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include <memory>
+#include "snowflake/IAuth.hpp"
+#include <string>
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -22,6 +23,8 @@ namespace Snowflake
 {
     namespace Client
     {
+        using namespace Snowflake::Client::IAuth;
+
         std::unique_ptr<IAuthenticationWebBrowserRunner> IAuthenticationWebBrowserRunner::instance
             = std::make_unique<AuthenticationWebBrowserRunner>();
 

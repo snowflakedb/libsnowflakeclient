@@ -15,7 +15,6 @@
 #endif
 
 #include "Authenticator.hpp"
-#include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include "error.h"
 #include "log_file_util.h"

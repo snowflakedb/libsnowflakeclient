@@ -2,12 +2,14 @@
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
 #include "../lib/authenticator.h"
-#include "../cpp/lib/AuthenticatorOAuth.hpp"
+#include "../cpp/lib/Authenticator.hpp"
+#include "snowflake/IAuth.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "memory.h"
 
 using namespace Snowflake::Client;
+using namespace Snowflake::Client::IAuth;
 
 
 /*
