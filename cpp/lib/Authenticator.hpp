@@ -111,6 +111,10 @@ namespace Client
 
       void resetTokens(std::string accessToken, std::string refreshToken) override;
 
+      void initWebComponents();
+
+      void initOAuthConfig();
+
       SF_CONNECT* m_connection;
   };
 

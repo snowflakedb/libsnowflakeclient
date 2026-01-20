@@ -563,15 +563,14 @@ namespace Snowflake::Client
 
       if (ret)
       {
-
           if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(), &resp_data))
           {
               CXX_LOG_INFO("sf::CIDPAuthenticator::curlPostCall::post call failed");
               // Extract error from OKTA's errorSummary field if available
-              const cJSON *errorJson = resp_data ? snowflake_cJSON_GetObjectItem(resp_data, "errorSummary") : nullptr;
-              const char *errorMsg = (errorJson && errorJson->valuestring) ? errorJson->valuestring : "SFConnectionFailed: Fail to get one time token.";
+              const cJSON* errorJson = resp_data ? snowflake_cJSON_GetObjectItem(resp_data, "errorSummary") : nullptr;
+              const char* errorMsg = (errorJson && errorJson->valuestring) ? errorJson->valuestring : "SFConnectionFailed: Fail to get one time token.";
               m_errMsg = errorMsg;
-              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, errorMsg, SF_SQLSTATE_GENERAL_ERROR);
+              SET_SNOWFLAKE_ERROR(&m_connection->error, SF_STATUS_ERROR_GENERAL, errorMsg, SF_SQLSTATE_GENERAL_ERROR);
               ret = false;
           }
           else
@@ -617,7 +616,7 @@ namespace Snowflake::Client
           }
           else
           {
-                  rawData = buf.buffer;
+              rawData = buf.buffer;
           }
       }
 
@@ -660,25 +659,8 @@ namespace Snowflake::Client
       IAuthenticationWebBrowserRunner* webBrowserRunner)
       : IAuthenticatorOAuth(authWebServer, webBrowserRunner), m_connection(connection)
   {
-      m_challengeProvider = AuthenticationChallengeBaseProvider::getInstance();
-      m_webBrowserRunner = webBrowserRunner == nullptr ? IAuthenticationWebBrowserRunner::getInstance() : webBrowserRunner;
-      m_oauthFlow = getAuthenticatorType(connection->authenticator);
-      m_authEndpoint = SFURL::parse(connection->oauth_authorization_endpoint ? connection->oauth_authorization_endpoint : "https://" + std::string(connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_AUTHORIZATION_URL_POSTFIX);
-      m_tokenEndpoint = SFURL::parse(connection->oauth_token_endpoint ? connection->oauth_token_endpoint : "https://" + std::string(connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_TOKEN_URL_POSTFIX);
-      m_clientId = connection->oauth_client_id;
-      m_clientSecret = connection->oauth_client_secret;
-      m_authScope = connection->oauth_scope ? connection->oauth_scope : "session:role:" + std::string(connection->role);
-      m_redirectUri = SFURL::parse(!is_string_empty(connection->oauth_redirect_uri) ? connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
-      m_redirectUriDynamicDefault = is_string_empty(connection->oauth_redirect_uri);
-      m_singleUseRefreshTokens = connection->single_use_refresh_token;
-      m_browserResponseTimeout = connection->browser_response_timeout;
-
-      if (m_authEndpoint.host() != m_tokenEndpoint.host())
-      {
-          CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
-              m_authEndpoint.host().c_str(),
-              m_tokenEndpoint.host().c_str());
-      }
+      initWebComponents();
+      initOAuthConfig();
   }
 
   void AuthenticatorOAuth::authenticate()
@@ -751,6 +733,30 @@ namespace Snowflake::Client
       return true;
   }
 
+  void AuthenticatorOAuth::initWebComponents()
+  {
+      m_challengeProvider = AuthenticationChallengeBaseProvider::getInstance();
+      m_browserResponseTimeout = m_connection->browser_response_timeout;
+  }
+
+  void AuthenticatorOAuth::initOAuthConfig()
+  {
+      m_oauthFlow = getAuthenticatorType(m_connection->authenticator);
+      m_authEndpoint = SFURL::parse(m_connection->oauth_authorization_endpoint ? m_connection->oauth_authorization_endpoint : "https://" + std::string(m_connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_AUTHORIZATION_URL_POSTFIX);
+      m_tokenEndpoint = SFURL::parse(m_connection->oauth_token_endpoint ? m_connection->oauth_token_endpoint : "https://" + std::string(m_connection->host) + AuthenticatorOAuth::S_OAUTH_DEFAULT_TOKEN_URL_POSTFIX);
+      m_clientId = m_connection->oauth_client_id;
+      m_clientSecret = m_connection->oauth_client_secret;
+      m_authScope = m_connection->oauth_scope ? m_connection->oauth_scope : "session:role:" + std::string(m_connection->role);
+      m_redirectUri = SFURL::parse(!is_string_empty(m_connection->oauth_redirect_uri) ? m_connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
+      m_redirectUriDynamicDefault = is_string_empty(m_connection->oauth_redirect_uri);
+      m_singleUseRefreshTokens = m_connection->single_use_refresh_token;
+      if (m_authEndpoint.host() != m_tokenEndpoint.host())
+      {
+          CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
+              m_authEndpoint.host().c_str(),
+              m_tokenEndpoint.host().c_str());
+      }
+  }
 
   AuthenticatorTest::AuthenticatorTest(SF_CONNECT* conn) : m_connection(conn)
   {
