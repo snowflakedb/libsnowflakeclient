@@ -566,9 +566,12 @@ namespace Snowflake::Client
 
           if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)s_body.c_str(), &resp_data))
           {
-              CXX_LOG_INFO("sf::CIDPAuthenticator::post_curl_call::post call failed, response body=%s\n",
-                  snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
-              m_errMsg = "SFConnectionFailed: Fail to get one time token.";
+              CXX_LOG_INFO("sf::CIDPAuthenticator::curlPostCall::post call failed");
+              // Extract error from OKTA's errorSummary field if available
+              const cJSON *errorJson = resp_data ? snowflake_cJSON_GetObjectItem(resp_data, "errorSummary") : nullptr;
+              const char *errorMsg = (errorJson && errorJson->valuestring) ? errorJson->valuestring : "SFConnectionFailed: Fail to get one time token.";
+              m_errMsg = errorMsg;
+              SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, errorMsg, SF_SQLSTATE_GENERAL_ERROR);
               ret = false;
           }
           else

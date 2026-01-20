@@ -651,8 +651,9 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
-    if (ret && json) {
-      // We were successful so parse JSON from text
+    // Parse JSON response if we have a buffer and json pointer even for HTTP errors 
+    // because the server sends error messages in JSON format
+    if (buffer.buffer && buffer.size > 0 && json) {
       if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
@@ -665,11 +666,14 @@ sf_bool STDCALL http_perform(CURL *curl,
         *json = NULL;
         *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
-            ret = SF_BOOLEAN_TRUE;
-            if (is_one_time_token_request(*json)) {
-                snowflake_cJSON_AddNullToObject(*json, "code");
+            // Only set ret if the HTTP request was successful
+            if (ret) {
+                if (is_one_time_token_request(*json)) {
+                    snowflake_cJSON_AddNullToObject(*json, "code");
+                }
             }
-        } else {
+        } else if (ret) {
+            // Only report JSON parsing error if the HTTP request succeeded
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                                 "Unable to parse JSON text response.",
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);
