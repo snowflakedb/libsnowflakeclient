@@ -666,12 +666,6 @@ namespace Client
               //Fail to get the saml response. Retry.
               isRetry = true;
               ret = false;
-              // Extract error from OKTA's errorSummary field if available
-              const cJSON *errorJson = resp_data ? snowflake_cJSON_GetObjectItem(resp_data, "errorSummary") : nullptr;
-              if (errorJson && errorJson->valuestring) {
-                  m_errMsg = errorJson->valuestring;
-                  SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_GENERAL, errorJson->valuestring, SF_SQLSTATE_GENERAL_ERROR);
-              }
           }
           else
           {
