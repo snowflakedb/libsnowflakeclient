@@ -27,7 +27,7 @@ void test_okta_wrong_credentials(void **unused) {
     SF_STATUS status = snowflake_connect(sf);
     assert_int_equal(status, SF_STATUS_ERROR_GENERAL);
     SF_ERROR_STRUCT* error = snowflake_error(sf);
-    assert_string_equal(error->msg, "Incorrect username or password was specified.");
+    assert_string_equal(error->msg, "Authentication failed");
     snowflake_term(sf);
 }
 
