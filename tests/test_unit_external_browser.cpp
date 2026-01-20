@@ -313,7 +313,8 @@ void test_auth_web_server_success(void**)
     assert_string_equal(dataMap["TOKEN"].get<std::string>().c_str(), "Snowflake-token-12345");
     assert_string_equal(dataMap["PROOF_KEY"].get<std::string>().c_str(), "MOCK_PROOF_KEY");
     assert_string_equal(dataMap["AUTHENTICATOR"].get<std::string>().c_str(), SF_AUTHENTICATOR_EXTERNAL_BROWSER);
-
+    
+    delete auth;
     snowflake_term(sf);
 }
 
@@ -556,6 +557,7 @@ void test_sso_token_cache(void**)
         secure_storage_save_credential(sf->token_cache, sf->host, sf->user, ID_TOKEN, original_token);
     }
     
+    delete auth;
     snowflake_cJSON_Delete(body);
     snowflake_term(sf);
 }
