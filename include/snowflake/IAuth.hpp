@@ -83,8 +83,8 @@ namespace Snowflake::Client
             std::vector<std::string> splitString(const std::string& s, char delimiter);
 
         protected:
-            int m_port; // port to listen, 0 for random port to be used
-            int m_real_port; // actual port used when randomly picked
+            int m_port = 0; // port to listen, 0 for random port to be used
+            int m_real_port = 0; // actual port used when randomly picked
             int m_timeout = SF_BROWSER_RESPONSE_TIMEOUT;
 
             std::string m_host = "127.0.0.1";
