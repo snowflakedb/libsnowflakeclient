@@ -3,6 +3,7 @@
  */
 
 #include <iostream>
+#include <thread>
 
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
@@ -208,6 +209,23 @@ void test_secure_storage_fails_to_lock(void **)
   assert_true(ss.removeToken(key) == SecureStorageStatus::Error);
 }
 
+void test_secure_storage_success_to_lock_after_expire(void **)
+{
+  boost::filesystem::remove_all("sf_cache_dir");
+  mkdir("sf_cache_dir", 0700);
+  EnvOverride override("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_cache_dir");
+  SecureStorage ss;
+  SecureStorageKey key { "host", "user", SecureStorageKeyType::MFA_TOKEN };
+
+  std::string token = "example_token";
+  std::string retrievedToken;
+  boost::filesystem::create_directory(std::string("sf_cache_dir/") + CACHE_FILENAME + ".lck");
+  std::this_thread::sleep_for(std::chrono::seconds(70));
+  assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
+  assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
+  assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
+}
+
 void test_secure_storage_fails_to_find_cache_path(void **)
 {
   EnvOverride override1("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", boost::none);
@@ -276,6 +294,7 @@ int main(void) {
       cmocka_unit_test(test_secure_storage_home_dir),
       cmocka_unit_test(test_secure_storage_c_api),
       cmocka_unit_test(test_secure_storage_fails_to_lock),
+      cmocka_unit_test(test_secure_storage_success_to_lock_after_expire),
       cmocka_unit_test(test_secure_storage_update_key),
       cmocka_unit_test(test_secure_storage_fails_to_find_cache_path),
       cmocka_unit_test(test_get_cache_dir_bad_path),
