@@ -5,7 +5,6 @@
 #include "../include/snowflake/client.h"
 #include "authenticator.h"
 #include <string>
-#include "../cpp/lib/AuthenticatorOAuth.hpp"
 
 namespace Snowflake::Client::UnitOAuthBase {
 

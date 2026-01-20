@@ -1,5 +1,6 @@
 #include <string>
 #include <regex>
+#include <chrono>
 #ifdef _WIN32
 #include <WS2tcpip.h>
 #else
@@ -92,6 +93,11 @@ namespace Client
             return url;
         }
 
+        IAuthenticatorExternalBrowser::IAuthenticatorExternalBrowser(IAuthWebServer* authWebServer, IDPAuthenticator* idp, IAuthenticationWebBrowserRunner* webBrowserRunner) :
+            m_authWebServer(authWebServer != nullptr ? authWebServer : new AuthWebServer()),
+            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()),
+            m_idp(idp){}
+
         int IAuthenticatorExternalBrowser::getPort()
         {
             return m_authWebServer->getPort();
@@ -109,44 +115,35 @@ namespace Client
                 return;
             }
 #endif
-            m_authWebServer->start();
-            if (m_authWebServer->isError())
-            {
+            try {
+                m_authWebServer->start();
+                std::map<std::string, std::string> out;
+                getLoginUrl(out, m_authWebServer->getPort());
+                startWebBrowser(out[std::string("LOGIN_URL")]);
+                m_proofKey = out[std::string("PROOF_KEY")];
+
+                m_authWebServer->setTimeout(m_browser_response_timeout);
+                m_authWebServer->startAccept();
+                while (m_authWebServer->receive())
+                {
+                    // nop
+                }
+            }
+            catch (const AuthException& e) {
+                try {
+                    m_authWebServer->stop();
+                }
+                catch (const AuthException& e) {
+                    CXX_LOG_WARN("sf::IAuthenticatorExternalBrowser::authenticate::Failed to stop auth web server: %s.", e.cause().c_str());
+                    m_errMsg = e.cause();
+                    return;
+                }
+                m_errMsg = e.cause();
                 return;
             }
 
-            std::map<std::string, std::string> out;
-            getLoginUrl(out, m_authWebServer->getPort());
-            if (isError())
-            {
-                return;
-            }
 
-            startWebBrowser(out[std::string("LOGIN_URL")]);
-            if (isError())
-            {
-                return;
-            }
-            m_proofKey = out[std::string("PROOF_KEY")];
-
-            m_authWebServer->setTimeout(m_browser_response_timeout);
-            m_authWebServer->startAccept();
-            if (m_authWebServer->isError())
-            {
-                return;
-            }
-            // accept SAML token
-            while (m_authWebServer->receive())
-            {
-                // nop
-            }
-
-            m_authWebServer->stop();
-            if (m_authWebServer->isError())
-            {
-                return;
-            }
-
+            
             m_token = m_authWebServer->getToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();
         }
@@ -213,86 +210,18 @@ namespace Client
             char regexStr[] = "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
             if (!std::regex_match(ssoUrl, std::regex(regexStr)))
             {
-                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL.");
-                m_errMsg = "SFAuthWebBrowserFailed: Invalid SSO URL.";
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL. %s", ssoUrl.c_str());
+                throw AuthException("sf::IAuthenticatorExternalBrowser::Error. Invalid SSO URL.");
             }
 
-            std::cout << "Initiating login request with your identity provider. A "
-                "browser window should have opened for you to complete the "
-                "login. If you can't see it, check existing browser windows, "
-                "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
-            // need double quotes to reserve ampasand characters
-            std::stringstream urlBuf;
-#ifdef __APPLE__
-            openURL(ssoUrl);
-#elif _WIN32
-            HINSTANCE ret = ShellExecuteA(NULL, "open", ssoUrl.c_str(), NULL, NULL,
-                SW_SHOWNORMAL);
-            if (ret > (HINSTANCE)32)
+            if (m_webBrowserRunner == nullptr)
             {
-                // success
-                return;
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
+                throw AuthException("sf::IAuthenticatorExternalBrowser::Error. Unable to open SSO URL.");
             }
-            CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. err: %d.", (int)(unsigned long long)ret);
-            m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser.";
 
-#else
-            // use fork to avoid using system() call and prevent command injection
-            char* argv[3];
-            pid_t child_pid;
-            int child_status;
-            argv[0] = const_cast<char*>("xdg-open");
-            argv[1] = const_cast<char*>(ssoUrl.c_str());
-            argv[2] = NULL;
-
-            child_pid = fork();
-            if (child_pid < 0)
-            {
-                // fork failed
-                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on fork.");
-                m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on fork.";
-            }
-            else if (child_pid == 0)
-            {
-                // This is done by the child process.
-                execvp(argv[0], argv);
-                /* If execvp returns, it must have failed. */
-                exit(-1); // Do nothing as we are in child process
-            }
-            else
-            {
-                // This is run by the parent. Wait for the child to terminate.
-                if (waitpid(child_pid, &child_status, 0) < 0)
-                {
-                    CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser on waitpid.");
-                    m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser on waitpid.";
-                }
-
-                if (WIFEXITED(child_status)) {
-                    const int es = WEXITSTATUS(child_status);
-                    if (es != 0)
-                    {
-                        CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser. xdg-open returned %d.", es);
-                        m_errMsg = "SFAuthWebBrowserFailed: Failed to start web browser. xdg-open returned.";
-                    }
-                }
-            }
-#endif
+            m_webBrowserRunner->startWebBrowser(ssoUrl);
         }
-
-#ifdef __APPLE__
-        void IAuthenticatorExternalBrowser::openURL(const std::string& url_str) {
-            CFURLRef url = CFURLCreateWithBytes(
-                NULL,                        // allocator
-                (UInt8*)url_str.c_str(),     // URLBytes
-                url_str.length(),            // length
-                kCFStringEncodingASCII,      // encoding
-                NULL                         // baseURL
-            );
-            LSOpenCFURLRef(url, 0);
-            CFRelease(url);
-        }
-#endif
 
 #ifdef _WIN32
         AuthWinSock::AuthWinSock()
@@ -324,6 +253,9 @@ namespace Client
             WSACleanup();
         }
 #endif
+
+        IAuthenticatorOKTA::IAuthenticatorOKTA(IDPAuthenticator* idp) : 
+            m_idp(idp){}
 
         void IAuthenticatorOKTA::authenticate()
         {
@@ -420,6 +352,452 @@ namespace Client
             CXX_LOG_DEBUG("sf::IAuthenticatorOKTA::extractPostBackUrlFromSamlResponse::Post back url after unescape: %s.", unescaped_url);
             return std::string(unescaped_url);
         }
+
+        /**
+         * Start http listener
+         */
+        void IAuthWebServer::start()
+        {
+            m_socket_desc_web_client = 0;
+            m_socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+            /*TODO: On Windows, socket functions don't set errno and the error code
+                    should be retrieved by WSAGetLastError(). Therefore for now the error
+                    message won't be logged correctly on Windows.
+                    Leave it for now since it won't affect the functionality.*/
+            if ((int)m_socket_descriptor < 0)
+            {
+                CXX_LOG_ERROR("sf::%s::WebServer::start::Failed to start web server. Could not create a socket.  err: %s", m_className, strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+            }
+
+            struct sockaddr_in recv_server;
+            memset((char*)&recv_server, 0, sizeof(struct sockaddr_in));
+            recv_server.sin_family = AF_INET;
+            recv_server.sin_port = htons(m_port); // ephemeral port
+            CXX_LOG_INFO("HOST is %s", m_host.c_str());
+            if (inet_pton(AF_INET, m_host.c_str(), &recv_server.sin_addr.s_addr) != 1)
+            {
+                CXX_LOG_ERROR(
+                    "sf::%s::WebServer::start::Failed to start web server. Could not convert buffer to a network address. err: %s",
+                    m_className, strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+            }
+            if (bind(m_socket_descriptor, (struct sockaddr*)&recv_server,
+                sizeof(struct sockaddr_in)) < 0)
+            {
+                CXX_LOG_ERROR(
+                    "sf::%s::WebServer::start::Failed to start web server. Could not bind a port. err: %s",
+                    m_className, strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+            }
+            socklen_t length = sizeof(struct sockaddr_in);
+            if (getsockname(m_socket_descriptor, (struct sockaddr*)&recv_server, &length) < 0) {
+                CXX_LOG_ERROR(
+                    "sf::%s::WebServer::start::Failed to get socket name. Could not get a port. err: %s",
+                    m_className, strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+            }
+            m_real_port = ntohs(recv_server.sin_port);
+            if (m_real_port != m_port) {
+                CXX_LOG_TRACE("sf::%s::WebServer::start::Started on port: %d for %s:%d%s", m_className, m_real_port, m_host.c_str(), m_real_port, m_path.c_str());
+            }
+            if (listen(m_socket_descriptor, 0) < 0)
+            {
+                CXX_LOG_ERROR(
+                    "sf::%s::WebServer::start::Failed to start web server. Could not listen a port. err: %s",
+                    m_className, strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+            }
+            CXX_LOG_TRACE("sf::%s::WebServer::start::Web Server successfully started on %s:%d and path %s", m_className, m_host.c_str(), m_real_port, m_path.c_str());
+        }
+
+        void IAuthWebServer::stop()
+        {
+            CXX_LOG_TRACE("sf::%s::WebServer::stop::Stopping HTTP listener: %s:%d%s", m_className, m_host.c_str(), m_real_port, m_path.c_str());
+            if ((int)m_socket_desc_web_client > 0)
+            {
+#ifndef _WIN32
+                shutdown(m_socket_desc_web_client, SHUT_RDWR);
+                int ret = close(m_socket_desc_web_client);
+#else
+                shutdown(m_socket_desc_web_client, SD_BOTH);
+                int ret = closesocket(m_socket_desc_web_client);
+#endif
+                if (ret < 0)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::%s::WebServer::stop::Failed close HTTP port err: %s",
+                        m_className, strerror(errno));
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+                }
+            }
+            m_socket_desc_web_client = 0;
+
+            if ((int)m_socket_descriptor > 0)
+            {
+#ifndef _WIN32
+                int ret = close(m_socket_descriptor);
+#else
+                int ret = closesocket(m_socket_descriptor);
+#endif
+                if (ret < 0)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::%s::WebServer::stop::Failed to stop web server. err: %s",
+                        m_className, strerror(errno));
+                    m_socket_descriptor = 0;
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+                }
+            }
+            m_socket_descriptor = 0;
+        }
+
+        void IAuthWebServer::startAccept()
+        {
+            struct sockaddr_in client = { 0, 0, 0, {} };
+            memset((char*)&client, 0, sizeof(struct sockaddr_in));
+            socklen_t len = sizeof(client);
+
+            fd_set fd;
+            timeval timeout;
+            FD_ZERO(&fd);
+            FD_SET(m_socket_descriptor, &fd);
+            timeout.tv_sec = m_timeout;
+            timeout.tv_usec = 0;
+            CXX_LOG_TRACE("sf::%s::WebServer::startAccept::select(m_socket_descriptor,...", m_className);
+            int retVal = select(m_socket_descriptor + 1, &fd, NULL, NULL, &timeout);
+            if (retVal > 0)
+            {
+                m_socket_desc_web_client = accept(
+                    m_socket_descriptor, (struct sockaddr*)&client, &len);
+                if ((int)m_socket_desc_web_client < 0)
+                {
+                    CXX_LOG_ERROR(
+                        "sf::%s::WebServer::startAccept::Failed to receive token. Could not accept a request. error: %s",
+                        m_className, strerror(errno));
+                    throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+                }
+            }
+            else if (retVal == 0)
+            {
+                CXX_LOG_ERROR("sf::%s::WebServer::startAccept::Auth browser timed out. ", m_className);
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Auth browser timed out.");
+            }
+            else
+            {
+                CXX_LOG_ERROR(
+                    "sf::%s::WebServer::startAccept::Failed to determine status of auth web server. err: %s",
+                    m_className,strerror(errno));
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::" + std::string(strerror(errno)));
+
+            }
+        }
+
+        bool IAuthWebServer::receive()
+        {
+            bool is_options = false;
+            char* mesg = new char[SOCKET_BUFFER_SIZE]();
+            char* reqline;
+            char* rest_mesg;
+            int recvlen;
+
+            if ((recvlen = (int)recv(m_socket_desc_web_client, mesg, SOCKET_BUFFER_SIZE, 0)) < 0)
+            {
+                CXX_LOG_ERROR("sf::%s::WebServer::receive::Failed to receive SAML token. Could not receive a request.", m_className);
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Failed to receive SAML token. Could not receive a request.");
+            }
+            reqline = sf_strtok(mesg, " \t\n", &rest_mesg);
+            if (strncmp(reqline, "GET\0", 4) == 0)
+            {
+                parseAndRespondGetRequest(&rest_mesg);
+            }
+            else if (strncmp(reqline, "POST\0", 5) == 0)
+            {
+                parseAndRespondPostRequest(std::string(rest_mesg, (unsigned long)recvlen));
+            }
+            else if (strncmp(reqline, "OPTIONS\0", 8) == 0)
+            {
+                is_options = parseAndRespondOptionsRequest(std::string(rest_mesg, (unsigned long)recvlen));
+            }
+            else
+            {
+                CXX_LOG_ERROR("sf::%s::WebServer::receive::Failed to receive SAML token. Could not get HTTP request. err: %s.", m_className, reqline);
+                throw AuthException("sf::" + std::string(m_className) + "::WebServer::Not HTTP request");
+            }
+            delete[] mesg;
+            return is_options;
+        }
+
+        void IAuthWebServer::respond(std::string errorCode, std::string message)
+        {
+            std::stringstream buf;
+            buf << "HTTP/1.0 " << errorCode << "\r\n"
+                << "Content-Type: text/html" << "\r\n"
+                << "Content-Length: " << message.length() << "\r\n\r\n"
+                << message;
+            send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
+            buf.clear();
+        }
+
+        void IAuthWebServer::fail(std::string httpError, std::string errMessage, std::string failureResponse)
+        {
+            CXX_LOG_ERROR("sf::%s::WebServer::fail", m_className, errMessage.c_str());
+            respond(httpError, failureResponse.empty() ? errMessage : failureResponse); // unless error message is html-escaped it shouldn't be part of response visible in the browser
+            throw AuthException(errMessage);
+        }
+
+        /**
+         * Get port number listening
+         * @return port number
+         */
+        int IAuthWebServer::getPort()
+        {
+            return m_real_port;
+        }
+
+        std::string IAuthWebServer::getToken()
+        {
+            return m_token;
+        }
+
+        /**
+         * Set the timeout for the web server.
+         */
+        void IAuthWebServer::setTimeout(int timeout)
+        {
+            m_timeout = timeout;
+        }
+
+        std::vector<std::string> IAuthWebServer::splitString(const std::string& s, char delimiter)
+        {
+            std::vector<std::string> tokens;
+            std::string token;
+            std::istringstream tokenStream(s);
+            while (std::getline(tokenStream, token, delimiter))
+            {
+                tokens.push_back(token);
+            }
+            return tokens;
+        }
+
+        /**
+* Constructor for AuthWebServer
+*/
+        AuthWebServer::AuthWebServer() :
+            m_consent_cache_id_token(true)
+        {
+            m_className = "AuthenticatorExternalBrowser";
+        }
+
+        /**
+         * Destructor for AuthWebServer
+         */
+        AuthWebServer::~AuthWebServer()
+        {
+            // nop
+        }
+        int AuthWebServer::start(std::string host, int port, std::string path)
+        {
+            SF_UNUSED(host);
+            SF_UNUSED(port);
+            SF_UNUSED(path);
+            return 0;
+        };
+
+
+        void AuthWebServer::parseAndRespondPostRequest(std::string response)
+        {
+            auto ret = splitString(response, '\n');
+            if (ret.empty())
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:No token parameter is found %s.", response.c_str());
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:No token parameter is found", failureMessage);
+            }
+            if (m_origin.empty())
+            {
+                respond(ret[ret.size() - 1]);
+            }
+            else
+            {
+                jsonValue_t json;
+                std::string& payload = ret[ret.size() - 1];
+                std::string err;
+                picojson::parse(json, payload.begin(), payload.end(), &err);
+                if (!err.empty())
+                {
+                    CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondPostRequest:Error in parsing JSON : % s, err : % s.", payload.c_str(), err.c_str());
+                    fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:Error in parsing JSON", failureMessage);
+                }
+                respondJson(json);
+            }
+        }
+
+        bool AuthWebServer::parseAndRespondOptionsRequest(std::string response)
+        {
+            std::string requested_header;
+            auto ret = splitString(response, '\n');
+            if (ret.empty())
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:No token parameter is found. %s.", response.c_str());
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondPostRequest:No token parameter is found", failureMessage);
+            }
+
+            for (auto const& value : ret)
+            {
+                if (value.find("Access-Control-Request-Method") != std::string::npos)
+                {
+                    auto v = value.substr(value.find(':') + 1);
+                    trim(v, ' ');
+                    if (v != "POST")
+                    {
+                        CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:POST method is not requested. %s.", value.c_str());
+                        fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondOptionsRequest:POST method is not requested", failureMessage);
+                    }
+                }
+                else if (value.find("Access-Control-Request-Headers") != std::string::npos)
+                {
+                    requested_header = value.substr(value.find(':') + 1);
+                    trim(requested_header, ' ');
+                }
+                else if (value.find("Origin") != std::string::npos)
+                {
+                    m_origin = value.substr(value.find(':') + 1);
+                    trim(m_origin, ' ');
+                }
+            }
+            if (requested_header.empty() || m_origin.empty())
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header. %s.", response.c_str());
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondOptionsRequest:no Access-Control-Request-Headers or Origin header", failureMessage);
+            }
+            std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()
+            );
+            char current_timestamp[50];
+            std::time_t t = (time_t)ms.count() / 1000;
+            std::tm tms;
+            strftime(current_timestamp, sizeof(current_timestamp), "%a, %d %b %Y %H:%M:%S GMT", sf_gmtime(&t, &tms));
+
+            std::stringstream buf;
+            buf << "HTTP/1.0 " << HTTP_OK << "\r\n"
+                << "Date: " << current_timestamp << "\r\n"
+                << "Access-Control-Allow-Methods: POST, GET" << "\r\n"
+                << "Access-Control-Allow-Headers: " << requested_header << "\r\n"
+                << "Access-Control-Max-Age: 86400" << "\r\n"
+                << "Access-Control-Allow-Origin: " << m_origin << "\r\n"
+                << "\r\n\r\n";
+            send(m_socket_desc_web_client, buf.str().c_str(), (int)buf.str().length(), 0);
+            buf.clear();
+            return true;
+        }
+
+        void AuthWebServer::parseAndRespondGetRequest(char** rest_mesg)
+        {
+            char* path = sf_strtok(NULL, " \t", rest_mesg);
+            char* protocol = sf_strtok(NULL, " \t\n", rest_mesg);
+            if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
+                strncmp(protocol, "HTTP/1.1", 8) != 0)
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request.");
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer::parseAndRespondGetRequest::Not HTTP request", failureMessage);
+            }
+
+            if (strncmp(path, "/?", 2) != 0)
+            {
+                CXX_LOG_ERROR("sf::AuthWebServer::parseAndRespondGetRequest:No token parameter is found.");
+                fail(HTTP_BAD_REQUEST, "sf::AuthWebServer:parseAndRespondGetRequest:No token parameter is found", failureMessage);
+            }
+            respond(std::string(&path[2]));
+        }
+
+        void AuthWebServer::respondJson(picojson::value& json)
+        {
+            jsonObject_t& obj = json.get<picojson::object>();
+            m_token = obj["token"].get<std::string>();
+            m_consent_cache_id_token = obj["consent"].get<bool>();
+
+            jsonObject_t payloadBody;
+            payloadBody["consent"] = picojson::value(m_consent_cache_id_token);
+            auto payloadBodyString = picojson::value(payloadBody).serialize();
+
+            IAuthWebServer::respond(HTTP_OK, payloadBodyString);
+        }
+
+        void AuthWebServer::respond(std::string queryParameters)
+        {
+            auto params = splitQuery(queryParameters);
+            for (auto& p : params)
+            {
+                if (p.first == "token")
+                {
+                    m_token = p.second;
+                    break;
+                }
+            }
+
+            IAuthWebServer::respond(HTTP_OK, successMessage);
+        }
+
+        std::string AuthWebServer::unquote(std::string src)
+        {
+            std::string ret;
+            char ch;
+            int i, ii;
+            for (i = 0; i < (int)src.length(); i++)
+            {
+                if (src[i] == '%')
+                {
+                    sf_sscanf(src.substr((unsigned long)(i + 1), 2).c_str(), "%x", &ii);
+                    ch = static_cast<char>(ii);
+                    ret += ch;
+                    i = i + 2;
+                }
+                else
+                {
+                    ret += src[i];
+                }
+            }
+            return ret;
+        }
+
+        std::vector<std::pair<std::string, std::string>> AuthWebServer::splitQuery(std::string query)
+        {
+            std::vector<std::pair<std::string, std::string>> ret;
+            std::string name;
+            bool inValue = false;
+            int prevPos = 0;
+            int i;
+            for (i = 0; i < (int)query.length(); ++i)
+            {
+                if (query[i] == '=' && !inValue) {
+                    name = query.substr(prevPos, i - prevPos);
+                    prevPos = i + 1;
+                    inValue = true;
+                }
+                else if (query[i] == '&')
+                {
+                    ret.emplace_back(
+                        std::make_pair(name, unquote(query.substr(prevPos, i - prevPos))));
+                    name = "";
+                    prevPos = i + 1;
+                    inValue = false;
+                }
+            }
+            if (!name.empty())
+            {
+                ret.emplace_back(
+                    std::make_pair(name, unquote(query.substr(prevPos, i - prevPos))));
+            }
+            return ret;
+        }
+
+        bool AuthWebServer::isConsentCacheIdToken()
+        {
+            return m_consent_cache_id_token;
+        }
+
+
     }// namespace IAuth
 } // namespace Client
 } // namespace Snowflake

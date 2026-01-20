@@ -1,7 +1,8 @@
 #include "AuthenticationWebBrowserRunner.hpp"
-#include "AuthenticatorOAuth.hpp"
 #include "../logger/SFLogger.hpp"
 #include <memory>
+#include "snowflake/IAuth.hpp"
+#include <string>
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -22,6 +23,8 @@ namespace Snowflake
 {
     namespace Client
     {
+        using namespace Snowflake::Client::IAuth;
+
         std::unique_ptr<IAuthenticationWebBrowserRunner> IAuthenticationWebBrowserRunner::instance
             = std::make_unique<AuthenticationWebBrowserRunner>();
 
@@ -37,6 +40,11 @@ namespace Snowflake
 
         void AuthenticationWebBrowserRunner::startWebBrowser(const std::string& ssoUrl)
         {
+            std::cout << "Initiating login request with your identity provider. A "
+                "browser window should have opened for you to complete the "
+                "login. If you can't see it, check existing browser windows, "
+                "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
+
             CXX_LOG_TRACE("sf::AuthenticationWebBrowserRunnerL::startWebBrowser::%s", maskOAuthSecret(ssoUrl).c_str());
 
 #ifdef __APPLE__

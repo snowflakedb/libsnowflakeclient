@@ -409,6 +409,36 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
     return ret;
 }
 
+sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** json)
+{
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);;
+    CURL* curl = get_curl_from_desc(curl_desc);
+    int64 elapsed_time = 0;
+    int8 retried_count = 0;
+
+    do {
+        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
+            get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, &sf->error,
+            sf->insecure_mode, sf->ocsp_fail_open,
+            sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+            sf->crl_disk_caching, sf->crl_memory_caching,
+            sf->crl_download_timeout,
+            sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
+            &elapsed_time, &retried_count, NULL,
+            SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
+            sf->include_retry_reason, is_new_retry_strategy_url(url)) ||
+            !*json) {
+            // Error is set in the perform function
+            break;
+        }
+        ret = SF_BOOLEAN_TRUE;
+    } while (0);
+
+    free_curl_desc(curl_desc);
+    return ret;
+}
+
 sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
                               CURL *curl,
                               char *url,
@@ -494,6 +524,52 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
     sf_header_destroy(new_header);
 
     return ret;
+}
+
+
+sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** json, NON_JSON_RESP* raw_resp, sf_bool is_json_format)
+{
+    sf_bool ret = SF_BOOLEAN_FALSE;
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);;
+    CURL* curl = get_curl_from_desc(curl_desc);
+    int64 elapsed_time = 0;
+    int8 retried_count = 0;
+
+    if (is_json_format)
+    {
+        ret = http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json,
+            NULL, NULL, get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, &sf->error,
+            sf->insecure_mode, sf->ocsp_fail_open,
+            sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+            sf->crl_disk_caching, sf->crl_memory_caching,
+            sf->crl_download_timeout,
+            sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
+            &elapsed_time, &retried_count, NULL,
+            SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
+            sf->include_retry_reason, is_new_retry_strategy_url(url));
+    }
+    else
+    {
+        ret = http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, NULL,
+            raw_resp, NULL, get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, &sf->error,
+            sf->insecure_mode, sf->ocsp_fail_open,
+            sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+            sf->crl_disk_caching, sf->crl_memory_caching,
+            sf->crl_download_timeout,
+            sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
+            &elapsed_time, &retried_count, NULL,
+            SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
+            sf->include_retry_reason, is_new_retry_strategy_url(url));
+    }
+    free_curl_desc(curl_desc);
+    if (sf->error.error_code != SF_STATUS_SUCCESS || ret != SF_BOOLEAN_TRUE)
+    {
+        return SF_BOOLEAN_FALSE;
+    }
+    else
+    {
+        return SF_BOOLEAN_TRUE;
+    }
 }
 
 void STDCALL decorrelate_jitter_free(DECORRELATE_JITTER_BACKOFF *djb) {
@@ -1302,11 +1378,6 @@ int64 get_retry_timeout(SF_CONNECT *sf)
 int8 get_login_retry_count(SF_CONNECT *sf)
 {
   return (int8)get_less_one(sf->retry_on_connect_count, sf->retry_count);
-}
-
-sf_bool is_one_time_token_request(cJSON* resp)
-{
-  return snowflake_cJSON_HasObjectItem(resp, "cookieToken") || snowflake_cJSON_HasObjectItem(resp, "sessionToken") || snowflake_cJSON_HasObjectItem(resp, "token_type");;
 }
 
 size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
