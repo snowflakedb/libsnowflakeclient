@@ -35,6 +35,7 @@ openssl_config_opts+=(
     "enable-fips"
     "--prefix=$OPENSSL_BUILD_DIR"
     "--openssldir=$OPENSSL_BUILD_DIR"
+    "--libdir=lib"
 )
 if [[ "$target" != "Release" ]]; then
     openssl_config_opts+=("--debug")
@@ -46,7 +47,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make distclean clean &> /dev/null || true
     perl ./Configure linux-$(uname -m) "${openssl_config_opts[@]}"
     make depend > /dev/null
-    make -j 4 > /dev/null
+    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
     make install_sw install_ssldirs install_fips > /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
     openssl_config_opts+=("-mmacosx-version-min=${MACOSX_VERSION_MIN}")
@@ -58,12 +59,12 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-arm64-cc "${openssl_config_opts[@]}"
-        make -j 4 build_libs > /dev/null
+        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) build_libs > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
         mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
-        make install_sw install_ssldirs install_fips > /dev/null
+        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install_sw install_ssldirs install_fips > /dev/null
         lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
         lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
@@ -90,7 +91,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
             echo "[INFO] Building $ARCH binary"
             perl ./Configure darwin64-$ARCH-cc "${openssl_config_opts[@]}"
         fi
-        make -j 4 > /dev/null
+        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
     fi
 else

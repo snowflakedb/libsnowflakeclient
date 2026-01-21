@@ -41,7 +41,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export CFLAGS="-fPIC"
     make -f Makefile.in distclean > /dev/null || true
     ./configure ${zlib_config_opts[@]} > /dev/null || true
-    make install > /dev/null || true
+    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install > /dev/null || true
 
 elif [[ "$PLATFORM" == "darwin" ]]; then
    if [[ "$ARCH" == "x86" || "$ARCH" == "x64" || "$ARCH" == "universal" ]]; then
@@ -51,7 +51,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        BUILD_DIR_X64=$BUILD_DIR/zlib_x64
        make -f Makefile.in distclean > /dev/null || true
        ./configure -s --static --prefix=$BUILD_DIR_X64
-       make install
+       make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install
 
        echo "Now building for arm64"
        make -f Makefile.in distclean > /dev/null || true
@@ -62,7 +62,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        export CFLAGS="-fPIC -arch arm64 -mmacosx-version-min=${MACOSX_VERSION_MIN}"
        BUILD_DIR_ARM64=$BUILD_DIR/zlib_arm64
       ./configure -s --static --prefix=$BUILD_DIR_ARM64  || exit 1
-       make install
+       make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install
 
        mkdir -p $BUILD_DIR/{lib,include}
        cp -fr $BUILD_DIR_X64/include/* $BUILD_DIR/include
@@ -73,7 +73,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
        export CFLAGS="-fPIC -arch $ARCH -mmacosx-version-min=${MACOSX_VERSION_MIN}"
        make -f Makefile.in distclean > /dev/null || true
        ./configure -s --static --prefix=$BUILD_DIR
-       make install
+       make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install
     fi
 else
     echo "[ERROR] Unknown platform: $PLATFORM"

@@ -62,7 +62,7 @@ mkdir cmake-build-$target
 cd cmake-build-$target
 echo cmake ${config_opts[@]} ..
 $CMAKE -E env CFLAGS=$ADDITIONAL_CFLAGS $CMAKE ${config_opts[@]} ..
-make
+make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 # temporarily disabled to mitigate flaky test
 # make test
 make install
