@@ -81,7 +81,7 @@ if [[ "$PLATFORM" == "darwin" ]] && [[ "$ARCH" == "universal" ]]; then
 fi
 $CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="$ARROW_CXXFLAGS" ../
 
-make
+make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 make install
 
 #make install does not do much here

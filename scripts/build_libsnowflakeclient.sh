@@ -78,7 +78,7 @@ fi
 
 set -x
 $CMAKE ${cmake_opts[@]} ..
-make 2>&1 | tee ../build.log
+make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) 2>&1 | tee ../build.log
 set +x
 
 BUILD_DIR=$DEPENDENCY_DIR/libsnowflakeclient
