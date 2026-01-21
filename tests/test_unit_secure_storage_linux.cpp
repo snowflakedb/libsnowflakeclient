@@ -3,7 +3,6 @@
  */
 
 #include <iostream>
-#include <thread>
 
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
@@ -219,8 +218,9 @@ void test_secure_storage_success_to_lock_after_expire(void **)
 
   std::string token = "example_token";
   std::string retrievedToken;
-  boost::filesystem::create_directory(std::string("sf_cache_dir/") + CACHE_FILENAME + ".lck");
-  std::this_thread::sleep_for(std::chrono::seconds(70));
+  std::string fileLockPath = std::string("sf_cache_dir/") + CACHE_FILENAME + ".lck";
+  boost::filesystem::create_directory(fileLockPath);
+  boost::filesystem::last_write_time(fileLockPath, time(NULL) - 70);
   assert_true(ss.storeToken(key, token) == SecureStorageStatus::Success);
   assert_true(ss.retrieveToken(key, retrievedToken) == SecureStorageStatus::Success);
   assert_true(ss.removeToken(key) == SecureStorageStatus::Success);
