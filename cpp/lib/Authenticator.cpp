@@ -2,17 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
-#include <regex>
 #include <functional>
-#ifdef _WIN32
-#include <WS2tcpip.h>
-#else
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#endif
 
 #include "Authenticator.hpp"
 #include "../logger/SFLogger.hpp"
@@ -23,7 +13,6 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <connection.h>
-#include "curl_desc_pool.h"
 #include "cJSON.h"
 #include "memory.h"
 
@@ -34,7 +23,6 @@
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
-#include <CoreFoundation/CoreFoundation.h>
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 

@@ -15,10 +15,7 @@
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"
 #include "../../lib/authenticator.h"
-
 #include <openssl/rand.h>
-#include "../include/snowflake/entities.hpp"
-#include "../logger/SFLogger.hpp"
 #include "../lib/client_int.h"
 
 #ifdef __APPLE__
