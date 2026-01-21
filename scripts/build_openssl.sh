@@ -64,7 +64,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-x86_64-cc "${openssl_config_opts[@]}"
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) install_sw install_ssldirs install_fips > /dev/null
+        make install_sw install_ssldirs install_fips > /dev/null
         lipo -create $OPENSSL_BUILD_DIR/lib/libssl.a    $OPENSSL_BUILD_DIR/libarm64/libssl.a    -output $OPENSSL_BUILD_DIR/lib/../libssl.a
         lipo -create $OPENSSL_BUILD_DIR/lib/libcrypto.a $OPENSSL_BUILD_DIR/libarm64/libcrypto.a -output $OPENSSL_BUILD_DIR/lib/../libcrypto.a
         lipo -create $OPENSSL_BUILD_DIR/lib/ossl-modules/fips.dylib $OPENSSL_BUILD_DIR/libarm64/ossl-modules/fips.dylib -output $OPENSSL_BUILD_DIR/lib/../fips.dylib
