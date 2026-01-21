@@ -37,6 +37,7 @@ void STDCALL copy_snowflake_error(SF_ERROR_STRUCT *dst, SF_ERROR_STRUCT *src);
 #define ERR_MSG_OAUTH_TOKEN_PARAMETER_IS_MISSING "OAuth token parameter is missing"
 #define ERR_MSG_OAUTH_PARAMETER_IS_MISSING "OAuth 2.0 Auth parameter is missing"
 #define ERR_MSG_PAT_PARAMETER_IS_MISSING "programmatic_access_token parameter is missing"
+#define ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING "workload_identity_provider parameter is required for WIF authentication. Valid values: AWS, AZURE, GCP, OIDC"
 
 #ifdef __cplusplus
 }
