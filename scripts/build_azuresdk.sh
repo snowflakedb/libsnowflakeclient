@@ -106,7 +106,7 @@ fi
 
 unset GIT_DIR
     
-make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+make
 make install
 
 #make install does not do much here

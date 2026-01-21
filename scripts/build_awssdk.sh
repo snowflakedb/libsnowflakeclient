@@ -106,7 +106,7 @@ $CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${aws_configure_opts[@]} ../
 
 unset GIT_DIR
 
-make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+make
 make install
 
 # on arm64 linux, the aws lib might be installed to lib folder

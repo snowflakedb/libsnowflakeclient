@@ -87,7 +87,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export CPPFLAGS="-I$OOB_DEPENDENCY_DIR/include -I$UUID_DEPENDENCY_DIR/include"
     export LDFLAGS="-L$OOB_DEPENDENCY_DIR/lib -L$UUID_DEPENDENCY_DIR/lib"
     PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -luuid -ldl" /bin/sh ./configure ${curl_configure_opts[@]}
-    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+    make
     make install
 elif [[ "$PLATFORM" == "darwin" ]]; then
     # Check to see if we are doing a universal build or not.
@@ -100,7 +100,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]} --host=arm-apple-darwin
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+        make > /dev/null
         make install /dev/null
 
         make clean &> /dev/null || true
@@ -108,7 +108,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+        make > /dev/null
         echo "lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a"
         lipo -create $LIBCURL_BUILD_DIR/lib/libcurl.a ./lib/.libs/libcurl.a -output $LIBCURL_BUILD_DIR/lib/../libcurl.a
         mv $LIBCURL_BUILD_DIR/lib/../libcurl.a $LIBCURL_BUILD_DIR/lib/libcurl.a
@@ -119,7 +119,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+        make > /dev/null
         make install /dev/null
     elif [[ "$ARCH" == "x64" ]]; then
         echo "[INFO] Building x64 Binary"
@@ -128,7 +128,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         export CPPFLAGS=-I$OOB_DEPENDENCY_DIR/include
         export LDFLAGS=-L$OOB_DEPENDENCY_DIR/lib
         PKG_CONFIG="pkg-config -static" LIBS="-ltelemetry -ldl" ./configure ${curl_configure_opts[@]}
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+        make > /dev/null
         make install /dev/null
     else
         echo "[ERROR] Unsupported $ARCH"

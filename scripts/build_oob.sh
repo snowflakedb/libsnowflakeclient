@@ -55,7 +55,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     export AROPTIONS=rcs
     export CFLAGS="-D_LARGEFILE64_SOURCE"
     make distclean clean > /dev/null || true
-    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) LIB=libtelemetry.a
+    make LIB=libtelemetry.a
 elif [[ "$PLATFORM" == "darwin" ]]; then
     export CC=clang
     export AR=libtool
@@ -64,14 +64,14 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     if [[ "$ARCH" == "x86" || "$ARCH" == "x64" || "$ARCH" == "universal" ]]; then
         # for intel always universal
         export CFLAGS="-mmacosx-version-min=10.14 -arch x86_64 -Xarch_x86_64"
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) LIB=libtelemetryx64.a
+        make LIB=libtelemetryx64.a
         make clean > /dev/null || true
         export CFLAGS="-mmacosx-version-min=10.14 -arch arm64 -Xarch_arm64"
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) LIB=libtelemetryarm64.a
+        make LIB=libtelemetryarm64.a
         lipo -create $OOB_SOURCE_DIR/libtelemetryx64.a $OOB_SOURCE_DIR/libtelemetryarm64.a -output $OOB_SOURCE_DIR/libtelemetry.a
     else
         export CFLAGS="-mmacosx-version-min=10.14 -arch $ARCH  -Xarch_$ARCH"
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) LIB=libtelemetry.a
+        make LIB=libtelemetry.a
     fi
     export AR=
 else
