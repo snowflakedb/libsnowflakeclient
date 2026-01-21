@@ -47,7 +47,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     make distclean clean &> /dev/null || true
     perl ./Configure linux-$(uname -m) "${openssl_config_opts[@]}"
     make depend > /dev/null
-    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+    make > /dev/null
     make install_sw install_ssldirs install_fips > /dev/null
 elif [[ "$PLATFORM" == "darwin" ]]; then
     openssl_config_opts+=("-mmacosx-version-min=${MACOSX_VERSION_MIN}")
@@ -59,7 +59,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         echo "[INFO] Building Universal Binary"
         make distclean clean &> /dev/null || true
         perl ./Configure darwin64-arm64-cc "${openssl_config_opts[@]}"
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) build_libs > /dev/null
+        make build_libs > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
         mv $OPENSSL_BUILD_DIR/lib $OPENSSL_BUILD_DIR/libarm64
         make distclean clean &> /dev/null || true
@@ -91,7 +91,7 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
             echo "[INFO] Building $ARCH binary"
             perl ./Configure darwin64-$ARCH-cc "${openssl_config_opts[@]}"
         fi
-        make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) > /dev/null
+        make > /dev/null
         make install_sw install_ssldirs install_fips > /dev/null
     fi
 else

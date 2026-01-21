@@ -34,7 +34,7 @@ mkdir -p $BUILD_DIR/{lib,include/uuid}
 if [[ "$PLATFORM" == "linux" ]]; then
     echo "Building uuid"
     export CFLAGS="-fPIC -DHAVE_SYS_FILE_H -DHAVE_USLEEP"
-    make -j $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+    make
 else
     echo "[ERROR] Unknown platform: $PLATFORM"
     exit 1
