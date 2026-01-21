@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #endif
-#include "cJSON.h"
 #include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"

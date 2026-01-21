@@ -1,43 +1,13 @@
-#ifdef _WIN32
-#include <WS2tcpip.h>
-#else
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#endif
-
 #include <algorithm>
 #include <cctype>
 #include <future>
 #include <regex>
 #include <string>
-
-#include <openssl/pem.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
 #include <connection.h>
 
-#ifdef __APPLE__
-#include <ApplicationServices/ApplicationServices.h>
-#endif
-
-#ifdef __linux__
-#include <sys/types.h>
-#include <sys/wait.h>
-#endif
-
-#include "snowflake/IBase64.hpp"
-#include "AuthenticationChallengeProvider.hpp"
-#include "AuthenticationWebBrowserRunner.hpp"
-#include "../include/snowflake/entities.hpp"
 #include "../logger/SFLogger.hpp"
 #include "snowflake/IAuth.hpp"
 
-#include "curl_desc_pool.h"
-#include "cJSON.h"
-#include "memory.h"
 #include "error.h"
 #include <errno.h>
 
