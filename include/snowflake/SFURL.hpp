@@ -430,20 +430,21 @@ private:
    */
   std::string m_cacheURL;
 
+  /// Components of a url:
+  /// scheme://[[userinfo@]hostname[:port]]path?paramKey1=paramVal1&.....#fragment
+  std::string m_scheme;
+  std::string m_host;
+  std::string m_port;
+  std::string m_path;
+  std::string m_fragment;
+  std::string m_userinfo;
+
   /**
    * Flag to see if the cache is valid
    */
   bool m_cacheValid;
 
-  /// Components of a url:
-  /// scheme://[[userinfo@]hostname[:port]]path?paramKey1=paramVal1&.....#fragment
-  std::string m_scheme;
-  std::string m_userinfo;
-  std::string m_host;
-  std::string m_port;
-  std::string m_path;
   QueryParams m_params;
-  std::string m_fragment;
 
   /**
   * proxy settings

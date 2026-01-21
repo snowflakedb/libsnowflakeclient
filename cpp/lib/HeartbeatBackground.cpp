@@ -71,7 +71,7 @@ extern "C" {
             ret = SF_BOOLEAN_FALSE;
         }
         free_curl_desc(curl_desc);
-        return SF_BOOLEAN_TRUE;
+        return ret;
     }
 
     void test_heartbeat(SF_CONNECT* sf) {

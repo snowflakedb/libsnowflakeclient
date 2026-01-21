@@ -2129,6 +2129,7 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
             *value = &sf->client_session_keep_alive_heartbeat_frequency;
+            break;
         case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
             *value = &sf->client_store_temporary_credential;
             break;
