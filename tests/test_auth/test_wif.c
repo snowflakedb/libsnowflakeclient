@@ -2,6 +2,11 @@
 #include <string.h>
 #include "auth_utils.h"
 
+#define SF_WIF_PROVIDER_AWS "AWS"
+#define SF_WIF_PROVIDER_GCP "GCP"
+#define SF_WIF_PROVIDER_AZURE "AZURE"
+#define SF_WIF_PROVIDER_OIDC "OIDC"
+
 // Checks if running in a specific cloud environment
 static int is_cloud_env(const char *expected_type) {
     char *type = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
@@ -54,7 +59,7 @@ static char* get_current_user(SF_CONNECT *sf) {
 void test_aws_wif_authentication(void **unused) {
     SF_UNUSED(unused);
     
-    if (!is_cloud_env("AWS")) {
+    if (!is_cloud_env(SF_WIF_PROVIDER_AWS)) {
         fprintf(stderr, "Not running AWS WIF test. SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE is not AWS\n");
         skip();
         return;
@@ -66,6 +71,7 @@ void test_aws_wif_authentication(void **unused) {
     set_all_snowflake_attributes(sf);
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AWS);
 
     const SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -89,7 +95,7 @@ void test_aws_wif_authentication(void **unused) {
 void test_gcp_wif_authentication(void **unused) {
     SF_UNUSED(unused);
     
-    if (!is_cloud_env("GCP")) {
+    if (!is_cloud_env(SF_WIF_PROVIDER_GCP)) {
         fprintf(stderr, "Not running GCP WIF test. SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE is not GCP\n");
         skip();
         return;
@@ -101,6 +107,7 @@ void test_gcp_wif_authentication(void **unused) {
     set_all_snowflake_attributes(sf);
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_GCP);
 
     const SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -124,7 +131,7 @@ void test_gcp_wif_authentication(void **unused) {
 void test_azure_wif_authentication(void **unused) {
     SF_UNUSED(unused);
     
-    if (!is_cloud_env("AZURE")) {
+    if (!is_cloud_env(SF_WIF_PROVIDER_AZURE)) {
         fprintf(stderr, "Not running Azure WIF test. SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE is not AZURE\n");
         skip();
         return;
@@ -144,6 +151,8 @@ void test_azure_wif_authentication(void **unused) {
     set_all_snowflake_attributes(sf);
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AZURE);
+    snowflake_set_attribute(sf, SF_CON_WIF_AZURE_RESOURCE, resource);
 
     const SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
@@ -181,6 +190,7 @@ void test_wif_no_cloud_credentials(void **unused) {
     set_all_snowflake_attributes(sf);
 
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AWS);
 
     const SF_STATUS status = snowflake_connect(sf);
 
@@ -188,6 +198,29 @@ void test_wif_no_cloud_credentials(void **unused) {
 
     const SF_ERROR_STRUCT *error = snowflake_error(sf);
     fprintf(stderr, "Expected error: %s\n", error->msg);
+
+    snowflake_term(sf);
+}
+
+// Test that WIF authentication fails when provider is not specified
+void test_wif_missing_provider(void **unused) {
+    SF_UNUSED(unused);
+
+    fprintf(stderr, "Testing WIF authentication failure without provider\n");
+
+    SF_CONNECT *sf = snowflake_init();
+    set_all_snowflake_attributes(sf);
+
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+
+    const SF_STATUS status = snowflake_connect(sf);
+
+    // Should fail with missing provider error
+    assert_int_not_equal(status, SF_STATUS_SUCCESS);
+
+    const SF_ERROR_STRUCT *error = snowflake_error(sf);
+    fprintf(stderr, "Expected error: %s\n", error->msg);
+    assert_non_null(strstr(error->msg, "workload_identity_provider"));
 
     snowflake_term(sf);
 }
@@ -224,6 +257,7 @@ void test_wif_valid_authenticator(void **unused) {
     set_all_snowflake_attributes(sf);
     
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, SF_WIF_PROVIDER_AWS);
     
     // May fail if not in cloud, but shouldn't fail with "unsupported authenticator"
     const SF_STATUS status = snowflake_connect(sf);
@@ -255,6 +289,7 @@ void test_wif_multiple_connections(void **unused) {
     SF_CONNECT *sf1 = snowflake_init();
     set_all_snowflake_attributes(sf1);
     snowflake_set_attribute(sf1, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf1, SF_CON_WIF_PROVIDER, attestation_type);
     
     const SF_STATUS status1 = snowflake_connect(sf1);
     if (status1 != SF_STATUS_SUCCESS) {
@@ -266,6 +301,7 @@ void test_wif_multiple_connections(void **unused) {
     SF_CONNECT *sf2 = snowflake_init();
     set_all_snowflake_attributes(sf2);
     snowflake_set_attribute(sf2, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
+    snowflake_set_attribute(sf2, SF_CON_WIF_PROVIDER, attestation_type);
     
     const SF_STATUS status2 = snowflake_connect(sf2);
     if (status2 != SF_STATUS_SUCCESS) {
@@ -303,7 +339,7 @@ void test_wif_explicit_provider_integration(void **unused) {
     snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, attestation_type);
     
     // Azure resource if available
-    if (strcmp(attestation_type, "AZURE") == 0) {
+    if (strcmp(attestation_type, SF_WIF_PROVIDER_AZURE) == 0) {
         char *resource = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_RESOURCE");
         if (resource) {
             snowflake_set_attribute(sf, SF_CON_WIF_AZURE_RESOURCE, resource);
@@ -321,18 +357,11 @@ void test_wif_explicit_provider_integration(void **unused) {
     snowflake_term(sf);
 }
 
-// Test invalid provider specification falls back to auto-detection
-void test_wif_invalid_provider_fallback(void **unused) {
+// Test invalid provider specification fails as auto-detection support is removed
+void test_wif_invalid_provider_fails(void **unused) {
     SF_UNUSED(unused);
     
-    char *attestation_type = getenv("SNOWFLAKE_WIF_ATTESTATION_TEST_TYPE");
-    if (!attestation_type) {
-        fprintf(stderr, "Skipping provider fallback test - not in cloud environment\n");
-        skip();
-        return;
-    }
-    
-    fprintf(stderr, "Testing invalid provider fallback to auto-detection\n");
+    fprintf(stderr, "Testing invalid provider fails without fallback\n");
     
     SF_CONNECT *sf = snowflake_init();
     set_all_snowflake_attributes(sf);
@@ -340,14 +369,14 @@ void test_wif_invalid_provider_fallback(void **unused) {
     snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_WORKLOAD_IDENTITY);
     snowflake_set_attribute(sf, SF_CON_WIF_PROVIDER, "INVALID_PROVIDER");
     
-    // Should succeed by falling back to auto-detection
+    // Should fail 
     const SF_STATUS status = snowflake_connect(sf);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sf->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
     
-    verify_connection_works(sf);
+    assert_int_not_equal(status, SF_STATUS_SUCCESS);
+    
+    const SF_ERROR_STRUCT *error = snowflake_error(sf);
+    fprintf(stderr, "Expected error: %s\n", error->msg);
+    
     snowflake_term(sf);
 }
 
@@ -359,7 +388,7 @@ void test_wif_get_attributes(void **unused) {
     
     SF_CONNECT *sf = snowflake_init();
     
-    const char *provider = "AWS";
+    const char *provider = SF_WIF_PROVIDER_AWS;
     const char *token = "test_token";
     const char *resource = "test_resource";
     
