@@ -1,0 +1,33 @@
+{
+  "mappings": [
+    {
+      "name": "GET request with query parameters",
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/api/resource",
+        "queryParameters": {
+          "param1": {
+            "equalTo": "value1"
+          },
+          "param2": {
+            "equalTo": "value2"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "success": true,
+          "data": {
+            "id": 123,
+            "name": "test resource"
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    }
+  ]
+}
+

@@ -691,6 +691,16 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    if ((AUTH_WIF == auth_type) && is_string_empty(sf->wif_provider)) {
+        log_error(ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
     if (SF_BOOLEAN_FALSE == validate_application(sf->application)) {
         // Invalid parnter application name
         log_error(ERR_MSG_APPLICATION_PARAMETER_INVALID);
@@ -1530,6 +1540,16 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 auth_renew_json_body(sf, body);
                 s_body = snowflake_cJSON_Print(body);
                 continue;
+            }
+            // Extract error message from JSON
+            const cJSON *messageJson = resp ? snowflake_cJSON_GetObjectItem(resp, "message") : NULL;
+            if (messageJson && messageJson->valuestring) {
+                log_error("Server error: %s", messageJson->valuestring);
+                const cJSON *codeJson = snowflake_cJSON_GetObjectItem(resp, "code");
+                const int64 code = (codeJson && codeJson->valuestring) ? strtol(codeJson->valuestring, NULL, 10) : SF_STATUS_ERROR_GENERAL;
+                clear_snowflake_error(&sf->error);
+                SET_SNOWFLAKE_ERROR(&sf->error, (SF_STATUS) code, messageJson->valuestring, SF_SQLSTATE_UNABLE_TO_CONNECT);
+                goto cleanup;
             }
             log_error("No response");
             if (sf->error.error_code == SF_STATUS_SUCCESS) {

@@ -82,6 +82,7 @@ fi
 $CMAKE -E env $CMAKE ${arrow_configure_opts[@]} -DARROW_CXXFLAGS="$ARROW_CXXFLAGS" ../
 
 make
+
 make install
 
 #make install does not do much here
