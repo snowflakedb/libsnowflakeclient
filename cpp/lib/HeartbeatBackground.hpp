@@ -29,21 +29,21 @@ namespace Snowflake
             {}
             std::string sessionId;
             std::string heartBeatURL;
-            SF_HEADER* httpExtraHeaders;
+            std::shared_ptr<SF_HEADER> httpExtraHeaders;
             int8 maxRetryCount;
             int64 retryTimeout;
             int64 networkTimeout;
             sf_bool isOcspOpen;
             sf_bool isInsecuremode;
             sf_bool retryCurlCount;
-            sf_bool crlCheck;
+            std::string proxy;
+            std::string noProxy;
             sf_bool crlAdvisory;
+            sf_bool crlCheck;
             sf_bool crlAllowNoCrl;
             sf_bool crlDiskCaching;
             sf_bool crlMemoryCaching;
             int64 crlDownloadTimeout;
-            std::string proxy;
-            std::string noProxy;
         } heartbeatReq;
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy

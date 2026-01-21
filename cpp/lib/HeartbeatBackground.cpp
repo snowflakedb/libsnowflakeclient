@@ -156,7 +156,7 @@ namespace Snowflake::Client
             heartbeatReq conn = HeartBeatQueue[i];
             const std::string& destination = conn.heartBeatURL;
             const std::string& sid = conn.sessionId;
-            SF_HEADER* httpExtraHeaders = conn.httpExtraHeaders;
+            SF_HEADER* httpExtraHeaders = conn.httpExtraHeaders.get();
 
             const char* proxy = conn.proxy.c_str();
             const char* noProxy = conn.noProxy.c_str();
@@ -298,10 +298,6 @@ namespace Snowflake::Client
 
     void HeartbeatBackground::freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue)
     {
-        for (size_t i = 0; i < HeartBeatQueue.size(); i++)
-        {
-            sf_header_destroy(HeartBeatQueue[i].httpExtraHeaders);
-        }
         HeartBeatQueue.clear();
     }
 
