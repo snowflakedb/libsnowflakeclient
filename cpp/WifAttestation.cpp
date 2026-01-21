@@ -18,23 +18,6 @@ namespace Snowflake {
           {AttestationType::GCP, createGcpAttestation},
           {AttestationType::OIDC, createOIDCAttestation},
       };
-
-      inline boost::optional<Attestation> createAutodetectAttestation(AttestationConfig& config) {
-        AttestationType order[] = {AttestationType::OIDC, AttestationType::AWS, AttestationType::AZURE, AttestationType::GCP};
-        CXX_LOG_INFO("Detecting attestation type");
-        for (const auto& type: order) {
-          auto provider = attestationProviders.at(type);
-          CXX_LOG_INFO("Trying attestation type %s", stringFromAttestationType(type));
-          auto attestation = provider(config);
-          if (attestation) {
-            CXX_LOG_INFO("Detected attestation type %s and performed attestation successfully", stringFromAttestationType(type));
-            return attestation.get();
-          }
-        }
-
-        CXX_LOG_ERROR("Failed to detect attestation type");
-        return boost::none;
-      }
     }
 
     boost::optional<Attestation> createAttestation(AttestationConfig& config) {
@@ -44,11 +27,8 @@ namespace Snowflake {
         config.awsSdkWrapper = AwsUtils::ISdkWrapper::getInstance();
 
       if (!config.type) {
-        auto result = createAutodetectAttestation(config);
-        if (!result) {
-          CXX_LOG_ERROR("Failed to autodetect attestation");
-        }
-        return result;
+        CXX_LOG_ERROR("Attestation type must be specified");
+        return boost::none;
       }
 
       auto type = config.type.get();
