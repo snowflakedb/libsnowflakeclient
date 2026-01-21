@@ -5,54 +5,73 @@
 extern "C" {
     void create_recursive_mutex(void** mutex, uint64_t id)
     {
-        *mutex = (void*) new Snowflake::Client::RecursiveMutex(id);
+        try {
+            *mutex = (void*) new Snowflake::Client::RecursiveMutex(id);
+        }
+        catch (...)
+        {
+            log_error("sf::RecursiveMutex::Fail to create the recursive mutex");
+        }
     }
 
     void free_recursive_mutex(void** mutex)
     {
-        delete static_cast<Snowflake::Client::RecursiveMutex*>(*mutex);
+        try {
+            delete static_cast<Snowflake::Client::RecursiveMutex*>(*mutex);
+            *mutex = NULL;
+        }
+        catch (...)
+        {
+            log_error("sf::RecursiveMutex::Fail to free the recursive mutex");
+        }
     }
 } // extern "C"
 
-namespace Snowflake
+namespace Snowflake::Client
 {
-    namespace Client
+    /**
+     * Thin wrapper to redefine a mutex to instrument the lock method
+     *
+     */
+    Mutex::Mutex()
+    {}
+
+    /**
+     * Lock a mutex
+     */
+    void Mutex::lock()
     {
-        /**
-         * Thin wrapper to redefine a mutex to instrument the lock method
-         *
-         */
-        Mutex::Mutex()
-        {
-        }
+        // invoke parent logic
+        m_mutex.lock();
+    }
 
-        /**
-         * Lock a mutex
-         */
-        void Mutex::lock()
-        {
-            // invoke parent logic
-            std::mutex::lock();
-        }
+    void Mutex::unlock()
+    {
+        m_mutex.unlock();
+    }
 
-        RecursiveMutex::RecursiveMutex(uint64_t id)
-            : m_id(id)
-        {
-            // name of this mutex
-            const char* mutexName = "sf_mutex";
+    RecursiveMutex::RecursiveMutex(uint64_t id)
+        : m_id(id)
+    {
+        // name of this mutex
+        const char* mutexName = "sf_mutex";
 
-            // trace to get the correlate OS reference with our internal mutex,
-            CXX_LOG_TRACE("sf::RecursiveMutex,/%s/%u mutex=%p", mutexName, m_id);
-        }
+        // trace to get the correlate OS reference with our internal mutex,
+        CXX_LOG_TRACE("sf::RecursiveMutex,/%s mutex=%lu", mutexName, m_id);
+    }
 
-        /**
-         * Lock a recursive mutex
-         */
-        void RecursiveMutex::lock()
-        {
-            // invoke parent logic
-            std::recursive_mutex::lock();
-        }
+    /**
+     * Lock a recursive mutex
+     */
+    void RecursiveMutex::lock()
+    {
+        // invoke parent logic
+        m_recursiveMutex.lock();
+    }
 
-    } // namespace Client
-} // namespace Snowflak
+    void RecursiveMutex::unlock()
+    {
+        m_recursiveMutex.unlock();
+    }
+
+} // namespace Snowflake::Client
