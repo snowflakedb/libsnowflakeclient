@@ -1,0 +1,36 @@
+{
+  "mappings": [
+    {
+      "name": "POST request with JSON body",
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/api/submit",
+        "headers": {
+          "Content-Type": {
+            "contains": "application/json"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.key"
+          },
+          {
+            "matchesJsonPath": "$.nested.field"
+          }
+        ]
+      },
+      "response": {
+        "status": 201,
+        "jsonBody": {
+          "created": true,
+          "id": "new-resource-456"
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "Location": "/api/resource/456"
+        }
+      }
+    }
+  ]
+}
+

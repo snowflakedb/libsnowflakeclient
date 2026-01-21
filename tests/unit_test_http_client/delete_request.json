@@ -1,0 +1,18 @@
+{
+  "mappings": [
+    {
+      "name": "DELETE request",
+      "request": {
+        "method": "DELETE",
+        "urlPathPattern": "/api/resource/.*"
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    }
+  ]
+}
+

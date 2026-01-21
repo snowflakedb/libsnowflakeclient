@@ -681,6 +681,16 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
+    if ((AUTH_WIF == auth_type) && is_string_empty(sf->wif_provider)) {
+        log_error(ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING);
+        SET_SNOWFLAKE_ERROR(
+            &sf->error,
+            SF_STATUS_ERROR_BAD_CONNECTION_PARAMS,
+            ERR_MSG_WIF_PROVIDER_PARAMETER_IS_MISSING,
+            SF_SQLSTATE_UNABLE_TO_CONNECT);
+        return SF_STATUS_ERROR_GENERAL;
+    }
+
     if (SF_BOOLEAN_FALSE == validate_application(sf->application)) {
         // Invalid parnter application name
         log_error(ERR_MSG_APPLICATION_PARAMETER_INVALID);
