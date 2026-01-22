@@ -215,6 +215,20 @@ void test_curl_crl_params(void **unused) {
 void test_crl_cache(void **unused) {
   SF_UNUSED(unused);
 
+/*
+ * CURLSSLOPT_NATIVE_CA should work with openssl on Windows only
+ * https://curl.se/libcurl/c/CURLOPT_SSL_OPTIONS.html
+ * but somehow it works on rhel so disable the test case on Ubuntu
+ * when the required certificate is missing (in a different location
+ * on Ubuntu).
+ */
+#ifdef __linux__
+  if (access("/etc/pki/tls/certs/ca-bundle.crt", F_OK) != 0)
+  {
+    return;
+  }
+#endif
+
   const std::string cache_dir = get_cache_dir();
 
   CURL *ch = nullptr;
@@ -242,6 +256,20 @@ void test_crl_cache(void **unused) {
 
 void test_no_crl_cache_if_disabled(void **unused) {
   SF_UNUSED(unused);
+
+/*
+ * CURLSSLOPT_NATIVE_CA should work with openssl on Windows only
+ * https://curl.se/libcurl/c/CURLOPT_SSL_OPTIONS.html
+ * but somehow it works on rhel so disable the test case on Ubuntu
+ * when the required certificate is missing (in a different location
+ * on Ubuntu).
+ */
+#ifdef __linux__
+  if (access("/etc/pki/tls/certs/ca-bundle.crt", F_OK) != 0)
+  {
+    return;
+  }
+#endif
 
   const std::string cache_dir = get_cache_dir();
 
