@@ -3,14 +3,15 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_SRC_VERSION=8.12.1
-set CURL_BUILD_VERSION=5
-set CURL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
+set CURL_BUILD_VERSION=1
 call %*
 goto :EOF
 
 :get_version
-    set version=%CURL_VERSION%
+    call "%scriptdir%_init.bat" x64 Release VS17
+    set CURL_SRC_VERSION=%CURL_VERSION%
+    set CURL_FULL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
+    set version=%CURL_FULL_VERSION%
     goto :EOF
 
 :build
@@ -28,6 +29,9 @@ set scriptdir=%~dp0
 call "%scriptdir%_init.bat" %platform% %build_type% %vs_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 set currdir=%cd%
+
+set CURL_SRC_VERSION=%CURL_VERSION%
+set CURL_FULL_VERSION=%CURL_SRC_VERSION%.%CURL_BUILD_VERSION%
 
 if /I "%platform%"=="x64" (    
     set openssl_target=VC-WIN64A
@@ -70,6 +74,32 @@ if "%vs_version%"=="VS15" (
 )
 
 call "%scriptdir%utils.bat" :setup_visual_studio %vs_version%
+
+set DEPS_DIR=%scriptdir%\..\deps
+set CURL_SOURCE_DIR=%DEPS_DIR%\%CURL_DIR%
+set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
+
+rd /S /Q %CURL_SOURCE_DIR%
+curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
+pushd %DEPS_DIR%
+  tar -xf curl-8.16.0.zip
+  move curl-8.16.0 curl
+popd
+pushd %DEPS_DIR%\..\
+  FOR /F "tokens=*" %%i IN ('git config user.name') do (set GIT_USERNAME="%%i")
+  FOR /F "tokens=*" %%i IN ('git config user.email') do (set GIT_USER_EMAIL="%%i")
+  git config user.name testuser
+  git config user.email test@test.com
+  git add -f deps\curl
+  git commit -m "Temporary commit"
+:: Set to windows line endings for patch file to work
+  rd /S /Q %CURL_SOURCE_DIR%
+  git restore deps\curl
+  git apply patches\curl-%CURL_SRC_VERSION%.patch
+  git reset HEAD~1
+  git config user.name %GIT_USERNAME%
+  git config user.email %GIT_USER_EMAIL%
+popd
 
 echo === staging openssl and zlib for curl
 set curl_dep=%TMP%\curl_dep
@@ -174,7 +204,7 @@ copy /v /y ^
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo === archiving the library
-call "%scriptdir%utils.bat" :zip_file curl %curl_version%
+call "%scriptdir%utils.bat" :zip_file curl %curl_full_version%
 if %ERRORLEVEL% NEQ 0 goto :error
 
 :success
