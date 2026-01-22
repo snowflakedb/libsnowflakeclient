@@ -1173,8 +1173,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->oauth_authorization_endpoint = NULL;
         sf->oauth_token_endpoint = NULL;
         sf->oauth_redirect_uri = NULL;
-        sf->oauth_client_id = NULL;
-        sf->oauth_client_secret = NULL;
+        alloc_buffer_and_copy(&sf->oauth_client_id, "LOCAL_APPLICATION");
+        alloc_buffer_and_copy(&sf->oauth_client_secret, "LOCAL_APPLICATION");
         sf->oauth_scope = NULL;
         sf->oauth_refresh_token = NULL;
         sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
