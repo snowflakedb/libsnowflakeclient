@@ -12,19 +12,65 @@ function usage() {
 }
 set -x -o pipefail
 
-CURL_SRC_VERSION=8.12.1
-CURL_BUILD_VERSION=5
-CURL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/_init.sh $@
 source $DIR/utils.sh
 
-[[ -n "$GET_VERSION" ]] && echo $CURL_VERSION && exit 0
+CURL_SRC_VERSION=$CURL_VERSION
+CURL_BUILD_VERSION=1
+CURL_FULL_VERSION=${CURL_SRC_VERSION}.${CURL_BUILD_VERSION}
 
-LIBCURL_SOURCE_DIR=$DEPS_DIR/curl/
+[[ -n "$GET_VERSION" ]] && echo $CURL_FULL_VERSION && exit 0
+
+LIBCURL_SOURCE_DIR=$DEPS_DIR/curl
 OOB_DEPENDENCY_DIR=$DEPENDENCY_DIR/oob
 UUID_DEPENDENCY_DIR=$DEPENDENCY_DIR/uuid
+CURL_SRC_VERSION_GIT=${CURL_SRC_VERSION//./_}
+
+rm -rf $LIBCURL_SOURCE_DIR
+curl https://curl.se/download/curl-8.16.0.tar.gz -o $DEPS_DIR/curl-8.16.0.tar.gz
+pushd $DEPS_DIR
+  tar -xf curl-8.16.0.tar.gz
+  mv curl-8.16.0 curl
+popd
+pushd $DEPS_DIR/../
+  # Unset any git environment variables that might interfere
+  unset GIT_DIR
+  unset GIT_WORK_TREE
+  unset GIT_INDEX_FILE
+  
+  # Add current directory to git safe.directory to handle ownership differences in Docker
+  git config --global --add safe.directory $(pwd)
+  
+  # Ensure we're in a working git repository
+  if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "[WARN] Not in a git repository, initializing..."
+    # Remove any corrupted .git directory
+    rm -rf .git
+    git init
+    git add -A
+    git commit -m "Initial commit for patching"
+  fi
+  
+  # Explicitly set GIT_DIR and GIT_WORK_TREE for all git operations
+  export GIT_DIR=$(pwd)/.git
+  export GIT_WORK_TREE=$(pwd)
+  
+  output=$(git config user.name) && [ -n "$output" ] && GIT_USERNAME="$output"
+  output=$(git config user.email) && [ -n "$output" ] && GIT_USER_EMAIL="$output"
+  git config user.name testuser
+  git config user.email test@test.com
+  git add -f deps/curl
+  git commit -m "Temporary commit"
+  git apply patches/curl-$CURL_SRC_VERSION.patch
+  git reset HEAD~1
+  [ -n "$GIT_USERNAME" ] && git config user.name $GIT_USERNAME
+  [ -n "$GIT_USER_EMAIL" ] && git config user.email $GIT_USER_EMAIL
+  
+  # Clean up environment variables
+  unset GIT_DIR
+  unset GIT_WORK_TREE
+popd
 
 # staging cJSON for curl
 CJSON_SOURCE_DIR=$DEPS_DIR/cJSON-${CJSON_VERSION}
@@ -135,5 +181,5 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
         exit 1
     fi
 fi
-echo === zip_file "curl" "$CURL_VERSION" "$target"
-zip_file "curl" "$CURL_VERSION" "$target"
+echo === zip_file "curl" "$CURL_FULL_VERSION" "$target"
+zip_file "curl" "$CURL_FULL_VERSION" "$target"
