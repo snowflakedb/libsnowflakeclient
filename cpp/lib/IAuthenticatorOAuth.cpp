@@ -411,11 +411,6 @@ namespace Snowflake::Client
 
         void IAuthenticatorOAuth::startWebBrowser(const std::string& ssoUrl)
         {
-            std::cout << "Initiating login request with your identity provider. A "
-                "browser window should have opened for you to complete the "
-                "login. If you can't see it, check existing browser windows, "
-                "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
-
             if (m_webBrowserRunner == nullptr)
             {
                 CXX_LOG_ERROR("sf::IAuthenticatorOAuth::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");

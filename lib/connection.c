@@ -419,23 +419,17 @@ sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* he
     int64 elapsed_time = 0;
     int8 retried_count = 0;
 
-    do {
-        if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
-            get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, &sf->error,
-            sf->insecure_mode, sf->ocsp_fail_open,
-            sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
-            sf->crl_disk_caching, sf->crl_memory_caching,
-            sf->crl_download_timeout,
-            sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
-            &elapsed_time, &retried_count, NULL,
-            SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-            sf->include_retry_reason, is_new_retry_strategy_url(url)) ||
-            !*json) {
-            // Error is set in the perform function
-            break;
-        }
-        ret = SF_BOOLEAN_TRUE;
-    } while (0);
+    ret = http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
+        get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, &sf->error,
+        sf->insecure_mode, sf->ocsp_fail_open,
+        sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
+        sf->crl_disk_caching, sf->crl_memory_caching,
+        sf->crl_download_timeout,
+        sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
+        &elapsed_time, &retried_count, NULL,
+        SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
+        sf->include_retry_reason, is_new_retry_strategy_url(url)) ||
+        *json;
 
     free_curl_desc(curl_desc);
     return ret;

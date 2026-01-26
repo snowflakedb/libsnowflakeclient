@@ -303,7 +303,7 @@ namespace Snowflake::Client
                 "<title>SAML Response for Snowflake</title></head>\n"
                 "<body>\n"
                 "Your identity was confirmed and propagated to Snowflake "
-                "libsnowflakeclient. You can close this window now and go back where you "
+                "You can close this window now and go back where you "
                 "started from.\n"
                 "</body></html>";
 
