@@ -116,13 +116,13 @@ namespace Snowflake::Client
             constexpr static const char* successMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
                 "<title>Authorization Code Granted for Snowflake</title></head>\n"
                 "<body><h4>Your identity was confirmed</h4>"
-                "Access to Snowflake has been granted to the libsnowflakeclient.\n"
+                "Access to Snowflake has been granted.\n"
                 "You can close this window now and go back where you started from.\n"
                 "</body></html>";
             constexpr static const char* failureMessage = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n"
                 "<title>Authorization Code Failed for Snowflake</title></head>\n"
                 "<body><h4>Could not validate your identity</h4>"
-                "Access to Snowflake could not have been granted to libsnowflakeclient.\n"
+                "Access to Snowflake could not have been granted.\n"
                 "You can close this window now and try again.\n"
                 "</body></html>";
         };
