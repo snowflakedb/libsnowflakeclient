@@ -676,14 +676,7 @@ sf_bool STDCALL http_perform(CURL *curl,
         snowflake_cJSON_Delete(*json);
         *json = NULL;
         *json = snowflake_cJSON_Parse(buffer.buffer);
-        if (*json) {
-            // Only set ret if the HTTP request was successful
-            if (ret) {
-                if (is_one_time_token_request(*json)) {
-                    snowflake_cJSON_AddNullToObject(*json, "code");
-                }
-            }
-        } else if (ret) {
+        if (!*json && ret) {
             // Only report JSON parsing error if the HTTP request succeeded
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                                 "Unable to parse JSON text response.",

@@ -1,4 +1,3 @@
-#include "../cpp/lib/AuthenticatorOAuth.hpp"
 #include "UnitOAuthBase.hpp"
 #include "../wiremock/wiremock.hpp"
 #include "../cpp/logger/SFLogger.hpp"

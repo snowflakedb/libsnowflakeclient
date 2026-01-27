@@ -1,11 +1,13 @@
-#include "../cpp/lib/AuthenticatorOAuth.hpp"
+#include "snowflake/IAuth.hpp"
 #include "UnitOAuthBase.hpp"
 #include "../wiremock/wiremock.hpp"
 #include "../cpp/logger/SFLogger.hpp"
+#include "snowflake/IAuth.hpp"
 #include "test_setup.h"
 #include "TestSetup.hpp"
 
 using namespace Snowflake::Client;
+using namespace Snowflake::Client::IAuth;
 
 void configureRunners()
 {
