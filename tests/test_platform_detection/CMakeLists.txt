@@ -8,7 +8,7 @@ configure_file(gce_identity_success.json . COPYONLY)
 configure_file(gce_vm_success.json . COPYONLY)
 configure_file(timeout_response.json . COPYONLY)
 
-add_executable(test_redirect
+add_executable(test_platform_detection
     ../wiremock/wiremock.cpp
     ../wiremock/wiremock.hpp
     ../utils/test_setup.h
