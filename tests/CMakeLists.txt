@@ -49,13 +49,12 @@ SET(TESTS_C
         test_async
         test_cancel
         test_stopwatch
-# FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY is internal switch
-# will enable lob test when the change on server side will be published
-#        test_lob
-#        test_stats
+        test_lob
+        test_stats
 # MFA, Oauth, and Okta connections are only able to run testing manually.
-        test_manual_connect
+       test_manual_connect
 )
+
 
 SET(TESTS_CXX
         test_unit_jwt
@@ -262,15 +261,15 @@ if (WIN32)
     if (WIN32_DEBUG)
         if(CMAKE_SIZEOF_VOID_P EQUAL 4)
             set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
             set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${ARROW_ALL_LIBS} ${AWS_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB} ${AZURE_STORAGE_LITE_LIB}
-                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+                    Version.lib Userenv.lib Bcrypt.lib ucrtd.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
         endif()
     else()
         set(TESTLIB_OPTS_C snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${OOB_LIB} ${CURL_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
         set(TESTLIB_OPTS_CXX snowflakeclient ${CMOCKA_LIB} ${AWS_ALL_LIBS} ${AZURE_STORAGE_LITE_LIB} ${ARROW_ALL_LIBS} ${CURL_LIB} ${OOB_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${ZLIB_LIB}
-                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib)
+                Version.lib Userenv.lib Bcrypt.lib Secur32.lib Ncrypt.lib Shlwapi.lib Iphlpapi.lib)
     endif()
 endif()
 
@@ -408,5 +407,6 @@ if (LINUX AND NOT MOCK)
     add_subdirectory(wiremock)
     add_subdirectory(test_redirect)
     add_subdirectory(test_oauth)
+    add_subdirectory(unit_test_http_client)
 endif()
 add_subdirectory(test_bind_datastructures)

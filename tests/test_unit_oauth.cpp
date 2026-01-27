@@ -141,12 +141,15 @@ SF_CONNECT* get_test_connection()
 void test_oauth_invalid_parameters(void** unused)
 {
     SF_UNUSED(unused);
-    // missing both the client id and the client secret
+    // empty client id and client secret (overriding defaults)
     SF_CONNECT* test1 = get_test_connection();
-    // missing clinet secret
+    snowflake_set_attribute(test1, SF_CON_OAUTH_CLIENT_ID, "");
+    snowflake_set_attribute(test1, SF_CON_OAUTH_CLIENT_SECRET, "");
+    // empty client secret (overriding default)
     SF_CONNECT* test2 = get_test_connection();
     snowflake_set_attribute(test2, SF_CON_OAUTH_CLIENT_ID, "clientid123");
-    // missing both role and auth_role
+    snowflake_set_attribute(test2, SF_CON_OAUTH_CLIENT_SECRET, "");
+    // missing both role and oauth_scope
     SF_CONNECT* test3 = get_test_connection();
     SF_FREE(test3->role);
     snowflake_set_attribute(test3, SF_CON_OAUTH_CLIENT_ID, "clientid123");

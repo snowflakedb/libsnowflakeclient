@@ -67,7 +67,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, int_app_version);
 #endif
     snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
-    snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    if (sf->user && *(sf->user)) {
+        snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    }
     // Add password if one exists
     if (sf->password && *(sf->password)) {
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);
@@ -1324,6 +1326,7 @@ sf_bool is_password_required(AuthenticatorType auth)
       case AUTH_EXTERNALBROWSER:
       case AUTH_OAUTH_AUTHORIZATION_CODE:
       case AUTH_OAUTH_CLIENT_CREDENTIALS:
+      case AUTH_WIF:
         return 0;
       default:
         return 1;

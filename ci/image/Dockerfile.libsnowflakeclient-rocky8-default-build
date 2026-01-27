@@ -1,12 +1,21 @@
-FROM redhat/ubi8
+FROM rockylinux:8
 
-RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+RUN dnf install -y epel-release
+RUN dnf -y install dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools
 RUN dnf upgrade -y
 RUN yum -y update
 RUN yum install -y yum-utils
 
+# zlib for libsnowflakeclient as build_zlib.sh is not called in its build script
+RUN yum install -y zlib zlib-devel
+
 # dependencies & tools
-RUN yum install -y wget gettext zip bzip2 cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 re2-devel automake autoconf libtool perl-IPC-Cmd perl-Digest-SHA perl-core
+RUN yum install -y wget gettext zip bzip2 cmake python39 git gcc-c++ libstdc++-static unixODBC unixODBC-devel vim jq re2 re2-devel automake autoconf libtool perl-core perl-IPC-Cmd perl-Digest-SHA tar unzip which make file
+
+# dependencies for libuuid
+RUN yum install -y bison gettext-devel
+
 RUN ln -s /usr/bin/python3.9 /usr/bin/python
 RUN python -m pip install --upgrade pip
 RUN pip install awscli
@@ -15,7 +24,7 @@ RUN pip install awscli
 RUN cd /tmp && wget https://sourceware.org/pub/valgrind/valgrind-3.23.0.tar.bz2 && tar xvf valgrind-3.23.0.tar.bz2 && cd valgrind-3.23.0 && ./configure && make && make install
 
 #cppunit
-RUN cd /tmp && git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &&\
+RUN cd /tmp && git clone https://anongit.freedesktop.org/git/libreoffice/cppunit &&\
     cd cppunit &&\
     git checkout tags/cppunit-1.15.1 -b v1.15.1 &&\
     ./autogen.sh &&\
@@ -27,7 +36,7 @@ RUN cd /tmp && git clone git://anongit.freedesktop.org/git/libreoffice/cppunit &
 RUN yum install -y java-1.8.0-openjdk
 
 # gosu
-RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-arm64"
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.19/gosu-amd64"
 RUN chmod +x /usr/local/bin/gosu
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -37,3 +46,4 @@ RUN mkdir -p /home/user
 RUN chmod 777 /home/user
 WORKDIR /home/user
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -262,7 +262,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
 
             /* the DEBUGFUNCTION has no effect until we enable VERBOSE */
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
             }
         }
 
@@ -283,7 +283,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         // Post type stuffs
         if (request_type == POST_REQUEST_TYPE) {
-            res = curl_easy_setopt(curl, CURLOPT_POST, 1);
+            res = curl_easy_setopt(curl, CURLOPT_POST, 1L);
             if (res != CURLE_OK) {
                 log_error("Failed to set post [%s]", curl_easy_strerror(res));
                 break;
@@ -403,7 +403,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             }
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, SSL_VERSION);
+        res = curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)SSL_VERSION);
         if (res != CURLE_OK) {
             log_error("Unable to set SSL Version [%s]",
                       curl_easy_strerror(res));
@@ -417,20 +417,20 @@ sf_bool STDCALL http_perform(CURL *curl,
         } else {
             ocsp_check = SF_OCSP_CHECK;
         }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, ocsp_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_CHECK, (long)ocsp_check);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP check enable/disable [%s]",
                       curl_easy_strerror(res));
             break;
         }
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, fail_open);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_OCSP_FAIL_OPEN, (long)fail_open);
         if (res != CURLE_OK) {
             log_error("Unable to set OCSP FAIL_OPEN [%s]",
                       curl_easy_strerror(res));
             break;
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, crl_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_check);
         if (res != CURLE_OK) {
           log_error("Unable to set CRL CHECK [%s]",
                     curl_easy_strerror(res));
@@ -439,7 +439,7 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         if (crl_check)
         {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, crl_advisory);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_advisory);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL advisory mode [%s]",
@@ -447,7 +447,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, crl_allow_no_crl);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_allow_no_crl);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL allow null crl [%s]",
@@ -455,7 +455,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, crl_disk_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_disk_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL disk caching [%s]",
@@ -463,7 +463,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, crl_memory_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_memory_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL memory caching [%s]",
@@ -471,7 +471,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, crl_download_timeout);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, (long)crl_download_timeout);
           if (res != CURLE_OK)
           {
               log_error("Unable to set CRL download timeout [%s]",
@@ -515,30 +515,57 @@ sf_bool STDCALL http_perform(CURL *curl,
 
         /* Check for errors */
         if (res != CURLE_OK) {
-          char msg[1024];
           if (curl_error_buffer[0] != '\0') {
             log_error("curl error buffer: %s", curl_error_buffer);
           }
-          if (res == CURLE_COULDNT_CONNECT && curl_retry_ctx.retry_count <
-                                              retry_on_curle_couldnt_connect_count)
+          if (res == CURLE_COULDNT_CONNECT &&
+              curl_retry_ctx.retry_count < (unsigned)retry_on_curle_couldnt_connect_count)
+          {
+            retry = SF_BOOLEAN_TRUE;
+            uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
+            log_error(
+                    "curl_easy_perform() failed connecting to server on attempt %d, "
+                    "will retry after %d second",
+                    curl_retry_ctx.retry_count,
+                    next_sleep_in_secs);
+            sf_sleep_ms(next_sleep_in_secs*1000);
+          } else if ((res == CURLE_OPERATION_TIMEDOUT) &&
+                     ((renew_timeout > 0) && (curl_timeout == renew_timeout)))
+          // retry directly without backoff when timeout is triggered by renew
+          {
+            retry = SF_BOOLEAN_TRUE;
+          }
+          // retry with backoff on any other curl error except particular non-retryable ones
+          else {
+            char msg[1024];
+            sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+            msg[sizeof(msg) - 1] = (char)0;
+            if (res == CURLE_SSL_CACERT_BADFILE) {
+              sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
+                    curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
+              msg[sizeof(msg) - 1] = (char)0;
+              log_error(msg);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                  msg,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            else if (res == CURLE_SSL_INVALIDCERTSTATUS) {
+              log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                                  msg,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            else if (res == CURLE_PEER_FAILED_VERIFICATION)
             {
-              retry = SF_BOOLEAN_TRUE;
-              uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
-              log_error(
-                      "curl_easy_perform() failed connecting to server on attempt %d, "
-                      "will retry after %d second",
-                      curl_retry_ctx.retry_count,
-                      next_sleep_in_secs);
-              sf_sleep_ms(next_sleep_in_secs*1000);
-            } else if (res == CURLE_OPERATION_TIMEDOUT) {
-              // retry directly without backoff when timeout is triggered by renew
-              if ((renew_timeout > 0) && (curl_timeout == renew_timeout))
-              {
-                retry = SF_BOOLEAN_TRUE;
-              }
-              // otherwise retry with backoff
-              else if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
-                       ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
+              log_error(msg);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
+                  msg,
+                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
+            // otherwise retry with backoff
+            else {
+              if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                 ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
               {
                 uint32 next_sleep_in_secs = retry_ctx_next_sleep(&curl_retry_ctx);
                 log_debug(
@@ -550,6 +577,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                 retry = SF_BOOLEAN_TRUE;
               }
               else {
+                log_error(msg);
                 sf_sprintf(msg, sizeof(msg),
                           "Exceeded the retry_timeout , curl code: [%d]",
                           res);
@@ -558,24 +586,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                                     SF_SQLSTATE_UNABLE_TO_CONNECT);
               }
             }
-            else {
-              char msg[1024];
-              if (res == CURLE_SSL_CACERT_BADFILE) {
-                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed. err: %s, CA Cert file: %s",
-                        curl_easy_strerror(res), CA_BUNDLE_FILE ? CA_BUNDLE_FILE : "Not Specified");
-                }
-                else {
-                sf_sprintf(msg, sizeof(msg), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-                }
-                msg[sizeof(msg)-1] = (char)0;
-                log_error(msg);
-                if (res == CURLE_SSL_INVALIDCERTSTATUS) {
-                  log_error("Detected CURLE_SSL_INVALIDCERTSTATUS (91) - likely OCSP/CRL validation failure.");
-                }
-                SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_CURL,
-                                    msg,
-                                    SF_SQLSTATE_UNABLE_TO_CONNECT);
-            }
+          }
         } else {
             if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) !=
                 CURLE_OK) {
@@ -651,8 +662,9 @@ sf_bool STDCALL http_perform(CURL *curl,
     }
     while (retry);
 
-    if (ret && json) {
-      // We were successful so parse JSON from text
+    // Parse JSON response if we have a buffer and json pointer even for HTTP errors 
+    // because the server sends error messages in JSON format
+    if (buffer.buffer && buffer.size > 0 && json) {
       if (chunk_downloader) {
             buffer.buffer = (char *) SF_REALLOC(buffer.buffer, buffer.size +
                                                                2); // 1 byte for closing bracket, 1 for null terminator
@@ -665,11 +677,14 @@ sf_bool STDCALL http_perform(CURL *curl,
         *json = NULL;
         *json = snowflake_cJSON_Parse(buffer.buffer);
         if (*json) {
-            ret = SF_BOOLEAN_TRUE;
-            if (is_one_time_token_request(*json)) {
-                snowflake_cJSON_AddNullToObject(*json, "code");
+            // Only set ret if the HTTP request was successful
+            if (ret) {
+                if (is_one_time_token_request(*json)) {
+                    snowflake_cJSON_AddNullToObject(*json, "code");
+                }
             }
-        } else {
+        } else if (ret) {
+            // Only report JSON parsing error if the HTTP request succeeded
             SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_BAD_JSON,
                                 "Unable to parse JSON text response.",
                                 SF_SQLSTATE_UNABLE_TO_CONNECT);

@@ -158,14 +158,13 @@ namespace Snowflake
 
         void WiremockRunner::waitForWiremockRunning()
         {
-            auto start = std::chrono::steady_clock::now();
+            const auto start = std::chrono::steady_clock::now();
             while (!isRunning())
             {
                 CXX_LOG_INFO("sf::WiremockRunner::is not running. Waiting for the execution");
                 sleep(1);
                 auto end = std::chrono::steady_clock::now();
-                double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count();
-                if (elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT)
+                if (const double elapsed_ms = std::chrono::duration<double, std::milli>(end - start).count(); elapsed_ms >= WiremockRunner::S_WIREMOCK_TIMEOUT)
                 {
 
                     CXX_LOG_INFO("sf::WiremockRunner::Wiremock startup timed out after %f ms", elapsed_ms);
