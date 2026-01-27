@@ -30,6 +30,16 @@ static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
 
+std::string getEnvironmentVariableValue(const std::string& envVarName)
+{
+  char envbuf[MAX_PATH + 1];
+  if (char* value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
+  {
+    return std::string(value);
+  }
+  return "";
+}
+
 PlatformDetectionStatus detectWithEndpoint(
   const HttpRequest& req,
   long timeout,
@@ -58,6 +68,41 @@ PlatformDetectionStatus detectWithEndpoint(
   }
 
   return PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectAwsLambda(long timeout)
+{
+  return getEnvironmentVariableValue("LAMBDA_TASK_ROOT").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectAzureFunction(long timeout)
+{
+  if (getEnvironmentVariableValue("FUNCTIONS_WORKER_RUNTIME").empty() ||
+    getEnvironmentVariableValue("FUNCTIONS_EXTENSION_VERSION").empty() ||
+    getEnvironmentVariableValue("AzureWebJobsStorage").empty())
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+  return PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectGceCloudRunService(long timeout)
+{
+  return (getEnvironmentVariableValue("K_SERVICE").empty() ||
+    getEnvironmentVariableValue("K_REVISION").empty() ||
+    getEnvironmentVariableValue("K_CONFIGURATION").empty())
+    ? PLATFORM_NOT_DETECTED
+    : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectGceCloudRunJob(long timeout)
+{
+  return getEnvironmentVariableValue("CLOUD_RUN_JOB").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectGithubAction(long timeout)
+{
+  return getEnvironmentVariableValue("GITHUB_ACTIONS").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
 }
 
 PlatformDetectionStatus detectEc2Instance(long timeout)
@@ -94,9 +139,8 @@ PlatformDetectionStatus detectAzureFunctionEnv(long timeout)
 
 PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
 {
-  char envbuf[32768];
   if ((PLATFORM_DETECTED == detectAzureFunctionEnv(timeout)) &&
-      (sf_getenv_s("IDENTITY_HEADER", envbuf, sizeof(envbuf))))
+      (!getEnvironmentVariableValue("IDENTITY_HEADER").empty()))
   {
     return PLATFORM_DETECTED;
   }
@@ -178,6 +222,11 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
 
 static const std::map <std::string, PlatformDetectorFunc> detectors =
 {
+  {"is_aws_lambda", detectAwsLambda},
+  {"is_azure_function", detectAzureFunction},
+  {"is_gce_cloud_run_service", detectGceCloudRunService},
+  {"is_gce_cloud_run_job", detectGceCloudRunJob},
+  {"is_github_action", detectGithubAction},
   {"is_ec2_instance", detectEc2Instance},
   {"has_aws_identity", detectAwsIdentity},
   {"is_azure_vm", detectAzureVM},
