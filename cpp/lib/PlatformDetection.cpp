@@ -3,11 +3,7 @@
 
 #include "snowflake/HttpClient.hpp"
 
-namespace Snowflake
-{
-namespace Client
-{
-namespace PlatformDetection
+namespace Snowflake::Client::PlatformDetection
 {
 
 enum PlatformDetectionStatus
@@ -19,7 +15,9 @@ enum PlatformDetectionStatus
 
 typedef PlatformDetectionStatus (*PlatformDetectorFunc)(long timeout);
 
-static const std::string awsMetadataBaseURL = "http://169.254.169.254";
+#define AWS_METADATA_BASE_URL "http://169.254.169.254"
+
+static std::string awsMetadataBaseURL = AWS_METADATA_BASE_URL;
 
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
@@ -109,6 +107,8 @@ static const std::map <std::string, PlatformDetectorFunc> detectors =
   {"is_ec2_instance", detectEc2Instance}
 };
 
+static bool detectionDone = false;
+
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 {
   static SF_MUTEX_HANDLE cacheMutex;
@@ -118,7 +118,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
   try
   {
     _mutex_lock(&cacheMutex);
-    if (detectedPlatformsCache.empty())
+    if (!detectionDone)
     {
       // TODO: add checking disable env later
       for (const auto& pair : detectors)
@@ -130,6 +130,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
           detectedPlatformsCache.push_back(pair.first);
         }
       }
+      detectionDone = true;
     }
     detectedPlatforms = detectedPlatformsCache;
     _mutex_unlock(&cacheMutex);
@@ -143,9 +144,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
   return;
 }
 
-} // namespace PlatformDetection
-} // namespace Client
-} // namespace Snowflake
+} // namespace
 
 
 
@@ -153,13 +152,14 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 extern "C"
 {
 
+using namespace Snowflake::Client::PlatformDetection;
 cJSON * get_detected_platforms()
 {
   // to ensure no exception thrown from C interface
   try
   {
     std::vector<std::string> detectedPlatforms;
-    Snowflake::Client::PlatformDetection::getDetectedPlatforms(detectedPlatforms);
+    getDetectedPlatforms(detectedPlatforms);
     cJSON* platformsJson = snowflake_cJSON_CreateArray();
     for (auto platform : detectedPlatforms)
     {
@@ -173,6 +173,22 @@ cJSON * get_detected_platforms()
     // TODO: log error
   }
   return NULL;
+}
+
+// Functions for test purpose
+void resetDetection()
+{
+  detectionDone = false;
+}
+
+void redirectMetadataBaseUrl(const char* url)
+{
+  awsMetadataBaseURL = url;
+}
+
+void restoreMetadataBaseUrl()
+{
+  awsMetadataBaseURL = AWS_METADATA_BASE_URL;
 }
 
 } // extern "C"
