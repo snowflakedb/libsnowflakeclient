@@ -3,11 +3,7 @@
 
 #include "snowflake/HttpClient.hpp"
 
-namespace Snowflake
-{
-namespace Client
-{
-namespace PlatformDetection
+namespace Snowflake::Client::PlatformDetection
 {
 
 enum PlatformDetectionStatus
@@ -93,9 +89,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
   return;
 }
 
-} // namespace PlatformDetection
-} // namespace Client
-} // namespace Snowflake
+} // namespace
 
 
 
