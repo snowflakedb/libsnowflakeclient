@@ -105,6 +105,23 @@ extern "C"
 
 cJSON * get_detected_platforms()
 {
+  // to ensure no exception thrown from C interface
+  try
+  {
+    std::vector<std::string> detectedPlatforms;
+    Snowflake::Client::PlatformDetection::getDetectedPlatforms(detectedPlatforms);
+    cJSON* platformsJson = snowflake_cJSON_CreateArray();
+    for (auto platform : detectedPlatforms)
+    {
+      cJSON* val = snowflake_cJSON_CreateString(platform.c_str());
+      snowflake_cJSON_AddItemToArray(platformsJson, val);
+    }
+    return platformsJson;
+  }
+  catch (...)
+  {
+    // TODO: log error
+  }
   return NULL;
 }
 
