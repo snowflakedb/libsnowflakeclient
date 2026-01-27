@@ -16,9 +16,7 @@
 #include "../include/snowflake/IAuth.hpp"
 #include "picojson.h"
 
-namespace Snowflake
-{
-namespace Client
+namespace Snowflake::Client
 {
     using namespace Snowflake::Client::IAuth;
   /**
@@ -133,7 +131,5 @@ namespace Client
       SF_CONNECT* m_connection;
       double count = 0;
   };
-
-} // namespace Client
-} // namespace Snowflake
+} // namespace Snowflake::Client
 #endif //PROJECT_AUTHENTICATOR_HPP
