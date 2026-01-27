@@ -23,9 +23,9 @@ static const std::string awsMetadataBaseURL = "http://169.254.169.254";
 
 PlatformDetectionStatus detectWithEndpoint(const HttpRequest& req, long timeout)
 {
-  static HttpClientConfig cfg = { timeout };
-  static std::unique_ptr<IHttpClient> httpClient =
-	  std::make_unique<IHttpClient>(IHttpClient::createSimple(cfg));
+  HttpClientConfig cfg = { timeout };
+  std::unique_ptr<IHttpClient> httpClient;
+  httpClient.reset(IHttpClient::createSimple(cfg));
 
   auto responseOpt = httpClient->run(req);
   if (!responseOpt)
@@ -54,15 +54,42 @@ PlatformDetectionStatus detectEc2Instance(long timeout)
   return detectWithEndpoint(req, timeout);
 }
 
-std::map <std::string, PlatformDetectorFunc> detectors =
+static const std::map <std::string, PlatformDetectorFunc> detectors =
 {
   {"is_ec2_instance", detectEc2Instance}
 };
 
-std::vector <std::string> detectedPlatformsCache;
-
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 {
+  static SF_MUTEX_HANDLE cacheMutex;
+  static auto mutexInit = _mutex_init(&cacheMutex);
+  static std::vector <std::string> detectedPlatformsCache;
+
+  try
+  {
+    _mutex_lock(&cacheMutex);
+    if (detectedPlatformsCache.empty())
+    {
+      // TODO: add checking disable env later
+      for (const auto& pair : detectors)
+      {
+        // TODO: set timeout to 1 second for now, need to expand
+        // IHttpClient to allow timeout in millisecond (we need 200ms)
+        if (pair.second(1) == PLATFORM_DETECTED)
+        {
+          detectedPlatformsCache.push_back(pair.first);
+        }
+      }
+    }
+    detectedPlatforms = detectedPlatformsCache;
+    _mutex_unlock(&cacheMutex);
+  }
+  catch (...)
+  {
+    // TODO: log error
+    _mutex_unlock(&cacheMutex);
+  }
+
   return;
 }
 
