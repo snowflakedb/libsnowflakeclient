@@ -7,6 +7,42 @@ using namespace Snowflake::Client;
 using namespace Snowflake::Client::PlatformDetection;
 
 Snowflake::Client::WiremockRunner* wiremock = NULL;
+// Check if WireMock is running by polling the admin endpoint
+static bool isWiremockRunning() {
+  const std::string request = std::string("curl -s --output /dev/null -X POST http://") +
+                              wiremockHost + ":" + wiremockAdminPort + "/__admin/mappings ";
+  const int ret = std::system(request.c_str());
+  return ret == 0;
+}
+
+int setup_wiremock(void **) {
+  wiremock = new WiremockRunner();
+
+  snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &SF_BOOLEAN_TRUE);
+  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_FALSE);
+
+  // Wait for WireMock to be ready
+  const int max_attempts = 10;
+  int attempts = 0;
+  while (!isWiremockRunning() && attempts < max_attempts) {
+    sleep(1);
+    attempts++;
+  }
+
+  if (!isWiremockRunning()) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int teardown_wiremock(void **) {
+  if (wiremock) {
+    delete wiremock;
+    wiremock = nullptr;
+  }
+  return 0;
+}
 
 extern "C"
 {
@@ -18,8 +54,8 @@ extern void restoreMetadataBaseUrl();
 void test_detection_endpoint_core(const std::string& expectedPlatform, const std::string& mappingFile)
 {
   resetDetection();
-  delete(wiremock);
-  wiremock = new WiremockRunner(mappingFile, {});
+  WiremockRunner::resetMapping();
+  WiremockRunner::initMappingFromFile(mappingFile);
   std::string wiremockUrl = std::string("http://") + wiremockHost + ":" + wiremockAdminPort;
   redirectMetadataBaseUrl(wiremockUrl.c_str());
   std::vector<std::string> detectedPlatforms;
@@ -38,6 +74,6 @@ int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_ec2Instance),
   };
-  return cmocka_run_group_tests(tests, NULL, NULL);
+  return cmocka_run_group_tests(tests, setup_wiremock, teardown_wiremock);
 }
 
