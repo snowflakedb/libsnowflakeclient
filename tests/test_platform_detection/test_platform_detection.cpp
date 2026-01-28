@@ -4,6 +4,7 @@
 #include "../wiremock/wiremock.hpp"
 
 using namespace Snowflake::Client;
+using namespace Snowflake::Client::PlatformDetection;
 
 Snowflake::Client::WiremockRunner* wiremock = NULL;
 
