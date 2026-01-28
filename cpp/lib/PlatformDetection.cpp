@@ -2,6 +2,7 @@
 #include "cJSON.h"
 
 #include "snowflake/HttpClient.hpp"
+#include "snowflake/platform.h"
 
 namespace Snowflake::Client::PlatformDetection
 {
@@ -17,11 +18,13 @@ typedef PlatformDetectionStatus (*PlatformDetectorFunc)(long timeout);
 
 #define AWS_METADATA_BASE_URL "http://169.254.169.254"
 
+#define MAX_ENV_VARIABLE_LENGTH 32767
+
 static std::string awsMetadataBaseURL = AWS_METADATA_BASE_URL;
 
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
-  char envbuf[MAX_PATH + 1];
+  char envbuf[MAX_ENV_VARIABLE_LENGTH];
   if (char* value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
   {
     return std::string(value);
@@ -50,12 +53,12 @@ PlatformDetectionStatus detectWithEndpoint(const HttpRequest& req, long timeout)
   return PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectAwsLambda(long timeout)
+PlatformDetectionStatus detectAwsLambdaEnv(long timeout)
 {
   return getEnvironmentVariableValue("LAMBDA_TASK_ROOT").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectAzureFunction(long timeout)
+PlatformDetectionStatus detectAzureFunctionEnv(long timeout)
 {
   if (getEnvironmentVariableValue("FUNCTIONS_WORKER_RUNTIME").empty() ||
     getEnvironmentVariableValue("FUNCTIONS_EXTENSION_VERSION").empty() ||
@@ -64,9 +67,9 @@ PlatformDetectionStatus detectAzureFunction(long timeout)
     return PLATFORM_NOT_DETECTED;
   }
   return PLATFORM_DETECTED;
-}
 
-PlatformDetectionStatus detectGceCloudRunService(long timeout)
+}
+PlatformDetectionStatus detectGceCloudRunServiceEnv(long timeout)
 {
   return (getEnvironmentVariableValue("K_SERVICE").empty() ||
     getEnvironmentVariableValue("K_REVISION").empty() ||
@@ -75,12 +78,15 @@ PlatformDetectionStatus detectGceCloudRunService(long timeout)
     : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectGceCloudRunJob(long timeout)
+PlatformDetectionStatus detectGceCloudRunJobEnv(long timeout)
 {
-  return getEnvironmentVariableValue("CLOUD_RUN_JOB").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
+  return getEnvironmentVariableValue("CLOUD_RUN_JOB").empty() ||
+    getEnvironmentVariableValue("CLOUD_RUN_EXECUTION").empty()
+    ? PLATFORM_NOT_DETECTED
+    : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectGithubAction(long timeout)
+PlatformDetectionStatus detectGithubActionEnv(long timeout)
 {
   return getEnvironmentVariableValue("GITHUB_ACTIONS").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
 }
@@ -99,21 +105,21 @@ PlatformDetectionStatus detectEc2Instance(long timeout)
 
 static const std::map <std::string, PlatformDetectorFunc> detectors =
 {
-  {"is_aws_lambda", detectAwsLambda},
-  {"is_azure_function", detectAzureFunction},
-  {"is_gce_cloud_run_service", detectGceCloudRunService},
-  {"is_gce_cloud_run_job", detectGceCloudRunJob},
-  {"is_github_action", detectGithubAction},
+  {"is_aws_lambda", detectAwsLambdaEnv},
+  {"is_azure_function", detectAzureFunctionEnv},
+  {"is_gce_cloud_run_service", detectGceCloudRunServiceEnv},
+  {"is_gce_cloud_run_job", detectGceCloudRunJobEnv},
+  {"is_github_action", detectGithubActionEnv},
   {"is_ec2_instance", detectEc2Instance}
 };
 
 static bool detectionDone = false;
+static std::vector <std::string> detectedPlatformsCache;
 
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 {
   static SF_MUTEX_HANDLE cacheMutex;
   static auto mutexInit = _mutex_init(&cacheMutex);
-  static std::vector <std::string> detectedPlatformsCache;
 
   try
   {
@@ -121,13 +127,20 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
     if (!detectionDone)
     {
       // TODO: add checking disable env later
-      for (const auto& pair : detectors)
+      if (!getEnvironmentVariableValue("SNOWFLAKE_DISABLE_PLATFORM_DETECTION").empty())
       {
-        // TODO: set timeout to 1 second for now, need to expand
-        // IHttpClient to allow timeout in millisecond (we need 200ms)
-        if (pair.second(1) == PLATFORM_DETECTED)
+        detectedPlatformsCache.push_back("disabled");
+      }
+      else
+      {
+        for (const auto& pair : detectors)
         {
-          detectedPlatformsCache.push_back(pair.first);
+          // TODO: set timeout to 1 second for now, need to expand
+          // IHttpClient to allow timeout in millisecond (we need 200ms)
+          if (pair.second(1) == PLATFORM_DETECTED)
+          {
+            detectedPlatformsCache.push_back(pair.first);
+          }
         }
       }
       detectionDone = true;
@@ -179,6 +192,7 @@ cJSON * get_detected_platforms()
 void resetDetection()
 {
   detectionDone = false;
+  detectedPlatformsCache.clear();
 }
 
 void redirectMetadataBaseUrl(const char* url)
