@@ -8,6 +8,7 @@
  */
 void test_json_data_in_MFA_Auth(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
@@ -67,6 +68,7 @@ void test_json_data_in_MFA_Auth(void **unused)
  */
 void test_application_path_override(void **unused)
 {
+    SF_UNUSED(unused);
     SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
     sf->account = "testaccount";
     sf->host = "testaccount.snowflakecomputing.com";
