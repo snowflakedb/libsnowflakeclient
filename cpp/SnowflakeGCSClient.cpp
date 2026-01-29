@@ -6,8 +6,8 @@
 #include "logger/SFLogger.hpp"
 #include "cJSON.h"
 #include <algorithm>
-#include <iostream>
-#include <sstream>
+#include "util/SnowflakeCommon.hpp"
+
 
 namespace
 {
@@ -197,7 +197,7 @@ RemoteStorageRequestOutcome SnowflakeGCSClient::GetRemoteFileMetadata(
   }
 
   std::map<std::string, std::string> headers;
-  parseHttpRespHeaders(headerString, headers);
+  Snowflake::Client::Util::parseHttpRespHeaders(headerString, headers);
 
   std::string key, iv;
   parseEncryptionMetadataFromJSON(headers[GCS_ENCRYPTIONDATAPROP], key, iv);
@@ -273,25 +273,6 @@ void SnowflakeGCSClient::parseEncryptionMetadataFromJSON(std::string const& json
   }
 
   snowflake_cJSON_free(json);
-}
-
-void SnowflakeGCSClient::parseHttpRespHeaders(std::string const& headerString,
-                            std::map<std::string, std::string>& headers)
-{
-  std::string header;
-  std::stringstream headerStream(headerString);
-  size_t index;
-  while (std::getline(headerStream, header) && header != "\r")
-  {
-    index = header.find(':', 0);
-    if (index != std::string::npos)
-    {
-      std::string key, value;
-      key = header.substr(0, index);
-      value = header.substr(index + 1);
-      headers[key] = value;
-    }
-  }
 }
 
 void SnowflakeGCSClient::buildGcsRequest(const std::string& filePathFull,

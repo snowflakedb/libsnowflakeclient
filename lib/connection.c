@@ -47,6 +47,7 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
 #endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
     snowflake_cJSON_AddStringToObject(client_env, "APPLICATION_PATH", app_path);
+    snowflake_cJSON_AddItemToObject(client_env, "PLATFORM", get_detected_platforms());
 
     session_parameters = snowflake_cJSON_CreateObject();
     snowflake_cJSON_AddStringToObject(

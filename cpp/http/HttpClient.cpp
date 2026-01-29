@@ -7,6 +7,7 @@ namespace Snowflake {
   namespace Client {
     const HttpClientConfig defaultHttpClientConfig = {
       5, // config timeout in seconds
+      0  // not to use timeout in milliseconds by default
     };
 
     class SimpleHttpClient : public IHttpClient {
@@ -17,11 +18,17 @@ namespace Snowflake {
         HttpResponse response;
         boost::optional<HttpResponse> responseOpt = boost::none;
 
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
+        if (config.connectTimeoutInMilliSeconds > 0) {
+          curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, config.connectTimeoutInSeconds);
+        } else {
+          curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
+        }
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, SimpleHttpClient::write);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, SimpleHttpClient::writeheader);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*) &response);
 
         if (!req.body.empty()) {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
@@ -59,6 +66,12 @@ namespace Snowflake {
       static size_t write(void *ptr, size_t size, size_t nmemb, HttpResponse *response) {
         CXX_LOG_TRACE("Writing %d bytes", (int) (size * nmemb));
         response->buffer.insert(response->buffer.end(), (char *) ptr, (char *) ptr + size * nmemb);
+        return size * nmemb;
+      }
+
+      static size_t writeheader(void *ptr, size_t size, size_t nmemb, HttpResponse *response) {
+        CXX_LOG_TRACE("Writing header %d bytes", (int) (size * nmemb));
+        response->headerBuffer.insert(response->headerBuffer.end(), (char *) ptr, (char *) ptr + size * nmemb);
         return size * nmemb;
       }
 
