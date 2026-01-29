@@ -138,10 +138,10 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 
         for (const auto& pair : detectors)
         {
-          futures.push_back(std::async(std::launch::async, [&pair] {
+          futures.push_back(std::async(std::launch::async, [detector = pair.second] {
             // TODO: set timeout to 1 second for now, need to expand
             // IHttpClient to allow timeout in millisecond (we need 200ms)
-            return pair.second(1) == PLATFORM_DETECTED;
+            return detector(1) == PLATFORM_DETECTED;
             }));
         }
 
