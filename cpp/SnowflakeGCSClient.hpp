@@ -75,9 +75,6 @@ private:
                                        std::string& key64,
                                        std::string& iv64);
 
-  void parseHttpRespHeaders(std::string const& headerString,
-                            std::map<std::string, std::string>& headers);
-
   /**
   * build gcs request.
   * @param filePathFull the full path of the object (input)
