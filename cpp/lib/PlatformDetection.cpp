@@ -114,7 +114,7 @@ static const std::map <std::string, PlatformDetectorFunc> detectors =
 };
 
 static bool detectionDone = false;
-static std::vector <std::string> detectedPlatformsCache;
+static std::vector<std::string> detectedPlatformsCache;
 
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 {
@@ -133,14 +133,26 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
       }
       else
       {
+        std::vector<std::future<bool>> futures;
+        futures.reserve(detectors.size());
+
         for (const auto& pair : detectors)
         {
-          // TODO: set timeout to 1 second for now, need to expand
-          // IHttpClient to allow timeout in millisecond (we need 200ms)
-          if (pair.second(1) == PLATFORM_DETECTED)
+          futures.push_back(std::async(std::launch::async, [&pair] {
+            // TODO: set timeout to 1 second for now, need to expand
+            // IHttpClient to allow timeout in millisecond (we need 200ms)
+            return pair.second(1) == PLATFORM_DETECTED;
+            }));
+        }
+
+        auto it = detectors.begin();
+        for (auto& fut : futures)
+        {
+          if (fut.get())
           {
-            detectedPlatformsCache.push_back(pair.first);
+            detectedPlatformsCache.push_back(it->first);
           }
+          ++it;
         }
       }
       detectionDone = true;

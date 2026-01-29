@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <future>
 
 namespace Snowflake::Client::PlatformDetection
 {
