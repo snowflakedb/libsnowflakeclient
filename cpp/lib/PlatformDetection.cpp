@@ -1,3 +1,4 @@
+#include <chrono>
 #include "snowflake/PlatformDetection.hpp"
 #include "snowflake/platform.h"
 #include "snowflake/HttpClient.hpp"
@@ -18,7 +19,8 @@ enum PlatformDetectionStatus
   PLATFORM_DETECTION_TIMEOUT
 };
 
-typedef PlatformDetectionStatus (*PlatformDetectorFunc)(long timeout);
+typedef PlatformDetectionStatus (*PlatformDetectorEnvFunc)();
+typedef PlatformDetectionStatus(*PlatformDetectorEndpointFunc)(long timeout);
 
 #define AWS_METADATA_BASE_URL "http://169.254.169.254"
 #define AZURE_METADATA_BASE_URL "http://169.254.169.254"
@@ -31,6 +33,7 @@ static std::string azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
 static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
+static const long timeoutInMs = 200;
 
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
@@ -72,12 +75,12 @@ PlatformDetectionStatus detectWithEndpoint(
   return PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectAwsLambdaEnv(long timeout)
+PlatformDetectionStatus detectAwsLambdaEnv()
 {
   return getEnvironmentVariableValue("LAMBDA_TASK_ROOT").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectAzureFunctionEnv(long timeout)
+PlatformDetectionStatus detectAzureFunctionEnv()
 {
   if (getEnvironmentVariableValue("FUNCTIONS_WORKER_RUNTIME").empty() ||
     getEnvironmentVariableValue("FUNCTIONS_EXTENSION_VERSION").empty() ||
@@ -88,7 +91,7 @@ PlatformDetectionStatus detectAzureFunctionEnv(long timeout)
   return PLATFORM_DETECTED;
 
 }
-PlatformDetectionStatus detectGceCloudRunServiceEnv(long timeout)
+PlatformDetectionStatus detectGceCloudRunServiceEnv()
 {
   return (getEnvironmentVariableValue("K_SERVICE").empty() ||
     getEnvironmentVariableValue("K_REVISION").empty() ||
@@ -97,7 +100,7 @@ PlatformDetectionStatus detectGceCloudRunServiceEnv(long timeout)
     : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectGceCloudRunJobEnv(long timeout)
+PlatformDetectionStatus detectGceCloudRunJobEnv()
 {
   return getEnvironmentVariableValue("CLOUD_RUN_JOB").empty() ||
     getEnvironmentVariableValue("CLOUD_RUN_EXECUTION").empty()
@@ -105,7 +108,7 @@ PlatformDetectionStatus detectGceCloudRunJobEnv(long timeout)
     : PLATFORM_DETECTED;
 }
 
-PlatformDetectionStatus detectGithubActionEnv(long timeout)
+PlatformDetectionStatus detectGithubActionEnv()
 {
   return getEnvironmentVariableValue("GITHUB_ACTIONS").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
 }
@@ -138,7 +141,7 @@ PlatformDetectionStatus detectAzureVM(long timeout)
 
 PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
 {
-  if ((PLATFORM_DETECTED == detectAzureFunctionEnv(timeout)) &&
+  if ((PLATFORM_DETECTED == detectAzureFunctionEnv()) &&
       (!getEnvironmentVariableValue("IDENTITY_HEADER").empty()))
   {
     return PLATFORM_DETECTED;
@@ -219,13 +222,17 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   return PLATFORM_NOT_DETECTED;
 }
 
-static const std::map <std::string, PlatformDetectorFunc> detectors =
+static const std::map <std::string, PlatformDetectorEnvFunc> envDetectors =
 {
   {"is_aws_lambda", detectAwsLambdaEnv},
   {"is_azure_function", detectAzureFunctionEnv},
   {"is_gce_cloud_run_service", detectGceCloudRunServiceEnv},
   {"is_gce_cloud_run_job", detectGceCloudRunJobEnv},
   {"is_github_action", detectGithubActionEnv},
+};
+
+static const std::map <std::string, PlatformDetectorEndpointFunc> endpointDetectors =
+{
   {"is_ec2_instance", detectEc2Instance},
   {"has_aws_identity", detectAwsIdentity},
   {"is_azure_vm", detectAzureVM},
@@ -254,26 +261,39 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
       }
       else
       {
-        std::vector<std::future<bool>> futures;
-        futures.reserve(detectors.size());
+        auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
+        std::vector<std::future<std::string>> futures;
+        futures.reserve(endpointDetectors.size());
 
-        for (const auto& pair : detectors)
+        for (const auto& pair : endpointDetectors)
         {
-          futures.push_back(std::async(std::launch::async, [detector = pair.second] {
-            // TODO: set timeout to 1 second for now, need to expand
-            // IHttpClient to allow timeout in millisecond (we need 200ms)
-            return detector(1) == PLATFORM_DETECTED;
+          futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first] {
+            return detector(timeoutInMs) == PLATFORM_DETECTED ? platform : "";
             }));
         }
 
-        auto it = detectors.begin();
+        for (const auto& pair : envDetectors)
+        {
+          if (pair.second() == PLATFORM_DETECTED)
+          {
+            detectedPlatformsCache.push_back(pair.first);
+          }
+        }
         for (auto& fut : futures)
         {
-          if (fut.get())
+          std::chrono::nanoseconds remainTime(0);
+          auto curTime = std::chrono::steady_clock::now();
+          if (curTime < endTime)
           {
-            detectedPlatformsCache.push_back(it->first);
+            remainTime = endTime - curTime;
           }
-          ++it;
+          if (fut.wait_for(remainTime) == std::future_status::ready)
+          {
+            if (!fut.get().empty())
+            {
+              detectedPlatformsCache.push_back(fut.get());
+            }
+          }
         }
       }
       detectionDone = true;

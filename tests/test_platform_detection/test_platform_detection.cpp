@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <algorithm>
+#include <chrono>
 #include "snowflake/PlatformDetection.hpp"
 #include "snowflake/platform.h"
 #include "../utils/test_setup.h"
@@ -11,8 +12,6 @@ extern "C"
 extern void resetDetection();
 extern void redirectMetadataBaseUrl(const char* url);
 extern void restoreMetadataBaseUrl();
-extern void sf_setenv();
-extern void sf_unsetenv();
 }
 
 namespace Snowflake::Client {
@@ -188,6 +187,22 @@ void test_githubActionEnv(void**) {
   assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_github_action") != detectedPlatforms.end());
 
   sf_unsetenv("GITHUB_ACTIONS");
+}
+
+void test_timeout(void**) {
+  resetDetection();
+  WiremockRunner::resetMapping();
+  WiremockRunner::initMappingFromFile("timeout_response.json");
+  std::string wiremockUrl = std::string("http://") + wiremockHost + ":" + wiremockAdminPort;
+  sf_setenv("AWS_ENDPOINT_URL_STS", wiremockUrl.c_str());
+  std::vector<std::string> detectedPlatforms;
+  auto startTime = std::chrono::steady_clock::now();
+  PlatformDetection::getDetectedPlatforms(detectedPlatforms);
+  auto endTime = std::chrono::steady_clock::now();
+  auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+  assert_true(execTime >= 200);
+  assert_true(execTime <= 250);
+  sf_unsetenv("AWS_ENDPOINT_URL_STS");
 }
 
 } // namespace Snowflake::Client
