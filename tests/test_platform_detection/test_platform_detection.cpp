@@ -76,6 +76,22 @@ void test_ec2Instance(void**) {
   test_detection_endpoint_core("is_ec2_instance", "aws_ec2_instance_success.json");
 }
 
+void test_azurevm(void**) {
+  test_detection_endpoint_core("is_azure_vm", "azure_vm_success.json");
+}
+
+void test_azureIdentity(void**) {
+  test_detection_endpoint_core("has_azure_managed_identity", "azure_managed_identity_success.json");
+}
+
+void test_gcevm(void**) {
+  test_detection_endpoint_core("is_gce_vm", "gce_vm_success.json");
+}
+
+void test_gcpIdentity(void**) {
+  test_detection_endpoint_core("has_gcp_identity", "gce_identity_success.json");
+}
+
 } // namespace Snowflake::Client
 
 using namespace Snowflake::Client;
@@ -83,6 +99,10 @@ int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_ec2Instance),
+      cmocka_unit_test(test_azurevm),
+      cmocka_unit_test(test_azureIdentity),
+      cmocka_unit_test(test_gcevm),
+      cmocka_unit_test(test_gcpIdentity),
   };
   return cmocka_run_group_tests(tests, setup_wiremock, teardown_wiremock);
 }

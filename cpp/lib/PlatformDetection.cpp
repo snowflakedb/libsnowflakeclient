@@ -109,7 +109,7 @@ PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
     HttpRequest::Method::GET,
     url,
     {
-      {"Metadata", "true"},
+      {"Metadata", "True"},
     },
   };
 
@@ -201,6 +201,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
     _mutex_lock(&cacheMutex);
     if (!detectionDone)
     {
+      detectedPlatformsCache.clear();
       // TODO: add checking disable env later
       for (const auto& pair : detectors)
       {
