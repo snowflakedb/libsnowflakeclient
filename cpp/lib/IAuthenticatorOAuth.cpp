@@ -470,7 +470,7 @@ namespace Snowflake::Client
         //    ////////////////////////////////////////////////////////
         OAuthTokenListenerWebServer::OAuthTokenListenerWebServer()
         {
-            m_className = std::string("AuthenticatorOAuth").c_str();
+            m_className = "AuthenticatorOAuth";
         }
 
         /**
