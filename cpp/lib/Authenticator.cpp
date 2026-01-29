@@ -741,6 +741,19 @@ namespace Snowflake::Client
       m_redirectUri = SFURL::parse(!is_string_empty(m_connection->oauth_redirect_uri) ? m_connection->oauth_redirect_uri : AuthenticatorOAuth::S_LOCALHOST_URL);
       m_redirectUriDynamicDefault = is_string_empty(m_connection->oauth_redirect_uri);
       m_singleUseRefreshTokens = m_connection->single_use_refresh_token;
+      if (m_authEndpoint.scheme() == "http")
+      {
+          CXX_LOG_WARN("sf::AuthenticatorOAuth::AuthenticatorOAuth::"
+              "OAuth authorization endpoint uses insecure HTTP protocol. "
+              "HTTPS should be used for secure communication.");
+      }
+      if (m_tokenEndpoint.scheme() == "http")
+      {
+          CXX_LOG_WARN("sf::AuthenticatorOAuth::AuthenticatorOAuth::"
+              "OAuth token endpoint uses insecure HTTP protocol. "
+              "HTTPS should be used for secure communication.");
+      }
+
       if (m_authEndpoint.host() != m_tokenEndpoint.host())
       {
           CXX_LOG_WARN("sf::AuthenticatorOAuth::validateConfiguration::Hosts for OAuth IdP integration are different: mismatch of %s and %s",
