@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <algorithm>
 #include "snowflake/PlatformDetection.hpp"
 #include "snowflake/platform.h"
 #include "../utils/test_setup.h"
@@ -31,6 +32,9 @@ int setup_wiremock(void **) {
   snowflake_global_set_attribute(SF_GLOBAL_DISABLE_VERIFY_PEER, &SF_BOOLEAN_TRUE);
   snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &SF_BOOLEAN_FALSE);
 
+  std::string wiremockUrl = std::string("http://") + wiremockHost + ":" + wiremockAdminPort;
+  redirectMetadataBaseUrl(wiremockUrl.c_str());
+
   // Wait for WireMock to be ready
   const int max_attempts = 10;
   int attempts = 0;
@@ -51,6 +55,7 @@ int teardown_wiremock(void **) {
     delete wiremock;
     wiremock = nullptr;
   }
+  restoreMetadataBaseUrl();
   return 0;
 }
 
@@ -59,17 +64,37 @@ void test_detection_endpoint_core(const std::string& expectedPlatform, const std
   resetDetection();
   WiremockRunner::resetMapping();
   WiremockRunner::initMappingFromFile(mappingFile);
+  // this doesn't work likely due to the AWS SDK version we are using.
+  // Didn't find AWS_ENDPOINT_URL* in the source code.
+  // no test case for has_aws_identity for now, while it's confirmed working on AWS instance.
   std::string wiremockUrl = std::string("http://") + wiremockHost + ":" + wiremockAdminPort;
-  redirectMetadataBaseUrl(wiremockUrl.c_str());
+  sf_setenv("AWS_ENDPOINT_URL_STS", wiremockUrl.c_str());
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), expectedPlatform.c_str());
-  restoreMetadataBaseUrl();
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), expectedPlatform) != detectedPlatforms.end());
+  sf_unsetenv("AWS_ENDPOINT_URL_STS");
 }
 
 void test_ec2Instance(void**) {
   test_detection_endpoint_core("is_ec2_instance", "aws_ec2_instance_success.json");
+}
+
+void test_azurevm(void**) {
+  test_detection_endpoint_core("is_azure_vm", "azure_vm_success.json");
+}
+
+void test_azureIdentity(void**) {
+  test_detection_endpoint_core("has_azure_managed_identity", "azure_managed_identity_success.json");
+}
+
+void test_gcevm(void**) {
+  test_detection_endpoint_core("is_gce_vm", "gce_vm_success.json");
+}
+
+void test_gcpIdentity(void**) {
+  test_detection_endpoint_core("has_gcp_identity", "gce_identity_success.json");
 }
 
 void test_disablePlatformDetection(void**) {
@@ -92,8 +117,9 @@ void test_awsLambdaEnv(void**) {
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
 
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), "is_aws_lambda");
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_aws_lambda") != detectedPlatforms.end());
 
   sf_unsetenv("LAMBDA_TASK_ROOT");
 }
@@ -107,8 +133,9 @@ void test_azureFunctionEnv(void**) {
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
 
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), "is_azure_function");
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_azure_function") != detectedPlatforms.end());
 
   sf_unsetenv("FUNCTIONS_WORKER_RUNTIME");
   sf_unsetenv("FUNCTIONS_EXTENSION_VERSION");
@@ -124,8 +151,9 @@ void test_gceCloudRunServiceEnv(void**) {
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
 
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), "is_gce_cloud_run_service");
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_gce_cloud_run_service") != detectedPlatforms.end());
 
   sf_unsetenv("K_SERVICE");
   sf_unsetenv("K_REVISION");
@@ -140,8 +168,9 @@ void test_gceCloudRunJobEnv(void**) {
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
 
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), "is_gce_cloud_run_job");
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_gce_cloud_run_job") != detectedPlatforms.end());
 
   sf_unsetenv("CLOUD_RUN_JOB");
   sf_unsetenv("CLOUD_RUN_EXECUTION");
@@ -154,25 +183,30 @@ void test_githubActionEnv(void**) {
   std::vector<std::string> detectedPlatforms;
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
 
-  assert_int_equal(1, detectedPlatforms.size());
-  assert_string_equal(detectedPlatforms[0].c_str(), "is_github_action");
+  // On aws instance has_aws_identity is also returned
+  assert_true(detectedPlatforms.size() <= 2);
+  assert_true(std::find(detectedPlatforms.begin(), detectedPlatforms.end(), "is_github_action") != detectedPlatforms.end());
 
   sf_unsetenv("GITHUB_ACTIONS");
 }
+
 } // namespace Snowflake::Client
 
 using namespace Snowflake::Client;
 int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_ec2Instance),
       cmocka_unit_test(test_disablePlatformDetection),
       cmocka_unit_test(test_awsLambdaEnv),
       cmocka_unit_test(test_azureFunctionEnv),
       cmocka_unit_test(test_gceCloudRunServiceEnv),
       cmocka_unit_test(test_gceCloudRunJobEnv),
       cmocka_unit_test(test_githubActionEnv),
+      cmocka_unit_test(test_ec2Instance),
+      cmocka_unit_test(test_azurevm),
+      cmocka_unit_test(test_azureIdentity),
+      cmocka_unit_test(test_gcevm),
+      cmocka_unit_test(test_gcpIdentity),
   };
   return cmocka_run_group_tests(tests, setup_wiremock, teardown_wiremock);
 }
-
