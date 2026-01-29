@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
+#include <boost/algorithm/string.hpp>
 #include "snowflake/basic_types.h"
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
@@ -210,6 +211,8 @@ void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerStri
       std::string key, value;
       key = header.substr(0, index);
       value = header.substr(index + 1);
+      boost::trim(key);
+      boost::trim(value);
       headers[key] = value;
     }
   }
