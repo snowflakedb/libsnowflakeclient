@@ -30,6 +30,7 @@ std::vector<sf_string_attributes> strAttributes = {
     { SF_CON_TIMEZONE, "test_timezone" },
     { SF_CON_SERVICE_NAME, "test_service_name" },
     { SF_CON_APPLICATION, "test_application" },
+    { SF_CON_APPLICATION_PATH, "/path/to/my/script.php" },
     { SF_CON_PRIV_KEY_FILE, "test_priv_key_file" },
     { SF_CON_PRIV_KEY_FILE_PWD, "test_priv_key_file_pwd" },
     { SF_CON_PROXY, "test_proxy" },

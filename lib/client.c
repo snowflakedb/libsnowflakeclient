@@ -1236,6 +1236,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->application_name);
     SF_FREE(sf->application_version);
     SF_FREE(sf->application);
+    SF_FREE(sf->application_path);
     SF_FREE(sf->timezone);
     SF_FREE(sf->service_name);
     SF_FREE(sf->query_result_format);
@@ -1640,6 +1641,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_APPLICATION:
           alloc_buffer_and_copy(&sf->application, value);
           break;
+        case SF_CON_APPLICATION_PATH:
+            alloc_buffer_and_copy(&sf->application_path, value);
+            break;
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
@@ -1908,6 +1912,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_APPLICATION:
           *value = sf->application;
           break;
+        case SF_CON_APPLICATION_PATH:
+            *value = sf->application_path;
+            break;
         case SF_CON_AUTHENTICATOR:
             *value = sf->authenticator;
             break;

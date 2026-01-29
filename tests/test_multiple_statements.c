@@ -177,7 +177,7 @@ void test_multi_stmt_with_large_result(void **unused)
     status = snowflake_query(sfstmt,
                              "create or replace temporary table test_multi_large(c1 number, c2 number);\n"
                              "insert into test_multi_large select seq4(), TO_VARCHAR(seq4()) from table(generator(rowcount => 100000));\n"
-                             "select * from test_multi_large",
+                             "select * from test_multi_large order by c1",
                              0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
@@ -335,7 +335,7 @@ void test_multi_stmt_arrow_format(void **unused)
     status = snowflake_query(sfstmt,
                              "create or replace temporary table test_multi_large(c1 number, c2 number);\n"
                              "insert into test_multi_large select seq4(), TO_VARCHAR(seq4()) from table(generator(rowcount => 100000));\n"
-                             "select * from test_multi_large",
+                             "select * from test_multi_large order by c1",
                              0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
