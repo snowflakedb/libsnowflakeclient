@@ -22,12 +22,10 @@ typedef PlatformDetectionStatus (*PlatformDetectorFunc)(long timeout);
 
 #define AWS_METADATA_BASE_URL "http://169.254.169.254"
 #define AZURE_METADATA_BASE_URL "http://169.254.169.254"
-#define GCE_METADATA_ROOT_URL "http://metadata.google.internal"
-#define GCP_METADATA_BASE_URL "http://metadata.google.internal/computeMetadata/v1"
+#define GCP_METADATA_BASE_URL "http://metadata.google.internal"
 
 static std::string awsMetadataBaseURL = AWS_METADATA_BASE_URL;
 static std::string azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
-static std::string gceMetadataRootURL = GCE_METADATA_ROOT_URL;
 static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
@@ -118,7 +116,7 @@ PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
 
 PlatformDetectionStatus detectGceVM(long timeout)
 {
-  auto url = boost::urls::url(gceMetadataRootURL);
+  auto url = boost::urls::url(gcpMetadataBaseURL);
   HttpRequest req{
     HttpRequest::Method::GET,
     url,
@@ -143,7 +141,7 @@ PlatformDetectionStatus detectGceVM(long timeout)
 
 PlatformDetectionStatus detectGcpIdentity(long timeout)
 {
-  auto url = boost::urls::url(gcpMetadataBaseURL + "/instance/service-accounts/default/email");
+  auto url = boost::urls::url(gcpMetadataBaseURL + "/computeMetadata/v1/instance/service-accounts/default/email");
   HttpRequest req{
     HttpRequest::Method::GET,
     url,
@@ -248,7 +246,6 @@ void redirectMetadataBaseUrl(const char* url)
 {
   awsMetadataBaseURL = url;
   azureMetadataBaseURL = url;
-  gceMetadataRootURL = url;
   gcpMetadataBaseURL = url;
 }
 
@@ -256,7 +253,6 @@ void restoreMetadataBaseUrl()
 {
   awsMetadataBaseURL = AWS_METADATA_BASE_URL;
   awsMetadataBaseURL = AZURE_METADATA_BASE_URL;
-  gceMetadataRootURL = GCE_METADATA_ROOT_URL;
   gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 }
 
