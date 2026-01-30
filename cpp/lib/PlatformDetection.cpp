@@ -51,7 +51,7 @@ PlatformDetectionStatus detectWithEndpoint(
   std::map <std::string, std::string> * respHeaders = NULL)
 {
   // use timeout in milliseconds
-  HttpClientConfig cfg = { 0, timeout };
+  HttpClientConfig cfg = { 0, timeout, 0, timeout };
   std::unique_ptr<IHttpClient> httpClient;
   httpClient.reset(IHttpClient::createSimple(cfg));
 

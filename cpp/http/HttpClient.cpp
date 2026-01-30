@@ -7,7 +7,9 @@ namespace Snowflake {
   namespace Client {
     const HttpClientConfig defaultHttpClientConfig = {
       5, // config timeout in seconds
-      0  // not to use timeout in milliseconds by default
+      0, // not to use other timeout by default
+      0,
+      0
     };
 
     class SimpleHttpClient : public IHttpClient {
@@ -19,9 +21,17 @@ namespace Snowflake {
         boost::optional<HttpResponse> responseOpt = boost::none;
 
         if (config.connectTimeoutInMilliSeconds > 0) {
-          curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, config.connectTimeoutInSeconds);
+          curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, config.connectTimeoutInMilliSeconds);
         } else {
           curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
+        }
+        if (config.requestTimeoutInSeconds > 0)
+        {
+          curl_easy_setopt(curl, CURLOPT_TIMEOUT, config.requestTimeoutInSeconds);
+        }
+        else if (config.requestTimeoutInMilliSeconds > 0)
+        {
+          curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, config.requestTimeoutInMilliSeconds);
         }
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, HttpRequest::methodToString(req.method));

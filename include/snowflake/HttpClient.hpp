@@ -56,6 +56,8 @@ namespace Snowflake {
     struct HttpClientConfig {
       long connectTimeoutInSeconds;
       long connectTimeoutInMilliSeconds = 0;
+      long requestTimeoutInSeconds = 0;
+      long requestTimeoutInMilliSeconds = 0;
     };
 
     class IHttpClient {
