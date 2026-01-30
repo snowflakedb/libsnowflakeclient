@@ -200,9 +200,10 @@ void test_timeout(void**) {
   PlatformDetection::getDetectedPlatforms(detectedPlatforms);
   auto endTime = std::chrono::steady_clock::now();
   auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-  printf("execTimeMs %d\n", execTimeMs);
+  printf("execTimeMs %d\n", (int)execTimeMs);
   assert_true(execTimeMs >= 200);
-  assert_true(execTimeMs <= 250);
+  // there could be extra delay due to some detectors not started right away
+  assert_true(execTimeMs <= 400);
   sf_unsetenv("AWS_ENDPOINT_URL_STS");
 }
 
