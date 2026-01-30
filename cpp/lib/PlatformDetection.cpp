@@ -289,9 +289,10 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
           }
           if (fut.wait_for(remainTime) == std::future_status::ready)
           {
-            if (!fut.get().empty())
+            std::string result = fut.get();
+            if (!result.empty())
             {
-              detectedPlatformsCache.push_back(fut.get());
+              detectedPlatformsCache.push_back(result);
             }
           }
         }

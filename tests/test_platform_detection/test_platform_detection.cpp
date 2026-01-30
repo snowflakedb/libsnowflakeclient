@@ -222,6 +222,7 @@ int main(void) {
       cmocka_unit_test(test_azureIdentity),
       cmocka_unit_test(test_gcevm),
       cmocka_unit_test(test_gcpIdentity),
+      cmocka_unit_test(test_timeout),
   };
   return cmocka_run_group_tests(tests, setup_wiremock, teardown_wiremock);
 }
