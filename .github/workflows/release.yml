@@ -1,0 +1,258 @@
+name: Build and Upload Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      version:
+        description: 'Version to build (e.g., 2.5.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-upload-linux-x86_64:
+    name: Build and Upload Linux x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Set environment variables
+        run: |
+          echo "GIT_BRANCH=master" >> $GITHUB_ENV
+          echo "GIT_COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "BUILD_TYPE=Release" >> $GITHUB_ENV
+          echo "UPLOAD_TO_S3=true" >> $GITHUB_ENV
+      
+      - name: Build and Upload
+        run: |
+          export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
+          export WORKSPACE=${{ github.workspace }}
+          ci/build_linux.sh
+      
+      - name: Upload artifacts (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsnowflakeclient-linux-x86_64
+          path: artifacts/*.tar.gz
+          retention-days: 30
+          if-no-files-found: warn
+
+  build-and-upload-linux-aarch64:
+    name: Build and Upload Linux aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Set environment variables
+        run: |
+          echo "GIT_BRANCH=master" >> $GITHUB_ENV
+          echo "GIT_COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "BUILD_TYPE=Release" >> $GITHUB_ENV
+          echo "UPLOAD_TO_S3=true" >> $GITHUB_ENV
+          echo "TARGET_PLATFORM=arm64" >> $GITHUB_ENV
+      
+      - name: Build and Upload
+        run: |
+          export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
+          export WORKSPACE=${{ github.workspace }}
+          ci/build_linux.sh
+      
+      - name: Upload artifacts (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsnowflakeclient-linux-aarch64
+          path: artifacts/*.tar.gz
+          retention-days: 30
+          if-no-files-found: warn
+
+  build-and-upload-macos:
+    name: Build and Upload macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Bash
+        run: brew install bash
+      
+      - name: Install CMake
+        run: brew install cmake
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Set environment variables
+        run: |
+          echo "GIT_BRANCH=master" >> $GITHUB_ENV
+          echo "GIT_COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "BUILD_TYPE=Release" >> $GITHUB_ENV
+          echo "UPLOAD_TO_S3=true" >> $GITHUB_ENV
+      
+      - name: Build and Upload
+        run: |
+          export GIT_URL=https://github.com/${GITHUB_REPOSITORY}.git
+          export WORKSPACE=${{ github.workspace }}
+          ./ci/build_mac.sh
+      
+      - name: Upload artifacts (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsnowflakeclient-macos
+          path: artifacts/*.tar.gz
+          retention-days: 30
+          if-no-files-found: warn
+
+  build-and-upload-windows:
+    name: Build and Upload Windows
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        platform: ['x64', 'x86']
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install CMake
+        shell: cmd
+        run: |
+          curl -L "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip" -o cmake.zip
+          tar -xf cmake.zip
+          echo %cd%\cmake-3.31.6-windows-x86_64\bin>> %GITHUB_PATH%
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Build and Upload
+        shell: cmd
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BUILD_TYPE: Release
+          VS_VERSION: VS17
+          GIT_BRANCH: master
+          GIT_COMMIT: ${{ github.sha }}
+          UPLOAD_TO_S3: true
+        run: ci\build_win.bat
+      
+      - name: Upload artifacts (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsnowflakeclient-windows-${{ matrix.platform }}
+          path: artifacts/*.tar.gz
+          retention-days: 30
+          if-no-files-found: warn
+
+  verify-upload:
+    name: Verify S3 Upload
+    needs: [build-and-upload-linux-x86_64, build-and-upload-linux-aarch64, build-and-upload-macos, build-and-upload-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Checking for version: $VERSION"
+      
+      - name: Verify uploads
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "========================================="
+          echo "Verifying LibSFC $VERSION on S3"
+          echo "========================================="
+          
+          SUCCESS=true
+          
+          echo ""
+          echo "Checking darwin (macOS): libsnowflakeclient_darwin_Release-${VERSION}.tar.gz"
+          if aws s3 ls s3://sfc-eng-data/dependency/libsnowflakeclient/ | grep "libsnowflakeclient_darwin_Release-${VERSION}.tar.gz"; then
+            echo "Darwin found"
+          else
+            echo "Darwin not found"
+            SUCCESS=false
+          fi
+          
+          echo ""
+          echo "Checking linux x86_64: libsnowflakeclient_linux_Release-${VERSION}.tar.gz"
+          if aws s3 ls s3://sfc-eng-data/dependency/libsnowflakeclient/ | grep "libsnowflakeclient_linux_Release-${VERSION}.tar.gz"; then
+            echo "Linux x86_64 found"
+          else
+            echo "Linux x86_64 not found"
+            SUCCESS=false
+          fi
+          
+          echo ""
+          echo "Checking linux aarch64: libsnowflakeclient_linux_Release-${VERSION}.tar.gz"
+          if aws s3 ls s3://sfc-eng-data/dependency-aarch64/libsnowflakeclient/ | grep "libsnowflakeclient_linux_Release-${VERSION}.tar.gz"; then
+            echo "Linux aarch64 found"
+          else
+            echo "Linux aarch64 not found"
+            SUCCESS=false
+          fi
+          
+          echo ""
+          echo "Checking windows x64: libsnowflakeclient_win64_vs17_Release-${VERSION}.zip"
+          if aws s3 ls s3://sfc-eng-data/dependency/libsnowflakeclient/ | grep "libsnowflakeclient_win64_vs17_Release-${VERSION}.zip"; then
+            echo "Windows x64 found"
+          else
+            echo "Windows x64 not found"
+            SUCCESS=false
+          fi
+          
+          echo ""
+          echo "Checking windows x86: libsnowflakeclient_win32_vs17_Release-${VERSION}.zip"
+          if aws s3 ls s3://sfc-eng-data/dependency/libsnowflakeclient/ | grep "libsnowflakeclient_win32_vs17_Release-${VERSION}.zip"; then
+            echo "Windows x86 found"
+          else
+            echo "Windows x86 not found"
+            SUCCESS=false
+          fi
+          
+          echo ""
+          echo "========================================="
+          if [ "$SUCCESS" = true ]; then
+            echo "All platforms verified successfully!"
+            echo "========================================="
+          else
+            echo "Some platforms missing!"
+            echo "========================================="
+            exit 1
+          fi
+
