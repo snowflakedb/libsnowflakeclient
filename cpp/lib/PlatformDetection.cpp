@@ -33,7 +33,6 @@ static std::string azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
 static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
-static const long timeoutInMs = 200;
 
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
@@ -205,10 +204,10 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   Aws::Client::ClientConfiguration clientConfig;
   clientConfig.connectTimeoutMs = timeout;
   clientConfig.requestTimeoutMs = timeout;
+  clientConfig.retryStrategy = std::make_shared<Aws::Client::StandardRetryStrategy>(0);
   Aws::STS::STSClient stsClient(clientConfig);
   Aws::STS::Model::GetCallerIdentityRequest request;
   Aws::STS::Model::GetCallerIdentityOutcome outcome = stsClient.GetCallerIdentity(request);
-
   if (outcome.IsSuccess())
   {
     return PLATFORM_DETECTED;
@@ -244,7 +243,7 @@ static const std::map <std::string, PlatformDetectorEndpointFunc> endpointDetect
 static bool detectionDone = false;
 static std::vector<std::string> detectedPlatformsCache;
 
-void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
+void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long timeoutMs)
 {
   static SF_MUTEX_HANDLE cacheMutex;
   static auto mutexInit = _mutex_init(&cacheMutex);
@@ -262,14 +261,13 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
       }
       else
       {
-        auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
-        std::vector<std::future<std::string>> futures;
+        std::vector<std::future<std::string> > futures;
         futures.reserve(endpointDetectors.size());
 
         for (const auto& pair : endpointDetectors)
         {
-          futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first] {
-            return detector(timeoutInMs) == PLATFORM_DETECTED ? platform : "";
+          futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first, timeoutMs] {
+            return detector(timeoutMs) == PLATFORM_DETECTED ? platform : "";
             }));
         }
 
@@ -280,6 +278,8 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
             detectedPlatformsCache.push_back(pair.first);
           }
         }
+
+        auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
         for (auto& fut : futures)
         {
           std::chrono::nanoseconds remainTime(0);
