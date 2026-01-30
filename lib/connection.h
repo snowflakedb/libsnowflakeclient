@@ -224,7 +224,7 @@ cJSON *STDCALL create_query_json_body(const char *sql_text,
 /*
  * @return detected platforms in cJSON.
  */
-cJSON * get_detected_platforms();
+cJSON * get_detected_platforms(long timeoutms);
 
 /**
  * Creates a cJSON blob that is used to renew a session with Snowflake. cJSON blob must be freed by the caller using

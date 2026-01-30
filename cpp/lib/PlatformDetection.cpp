@@ -33,7 +33,6 @@ static std::string azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
 static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
 static std::string gcpMetadataFlavor = "Google";
-static const long timeoutInMs = 200;
 
 std::string getEnvironmentVariableValue(const std::string& envVarName)
 {
@@ -244,16 +243,14 @@ static const std::map <std::string, PlatformDetectorEndpointFunc> endpointDetect
 static bool detectionDone = false;
 static std::vector<std::string> detectedPlatformsCache;
 
-void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
+void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long timeoutMs)
 {
   static SF_MUTEX_HANDLE cacheMutex;
   static auto mutexInit = _mutex_init(&cacheMutex);
   SF_UNUSED(mutexInit);
-  static std::vector<std::future<std::string>> futures;
 
   try
   {
-    auto start = std::chrono::steady_clock::now();
     _mutex_lock(&cacheMutex);
     if (!detectionDone)
     {
@@ -264,16 +261,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
       }
       else
       {
-        auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
-        futures.clear();
-        futures.reserve(endpointDetectors.size());
-
-        for (const auto& pair : endpointDetectors)
-        {
-          futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first] {
-            return detector(timeoutInMs) == PLATFORM_DETECTED ? platform : "";
-            }));
-        }
+        auto stopTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
 
         for (const auto& pair : envDetectors)
         {
@@ -282,30 +270,26 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
             detectedPlatformsCache.push_back(pair.first);
           }
         }
-        for (auto& fut : futures)
+        /* running detectors in parallel is tricky as we are using
+         * blocking httpClient and there is no safe way to terminate the tasks.
+         * running one by one would be enough usually reaching local host
+         * won't take much time. It's for information collection anyway best
+         * effort would be enough.
+         */
+        for (const auto& pair : endpointDetectors)
         {
-          std::chrono::nanoseconds remainTime(0);
-          auto curTime = std::chrono::steady_clock::now();
-          if (curTime < endTime)
+          long remainTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                              stopTime - std::chrono::steady_clock::now()).count();
+          if (remainTime < 0)
           {
-            remainTime = endTime - curTime;
+            break;
           }
-          if (fut.wait_for(remainTime) == std::future_status::ready)
+          if (pair.second(remainTime) == PLATFORM_DETECTED)
           {
-            std::string result = fut.get();
-            if (!result.empty())
-            {
-              detectedPlatformsCache.push_back(result);
-            }
+            detectedPlatformsCache.push_back(pair.first);
           }
         }
-        auto end = std::chrono::steady_clock::now();
-        auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        printf("running detectors took :%d ms", (int)execTimeMs);
       }
-      auto end = std::chrono::steady_clock::now();
-      auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-      printf("ending detectors took :%d ms", (int)execTimeMs);
       detectionDone = true;
     }
     detectedPlatforms = detectedPlatformsCache;

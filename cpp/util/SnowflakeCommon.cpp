@@ -148,13 +148,13 @@ uint64 sf_get_current_time_millis()
 }
 
 // have to put the implementation here to avoid conflict type definition with AWS of cJSON
-cJSON * get_detected_platforms()
+cJSON * get_detected_platforms(long timeoutms)
 {
   // to ensure no exception thrown from C interface
   try
   {
     std::vector<std::string> detectedPlatforms;
-    Snowflake::Client::PlatformDetection::getDetectedPlatforms(detectedPlatforms);
+    Snowflake::Client::PlatformDetection::getDetectedPlatforms(detectedPlatforms, timeoutms);
     cJSON* platformsJson = snowflake_cJSON_CreateArray();
     for (auto platform : detectedPlatforms)
     {
