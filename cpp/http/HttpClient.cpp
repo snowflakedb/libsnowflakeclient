@@ -21,7 +21,7 @@ namespace Snowflake {
         boost::optional<HttpResponse> responseOpt = boost::none;
 
         if (config.connectTimeoutInMilliSeconds > 0) {
-          printf("set connection timeout in ms %d\n", config.connectTimeoutInMilliSeconds);
+          printf("set connection timeout in ms %d\n", (int)config.connectTimeoutInMilliSeconds);
           curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, config.connectTimeoutInMilliSeconds);
         } else {
           curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
@@ -32,7 +32,7 @@ namespace Snowflake {
         }
         else if (config.requestTimeoutInMilliSeconds > 0)
         {
-          printf("set request timeout in ms %d\n", config.requestTimeoutInMilliSeconds);
+          printf("set request timeout in ms %d\n", (int)config.requestTimeoutInMilliSeconds);
           curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, config.requestTimeoutInMilliSeconds);
         }
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
