@@ -249,6 +249,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
   static SF_MUTEX_HANDLE cacheMutex;
   static auto mutexInit = _mutex_init(&cacheMutex);
   SF_UNUSED(mutexInit);
+  static std::vector<std::future<std::string>> futures;
 
   try
   {
@@ -264,7 +265,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
       else
       {
         auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
-        std::vector<std::future<std::string>> futures;
+        futures.clear();
         futures.reserve(endpointDetectors.size());
 
         for (const auto& pair : endpointDetectors)
