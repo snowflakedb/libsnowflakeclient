@@ -252,6 +252,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 
   try
   {
+    auto start = std::chrono::steady_clock::now();
     _mutex_lock(&cacheMutex);
     if (!detectionDone)
     {
@@ -297,7 +298,13 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
             }
           }
         }
+        auto end = std::chrono::steady_clock::now();
+        auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        printf("running detectors took :%d ms", (int)execTimeMs);
       }
+      auto end = std::chrono::steady_clock::now();
+      auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+      printf("ending detectors took :%d ms", (int)execTimeMs);
       detectionDone = true;
     }
     detectedPlatforms = detectedPlatformsCache;

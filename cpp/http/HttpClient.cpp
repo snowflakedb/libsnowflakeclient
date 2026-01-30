@@ -1,4 +1,4 @@
-
+#include <chrono>
 #include "snowflake/HttpClient.hpp"
 #include "../logger/SFLogger.hpp"
 #include <curl/curl.h>
@@ -21,6 +21,7 @@ namespace Snowflake {
         boost::optional<HttpResponse> responseOpt = boost::none;
 
         if (config.connectTimeoutInMilliSeconds > 0) {
+          printf("set connection timeout in ms %d\n", config.connectTimeoutInMilliSeconds);
           curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, config.connectTimeoutInMilliSeconds);
         } else {
           curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config.connectTimeoutInSeconds);
@@ -31,6 +32,7 @@ namespace Snowflake {
         }
         else if (config.requestTimeoutInMilliSeconds > 0)
         {
+          printf("set request timeout in ms %d\n", config.requestTimeoutInMilliSeconds);
           curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, config.requestTimeoutInMilliSeconds);
         }
         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
@@ -53,8 +55,14 @@ namespace Snowflake {
         if (header_list) {
           curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
         }
-
+        auto start = std::chrono::steady_clock::now();
         CURLcode res = curl_easy_perform(curl);
+        auto end = std::chrono::steady_clock::now();
+        auto execTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        if (config.requestTimeoutInMilliSeconds)
+        {
+          printf("curl_easy_perform execute time :%d ms", (int)execTimeMs);
+        }
         long response_code = 0;
         if (res == CURLE_OK) {
           curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
