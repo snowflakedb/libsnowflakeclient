@@ -248,6 +248,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms)
 {
   static SF_MUTEX_HANDLE cacheMutex;
   static auto mutexInit = _mutex_init(&cacheMutex);
+  SF_UNUSED(mutexInit);
 
   try
   {
