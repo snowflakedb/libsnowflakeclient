@@ -263,6 +263,9 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
       {
         auto stopTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
 
+        std::vector<std::future<std::string> > futures;
+        futures.reserve(endpointDetectors.size());
+
         for (const auto& pair : envDetectors)
         {
           if (pair.second() == PLATFORM_DETECTED)
@@ -284,9 +287,22 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
           {
             break;
           }
-          if (pair.second(remainTime) == PLATFORM_DETECTED)
+          futures.push_back(std::async(std::launch::async, [&pair, stopTime] {
+              long remainTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                  stopTime - std::chrono::steady_clock::now()).count();
+              if (remainTime < 0)
+              {
+                  return std::string("");
+              }
+              return (pair.second(remainTime) == PLATFORM_DETECTED) ? pair.first : "";
+            }));
+        }
+        for (auto& fut : futures)
+        {
+          std::string result = fut.get();
+          if (!result.empty())
           {
-            detectedPlatformsCache.push_back(pair.first);
+            detectedPlatformsCache.push_back(result);
           }
         }
       }
