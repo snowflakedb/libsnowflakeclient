@@ -262,7 +262,6 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
       else
       {
         auto stopTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
-
         std::vector<std::future<std::string> > futures;
         futures.reserve(endpointDetectors.size());
 
@@ -281,14 +280,8 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
          */
         for (const auto& pair : endpointDetectors)
         {
-          long remainTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                              stopTime - std::chrono::steady_clock::now()).count();
-          if (remainTime < 0)
-          {
-            break;
-          }
           futures.push_back(std::async(std::launch::async, [&pair, stopTime] {
-              long remainTime = std::chrono::duration_cast<std::chrono::microseconds>(
+              long remainTime = std::chrono::duration_cast<std::chrono::milliseconds>(
                   stopTime - std::chrono::steady_clock::now()).count();
               if (remainTime < 0)
               {
@@ -303,7 +296,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
           auto start = std::chrono::steady_clock::now();
           std::string result = fut.get();
           auto end  = std::chrono::steady_clock::now();
-          int waitTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+          int waitTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
           printf("waited for one detector %d\n", waitTime);
           if (!result.empty())
           {
