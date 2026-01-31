@@ -202,8 +202,8 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
 {
   auto awsSdkInit = AwsUtils::initAwsSdk();
   Aws::Client::ClientConfiguration clientConfig;
-  clientConfig.connectTimeoutMs = timeout;
-  clientConfig.requestTimeoutMs = timeout;
+  clientConfig.connectTimeoutMs = 10;
+  clientConfig.requestTimeoutMs = 10;
   Aws::STS::STSClient stsClient(clientConfig);
   Aws::STS::Model::GetCallerIdentityRequest request;
   auto customRetryHandler = [](const Aws::AmazonWebServiceRequest&) -> bool {
