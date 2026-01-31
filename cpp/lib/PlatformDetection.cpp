@@ -280,15 +280,13 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
          */
         for (const auto& pair : endpointDetectors)
         {
-          futures.push_back(std::async(std::launch::async, [&pair, stopTime] {
-              long remainTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  stopTime - std::chrono::steady_clock::now()).count();
-              if (remainTime < 0)
-              {
-                  return std::string("");
-              }
-              printf("remain time for detector %s : %d\n", pair.first.c_str(), (int)remainTime);
-              return (pair.second(remainTime) == PLATFORM_DETECTED) ? pair.first : "";
+          futures.push_back(std::async(std::launch::async, [&pair, timeoutMs] {
+              auto start = std::chrono::steady_clock::now();
+              PlatformDetectionStatus status = pair.second(timeoutMs);
+              auto end = std::chrono::steady_clock::now();
+              int execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+              printf("detector %s executed %d ms\n", pair.first.c_str(), execTime);
+              return (status == PLATFORM_DETECTED) ? pair.first : "";
             }));
         }
         for (auto& fut : futures)
