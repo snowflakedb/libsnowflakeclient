@@ -294,12 +294,17 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
               {
                   return std::string("");
               }
+              printf("remain time for detector %s : %d\n", pair.first, (int)remainTime);
               return (pair.second(remainTime) == PLATFORM_DETECTED) ? pair.first : "";
             }));
         }
         for (auto& fut : futures)
         {
+          auto start = std::chrono::steady_clock::now();
           std::string result = fut.get();
+          auto end  = std::chrono::steady_clock::now();
+          int waitTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+          printf("waited for one detector %d\n", waitTime);
           if (!result.empty())
           {
             detectedPlatformsCache.push_back(result);
