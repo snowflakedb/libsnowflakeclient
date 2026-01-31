@@ -206,6 +206,10 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   clientConfig.requestTimeoutMs = timeout;
   Aws::STS::STSClient stsClient(clientConfig);
   Aws::STS::Model::GetCallerIdentityRequest request;
+  auto customRetryHandler = [](const Aws::AmazonWebServiceRequest&) -> bool {
+          return false;
+      };
+  request.SetRequestRetryHandler(customRetryHandler);
   Aws::STS::Model::GetCallerIdentityOutcome outcome = stsClient.GetCallerIdentity(request);
 
   if (outcome.IsSuccess())
@@ -261,7 +265,6 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
       }
       else
       {
-        auto stopTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
         std::vector<std::future<std::string> > futures;
         futures.reserve(endpointDetectors.size());
 
