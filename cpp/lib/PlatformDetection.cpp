@@ -294,7 +294,7 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
               {
                   return std::string("");
               }
-              printf("remain time for detector %s : %d\n", pair.first, (int)remainTime);
+              printf("remain time for detector %s : %d\n", pair.first.c_str(), (int)remainTime);
               return (pair.second(remainTime) == PLATFORM_DETECTED) ? pair.first : "";
             }));
         }
