@@ -1,0 +1,366 @@
+#include <chrono>
+#include "snowflake/PlatformDetection.hpp"
+#include "snowflake/platform.h"
+#include "snowflake/HttpClient.hpp"
+#include "snowflake/AWSUtils.hpp"
+#include <aws/core/Aws.h>
+#include <aws/sts/STSClient.h>
+#include <exception>
+#include "../util/SnowflakeCommon.hpp"
+#include "../logger/SFLogger.hpp"
+
+namespace Snowflake::Client::PlatformDetection
+{
+
+enum PlatformDetectionStatus
+{
+  PLATFORM_DETECTED,
+  PLATFORM_NOT_DETECTED,
+  PLATFORM_DETECTION_TIMEOUT
+};
+
+typedef PlatformDetectionStatus (*PlatformDetectorEnvFunc)();
+typedef PlatformDetectionStatus(*PlatformDetectorEndpointFunc)(long timeout);
+
+#define AWS_METADATA_BASE_URL "http://169.254.169.254"
+#define AZURE_METADATA_BASE_URL "http://169.254.169.254"
+#define GCP_METADATA_BASE_URL "http://metadata.google.internal"
+
+#define MAX_ENV_VARIABLE_LENGTH 32767
+
+static std::string awsMetadataBaseURL = AWS_METADATA_BASE_URL;
+static std::string azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
+static std::string gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
+static std::string gcpMetadataFlavorHeaderName = "Metadata-Flavor";
+static std::string gcpMetadataFlavor = "Google";
+
+std::string getEnvironmentVariableValue(const std::string& envVarName)
+{
+  char envbuf[MAX_ENV_VARIABLE_LENGTH];
+  if (char* value = sf_getenv_s(envVarName.c_str(), envbuf, sizeof(envbuf)))
+  {
+    return std::string(value);
+  }
+  return "";
+}
+
+PlatformDetectionStatus detectWithEndpoint(
+  const HttpRequest& req,
+  long timeout,
+  std::map <std::string, std::string> * respHeaders = NULL)
+{
+  // use timeout in milliseconds
+  HttpClientConfig cfg = { 0, timeout, 0, timeout };
+  std::unique_ptr<IHttpClient> httpClient;
+  httpClient.reset(IHttpClient::createSimple(cfg));
+
+  auto responseOpt = httpClient->run(req);
+  if (!responseOpt)
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+
+  const auto& response = responseOpt.get();
+  if (response.code != 200)
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+
+  if (respHeaders)
+  {
+    Snowflake::Client::Util::parseHttpRespHeaders(response.getHeader(), *respHeaders);
+  }
+
+  return PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectAwsLambdaEnv()
+{
+  return getEnvironmentVariableValue("LAMBDA_TASK_ROOT").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectAzureFunctionEnv()
+{
+  if (getEnvironmentVariableValue("FUNCTIONS_WORKER_RUNTIME").empty() ||
+    getEnvironmentVariableValue("FUNCTIONS_EXTENSION_VERSION").empty() ||
+    getEnvironmentVariableValue("AzureWebJobsStorage").empty())
+  {
+    return PLATFORM_NOT_DETECTED;
+  }
+  return PLATFORM_DETECTED;
+
+}
+PlatformDetectionStatus detectGceCloudRunServiceEnv()
+{
+  return (getEnvironmentVariableValue("K_SERVICE").empty() ||
+    getEnvironmentVariableValue("K_REVISION").empty() ||
+    getEnvironmentVariableValue("K_CONFIGURATION").empty())
+    ? PLATFORM_NOT_DETECTED
+    : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectGceCloudRunJobEnv()
+{
+  return getEnvironmentVariableValue("CLOUD_RUN_JOB").empty() ||
+    getEnvironmentVariableValue("CLOUD_RUN_EXECUTION").empty()
+    ? PLATFORM_NOT_DETECTED
+    : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectGithubActionEnv()
+{
+  return getEnvironmentVariableValue("GITHUB_ACTIONS").empty() ? PLATFORM_NOT_DETECTED : PLATFORM_DETECTED;
+}
+
+PlatformDetectionStatus detectEc2Instance(long timeout)
+{
+  const auto url = boost::urls::url(awsMetadataBaseURL + "/latest/dynamic/instance-identity/document");
+  HttpRequest req{
+    HttpRequest::Method::GET,
+    url,
+    {}
+  };
+
+  return detectWithEndpoint(req, timeout);
+}
+
+PlatformDetectionStatus detectAzureVM(long timeout)
+{
+  const auto url = boost::urls::url(azureMetadataBaseURL + "/metadata/instance?api-version=2019-03-11");
+  HttpRequest req{
+    HttpRequest::Method::GET,
+    url,
+    {
+      {"Metadata", "true"},
+    },
+  };
+
+  return detectWithEndpoint(req, timeout);
+}
+
+PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
+{
+  if ((PLATFORM_DETECTED == detectAzureFunctionEnv()) &&
+      (!getEnvironmentVariableValue("IDENTITY_HEADER").empty()))
+  {
+    return PLATFORM_DETECTED;
+  }
+  auto url = boost::urls::url(azureMetadataBaseURL + "/metadata/identity/oauth2/token");
+  url.params().set("api-version", "2018-02-01");
+  url.params().set("resource", "https://management.azure.com");
+  HttpRequest req{
+    HttpRequest::Method::GET,
+    url,
+    {
+      {"Metadata", "True"},
+    },
+  };
+
+  return detectWithEndpoint(req, timeout);
+}
+
+PlatformDetectionStatus detectGceVM(long timeout)
+{
+  auto url = boost::urls::url(gcpMetadataBaseURL);
+  HttpRequest req{
+    HttpRequest::Method::GET,
+    url,
+    {}
+  };
+
+  std::map <std::string, std::string> respHeaders;
+
+  PlatformDetectionStatus ret = detectWithEndpoint(req, timeout, &respHeaders);
+  if (ret != PLATFORM_DETECTED)
+  {
+    return ret;
+  }
+
+  if (respHeaders[gcpMetadataFlavorHeaderName] == gcpMetadataFlavor)
+  {
+    return PLATFORM_DETECTED;
+  }
+
+  return PLATFORM_NOT_DETECTED;
+}
+
+PlatformDetectionStatus detectGcpIdentity(long timeout)
+{
+  auto url = boost::urls::url(gcpMetadataBaseURL + "/computeMetadata/v1/instance/service-accounts/default/email");
+  HttpRequest req{
+    HttpRequest::Method::GET,
+    url,
+    {
+      {gcpMetadataFlavorHeaderName, gcpMetadataFlavor},
+    },
+  };
+
+  return detectWithEndpoint(req, timeout);
+}
+
+PlatformDetectionStatus detectAwsIdentity(long timeout)
+{
+  auto awsSdkInit = AwsUtils::initAwsSdk();
+  Aws::Client::ClientConfiguration clientConfig;
+  clientConfig.connectTimeoutMs = timeout;
+  clientConfig.requestTimeoutMs = timeout;
+  clientConfig.retryStrategy = std::make_shared<Aws::Client::StandardRetryStrategy>(0);
+  auto start = std::chrono::steady_clock::now();
+  Aws::STS::STSClient stsClient(clientConfig);
+  auto end = std::chrono::steady_clock::now();
+  int execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  printf("initialize stsClient took %d ms\n", execTime);
+  Aws::STS::Model::GetCallerIdentityRequest request;
+  auto customRetryHandler = [](const Aws::AmazonWebServiceRequest&) -> bool {
+          return false;
+      };
+  request.SetRequestRetryHandler(customRetryHandler);
+  start = std::chrono::steady_clock::now();
+  Aws::STS::Model::GetCallerIdentityOutcome outcome = stsClient.GetCallerIdentity(request);
+  end = std::chrono::steady_clock::now();
+  execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  printf("GetCallerIdentity took %d ms\n", execTime);
+  if (outcome.IsSuccess())
+  {
+    return PLATFORM_DETECTED;
+  }
+  Aws::STS::STSErrors errType = outcome.GetError().GetErrorType();
+  if (Aws::STS::STSErrors::REQUEST_TIMEOUT == errType)
+  {
+    return PLATFORM_DETECTION_TIMEOUT;
+  }
+
+  return PLATFORM_NOT_DETECTED;
+}
+
+static const std::map <std::string, PlatformDetectorEnvFunc> envDetectors =
+{
+  {"is_aws_lambda", detectAwsLambdaEnv},
+  {"is_azure_function", detectAzureFunctionEnv},
+  {"is_gce_cloud_run_service", detectGceCloudRunServiceEnv},
+  {"is_gce_cloud_run_job", detectGceCloudRunJobEnv},
+  {"is_github_action", detectGithubActionEnv},
+};
+
+static const std::map <std::string, PlatformDetectorEndpointFunc> endpointDetectors =
+{
+  {"is_ec2_instance", detectEc2Instance},
+  {"has_aws_identity", detectAwsIdentity},
+  {"is_azure_vm", detectAzureVM},
+  {"has_azure_managed_identity", detectAzureManagedIdentity},
+  {"is_gce_vm", detectGceVM},
+  {"has_gcp_identity", detectGcpIdentity}
+};
+
+static bool detectionDone = false;
+static std::vector<std::string> detectedPlatformsCache;
+
+void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long timeoutMs)
+{
+  static SF_MUTEX_HANDLE cacheMutex;
+  static auto mutexInit = _mutex_init(&cacheMutex);
+  SF_UNUSED(mutexInit);
+
+  try
+  {
+    _mutex_lock(&cacheMutex);
+    if (!detectionDone)
+    {
+      detectedPlatformsCache.clear();
+      if (!getEnvironmentVariableValue("SNOWFLAKE_DISABLE_PLATFORM_DETECTION").empty())
+      {
+        detectedPlatformsCache.push_back("disabled");
+      }
+      else
+      {
+        std::vector<std::future<std::string> > futures;
+        futures.reserve(endpointDetectors.size());
+
+        for (const auto& pair : envDetectors)
+        {
+          if (pair.second() == PLATFORM_DETECTED)
+          {
+            detectedPlatformsCache.push_back(pair.first);
+          }
+        }
+        /* running detectors in parallel is tricky as we are using
+         * blocking httpClient and there is no safe way to terminate the tasks.
+         * running one by one would be enough usually reaching local host
+         * won't take much time. It's for information collection anyway best
+         * effort would be enough.
+         */
+        for (const auto& pair : endpointDetectors)
+        {
+          futures.push_back(std::async(std::launch::async, [&pair, timeoutMs] {
+              auto start = std::chrono::steady_clock::now();
+              PlatformDetectionStatus status = pair.second(timeoutMs);
+              auto end = std::chrono::steady_clock::now();
+              int execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+              printf("detector %s executed %d ms\n", pair.first.c_str(), execTime);
+              return (status == PLATFORM_DETECTED) ? pair.first : "";
+            }));
+        }
+        for (auto& fut : futures)
+        {
+          auto start = std::chrono::steady_clock::now();
+          std::string result = fut.get();
+          auto end  = std::chrono::steady_clock::now();
+          int waitTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+          printf("waited for one detector %d\n", waitTime);
+          if (!result.empty())
+          {
+            detectedPlatformsCache.push_back(result);
+          }
+        }
+      }
+      detectionDone = true;
+    }
+    detectedPlatforms = detectedPlatformsCache;
+    _mutex_unlock(&cacheMutex);
+  }
+  catch (const std::exception& e)
+  {
+    _mutex_unlock(&cacheMutex);
+    CXX_LOG_TRACE("getDetectedPlatforms caught exception: %s", e.what());
+  }
+  catch (...)
+  {
+    _mutex_unlock(&cacheMutex);
+    CXX_LOG_TRACE("getDetectedPlatforms caught unknown exception");
+  }
+
+  return;
+}
+
+} // namespace
+
+
+
+// wrapper functions for C
+extern "C"
+{
+
+using namespace Snowflake::Client::PlatformDetection;
+// Functions for test purpose
+void resetDetection()
+{
+  detectionDone = false;
+  detectedPlatformsCache.clear();
+}
+
+void redirectMetadataBaseUrl(const char* url)
+{
+  awsMetadataBaseURL = url;
+  azureMetadataBaseURL = url;
+  gcpMetadataBaseURL = url;
+}
+
+void restoreMetadataBaseUrl()
+{
+  awsMetadataBaseURL = AWS_METADATA_BASE_URL;
+  awsMetadataBaseURL = AZURE_METADATA_BASE_URL;
+  gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
+}
+
+} // extern "C"
+
