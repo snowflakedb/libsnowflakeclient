@@ -202,8 +202,9 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
 {
   auto awsSdkInit = AwsUtils::initAwsSdk();
   Aws::Client::ClientConfiguration clientConfig;
-  clientConfig.connectTimeoutMs = 10;
-  clientConfig.requestTimeoutMs = 10;
+  clientConfig.connectTimeoutMs = timeout;
+  clientConfig.requestTimeoutMs = timeout;
+  clientConfig.retryStrategy = std::make_shared<Aws::Client::StandardRetryStrategy>(0);
   auto start = std::chrono::steady_clock::now();
   Aws::STS::STSClient stsClient(clientConfig);
   auto end = std::chrono::steady_clock::now();
