@@ -3,8 +3,9 @@
 #include "snowflake/platform.h"
 #include "snowflake/HttpClient.hpp"
 #include "snowflake/AWSUtils.hpp"
+#include <aws/core/auth/AWSCredentialsProviderChain.h>
 #include <aws/core/Aws.h>
-#include <aws/sts/STSClient.h>
+#include <boost/algorithm/string.hpp>
 #include <exception>
 #include "../util/SnowflakeCommon.hpp"
 #include "../logger/SFLogger.hpp"
@@ -200,24 +201,19 @@ PlatformDetectionStatus detectGcpIdentity(long timeout)
 
 PlatformDetectionStatus detectAwsIdentity(long timeout)
 {
+  SF_UNUSED(timeout);
   auto awsSdkInit = AwsUtils::initAwsSdk();
-  Aws::Client::ClientConfiguration clientConfig;
-  clientConfig.connectTimeoutMs = timeout;
-  clientConfig.requestTimeoutMs = timeout;
-  clientConfig.retryStrategy = std::make_shared<Aws::Client::StandardRetryStrategy>(0);
-  Aws::STS::STSClient stsClient(clientConfig);
-  Aws::STS::Model::GetCallerIdentityRequest request;
-  Aws::STS::Model::GetCallerIdentityOutcome outcome = stsClient.GetCallerIdentity(request);
-  if (outcome.IsSuccess())
+  Aws::Auth::DefaultAWSCredentialsProviderChain credentialsProvider;
+  auto creds = credentialsProvider.GetAWSCredentials();
+  std::string accessKey = creds.GetAWSAccessKeyId();
+  std::string secretKey = creds.GetAWSSecretKey();
+  boost::trim(accessKey);
+  boost::trim(secretKey);
+
+  if (!accessKey.empty() && !secretKey.empty())
   {
     return PLATFORM_DETECTED;
   }
-  Aws::STS::STSErrors errType = outcome.GetError().GetErrorType();
-  if (Aws::STS::STSErrors::REQUEST_TIMEOUT == errType)
-  {
-    return PLATFORM_DETECTION_TIMEOUT;
-  }
-
   return PLATFORM_NOT_DETECTED;
 }
 
