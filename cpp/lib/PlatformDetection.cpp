@@ -204,14 +204,21 @@ PlatformDetectionStatus detectAwsIdentity(long timeout)
   Aws::Client::ClientConfiguration clientConfig;
   clientConfig.connectTimeoutMs = 10;
   clientConfig.requestTimeoutMs = 10;
+  auto start = std::chrono::steady_clock::now();
   Aws::STS::STSClient stsClient(clientConfig);
+  auto end = std::chrono::steady_clock::now();
+  int execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  printf("initialize stsClient took %d ms\n", execTime);
   Aws::STS::Model::GetCallerIdentityRequest request;
   auto customRetryHandler = [](const Aws::AmazonWebServiceRequest&) -> bool {
           return false;
       };
   request.SetRequestRetryHandler(customRetryHandler);
+  start = std::chrono::steady_clock::now();
   Aws::STS::Model::GetCallerIdentityOutcome outcome = stsClient.GetCallerIdentity(request);
-
+  end = std::chrono::steady_clock::now();
+  execTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  printf("GetCallerIdentity took %d ms\n", execTime);
   if (outcome.IsSuccess())
   {
     return PLATFORM_DETECTED;
