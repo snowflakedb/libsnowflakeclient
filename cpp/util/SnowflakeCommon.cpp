@@ -165,7 +165,7 @@ cJSON * get_detected_platforms(long timeoutms)
   }
   catch (...)
   {
-    // TODO: log error
+    CXX_LOG_ERROR("Attempt to detect platforms has failed");
   }
   return NULL;
 }
