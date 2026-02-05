@@ -339,7 +339,7 @@ void redirectMetadataBaseUrl(const char* url)
 void restoreMetadataBaseUrl()
 {
   awsMetadataBaseURL = AWS_METADATA_BASE_URL;
-  awsMetadataBaseURL = AZURE_METADATA_BASE_URL;
+  azureMetadataBaseURL = AZURE_METADATA_BASE_URL;
   gcpMetadataBaseURL = GCP_METADATA_BASE_URL;
 }
 
