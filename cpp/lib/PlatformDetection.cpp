@@ -309,8 +309,6 @@ void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long time
     _mutex_unlock(&cacheMutex);
     CXX_LOG_TRACE("getDetectedPlatforms caught unknown exception");
   }
-
-  return;
 }
 
 } // namespace
