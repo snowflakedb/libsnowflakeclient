@@ -895,8 +895,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     }
 
     if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
-        log_debug("oauth_client_id: %s", sf->oauth_client_id);
-        log_debug("oauth_client_secret: %s", sf->oauth_client_secret ? "****" : "not provided");
+        log_debug("oauth_client_id: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
+        log_debug("oauth_client_secret: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
         log_debug("oauth_redirect_uri: %s", sf->oauth_redirect_uri);
         log_debug("oauth_authorization_endpoint: %s", sf->oauth_authorization_endpoint);
         log_debug("oauth_token_endpoint: %s", sf->oauth_token_endpoint);

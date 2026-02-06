@@ -331,11 +331,31 @@ namespace {
         return Snowflake::Client::Util::IBase64::encodeURLNoPadding(std::vector<char>(s.begin(), s.end()));
     }
 
-    SF_HEADER* createTokenRequestExternalHeaders(const std::string& clientId, const std::string& clientSecret) {
+    SF_HEADER* createTokenRequestExternalHeaders(const std::string& clientId, const std::string& clientSecret, SF_ERROR_STRUCT* err) {
         SF_HEADER* oauth_header = sf_header_create();
         std::string auth = "Authorization: Basic " + encodeBase64(clientId + ":" + clientSecret);
-        oauth_header->header = curl_slist_append(oauth_header->header, auth.c_str());
-        oauth_header->header = curl_slist_append(oauth_header->header, "Content-Type: application/x-www-form-urlencoded");
+        struct curl_slist* temp = NULL;
+        
+        temp = curl_slist_append(oauth_header->header, auth.c_str());
+        if (temp == NULL) {
+            SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                "Ran out of memory trying to create OAuth header.",
+                                SF_SQLSTATE_GENERAL_ERROR);
+            sf_header_destroy(oauth_header);
+            return NULL;
+        }
+        oauth_header->header = temp;
+
+
+        temp = curl_slist_append(oauth_header->header, "Content-Type: application/x-www-form-urlencoded");
+        if (temp == NULL) {
+            SET_SNOWFLAKE_ERROR(err, SF_STATUS_ERROR_OUT_OF_MEMORY,
+                                "Ran out of memory trying to create OAuth header.",
+                                 SF_SQLSTATE_GENERAL_ERROR);
+            sf_header_destroy(oauth_header);
+            return NULL;
+        }
+        oauth_header->header = temp;
         return oauth_header;
     }
 }
@@ -701,7 +721,12 @@ namespace Snowflake::Client
   bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
       const std::string& body, jsonObject_t& resp) {
       std::string destination = endPoint.toString();
-      SF_HEADER* httpExtraHeaders = createTokenRequestExternalHeaders(m_clientId, m_clientSecret);
+      SF_ERROR_STRUCT* err = &m_connection->error;
+      SF_HEADER* httpExtraHeaders = createTokenRequestExternalHeaders(m_clientId, m_clientSecret, err);
+      if (err->error_code != SF_STATUS_SUCCESS) {
+          CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRestRequest::Failed to create the header for the rest request in OAuth");
+          return false;
+      }
       struct curl_slist* current = httpExtraHeaders->header;
       while (current != nullptr) 
       {

@@ -137,8 +137,6 @@ namespace Client
                 m_errMsg = e.cause();
                 return;
             }
-
-
             
             m_token = m_authWebServer->getToken();
             m_consentCacheIdToken = m_authWebServer->isConsentCacheIdToken();

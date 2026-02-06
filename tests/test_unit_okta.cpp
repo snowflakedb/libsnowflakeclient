@@ -194,7 +194,7 @@ void test_idp_authenticator(void**)
     snowflake_term(sf);
 }
 
-void test_okta_getAuthenicator(void**)
+void test_okta_getAuthenticator(void**)
 {
     assert_int_equal(getAuthenticatorType("hello"), AUTH_OKTA);
     assert_int_equal(getAuthenticatorType("www.okta.com"), AUTH_OKTA);
@@ -299,7 +299,7 @@ int main(void) {
   initialize_test(SF_BOOLEAN_FALSE);
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_idp_authenticator),
-    cmocka_unit_test(test_okta_getAuthenicator),
+    cmocka_unit_test(test_okta_getAuthenticator),
     cmocka_unit_test(test_okta_initializie_and_terminatie),
     cmocka_unit_test(test_okta_authenticator_succeed),
     cmocka_unit_test(test_okta_authenticator_fail),
