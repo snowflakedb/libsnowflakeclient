@@ -124,6 +124,7 @@ namespace Client
                 {
                     // nop
                 }
+                m_authWebServer->stop();
             }
             catch (const AuthException& e) {
                 try {
