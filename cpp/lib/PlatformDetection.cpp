@@ -153,7 +153,7 @@ PlatformDetectionStatus detectAzureManagedIdentity(long timeout)
     HttpRequest::Method::GET,
     url,
     {
-      {"Metadata", "true"},
+      {"Metadata", "True"},
     },
   };
 
