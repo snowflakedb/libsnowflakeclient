@@ -43,7 +43,13 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     strcpy(app_path, "/app/path");
 #else
     sf_os_version(os_version, sizeof(os_version));
-    sf_get_callers_executable_path(app_path, sizeof(app_path));
+    // Use application_path override if provided, otherwise detect automatically
+    if (sf->application_path && sf->application_path[0] != '\0') {
+        sf_strncpy(app_path, sizeof(app_path), sf->application_path, sizeof(app_path) - 1);
+        app_path[sizeof(app_path) - 1] = '\0';
+    } else {
+        sf_get_callers_executable_path(app_path, sizeof(app_path));
+    }
 #endif
     snowflake_cJSON_AddStringToObject(client_env, "OS_VERSION", os_version);
     snowflake_cJSON_AddStringToObject(client_env, "APPLICATION_PATH", app_path);
@@ -68,7 +74,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     snowflake_cJSON_AddStringToObject(data, CLIENT_APP_VERSION_KEY, int_app_version);
 #endif
     snowflake_cJSON_AddStringToObject(data, "ACCOUNT_NAME", sf->account);
-    snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    if (sf->user && *(sf->user)) {
+        snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
+    }
     // Add password if one exists
     if (sf->password && *(sf->password)) {
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);

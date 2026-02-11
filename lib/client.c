@@ -637,7 +637,9 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && is_string_empty(sf->user)) {
+    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && 
+        auth_type != AUTH_WIF && 
+        is_string_empty(sf->user)) {
         // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
         SET_SNOWFLAKE_ERROR(
@@ -1190,8 +1192,8 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->oauth_authorization_endpoint = NULL;
         sf->oauth_token_endpoint = NULL;
         sf->oauth_redirect_uri = NULL;
-        sf->oauth_client_id = NULL;
-        sf->oauth_client_secret = NULL;
+        alloc_buffer_and_copy(&sf->oauth_client_id, "LOCAL_APPLICATION");
+        alloc_buffer_and_copy(&sf->oauth_client_secret, "LOCAL_APPLICATION");
         sf->oauth_scope = NULL;
         sf->oauth_refresh_token = NULL;
         sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
@@ -1258,6 +1260,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->application_name);
     SF_FREE(sf->application_version);
     SF_FREE(sf->application);
+    SF_FREE(sf->application_path);
     SF_FREE(sf->timezone);
     SF_FREE(sf->service_name);
     SF_FREE(sf->query_result_format);
@@ -1682,6 +1685,9 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_APPLICATION:
           alloc_buffer_and_copy(&sf->application, value);
           break;
+        case SF_CON_APPLICATION_PATH:
+            alloc_buffer_and_copy(&sf->application_path, value);
+            break;
         case SF_CON_AUTHENTICATOR:
             alloc_buffer_and_copy(&sf->authenticator, value);
             break;
@@ -1956,6 +1962,9 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_APPLICATION:
           *value = sf->application;
           break;
+        case SF_CON_APPLICATION_PATH:
+            *value = sf->application_path;
+            break;
         case SF_CON_AUTHENTICATOR:
             *value = sf->authenticator;
             break;

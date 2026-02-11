@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 export PLATFORM=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
-export INTERNAL_REPO=nexus.int.snowflakecomputing.com:8086
+export INTERNAL_REPO=artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/internal-production-docker-snowflake-virtual
 if [[ -z "$GITHUB_ACTIONS" ]]; then
     # Use the internal Docker Registry
     export DOCKER_REGISTRY_NAME=$INTERNAL_REPO/docker
@@ -16,11 +16,11 @@ export DRIVER_NAME=libsnowflakeclient
 
 # Build images
 BUILD_IMAGE_VERSION_X64=1
-BUILD_IMAGE_VERSION_AARCH64=1
-BUILD_IMAGE_VERSION_UBUNTU_AARCH64=3
+BUILD_IMAGE_VERSION_AARCH64=2
+BUILD_IMAGE_VERSION_UBUNTU_AARCH64=5
 # Test Images
 TEST_IMAGE_VERSION_X64=1
-TEST_IMAGE_VERSION_AARCH64=1
+TEST_IMAGE_VERSION_AARCH64=2
 
 PLATFORM_ARCH=$(uname -p)
 if [[ -z "$TARGET_PLATFORM" ]]; then

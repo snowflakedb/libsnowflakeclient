@@ -64,7 +64,7 @@ namespace Client {
     }
 
     CXX_LOG_ERROR("Failed to acquire file lock(path=%s) with error code: %d", path.c_str(), ec.value());
-    std::time_t creation_time_epoch_seconds = boost::filesystem::creation_time(path, ec);
+    std::time_t creation_time_epoch_seconds = boost::filesystem::last_write_time(path, ec);
     if (ec)
     {
       CXX_LOG_ERROR("Failed to get creation time for path=%s with error code: %d", path.c_str(), ec.value());
@@ -79,6 +79,12 @@ namespace Client {
       if (ec)
       {
         CXX_LOG_ERROR("Failed to remove stale lock(path=%s) with error code: %d", path.c_str(), ec.value());
+      }
+      created = boost::filesystem::create_directory(path, ec);
+      if (created && !ec)
+      {
+          locked = true;
+          return false;
       }
     }
 
