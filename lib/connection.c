@@ -61,8 +61,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
                                       : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
-
     snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
+    snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_SESSION_KEEP_ALIVE", sf->client_session_keep_alive);
+    snowflake_cJSON_AddUint64ToObject(session_parameters, "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY", sf->client_session_keep_alive_heartbeat_frequency);
 
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();

@@ -13,10 +13,14 @@ add_compile_definitions(LOG_USE_COLOR)
 
 option(BUILD_TESTS "True if build tests" on)
 option(MOCK "True if mock should be used" off)
+option(HEARTBEAT "True if HEARTBEAT_DEBUG should be used" off)
+
 set(OPENSSL_VERSION_NUMBER  0x11100000L)
 
 # Developers can uncomment this to enable mock builds on their local VMs
 #set(MOCK TRUE)
+# Developers can uncomment this to enable HEARTBEAT_DEBUG builds on their local VMs
+#set(HEARTBEAT TRUE)
 
 # Generates compile_commands.json file for clangd to parse.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -66,6 +70,7 @@ set(SOURCE_FILES
         lib/chunk_downloader.c
         lib/mock_http_perform.h
         lib/http_perform.c
+        lib/mutex.h
 )
 
 set (SOURCE_FILES_PUT_GET
@@ -190,6 +195,10 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/ClientBindUploader.hpp
         cpp/lib/ClientBindUploader.cpp
         cpp/lib/client_config_parser.cpp
+        cpp/lib/HeartbeatBackground.cpp
+        cpp/lib/HeartbeatBackground.hpp
+        cpp/lib/Mutex.cpp
+        cpp/lib/Mutex.hpp
         cpp/lib/TomlConfigParser.cpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
@@ -211,6 +220,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         lib/query_context_cache.h
         lib/curl_desc_pool.h
         lib/authenticator.h
+        lib/heart_beat_background.h
         lib/log_file_util.h
         include/snowflake/WifAttestation.hpp
         cpp/WifAttestation.cpp

@@ -90,6 +90,8 @@ void test_mfa_token_caching(void **unused) {
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
+    sf_bool client_keep_alive = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_keep_alive);
     setup_mfa_connect_initial_request_mock();
     SF_STATUS status = snowflake_connect(sf);
 
@@ -108,6 +110,8 @@ void test_mfa_token_caching(void **unused) {
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &client_request_mfa_token);
+    sf_bool client_keep_alive = SF_BOOLEAN_FALSE;
+    snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_keep_alive);
     setup_mfa_connect_cached_mfa_request_mock();
     SF_STATUS status = snowflake_connect(sf);
 
