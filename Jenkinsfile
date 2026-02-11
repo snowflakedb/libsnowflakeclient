@@ -1,4 +1,5 @@
-import groovy.json.JsonOutput
+@Library('pipeline-utils')
+import com.snowflake.DevEnvUtils
 
 // Skip older builds when new commits are pushed to the same branch (except master)
 if (env.BRANCH_NAME != 'master') {
@@ -14,6 +15,13 @@ timestamps {
       println("${scmInfo}")
       env.GIT_BRANCH = scmInfo.GIT_BRANCH
       env.GIT_COMMIT = scmInfo.GIT_COMMIT
+    }
+    stage('Authenticate Artifactory') {
+      script {
+        new DevEnvUtils().withSfCli {
+          sh "sf artifact oci auth"
+        }
+      }
     }
     params = [
       string(name: 'GIT_COMMIT', value: scmInfo.GIT_COMMIT),
@@ -38,7 +46,6 @@ timestamps {
 def testLinuxAuthentication() {
     stage('Test Linux authentication') {
         withCredentials([
-            string(credentialsId: 'a791118f-a1ea-46cd-b876-56da1b9bc71c', variable: 'NEXUS_PASSWORD'),
             string(credentialsId: 'sfctest0-parameters-secret', variable: 'PARAMETERS_SECRET'),
             usernamePassword(credentialsId: '063fc85b-62a6-4181-9d72-873b43488411', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
         ]) {
