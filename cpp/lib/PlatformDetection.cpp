@@ -241,74 +241,58 @@ static std::vector<std::string> detectedPlatformsCache;
 
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long timeoutMs)
 {
-  static SF_MUTEX_HANDLE cacheMutex;
-  static auto mutexInit = _mutex_init(&cacheMutex);
-  SF_UNUSED(mutexInit);
+  static std::mutex cacheMutex;
 
-  try
+  std::lock_guard<std::mutex> guard(cacheMutex);
+  if (!detectionDone)
   {
-    _mutex_lock(&cacheMutex);
-    if (!detectionDone)
+    detectedPlatformsCache.clear();
+    if (!getEnvironmentVariableValue("SNOWFLAKE_DISABLE_PLATFORM_DETECTION").empty())
     {
-      detectedPlatformsCache.clear();
-      if (!getEnvironmentVariableValue("SNOWFLAKE_DISABLE_PLATFORM_DETECTION").empty())
-      {
-        detectedPlatformsCache.push_back("disabled");
-      }
-      else
-      {
-        std::vector<std::future<std::string> > futures;
-        futures.reserve(endpointDetectors.size());
-
-        for (const auto& pair : endpointDetectors)
-        {
-          futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first, timeoutMs] {
-            return detector(timeoutMs) == PLATFORM_DETECTED ? platform : "";
-            }));
-        }
-
-        for (const auto& pair : envDetectors)
-        {
-          if (pair.second() == PLATFORM_DETECTED)
-          {
-            detectedPlatformsCache.push_back(pair.first);
-          }
-        }
-
-        auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
-        for (auto& fut : futures)
-        {
-          std::chrono::nanoseconds remainTime(0);
-          auto curTime = std::chrono::steady_clock::now();
-          if (curTime < endTime)
-          {
-            remainTime = endTime - curTime;
-          }
-          if (fut.wait_for(remainTime) == std::future_status::ready)
-          {
-            std::string result = fut.get();
-            if (!result.empty())
-            {
-              detectedPlatformsCache.push_back(result);
-            }
-          }
-        }
-      }
-      detectionDone = true;
+      detectedPlatformsCache.push_back("disabled");
     }
-    detectedPlatforms = detectedPlatformsCache;
-    _mutex_unlock(&cacheMutex);
+    else
+    {
+      std::vector<std::future<std::string> > futures;
+      futures.reserve(endpointDetectors.size());
+
+      for (const auto& pair : endpointDetectors)
+      {
+        futures.push_back(std::async(std::launch::async, [detector = pair.second, platform = pair.first, timeoutMs] {
+          return detector(timeoutMs) == PLATFORM_DETECTED ? platform : "";
+          }));
+      }
+
+      for (const auto& pair : envDetectors)
+      {
+        if (pair.second() == PLATFORM_DETECTED)
+        {
+          detectedPlatformsCache.push_back(pair.first);
+        }
+      }
+
+      auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+      for (auto& fut : futures)
+      {
+        std::chrono::nanoseconds remainTime(0);
+        auto curTime = std::chrono::steady_clock::now();
+        if (curTime < endTime)
+        {
+          remainTime = endTime - curTime;
+        }
+        if (fut.wait_for(remainTime) == std::future_status::ready)
+        {
+          std::string result = fut.get();
+          if (!result.empty())
+          {
+            detectedPlatformsCache.push_back(result);
+          }
+        }
+      }
+    }
+    detectionDone = true;
   }
-  catch (const std::exception& e)
-  {
-    _mutex_unlock(&cacheMutex);
-    CXX_LOG_TRACE("getDetectedPlatforms caught exception: %s", e.what());
-  }
-  catch (...)
-  {
-    _mutex_unlock(&cacheMutex);
-    CXX_LOG_TRACE("getDetectedPlatforms caught unknown exception");
-  }
+  detectedPlatforms = detectedPlatformsCache;
 }
 
 } // namespace
