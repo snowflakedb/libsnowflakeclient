@@ -2,6 +2,7 @@
 #define SNOWFLAKECLIENT_SNOWFLAKECOMMON_HPP
 
 #include <string>
+#include <map>
 #include <cstdint>
 #include <type_traits>
 
@@ -13,9 +14,12 @@ namespace Client
 namespace Util
 {
 
-void  replaceStrAll(std::string& stringToReplace,
-                    std::string const& oldValue,
-                    std::string const& newValue);
+void replaceStrAll(std::string& stringToReplace,
+                   std::string const& oldValue,
+                   std::string const& newValue);
+
+void parseHttpRespHeaders(std::string const& headerString,
+                          std::map<std::string, std::string>& headers);
 
 } // namespace Util
 } // namespace Client
