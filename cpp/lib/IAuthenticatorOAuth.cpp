@@ -1,0 +1,629 @@
+#include <algorithm>
+#include <cctype>
+#include <future>
+#include <regex>
+#include <string>
+#include <connection.h>
+
+#include "../logger/SFLogger.hpp"
+#include "snowflake/IAuth.hpp"
+
+#include "error.h"
+#include <errno.h>
+
+namespace Snowflake::Client
+{
+    using Snowflake::Client::SFURL;
+    namespace IAuth {
+        const std::string IAuthenticatorOAuth::S_LOCALHOST = "127.0.0.1";
+        const std::string IAuthenticatorOAuth::S_LOCALHOST_URL = "http://" + IAuthenticatorOAuth::S_LOCALHOST;
+        const std::string IAuthenticatorOAuth::S_OAUTH_DEFAULT_AUTHORIZATION_URL_POSTFIX = "/oauth/authorize";
+        const std::string IAuthenticatorOAuth::S_OAUTH_DEFAULT_TOKEN_URL_POSTFIX = "/oauth/token-request";
+
+        struct AuthorizationCodeRequest
+        {
+            SFURL authorizationEndpoint;
+            std::string authorizationScope;
+            std::string clientId;
+            std::string clientSecret;
+            SFURL redirectCallbackUrl;
+            std::string codeChallenge;
+            std::string state;
+            std::string codeChallengeMethod;
+
+            std::string authorizationCodeUrl()
+            {
+                std::string url = authorizationEndpoint.toString();
+                url.append("?client_id=").append(UrlEncode(clientId))
+                    .append("&response_type=").append("code")
+                    .append("&redirect_uri=").append(UrlEncode(redirectCallbackUrl.toString()))
+                    .append("&scope=").append(UrlEncode(authorizationScope))
+                    .append("&code_challenge=").append(UrlEncode(codeChallenge))
+                    .append("&code_challenge_method=").append(codeChallengeMethod)
+                    .append("&state=").append(UrlEncode(state));
+                return url;
+            }
+        };
+
+        struct AuthorizationCodeResponse
+        {
+            std::string authorizationCode;
+            bool success;
+            std::string errorMessage;
+
+            static AuthorizationCodeResponse succeeded(const std::string& code)
+            {
+                return { code, true, "" };
+            }
+
+            static AuthorizationCodeResponse failed(const std::string& error)
+            {
+                return { "", false, error };
+            }
+        };
+
+        struct AccessTokenRequest
+        {
+            SFURL tokenRequestUri;
+            std::string authorizationCode;
+            std::string authorizationScope;
+            std::string clientId;
+            std::string clientSecret;
+            std::string codeVerifier;
+            SFURL redirectUri;
+            std::string state;
+            bool singleUseRefreshTokens;
+        };
+
+        struct AccessTokenResponse
+        {
+            std::string accessToken;
+            std::string refreshToken;
+            bool success;
+            std::string errorMessage;
+
+            static AccessTokenResponse succeeded(const std::string& token, const std::string& refreshToken)
+            {
+                return { token, refreshToken, true, "" };
+            }
+
+            static AccessTokenResponse failed(const std::string& error)
+            {
+                return { ":", ":", false, error };
+            }
+        };
+
+        struct RefreshAccessTokenRequest
+        {
+            std::string clientId;
+            std::string clientSecret;
+            SFURL tokenEndpoint;
+            std::string refreshToken;
+            std::string scope;
+        };
+
+        IAuthenticatorOAuth::IAuthenticatorOAuth(
+            IAuthWebServer* authWebServer,
+            IAuthenticationWebBrowserRunner* webBrowserRunner)
+            : m_authWebServer(authWebServer != nullptr ? authWebServer : new OAuthTokenListenerWebServer()),
+            m_webBrowserRunner(webBrowserRunner != nullptr ? webBrowserRunner : IAuthenticationWebBrowserRunner::getInstance()) {}
+
+        void IAuthenticatorOAuth::authenticate()
+        {
+
+#ifdef _WIN32
+            AuthWinSock authWinSock;
+#endif
+            try {
+                // try to get a new access token using the existing refresh token
+                if (refreshAccessTokenFlow())
+                    return;
+
+                // do full authorization pipeline
+                switch (m_oauthFlow)
+                {
+                case AUTH_OAUTH_AUTHORIZATION_CODE:
+                    authorizationCodeFlow();
+                    break;
+                case AUTH_OAUTH_CLIENT_CREDENTIALS:
+                    clientCredentialsFlow();
+                    break;
+                default:
+                    m_errMsg = "Unsupported OAuth flow type";
+                }
+            }
+            catch (const AuthException& e) {
+                m_errMsg = e.cause();
+            }
+        }
+
+        void IAuthenticatorOAuth::authorizationCodeFlow()
+        {
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::authorizationCodeFlow::OAuth authorization code flow started");
+
+            std::string codeVerifier = m_challengeProvider->generateCodeVerifier();
+            std::string codeChallenge = m_challengeProvider->generateCodeChallenge(codeVerifier);
+            std::string state = m_challengeProvider->generateState();
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::authorizationCodeFlow::createAuthorizationCodeRequest %s", maskOAuthSecret(m_authEndpoint).c_str())
+                AuthorizationCodeRequest authCodeRequest = { m_authEndpoint,
+                                                            m_authScope,
+                                                            m_clientId,
+                                                            m_clientSecret,
+                                                            m_redirectUri,
+                                                            codeChallenge,
+                                                            state,
+                                                            m_challengeProvider->codeChallengeMethod() };
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::authorizationCodeFlow::executeAuthorizationCodeRequest %s",
+                maskOAuthSecret(authCodeRequest.authorizationCodeUrl()).c_str());
+            AuthorizationCodeResponse authCodeResponse = executeAuthorizationCodeRequest(authCodeRequest);
+            handleInvalidResponse(authCodeResponse.success, std::string("oauth authorization code request failure ") + authCodeResponse.errorMessage);
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::authorizationCodeFlow::createAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str())
+                AccessTokenRequest accessRequest = { m_tokenEndpoint,
+                                                    authCodeResponse.authorizationCode,
+                                                    m_authScope,
+                                                    m_clientId,
+                                                    m_clientSecret,
+                                                    codeVerifier,
+                                                    m_redirectUri,
+                                                    state,
+                                                    m_singleUseRefreshTokens };
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::authorizationCodeFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
+            handleInvalidResponse(accessResponse.success, std::string("oauth access token request failure ") + accessResponse.errorMessage);
+
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::authorizationCodeFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str());
+            resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
+        }
+
+        void IAuthenticatorOAuth::clientCredentialsFlow()
+        {
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::clientCredentialsFlow::OAuth client credentials flow started")
+                CXX_LOG_TRACE("sf::IAuthenticatorOAuth::clientCredentialsFlow::createAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenRequest accessRequest = { m_tokenEndpoint,
+                                                "",
+                                                m_authScope,
+                                                m_clientId,
+                                                m_clientSecret,
+                                                "",
+                                               SFURL::parse(""),
+                                                "",
+                                                false };
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::clientCredentialsFlow::executeAccessTokenRequest %s", maskOAuthSecret(m_tokenEndpoint).c_str());
+            AccessTokenResponse accessResponse = executeAccessTokenRequest(accessRequest);
+            handleInvalidResponse(accessResponse.success, std::string("oauth access token request failure"));
+
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::clientCredentialsFlow::Successfully acquired access token: %s", maskOAuthSecret(accessResponse.accessToken).c_str());
+            resetTokens(accessResponse.accessToken, accessResponse.refreshToken);
+        }
+
+        std::string IAuthenticatorOAuth::oauthWebServerTask(IAuthWebServer* authWebServer, const SFURL& redirectUrl, const std::string& state, const int browserResponseTimeout) {
+            SF_UNUSED(redirectUrl);
+
+            authWebServer->setTimeout(browserResponseTimeout);
+            try {
+                authWebServer->startAccept(state);
+                authWebServer->receive();
+                authWebServer->stop();
+            }
+            catch (...)
+            {
+                CXX_LOG_WARN("sf::IAuthenticatorOAuth::oauthWebServerTask::Problem during HTTP listen.");
+                authWebServer->stop();
+                throw;
+            }
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::oauthWebServerTask::Token: %s", maskOAuthSecret(authWebServer->getToken()).c_str());
+            return authWebServer->getToken();
+        }
+
+        std::future<std::string> IAuthenticatorOAuth::asyncStartOAuthWebserver(const AuthorizationCodeRequest& authorizationCodeRequest) const {
+            SFURL redirectUrl = authorizationCodeRequest.redirectCallbackUrl;
+
+            return std::async(std::launch::async, oauthWebServerTask,
+                m_authWebServer.get(),
+                redirectUrl,
+                authorizationCodeRequest.state,
+                m_browserResponseTimeout);
+        }
+
+        bool IAuthenticatorOAuth::refreshAccessTokenFlow() {
+            if (m_oauth_refresh_token.empty()) {
+                CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::refreshAccessTokenFlow::Refresh token is empty, a complete flow is required");
+                return false;
+            }
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token flow started");
+
+            RefreshAccessTokenRequest request{
+              m_clientId,
+              m_clientSecret,
+              m_tokenEndpoint,
+              m_oauth_refresh_token,
+              m_authScope
+            };
+
+            CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::clientCredentialsFlow::executeRefreshAccessTokenRequest")
+                AccessTokenResponse response = executeRefreshAccessTokenRequest(request);
+            if (!response.success) {
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::refreshAccessTokenFlow::OAuth refresh access token failed: %s",
+                    response.errorMessage.c_str());
+            }
+            else {
+                CXX_LOG_DEBUG("sf::IAuthenticatorOAuth::clientCredentialsFlow::token refresh completed");
+                resetTokens(std::move(response.accessToken), std::move(response.refreshToken));
+            }
+            return response.success;
+        }
+
+        AuthorizationCodeResponse IAuthenticatorOAuth::executeAuthorizationCodeRequest(AuthorizationCodeRequest& authorizationCodeRequest)
+        {
+            SFURL redirectUrl = authorizationCodeRequest.redirectCallbackUrl;
+            m_authWebServer->setTimeout(m_browserResponseTimeout);
+            int portUsed = m_authWebServer->start(redirectUrl.host(), std::atoi(redirectUrl.port().c_str()), redirectUrl.path());
+            refreshDynamicRedirectUri(portUsed, authorizationCodeRequest);
+            std::string token;
+            std::future<std::string> tokenFuture = asyncStartOAuthWebserver(authorizationCodeRequest);
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAuthorizationCodeRequest::------------------------");
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAuthorizationCodeRequest::GET %s", maskOAuthSecret(
+                authorizationCodeRequest.authorizationCodeUrl()).c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAuthorizationCodeRequest::------------------------");
+
+            startWebBrowser(authorizationCodeRequest.authorizationCodeUrl());
+            try
+            {
+                token = tokenFuture.get();
+            }
+            catch (const Snowflake::Client::IAuth::AuthException& e)
+            {
+                m_authWebServer->stop();
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::executeAuthorizationCodeRequest::Error while trying to get authorization code: %s", e.what());
+                return AuthorizationCodeResponse::failed(e.cause());
+            }
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAuthorizationCodeRequest::Received token: %s", maskOAuthSecret(token).c_str());
+            return AuthorizationCodeResponse::succeeded(token);
+        }
+
+        AccessTokenResponse IAuthenticatorOAuth::executeAccessTokenRequest(AccessTokenRequest& request)
+        {
+            SFURL tokenURL = request.tokenRequestUri;
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::token request: %s",
+                maskOAuthSecret(tokenURL).c_str());
+
+            // body
+            std::string body = createAccessTokenRequestBody(request);
+            jsonObject_t resp;
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::------------------------");
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::POST %s",
+                tokenURL.toString().c_str());
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest");
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::%s", maskOAuthSecret(body).c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::------------------------");
+
+            if (!executeRestRequest(tokenURL, body, resp)) {
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::executeAccessTokenRequest::OAuth error: %s", m_errMsg.c_str());
+                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg.c_str());
+            }
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::------------------------");
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::Body: %s", maskOAuthSecret(picojson::value(resp).serialize()).c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeAccessTokenRequest::------------------------");
+
+            std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
+            std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
+
+
+            if (accessToken.empty()) {
+                return AccessTokenResponse::failed("Invalid Identity Provider response: access token not provided");
+            }
+
+            return AccessTokenResponse::succeeded(accessToken, refreshToken);
+        }
+
+        AccessTokenResponse IAuthenticatorOAuth::executeRefreshAccessTokenRequest(
+            RefreshAccessTokenRequest& request)
+        {
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::token request: %s",
+                maskOAuthSecret(request.tokenEndpoint).c_str());
+
+            // body
+            std::string body = createRefreshAccessTokenRequestBody(request);
+            jsonObject_t resp;
+
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::----------------------");
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::POST %s",
+                request.tokenEndpoint.toString().c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::%s",
+                maskOAuthSecret(body).c_str());
+            CXX_LOG_TRACE("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::----------------------");
+
+            if (!executeRestRequest(request.tokenEndpoint, body, resp)) {
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::executeRefreshAccessTokenRequest::OAuth error: %s", m_errMsg.c_str());
+                return AccessTokenResponse::failed(std::string("Invalid Identity Provider response: ") + m_errMsg);
+            }
+
+            std::string accessToken = resp.find("access_token") != resp.end() ? resp["access_token"].get<std::string>() : "";
+            std::string refreshToken = resp.find("refresh_token") != resp.end() ? resp["refresh_token"].get<std::string>() : "";
+
+            if (accessToken.empty()) {
+                return AccessTokenResponse::failed("Invalid Identity Provider response: access token not provided");
+            }
+
+            return AccessTokenResponse::succeeded(accessToken, refreshToken);
+        }
+
+        std::string IAuthenticatorOAuth::createRefreshAccessTokenRequestBody(const RefreshAccessTokenRequest& request) {
+            std::string requestBody = "grant_type=refresh_token&refresh_token=" + request.refreshToken;
+            if (!request.scope.empty()) {
+                requestBody.append("&scope=");
+                requestBody.append(UrlEncode(request.scope));
+            }
+            return requestBody;
+        }
+
+        std::string IAuthenticatorOAuth::createAccessTokenRequestBody(AccessTokenRequest& request)
+        {
+            std::string requestBody = "";
+            std::string grantType; // authorization_code, client_credentials, later: refresh_token
+
+            if (m_oauthFlow == AUTH_OAUTH_AUTHORIZATION_CODE) {
+                grantType = "authorization_code";
+            }
+            else {
+                grantType = "client_credentials";
+            }
+
+            requestBody.append("grant_type=");
+            requestBody.append(UrlEncode(grantType));
+
+            if (!request.authorizationCode.empty())
+            {
+                requestBody.append("&code=");
+                requestBody.append(UrlEncode(request.authorizationCode));
+            }
+
+            if (m_oauthFlow == AUTH_OAUTH_AUTHORIZATION_CODE)
+            {
+                requestBody.append("&redirect_uri=");
+                requestBody.append(UrlEncode(request.redirectUri.toString()));
+            }
+
+            if (!request.codeVerifier.empty())
+            {
+                requestBody.append("&code_verifier=");
+                requestBody.append(UrlEncode(request.codeVerifier));
+            }
+
+            requestBody.append("&scope=");
+            requestBody.append(UrlEncode(request.authorizationScope));
+
+            if (request.singleUseRefreshTokens)
+            {
+                requestBody.append("&enable_single_use_refresh_tokens=true");
+            }
+
+            return requestBody;
+        }
+
+        void IAuthenticatorOAuth::startWebBrowser(const std::string& ssoUrl)
+        {
+            if (m_webBrowserRunner == nullptr)
+            {
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::startWebBrowser::Failed to start web browser. Unable to open SSO URL.");
+                throw AuthException("sf::IAuthenticatorOAuth::Error. Unable to open SSO URL.");
+            }
+
+            m_webBrowserRunner->startWebBrowser(ssoUrl);
+        }
+
+
+        void IAuthenticatorOAuth::refreshDynamicRedirectUri(int portUsed, AuthorizationCodeRequest& authorizationCodeRequest) {
+            if (m_redirectUriDynamicDefault) {
+                m_redirectUri = SFURL::parse(S_LOCALHOST_URL + ":" + std::to_string(portUsed));
+                authorizationCodeRequest.redirectCallbackUrl = m_redirectUri;
+            }
+        }
+
+        void IAuthenticatorOAuth::updateDataMap(jsonObject_t& dataMap)
+        {
+            dataMap["AUTHENTICATOR"] = picojson::value(SF_AUTHENTICATOR_OAUTH);
+            jsonObject_t& clientEnvironment = dataMap["CLIENT_ENVIRONMENT"].get<jsonObject_t>();
+            clientEnvironment["OAUTH_TYPE"] = picojson::value(oauthAuthorizationFlow());
+
+            if (!m_token.empty())
+            {
+                CXX_LOG_TRACE("sf::IAuthenticatorOAuth::updateDataMap::Passing token to Snowflake authentication: %s",
+                    maskOAuthSecret(m_token).c_str());
+                dataMap["TOKEN"] = picojson::value(m_token);
+            }
+            else
+                CXX_LOG_ERROR("sf::IAuthenticatorOAuth::updateDataMap::Token not provided!");
+        }
+
+        std::string IAuthenticatorOAuth::oauthAuthorizationFlow()
+        {
+            if (m_oauthFlow == AUTH_OAUTH_AUTHORIZATION_CODE) {
+                return SF_AUTHENTICATOR_OAUTH_AUTHORIZATION_CODE;
+            }
+            else {
+                return SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS;
+            }
+        }
+
+        void IAuthenticatorOAuth::handleInvalidResponse(bool success, const std::string& errorMessage)
+        {
+            if (!success)
+            {
+                CXX_LOG_ERROR(
+                    "sf::IAuthenticatorOAuth::handleInvalidResponse::Failure during authentication: %s",
+                    errorMessage.c_str());
+                throw AuthException("OAuth authentication failure: " + errorMessage);
+            }
+        }
+
+        //    ////////////////////////////////////////////////////////
+        //     WEB SRV
+        //    ////////////////////////////////////////////////////////
+        OAuthTokenListenerWebServer::OAuthTokenListenerWebServer()
+        {
+            m_className = "AuthenticatorOAuth";
+        }
+
+        /**
+         * Start http listener on given port and path that accepts token (and optionally refresh token) from Snowflake or external IdP
+         */
+        int OAuthTokenListenerWebServer::start(std::string host, int port, std::string path)
+        {
+            m_host = std::move(host);
+            m_path = std::move(path);
+            m_port = std::move(port);
+            m_real_port = std::move(port);
+            if (sf_strncasecmp("localhost", m_host.c_str(), 9) == 0) {
+                m_host = IAuthenticatorOAuth::S_LOCALHOST;
+            }
+
+            if (port == 0) {
+                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s%s, port will be randomly chosen",
+                    m_host.c_str(), path.c_str());
+            }
+            else {
+                CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::start::Trying to start HTTP listener on: %s:%d%s",
+                    m_host.c_str(), port, path.c_str());
+            }
+            IAuthWebServer::start();
+            return m_real_port;
+        }
+
+        void OAuthTokenListenerWebServer::startAccept(std::string state)
+        {
+            m_state = state;
+            IAuthWebServer::startAccept();
+        }
+
+        void OAuthTokenListenerWebServer::respondUnsupportedRequest(std::string method)
+        {
+            std::string errorDesc = "Unexpected method while waiting for a request: " + method;
+            CXX_LOG_ERROR("sf::OAuthTokenListenerWebServer::receive::%s", errorDesc.c_str());
+            throw AuthException("SFOAuthError: " + std::string(strerror(errno)));
+        }
+
+        bool OAuthTokenListenerWebServer::parseAndRespondOptionsRequest(std::string response)
+        {
+            SF_UNUSED(response);
+            respondUnsupportedRequest("Option");
+            return false;
+        }
+
+        void OAuthTokenListenerWebServer::parseAndRespondPostRequest(std::string response)
+        {
+            SF_UNUSED(response);
+            respondUnsupportedRequest("Post");
+        }
+
+        void OAuthTokenListenerWebServer::parseAndRespondGetRequest(char** rest_mesg)
+        {
+            char** position = rest_mesg;
+            char* fullPath = sf_strtok(NULL, " \t\n", position);
+            char* protocol = sf_strtok(NULL, " \t\n", position);
+            sf_strtok(NULL, " :", position); // skip host key
+
+            m_token = "";
+
+            // validate protocol
+            if (strncmp(protocol, "HTTP/1.0", 8) != 0 &&
+                strncmp(protocol, "HTTP/1.1", 8) != 0)
+            {
+                fail(HTTP_BAD_REQUEST, "HTTP Request has unexpected protocol", failureMessage);
+            }
+
+            // validate request path
+            if (strncmp(m_path.c_str(), fullPath, m_path.length()) != 0)
+            {
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing URL", failureMessage);
+            }
+
+            // validate request parameters exist
+            std::string expectedPath = m_path.length() > 0 ? m_path : "/";
+            expectedPath = expectedPath.append("?");
+            if (strncmp(fullPath, expectedPath.c_str(), expectedPath.length()) != 0)
+            {
+                fail(HTTP_BAD_REQUEST, "HTTP Request has invalid endpoint path", failureMessage);
+            }
+
+            // extract request parameters
+            char* paramsPtr;
+            char* path = sf_strtok(fullPath, "?", &paramsPtr);
+            if (path == nullptr)
+            {
+                fail(HTTP_BAD_REQUEST, "HTTP Request is missing parameters", failureMessage);
+            }
+
+            std::vector<std::string> params = splitString(paramsPtr, '&');
+            std::string receivedCode;
+            std::string receivedState;
+            std::string error;
+            std::string errorDescription;
+            for (auto it = params.begin(); it != params.end(); ++it) {
+                std::string item = it->c_str();
+                std::vector<std::string> param = splitString(item, '=');
+                if (param.at(0) == "code")
+                    receivedCode = param.at(1);
+                if (param.at(0) == "state")
+                    receivedState = param.at(1);
+                if (param.at(0) == "error")
+                    error = param.at(1);
+                if (param.at(0) == "error_description")
+                    errorDescription = std::regex_replace(param.at(1), std::regex("\\+"), " ");
+            }
+
+            if (!error.empty()) {
+                std::string fullError = "Identity Provider responded with error: " + error + ": " + errorDescription;
+                fail(HTTP_BAD_REQUEST, fullError, failureMessage);
+            }
+
+            // validate state and non-empty authorization code
+            if (receivedState != m_state || receivedState.empty())
+            {
+                fail(HTTP_BAD_REQUEST, "Identity Provider did not provide expected state parameter!It might indicate an XSS attack.", failureMessage);
+            }
+
+            m_token = receivedCode;
+            CXX_LOG_TRACE("sf::OAuthTokenListenerWebServer::parseAndRespondGetRequest",
+                "Successfully received authorization code from Identity Provider");
+            respond(HTTP_OK, successMessage);
+        }
+
+        bool OAuthTokenListenerWebServer::isConsentCacheIdToken()
+        {
+            return true;
+        }
+    };
+
+    std::string UrlEncode(std::string url)
+    {
+        return curl_easy_escape(nullptr, url.c_str(), url.length());
+    }
+
+    std::string maskOAuthSecret(const std::string& secret)
+    {
+#if defined _DEBUG_OAUTH
+        return secret;
+#else
+        SF_UNUSED(secret);
+        return "****";
+#endif
+    }
+
+    std::string maskOAuthSecret(SFURL& secret) {
+#if defined _DEBUG_OAUTH
+        return secret.toString();
+#else
+        SF_UNUSED(secret);
+        return "****";
+#endif
+    }
+}

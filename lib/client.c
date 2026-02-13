@@ -852,9 +852,25 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     log_debug("Application name: %s", sf->application_name);
     log_debug("Application version: %s", sf->application_version);
+
+    //Authentication parameters
     log_debug("authenticator: %s", sf->authenticator);
     log_debug("user: %s", sf->user);
     log_debug("password: %s", sf->password ? "****" : sf->password);
+    log_debug("host: %s", sf->host);
+    log_debug("port: %s", sf->port);
+    log_debug("account: %s", sf->account);
+    log_debug("region: %s", sf->region);
+    log_debug("database: %s", sf->database);
+    log_debug("schema: %s", sf->schema);
+    log_debug("warehouse: %s", sf->warehouse);
+    log_debug("role: %s", sf->role);
+    log_debug("protocol: %s", sf->protocol);
+    log_debug("login_timeout: %d", sf->login_timeout);
+    log_debug("network_timeout: %d", sf->network_timeout);
+    log_debug("retry_timeout: %d", sf->retry_timeout);
+    log_debug("retry_count: %d", sf->retry_count);
+
     if (AUTH_JWT == auth_type) {
         log_debug("priv_key_file: %s", sf->priv_key_file);
         log_debug("jwt_timeout: %d", sf->jwt_timeout);
@@ -867,37 +883,50 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         log_debug("programmatic_access_token: %s", sf->programmatic_access_token ? "provided" : "not provided");
     }
     if (AUTH_EXTERNALBROWSER == auth_type) {
-        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
         log_debug("disable_console_login: %s", sf->disable_console_login ? "true" : "false");
-        log_debug("browser_response_timeout: %d", sf->browser_response_timeout);
     }
     if (AUTH_OKTA == auth_type) {
         log_debug("disable_saml_url_check: %s", sf->disable_saml_url_check ? "true" : "false");
     }
-    log_debug("host: %s", sf->host);
-    log_debug("port: %s", sf->port);
-    log_debug("account: %s", sf->account);
-    log_debug("region: %s", sf->region);
-    log_debug("database: %s", sf->database);
-    log_debug("schema: %s", sf->schema);
-    log_debug("warehouse: %s", sf->warehouse);
-    log_debug("role: %s", sf->role);
-    log_debug("protocol: %s", sf->protocol);
-    log_debug("autocommit: %s", sf->autocommit ? "true": "false");
+    if (AUTH_SNOWFLAKE == auth_type || AUTH_USR_PWD_MFA == auth_type) {
+        log_debug("passcode: %s", sf->passcode ? "provided" : "not provided");
+        log_debug("passcode_in_password: %s", sf->passcode_in_password ? "true" : "false");
+        log_debug("client_request_mfa_token: %s", sf->client_request_mfa_token ? "true" : "false");
+    }
+
+    if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
+        log_debug("oauth_client_id: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
+        log_debug("oauth_client_secret: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
+        log_debug("oauth_redirect_uri: %s", sf->oauth_redirect_uri);
+        log_debug("oauth_authorization_endpoint: %s", sf->oauth_authorization_endpoint);
+        log_debug("oauth_token_endpoint: %s", sf->oauth_token_endpoint);
+        log_debug("oauth_scope: %s", sf->oauth_scope);
+        log_debug("single_use_refresh_token: %s", sf->single_use_refresh_token ? "true" : "false");
+    }
+
+    if (AUTH_EXTERNALBROWSER == auth_type || AUTH_OAUTH_AUTHORIZATION_CODE == auth_type) {
+        log_debug("client_store_temporary_credential: %s", sf->client_store_temporary_credential ? "true" : "false");
+        log_debug("browser_response_timeout: %d", sf->browser_response_timeout);
+    }
+
+    //OCSP
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
+
+    //CRL checks
     log_debug("crl_check: %s", sf->crl_check ? "true" : "false");
     log_debug("crl_advisory: %s", sf->crl_advisory ? "true" : "false");
     log_debug("crl_allow_no_crl: %s", sf->crl_allow_no_crl ? "true" : "false");
     log_debug("crl_disk_caching: %s", sf->crl_disk_caching ? "true" : "false");
     log_debug("crl_memory_caching: %s", sf->crl_memory_caching ? "true" : "false");
-    log_debug("timezone: %s", sf->timezone);
-    log_debug("login_timeout: %d", sf->login_timeout);
-    log_debug("network_timeout: %d", sf->network_timeout);
-    log_debug("retry_timeout: %d", sf->retry_timeout);
-    log_debug("retry_count: %d", sf->retry_count);
-    log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
+   
+    //Query parameters
+    log_debug("autocommit: %s", sf->autocommit ? "true" : "false");
     log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
+    log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
+    log_debug("timezone: %s", sf->timezone);
+
+    //Bulk data transfer parameters
     log_debug("use_s3_regional_url: %s", sf->use_s3_regional_url ? "true" : "false");
     log_debug("put_use_urand_dev: %s", sf->put_use_urand_dev ? "true" : "false");
     log_debug("put_compress_level: %d", sf->put_compress_level);
