@@ -20,7 +20,7 @@ namespace Snowflake
         {
             _heartbeatreq_s(SF_CONNECT* sf, const std::string& url,
                 SF_HEADER* header)
-                : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header),
+                : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header, sf_header_destroy),
                 maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_login_timeout(sf)), networkTimeout(sf->network_timeout), 
                 isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count),
                 proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""),

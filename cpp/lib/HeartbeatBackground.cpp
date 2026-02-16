@@ -12,48 +12,52 @@ extern "C" {
 
     void start_heart_beat_for_this_session(SF_CONNECT* sf)
     {
-        try {
-            _mutex_lock(&sf->mutex_heart_beat);
-            if (!sf->is_heart_beat_on)
-            {
+        _mutex_lock(&sf->mutex_heart_beat);
+        if (!sf->is_heart_beat_on)
+        {
+            try {
                 log_trace("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.addConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
             }
-            else
+
+            catch (...)
             {
-                log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
+                log_error("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
             }
-            _mutex_unlock(&sf->mutex_heart_beat);
         }
-        catch (...)
+        else
         {
-            log_error("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
+            log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
         }
+
+        _mutex_unlock(&sf->mutex_heart_beat);
     }
 
     void stop_heart_beat_for_this_session(SF_CONNECT* sf)
     {
-        try {
-            _mutex_lock(&sf->mutex_heart_beat);
-            if (sf->is_heart_beat_on)
-            {
+        _mutex_lock(&sf->mutex_heart_beat);
+        if (sf->is_heart_beat_on)
+        {
+            try {
+
                 log_trace("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.removeConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
             }
-            else
+            catch (...)
             {
-                log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
+                log_error("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
             }
-            _mutex_unlock(&sf->mutex_heart_beat);
         }
-        catch (...)
+        else
         {
-            log_error("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
+            log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
         }
+        _mutex_unlock(&sf->mutex_heart_beat);
+
     }
 
     sf_bool renew_session_sync(SF_CONNECT* sf)
@@ -180,7 +184,8 @@ namespace Snowflake::Client
             {
                 sf_bool success = SF_BOOLEAN_FALSE;
                 if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
-                    char* code = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "code"));
+                    cJSON* codeItem = snowflake_cJSON_GetObjectItem(resp_data, "code");
+                    const char* code = codeItem ? codeItem->valuestring : "";
                     if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
                     {
                         CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token expired will retry later sessionId: %s", sid.c_str());
