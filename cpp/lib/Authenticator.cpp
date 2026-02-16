@@ -721,7 +721,7 @@ namespace Snowflake::Client
   bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
       const std::string& body, jsonObject_t& resp) {
       std::string destination = endPoint.toString();
-      SF_ERROR_STRUCT err = {SF_STATUS_SUCCESS, 0, 0, 0, 0, 0, 0};
+      SF_ERROR_STRUCT err = { SF_STATUS_SUCCESS, {0}, NULL, 0, {0}, NULL, 0 };
       SF_HEADER* httpExtraHeaders = createTokenRequestExternalHeaders(m_clientId, m_clientSecret, &err);
       if (err.error_code != SF_STATUS_SUCCESS) {
           CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRestRequest::Failed to create the header for the rest request in OAuth");

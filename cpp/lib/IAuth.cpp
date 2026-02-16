@@ -450,7 +450,7 @@ namespace Client
 
         void IAuthWebServer::startAccept()
         {
-            struct sockaddr_in client = { 0 };
+            struct sockaddr_in client = { 0, 0, 0, 0 };
             socklen_t len = sizeof(client);
 
             fd_set fd;
