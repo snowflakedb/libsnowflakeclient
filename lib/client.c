@@ -1499,11 +1499,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             
             json_copy_int(&sf->master_token_validation_time, data, "masterValidityInSeconds");
 
-            cJSON* sessionIDJson = NULL;
-            sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
-            if (sessionIDJson) 
+            cJSON* sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
+            if (sessionIDJson != NULL) 
             {
-                const char* id = cJSON_IsString(sessionIDJson) && (sessionIDJson->valuestring != NULL) ? sessionIDJson->valuestring : snowflake_cJSON_Print(sessionIDJson);
+                const char* id = sessionIDJson->valuestring != NULL ? sessionIDJson->valuestring : snowflake_cJSON_Print(sessionIDJson);
                 alloc_buffer_and_copy(&sf->session_id, id);
             }
 
