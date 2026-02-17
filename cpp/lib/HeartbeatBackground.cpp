@@ -15,13 +15,13 @@ extern "C" {
         _mutex_lock(&sf->mutex_heart_beat);
         if (!sf->is_heart_beat_on)
         {
-            try {
+            try 
+            {
                 log_trace("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.addConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
             }
-
             catch (...)
             {
                 log_error("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
@@ -31,7 +31,6 @@ extern "C" {
         {
             log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
         }
-
         _mutex_unlock(&sf->mutex_heart_beat);
     }
 
@@ -40,8 +39,8 @@ extern "C" {
         _mutex_lock(&sf->mutex_heart_beat);
         if (sf->is_heart_beat_on)
         {
-            try {
-
+            try 
+            {
                 log_trace("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.removeConnection(sf);
@@ -57,7 +56,6 @@ extern "C" {
             log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
-
     }
 
     sf_bool renew_session_sync(SF_CONNECT* sf)

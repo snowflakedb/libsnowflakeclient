@@ -1503,7 +1503,8 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
             if (sessionIDJson) 
             {
-                alloc_buffer_and_copy(&sf->session_id, sessionIDJson->valuestring);
+                const char* id = cJSON_IsString(sessionIDJson) && (sessionIDJson->valuestring != NULL) ? sessionIDJson->valuestring : snowflake_cJSON_Print(sessionIDJson);
+                alloc_buffer_and_copy(&sf->session_id, id);
             }
 
             // SNOW-715510: TODO Enable token cache
