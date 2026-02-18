@@ -299,18 +299,13 @@ namespace Snowflake::Client
         return heartbeatReq(connection, destination, httpExtraHeaders);
     }
 
-    void HeartbeatBackground::freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue)
-    {
-        HeartBeatQueue.clear();
-    }
-
     void HeartbeatBackground::renewSession(std::vector<heartbeatReq>& heartBeatQueue,
         std::vector<heartbeatReq>& renewQueue)
     {
         if (renewQueue.size() > 0)
         {
             CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%d connections need retry with session renew", renewQueue.size());
-            freeHeartBeatReqQueue(heartBeatQueue);
+            heartBeatQueue.clear();
             // get lock during renew. the reason is that:
             // 1. session renew needs more connection related implementation and it
             //    would be too heavy to bring it here
@@ -357,7 +352,7 @@ namespace Snowflake::Client
         renewQueue.clear();
         renewQueue.insert(renewQueue.begin(), HeartBeatQueue.begin(), HeartBeatQueue.end());
         renewSession(HeartBeatQueue, renewQueue);
-        freeHeartBeatReqQueue(HeartBeatQueue);
+        HeartBeatQueue.clear();
     }
 
 } // namespace Snowflake::Client
