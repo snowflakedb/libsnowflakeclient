@@ -238,11 +238,10 @@ static const std::map <std::string, PlatformDetectorEndpointFunc> endpointDetect
 
 static bool detectionDone = false;
 static std::vector<std::string> detectedPlatformsCache;
+static std::mutex cacheMutex;
 
 void getDetectedPlatforms(std::vector<std::string>& detectedPlatforms, long timeoutMs)
 {
-  static std::mutex cacheMutex;
-
   std::lock_guard<std::mutex> guard(cacheMutex);
   if (!detectionDone)
   {
@@ -307,6 +306,7 @@ using namespace Snowflake::Client::PlatformDetection;
 // Functions for test purpose
 void resetDetection()
 {
+  std::lock_guard<std::mutex> guard(cacheMutex);
   detectionDone = false;
   detectedPlatformsCache.clear();
 }
