@@ -17,19 +17,19 @@ extern "C" {
         {
             try 
             {
-                log_trace("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
+                log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.addConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
             }
             catch (...)
             {
-                log_error("sf::HeartbeatBackrgound::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
+                log_error("sf::HeartbeatBackground::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
             }
         }
         else
         {
-            log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
+            log_trace("sf::HeartbeatBackground::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
@@ -41,19 +41,19 @@ extern "C" {
         {
             try 
             {
-                log_trace("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Add the connection to heartbeatSync list");
+                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Add the connection to heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.removeConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
             }
             catch (...)
             {
-                log_error("sf::HeartbeatBackrgound::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
+                log_error("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
             }
         }
         else
         {
-            log_trace("sf::HeartbeatBackrgound::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
+            log_trace("sf::HeartbeatBackground::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
@@ -68,7 +68,7 @@ extern "C" {
         RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(sf->mutex_tokens));
         if (!renew_session(curl, sf, err))
         {
-            CXX_LOG_TRACE("sf::HeartbeatBackrgound::renew_session_sync::Failed to renew session");
+            CXX_LOG_TRACE("sf::HeartbeatBackground::renew_session_sync::Failed to renew session");
             stop_heart_beat_for_this_session(sf);
             ret = SF_BOOLEAN_FALSE;
         }
@@ -191,7 +191,7 @@ namespace Snowflake::Client
                     }
                     else
                     {
-                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %d", sid.c_str(), code);
+                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %s", sid.c_str(), code);
                     }
                 }
                 else
@@ -279,7 +279,6 @@ namespace Snowflake::Client
         char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
         uuid4_generate(requestid);
         uuid4_generate(requestgid);
-
 
         std::string protocol = connection->protocol;
         std::string host = connection->host;
