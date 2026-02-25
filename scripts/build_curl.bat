@@ -82,7 +82,7 @@ set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
 rd /S /Q %CURL_SOURCE_DIR%
 curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
 pushd %DEPS_DIR%
-  tar -xf curl-8.16.0.zip
+  powershell -Command "Expand-Archive -Path .\curl-8.16.0.zip -DestinationPath ."
   move curl-8.16.0 curl
 popd
 pushd %DEPS_DIR%\..\
