@@ -604,6 +604,9 @@ static void STDCALL log_term() {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
+    log_info("log_query_text: %s", sf->log_query_text ? "true" : "false");
+    log_info("log_query_parameter: %s", sf->log_query_text ? "true" : "false");
+
     AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
     if (AUTH_UNSUPPORTED == auth_type) {
         // Invalid authenticator
@@ -1178,6 +1181,9 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->oauth_scope = NULL;
         sf->oauth_refresh_token = NULL;
         sf->single_use_refresh_token = SF_BOOLEAN_FALSE;
+        
+        sf->log_query_text = SF_BOOLEAN_FALSE;
+        sf->log_query_parameters = SF_BOOLEAN_FALSE;
     }
 
     return sf;
@@ -1847,6 +1853,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_WIF_AZURE_RESOURCE:
             alloc_buffer_and_copy(&sf->wif_azure_resource, value);
             break;
+        case SF_CON_LOG_QUERY_TEXT:
+            sf->log_query_text = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_LOG_QUERY_PARAMETERS:
+            sf->log_query_parameters = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
                                 "Invalid attribute type",
@@ -2094,6 +2106,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
             break;
         case SF_CON_WIF_AZURE_RESOURCE:
             *value = sf->wif_azure_resource;
+            break;
+        case SF_CON_LOG_QUERY_TEXT:
+            *value = sf->log_query_text;
+            break;
+        case SF_CON_LOG_QUERY_PARAMETERS:
+            *value = sf->log_query_parameters;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
@@ -3511,7 +3529,42 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
 
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
-    log_debug("Here is constructed body:\n%s", s_body);
+    
+    if (sfstmt->connection->log_query_text && sfstmt->connection->log_query_parameters) {
+        log_debug("Here is constructed body:\n%s", s_body);
+    }
+    else {
+        // Mask sqlText if log_query_text is false
+        cJSON* sql_text_item = NULL;
+        char* original_sql_text = NULL;
+        if (!sfstmt->connection->log_query_text) {
+            sql_text_item = snowflake_cJSON_GetObjectItem(body, "sqlText");
+            if (sql_text_item) {
+                original_sql_text = sql_text_item->valuestring;
+                sql_text_item->valuestring = "****";
+            }
+        }
+        // Mask parameters object if log_query_parameters is false
+        cJSON* params_item = NULL;
+        if (!sfstmt->connection->log_query_parameters) {
+            params_item = snowflake_cJSON_DetachItemFromObject(body, "parameters");
+            if (params_item) {
+                snowflake_cJSON_AddStringToObject(body, "parameters", "****");
+            }
+        }
+        char* masked_body = snowflake_cJSON_Print(body);
+        log_debug("Here is constructed body:\n%s", masked_body);
+        SF_FREE(masked_body);
+        // Restore sqlText
+        if (sql_text_item) {
+            sql_text_item->valuestring = original_sql_text;
+        }
+        // Restore parameters
+        if (params_item) {
+            snowflake_cJSON_DeleteItemFromObject(body, "parameters");
+            snowflake_cJSON_AddItemToObject(body, "parameters", params_item);
+        }
+    }
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;

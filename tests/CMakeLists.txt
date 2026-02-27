@@ -19,6 +19,7 @@ SET(TESTS_C
         test_crud
         test_error_handlings
         test_large_result_set
+        test_log_query
         test_transaction
         test_ping_pong
         test_stmt_with_bad_connect
