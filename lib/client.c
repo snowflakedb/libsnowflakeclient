@@ -2108,10 +2108,10 @@ SF_STATUS STDCALL snowflake_get_attribute(
             *value = sf->wif_azure_resource;
             break;
         case SF_CON_LOG_QUERY_TEXT:
-            *value = sf->log_query_text;
+            *value = &sf->log_query_text;
             break;
         case SF_CON_LOG_QUERY_PARAMETERS:
-            *value = sf->log_query_parameters;
+            *value = &sf->log_query_parameters;
             break;
         default:
             SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_BAD_ATTRIBUTE_TYPE,
