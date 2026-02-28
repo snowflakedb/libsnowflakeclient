@@ -33,86 +33,86 @@ SF_CONNECT* validate_connection()
     return sf;
 }
 
-//void test_log_query_text(void** unused)
-//{
-//    SF_UNUSED(unused);
-//    SF_CONNECT* sf = validate_connection();
-//
-//    /* query */
-//    SF_STMT* sfstmt = snowflake_stmt(sf);
-//    SF_STATUS status = snowflake_query(sfstmt, "create or replace temporary table test_multi_txn(c1 number, c2 string) as select 10, 'z'", 0);
-//    assert_int_equal(status, SF_STATUS_SUCCESS);
-//
-//    int64 multi_stmt_count = 5;
-//    status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
-//    assert_int_equal(status, SF_STATUS_SUCCESS);
-//
-//    /* Enable the logging */
-//    char log_buf[16500] = { 0 };
-//    FILE* log_fp = tmpfile();
-//    assert_non_null(log_fp);
-//    log_set_lock(NULL);
-//    log_set_level(SF_LOG_DEBUG);
-//    log_set_quiet(1);
-//    log_set_fp(log_fp);
-//
-//    const char* query_text =
-//        "begin;\n"
-//        "delete from test_multi_txn;\n"
-//        "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
-//        "commit;\n"
-//        "select count(*) from test_multi_txn";
-//
-//    status = snowflake_query(sfstmt, query_text, 0);
-//    if (status != SF_STATUS_SUCCESS) {
-//        dump_error(&(sfstmt->error));
-//    }
-//    assert_int_equal(status, SF_STATUS_SUCCESS);
-//
-//    // first statement (begin)
-//    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-//    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-//
-//    // second statement (delete)
-//    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-//    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-//    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-//
-//    // third statement (insert)
-//    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-//    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-//    assert_int_equal(snowflake_affected_rows(sfstmt), 2);
-//
-//    // fourth statement (commit)
-//    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-//    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-//    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-//
-//    // fifth statement (select)
-//    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-//    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-//
-//    /* Validate that the query text is masked in the log */
-//    fflush(log_fp);
-//    rewind(log_fp);
-//    fread(log_buf, 1, sizeof(log_buf) - 1, log_fp);
-//    fclose(log_fp);
-//    log_set_fp(NULL);
-//
-//    assert_null(strstr(log_buf, "begin;"));
-//    assert_null(strstr(log_buf, "delete from test_multi_txn"));
-//    assert_non_null(strstr(log_buf, "sqlText:****"));
-//
-//    status = snowflake_query(sfstmt, query_text, 0);
-//    if (status != SF_STATUS_SUCCESS) {
-//        dump_error(&(sfstmt->error));
-//    }
-//    assert_int_equal(status, SF_STATUS_SUCCESS);
-//
-//    snowflake_stmt_term(sfstmt);
-//    snowflake_term(sf);
-//    remove(log_fp);
-//}
+void test_log_query_text(void** unused)
+{
+    SF_UNUSED(unused);
+    SF_CONNECT* sf = validate_connection();
+
+    /* query */
+    SF_STMT* sfstmt = snowflake_stmt(sf);
+    SF_STATUS status = snowflake_query(sfstmt, "create or replace temporary table test_multi_txn(c1 number, c2 string) as select 10, 'z'", 0);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    int64 multi_stmt_count = 5;
+    status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    /* Enable the logging */
+    char log_buf[16500] = { 0 };
+    FILE* log_fp = tmpfile();
+    assert_non_null(log_fp);
+    log_set_lock(NULL);
+    log_set_level(SF_LOG_DEBUG);
+    log_set_quiet(1);
+    log_set_fp(log_fp);
+
+    const char* query_text =
+        "begin;\n"
+        "delete from test_multi_txn;\n"
+        "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
+        "commit;\n"
+        "select count(*) from test_multi_txn";
+
+    status = snowflake_query(sfstmt, query_text, 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    // first statement (begin)
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
+
+    // second statement (delete)
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
+
+    // third statement (insert)
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), 2);
+
+    // fourth statement (commit)
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
+
+    // fifth statement (select)
+    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
+    assert_int_equal(snowflake_num_rows(sfstmt), 1);
+
+    /* Validate that the query text is masked in the log */
+    fflush(log_fp);
+    rewind(log_fp);
+    fread(log_buf, 1, sizeof(log_buf) - 1, log_fp);
+    fclose(log_fp);
+    log_set_fp(NULL);
+
+    assert_null(strstr(log_buf, "begin;"));
+    assert_null(strstr(log_buf, "delete from test_multi_txn"));
+    assert_non_null(strstr(log_buf, "sqlText:****"));
+
+    status = snowflake_query(sfstmt, query_text, 0);
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
+    remove(log_fp);
+}
 
 void test_log_query_parameters(void** unused)
 {
