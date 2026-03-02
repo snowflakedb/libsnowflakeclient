@@ -174,10 +174,11 @@ void test_log_query_text(void** unused)
     assert_false(masked_sql_found);
     assert_false(masked_query_parameter_found);
 
-    fclose(fp);
     log_close();
     remove(log_fp);
 
+    snowflake_stmt_term(sfstmt);
+    snowflake_term(sf);
 }
 
 int main(void) {
