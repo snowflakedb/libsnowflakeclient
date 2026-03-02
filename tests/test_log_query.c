@@ -1,15 +1,10 @@
-#include <string.h>
-#include <stdio.h>
-#include "utils/test_setup.h"
-#include <snowflake/logger.h>
-
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
 #include "log_file_util.h"
 #include "memory.h"
 #include <stdio.h>
 #include <sys/stat.h>
-
+#include <stdlib.h>
 #ifndef _WIN32
 #include <unistd.h>
 #include <pwd.h>
@@ -47,14 +42,15 @@ void test_log_query_text(void** unused)
     status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    /* Enable the logging */
-    char log_buf[16500] = { 0 };
-    FILE* log_fp = tmpfile();
-    assert_non_null(log_fp);
+    char* log_fp = "sql.log";
+    remove(log_fp);
+
+    FILE* fp = fopen(log_fp, "w+");
+    assert_non_null(fp);
     log_set_lock(NULL);
     log_set_level(SF_LOG_DEBUG);
     log_set_quiet(1);
-    log_set_fp(log_fp);
+    log_set_fp(fp);
 
     const char* query_text =
         "begin;\n"
@@ -92,97 +88,102 @@ void test_log_query_text(void** unused)
     assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-    /* Validate that the query text is masked in the log */
-    fflush(log_fp);
-    rewind(log_fp);
-    fread(log_buf, 1, sizeof(log_buf) - 1, log_fp);
-    fclose(log_fp);
-    log_set_fp(NULL);
+    size_t  cap = 0;
+    size_t len = 0;
+    fseek(fp, 0, SEEK_SET); 
 
-    assert_null(strstr(log_buf, "begin;"));
-    assert_null(strstr(log_buf, "delete from test_multi_txn"));
-    assert_non_null(strstr(log_buf, "sqlText:****"));
+    sf_bool found_query_text = SF_BOOLEAN_FALSE;
+    sf_bool masked_sql_found = SF_BOOLEAN_FALSE;
+    sf_bool found_query_parameters = SF_BOOLEAN_FALSE;
+    sf_bool masked_query_parameter_found = SF_BOOLEAN_FALSE;
+    char line[1024];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if(strstr(line, "insert into test_multi_txn values (1, 'a'), (2, 'b');") != NULL) 
+        {
+            found_query_text = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "sqlText\":	\"****\"") != NULL)
+        {
+            masked_sql_found = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "MULTI_STATEMENT_COUNT") != NULL)
+        {
+            found_query_parameters = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "parameters\":	\"****\"") != NULL)
+        {
+            masked_query_parameter_found = SF_BOOLEAN_TRUE;
+        }
+    }
+
+    assert_false(found_query_text);
+    assert_false(found_query_parameters);
+
+    assert_true(masked_sql_found);
+    assert_true(masked_query_parameter_found);
+
+    fclose(fp);
+    remove("sql.log");
+
+
+    fp = fopen(log_fp, "w+");
+    assert_non_null(fp);
+    //Enable the log query text.
+    sf->log_query_text = SF_BOOLEAN_TRUE;
+    sf->log_query_parameters = SF_BOOLEAN_TRUE;
 
     status = snowflake_query(sfstmt, query_text, 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    snowflake_stmt_term(sfstmt);
-    snowflake_term(sf);
-    remove(log_fp);
-}
-
-void test_log_query_parameters(void** unused)
-{
-    SF_UNUSED(unused);
-    const char* logtext[][2] = {
-     {//0
-         "sqlText: select 1",
-         "sqlText: ****"
-     },
-     {
-         "parameters: {",
-         "parameters: ****"
-      }
-    };
-
-    SF_CONNECT* sf = validate_connection();
-    SF_STMT* sfstmt = snowflake_stmt(sf);
-
-    char query[1024];
-    int64 multi_stmt_count = 3;
-    SF_STATUS status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
-
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    sprintf(query, "%s", "select 1; select 2; select 3");
-
-    /* Enable the logging */
-    FILE* fp = fopen("dummy.log", "w+");
-    assert_non_null(fp);
-    log_set_lock(NULL);
-    log_set_level(SF_LOG_TRACE);
-    log_set_quiet(1);
-    log_set_fp(fp);
-
-    status = snowflake_query(sfstmt, query, 0);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
-    }
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    snowflake_stmt_term(sfstmt);
-    snowflake_term(sf);
-
-    char* line = NULL;
-    size_t len = 0;
-    for (int i = 0; i < 13; i++)
-    {
-        fseek(fp, 0, SEEK_SET);
-        log_trace("%s", logtext[i][0]);
-        fseek(fp, 0, SEEK_SET);
-        len = getline(&line, &len, fp);
-        if (i != 0)
+    
+    //Reset the parameter
+    found_query_text = SF_BOOLEAN_FALSE;
+    masked_sql_found = SF_BOOLEAN_FALSE;
+    found_query_parameters = SF_BOOLEAN_FALSE;
+    masked_query_parameter_found = SF_BOOLEAN_FALSE;
+    fseek(fp, 0, SEEK_SET);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (strstr(line, "insert into test_multi_txn values (1, 'a'), (2, 'b');") != NULL)
         {
-            assert_null(strstr(line, logtext[i][0]));
+            found_query_text = SF_BOOLEAN_TRUE;
         }
-        assert_non_null(strstr(line, logtext[i][1]));
+
+        if (strstr(line, "sqlText\":	\"****\"") != NULL)
+        {
+            masked_sql_found = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "MULTI_STATEMENT_COUNT") != NULL)
+        {
+            found_query_parameters = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "parameters\":	\"****\"") != NULL)
+        {
+            masked_query_parameter_found = SF_BOOLEAN_TRUE;
+        }
     }
 
-    free(line);
+    assert_true(found_query_text);
+    assert_true(found_query_parameters);
+
+    assert_false(masked_sql_found);
+    assert_false(masked_query_parameter_found);
+
+    log_close();
     fclose(fp);
+    remove("sql.log");
+
 }
 
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_log_query_text),
-        cmocka_unit_test(test_log_query_parameters),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();
