@@ -88,15 +88,14 @@ void test_log_query_text(void** unused)
     assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
     assert_int_equal(snowflake_num_rows(sfstmt), 1);
 
-    size_t  cap = 0;
-    size_t len = 0;
-    fseek(fp, 0, SEEK_SET); 
 
     sf_bool found_query_text = SF_BOOLEAN_FALSE;
     sf_bool masked_sql_found = SF_BOOLEAN_FALSE;
     sf_bool found_query_parameters = SF_BOOLEAN_FALSE;
     sf_bool masked_query_parameter_found = SF_BOOLEAN_FALSE;
     char line[1024];
+
+    fseek(fp, 0, SEEK_SET);
     while (fgets(line, sizeof(line), fp) != NULL) {
         if(strstr(line, "insert into test_multi_txn values (1, 'a'), (2, 'b');") != NULL) 
         {
@@ -126,11 +125,12 @@ void test_log_query_text(void** unused)
     assert_true(masked_query_parameter_found);
 
     fclose(fp);
-    remove("sql.log");
+    remove(log_fp);
 
 
     fp = fopen(log_fp, "w+");
     assert_non_null(fp);
+    log_set_fp(fp);
     //Enable the log query text.
     sf->log_query_text = SF_BOOLEAN_TRUE;
     sf->log_query_parameters = SF_BOOLEAN_TRUE;
@@ -176,7 +176,7 @@ void test_log_query_text(void** unused)
 
     log_close();
     fclose(fp);
-    remove("sql.log");
+    remove(log_fp);
 
 }
 
