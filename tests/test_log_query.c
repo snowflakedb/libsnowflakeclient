@@ -174,8 +174,8 @@ void test_log_query_text(void** unused)
     assert_false(masked_sql_found);
     assert_false(masked_query_parameter_found);
 
-    log_close();
     fclose(fp);
+    log_close();
     remove(log_fp);
 
 }
