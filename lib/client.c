@@ -605,7 +605,7 @@ static void STDCALL log_term() {
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_info("log_query_text: %s", sf->log_query_text ? "true" : "false");
-    log_info("log_query_parameter: %s", sf->log_query_text ? "true" : "false");
+    log_info("log_query_parameters: %s", sf->log_query_parameters ? "true" : "false");
 
     AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
     if (AUTH_UNSUPPORTED == auth_type) {
@@ -3868,7 +3868,7 @@ SF_STATUS STDCALL _snowflake_execute_ex(SF_STMT *sfstmt,
             {
                 log_debug("Array bind is not supported - each parameter set entry "
                           "will be executed as a single request for query: %s",
-                          sfstmt->sql_text);
+                          sfstmt->connection->log_query_text ? sfstmt->sql_text : "****");
                 need_batch_exec = SF_BOOLEAN_TRUE;
             }
         }
