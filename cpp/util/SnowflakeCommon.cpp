@@ -1,8 +1,11 @@
 #define CURL_STATICLIB
 #include <string.h>
+#include <iostream>
+#include <sstream>
 #include <curl/curl.h>
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
+#include <boost/algorithm/string.hpp>
 #include "snowflake/basic_types.h"
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
@@ -10,6 +13,8 @@
 #include <chrono>
 #include "SnowflakeCommon.hpp"
 #include "log_file_util.h"
+#include "cJSON.h"
+#include "snowflake/PlatformDetection.hpp"
 
 using namespace Snowflake;
 using namespace Snowflake::Client;
@@ -142,6 +147,29 @@ uint64 sf_get_current_time_millis()
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+// have to put the implementation here to avoid conflict type definition with AWS of cJSON
+cJSON * get_detected_platforms(long timeoutms)
+{
+  // to ensure no exception thrown from C interface
+  try
+  {
+    std::vector<std::string> detectedPlatforms;
+    Snowflake::Client::PlatformDetection::getDetectedPlatforms(detectedPlatforms, timeoutms);
+    cJSON* platformsJson = snowflake_cJSON_CreateArray();
+    for (auto platform : detectedPlatforms)
+    {
+      cJSON* val = snowflake_cJSON_CreateString(platform.c_str());
+      snowflake_cJSON_AddItemToArray(platformsJson, val);
+    }
+    return platformsJson;
+  }
+  catch (...)
+  {
+    CXX_LOG_ERROR("Attempt to detect platforms has failed");
+  }
+  return NULL;
+}
+
 }
 
 void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
@@ -169,3 +197,23 @@ void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
   }
 }
 
+void Snowflake::Client::Util::parseHttpRespHeaders(std::string const& headerString,
+                                                   std::map<std::string, std::string>& headers)
+{
+  std::string header;
+  std::stringstream headerStream(headerString);
+  size_t index;
+  while (std::getline(headerStream, header) && header != "\r")
+  {
+    index = header.find(':', 0);
+    if (index != std::string::npos)
+    {
+      std::string key, value;
+      key = header.substr(0, index);
+      value = header.substr(index + 1);
+      boost::trim(key);
+      boost::trim(value);
+      headers[key] = value;
+    }
+  }
+}
