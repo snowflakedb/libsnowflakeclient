@@ -35,8 +35,7 @@ class IFileTransferAgent
 {
 public:
 
-  bool m_logQueryText = false;
-
+  std::string m_qid;
 
   virtual ~IFileTransferAgent() {};
   /**
@@ -103,9 +102,9 @@ public:
   */
   virtual void setGetMaxRetries(int maxRetries) {};
 
-  virtual void setLogQueryText(bool logQueryText) 
+  virtual void setQueryId(std::string qid) 
   {
-      m_logQueryText = logQueryText;
+      m_qid = qid;
   };
 
 };

@@ -113,7 +113,7 @@ Snowflake::Client::FileTransferAgent::execute(string *command)
       upload(command);
       auto putEnd = std::chrono::steady_clock::now();
       auto totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(putEnd - putStart).count();
-      CXX_LOG_DEBUG("Time took to upload %s: %ld milli seconds.", m_logQueryText ? command->c_str() : "****", totalTime);
+      CXX_LOG_DEBUG("Time took to upload the QueryId: %s: %ld milli seconds.", m_qid.c_str(), totalTime);
       break;
     }
     case CommandType::DOWNLOAD:
@@ -274,14 +274,14 @@ void Snowflake::Client::FileTransferAgent::upload(string *command)
   }
   if( m_largeFilesMeta.size() + m_smallFilesMeta.size() == 0)
   {
-    CXX_LOG_DEBUG("No files to upload, source files do not exist. put command %s FAILED.", m_logQueryText ? command->c_str() : "****");
+    CXX_LOG_DEBUG("No files to upload, source files do not exist. QueryId %s FAILED.", m_qid.c_str());
     m_executionResults->SetTransferOutCome(RemoteStorageRequestOutcome::FAILED, 0);
     throw SnowflakeTransferException(TransferError::FAILED_TO_TRANSFER, "source file does not exist.");
   }
 
   if (!m_failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.", m_logQueryText ? command->c_str() : "****");
+    CXX_LOG_DEBUG("QueryId: %s FAILED.", m_qid.c_str());
     if (isPutFastFailEnabled())
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_UPLOADS, m_failedTransfers.c_str());
@@ -679,7 +679,7 @@ void Snowflake::Client::FileTransferAgent::download(string *command)
 
   if (!m_failedTransfers.empty())
   {
-    CXX_LOG_DEBUG("%s command FAILED.", m_logQueryText ? command->c_str() : "****");
+    CXX_LOG_DEBUG("QueryId: %s FAILED.", m_qid.c_str());
     if (isGetFastFailEnabled())
     {
       throw SnowflakeTransferException(TransferError::FAST_FAIL_ENABLED_SKIP_DOWNLOADS, m_failedTransfers.c_str());
@@ -888,7 +888,7 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
 {
   if (std::string::npos == command.find(FILE_PROTOCOL))
   {
-    CXX_LOG_ERROR("file:// prefix not found in command %s", m_logQueryText ? command.c_str() : "****");
+    CXX_LOG_ERROR("file:// prefix not found in command");
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
       "file:// prefix not found in command.");
   }
@@ -971,7 +971,7 @@ extern "C" {
     agent.setGetFastFail(sfconn->get_fastfail);
     agent.setGetMaxRetries(sfconn->get_maxretries);
     agent.setRandomDeviceAsUrand(sfconn->put_use_urand_dev);
-    agent.setLogQueryText(sfconn->log_query_text);
+    agent.setQueryId(sfstmt->sfqid);
 
     if (upload_stream)
     {
