@@ -199,11 +199,6 @@ public:
     m_maxGetRetries = maxRetries;
   }
 
-  void setLogQueryText(bool logQueryText)
-  {
-    m_logQueryText = logQueryText;
-  }
-
 private:
   /**
    * Populate file metadata, (Get source file name)
@@ -332,8 +327,6 @@ private:
   bool m_getFastFail;
 
   int m_maxGetRetries;
-
-  bool m_logQueryText;
 
   std::string m_failedTransfers;
 };
