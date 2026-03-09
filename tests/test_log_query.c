@@ -76,7 +76,7 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
     }
 }
 
-test_normal_query_helper(sf_bool log_query_text)
+void test_normal_query_helper(sf_bool log_query_text)
 {
     SF_CONNECT* sf = validate_connection(log_query_text, SF_BOOLEAN_FALSE);
 
