@@ -1965,7 +1965,7 @@ void test_put_get_with_unicode(void **unused)
 
 void test_log_query_text_in_fileTransfer_helper(bool log_query_text)
 {
-    char* log_fp = "sql.log";
+    const char* log_fp = "sql.log";
     remove(log_fp);
 
     FILE* fp = fopen(log_fp, "w+");
