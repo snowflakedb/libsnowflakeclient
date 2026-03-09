@@ -28,7 +28,6 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
 
     fseek(fp, 0, SEEK_SET);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        printf_s("%s", line);
         if (strstr(line, query_text) != NULL)
         {
             found_query_text = SF_BOOLEAN_TRUE;
