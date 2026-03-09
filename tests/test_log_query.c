@@ -1,25 +1,14 @@
 #include "utils/test_setup.h"
 #include <snowflake/client_config_parser.h>
 #include "log_file_util.h"
-#include "memory.h"
 #include <stdio.h>
-#include <sys/stat.h>
 #include <stdlib.h>
-#ifndef _WIN32
-#include <unistd.h>
-#include <pwd.h>
-#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
-#else
-#define F_OK 0
-inline int access(const char* pathname, int mode) {
-    return _access(pathname, mode);
-}
-#endif
-#define SF_TMP_FOLDER "/tmp/sf_client_config_folder"
 
-SF_CONNECT* validate_connection()
+SF_CONNECT* validate_connection(sf_bool log_query_text, sf_bool log_query_parameters)
 {
     SF_CONNECT* sf = setup_snowflake_connection();
+    sf->log_query_text = log_query_text;
+    sf->log_query_parameters = log_query_parameters;
     SF_STATUS status = snowflake_connect(sf);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sf->error));
@@ -28,19 +17,72 @@ SF_CONNECT* validate_connection()
     return sf;
 }
 
-void test_log_query_text(void** unused)
+void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text, sf_bool log_query_parameters)
 {
-    SF_UNUSED(unused);
-    SF_CONNECT* sf = validate_connection();
+    sf_bool found_query_text = SF_BOOLEAN_FALSE;
+    sf_bool masked_sql_found = SF_BOOLEAN_FALSE;
+    sf_bool found_query_parameters = SF_BOOLEAN_FALSE;
+    sf_bool masked_query_param_found = SF_BOOLEAN_FALSE;
+
+    char line[1024];
+
+    fseek(fp, 0, SEEK_SET);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        printf_s("%s", line);
+        if (strstr(line, query_text) != NULL)
+        {
+            found_query_text = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "sqlText\":	\"****\"") != NULL)
+        {
+            masked_sql_found = SF_BOOLEAN_TRUE;
+        }
+
+
+        if (strstr(line, "bindings\":	\"****\"") != NULL)
+        {
+            masked_query_param_found = SF_BOOLEAN_TRUE;
+        }
+
+
+        if (strstr(line, "value\":	\"log query testing\"") != NULL)
+        {
+            found_query_parameters = SF_BOOLEAN_TRUE;
+        }
+    }
+
+
+    if (log_query_text) {
+        assert_true(found_query_text);
+        assert_false(masked_sql_found);
+    }
+    else
+    {
+        assert_false(found_query_text);
+        assert_true(masked_sql_found);
+
+    }
+
+    if (log_query_parameters) {
+
+        assert_false(masked_query_param_found);
+        assert_true(found_query_parameters);
+
+    }
+    else
+    {
+        assert_false(found_query_parameters);
+        assert_true(masked_query_param_found);
+    }
+}
+
+test_normal_query_helper(sf_bool log_query_text)
+{
+    SF_CONNECT* sf = validate_connection(log_query_text, SF_BOOLEAN_FALSE);
 
     /* query */
     SF_STMT* sfstmt = snowflake_stmt(sf);
-    SF_STATUS status = snowflake_query(sfstmt, "create or replace temporary table test_multi_txn(c1 number, c2 string) as select 10, 'z'", 0);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
-
-    int64 multi_stmt_count = 5;
-    status = snowflake_stmt_set_attr(sfstmt, SF_STMT_MULTI_STMT_COUNT, &multi_stmt_count);
-    assert_int_equal(status, SF_STATUS_SUCCESS);
 
     char* log_fp = "sql.log";
     remove(log_fp);
@@ -52,52 +94,22 @@ void test_log_query_text(void** unused)
     log_set_quiet(1);
     log_set_fp(fp);
 
-    const char* query_text =
-        "begin;\n"
-        "delete from test_multi_txn;\n"
-        "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
-        "commit;\n"
-        "select count(*) from test_multi_txn";
+    const char* query_text = "select 1";
 
-    status = snowflake_query(sfstmt, query_text, 0);
+    SF_STATUS status = snowflake_query(sfstmt, query_text, 0);
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
 
-    // first statement (begin)
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-
-    // second statement (delete)
-    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-
-    // third statement (insert)
-    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-    assert_int_equal(snowflake_affected_rows(sfstmt), 2);
-
-    // fourth statement (commit)
-    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-    assert_int_equal(snowflake_affected_rows(sfstmt), 1);
-
-    // fifth statement (select)
-    assert_int_equal(snowflake_next_result(sfstmt), SF_STATUS_SUCCESS);
-    assert_int_equal(snowflake_num_rows(sfstmt), 1);
-
-
     sf_bool found_query_text = SF_BOOLEAN_FALSE;
     sf_bool masked_sql_found = SF_BOOLEAN_FALSE;
-    sf_bool found_query_parameters = SF_BOOLEAN_FALSE;
-    sf_bool masked_query_parameter_found = SF_BOOLEAN_FALSE;
+
     char line[1024];
 
     fseek(fp, 0, SEEK_SET);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        if(strstr(line, "insert into test_multi_txn values (1, 'a'), (2, 'b');") != NULL) 
+        if (strstr(line, query_text) != NULL)
         {
             found_query_text = SF_BOOLEAN_TRUE;
         }
@@ -106,74 +118,18 @@ void test_log_query_text(void** unused)
         {
             masked_sql_found = SF_BOOLEAN_TRUE;
         }
-
-        if (strstr(line, "MULTI_STATEMENT_COUNT") != NULL)
-        {
-            found_query_parameters = SF_BOOLEAN_TRUE;
-        }
-
-        if (strstr(line, "parameters\":	\"****\"") != NULL)
-        {
-            masked_query_parameter_found = SF_BOOLEAN_TRUE;
-        }
     }
 
-    assert_false(found_query_text);
-    assert_false(found_query_parameters);
-
-    assert_true(masked_sql_found);
-    assert_true(masked_query_parameter_found);
-
-    fclose(fp);
-    remove(log_fp);
-
-
-    fp = fopen(log_fp, "w+");
-    assert_non_null(fp);
-    log_set_fp(fp);
-    //Enable the log query text.
-    sf->log_query_text = SF_BOOLEAN_TRUE;
-    sf->log_query_parameters = SF_BOOLEAN_TRUE;
-
-    status = snowflake_query(sfstmt, query_text, 0);
-    if (status != SF_STATUS_SUCCESS) {
-        dump_error(&(sfstmt->error));
+    if (log_query_text) {
+        assert_true(found_query_text);
+        assert_false(masked_sql_found);
     }
-    
-    //Reset the parameter
-    found_query_text = SF_BOOLEAN_FALSE;
-    masked_sql_found = SF_BOOLEAN_FALSE;
-    found_query_parameters = SF_BOOLEAN_FALSE;
-    masked_query_parameter_found = SF_BOOLEAN_FALSE;
-    fseek(fp, 0, SEEK_SET);
-    while (fgets(line, sizeof(line), fp) != NULL) {
-        if (strstr(line, "insert into test_multi_txn values (1, 'a'), (2, 'b');") != NULL)
-        {
-            found_query_text = SF_BOOLEAN_TRUE;
-        }
+    else
+    {
+        assert_false(found_query_text);
+        assert_true(masked_sql_found);
 
-        if (strstr(line, "sqlText\":	\"****\"") != NULL)
-        {
-            masked_sql_found = SF_BOOLEAN_TRUE;
-        }
-
-        if (strstr(line, "MULTI_STATEMENT_COUNT") != NULL)
-        {
-            found_query_parameters = SF_BOOLEAN_TRUE;
-        }
-
-        if (strstr(line, "parameters\":	\"****\"") != NULL)
-        {
-            masked_query_parameter_found = SF_BOOLEAN_TRUE;
-        }
     }
-
-    assert_true(found_query_text);
-    assert_true(found_query_parameters);
-
-    assert_false(masked_sql_found);
-    assert_false(masked_query_parameter_found);
-
     log_close();
     remove(log_fp);
 
@@ -181,10 +137,196 @@ void test_log_query_text(void** unused)
     snowflake_term(sf);
 }
 
+
+void test_log_query_params_array_binding_helper(sf_bool log_query_parameters)
+{
+    /* init */
+    SF_STATUS status;
+    SF_BIND_INPUT input_array[3];
+    int64 input1;
+    char input2[1000];
+    float64 input3;
+    char str[1000];
+    unsigned int iter = 0;
+
+    /* Connect with all parameters set */
+    SF_CONNECT* sf = validate_connection(SF_BOOLEAN_FALSE, log_query_parameters);
+
+    /* Create a statement once and reused */
+    SF_STMT* stmt = snowflake_stmt(sf);
+    /* NOTE: the numeric type here should fit into int64 otherwise
+     * it is taken as a float */
+    status = snowflake_query(
+        stmt,
+        "create or replace table t (c1 number(10,0) not null, c2 string, c3 double)",
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    for (iter = 0; iter < 3; iter++)
+    {
+        snowflake_bind_input_init(&input_array[iter]);
+    }
+
+    input_array[0].idx = 1;
+    input_array[0].c_type = SF_C_TYPE_INT64;
+    input_array[0].value = &input1;
+    input_array[0].len = sizeof(input1);
+
+    input_array[1].idx = 2;
+    input_array[1].c_type = SF_C_TYPE_STRING;
+    input_array[1].value = &input2;
+    input_array[1].len = sizeof(input2);
+
+    input_array[2].idx = 3;
+    input_array[2].c_type = SF_C_TYPE_FLOAT64;
+    input_array[2].value = &input3;
+    input_array[2].len = sizeof(input3);
+
+    char* log_fp = "sql.log";
+    remove(log_fp);
+
+    FILE* fp = fopen(log_fp, "w+");
+    assert_non_null(fp);
+    log_set_lock(NULL);
+    log_set_level(SF_LOG_DEBUG);
+    log_set_quiet(1);
+    log_set_fp(fp);
+
+    char* query_text = "insert into t values(?, ?, ?)";
+
+    status = snowflake_prepare(
+        stmt,
+        query_text,
+        0
+    );
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    status = snowflake_bind_param_array(stmt, input_array, 3);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    input1 = 1;
+    strcpy(input2, "log query testing");
+    input3 = 1.23;
+
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    validate_log_file(fp, query_text, SF_BOOLEAN_FALSE, log_query_parameters);
+
+    log_close();
+    remove(log_fp);
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
+void test_log_query_params_single_binding_helper(sf_bool log_query_text, sf_bool log_query_parameters)
+{
+    SF_CONNECT* sf = validate_connection(log_query_text, log_query_parameters);
+
+    char str[20];
+    // Initialize bind inputs
+    SF_BIND_INPUT string_input = {
+      .idx = 2,
+      .c_type = SF_C_TYPE_STRING,
+      .value = "log query testing",
+      .len = sizeof(str)
+    };
+
+    /* Create a statement once and reused */
+    SF_STMT* stmt = snowflake_stmt(sf);
+
+    char* log_fp = "sql.log";
+    remove(log_fp);
+
+    FILE* fp = fopen(log_fp, "w+");
+    assert_non_null(fp);
+    log_set_lock(NULL);
+    log_set_level(SF_LOG_DEBUG);
+    log_set_quiet(1);
+    log_set_fp(fp);
+
+    char* query_text = "select ?,?,?,?,?,?,?,?,?";
+
+
+    // test with parameters more than 8
+    SF_STATUS status = snowflake_prepare(
+        stmt,
+        query_text,
+        0
+    );
+
+    for (string_input.idx = 1; string_input.idx <= 9; string_input.idx++)
+    {
+        status = snowflake_bind_param(stmt, &string_input);
+        assert_int_equal(status, SF_STATUS_SUCCESS);
+    }
+
+    status = snowflake_execute(stmt);
+    assert_int_equal(status, SF_STATUS_SUCCESS);
+
+    validate_log_file(fp, query_text, log_query_text, log_query_parameters);
+
+    log_close();
+    remove(log_fp);
+
+    snowflake_stmt_term(stmt);
+    snowflake_term(sf);
+}
+
+void test_log_query_text_enabled(void** unused)
+{
+    SF_UNUSED(unused);
+    test_normal_query_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_log_query_text_disabled(void** unused)
+{
+    SF_UNUSED(unused);
+    test_normal_query_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_log_query_params_disabled_with_array_binding(void** unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_params_array_binding_helper(SF_BOOLEAN_FALSE);
+}
+
+void test_log_query_params_enabled_with_array_binding(void** unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_params_array_binding_helper(SF_BOOLEAN_TRUE);
+}
+
+void test_log_query_text_and_params_both_disabled_with_single_binding(void** unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_params_single_binding_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
+}
+
+void test_log_query_text_disabled_and_params_enabled_with_single_binding(void** unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_params_single_binding_helper(SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE);
+}
+
+void test_log_query_text_and_params_both_enabled_with_single_binding(void** unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_params_single_binding_helper(SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE);
+}
+
 int main(void) {
     initialize_test(SF_BOOLEAN_FALSE);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_log_query_text),
+        cmocka_unit_test(test_log_query_text_enabled),
+        cmocka_unit_test(test_log_query_text_disabled),
+        cmocka_unit_test(test_log_query_params_enabled_with_array_binding),
+        cmocka_unit_test(test_log_query_params_disabled_with_array_binding),
+        cmocka_unit_test(test_log_query_text_and_params_both_disabled_with_single_binding),
+        cmocka_unit_test(test_log_query_text_disabled_and_params_enabled_with_single_binding),
+        cmocka_unit_test(test_log_query_text_and_params_both_enabled_with_single_binding),
     };
     int ret = cmocka_run_group_tests(tests, NULL, NULL);
     snowflake_global_term();

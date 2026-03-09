@@ -3547,9 +3547,9 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
         // Mask parameters object if log_query_parameters is false
         cJSON* params_item = NULL;
         if (!sfstmt->connection->log_query_parameters) {
-            params_item = snowflake_cJSON_DetachItemFromObject(body, "parameters");
+            params_item = snowflake_cJSON_DetachItemFromObject(body, "bindings");
             if (params_item) {
-                snowflake_cJSON_AddStringToObject(body, "parameters", "****");
+                snowflake_cJSON_AddStringToObject(body, "bindings", "****");
             }
         }
         char* masked_body = snowflake_cJSON_Print(body);
@@ -3561,8 +3561,8 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
         }
         // Restore parameters
         if (params_item) {
-            snowflake_cJSON_DeleteItemFromObject(body, "parameters");
-            snowflake_cJSON_AddItemToObject(body, "parameters", params_item);
+            snowflake_cJSON_DeleteItemFromObject(body, "bindings");
+            snowflake_cJSON_AddItemToObject(body, "bindings", params_item);
         }
     }
 
