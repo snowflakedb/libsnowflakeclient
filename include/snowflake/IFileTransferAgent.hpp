@@ -108,6 +108,11 @@ public:
       m_logQueryText = logQueryText;
   };
 
+  virtual const char* logCommand(std::string* command)
+  {
+      return m_logQueryText ? command->c_str() : "****";
+  }
+
 };
 
 }

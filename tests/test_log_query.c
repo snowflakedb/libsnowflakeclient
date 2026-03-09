@@ -145,7 +145,6 @@ void test_log_query_params_array_binding_helper(sf_bool log_query_parameters)
     int64 input1;
     char input2[1000];
     float64 input3;
-    char str[1000];
     unsigned int iter = 0;
 
     /* Connect with all parameters set */

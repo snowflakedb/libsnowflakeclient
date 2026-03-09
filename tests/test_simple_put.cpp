@@ -114,7 +114,8 @@ void test_simple_put_core(const char * fileName,
                           bool overwrite = false,
                           SF_CONNECT * connection = nullptr,
                           bool testUnicode = false,
-                          bool native = false)
+                          bool native = false,
+                          bool logQueryText = false)
 {
   /* init */
   SF_STATUS status;
@@ -126,6 +127,10 @@ void test_simple_put_core(const char * fileName,
     int64 timeout = 1200;
     snowflake_set_attribute(sf, SF_CON_NETWORK_TIMEOUT, &timeout);
     snowflake_set_attribute(sf, SF_CON_RETRY_TIMEOUT, &timeout);
+    if (logQueryText)
+    {
+        sf->log_query_text = SF_BOOLEAN_TRUE;
+    }
     status = snowflake_connect(sf);
     assert_int_equal(SF_STATUS_SUCCESS, status);
   }
@@ -1958,6 +1963,81 @@ void test_put_get_with_unicode(void **unused)
   test_simple_get_data(getcmd.c_str(), "48", 0, true);
 }
 
+void test_log_query_text_in_fileTransfer_helper(bool log_query_text)
+{
+    char* log_fp = "sql.log";
+    remove(log_fp);
+
+    FILE* fp = fopen(log_fp, "w+");
+    assert_non_null(fp);
+    log_set_lock(NULL);
+    log_set_level(SF_LOG_DEBUG);
+    log_set_quiet(1);
+    log_set_fp(fp);
+
+    const char* file = "small_file.csv";
+    test_simple_put_core(file, // filename
+        "auto", //source compression
+        true, // auto compress
+        true, // copyUploadFile
+        true, // verifyCopyUploadFile
+        false, // copyTableToStaging
+        false, // createDupTable
+        false, // setCustomThreshold
+        64 * 1024 * 1024, // customThreshold
+        false, // useDevUrand
+        false, // createSubfolder
+        nullptr, // tmpDir
+        false, // useS3regionalUrl
+        -1, //compressLevel
+        false, // overwrite
+        nullptr, // connection
+        false, // testUnicode
+        true,
+        log_query_text);
+
+    std::string putCommand = "put file://" + TestSetup::getDataDir() + file + " @%test_small_put";;
+
+    sf_bool found_query_text = SF_BOOLEAN_FALSE;
+    sf_bool masked_sql_found = SF_BOOLEAN_FALSE;
+
+    char line[1024];
+
+    fseek(fp, 0, SEEK_SET);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (strstr(line, putCommand.c_str()) != NULL)
+        {
+            found_query_text = SF_BOOLEAN_TRUE;
+        }
+
+        if (strstr(line, "Time took to upload ****") != NULL)
+        {
+            masked_sql_found = SF_BOOLEAN_TRUE;
+        }
+    }
+
+    if (log_query_text) {
+        assert_true(found_query_text);
+        assert_false(masked_sql_found);
+    }
+    else
+    {
+        assert_false(found_query_text);
+        assert_true(masked_sql_found);
+
+    }
+    log_close();
+    remove(log_fp);
+}
+
+void test_log_query_text_in_fileTransfer(void **unused)
+{
+    SF_UNUSED(unused);
+    test_log_query_text_in_fileTransfer_helper(true);
+    test_log_query_text_in_fileTransfer_helper(false);
+}
+
+
 int main(void) {
 
 #ifdef __APPLE__
@@ -2025,6 +2105,8 @@ int main(void) {
     cmocka_unit_test_teardown(test_verify_upload, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_dev_urandom_native, teardown),
     cmocka_unit_test_teardown(test_simple_put_use_s3_regionalURL_native, teardown),
+    cmocka_unit_test_teardown(test_log_query_text_in_fileTransfer, teardown),
+
   };
   int ret = cmocka_run_group_tests(tests, gr_setup, gr_teardown);
   return ret;
