@@ -1183,6 +1183,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_heart_beat);
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
+        sf->is_closed = SF_BOOLEAN_TRUE;
 
         create_recursive_mutex(&sf->mutex_tokens, (uint64_t)&sf);
 
@@ -1207,6 +1208,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     if (!sf) {
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
+    sf->is_closed = SF_BOOLEAN_TRUE;
     cJSON *resp = NULL;
     char *s_resp = NULL;
     Stopwatch stopwatch;
@@ -1453,6 +1455,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 goto cleanup;
             }
             if (!success) {
+                sf->is_closed = SF_BOOLEAN_TRUE;
                 cJSON *messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
                 char *message = NULL;
                 cJSON *codeJson = NULL;
@@ -1545,6 +1548,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             if (ret > 0) {
                 goto cleanup;
             }
+            sf->is_closed = SF_BOOLEAN_FALSE;
         } else {
             if (is_renew && (renew_timeout > 0)) {
                 // renew authentication information in body

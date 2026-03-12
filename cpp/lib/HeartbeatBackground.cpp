@@ -69,7 +69,6 @@ extern "C" {
         if (!renew_session(curl, sf, err))
         {
             CXX_LOG_TRACE("sf::HeartbeatBackground::renew_session_sync::Failed to renew session");
-            stop_heart_beat_for_this_session(sf);
             ret = SF_BOOLEAN_FALSE;
         }
         free_curl_desc(curl_desc);
@@ -288,10 +287,13 @@ namespace Snowflake::Client
 
         SF_HEADER* httpExtraHeaders = sf_header_create();
         httpExtraHeaders->use_application_json_accept_type = SF_BOOLEAN_TRUE;
-        if (!create_header(connection, httpExtraHeaders, &connection->error)) {
-            CXX_LOG_TRACE("sf::HeartBeatBackground::sendQueuedHeartBeatReq::Failed to create the header for the request HeartBeat");
-        }
 
+        {
+            RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(connection->mutex_tokens));
+            if (!create_header(connection, httpExtraHeaders, &connection->error)) {
+                CXX_LOG_TRACE("sf::HeartBeatBackground::sendQueuedHeartBeatReq::Failed to create the header for the request HeartBeat");
+            }
+        }
         std::string sessionId = connection->session_id;
         std::string destination = url.toString();
 
@@ -321,15 +323,16 @@ namespace Snowflake::Client
                 if (itr != m_connections.end())
                 {
                     CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::retry on session %s with session renew", renewQueue[i].sessionId.c_str());
-                    try
+
+                    if (renew_session_sync(itr->second))
                     {
-                        renew_session_sync(itr->second);
                         heartBeatQueue.emplace_back(this->genHeartBeatReq(itr->second));
                     }
-                    catch (...)
+                    else
                     {
                         CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
                     }
+
                 }
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
             }

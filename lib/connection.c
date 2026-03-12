@@ -1004,6 +1004,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
 
     // Successful call, non-null json, successful success code, data object and session token must all be present
     // otherwise set an error
+    sf->is_closed = SF_BOOLEAN_TRUE;
     if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error,
                         0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
         !json) {
@@ -1040,6 +1041,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
             goto cleanup;
         }
         log_debug("Finished updating session");
+        sf->is_closed = SF_BOOLEAN_FALSE;
     }
 
     ret = SF_BOOLEAN_TRUE;
