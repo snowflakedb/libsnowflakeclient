@@ -38,12 +38,10 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
             masked_sql_found = SF_BOOLEAN_TRUE;
         }
 
-
         if (strstr(line, "bindings\":	\"****\"") != NULL)
         {
             masked_query_param_found = SF_BOOLEAN_TRUE;
         }
-
 
         if (strstr(line, "value\":	\"log query testing\"") != NULL)
         {
@@ -52,7 +50,8 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
     }
 
 
-    if (log_query_text) {
+    if (log_query_text) 
+    {
         assert_true(found_query_text);
         assert_false(masked_sql_found);
     }
@@ -60,14 +59,12 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
     {
         assert_false(found_query_text);
         assert_true(masked_sql_found);
-
     }
 
-    if (log_query_parameters) {
-
+    if (log_query_parameters) 
+    {
         assert_false(masked_query_param_found);
         assert_true(found_query_parameters);
-
     }
     else
     {
@@ -119,7 +116,8 @@ void test_normal_query_helper(sf_bool log_query_text)
         }
     }
 
-    if (log_query_text) {
+    if (log_query_text) 
+    {
         assert_true(found_query_text);
         assert_false(masked_sql_found);
     }
