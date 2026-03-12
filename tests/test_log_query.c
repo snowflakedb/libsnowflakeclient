@@ -49,7 +49,6 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
         }
     }
 
-
     if (log_query_text) 
     {
         assert_true(found_query_text);
@@ -125,7 +124,6 @@ void test_normal_query_helper(sf_bool log_query_text)
     {
         assert_false(found_query_text);
         assert_true(masked_sql_found);
-
     }
     log_close();
     remove(log_fp);
@@ -244,7 +242,6 @@ void test_log_query_params_single_binding_helper(sf_bool log_query_text, sf_bool
     log_set_fp(fp);
 
     char* query_text = "select ?,?,?,?,?,?,?,?,?";
-
 
     // test with parameters more than 8
     SF_STATUS status = snowflake_prepare(
