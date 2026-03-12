@@ -164,6 +164,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         include/snowflake/BindUploader.hpp
         include/snowflake/SecureStorage.hpp
         include/snowflake/TomlConfigParser.hpp
+        include/snowflake/PlatformDetection.hpp
         cpp/lib/Exceptions.cpp
         cpp/lib/Connection.cpp
         cpp/lib/Statement.cpp
@@ -200,6 +201,7 @@ set(SOURCE_FILES_CPP_WRAPPER
         cpp/lib/Mutex.cpp
         cpp/lib/Mutex.hpp
         cpp/lib/TomlConfigParser.cpp
+        cpp/lib/PlatformDetection.cpp
         cpp/platform/secure_storage.cpp
         cpp/platform/SecureStorage.cpp
         cpp/platform/SecureStorageApple.cpp
