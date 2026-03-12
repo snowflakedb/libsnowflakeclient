@@ -276,13 +276,13 @@ void test_log_query_params_single_binding_helper(sf_bool log_query_text, sf_bool
 void test_log_query_text_enabled(void** unused)
 {
     SF_UNUSED(unused);
-    test_normal_query_helper(SF_BOOLEAN_FALSE);
+    test_normal_query_helper(SF_BOOLEAN_TRUE);
 }
 
 void test_log_query_text_disabled(void** unused)
 {
     SF_UNUSED(unused);
-    test_normal_query_helper(SF_BOOLEAN_TRUE);
+    test_normal_query_helper(SF_BOOLEAN_FALSE);
 }
 
 void test_log_query_params_disabled_with_array_binding(void** unused)
