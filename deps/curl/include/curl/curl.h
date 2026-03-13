@@ -2259,6 +2259,9 @@ typedef enum {
   /* Snowflake options. CRL download timeout */
   CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, CURLOPTTYPE_LONG, 335),
 
+  /* Snowflake options. CRL download max size in bytes. Defaults to 200 MB */
+  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, CURLOPTTYPE_LONG, 336),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
