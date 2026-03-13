@@ -220,7 +220,7 @@ void test_crl_download_max_size_attribute(void **unused) {
 
   SF_CONNECT *sf = setup_snowflake_connection();
 
-  // default should be SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (200 MB)
+  // default should be SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (20 MB)
   void *val = NULL;
   snowflake_get_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &val);
   assert_non_null(val);

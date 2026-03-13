@@ -107,9 +107,9 @@ extern "C" {
 #define SF_CRL_DOWNLOAD_TIMEOUT 120
 
     /**
-     * CRL download max size in bytes (200 MB)
+     * CRL download max size in bytes (20 MB)
      */
-#define SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (200 * 1024 * 1024)
+#define SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (20 * 1024 * 1024)
 
 /**
  * CRL configuration parameters.
