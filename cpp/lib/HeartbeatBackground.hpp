@@ -73,8 +73,6 @@ namespace Snowflake
         private:
             heartbeatReq genHeartBeatReq(SF_CONNECT* connection);
 
-            void freeHeartBeatReqQueue(std::vector<heartbeatReq>& HeartBeatQueue);
-
             /** calculate interval between two heartbeats */
             long calculateHeartBeatInterval(long master_token_validation_time);
 

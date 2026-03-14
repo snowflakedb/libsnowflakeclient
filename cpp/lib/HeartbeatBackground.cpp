@@ -41,7 +41,7 @@ extern "C" {
         {
             try 
             {
-                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Remove the connection from heartbeatSync list");
+                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Stop the heartbeat for this session");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.removeConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
