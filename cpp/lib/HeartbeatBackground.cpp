@@ -338,6 +338,7 @@ namespace Snowflake::Client
                 {
                     m_connections.erase(renewQueue[i].sessionId);
                     CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
+
                 }
             }
         }
