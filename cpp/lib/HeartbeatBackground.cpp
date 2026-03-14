@@ -29,7 +29,7 @@ extern "C" {
         }
         else
         {
-            log_trace("sf::HeartbeatBackground::startHeartBeatForThisSessionSync::Heartbeat already enabled for this session");
+            log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Heartbeat already enabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
@@ -53,7 +53,7 @@ extern "C" {
         }
         else
         {
-            log_trace("sf::HeartbeatBackground::startHeartBeatForThisSessionSync::Heartbeat already disabled for this session");
+            log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Heartbeat already disabled for this session");
         }
         _mutex_unlock(&sf->mutex_heart_beat);
     }
@@ -180,7 +180,7 @@ namespace Snowflake::Client
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
             {
                 sf_bool success = SF_BOOLEAN_FALSE;
-                if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
+                if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && success) {
                     cJSON* codeItem = snowflake_cJSON_GetObjectItem(resp_data, "code");
                     const char* code = codeItem ? codeItem->valuestring : "";
                     if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
@@ -334,7 +334,11 @@ namespace Snowflake::Client
                     }
 
                 }
-                CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
+                else
+                {
+                    m_connections.erase(renewQueue[i].sessionId);
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
+                }
             }
         }
 

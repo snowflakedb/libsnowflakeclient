@@ -35,7 +35,7 @@ namespace Snowflake
             int64 networkTimeout;
             sf_bool isOcspOpen;
             sf_bool isInsecuremode;
-            sf_bool retryCurlCount;
+            int8 retryCurlCount;
             std::string proxy;
             std::string noProxy;
             sf_bool crlAdvisory;
