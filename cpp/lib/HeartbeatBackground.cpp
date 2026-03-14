@@ -41,7 +41,7 @@ extern "C" {
         {
             try 
             {
-                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Add the connection to heartbeatSync list");
+                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Remove the connection from heartbeatSync list");
                 HeartbeatBackground& bg = HeartbeatBackground::getInstance();
                 bg.removeConnection(sf);
                 sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
@@ -180,7 +180,7 @@ namespace Snowflake::Client
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
             {
                 sf_bool success = SF_BOOLEAN_FALSE;
-                if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && success) {
+                if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
                     cJSON* codeItem = snowflake_cJSON_GetObjectItem(resp_data, "code");
                     const char* code = codeItem ? codeItem->valuestring : "";
                     if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
@@ -190,7 +190,7 @@ namespace Snowflake::Client
                     }
                     else
                     {
-                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %s", sid.c_str(), code);
+                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %s. Remove it from the HearBeat queue", sid.c_str(), code);
                     }
                 }
                 else
@@ -303,6 +303,8 @@ namespace Snowflake::Client
     void HeartbeatBackground::renewSession(std::vector<heartbeatReq>& heartBeatQueue,
         std::vector<heartbeatReq>& renewQueue)
     {
+
+        std::vector<SF_CONNECT*> failedConnection;
         if (renewQueue.size() > 0)
         {
             CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%d connections need retry with session renew", renewQueue.size());
@@ -331,16 +333,23 @@ namespace Snowflake::Client
                     else
                     {
                         CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
+                        failedConnection.push_back(itr->second);
+                        m_connections.erase(itr);
                     }
-
                 }
                 else
                 {
-                    m_connections.erase(renewQueue[i].sessionId);
                     CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
-
-                }
+                } 
             }
+        }
+
+        //Set Remove connection's heartbeat option
+        for (SF_CONNECT* conn : failedConnection)
+        {
+            _mutex_lock(&conn->mutex_heart_beat);
+            conn->is_heart_beat_on = SF_BOOLEAN_FALSE;
+            _mutex_unlock(&conn->mutex_heart_beat);
         }
 
         // resend heartbeat after renew session, no further session renew needed
