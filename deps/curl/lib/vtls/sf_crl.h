@@ -9,7 +9,7 @@
 #define SF_PUBLIC(type) type
 #endif
 
-#define SF_CRL_DOWNLOAD_MAX_SIZE (200 * 1024 * 1024) /* 200 MB */
+#define SF_CRL_DOWNLOAD_MAX_SIZE (20 * 1024 * 1024) /* 20 MB */
 
 SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  X509_STORE *ctx,

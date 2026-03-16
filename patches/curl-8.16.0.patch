@@ -74,7 +74,7 @@ index 6f4aa90f13..940d45c9e5 100644
 +  /* Snowflake options. CRL download timeout */
 +  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, CURLOPTTYPE_LONG, 337),
 +
-+  /* Snowflake options. CRL download max size in bytes. Defaults to 200 MB */
++  /* Snowflake options. CRL download max size in bytes. Defaults to 20 MB */
 +  CURLOPT(CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, CURLOPTTYPE_LONG, 338),
 +
    CURLOPT_LASTENTRY /* the last unused */
