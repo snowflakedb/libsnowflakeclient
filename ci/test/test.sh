@@ -49,7 +49,7 @@ function test_component()
     fi
     pushd $CI_TEST_DIR/../..
         cd $cmake_dir
-        $CTEST -V --rerun-failed --output-on-failure -E "(valgrind.*|test_auth)"
+        $CTEST -V -E "(valgrind.*|test_auth)"
     popd
 }
 
