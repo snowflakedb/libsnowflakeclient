@@ -117,7 +117,7 @@ extern "C" {
 typedef struct SF_CRL_CONFIG {
     sf_bool check;
     sf_bool advisory;
-    sf_bool allow_no_crl;
+    sf_bool allow_no_crl; // allow certificates without CRL URL
     sf_bool disk_caching;
     sf_bool memory_caching;
     long download_timeout;
