@@ -126,6 +126,11 @@ extern "C" {
  */
 #define PRIVATELINK_HOSTNAME_SUFFIX ".privatelink.snowflakecomputing."
 
+ /**
+  * Platform detection timeout in milliseconds
+  */
+#define SF_PLATFORM_DETECTION_TIMEOUT 200
+
 /**
  * Snowflake Data types
  *
