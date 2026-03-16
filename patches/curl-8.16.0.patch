@@ -418,7 +418,7 @@ diff --git a/deps/curl/lib/setopt.c b/deps/curl/lib/setopt.c
 index 5adfe4dbeb..cc2bdba315 100644
 --- a/deps/curl/lib/setopt.c
 +++ b/deps/curl/lib/setopt.c
-@@ -1282,6 +1282,51 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
+@@ -1282,6 +1282,55 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
    case CURLOPT_UPLOAD_FLAGS:
      s->upload_flags = (unsigned char)arg;
      break;
@@ -519,7 +519,7 @@ diff --git a/deps/curl/lib/urldata.h b/deps/curl/lib/urldata.h
 index cf181af641..e17fcb658f 100644
 --- a/deps/curl/lib/urldata.h
 +++ b/deps/curl/lib/urldata.h
-@@ -258,6 +258,17 @@ struct ssl_backend_data;
+@@ -258,6 +258,18 @@ struct ssl_backend_data;
  struct Curl_ssl_scache_entry;
  
  struct ssl_primary_config {
@@ -579,7 +579,7 @@ index a49203ab07..3ab7013002 100644
    return 1;
  }
  
-@@ -3617,6 +3633,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3617,6 +3633,19 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
    cached_store = ossl_get_cached_x509_store(cf, data);
    if(cached_store && cache_criteria_met && X509_STORE_up_ref(cached_store)) {
      SSL_CTX_set_cert_store(ssl_ctx, cached_store);
@@ -599,7 +599,7 @@ index a49203ab07..3ab7013002 100644
    }
    else {
      X509_STORE *store = SSL_CTX_get_cert_store(ssl_ctx);
-@@ -3625,6 +3653,17 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
+@@ -3625,6 +3653,18 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
      if(result == CURLE_OK && cache_criteria_met) {
        ossl_set_cached_x509_store(cf, data, store);
      }
@@ -689,7 +689,7 @@ new file mode 100644
 index 0000000000..bbfe697737
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_crl.c
-@@ -0,0 +1,834 @@
+@@ -0,0 +1,842 @@
 +#include "curl_setup.h"
 +#include "urldata.h"
 +#include "sendf.h"
@@ -4260,7 +4260,7 @@ diff --git a/deps/curl/lib/vtls/vtls.c b/deps/curl/lib/vtls/vtls.c
 index f17f9142be..4ab4bf5055 100644
 --- a/deps/curl/lib/vtls/vtls.c
 +++ b/deps/curl/lib/vtls/vtls.c
-@@ -394,6 +394,15 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
+@@ -394,6 +394,16 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
      dest->verifyhost = src->verifyhost;
      dest->verifypeer = src->verifypeer;
      dest->verifystatus = src->verifystatus;
