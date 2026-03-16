@@ -891,6 +891,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("crl_allow_no_crl: %s", sf->crl_config.allow_no_crl ? "true" : "false");
     log_debug("crl_disk_caching: %s", sf->crl_config.disk_caching ? "true" : "false");
     log_debug("crl_memory_caching: %s", sf->crl_config.memory_caching ? "true" : "false");
+    log_debug("crl_download_max_size: %ld", sf->crl_config.download_max_size);
     log_debug("timezone: %s", sf->timezone);
     log_debug("login_timeout: %d", sf->login_timeout);
     log_debug("network_timeout: %d", sf->network_timeout);
