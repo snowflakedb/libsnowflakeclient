@@ -604,8 +604,14 @@ static void STDCALL log_term() {
  */
 SF_STATUS STDCALL
 _snowflake_check_connection_parameters(SF_CONNECT *sf) {
-    log_info("log_query_text: %s", sf->log_query_text ? "true" : "false");
-    log_info("log_query_parameters: %s", sf->log_query_parameters ? "true" : "false");
+    if (sf->log_query_text)
+    {
+        log_info("log_query_text is set to true, query text will be logged on info level.");
+    }
+    if (sf->log_query_parameters)
+    {
+        log_info("log_query_parameters is set to true, query bindings will be logged on info level.");
+    }
 
     AuthenticatorType auth_type = getAuthenticatorType(sf->authenticator);
     if (AUTH_UNSUPPORTED == auth_type) {
@@ -3502,6 +3508,15 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
         goto cleanup;
     }
 
+    if ((sfstmt->connection->log_query_text) && sfstmt->sql_text) {
+        log_info("Executing query:\n%s", sfstmt->sql_text);
+    }
+    if ((sfstmt->connection->log_query_parameters) && bindings) {
+        char* s_bindings = snowflake_cJSON_Print(bindings);
+        log_info("Query bindings:\n%s", s_bindings);
+        SF_FREE(s_bindings);
+    }
+
     // Create Body
     body = create_query_json_body(sfstmt->sql_text, sfstmt->sequence_counter,
                                   is_string_empty(sfstmt->connection->directURL) ?
@@ -3544,26 +3559,19 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
                 sql_text_item->valuestring = "****";
             }
         }
-        // Mask parameters object if log_query_parameters is false
-        cJSON* params_item = NULL;
-        if (!sfstmt->connection->log_query_parameters) {
-            params_item = snowflake_cJSON_DetachItemFromObject(body, "bindings");
-            if (params_item) {
-                snowflake_cJSON_AddStringToObject(body, "bindings", "****");
-            }
-        }
-        char* masked_body = snowflake_cJSON_Print(body);
+
+        /* sql text and bindings are logged previously when switch is on,
+         * here we only log masked body for debug purpose.
+         */
+        cJSON* body_copy = snowflake_cJSON_Duplicate(body, 1);
+        snowflake_cJSON_ReplaceItemInObject(body_copy, "sqlText",
+            snowflake_cJSON_CreateString("****"));
+        snowflake_cJSON_ReplaceItemInObject(body_copy, "bindings",
+            snowflake_cJSON_CreateString("****"));
+        char* masked_body = snowflake_cJSON_Print(body_copy);
         log_debug("Here is constructed body:\n%s", masked_body);
         SF_FREE(masked_body);
-        // Restore sqlText
-        if (sql_text_item) {
-            sql_text_item->valuestring = original_sql_text;
-        }
-        // Restore parameters
-        if (params_item) {
-            snowflake_cJSON_DeleteItemFromObject(body, "bindings");
-            snowflake_cJSON_AddItemToObject(body, "bindings", params_item);
-        }
+        snowflake_cJSON_Delete(body_copy);
     }
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
