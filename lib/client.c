@@ -3545,34 +3545,18 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
     s_body = snowflake_cJSON_Print(body);
     log_debug("Created body");
     
-    if (sfstmt->connection->log_query_text && sfstmt->connection->log_query_parameters) {
-        log_debug("Here is constructed body:\n%s", s_body);
-    }
-    else {
-        // Mask sqlText if log_query_text is false
-        cJSON* sql_text_item = NULL;
-        char* original_sql_text = NULL;
-        if (!sfstmt->connection->log_query_text) {
-            sql_text_item = snowflake_cJSON_GetObjectItem(body, "sqlText");
-            if (sql_text_item) {
-                original_sql_text = sql_text_item->valuestring;
-                sql_text_item->valuestring = "****";
-            }
-        }
-
-        /* sql text and bindings are logged previously when switch is on,
-         * here we only log masked body for debug purpose.
-         */
-        cJSON* body_copy = snowflake_cJSON_Duplicate(body, 1);
-        snowflake_cJSON_ReplaceItemInObject(body_copy, "sqlText",
-            snowflake_cJSON_CreateString("****"));
-        snowflake_cJSON_ReplaceItemInObject(body_copy, "bindings",
-            snowflake_cJSON_CreateString("****"));
-        char* masked_body = snowflake_cJSON_Print(body_copy);
-        log_debug("Here is constructed body:\n%s", masked_body);
-        SF_FREE(masked_body);
-        snowflake_cJSON_Delete(body_copy);
-    }
+    /* sql text and bindings are logged previously when switch is on,
+     * here we only log masked body for debug purpose.
+     */
+    cJSON* body_copy = snowflake_cJSON_Duplicate(body, 1);
+    snowflake_cJSON_ReplaceItemInObject(body_copy, "sqlText",
+        snowflake_cJSON_CreateString("****"));
+    snowflake_cJSON_ReplaceItemInObject(body_copy, "bindings",
+        snowflake_cJSON_CreateString("****"));
+    char* masked_body = snowflake_cJSON_Print(body_copy);
+    log_debug("Here is constructed body:\n%s", masked_body);
+    SF_FREE(masked_body);
+    snowflake_cJSON_Delete(body_copy);
 
     char* queryURL = is_string_empty(sfstmt->connection->directURL) ?
                      QUERY_URL : sfstmt->connection->directURL;
