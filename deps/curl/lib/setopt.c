@@ -1451,6 +1451,10 @@ static CURLcode setopt_long(struct Curl_easy *data, CURLoption option,
                                          (unsigned int)arg : 120;
     Curl_ssl_conn_config_update(data, FALSE);
     break;
+  case CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE:
+      data->set.ssl.primary.sf_crl_download_max_size = (arg > 0) ? arg : 0;
+    Curl_ssl_conn_config_update(data, FALSE);
+    break;
   default:
     /* unknown option */
     return CURLE_UNKNOWN_OPTION;

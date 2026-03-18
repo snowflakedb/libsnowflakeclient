@@ -112,6 +112,24 @@ extern "C" {
      */
 #define SF_CRL_DOWNLOAD_TIMEOUT 120
 
+    /**
+     * CRL download max size in bytes (20 MB)
+     */
+#define SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (20 * 1024 * 1024)
+
+/**
+ * CRL configuration parameters.
+ */
+typedef struct SF_CRL_CONFIG {
+    sf_bool check;
+    sf_bool advisory;
+    sf_bool allow_no_crl; // allow certificates without CRL URL
+    sf_bool disk_caching;
+    sf_bool memory_caching;
+    long download_timeout;
+    long download_max_size;
+} SF_CRL_CONFIG;
+
  /**
  * max retry number
  */
@@ -351,6 +369,7 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_CRL_DISK_CACHING,
     SF_CON_CRL_MEMORY_CACHING,
     SF_CON_CRL_DOWNLOAD_TIMEOUT,
+    SF_CON_CRL_DOWNLOAD_MAX_SIZE,
     SF_CON_WIF_PROVIDER,
     SF_CON_WIF_TOKEN,
     SF_CON_WIF_AZURE_RESOURCE,
@@ -441,12 +460,7 @@ typedef struct SF_CONNECT {
     char *service_name;
     char *query_result_format;
 
-    sf_bool crl_check;
-    sf_bool crl_advisory;
-    sf_bool crl_allow_no_crl;
-    sf_bool crl_disk_caching;
-    sf_bool crl_memory_caching;
-    long crl_download_timeout;
+    SF_CRL_CONFIG crl_config;
 
   /* used when updating parameters */
     SF_MUTEX_HANDLE mutex_parameters;
