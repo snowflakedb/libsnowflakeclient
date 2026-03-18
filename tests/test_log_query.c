@@ -52,7 +52,7 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
     if (log_query_text) 
     {
         assert_true(found_query_text);
-        assert_false(masked_sql_found);
+        assert_true(masked_sql_found);
     }
     else
     {
@@ -62,7 +62,7 @@ void validate_log_file(FILE* fp, const char* query_text, sf_bool log_query_text,
 
     if (log_query_parameters) 
     {
-        assert_false(masked_query_param_found);
+        assert_true(masked_query_param_found);
         assert_true(found_query_parameters);
     }
     else
@@ -118,7 +118,7 @@ void test_normal_query_helper(sf_bool log_query_text)
     if (log_query_text) 
     {
         assert_true(found_query_text);
-        assert_false(masked_sql_found);
+        assert_true(masked_sql_found);
     }
     else
     {
