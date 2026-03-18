@@ -1341,7 +1341,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     {
         switch (authtype)
         {
-        case AUTH_SNOWFLAKE:
         case AUTH_USR_PWD_MFA:
             if (sf->client_request_mfa_token) {
                 if (sf->token_cache == NULL) {

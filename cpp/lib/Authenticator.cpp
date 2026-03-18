@@ -89,6 +89,10 @@ extern "C" {
     {
         return AUTH_WIF;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_USR_PWD_MFA) == 0)
+    {
+        return AUTH_USR_PWD_MFA;
+    }
     if (strcasecmp(authenticator, "test") == 0)
     {
         return AUTH_TEST;
