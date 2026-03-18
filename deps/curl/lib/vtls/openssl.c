@@ -3649,7 +3649,8 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
                        conn_config->sf_crl_allow_no_crl,
                        conn_config->sf_crl_disk_caching,
                        conn_config->sf_crl_memory_caching,
-                       conn_config->sf_crl_download_timeout);
+                       conn_config->sf_crl_download_timeout,
+                       conn_config->sf_crl_download_max_size);
     }
     /* !!! End of Snowflake CRL !!! */
   }
@@ -3668,7 +3669,8 @@ CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
                        conn_config->sf_crl_allow_no_crl,
                        conn_config->sf_crl_disk_caching,
                        conn_config->sf_crl_memory_caching,
-                       conn_config->sf_crl_download_timeout);
+                       conn_config->sf_crl_download_timeout,
+                       conn_config->sf_crl_download_max_size);
     }
     /* !!! End of Snowflake CRL !!! */
   }

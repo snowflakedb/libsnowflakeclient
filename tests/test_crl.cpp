@@ -209,7 +209,61 @@ void test_curl_crl_params(void **unused) {
   assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DISK_CACHING, 1L), CURLE_OK);
   assert_int_equal(curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, 1L), CURLE_OK);
 
+  CURLcode maxSizeRes = curl_easy_setopt(ch, CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, (long)(100 * 1024 * 1024));
+  assert_true(maxSizeRes == CURLE_OK || maxSizeRes == CURLE_UNKNOWN_OPTION);
+
   curl_easy_cleanup(ch);
+}
+
+void test_crl_download_max_size_attribute(void **unused) {
+  SF_UNUSED(unused);
+
+  SF_CONNECT *sf = setup_snowflake_connection();
+
+  // default should be SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT (20 MB)
+  void *val = NULL;
+  snowflake_get_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &val);
+  assert_non_null(val);
+  assert_int_equal(*(long*)val, SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT);
+
+  // set a custom value
+  int64 custom_size = 50 * 1024 * 1024; // 50 MB
+  snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &custom_size);
+
+  val = NULL;
+  snowflake_get_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &val);
+  assert_non_null(val);
+  assert_int_equal(*(long*)val, 50 * 1024 * 1024);
+
+  // set with NULL value should reset to default
+  snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, NULL);
+
+  val = NULL;
+  snowflake_get_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &val);
+  assert_non_null(val);
+  assert_int_equal(*(long*)val, SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT);
+
+  snowflake_term(sf);
+}
+
+void test_success_with_crl_check_custom_max_size(void **unused) {
+  SF_UNUSED(unused);
+
+  sf_bool value = SF_BOOLEAN_FALSE;
+  snowflake_global_set_attribute(SF_GLOBAL_OCSP_CHECK, &value);
+
+  SF_CONNECT *sf = setup_snowflake_connection();
+
+  sf_bool crl_check = SF_BOOLEAN_TRUE;
+  snowflake_set_attribute(sf, SF_CON_CRL_CHECK, &crl_check);
+
+  int64 custom_size = 100 * 1024 * 1024; // 100 MB
+  snowflake_set_attribute(sf, SF_CON_CRL_DOWNLOAD_MAX_SIZE, &custom_size);
+
+  SF_STATUS ret = snowflake_connect(sf);
+  assert_int_equal(ret, SF_STATUS_SUCCESS);
+
+  snowflake_term(sf);
 }
 
 void test_crl_cache(void **unused) {
@@ -306,7 +360,9 @@ int main() {
       cmocka_unit_test(test_success_with_no_crl_in_advisory_mode),
       cmocka_unit_test(test_curl_crl_params),
       cmocka_unit_test(test_crl_cache),
-      cmocka_unit_test(test_no_crl_cache_if_disabled)
+      cmocka_unit_test(test_no_crl_cache_if_disabled),
+      cmocka_unit_test(test_crl_download_max_size_attribute),
+      cmocka_unit_test(test_success_with_crl_check_custom_max_size)
     };
     int ret = cmocka_run_group_tests(tests, nullptr, nullptr);
     snowflake_global_term();
