@@ -20,11 +20,19 @@ namespace Snowflake {
                 void* curl_desc = get_curl_desc_from_pool(url.c_str(), NULL, NULL);
                 CURL* curl = get_curl_from_desc(curl_desc);
 
+                SF_CRL_CONFIG crl_config = {
+                    SF_BOOLEAN_FALSE,                // check
+                    SF_BOOLEAN_TRUE,                 // advisory
+                    SF_BOOLEAN_TRUE,                 // allow_no_crl
+                    SF_BOOLEAN_TRUE,                 // disk_caching
+                    SF_BOOLEAN_TRUE,                 // memory_caching
+                    SF_CRL_DOWNLOAD_TIMEOUT,         // download_timeout
+                    SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT  // download_max_size
+                };
                 http_perform(curl, GET_REQUEST_TYPE, (char*)url.c_str(), NULL, NULL, NULL, &resp_data,
                     NULL, NULL, 120, 120, SF_BOOLEAN_FALSE, NULL, SF_BOOLEAN_TRUE, SF_BOOLEAN_FALSE,
-                    SF_BOOLEAN_FALSE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE, SF_BOOLEAN_TRUE,
-                    SF_CRL_DOWNLOAD_TIMEOUT, 0,
-                    0, 7, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
+                    &crl_config,
+                    0, 7, 0, NULL, NULL, NULL, SF_BOOLEAN_FALSE,
                     NULL, NULL, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
             }
         };
