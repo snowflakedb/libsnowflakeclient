@@ -1341,7 +1341,6 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth)
     switch (auth)
     {
       case AUTH_USR_PWD_MFA:
-      case AUTH_SNOWFLAKE:
       case AUTH_EXTERNALBROWSER:
       case AUTH_OAUTH_AUTHORIZATION_CODE:
         return 1;

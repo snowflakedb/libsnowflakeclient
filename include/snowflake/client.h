@@ -59,6 +59,12 @@ extern "C" {
 * Authenticator, oauth_client_credentials
 */
 #define SF_AUTHENTICATOR_OAUTH_CLIENT_CREDENTIALS "oauth_client_credentials"
+
+/**
+* Authenticator, username/password with MFA token caching
+*/
+#define SF_AUTHENTICATOR_USR_PWD_MFA "username_password_mfa"
+
  /**
  * Authenticator, SSO token
  */

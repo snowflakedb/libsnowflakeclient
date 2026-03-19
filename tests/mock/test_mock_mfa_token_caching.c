@@ -87,6 +87,7 @@ void test_mfa_token_caching(void **unused) {
 
   {
     SF_CONNECT *sf = sf_connect_init();
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_USR_PWD_MFA);
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "passwd");
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
@@ -105,6 +106,7 @@ void test_mfa_token_caching(void **unused) {
 
   {
     SF_CONNECT *sf = sf_connect_init();
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_USR_PWD_MFA);
     snowflake_set_attribute(sf, SF_CON_PASSWORD, "passwd");
     snowflake_set_attribute(sf, SF_CON_PASSCODE, "passcode");
     sf_bool client_request_mfa_token = 1;
