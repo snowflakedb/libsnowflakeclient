@@ -148,7 +148,7 @@ jobs:
               run: ci\test_win.bat
     build-test-mac:
         name: Build-Test-Mac
-        runs-on: macos-14
+        runs-on: macos-15
         strategy:
             fail-fast: false
             matrix:
