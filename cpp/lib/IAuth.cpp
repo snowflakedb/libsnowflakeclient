@@ -205,7 +205,7 @@ namespace Client
             char regexStr[] = "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
             if (!std::regex_match(ssoUrl, std::regex(regexStr)))
             {
-                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL. %s", ssoUrl.c_str());
+                CXX_LOG_ERROR("sf::IAuthenticatorExternalBrowser::startWebBrowser::Failed to start web browser.Invalid SSO URL.");
                 throw AuthException("sf::IAuthenticatorExternalBrowser::Error. Invalid SSO URL.");
             }
 
@@ -536,7 +536,7 @@ namespace Client
 
         void IAuthWebServer::fail(std::string httpError, std::string errMessage, std::string failureResponse)
         {
-            CXX_LOG_ERROR("sf::%s::WebServer::fail", m_className, errMessage.c_str());
+            CXX_LOG_ERROR("sf::%s::WebServer::fail %s", m_className, errMessage.c_str());
             respond(httpError, failureResponse.empty() ? errMessage : failureResponse); // unless error message is html-escaped it shouldn't be part of response visible in the browser
             throw AuthException(errMessage);
         }

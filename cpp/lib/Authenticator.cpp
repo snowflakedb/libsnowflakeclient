@@ -623,30 +623,7 @@ namespace Snowflake::Client
 
       if (ret)
       {
-<<<<<<< SNOW-2452931v3
           if (!curl_external_get_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, NULL, raw_resp, is_json_format))
-=======
-          if (parseJSON) 
-          {
-              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
-                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           &m_connection->crl_config,
-                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
-                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
-          }
-          else
-          {
-              isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
-                                           raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
-                                           m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           &m_connection->crl_config,
-                                           m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
-                                           SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
-          }
-
-          if (!isHttpSuccess)
->>>>>>> master
           {
               //Fail to get the saml response. Retry.
               isRetry = true;
@@ -765,9 +742,10 @@ namespace Snowflake::Client
 
       if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)body.c_str(), &resp_data))
       {
-          CXX_LOG_INFO("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n",
-              snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data")));
+          char* s_resp = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data");
+          CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n", s_resp);
           m_errMsg = m_connection->error.msg;
+          SF_FREE(s_resp);
           return false;
       }
       else
