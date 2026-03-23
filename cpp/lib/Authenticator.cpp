@@ -724,6 +724,7 @@ namespace Snowflake::Client
 
   bool AuthenticatorOAuth::executeRestRequest(SFURL& endPoint,
       const std::string& body, jsonObject_t& resp) {
+      bool ret = true;
       std::string destination = endPoint.toString();
       SF_ERROR_STRUCT err = { SF_STATUS_SUCCESS, {0}, NULL, 0, {0}, NULL, 0 };
       SF_HEADER* httpExtraHeaders = createTokenRequestExternalHeaders(m_clientId, m_clientSecret, &err);
@@ -746,13 +747,15 @@ namespace Snowflake::Client
           CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n", s_resp);
           m_errMsg = m_connection->error.msg;
           SF_FREE(s_resp);
-          return false;
+          ret = false;
       }
       else
       {
           cJSONtoPicoJson(resp_data, resp);
       }
-      return true;
+      sf_header_destroy(httpExtraHeaders);
+      snowflake_cJSON_Delete(resp_data);
+      return ret;
   }
 
   void AuthenticatorOAuth::initWebComponents()
