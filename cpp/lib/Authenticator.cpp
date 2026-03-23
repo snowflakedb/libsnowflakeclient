@@ -742,7 +742,7 @@ namespace Snowflake::Client
 
       if (!curl_external_post_call(m_connection, (char*)destination.c_str(), httpExtraHeaders, (char*)body.c_str(), &resp_data))
       {
-          char* s_resp = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data");
+          char* s_resp = snowflake_cJSON_Print(snowflake_cJSON_GetObjectItem(resp_data, "data"));
           CXX_LOG_ERROR("sf::AuthenticatorOAuth::executeRestRequest::post call failed, response body=%s\n", s_resp);
           m_errMsg = m_connection->error.msg;
           SF_FREE(s_resp);
