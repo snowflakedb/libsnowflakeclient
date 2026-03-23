@@ -146,12 +146,7 @@ sf_bool STDCALL http_perform(CURL *curl,
                              SF_ERROR_STRUCT *error,
                              sf_bool insecure_mode,
                              sf_bool fail_open,
-                             sf_bool crl_check,
-                             sf_bool crl_advisory,
-                             sf_bool crl_allow_no_crl,
-                             sf_bool crl_disk_caching,
-                             sf_bool crl_memory_caching,
-                             long crl_download_timeout,
+                             const SF_CRL_CONFIG *crl_config,
                              int8 retry_on_curle_couldnt_connect_count,
                              int64 renew_timeout,
                              int8 retry_max_count,
@@ -430,16 +425,16 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
         }
 
-        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_check);
+        res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_CHECK, (long)crl_config->check);
         if (res != CURLE_OK) {
           log_error("Unable to set CRL CHECK [%s]",
                     curl_easy_strerror(res));
           break;
         }
 
-        if (crl_check)
+        if (crl_config->check)
         {
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_advisory);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ADVISORY, (long)crl_config->advisory);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL advisory mode [%s]",
@@ -447,7 +442,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_allow_no_crl);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_ALLOW_NO_CRL, (long)crl_config->allow_no_crl);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL allow null crl [%s]",
@@ -455,7 +450,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_disk_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DISK_CACHING, (long)crl_config->disk_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL disk caching [%s]",
@@ -463,7 +458,7 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_memory_caching);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_MEMORY_CACHING, (long)crl_config->memory_caching);
           if (res != CURLE_OK)
           {
             log_error("Unable to set CRL memory caching [%s]",
@@ -471,12 +466,20 @@ sf_bool STDCALL http_perform(CURL *curl,
             break;
           }
 
-          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, (long)crl_download_timeout);
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_TIMEOUT, (long)crl_config->download_timeout);
           if (res != CURLE_OK)
           {
               log_error("Unable to set CRL download timeout [%s]",
                         curl_easy_strerror(res));
               break;
+          }
+
+          res = curl_easy_setopt(curl, CURLOPT_SSL_SF_CRL_DOWNLOAD_MAX_SIZE, (long)crl_config->download_max_size);
+          if (res != CURLE_OK)
+          {
+              log_warn("Unable to set CRL download max size [%s], using default",
+                       curl_easy_strerror(res));
+              res = CURLE_OK;
           }
         }
 

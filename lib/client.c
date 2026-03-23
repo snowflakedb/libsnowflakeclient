@@ -896,7 +896,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
 
     if (AUTH_OAUTH_AUTHORIZATION_CODE == auth_type || AUTH_OAUTH_CLIENT_CREDENTIALS == auth_type) {
         log_debug("oauth_client_id: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
-        log_debug("oauth_client_secret: %s", sf_strncasecmp(sf->oauth_client_id, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
+        log_debug("oauth_client_secret: %s", sf_strncasecmp(sf->oauth_client_secret, "LOCAL_APPLICATION", 17) != 0 ? "provided" : "not provided");
         log_debug("oauth_redirect_uri: %s", sf->oauth_redirect_uri);
         log_debug("oauth_authorization_endpoint: %s", sf->oauth_authorization_endpoint);
         log_debug("oauth_token_endpoint: %s", sf->oauth_token_endpoint);
@@ -912,16 +912,18 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     //OCSP
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
-
-    //CRL checks
-    log_debug("crl_check: %s", sf->crl_check ? "true" : "false");
-    log_debug("crl_advisory: %s", sf->crl_advisory ? "true" : "false");
-    log_debug("crl_allow_no_crl: %s", sf->crl_allow_no_crl ? "true" : "false");
-    log_debug("crl_disk_caching: %s", sf->crl_disk_caching ? "true" : "false");
-    log_debug("crl_memory_caching: %s", sf->crl_memory_caching ? "true" : "false");
-   
-    //Query parameters
-    log_debug("autocommit: %s", sf->autocommit ? "true" : "false");
+    log_debug("crl_check: %s", sf->crl_config.check ? "true" : "false");
+    log_debug("crl_advisory: %s", sf->crl_config.advisory ? "true" : "false");
+    log_debug("crl_allow_no_crl: %s", sf->crl_config.allow_no_crl ? "true" : "false");
+    log_debug("crl_disk_caching: %s", sf->crl_config.disk_caching ? "true" : "false");
+    log_debug("crl_memory_caching: %s", sf->crl_config.memory_caching ? "true" : "false");
+    log_debug("crl_download_max_size: %ld", sf->crl_config.download_max_size);
+    log_debug("timezone: %s", sf->timezone);
+    log_debug("login_timeout: %d", sf->login_timeout);
+    log_debug("network_timeout: %d", sf->network_timeout);
+    log_debug("retry_timeout: %d", sf->retry_timeout);
+    log_debug("retry_count: %d", sf->retry_count);
+    log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
     log_debug("include_retry_reason: %s", sf->include_retry_reason ? "true" : "false");
     log_debug("qcc_disable: %s", sf->qcc_disable ? "true" : "false");
     log_debug("timezone: %s", sf->timezone);
@@ -1111,12 +1113,13 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->passcode_in_password = SF_BOOLEAN_FALSE;
         sf->insecure_mode = SF_BOOLEAN_FALSE;
         sf->ocsp_fail_open = SF_BOOLEAN_TRUE;
-        sf->crl_check = SF_BOOLEAN_FALSE;
-        sf->crl_advisory = SF_BOOLEAN_TRUE;
-        sf->crl_allow_no_crl = SF_BOOLEAN_TRUE;
-        sf->crl_disk_caching = SF_BOOLEAN_TRUE;
-        sf->crl_memory_caching = SF_BOOLEAN_TRUE;
-        sf->crl_download_timeout = SF_CRL_DOWNLOAD_TIMEOUT;
+        sf->crl_config.check = SF_BOOLEAN_FALSE;
+        sf->crl_config.advisory = SF_BOOLEAN_TRUE;
+        sf->crl_config.allow_no_crl = SF_BOOLEAN_TRUE;
+        sf->crl_config.disk_caching = SF_BOOLEAN_TRUE;
+        sf->crl_config.memory_caching = SF_BOOLEAN_TRUE;
+        sf->crl_config.download_timeout = SF_CRL_DOWNLOAD_TIMEOUT;
+        sf->crl_config.download_max_size = SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT;
         sf->autocommit = SF_BOOLEAN_TRUE;
 #if defined(__APPLE__) || defined(_WIN32)
         sf->client_request_mfa_token = SF_BOOLEAN_TRUE;
@@ -1370,7 +1373,6 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
     {
         switch (authtype)
         {
-        case AUTH_SNOWFLAKE:
         case AUTH_USR_PWD_MFA:
             if (sf->client_request_mfa_token) {
                 if (sf->token_cache == NULL) {
@@ -1716,22 +1718,25 @@ SF_STATUS STDCALL snowflake_set_attribute(
           sf->ocsp_fail_open = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
         case SF_CON_CRL_CHECK:
-          sf->crl_check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          sf->crl_config.check = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_ADVISORY:
-          sf->crl_advisory = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          sf->crl_config.advisory = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_ALLOW_NO_CRL:
-          sf->crl_allow_no_crl = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+          sf->crl_config.allow_no_crl = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
         case SF_CON_CRL_DISK_CACHING:
-          sf->crl_disk_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          sf->crl_config.disk_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
         case SF_CON_CRL_MEMORY_CACHING:
-          sf->crl_memory_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
+          sf->crl_config.memory_caching = value ? *((sf_bool*)value) : SF_BOOLEAN_TRUE;
           break;
         case SF_CON_CRL_DOWNLOAD_TIMEOUT:
-          sf->crl_download_timeout = value ? *((int64*)value) : SF_CRL_DOWNLOAD_TIMEOUT;
+          sf->crl_config.download_timeout = value ? *((int64*)value) : SF_CRL_DOWNLOAD_TIMEOUT;
+          break;
+        case SF_CON_CRL_DOWNLOAD_MAX_SIZE:
+          sf->crl_config.download_max_size = value ? *((int64*)value) : SF_CRL_DOWNLOAD_MAX_SIZE_DEFAULT;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             sf->login_timeout = value ? *((int64 *) value) : SF_LOGIN_TIMEOUT;
@@ -1987,22 +1992,25 @@ SF_STATUS STDCALL snowflake_get_attribute(
           *value = &sf->ocsp_fail_open;
           break;
         case SF_CON_CRL_CHECK:
-          *value = &sf->crl_check;
+          *value = &sf->crl_config.check;
           break;
         case SF_CON_CRL_ADVISORY:
-          *value = &sf->crl_advisory;
+          *value = &sf->crl_config.advisory;
           break;
         case SF_CON_CRL_ALLOW_NO_CRL:
-          *value = &sf->crl_allow_no_crl;
+          *value = &sf->crl_config.allow_no_crl;
           break;
         case SF_CON_CRL_DISK_CACHING:
-          *value = &sf->crl_disk_caching;
+          *value = &sf->crl_config.disk_caching;
           break;
         case SF_CON_CRL_MEMORY_CACHING:
-          *value = &sf->crl_memory_caching;
+          *value = &sf->crl_config.memory_caching;
           break;
         case SF_CON_CRL_DOWNLOAD_TIMEOUT:
-          *value = &sf->crl_download_timeout;
+          *value = &sf->crl_config.download_timeout;
+          break;
+        case SF_CON_CRL_DOWNLOAD_MAX_SIZE:
+          *value = &sf->crl_config.download_max_size;
           break;
         case SF_CON_LOGIN_TIMEOUT:
             *value = &sf->login_timeout;
@@ -2280,12 +2288,7 @@ static sf_bool setup_result_with_json_resp(SF_STMT* sfstmt, cJSON* data)
             &sfstmt->error,
             sfstmt->connection->insecure_mode,
             sfstmt->connection->ocsp_fail_open,
-            sfstmt->connection->crl_check,
-            sfstmt->connection->crl_advisory,
-            sfstmt->connection->crl_allow_no_crl,
-            sfstmt->connection->crl_disk_caching,
-            sfstmt->connection->crl_memory_caching,
-            sfstmt->connection->crl_download_timeout,
+            &sfstmt->connection->crl_config,
             callback_create_resp,
             sfstmt->connection->proxy,
             sfstmt->connection->no_proxy,

@@ -396,6 +396,7 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
     dest->sf_crl_disk_caching = src->sf_crl_disk_caching;
     dest->sf_crl_memory_caching = src->sf_crl_memory_caching;
     dest->sf_crl_download_timeout = src->sf_crl_download_timeout;
+    dest->sf_crl_download_max_size = src->sf_crl_download_max_size;
     dest->sf_oob_enable = src->sf_oob_enable;
   }
 }

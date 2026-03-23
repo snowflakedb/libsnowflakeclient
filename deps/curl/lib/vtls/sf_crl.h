@@ -9,13 +9,16 @@
 #define SF_PUBLIC(type) type
 #endif
 
+#define SF_CRL_DOWNLOAD_MAX_SIZE (20 * 1024 * 1024) /* 20 MB */
+
 SF_PUBLIC(void) registerCRLCheck(struct Curl_easy *data,
                                  X509_STORE *ctx,
                                  bool crl_advisory,
                                  bool crl_allow_no_crl,
                                  bool crl_disk_caching,
                                  bool crl_memory_caching,
-                                 long crl_download_timeout);
+                                 long crl_download_timeout,
+                                 long crl_download_max_size);
 
 SF_PUBLIC(void) initCertCRL(void);
 
