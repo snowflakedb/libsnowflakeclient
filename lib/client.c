@@ -627,8 +627,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
         return SF_STATUS_ERROR_GENERAL;
     }
 
-    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) &&
-        auth_type != AUTH_WIF &&
+    if (!(auth_type == AUTH_EXTERNALBROWSER && sf->disable_console_login) && 
+        auth_type != AUTH_WIF && 
         is_string_empty(sf->user)) {
         // Invalid user name
         log_error(ERR_MSG_USER_PARAMETER_IS_MISSING);
@@ -776,17 +776,16 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
             {
                 //region started with "cn-", use "cn" for top domain
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.cn",
-                    sf->account, sf->region);
+                         sf->account, sf->region);
             }
             else
             {
                 sf_sprintf(buf, sizeof(buf), "%s.%s.snowflakecomputing.com",
-                    sf->account, sf->region);
+                         sf->account, sf->region);
             }
-        }
-        else {
+        } else {
             sf_sprintf(buf, sizeof(buf), "%s.snowflakecomputing.com",
-                sf->account);
+                     sf->account);
         }
         alloc_buffer_and_copy(&sf->host, buf);
     }
@@ -812,7 +811,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     {
         top_domain++;
         size_t length = top_domain - sf->host;
-        sf_strncpy(host_without_top_domain, sizeof(host_without_top_domain), sf->host, length);
+        sf_strncpy(host_without_top_domain, sizeof(host_without_top_domain), sf->host,length);
     }
     else
     {
@@ -826,14 +825,14 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     if (ends_with(host_without_top_domain, PRIVATELINK_HOSTNAME_SUFFIX))
     {
         char url_buf[4096];
-        sf_snprintf(url_buf, sizeof(url_buf), sizeof(url_buf) - 1, "http://ocsp.%s/%s",
-            sf->host, "ocsp_response_cache.json");
-        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"))
+        sf_snprintf(url_buf, sizeof(url_buf), sizeof(url_buf)-1, "http://ocsp.%s/%s",
+           sf->host, "ocsp_response_cache.json");
+        if (getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL")) 
         {
             log_warn(
                 "sf", "Connection", "connect",
                 "Replace SF_OCSP_RESPONSE_CACHE_SERVER_URL from %s to %s",
-                getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"), url_buf);
+                getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL"),url_buf);
         }
         log_debug(
             "sf", "Connection", "connect",
@@ -884,7 +883,7 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("warehouse: %s", sf->warehouse);
     log_debug("role: %s", sf->role);
     log_debug("protocol: %s", sf->protocol);
-    log_debug("autocommit: %s", sf->autocommit ? "true" : "false");
+    log_debug("autocommit: %s", sf->autocommit ? "true": "false");
     log_debug("insecure_mode: %s", sf->insecure_mode ? "true" : "false");
     log_debug("ocsp_fail_open: %s", sf->ocsp_fail_open ? "true" : "false");
     log_debug("crl_check: %s", sf->crl_config.check ? "true" : "false");
