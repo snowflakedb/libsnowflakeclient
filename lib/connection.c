@@ -423,7 +423,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* header, char* body, cJSON** json)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);;
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;
@@ -435,7 +435,7 @@ sf_bool STDCALL curl_external_post_call(SF_CONNECT* sf, char* url, SF_HEADER* he
         sf->retry_on_curle_couldnt_connect_count, auth_get_renew_timeout(sf), get_login_retry_count(sf),
         &elapsed_time, &retried_count, NULL,
         SF_BOOLEAN_TRUE, sf->proxy, sf->no_proxy,
-        sf->include_retry_reason, is_new_retry_strategy_url(url)) ||
+        sf->include_retry_reason, is_new_retry_strategy_url(url)) &&
         *json;
 
     free_curl_desc(curl_desc);
@@ -531,7 +531,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
 sf_bool STDCALL curl_external_get_call(SF_CONNECT* sf, char* url, SF_HEADER* header, cJSON** json, NON_JSON_RESP* raw_resp, sf_bool is_json_format)
 {
     sf_bool ret = SF_BOOLEAN_FALSE;
-    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);;
+    void* curl_desc = get_curl_desc_from_pool(url, sf->proxy, sf->no_proxy);
     CURL* curl = get_curl_from_desc(curl_desc);
     int64 elapsed_time = 0;
     int8 retried_count = 0;

@@ -130,9 +130,9 @@ namespace Client
                 try {
                     m_authWebServer->stop();
                 }
-                catch (const AuthException& e) {
+                catch (const AuthException& ex) {
                     CXX_LOG_WARN("sf::IAuthenticatorExternalBrowser::authenticate::Failed to stop auth web server: %s.", e.cause().c_str());
-                    m_errMsg = e.cause();
+                    m_errMsg = ex.cause();
                     return;
                 }
                 m_errMsg = e.cause();

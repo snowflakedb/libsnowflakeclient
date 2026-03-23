@@ -45,7 +45,7 @@ namespace Snowflake
                 "login. If you can't see it, check existing browser windows, "
                 "or your OS settings. Press CTRL+C to abort and try again..." << "\n";
 
-            CXX_LOG_TRACE("sf::AuthenticationWebBrowserRunnerL::startWebBrowser::%s", maskOAuthSecret(ssoUrl).c_str());
+            CXX_LOG_TRACE("sf::AuthenticationWebBrowserRunner::startWebBrowser::%s", maskOAuthSecret(ssoUrl).c_str());
 
 #ifdef __APPLE__
             CFURLRef urlRef = CFURLCreateWithBytes(

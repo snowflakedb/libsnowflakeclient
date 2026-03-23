@@ -605,7 +605,11 @@ namespace Snowflake::Client
 
     std::string UrlEncode(std::string url)
     {
-        return curl_easy_escape(nullptr, url.c_str(), url.length());
+        char* escaped = curl_easy_escape(nullptr, url.c_str(), url.length());
+        std::string result(escaped ? escaped : "");
+        curl_free(escaped);
+        return result;
+
     }
 
     std::string maskOAuthSecret(const std::string& secret)
