@@ -303,9 +303,7 @@ sf_bool STDCALL curl_post_call(SF_CONNECT *sf,
         if (!http_perform(curl, POST_REQUEST_TYPE, url, header, body, NULL, json, NULL, NULL,
                           retry_timeout, sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
-                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
-                          sf->crl_disk_caching, sf->crl_memory_caching,
-                          sf->crl_download_timeout,
+                          &sf->crl_config,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count,
                           elapsed_time, retried_count, is_renew,
                           renew_injection, sf->proxy, sf->no_proxy,
@@ -448,9 +446,7 @@ sf_bool STDCALL curl_get_call(SF_CONNECT *sf,
         if (!http_perform(curl, GET_REQUEST_TYPE, url, header, NULL, NULL, json, NULL, NULL,
                           get_retry_timeout(sf), sf->network_timeout, SF_BOOLEAN_FALSE, error,
                           sf->insecure_mode, sf->ocsp_fail_open,
-                          sf->crl_check, sf->crl_advisory, sf->crl_allow_no_crl,
-                          sf->crl_disk_caching, sf->crl_memory_caching,
-                          sf->crl_download_timeout,
+                          &sf->crl_config,
                           sf->retry_on_curle_couldnt_connect_count, renew_timeout, retry_max_count, elapsed_time, retried_count, NULL,
                           SF_BOOLEAN_FALSE, sf->proxy, sf->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE) ||
             !*json) {
@@ -1352,7 +1348,6 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth)
     switch (auth)
     {
       case AUTH_USR_PWD_MFA:
-      case AUTH_SNOWFLAKE:
       case AUTH_EXTERNALBROWSER:
       case AUTH_OAUTH_AUTHORIZATION_CODE:
         return 1;

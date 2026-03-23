@@ -89,6 +89,10 @@ extern "C" {
     {
         return AUTH_WIF;
     }
+    if (strcasecmp(authenticator, SF_AUTHENTICATOR_USR_PWD_MFA) == 0)
+    {
+        return AUTH_USR_PWD_MFA;
+    }
     if (strcasecmp(authenticator, "test") == 0)
     {
         return AUTH_TEST;
@@ -647,9 +651,7 @@ namespace Client
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
                                            raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
                                            m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
-                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
-                                           m_connection->crl_download_timeout,
+                                           &m_connection->crl_config,
                                            m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
                                            SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
           }
@@ -658,9 +660,7 @@ namespace Client
               isHttpSuccess = http_perform(curl, GET_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, NULL,
                                            raw_resp, NULL, m_retryTimeout, curlTimeout, SF_BOOLEAN_FALSE, err,
                                            m_connection->insecure_mode, m_connection->ocsp_fail_open,
-                                           m_connection->crl_check, m_connection->crl_advisory, m_connection->crl_allow_no_crl,
-                                           m_connection->crl_disk_caching, m_connection->crl_memory_caching,
-                                           m_connection->crl_download_timeout,
+                                           &m_connection->crl_config,
                                            m_connection->retry_on_curle_couldnt_connect_count, renewTimeout, maxRetryCount, &elapsedTime, &m_retriedCount, NULL,
                                            SF_BOOLEAN_FALSE, m_connection->proxy, m_connection->no_proxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE);
           }
