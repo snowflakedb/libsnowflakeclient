@@ -78,6 +78,7 @@ SF_CONNECT* sf_connect_init() {
 }
 
 void test_mfa_token_caching(void **unused) {
+  sf_setenv("SNOWFLAKE_DISABLE_PLATFORM_DETECTION", "true");
   sf_setenv("SF_TEMPORARY_CREDENTIAL_CACHE_DIR", "sf_temporary_credential_cache_dir");
   rmdir("sf_temporary_credential_cache_dir");
   mkdir("sf_temporary_credential_cache_dir", 0700);
@@ -125,6 +126,8 @@ void test_mfa_token_caching(void **unused) {
     setup_mfa_term_cached_mfa_request_mock();
     snowflake_term(sf);
   }
+
+  sf_unsetenv("SNOWFLAKE_DISABLE_PLATFORM_DETECTION");
 }
 
   int main(void) {
