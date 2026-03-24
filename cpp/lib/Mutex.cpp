@@ -18,6 +18,12 @@ extern "C" {
 
     void free_recursive_mutex(void** mutex)
     {
+        if(mutex == NULL || *mutex == NULL)
+        {
+            log_trace("sf::RecursiveMutex::The recursive mutex is not initialized, skip free");
+            return;
+        }
+
         try {
             delete static_cast<Snowflake::Client::RecursiveMutex*>(*mutex);
             *mutex = NULL;

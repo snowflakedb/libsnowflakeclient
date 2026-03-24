@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
@@ -1180,14 +1181,14 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
-        sf->client_session_keep_alive = SF_BOOLEAN_TRUE;
+        sf->client_session_keep_alive = SF_BOOLEAN_FALSE;
         sf->client_session_keep_alive_heartbeat_frequency = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
         _mutex_init(&sf->mutex_heart_beat);
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
         sf->is_closed = SF_BOOLEAN_TRUE;
 
-        if (!create_recursive_mutex(&sf->mutex_tokens, (uint64_t)&sf)) 
+        if (!create_recursive_mutex(&sf->mutex_tokens, (uint64_t)(uintptr_t)sf))
         {
             log_error("Failed to create mutex for tokens");
         };

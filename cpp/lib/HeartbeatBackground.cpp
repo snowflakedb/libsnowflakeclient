@@ -323,7 +323,7 @@ namespace Snowflake::Client
         std::vector<SF_CONNECT*> failedConnection;
         if (renewQueue.size() > 0)
         {
-            CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%d connections need retry with session renew", renewQueue.size());
+            CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%zu connections need retry with session renew", renewQueue.size());
             heartBeatQueue.clear();
             // get lock during renew. the reason is that:
             // 1. session renew needs more connection related implementation and it
@@ -369,7 +369,7 @@ namespace Snowflake::Client
         }
 
         // resend heartbeat after renew session, no further session renew needed
-        CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::resend heartbeat for %d of connections after session renew", heartBeatQueue.size());
+        CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::resend heartbeat for %zu of connections after session renew", heartBeatQueue.size());
         sendQueuedHeartBeatReq(heartBeatQueue, NULL);
     }
 
