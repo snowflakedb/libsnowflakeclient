@@ -134,7 +134,7 @@ namespace Snowflake::Client
             {
                 this->m_master_token_validation_time = connection->master_token_validation_time;
                 CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
-                m_worker = new std::thread(&HeartbeatBackground::heartBeatAll, this);
+                m_worker = std::make_unique<std::thread>(&HeartbeatBackground::heartBeatAll, this);
             }
             else
             {
