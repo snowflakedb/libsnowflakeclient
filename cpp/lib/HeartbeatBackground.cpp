@@ -185,12 +185,11 @@ namespace Snowflake::Client
             int8 retried_count = 0;
             int64 elapsedTime = 0;
             cJSON* resp_data = NULL;
-            SF_ERROR_STRUCT* err = NULL;
 
             CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", conn.sessionId.c_str());
 
             if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, err,
+                NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, conn.error,
                 conn.isInsecuremode, conn.isOcspOpen, conn.crlConfig,
                 conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
@@ -319,8 +318,6 @@ namespace Snowflake::Client
     void HeartbeatBackground::renewSession(std::vector<heartbeatReq>& heartBeatQueue,
         std::vector<heartbeatReq>& renewQueue)
     {
-
-        std::vector<SF_CONNECT*> failedConnection;
         if (renewQueue.size() > 0)
         {
             CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%zu connections need retry with session renew", renewQueue.size());
@@ -349,8 +346,12 @@ namespace Snowflake::Client
                     else
                     {
                         CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
-                        failedConnection.push_back(itr->second);
+                        SF_CONNECT* failedConn = itr->second;
                         m_connections.erase(itr);
+
+                        _mutex_lock(&failedConn->mutex_heart_beat);
+                        failedConn->is_heart_beat_on = SF_BOOLEAN_FALSE;
+                        _mutex_unlock(&failedConn->mutex_heart_beat);
                     }
                 }
                 else
