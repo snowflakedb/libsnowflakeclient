@@ -12,50 +12,62 @@ extern "C" {
 
     void start_heart_beat_for_this_session(SF_CONNECT* sf)
     {
-        _mutex_lock(&sf->mutex_heart_beat);
-        if (!sf->is_heart_beat_on)
-        {
-            try 
+        if (sf->mutex_tokens) {
+            _mutex_lock(&sf->mutex_heart_beat);
+            if (!sf->is_heart_beat_on)
             {
-                log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
-                HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-                bg.addConnection(sf);
-                sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
+                try
+                {
+                    log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
+                    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+                    bg.addConnection(sf);
+                    sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
+                }
+                catch (...)
+                {
+                    log_error("sf::HeartbeatBackground::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
+                }
             }
-            catch (...)
+            else
             {
-                log_error("sf::HeartbeatBackground::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
+                log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Heartbeat already enabled for this session");
             }
+            _mutex_unlock(&sf->mutex_heart_beat);
         }
         else
         {
-            log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Heartbeat already enabled for this session");
+            log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::The mutex for token is not initialized, skip starting heartbeat for this session");
         }
-        _mutex_unlock(&sf->mutex_heart_beat);
     }
 
     void stop_heart_beat_for_this_session(SF_CONNECT* sf)
     {
-        _mutex_lock(&sf->mutex_heart_beat);
-        if (sf->is_heart_beat_on)
-        {
-            try 
+        if (sf->mutex_tokens) {
+            _mutex_lock(&sf->mutex_heart_beat);
+            if (sf->is_heart_beat_on)
             {
-                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Stop the heartbeat for this session");
-                HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-                bg.removeConnection(sf);
-                sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
+                try
+                {
+                    log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Stop the heartbeat for this session");
+                    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+                    bg.removeConnection(sf);
+                    sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
+                }
+                catch (...)
+                {
+                    log_error("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
+                }
             }
-            catch (...)
+            else
             {
-                log_error("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
+                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Heartbeat already disabled for this session");
             }
+            _mutex_unlock(&sf->mutex_heart_beat);
         }
         else
         {
-            log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Heartbeat already disabled for this session");
+            log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::The mutex for token is not initialized, The heartbeat was skipped and do not need to stop");
         }
-        _mutex_unlock(&sf->mutex_heart_beat);
     }
 
     sf_bool renew_session_sync(SF_CONNECT* sf)
@@ -94,13 +106,18 @@ namespace Snowflake::Client
             MutexGuard m_guard(m_lock);
             m_workerEnded = true;
         }
+
         // wake up worker thread and let it ended
         m_cv.notify_all();
-        // join
-        if (m_worker != NULL)
+        if (m_worker && m_worker->joinable())
         {
-            m_worker->join();
-            delete m_worker;
+            try {
+                m_worker->join();
+            }
+            catch (const std::exception& e)
+            {
+                CXX_LOG_ERROR("sf::HeartbeatBackground::~HeartbeatBackground::Exception occurred when joining the heartbeat worker thread, err: %s", e.what());
+            }
         }
     }
 
@@ -174,8 +191,7 @@ namespace Snowflake::Client
 
             if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
                 NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, err,
-                conn.isInsecuremode, conn.isOcspOpen, conn.crlCheck, conn.crlAdvisory, conn.crlAllowNoCrl,
-                conn.crlDiskCaching, conn.crlMemoryCaching, conn.crlDownloadTimeout,
+                conn.isInsecuremode, conn.isOcspOpen, conn.crlConfig,
                 conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
             {

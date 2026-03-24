@@ -21,11 +21,9 @@ namespace Snowflake
             _heartbeatreq_s(SF_CONNECT* sf, const std::string& url,
                 SF_HEADER* header)
                 : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header, sf_header_destroy),
-                maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_login_timeout(sf)), networkTimeout(sf->network_timeout), 
+                maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_login_timeout(sf)), networkTimeout(sf->network_timeout),
                 isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count),
-                proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""),
-                crlAdvisory(sf->crl_advisory), crlCheck(sf->crl_check), crlAllowNoCrl(sf->crl_allow_no_crl),
-                crlDiskCaching(sf->crl_disk_caching), crlMemoryCaching(sf->crl_memory_caching), crlDownloadTimeout(sf->crl_download_timeout)
+                proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""), crlConfig(&sf->crl_config)
             {}
             std::string sessionId;
             std::string heartBeatURL;
@@ -44,6 +42,7 @@ namespace Snowflake
             sf_bool crlDiskCaching;
             sf_bool crlMemoryCaching;
             int64 crlDownloadTimeout;
+            SF_CRL_CONFIG* crlConfig;
         } heartbeatReq;
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy
@@ -77,7 +76,7 @@ namespace Snowflake
             long calculateHeartBeatInterval(long master_token_validation_time);
 
             /** worker thread that is doing heartbeat*/
-            std::thread* m_worker = NULL;
+            std::unique_ptr<std::thread> m_worker;
 
             /** Queue of connections that need to heartbeat, mapped by session Id*/
             std::map<std::string, SF_CONNECT*> m_connections;

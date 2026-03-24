@@ -151,7 +151,7 @@ void test_heartbeat_manually(void** unused)
     test_heartbeat(sf);
 
     assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
-    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->master_token)) == 0);
     SF_FREE(previous_sessiontoken);
     SF_FREE(previous_masterToken);
 
@@ -162,11 +162,11 @@ void test_heartbeat_manually(void** unused)
 //HEARTBEAT_DEBUG should be enabled
 void test_heartbeat(void** unused)
 {
+    SF_UNUSED(unused);
 #ifndef HEARTBEAT_DEBUG
     return;
 #endif // 
 
-    SF_UNUSED(unused);
     SF_CONNECT* sf = snowflake_init();
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
         getenv("SNOWFLAKE_TEST_ACCOUNT"));
@@ -205,6 +205,9 @@ void test_heartbeat(void** unused)
     sf_sleep_ms(30 * 1000);
     assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
     assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+
+    SF_FREE(previous_sessiontoken);
+    SF_FREE(previous_masterToken);
 
     snowflake_term(sf);
 }

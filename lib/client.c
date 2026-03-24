@@ -1187,7 +1187,10 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
         sf->is_closed = SF_BOOLEAN_TRUE;
 
-        create_recursive_mutex(&sf->mutex_tokens, (uint64_t)&sf);
+        if (!create_recursive_mutex(&sf->mutex_tokens, (uint64_t)&sf)) 
+        {
+            log_error("Failed to create mutex for tokens");
+        };
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;

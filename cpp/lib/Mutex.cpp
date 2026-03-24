@@ -3,14 +3,16 @@
 #include "../logger/SFLogger.hpp"
 
 extern "C" {
-    void create_recursive_mutex(void** mutex, uint64_t id)
+    sf_bool create_recursive_mutex(void** mutex, uint64_t id)
     {
         try {
             *mutex = (void*) new Snowflake::Client::RecursiveMutex(id);
+            return SF_BOOLEAN_TRUE;
         }
         catch (...)
         {
             log_error("sf::RecursiveMutex::Fail to create the recursive mutex");
+            return SF_BOOLEAN_FALSE;
         }
     }
 
