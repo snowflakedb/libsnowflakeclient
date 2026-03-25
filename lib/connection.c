@@ -1351,3 +1351,16 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth)
         return 0;
     }
 }
+
+uint64 validate_heart_beat_frequency(uint64 frequency)
+{
+    if (frequency < 900) {
+        return 900;
+    }
+    else if (frequency > 3600) {
+        return 3600;
+    }
+    else {
+        return frequency;
+    }
+}

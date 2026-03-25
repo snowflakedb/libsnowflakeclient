@@ -6,6 +6,7 @@
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
 #include "../lib/snowflake_util.h"
+#include <algorithm>
 
 extern "C" {
     using namespace Snowflake::Client;
@@ -118,19 +119,21 @@ namespace Snowflake::Client
             m_connections[connection->session_id] = connection;
             connection->is_heart_beat_on = SF_BOOLEAN_TRUE;
 
+            uint64 heartBeatInterval = calculateHeartBeatInterval(connection);
+
             if (m_worker == NULL)
             {
-                this->m_master_token_validation_time = connection->master_token_validation_time;
-                CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync");
+                this->m_heart_beat_interval_in_secs = heartBeatInterval;
+                CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync  with interval of %ld", heartBeatInterval);
                 m_worker = std::make_unique<std::thread>(&HeartbeatBackground::heartBeatAll, this);
             }
             else
             {
-                if (connection->master_token_validation_time < this->m_master_token_validation_time)
+                if (heartBeatInterval < this->m_heart_beat_interval_in_secs)
                 {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: Master token validity time lower to %ld", connection->master_token_validation_time);
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: Heartbeat interval lower to %ld", heartBeatInterval);
                     // update the validation time
-                    this->m_master_token_validation_time = connection->master_token_validation_time;
+                    this->m_heart_beat_interval_in_secs = heartBeatInterval;
 
                     needToNotify = true;
                 }
@@ -154,9 +157,9 @@ namespace Snowflake::Client
         connection->is_heart_beat_on = SF_BOOLEAN_FALSE;
     }
 
-    long HeartbeatBackground::calculateHeartBeatInterval(long master_token_validation_time)
+    long HeartbeatBackground::calculateHeartBeatInterval(SF_CONNECT* connection)
     {
-        return master_token_validation_time / 4;
+        return min(connection->master_token_validation_time / 4, connection->client_session_keep_alive_heartbeat_frequency);
     }
 
     void HeartbeatBackground::sendQueuedHeartBeatReq(
@@ -237,12 +240,12 @@ namespace Snowflake::Client
             // be closed and destroyed during that
             {
                 MutexUnique guard(m_lock);
-                long heartBeatInterval = this->calculateHeartBeatInterval(this->m_master_token_validation_time);
+                long heartBeatInterval = m_heart_beat_interval_in_secs;
 
                 // For debug purpose only force heartbeat interval to 1 second
                 // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
-                heartBeatInterval = 1;
+                m_heart_beat_interval_in_secs = 1;
 #endif
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", heartBeatInterval);
                 std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(heartBeatInterval);

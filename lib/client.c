@@ -389,7 +389,8 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             }
             else if (strcmp(name->valuestring, "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY") == 0)
             {
-                sf->client_session_keep_alive_heartbeat_frequency = snowflake_cJSON_GetUint64Value(value);
+                uint64 frequency = snowflake_cJSON_GetUint64Value(value);
+                sf->client_session_keep_alive_heartbeat_frequency = validate_heart_beat_frequency(frequency);
             }
         }
     }
