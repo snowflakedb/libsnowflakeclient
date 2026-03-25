@@ -209,7 +209,7 @@ namespace Snowflake::Client
             }
             else
             {
-                CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::Encountered error when heartbeat sync");
+                CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Encountered error when heartbeat sync");
             }
 
             free_curl_desc(curl_desc);
@@ -283,7 +283,7 @@ namespace Snowflake::Client
 
     heartbeatReq HeartbeatBackground::genHeartBeatReq(SF_CONNECT* connection)
     {
-        CXX_LOG_TRACE("sf::HeartbeatBackground:genHeartbeatReq::generate heartbeat request to the server");
+        CXX_LOG_TRACE("sf::HeartbeatBackground::genHeartbeatReq::generate heartbeat request to the server");
         char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
         uuid4_generate(requestid);
         uuid4_generate(requestgid);

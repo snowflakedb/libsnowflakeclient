@@ -599,7 +599,6 @@ typedef struct SF_CONNECT {
     sf_bool disable_console_login;
 
     // Heartbeat
-    SF_MUTEX_HANDLE mutex_heart_beat;
     void* mutex_tokens;
     int64 master_token_validation_time;
     char* session_id;

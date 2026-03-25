@@ -209,7 +209,7 @@ void test_heartbeat(void** unused)
 
     sf_sleep_ms(30 * 1000);
     assert_false(sf_strncasecmp(previous_sessiontoken, sf->token, strlen(sf->token)) == 0);
-    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->token)) == 0);
+    assert_false(sf_strncasecmp(previous_masterToken, sf->master_token, strlen(sf->master_token)) == 0);
 
     SF_FREE(previous_sessiontoken);
     SF_FREE(previous_masterToken);
