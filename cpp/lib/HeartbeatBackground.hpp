@@ -82,7 +82,7 @@ namespace Snowflake
             /** Queue of connections that need to heartbeat, mapped by session Id*/
             std::map<std::string, SF_CONNECT*> m_connections;
 
-            long m_heart_beat_interval_in_secs;
+            long m_heart_beat_interval_in_secs = 3600;
 
             /** global lock */
             Mutex m_lock;
