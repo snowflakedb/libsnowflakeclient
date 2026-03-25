@@ -161,9 +161,11 @@ namespace Snowflake::Client
         if (!m_connections.empty())
         {
             long minInterval = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
-            for (const auto& connection : m_connections)
+            for (const auto& session : m_connections)
             {
-                minInterval = calculateHeartBeatInterval(connection.second);
+                long frequency = calculateHeartBeatInterval(session.second);
+                minInterval = minInterval < frequency ? minInterval : frequency;
+                minInterval = minInterval < frequency ? minInterval : frequency;
             }
             m_heart_beat_interval_in_secs = minInterval;
         }
