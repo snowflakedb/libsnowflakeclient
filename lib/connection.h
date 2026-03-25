@@ -684,7 +684,7 @@ sf_bool is_password_required(AuthenticatorType auth);
 sf_bool is_secure_storage_auth(AuthenticatorType auth);
 
 //Validate the HeartBeat frequency value not too over or too less.
-uint64 validate_heart_beat_frequency(uint64 frequency)
+uint64 validate_heart_beat_frequency(uint64 frequency);
 #ifdef __cplusplus
 }
 #endif

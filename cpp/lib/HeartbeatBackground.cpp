@@ -6,7 +6,6 @@
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
 #include "../lib/snowflake_util.h"
-#include <algorithm>
 
 extern "C" {
     using namespace Snowflake::Client;
