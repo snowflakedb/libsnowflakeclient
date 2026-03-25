@@ -43,7 +43,7 @@ namespace Snowflake
             sf_bool crlMemoryCaching;
             int64 crlDownloadTimeout;
             SF_CRL_CONFIG* crlConfig;
-            SF_ERROR_STRUCT* error
+            SF_ERROR_STRUCT* error;
         } heartbeatReq;
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy
