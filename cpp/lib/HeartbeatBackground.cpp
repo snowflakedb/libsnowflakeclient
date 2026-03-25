@@ -6,6 +6,7 @@
 #include "curl_desc_pool.h"
 #include "../include/snowflake/SFURL.hpp"
 #include "../lib/snowflake_util.h"
+#include <algorithm>
 
 extern "C" {
     using namespace Snowflake::Client;
@@ -158,7 +159,10 @@ namespace Snowflake::Client
 
     long HeartbeatBackground::calculateHeartBeatInterval(SF_CONNECT* connection)
     {
-        return min(connection->master_token_validation_time / 4, connection->client_session_keep_alive_heartbeat_frequency);
+        long tokenTime = connection->master_token_validation_time / 4;
+        long frequency = connection->client_session_keep_alive_heartbeat_frequency;
+
+        return tokenTime < frequency ? tokenTime : frequency;
     }
 
     void HeartbeatBackground::sendQueuedHeartBeatReq(
