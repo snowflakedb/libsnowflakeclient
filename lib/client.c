@@ -1183,7 +1183,6 @@ SF_CONNECT *STDCALL snowflake_init() {
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
         sf->client_session_keep_alive = SF_BOOLEAN_FALSE;
         sf->client_session_keep_alive_heartbeat_frequency = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
-        _mutex_init(&sf->mutex_heart_beat);
         sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
         sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
         sf->is_closed = SF_BOOLEAN_TRUE;
@@ -1191,7 +1190,7 @@ SF_CONNECT *STDCALL snowflake_init() {
         if (!create_recursive_mutex(&sf->mutex_tokens, (uint64_t)(uintptr_t)sf))
         {
             log_error("Failed to create mutex for tokens");
-        };
+        }
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;
@@ -1249,7 +1248,6 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
     _mutex_term(&sf->mutex_stage_bind);
-    _mutex_term(&sf->mutex_heart_beat);
     free_recursive_mutex(&sf->mutex_tokens);
 
     SF_FREE(sf->host);
@@ -1540,6 +1538,9 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
 
             _mutex_lock(&sf->mutex_parameters);
             ret = _set_parameters_session_info(sf, data);
+            qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
+            _mutex_unlock(&sf->mutex_parameters);
+
             if (sf->client_session_keep_alive)
             {
                 start_heart_beat_for_this_session(sf);
@@ -1548,8 +1549,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             {
                 stop_heart_beat_for_this_session(sf);
             }
-            qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
-            _mutex_unlock(&sf->mutex_parameters);
+
             if (ret > 0) {
                 goto cleanup;
             }

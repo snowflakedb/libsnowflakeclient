@@ -57,7 +57,7 @@ namespace Snowflake
             ~HeartbeatBackground();
 
             /**
-             * Add a pointer to the conenction to the hearbeat list
+             * Add a pointer to the connection to the heartbeat list
              */
             void addConnection(SF_CONNECT* connection);
 

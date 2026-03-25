@@ -13,26 +13,17 @@ extern "C" {
     void start_heart_beat_for_this_session(SF_CONNECT* sf)
     {
         if (sf->mutex_tokens) {
-            _mutex_lock(&sf->mutex_heart_beat);
-            if (!sf->is_heart_beat_on)
+            try
             {
-                try
-                {
-                    log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
-                    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-                    bg.addConnection(sf);
-                    sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
-                }
-                catch (...)
-                {
-                    log_error("sf::HeartbeatBackground::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
-                }
+                log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Add the connection to heartbeatSync list");
+                HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+                bg.addConnection(sf);
+                sf->is_heart_beat_on = SF_BOOLEAN_TRUE;
             }
-            else
+            catch (...)
             {
-                log_trace("sf::HeartbeatBackground::start_heart_beat_for_this_session::Heartbeat already enabled for this session");
+                log_error("sf::HeartbeatBackground::start_heart_beat_for_this_session::Exception occurred when starting heartbeat for this session");
             }
-            _mutex_unlock(&sf->mutex_heart_beat);
         }
         else
         {
@@ -43,26 +34,17 @@ extern "C" {
     void stop_heart_beat_for_this_session(SF_CONNECT* sf)
     {
         if (sf->mutex_tokens) {
-            _mutex_lock(&sf->mutex_heart_beat);
-            if (sf->is_heart_beat_on)
+            try
             {
-                try
-                {
-                    log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Stop the heartbeat for this session");
-                    HeartbeatBackground& bg = HeartbeatBackground::getInstance();
-                    bg.removeConnection(sf);
-                    sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
-                }
-                catch (...)
-                {
-                    log_error("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
-                }
+                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Stop the heartbeat for this session");
+                HeartbeatBackground& bg = HeartbeatBackground::getInstance();
+                bg.removeConnection(sf);
+                sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
             }
-            else
+            catch (...)
             {
-                log_trace("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Heartbeat already disabled for this session");
+                log_error("sf::HeartbeatBackground::stop_heart_beat_for_this_session::Exception occurred when stopping heartbeat for this session");
             }
-            _mutex_unlock(&sf->mutex_heart_beat);
         }
         else
         {
@@ -127,8 +109,14 @@ namespace Snowflake::Client
         {
             // gained the lock first
             MutexGuard m_guard(m_lock);
+            if (connection->is_heart_beat_on)
+            {
+                CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection::Heartbeat already enabled for this session");
+                return;
+            }
 
             m_connections[connection->session_id] = connection;
+            connection->is_heart_beat_on = SF_BOOLEAN_TRUE;
 
             if (m_worker == NULL)
             {
@@ -157,7 +145,13 @@ namespace Snowflake::Client
     void HeartbeatBackground::removeConnection(SF_CONNECT* connection)
     {
         MutexGuard m_guard(m_lock);
+        if(!connection->is_heart_beat_on)
+        {
+            CXX_LOG_TRACE("sf::HeartbeatBackground::removeConnection::Heartbeat already disabled for this session");
+            return;
+        }
         m_connections.erase(connection->session_id);
+        connection->is_heart_beat_on = SF_BOOLEAN_FALSE;
     }
 
     long HeartbeatBackground::calculateHeartBeatInterval(long master_token_validation_time)
@@ -245,7 +239,7 @@ namespace Snowflake::Client
                 MutexUnique guard(m_lock);
                 long heartBeatInterval = this->calculateHeartBeatInterval(this->m_master_token_validation_time);
 
-                // For debug purpose only force heartbeat iterval to 1 second
+                // For debug purpose only force heartbeat interval to 1 second
                 // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
                 heartBeatInterval = 1;
@@ -289,7 +283,7 @@ namespace Snowflake::Client
 
     heartbeatReq HeartbeatBackground::genHeartBeatReq(SF_CONNECT* connection)
     {
-        CXX_LOG_TRACE("sf::HeartbeatBackground:LgenHeartbeatReq::generate heartbeat request to the server");
+        CXX_LOG_TRACE("sf::HeartbeatBackground:genHeartbeatReq::generate heartbeat request to the server");
         char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
         uuid4_generate(requestid);
         uuid4_generate(requestgid);
@@ -306,7 +300,7 @@ namespace Snowflake::Client
         {
             RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(connection->mutex_tokens));
             if (!create_header(connection, httpExtraHeaders, &connection->error)) {
-                CXX_LOG_TRACE("sf::HeartBeatBackground::sendQueuedHeartBeatReq::Failed to create the header for the request HeartBeat");
+                CXX_LOG_TRACE("sf::HeartBeatBackground::genHeartbeatReq::Failed to create the header for the request HeartBeat");
             }
         }
         std::string sessionId = connection->session_id;
@@ -320,7 +314,7 @@ namespace Snowflake::Client
     {
         if (renewQueue.size() > 0)
         {
-            CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::%zu connections need retry with session renew", renewQueue.size());
+            CXX_LOG_TRACE("sf::HeartbeatBackground::renewSession::%zu connections need retry with session renew", renewQueue.size());
             heartBeatQueue.clear();
             // get lock during renew. the reason is that:
             // 1. session renew needs more connection related implementation and it
@@ -337,7 +331,7 @@ namespace Snowflake::Client
                 std::map<std::string, SF_CONNECT*>::iterator itr = m_connections.find(renewQueue[i].sessionId);
                 if (itr != m_connections.end())
                 {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::retry on session %s with session renew", renewQueue[i].sessionId.c_str());
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::renewSession::retry on session %s with session renew", renewQueue[i].sessionId.c_str());
 
                     if (renew_session_sync(itr->second))
                     {
@@ -345,32 +339,21 @@ namespace Snowflake::Client
                     }
                     else
                     {
-                        CXX_LOG_INFO("sf::HeartbeatBackground::heartBeatAll::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
+                        CXX_LOG_INFO("sf::HeartbeatBackground::renewSession::session renew failed for session id: %s", renewQueue[i].sessionId.c_str());
                         SF_CONNECT* failedConn = itr->second;
                         m_connections.erase(itr);
-
-                        _mutex_lock(&failedConn->mutex_heart_beat);
                         failedConn->is_heart_beat_on = SF_BOOLEAN_FALSE;
-                        _mutex_unlock(&failedConn->mutex_heart_beat);
                     }
                 }
                 else
                 {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::renewSession::give up retry since session is closed: %s", renewQueue[i].sessionId.c_str());
                 } 
             }
         }
 
-        //Set Remove connection's heartbeat option
-        for (SF_CONNECT* conn : failedConnection)
-        {
-            _mutex_lock(&conn->mutex_heart_beat);
-            conn->is_heart_beat_on = SF_BOOLEAN_FALSE;
-            _mutex_unlock(&conn->mutex_heart_beat);
-        }
-
         // resend heartbeat after renew session, no further session renew needed
-        CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::resend heartbeat for %zu of connections after session renew", heartBeatQueue.size());
+        CXX_LOG_TRACE("sf::HeartbeatBackground::renewSession::resend heartbeat for %zu of connections after session renew", heartBeatQueue.size());
         sendQueuedHeartBeatReq(heartBeatQueue, NULL);
     }
 

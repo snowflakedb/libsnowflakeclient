@@ -191,8 +191,7 @@ public:
    */
   SFURL(const SFURL &copy);
 
-  SFURL(std::string& protocol, std::string& host, std::string& port);
-
+  SFURL(const std::string& protocol, const std::string& host, const std::string& port);
 
   /**
    * Assign operator

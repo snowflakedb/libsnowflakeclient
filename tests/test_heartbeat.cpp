@@ -150,7 +150,7 @@ void test_heartbeat_manually(void** unused)
     assert_true(sf->is_heart_beat_on);
 
     char* previous_sessiontoken = (char*)SF_MALLOC(strlen(sf->token) + 1);
-    char* previous_masterToken = (char*)SF_MALLOC(strlen(sf->master_token) + 1);;
+    char* previous_masterToken = (char*)SF_MALLOC(strlen(sf->master_token) + 1);
     strcpy(previous_sessiontoken, sf->token);
     strcpy(previous_masterToken, sf->master_token);
     test_heartbeat(sf);

@@ -12,14 +12,14 @@ extern "C" {
 #endif
 
     /**
-    * Start the Hearbeat thread for this connection.
+    * Start the Heartbeat thread for this connection.
     *
     * @param sf                 The connection
     */
     void start_heart_beat_for_this_session(SF_CONNECT* sf);
 
    /**
-    * Stop the Hearbeat thread for this connection.
+    * Stop the Heartbeat thread for this connection.
     *
     * @param sf                 The connection
     */
