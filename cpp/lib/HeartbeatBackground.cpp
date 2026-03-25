@@ -155,6 +155,18 @@ namespace Snowflake::Client
         }
         m_connections.erase(connection->session_id);
         connection->is_heart_beat_on = SF_BOOLEAN_FALSE;
+
+        //reset the heartBeat Interval
+
+        if (!m_connections.empty())
+        {
+            long minInterval = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+            for (const auto& connection : m_connections)
+            {
+                minInterval = calculateHeartBeatInterval(connection.second);
+            }
+            m_heart_beat_interval_in_secs = minInterval;
+        }
     }
 
     long HeartbeatBackground::calculateHeartBeatInterval(SF_CONNECT* connection)
@@ -185,11 +197,12 @@ namespace Snowflake::Client
             int8 retried_count = 0;
             int64 elapsedTime = 0;
             cJSON* resp_data = NULL;
+            SF_ERROR_STRUCT err;
 
             CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", conn.sessionId.c_str());
 
             if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, conn.error,
+                NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, &err,
                 conn.isInsecuremode, conn.isOcspOpen, conn.crlConfig,
                 conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
