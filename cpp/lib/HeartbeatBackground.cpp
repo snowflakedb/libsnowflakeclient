@@ -283,7 +283,7 @@ namespace Snowflake::Client
 
     heartbeatReq HeartbeatBackground::genHeartBeatReq(SF_CONNECT* connection)
     {
-        CXX_LOG_TRACE("sf::HeartbeatBackground::genHeartbeatReq::generate heartbeat request to the server");
+        CXX_LOG_TRACE("sf::HeartbeatBackground::genHeartBeatReq::generate heartbeat request to the server");
         char requestid[SF_UUID4_LEN], requestgid[SF_UUID4_LEN];
         uuid4_generate(requestid);
         uuid4_generate(requestgid);
@@ -300,7 +300,7 @@ namespace Snowflake::Client
         {
             RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(connection->mutex_tokens));
             if (!create_header(connection, httpExtraHeaders, &connection->error)) {
-                CXX_LOG_TRACE("sf::HeartBeatBackground::genHeartbeatReq::Failed to create the header for the request HeartBeat");
+                CXX_LOG_TRACE("sf::HeartBeatBackground::genHeartBeatReq::Failed to create the header for the request HeartBeat");
             }
         }
         std::string sessionId = connection->session_id;
