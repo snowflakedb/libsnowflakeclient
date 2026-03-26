@@ -159,6 +159,12 @@ SFURL::SFURL(const SFURL &copy)
 , m_proxyEnabled(copy.m_proxyEnabled)
 {}
 
+SFURL::SFURL(const std::string& protocol, const std::string& host, const std::string& port)
+    : m_scheme(protocol), m_host(host), m_port(port),
+      m_cacheValid(false), m_params(m_cacheValid, m_cacheURL)
+    , m_proxyEnabled(false)
+     {}
+
 SFURL &SFURL::operator= (const SFURL &copy)
 {
   if (this == &copy)

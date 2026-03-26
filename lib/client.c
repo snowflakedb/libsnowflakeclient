@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <openssl/crypto.h>
 #include <snowflake/client.h>
 #include <snowflake/client_config_parser.h>
@@ -18,6 +19,8 @@
 #include "authenticator.h"
 #include "query_context_cache.h"
 #include "snowflake_util.h"
+#include "heart_beat_background.h"
+#include "mutex.h"
 
 #ifdef _WIN32
 #include <Shellapi.h>
@@ -379,6 +382,15 @@ static SF_STATUS STDCALL _reset_connection_parameters(
             else if ((strcmp(name->valuestring, "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD") == 0) &&
                      !sf->binding_threshold_overridden) {
                 sf->stage_binding_threshold = snowflake_cJSON_GetUint64Value(value);
+            }
+            else if (strcmp(name->valuestring, "CLIENT_SESSION_KEEP_ALIVE") == 0)
+            {
+                sf->client_session_keep_alive = snowflake_cJSON_IsTrue(value) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
+            }
+            else if (strcmp(name->valuestring, "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY") == 0)
+            {
+                uint64 frequency = snowflake_cJSON_GetUint64Value(value);
+                sf->client_session_keep_alive_heartbeat_frequency = validate_heart_beat_frequency(frequency);
             }
         }
     }
@@ -908,6 +920,8 @@ _snowflake_check_connection_parameters(SF_CONNECT *sf) {
     log_debug("get_fastfail: %s", sf->get_fastfail ? "true" : "false");
     log_debug("get_maxretries: %d", sf->get_maxretries);
     log_debug("get_threshold: %d", sf->get_threshold);
+    log_debug("client_session_keep_alive: %s", sf->client_session_keep_alive ? "true" : "false");
+    log_debug("client_session_keep_alive_heartbeat_frequency: %d", sf->client_session_keep_alive_heartbeat_frequency);
 
     return SF_STATUS_SUCCESS;
 }
@@ -1168,6 +1182,16 @@ SF_CONNECT *STDCALL snowflake_init() {
         _mutex_init(&sf->mutex_stage_bind);
         sf->binding_stage_created = SF_BOOLEAN_FALSE;
         sf->stage_binding_threshold = SF_DEFAULT_STAGE_BINDING_THRESHOLD;
+        sf->client_session_keep_alive = SF_BOOLEAN_FALSE;
+        sf->client_session_keep_alive_heartbeat_frequency = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+        sf->is_heart_beat_on = SF_BOOLEAN_FALSE;
+        sf->master_token_validation_time = SF_DEFAULT_MASTER_TOKEN_VALIDATION_TIME;
+        sf->is_closed = SF_BOOLEAN_TRUE;
+
+        if (!create_recursive_mutex(&sf->mutex_tokens, (uint64_t)(uintptr_t)sf))
+        {
+            log_error("Failed to create mutex for tokens");
+        }
 
         sf->sso_token = NULL;
         sf->mfa_token = NULL;
@@ -1190,11 +1214,14 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     if (!sf) {
         return SF_STATUS_ERROR_CONNECTION_NOT_EXIST;
     }
+    sf->is_closed = SF_BOOLEAN_TRUE;
     cJSON *resp = NULL;
     char *s_resp = NULL;
     Stopwatch stopwatch;
     stopwatch_start(&stopwatch);
     clear_snowflake_error(&sf->error);
+
+    stop_heart_beat_for_this_session(sf);
 
     if (sf->token && sf->master_token) {
         /* delete the session */
@@ -1222,6 +1249,8 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     _mutex_term(&sf->mutex_sequence_counter);
     _mutex_term(&sf->mutex_parameters);
     _mutex_term(&sf->mutex_stage_bind);
+    free_recursive_mutex(&sf->mutex_tokens);
+
     SF_FREE(sf->host);
     SF_FREE(sf->port);
     SF_FREE(sf->user);
@@ -1252,6 +1281,7 @@ SF_STATUS STDCALL snowflake_term(SF_CONNECT *sf) {
     SF_FREE(sf->proxy);
     SF_FREE(sf->no_proxy);
     SF_FREE(sf->oauth_token);
+    SF_FREE(sf->session_id);
     SF_FREE(sf->oauth_authorization_endpoint);
     SF_FREE(sf->oauth_token_endpoint);
     SF_FREE(sf->oauth_redirect_uri);
@@ -1429,6 +1459,7 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 goto cleanup;
             }
             if (!success) {
+                sf->is_closed = SF_BOOLEAN_TRUE;
                 cJSON *messageJson = snowflake_cJSON_GetObjectItem(resp, "message");
                 char *message = NULL;
                 cJSON *codeJson = NULL;
@@ -1472,6 +1503,25 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             if (!set_tokens(sf, data, "token", "masterToken", &sf->error)) {
                 goto cleanup;
             }
+            
+            json_copy_int(&sf->master_token_validation_time, data, "masterValidityInSeconds");
+
+            cJSON* sessionIDJson = snowflake_cJSON_GetObjectItem(data, "sessionID");
+            if (sessionIDJson != NULL) 
+            {
+                if (sessionIDJson->valuestring != NULL)
+                {
+                    alloc_buffer_and_copy(&sf->session_id, sessionIDJson->valuestring);
+                }
+                else
+                {
+                   char* id = snowflake_cJSON_Print(sessionIDJson);
+                   alloc_buffer_and_copy(&sf->session_id, id);
+                   SF_FREE(id);
+                }
+            }
+
+            // SNOW-715510: TODO Enable token cache
 
             char* auth_token = NULL;
             if (sf->token_cache) {
@@ -1491,9 +1541,20 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             ret = _set_parameters_session_info(sf, data);
             qcc_deserialize(sf, snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY));
             _mutex_unlock(&sf->mutex_parameters);
+
+            if (sf->client_session_keep_alive)
+            {
+                start_heart_beat_for_this_session(sf);
+            }
+            else
+            {
+                stop_heart_beat_for_this_session(sf);
+            }
+
             if (ret > 0) {
                 goto cleanup;
             }
+            sf->is_closed = SF_BOOLEAN_FALSE;
         } else {
             if (is_renew && (renew_timeout > 0)) {
                 // renew authentication information in body
@@ -1842,6 +1903,12 @@ SF_STATUS STDCALL snowflake_set_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           sf->stage_binding_disabled = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
           break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE:
+            sf->client_session_keep_alive = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
+            break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
+            sf->client_session_keep_alive_heartbeat_frequency = value ? (*((uint64*)value)) : SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+            break;
         case SF_CON_WIF_PROVIDER:
             alloc_buffer_and_copy(&sf->wif_provider, value);
             break;
@@ -2090,6 +2157,12 @@ SF_STATUS STDCALL snowflake_get_attribute(
         case SF_CON_DISABLE_STAGE_BIND:
           *value = &sf->stage_binding_disabled;
           break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE:
+            *value = &sf->client_session_keep_alive;
+            break;
+        case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
+            *value = &sf->client_session_keep_alive_heartbeat_frequency;
+            break;
         case SF_CON_CLIENT_STORE_TEMPORARY_CREDENTIAL:
             *value = &sf->client_store_temporary_credential;
             break;

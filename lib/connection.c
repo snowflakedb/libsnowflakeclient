@@ -62,8 +62,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
         autocommit == SF_BOOLEAN_TRUE ? SF_BOOLEAN_INTERNAL_TRUE_STR
                                       : SF_BOOLEAN_INTERNAL_FALSE_STR);
 
-
     snowflake_cJSON_AddStringToObject(session_parameters, "TIMEZONE", timezone);
+    snowflake_cJSON_AddBoolToObject(session_parameters, "CLIENT_SESSION_KEEP_ALIVE", sf->client_session_keep_alive);
+    snowflake_cJSON_AddUint64ToObject(session_parameters, "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY", sf->client_session_keep_alive_heartbeat_frequency);
 
     //Create Request Data JSON blob
     data = snowflake_cJSON_CreateObject();
@@ -995,6 +996,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
 
     // Successful call, non-null json, successful success code, data object and session token must all be present
     // otherwise set an error
+    sf->is_closed = SF_BOOLEAN_TRUE;
     if (!curl_post_call(sf, curl, encoded_url, header, s_body, &json, error,
                         0, sf->retry_count, get_retry_timeout(sf), NULL, NULL, NULL, SF_BOOLEAN_FALSE) ||
         !json) {
@@ -1031,6 +1033,7 @@ sf_bool STDCALL renew_session(CURL *curl, SF_CONNECT *sf, SF_ERROR_STRUCT *error
             goto cleanup;
         }
         log_debug("Finished updating session");
+        sf->is_closed = SF_BOOLEAN_FALSE;
     }
 
     ret = SF_BOOLEAN_TRUE;
@@ -1346,5 +1349,18 @@ sf_bool is_secure_storage_auth(AuthenticatorType auth)
         return 1;
       default:
         return 0;
+    }
+}
+
+uint64 validate_heart_beat_frequency(uint64 frequency)
+{
+    if (frequency < 900) {
+        return 900;
+    }
+    else if (frequency > 3600) {
+        return 3600;
+    }
+    else {
+        return frequency;
     }
 }

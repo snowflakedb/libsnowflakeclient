@@ -1,5 +1,6 @@
 #include "../../lib/snowflake_cpp_util.h"
 #include "../include/snowflake/SFURL.hpp"
+#include "memory.h"
 
 namespace Snowflake
 {
@@ -9,8 +10,10 @@ namespace Client
 	extern "C" {
 		void cJSONtoPicoJson(cJSON* cjson, jsonObject_t& picojson)
 		{
-			std::string dataStr = snowflake_cJSON_Print(cjson);
+            char* jsonStr = snowflake_cJSON_Print(cjson);
+            std::string dataStr = std::string(jsonStr);
 			strToPicoJson(picojson, dataStr);
+			SF_FREE(jsonStr);
 		}
 
 		void picoJsonTocJson(jsonObject_t& picojson, cJSON** cjson)
