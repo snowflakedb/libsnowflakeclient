@@ -97,6 +97,7 @@ void test_mfa_totp_authentication(void **unused) {
         return;
     }
     
+    snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_USR_PWD_MFA);
     snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
     snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
     snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
@@ -129,6 +130,7 @@ void test_mfa_totp_authentication(void **unused) {
             
             sf = snowflake_init();
             set_all_snowflake_attributes(sf);
+            snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_USR_PWD_MFA);
             snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
             snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
             snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});
@@ -157,6 +159,7 @@ void test_mfa_totp_authentication(void **unused) {
             if (strstr(errorMsg, "Invalid") || strstr(errorMsg, "TOTP") ||
                 strstr(errorMsg, "passcode") || strstr(errorMsg, "MFA") ||
                 strstr(errorMsg, "authentication failed")) {
+                snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR, SF_AUTHENTICATOR_USR_PWD_MFA);
                 snowflake_set_attribute(sf, SF_CON_USER, mfa_user);
                 snowflake_set_attribute(sf, SF_CON_PASSWORD, mfa_password);
                 snowflake_set_attribute(sf, SF_CON_CLIENT_REQUEST_MFA_TOKEN, &(sf_bool){1});

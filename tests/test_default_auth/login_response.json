@@ -1,0 +1,61 @@
+{
+  "mappings": [
+    {
+      "scenarioName": "Default auth login",
+      "newScenarioState": "Logged in",
+      "request": {
+        "urlPathPattern": "/session/v1/login-request.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": {
+            "masterToken": "master-token",
+            "token": "session-token",
+            "validityInSeconds": 3600,
+            "masterValidityInSeconds": 14400,
+            "parameters": [
+              {
+                "name": "AUTOCOMMIT",
+                "value": true
+              }
+            ],
+            "sessionInfo": {
+              "databaseName": "TEST",
+              "schemaName": "TEST",
+              "warehouseName": "TEST_WH",
+              "roleName": "ANALYST"
+            },
+            "idToken": null,
+            "idTokenValidityInSeconds": 0,
+            "responseData": null,
+            "mfaToken": "should-not-be-cached",
+            "mfaTokenValidityInSeconds": 3600
+          },
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    },
+    {
+      "scenarioName": "Default auth login",
+      "requiredScenarioState": "Logged in",
+      "newScenarioState": "Disconnected",
+      "request": {
+        "urlPathPattern": "/session.*",
+        "method": "POST"
+      },
+      "response": {
+        "status": 200,
+        "jsonBody": {
+          "data": null,
+          "code": null,
+          "message": null,
+          "success": true
+        }
+      }
+    }
+  ]
+}
