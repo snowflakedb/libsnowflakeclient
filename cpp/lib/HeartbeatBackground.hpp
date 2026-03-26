@@ -37,12 +37,6 @@ namespace Snowflake
             int8 retryCurlCount;
             std::string proxy;
             std::string noProxy;
-            sf_bool crlAdvisory;
-            sf_bool crlCheck;
-            sf_bool crlAllowNoCrl;
-            sf_bool crlDiskCaching;
-            sf_bool crlMemoryCaching;
-            int64 crlDownloadTimeout;
             SF_CRL_CONFIG crlConfig;
         } heartbeatReq;
 

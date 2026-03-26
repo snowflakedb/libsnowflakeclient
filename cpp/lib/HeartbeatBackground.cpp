@@ -137,14 +137,14 @@ namespace Snowflake::Client
             if (m_worker == NULL)
             {
                 this->m_heart_beat_interval_in_secs = heartBeatInterval;
-                CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: start a new thread for heartbeatSync  with interval of %ld", heartBeatInterval);
+                CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection::Start a new thread for heartbeatSync with interval of %ld", heartBeatInterval);
                 m_worker = std::make_unique<std::thread>(&HeartbeatBackground::heartBeatAll, this);
             }
             else
             {
                 if (heartBeatInterval < this->m_heart_beat_interval_in_secs)
                 {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection:: Heartbeat interval lower to %ld", heartBeatInterval);
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::addConnection::Heartbeat interval lowered to %ld", heartBeatInterval);
                     // update the validation time
                     this->m_heart_beat_interval_in_secs = heartBeatInterval;
 

@@ -1516,6 +1516,10 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
                 else
                 {
                    char* id = snowflake_cJSON_Print(sessionIDJson);
+                   if (sf->session_id)
+                   {
+                       SF_FREE(sf->session_id);
+                   }
                    alloc_buffer_and_copy(&sf->session_id, id);
                    SF_FREE(id);
                 }
