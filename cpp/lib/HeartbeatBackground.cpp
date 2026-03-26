@@ -174,7 +174,6 @@ namespace Snowflake::Client
             {
                 long frequency = calculateHeartBeatInterval(session.second);
                 minInterval = minInterval < frequency ? minInterval : frequency;
-                minInterval = minInterval < frequency ? minInterval : frequency;
             }
             m_heart_beat_interval_in_secs = minInterval;
         }
@@ -248,7 +247,7 @@ namespace Snowflake::Client
             }
             else
             {
-                CXX_LOG_ERROR("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Failed to create the cur")
+                CXX_LOG_ERROR("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Failed to create the curl");
             }
         }
     }
@@ -336,7 +335,7 @@ namespace Snowflake::Client
         {
             RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(connection->mutex_tokens));
             if (!create_header(connection, httpExtraHeaders, &connection->error)) {
-                CXX_LOG_TRACE("sf::HeartBeatBackground::genHeartBeatReq::Failed to create the header for the request HeartBeat");
+                CXX_LOG_TRACE("sf::HeartbeatBackground::genHeartBeatReq::Failed to create the header for the request HeartBeat");
             }
         }
         std::string sessionId = connection->session_id;
