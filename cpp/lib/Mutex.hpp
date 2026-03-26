@@ -3,6 +3,7 @@
 #define SNOWFLAKE_MUTEX_HPP
 
 #include <mutex>
+#include <snowflake/basic_types.h>
 
 namespace Snowflake::Client
 {

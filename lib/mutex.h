@@ -13,7 +13,7 @@ extern "C" {
     * @param mutex                 Mutex
     * @param id                    Connection address
     */
-    sf_bool create_recursive_mutex(void** mutex, uint64_t id);
+    sf_bool create_recursive_mutex(void** mutex, uint64 id);
 
      /**
     * delete a recursive mutex in C.
