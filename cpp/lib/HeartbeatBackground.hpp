@@ -11,6 +11,7 @@
 #include <snowflake/client.h>
 #include <connection.h>
 #include <snowflake/SFURL.hpp>
+#include <client_int.h>
 
 namespace Snowflake
 {
@@ -81,7 +82,7 @@ namespace Snowflake
             /** Queue of connections that need to heartbeat, mapped by session Id*/
             std::map<std::string, SF_CONNECT*> m_connections;
 
-            long m_heart_beat_interval_in_secs = 3600;
+            long m_heart_beat_interval_in_secs = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
 
             /** global lock */
             Mutex m_lock;

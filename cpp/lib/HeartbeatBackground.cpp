@@ -1,6 +1,5 @@
 #include "HeartbeatBackground.hpp"
 #include <heart_beat_background.h>
-#include <client_int.h>
 #include <connection.h>
 #include "../logger/SFLogger.hpp"
 #include "curl_desc_pool.h"
@@ -70,12 +69,17 @@ extern "C" {
             {
                 CXX_LOG_TRACE("sf::HeartbeatBackground::renew_session_sync::Failed to renew session");
             }
-            free_curl_desc(curl_desc);
         }
         else
         {
             CXX_LOG_ERROR("sf::HeartbeatBackground::renew_session_sync::Failed to create the curl for the renew_session");
         }
+
+        if (curl_desc)
+        {
+            free_curl_desc(curl_desc);
+        }
+
         return ret;
     }
 
@@ -177,6 +181,11 @@ namespace Snowflake::Client
             }
             m_heart_beat_interval_in_secs = minInterval;
         }
+        else
+        {
+            m_heart_beat_interval_in_secs = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+        }
+
     }
 
     long HeartbeatBackground::calculateHeartBeatInterval(SF_CONNECT* connection)

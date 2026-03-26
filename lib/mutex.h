@@ -1,8 +1,7 @@
 #ifndef SNOWFLAKE_MUTEX_H
 #define SNOWFLAKE_MUTEX_H
 
-#include "snowflake/client.h"
-#include "cJSON.h"
+#include "snowflake/basic_types.h"
 
 #ifdef __cplusplus
 extern "C" {
