@@ -165,7 +165,7 @@ void test_heartbeat_manually(void** unused)
 }
 
 //HEARTBEAT_DEBUG should be enabled
-void test_heartbeat(void** unused)
+void test_heartbeat_background(void** unused)
 {
     SF_UNUSED(unused);
 #ifndef HEARTBEAT_DEBUG
@@ -224,7 +224,7 @@ int main(void) {
     cmocka_unit_test(test_connect_with_client_session_keep_alive_disable),
     cmocka_unit_test(test_connect_with_client_session_keep_alive_current),
     cmocka_unit_test(test_heartbeat_manually),
-    cmocka_unit_test(test_heartbeat),
+    cmocka_unit_test(test_heartbeat_background),
   };
   int ret = cmocka_run_group_tests(tests, NULL, NULL);
   return ret;

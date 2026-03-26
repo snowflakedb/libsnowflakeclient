@@ -3,6 +3,7 @@
 #define SNOWFLAKE_MUTEX_HPP
 
 #include <mutex>
+#include <snowflake/basic_types.h>
 
 namespace Snowflake::Client
 {
@@ -43,17 +44,11 @@ namespace Snowflake::Client
 
         /**
          * Constructor
-         *
-         * @param klass
-         *   mutex class
-         *
-         * @param info
-         *   info about this mutex
-         *
+
          * @param id
          *   mutex unique id
          */
-        RecursiveMutex(uint64_t id);
+        RecursiveMutex(uint64 id);
 
         /**
          * Create thin wrapper on top of the lock to capture thread contention

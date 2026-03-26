@@ -1,9 +1,9 @@
 #include "Mutex.hpp"
-#include "../lib/mutex.h"
+#include "mutex.h"
 #include "../logger/SFLogger.hpp"
 
 extern "C" {
-    sf_bool create_recursive_mutex(void** mutex, uint64_t id)
+    sf_bool create_recursive_mutex(void** mutex, uint64 id)
     {
         try {
             *mutex = (void*) new Snowflake::Client::RecursiveMutex(id);
@@ -58,7 +58,7 @@ namespace Snowflake::Client
         m_mutex.unlock();
     }
 
-    RecursiveMutex::RecursiveMutex(uint64_t id)
+    RecursiveMutex::RecursiveMutex(uint64 id)
         : m_id(id)
     {
         // name of this mutex

@@ -1907,7 +1907,7 @@ SF_STATUS STDCALL snowflake_set_attribute(
             sf->client_session_keep_alive = value ? *((sf_bool*)value) : SF_BOOLEAN_FALSE;
             break;
         case SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY:
-            sf->client_session_keep_alive_heartbeat_frequency = value ? (*((uint64*)value)) : SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+            sf->client_session_keep_alive_heartbeat_frequency = value ? validate_heart_beat_frequency((*((uint64*)value))) : SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
             break;
         case SF_CON_WIF_PROVIDER:
             alloc_buffer_and_copy(&sf->wif_provider, value);

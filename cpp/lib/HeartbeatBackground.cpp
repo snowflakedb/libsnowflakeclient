@@ -1,12 +1,10 @@
 #include "HeartbeatBackground.hpp"
-#include "../lib/heart_beat_background.h"
-#include "../lib/client_int.h"
-#include "../lib/connection.h"
+#include <heart_beat_background.h>
+#include <connection.h>
 #include "../logger/SFLogger.hpp"
 #include "curl_desc_pool.h"
-#include "../include/snowflake/SFURL.hpp"
-#include "../lib/snowflake_util.h"
-#include <algorithm>
+#include <snowflake/SFURL.hpp>
+#include <snowflake_util.h>
 
 extern "C" {
     using namespace Snowflake::Client;
@@ -55,18 +53,33 @@ extern "C" {
 
     sf_bool renew_session_sync(SF_CONNECT* sf)
     {
-        sf_bool ret = SF_BOOLEAN_TRUE;
+        sf_bool ret = SF_BOOLEAN_FALSE;
         void* curl_desc = get_curl_desc_from_pool(RENEW_SESSION_URL, sf->proxy, sf->no_proxy);
         CURL* curl = get_curl_from_desc(curl_desc);
-        SF_ERROR_STRUCT* err = &sf->error;
-
-        RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(sf->mutex_tokens));
-        if (!renew_session(curl, sf, err))
+        if(curl)
         {
-            CXX_LOG_TRACE("sf::HeartbeatBackground::renew_session_sync::Failed to renew session");
-            ret = SF_BOOLEAN_FALSE;
+            SF_ERROR_STRUCT* err = &sf->error;
+
+            RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(sf->mutex_tokens));
+            if (renew_session(curl, sf, err))
+            {
+                ret = SF_BOOLEAN_TRUE;
+            }
+            else
+            {
+                CXX_LOG_TRACE("sf::HeartbeatBackground::renew_session_sync::Failed to renew session");
+            }
         }
-        free_curl_desc(curl_desc);
+        else
+        {
+            CXX_LOG_ERROR("sf::HeartbeatBackground::renew_session_sync::Failed to create the curl for the renew_session");
+        }
+
+        if (curl_desc)
+        {
+            free_curl_desc(curl_desc);
+        }
+
         return ret;
     }
 
@@ -165,10 +178,14 @@ namespace Snowflake::Client
             {
                 long frequency = calculateHeartBeatInterval(session.second);
                 minInterval = minInterval < frequency ? minInterval : frequency;
-                minInterval = minInterval < frequency ? minInterval : frequency;
             }
             m_heart_beat_interval_in_secs = minInterval;
         }
+        else
+        {
+            m_heart_beat_interval_in_secs = SF_DEFAULT_CLIENT_SESSION_ALIVE_HEARTBEAT_FREQUENCY;
+        }
+
     }
 
     long HeartbeatBackground::calculateHeartBeatInterval(SF_CONNECT* connection)
@@ -196,45 +213,51 @@ namespace Snowflake::Client
             void* curl_desc = get_curl_desc_from_pool(destination.c_str(), proxy, noProxy);
             CURL* curl = get_curl_from_desc(curl_desc);
 
-            int8 retried_count = 0;
-            int64 elapsedTime = 0;
-            cJSON* resp_data = NULL;
-            SF_ERROR_STRUCT err;
+            if (curl) {
+                int8 retried_count = 0;
+                int64 elapsedTime = 0;
+                cJSON* resp_data = NULL;
+                SF_ERROR_STRUCT err;
 
-            CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", conn.sessionId.c_str());
+                CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::sending heartbeat for session %s", conn.sessionId.c_str());
 
-            if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
-                NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, &err,
-                conn.isInsecuremode, conn.isOcspOpen, conn.crlConfig,
-                conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
-                proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
-            {
-                sf_bool success = SF_BOOLEAN_FALSE;
-                if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
-                    cJSON* codeItem = snowflake_cJSON_GetObjectItem(resp_data, "code");
-                    const char* code = codeItem ? codeItem->valuestring : "";
-                    if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
-                    {
-                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token expired will retry later sessionId: %s", sid.c_str());
-                        renewQueue->emplace_back(HeartBeatQueue[i]);
+                if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
+                    NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, &err,
+                    conn.isInsecuremode, conn.isOcspOpen, &conn.crlConfig,
+                    conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
+                    proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
+                {
+                    sf_bool success = SF_BOOLEAN_FALSE;
+                    if (json_copy_bool(&success, resp_data, "success") == SF_JSON_ERROR_NONE && !success) {
+                        cJSON* codeItem = snowflake_cJSON_GetObjectItem(resp_data, "code");
+                        const char* code = codeItem ? codeItem->valuestring : "";
+                        if ((renewQueue) && strcmp(code, SESSION_TOKEN_EXPIRED_CODE) == 0)
+                        {
+                            CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token expired will retry later sessionId: %s", sid.c_str());
+                            renewQueue->emplace_back(HeartBeatQueue[i]);
+                        }
+                        else
+                        {
+                            CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %s", sid.c_str(), code);
+                        }
                     }
                     else
                     {
-                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Sending heartbeat failed with Session Id: %s and errorcode: %s. Remove it from the HearBeat queue", sid.c_str(), code);
+                        CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token did NOT expire. No token update. Session Id: %s", sid.c_str());
                     }
                 }
                 else
                 {
-                    CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Session token did NOT expire. No token update. Session Id: %s", sid.c_str());
+                    CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Encountered error when heartbeat sync");
                 }
+
+                free_curl_desc(curl_desc);
+                snowflake_cJSON_Delete(resp_data);
             }
             else
             {
-                CXX_LOG_TRACE("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Encountered error when heartbeat sync");
+                CXX_LOG_ERROR("sf::HeartbeatBackground::sendQueuedHeartBeatReq::Failed to create the curl");
             }
-
-            free_curl_desc(curl_desc);
-            snowflake_cJSON_Delete(resp_data);
         }
     }
 
@@ -263,7 +286,7 @@ namespace Snowflake::Client
                 // For debug purpose only force heartbeat interval to 1 second
                 // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
-                m_heart_beat_interval_in_secs = 1;
+                heartBeatInterval = 1;
 #endif
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", heartBeatInterval);
                 std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(heartBeatInterval);
@@ -321,7 +344,7 @@ namespace Snowflake::Client
         {
             RecursiveMutexGuard guard(*static_cast<Snowflake::Client::RecursiveMutex*>(connection->mutex_tokens));
             if (!create_header(connection, httpExtraHeaders, &connection->error)) {
-                CXX_LOG_TRACE("sf::HeartBeatBackground::genHeartBeatReq::Failed to create the header for the request HeartBeat");
+                CXX_LOG_TRACE("sf::HeartbeatBackground::genHeartBeatReq::Failed to create the header for the request HeartBeat");
             }
         }
         std::string sessionId = connection->session_id;
