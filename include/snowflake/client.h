@@ -380,6 +380,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_WIF_AZURE_RESOURCE,
     SF_CON_WORKLOAD_IDENTITY_IMPERSONATION_PATH,
     SF_CON_APPLICATION_PATH,
+    SF_CON_LOG_QUERY_TEXT,
+    SF_CON_LOG_QUERY_PARAMETERS,
     SF_CON_CLIENT_SESSION_KEEP_ALIVE,
     SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY,
 } SF_ATTRIBUTE;
@@ -608,6 +610,10 @@ typedef struct SF_CONNECT {
     uint64 client_session_keep_alive_heartbeat_frequency;
 
     sf_bool client_store_temporary_credential;
+
+    //the option to enable capturing the query info in the logs
+    sf_bool log_query_text;
+    sf_bool log_query_parameters;
 } SF_CONNECT;
 
 /**
