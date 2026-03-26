@@ -205,7 +205,7 @@ namespace Snowflake::Client
 
             if (http_perform(curl, POST_REQUEST_TYPE, (char*)destination.c_str(), httpExtraHeaders, NULL, NULL, &resp_data,
                 NULL, NULL, conn.retryTimeout, conn.networkTimeout, SF_BOOLEAN_FALSE, &err,
-                conn.isInsecuremode, conn.isOcspOpen, conn.crlConfig,
+                conn.isInsecuremode, conn.isOcspOpen, &conn.crlConfig,
                 conn.retryCurlCount, 0, conn.maxRetryCount, &elapsedTime, &retried_count, NULL, SF_BOOLEAN_FALSE,
                 proxy, noProxy, SF_BOOLEAN_FALSE, SF_BOOLEAN_FALSE))
             {
@@ -263,7 +263,7 @@ namespace Snowflake::Client
                 // For debug purpose only force heartbeat interval to 1 second
                 // https://github.com/snowflakedb/snowflake-sdks-drivers-issues-teamwork/issues/368
 #ifdef HEARTBEAT_DEBUG
-                m_heart_beat_interval_in_secs = 1;
+                heartBeatInterval = 1;
 #endif
                 CXX_LOG_TRACE("sf::HeartbeatBackground::heartBeatAll::HeartBeat interval: %ld", heartBeatInterval);
                 std::chrono::duration<long> heartBeatDuration = std::chrono::duration<long>(heartBeatInterval);

@@ -8,9 +8,9 @@
 #include <vector>
 #include <map>
 #include "Mutex.hpp"
-#include "../include/snowflake/client.h"
-#include "../lib/connection.h"
-#include "../include/snowflake/SFURL.hpp"
+#include <snowflake/client.h>
+#include <connection.h>
+#include <snowflake/SFURL.hpp>
 
 namespace Snowflake
 {
@@ -23,7 +23,7 @@ namespace Snowflake
                 : sessionId(sf->session_id), heartBeatURL(url), httpExtraHeaders(header, sf_header_destroy),
                 maxRetryCount(get_login_retry_count(sf)), retryTimeout(get_login_timeout(sf)), networkTimeout(sf->network_timeout),
                 isOcspOpen(sf->ocsp_fail_open), isInsecuremode(sf->insecure_mode), retryCurlCount(sf->retry_on_curle_couldnt_connect_count),
-                proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""), crlConfig(&sf->crl_config)
+                proxy(sf->proxy ? sf->proxy : ""), noProxy(sf->no_proxy ? sf->no_proxy : ""), crlConfig(sf->crl_config)
             {}
             std::string sessionId;
             std::string heartBeatURL;
@@ -42,7 +42,7 @@ namespace Snowflake
             sf_bool crlDiskCaching;
             sf_bool crlMemoryCaching;
             int64 crlDownloadTimeout;
-            SF_CRL_CONFIG* crlConfig;
+            SF_CRL_CONFIG crlConfig;
         } heartbeatReq;
 
         class HeartbeatBackground : public ::Snowflake::Client::Singleton<HeartbeatBackground>, private ::Snowflake::Client::DoNotCopy
