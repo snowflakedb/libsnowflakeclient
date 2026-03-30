@@ -46,7 +46,7 @@
 #  include iodef
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(UNDER_CE)
 #  include <conio.h>
 #endif
 
@@ -94,7 +94,7 @@ char *getpass_r(const char *prompt, char *buffer, size_t buflen)
 #define DONE
 #endif /* __VMS */
 
-#if defined(_WIN32)
+#ifdef _WIN32
 
 char *getpass_r(const char *prompt, char *buffer, size_t buflen)
 {
@@ -122,7 +122,7 @@ char *getpass_r(const char *prompt, char *buffer, size_t buflen)
   return buffer; /* we always return success */
 }
 #define DONE
-#endif /* _WIN32 */
+#endif /* _WIN32 && !UNDER_CE */
 
 #ifndef DONE /* not previously provided */
 
@@ -179,7 +179,7 @@ char *getpass_r(const char *prompt, /* prompt to display */
   ssize_t nread;
   bool disabled;
   int fd = open("/dev/tty", O_RDONLY);
-  if(-1 == fd)
+  if(fd == -1)
     fd = STDIN_FILENO; /* use stdin if the tty could not be used */
 
   disabled = ttyecho(FALSE, fd); /* disable terminal echo */

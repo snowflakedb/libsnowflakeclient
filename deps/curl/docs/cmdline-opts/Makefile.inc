@@ -21,7 +21,7 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-# Shared between Makefile.am and CMakeLists.txt
+# Shared between CMakeLists.txt and Makefile.am
 
 SUPPORT = \
   _AUTHORS.md \
@@ -101,6 +101,7 @@ DPAGES = \
   fail-with-body.md \
   fail.md \
   false-start.md \
+  follow.md \
   form-escape.md \
   form-string.md \
   form.md \
@@ -181,8 +182,10 @@ DPAGES = \
   ntlm.md \
   oauth2-bearer.md \
   output-dir.md \
+  out-null.md \
   output.md \
   parallel-immediate.md \
+  parallel-max-host.md \
   parallel-max.md \
   parallel.md \
   pass.md \
@@ -253,6 +256,7 @@ DPAGES = \
   show-error.md \
   show-headers.md \
   silent.md \
+  sigalgs.md \
   skip-existing.md \
   socks4.md \
   socks4a.md \
@@ -301,6 +305,7 @@ DPAGES = \
   trace.md \
   unix-socket.md \
   upload-file.md \
+  upload-flags.md \
   url.md \
   url-query.md \
   use-ascii.md \

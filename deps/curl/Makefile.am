@@ -32,7 +32,6 @@ CMAKE_DIST =                                    \
  CMake/curl-config.cmake.in                     \
  CMake/CurlSymbolHiding.cmake                   \
  CMake/CurlTests.c                              \
- CMake/FindBearSSL.cmake                        \
  CMake/FindBrotli.cmake                         \
  CMake/FindCares.cmake                          \
  CMake/FindGSS.cmake                            \
@@ -44,8 +43,6 @@ CMAKE_DIST =                                    \
  CMake/FindLibssh.cmake                         \
  CMake/FindLibssh2.cmake                        \
  CMake/FindLibuv.cmake                          \
- CMake/FindMbedTLS.cmake                        \
- CMake/FindMSH3.cmake                           \
  CMake/FindMbedTLS.cmake                        \
  CMake/FindNGHTTP2.cmake                        \
  CMake/FindNGHTTP3.cmake                        \
@@ -60,16 +57,14 @@ CMAKE_DIST =                                    \
  CMake/OtherTests.cmake                         \
  CMake/PickyWarnings.cmake                      \
  CMake/Utilities.cmake                          \
+ CMake/unix-cache.cmake                         \
  CMake/win32-cache.cmake                        \
  CMakeLists.txt                                 \
  tests/cmake/CMakeLists.txt                     \
  tests/cmake/test.c                             \
  tests/cmake/test.sh
 
-VC_DIST = projects/README.md                           \
- projects/build-openssl.bat                            \
- projects/checksrc.bat                                 \
- projects/generate.bat
+VC_DIST = projects/README.md projects/generate.bat
 
 WINBUILD_DIST = winbuild/README.md \
  winbuild/MakefileBuild.vc winbuild/Makefile.vc winbuild/makedebug.bat
@@ -84,7 +79,7 @@ PLAN9_DIST = plan9/include/mkfile \
  plan9/src/mkfile.inc             \
  plan9/src/mkfile
 
-EXTRA_DIST = CHANGES.md COPYING RELEASE-NOTES Dockerfile \
+EXTRA_DIST = CHANGES.md COPYING RELEASE-NOTES Dockerfile .editorconfig \
  $(CMAKE_DIST) $(VC_DIST) $(WINBUILD_DIST) $(PLAN9_DIST)
 
 DISTCLEANFILES = buildinfo.txt
@@ -177,7 +172,7 @@ rpms:
 	$(MAKE) RPMDIST=curl-ssl rpm
 
 rpm:
-	RPM_TOPDIR=`rpm --showrc | $(PERL) -n -e 'print if(s/.*_topdir\s+(.*)/$$1/)'` ; \
+	RPM_TOPDIR=`rpm --showrc | @PERL@ -n -e 'print if(s/.*_topdir\s+(.*)/$$1/)'` ; \
 	cp $(srcdir)/packages/Linux/RPM/$(RPMDIST).spec $$RPM_TOPDIR/SPECS ; \
 	cp $(PACKAGE)-$(VERSION).tar.gz $$RPM_TOPDIR/SOURCES ; \
 	rpm -ba --clean --rmsource $$RPM_TOPDIR/SPECS/$(RPMDIST).spec ; \
@@ -221,3 +216,6 @@ checksrc:
 tidy:
 	(cd src && $(MAKE) tidy)
 	(cd lib && $(MAKE) tidy)
+
+clean-local:
+	(cd tests && $(MAKE) clean)

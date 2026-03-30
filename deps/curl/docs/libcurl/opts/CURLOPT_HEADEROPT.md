@@ -73,6 +73,11 @@ int main(void)
 }
 ~~~
 
+# HISTORY
+
+**CURLHEADER_*** macros became `long` types in 8.16.0, prior to this version
+a `long` cast was necessary when passed to curl_easy_setopt(3).
+
 # %AVAILABILITY%
 
 # RETURN VALUE

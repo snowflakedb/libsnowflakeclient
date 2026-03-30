@@ -23,12 +23,9 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "curlx.h"
 #include "tool_cfgable.h"
 #include "tool_writeout.h"
 #include "tool_writeout_json.h"
-#include "dynbuf.h"
-
 #include "memdebug.h" /* keep this as LAST include */
 
 static int writeTime(FILE *stream, const struct writeoutvar *wovar,
@@ -127,6 +124,8 @@ static const struct writeoutvar variables[] = {
   {"time_starttransfer", VAR_STARTTRANSFER_TIME, CURLINFO_STARTTRANSFER_TIME_T,
    writeTime},
   {"time_total", VAR_TOTAL_TIME, CURLINFO_TOTAL_TIME_T, writeTime},
+  {"tls_earlydata", VAR_TLS_EARLYDATA_SENT, CURLINFO_EARLYDATA_SENT_T,
+   writeOffset},
   {"url", VAR_INPUT_URL, CURLINFO_NONE, writeString},
   {"url.fragment", VAR_INPUT_URLFRAGMENT, CURLINFO_NONE, writeString},
   {"url.host", VAR_INPUT_URLHOST, CURLINFO_NONE, writeString},
@@ -149,7 +148,7 @@ static const struct writeoutvar variables[] = {
   {"urle.scheme", VAR_INPUT_URLESCHEME, CURLINFO_NONE, writeString},
   {"urle.user", VAR_INPUT_URLEUSER, CURLINFO_NONE, writeString},
   {"urle.zoneid", VAR_INPUT_URLEZONEID, CURLINFO_NONE, writeString},
-  {"urlnum", VAR_URLNUM, CURLINFO_NONE, writeLong},
+  {"urlnum", VAR_URLNUM, CURLINFO_NONE, writeOffset},
   {"xfer_id", VAR_EASY_ID, CURLINFO_XFER_ID, writeOffset}
 };
 
@@ -362,8 +361,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
       break;
     case VAR_ERRORMSG:
       if(per_result) {
-        strinfo = (per->errorbuffer && per->errorbuffer[0]) ?
-          per->errorbuffer : curl_easy_strerror(per_result);
+        strinfo = (per->errorbuffer[0]) ? per->errorbuffer :
+          curl_easy_strerror(per_result);
         valid = true;
       }
       break;
@@ -425,7 +424,7 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
     if(use_json)
       fprintf(stream, "\"%s\":null", wovar->name);
   }
-  curl_free((char *)freestr);
+  curl_free((char *)CURL_UNCONST(freestr));
 
   curlx_dyn_free(&buf);
   return 1; /* return 1 if anything was written */
@@ -462,12 +461,6 @@ static int writeLong(FILE *stream, const struct writeoutvar *wovar,
     case VAR_EXITCODE:
       longinfo = (long)per_result;
       valid = true;
-      break;
-    case VAR_URLNUM:
-      if(per->urlnum <= INT_MAX) {
-        longinfo = (long)per->urlnum;
-        valid = true;
-      }
       break;
     default:
       DEBUGASSERT(0);
@@ -509,7 +502,16 @@ static int writeOffset(FILE *stream, const struct writeoutvar *wovar,
       valid = true;
   }
   else {
-    DEBUGASSERT(0);
+    switch(wovar->id) {
+    case VAR_URLNUM:
+      if(per->urlnum <= INT_MAX) {
+        offinfo = per->urlnum;
+        valid = true;
+      }
+      break;
+    default:
+      DEBUGASSERT(0);
+    }
   }
 
   if(valid) {
@@ -536,6 +538,82 @@ matchvar(const void *m1, const void *m2)
 }
 
 #define MAX_WRITEOUT_NAME_LENGTH 24
+
+/* return the position after %time{} */
+static const char *outtime(const char *ptr, /* %time{ ... */
+                           FILE *stream)
+{
+  const char *end;
+  ptr += 6;
+  end = strchr(ptr, '}');
+  if(end) {
+    struct tm *utc;
+    struct dynbuf format;
+    char output[256]; /* max output time length */
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval cnow;
+#else
+    struct curltime cnow;
+#endif
+    time_t secs;
+    unsigned int usecs;
+    size_t i;
+    size_t vlen;
+    CURLcode result = CURLE_OK;
+
+#ifdef HAVE_GETTIMEOFDAY
+    gettimeofday(&cnow, NULL);
+#else
+    cnow.tv_sec = time(NULL);
+    cnow.tv_usec = 0;
+#endif
+    secs = cnow.tv_sec;
+    usecs = (unsigned int)cnow.tv_usec;
+#ifdef DEBUGBUILD
+    {
+      const char *timestr = getenv("CURL_TIME");
+      if(timestr) {
+        curl_off_t val;
+        curlx_str_number(&timestr, &val, TIME_T_MAX);
+        secs = (time_t)val;
+        usecs = (unsigned int)(val % 1000000);
+      }
+    }
+#endif
+    vlen = end - ptr;
+    curlx_dyn_init(&format, 1024);
+
+    /* insert sub-seconds for %f */
+    /* insert +0000 for %z because it is otherwise not portable */
+    /* insert UTC for %Z because it is otherwise not portable */
+    for(i = 0; !result && i < vlen; i++) {
+      if((i < vlen - 1) && ptr[i] == '%' &&
+         ((ptr[i + 1] == 'f') || ((ptr[i + 1] | 0x20) == 'z'))) {
+        if(ptr[i + 1] == 'f')
+          result = curlx_dyn_addf(&format, "%06u", usecs);
+        else if(ptr[i + 1] == 'Z')
+          result = curlx_dyn_addn(&format, "UTC", 3);
+        else
+          result = curlx_dyn_addn(&format, "+0000", 5);
+        i++;
+      }
+      else
+        result = curlx_dyn_addn(&format, &ptr[i], 1);
+    }
+    if(!result) {
+      /* !checksrc! disable BANNEDFUNC 1 */
+      utc = gmtime(&secs);
+      if(curlx_dyn_len(&format) && utc &&
+         strftime(output, sizeof(output), curlx_dyn_ptr(&format), utc))
+        fputs(output, stream);
+      curlx_dyn_free(&format);
+    }
+    ptr = end + 1;
+  }
+  else
+    fputs("%time{", stream);
+  return ptr;
+}
 
 void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
                  CURLcode per_result)
@@ -577,7 +655,7 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
           if(!curlx_dyn_addn(&name, ptr, vlen)) {
             find.name = curlx_dyn_ptr(&name);
             wv = bsearch(&find,
-                         variables, sizeof(variables)/sizeof(variables[0]),
+                         variables, CURL_ARRAYSIZE(variables),
                          sizeof(variables[0]), matchvar);
           }
           if(wv) {
@@ -601,7 +679,7 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
               break;
             case VAR_JSON:
               ourWriteOutJSON(stream, variables,
-                              sizeof(variables)/sizeof(variables[0]),
+                              CURL_ARRAYSIZE(variables),
                               per, per_result);
               break;
             case VAR_HEADER_JSON:
@@ -637,6 +715,9 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
           }
           else
             fputs("%header{", stream);
+        }
+        else if(!strncmp("time{", &ptr[1], 5)) {
+          ptr = outtime(ptr, stream);
         }
         else if(!strncmp("output{", &ptr[1], 7)) {
           bool append = FALSE;
