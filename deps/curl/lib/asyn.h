@@ -23,8 +23,11 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
 #include "curl_setup.h"
+
+#if defined(USE_HTTPSRR) && defined(USE_ARES)
+#include "httpsrr.h"
+#endif
 
 struct Curl_easy;
 struct Curl_dns_entry;
@@ -32,9 +35,7 @@ struct Curl_dns_entry;
 #ifdef CURLRES_ASYNCH
 
 #include "curl_addrinfo.h"
-#include "httpsrr.h"
 
-struct addrinfo;
 struct hostent;
 struct connectdata;
 struct easy_pollset;
@@ -69,7 +70,7 @@ void Curl_async_global_cleanup(void);
  * Get the resolver implementation instance (c-ares channel) or NULL
  * for passing to application callback.
  */
-CURLcode Curl_async_get_impl(struct Curl_easy *easy, void **impl);
+CURLcode Curl_async_get_impl(struct Curl_easy *data, void **impl);
 
 /* Curl_async_pollset()
  *
@@ -105,7 +106,7 @@ CURLcode Curl_async_is_resolved(struct Curl_easy *data,
  * CURLE_OPERATION_TIMEDOUT if a time-out occurred, or other errors.
  */
 CURLcode Curl_async_await(struct Curl_easy *data,
-                          struct Curl_dns_entry **dnsentry);
+                          struct Curl_dns_entry **dns);
 
 /*
  * Curl_async_getaddrinfo() - when using this resolver
@@ -118,11 +119,8 @@ CURLcode Curl_async_await(struct Curl_easy *data,
  * Each resolver backend must of course make sure to return data in the
  * correct format to comply with this.
  */
-struct Curl_addrinfo *Curl_async_getaddrinfo(struct Curl_easy *data,
-                                             const char *hostname,
-                                             int port,
-                                             int ip_version,
-                                             int *waitp);
+CURLcode Curl_async_getaddrinfo(struct Curl_easy *data, const char *hostname,
+                                int port, int ip_version);
 
 #ifdef USE_ARES
 /* common functions for c-ares and threaded resolver with HTTPSRR */
@@ -132,19 +130,18 @@ CURLcode Curl_ares_pollset(struct Curl_easy *data,
                            ares_channel channel,
                            struct easy_pollset *ps);
 
-int Curl_ares_perform(ares_channel channel,
-                      timediff_t timeout_ms);
+int Curl_ares_perform(ares_channel channel, timediff_t timeout_ms);
 #endif
 
 #ifdef CURLRES_ARES
 /* async resolving implementation using c-ares alone */
 struct async_ares_ctx {
   ares_channel channel;
-  int num_pending; /* number of outstanding c-ares requests */
+  int num_pending;               /* number of outstanding c-ares requests */
   struct Curl_addrinfo *temp_ai; /* intermediary result while fetching c-ares
                                     parts */
-  int ares_status; /* ARES_SUCCESS, ARES_ENOTFOUND, etc. */
-  CURLcode result; /* CURLE_OK or error handling response */
+  int ares_status;               /* ARES_SUCCESS, ARES_ENOTFOUND, etc. */
+  CURLcode result;               /* CURLE_OK or error handling response */
 #ifndef HAVE_CARES_GETADDRINFO
   struct curltime happy_eyeballs_dns_time; /* when this timer started, or 0 */
 #endif
@@ -226,11 +223,11 @@ struct doh_probes;
 #else /* CURLRES_ASYNCH */
 
 /* convert these functions if an asynch resolver is not used */
-#define Curl_async_get_impl(x,y)    (*(y) = NULL, CURLE_OK)
-#define Curl_async_is_resolved(x,y) CURLE_COULDNT_RESOLVE_HOST
-#define Curl_async_await(x,y) CURLE_COULDNT_RESOLVE_HOST
-#define Curl_async_global_init() CURLE_OK
-#define Curl_async_global_cleanup() Curl_nop_stmt
+#define Curl_async_get_impl(x, y)    (*(y) = NULL, CURLE_OK)
+#define Curl_async_is_resolved(x, y) CURLE_COULDNT_RESOLVE_HOST
+#define Curl_async_await(x, y)       CURLE_COULDNT_RESOLVE_HOST
+#define Curl_async_global_init()     CURLE_OK
+#define Curl_async_global_cleanup()  Curl_nop_stmt
 
 #endif /* !CURLRES_ASYNCH */
 
@@ -270,9 +267,8 @@ void Curl_async_shutdown(struct Curl_easy *data);
 void Curl_async_destroy(struct Curl_easy *data);
 #else /* !USE_CURL_ASYNC */
 #define Curl_async_shutdown(x) Curl_nop_stmt
-#define Curl_async_destroy(x) Curl_nop_stmt
+#define Curl_async_destroy(x)  Curl_nop_stmt
 #endif /* USE_CURL_ASYNC */
-
 
 /********** end of generic resolver interface functions *****************/
 #endif /* HEADER_CURL_ASYN_H */

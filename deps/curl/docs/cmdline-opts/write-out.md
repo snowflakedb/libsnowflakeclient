@@ -25,9 +25,8 @@ from stdin you write "@-".
 
 The variables present in the output format are substituted by the value or
 text that curl thinks fit, as described below. All variables are specified as
-%{variable_name} and to output a normal % you just write them as %%. You can
-output a newline by using \n, a carriage return with \r and a tab space with
-\t.
+%{variable_name} and to output a normal % you write them as %%. You can output
+a newline by using \n, a carriage return with \r and a tab space with \t.
 
 The output is by default written to standard output, but can be changed with
 %{stderr} and %output{}.
@@ -92,6 +91,14 @@ server. (Added in 7.15.4)
 The value of header `name` from the transfer's most recent server response.
 Unlike other variables, the variable name `header` is not in braces. For
 example `%header{date}`. Refer to --write-out remarks. (Added in 7.84.0)
+
+Starting with 8.17.0, output the contents of *all* header fields using a
+specific name - even for a whole redirect "chain" by appending
+`:all:[separator]` to the header name. The `[separator]` string (if not blank)
+is output between the headers if there are more than one. When more than one
+header is shown, they are output in the chronological order of appearance over
+the wire. To include a close brace (`}`) in the separator, escape it with a
+backslash: `\}`.
 
 ## `header_json`
 A JSON object with all HTTP response headers from the recent transfer. Values
@@ -237,13 +244,13 @@ The time, in seconds, it took from the start until the name resolving was
 completed.
 
 ## `time_posttransfer`
-The time it took from the start until the last byte is sent by libcurl.
-In microseconds. (Added in 8.10.0)
+The time, in seconds, it took from the start until the last byte is sent
+by libcurl. (Added in 8.10.0)
 
 ## `time_pretransfer`
-The time, in seconds, it took from the start until the file transfer was just
-about to begin. This includes all pre-transfer commands and negotiations that
-are specific to the particular protocol(s) involved.
+The time, in seconds, it took from the start until immediately before the file
+transfer was about to begin. This includes all pre-transfer commands and
+negotiations that are specific to the particular protocol(s) involved.
 
 ## `time_queue`
 The time, in seconds, the transfer was queued during its run. This adds

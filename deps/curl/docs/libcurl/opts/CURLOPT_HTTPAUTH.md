@@ -56,7 +56,7 @@ regular old-fashioned Basic method.
 
 HTTP Digest authentication with an IE flavor. Digest authentication is defined
 in RFC 2617 and is a more secure way to do authentication over public networks
-than the regular old-fashioned Basic method. The IE flavor is simply that
+than the regular old-fashioned Basic method. The IE flavor means that
 libcurl uses a special "quirk" that IE is known to have used before version 7
 and that some servers require the client to use.
 
@@ -134,12 +134,12 @@ int main(void)
 {
   CURL *curl = curl_easy_init();
   if(curl) {
-    CURLcode ret;
+    CURLcode result;
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
     /* allow whatever auth the server speaks */
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
     curl_easy_setopt(curl, CURLOPT_USERPWD, "james:bond");
-    ret = curl_easy_perform(curl);
+    result = curl_easy_perform(curl);
   }
 }
 ~~~

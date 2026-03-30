@@ -23,8 +23,7 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
-#include "../curl_setup.h"
+#include "curl_setup.h"
 
 #ifdef USE_OPENSSL
 /*
@@ -35,7 +34,7 @@
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
 
-#include "../urldata.h"
+#include "urldata.h"
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #define HAVE_OPENSSL3  /* non-fork OpenSSL 3.x or later */
@@ -45,14 +44,19 @@
 #define HAVE_BORINGSSL_LIKE
 #endif
 
+/* OpenSSL 3.5.0+ has built-in 'SSLKEYLOGFILE' support if built with
+   'enable-sslkeylog' */
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L && !defined(OPENSSL_NO_SSLKEYLOG)
+#define HAVE_KEYLOG_UPSTREAM
+#endif
+
 /*
  * Whether SSL_CTX_set_keylog_callback is available.
  * OpenSSL: supported since 1.1.1 https://github.com/openssl/openssl/pull/2287
  * BoringSSL: supported since d28f59c27bac (committed 2015-11-19)
  * LibreSSL: not supported. 3.5.0+ has a stub function that does nothing.
  */
-#if (OPENSSL_VERSION_NUMBER >= 0x10101000L && \
-  !defined(LIBRESSL_VERSION_NUMBER)) || defined(HAVE_BORINGSSL_LIKE)
+#ifndef LIBRESSL_VERSION_NUMBER
 #define HAVE_KEYLOG_CALLBACK
 #endif
 
@@ -71,17 +75,17 @@ struct ossl_ctx {
   /* these ones requires specific SSL-types */
   SSL_CTX* ssl_ctx;
   SSL*     ssl;
-  X509*    server_cert;
   BIO_METHOD *bio_method;
   CURLcode io_result;       /* result of last BIO cfilter operation */
   /* blocked writes need to retry with same length, remember it */
   int      blocked_ssl_write_len;
-#ifndef HAVE_KEYLOG_CALLBACK
+#if !defined(HAVE_KEYLOG_UPSTREAM) && !defined(HAVE_KEYLOG_CALLBACK)
   /* Set to true once a valid keylog entry has been created to avoid dupes.
      This is a bool and not a bitfield because it is passed by address. */
   bool keylog_done;
 #endif
   BIT(x509_store_setup);            /* x509 store has been set up */
+  BIT(store_is_empty);              /* no certs/paths/blobs in x509 store */
   BIT(reused_session);              /* session-ID was reused for this */
 };
 
@@ -102,7 +106,7 @@ CURLcode Curl_ossl_ctx_init(struct ossl_ctx *octx,
                             struct Curl_cfilter *cf,
                             struct Curl_easy *data,
                             struct ssl_peer *peer,
-                            const struct alpn_spec *alpns,
+                            const struct alpn_spec *alpns_requested,
                             Curl_ossl_ctx_setup_cb *cb_setup,
                             void *cb_user_data,
                             Curl_ossl_new_session_cb *cb_new_session,
@@ -122,7 +126,7 @@ extern const struct Curl_ssl Curl_ssl_openssl;
  */
 CURLcode Curl_ssl_setup_x509_store(struct Curl_cfilter *cf,
                                    struct Curl_easy *data,
-                                   SSL_CTX *ssl_ctx);
+                                   struct ossl_ctx *octx);
 
 CURLcode Curl_ossl_ctx_configure(struct Curl_cfilter *cf,
                                  struct Curl_easy *data,
@@ -134,7 +138,7 @@ CURLcode Curl_ossl_ctx_configure(struct Curl_cfilter *cf,
 CURLcode Curl_ossl_add_session(struct Curl_cfilter *cf,
                                struct Curl_easy *data,
                                const char *ssl_peer_key,
-                               SSL_SESSION *ssl_sessionid,
+                               SSL_SESSION *session,
                                int ietf_tls_id,
                                const char *alpn,
                                unsigned char *quic_tp,
@@ -151,8 +155,7 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
                                    struct ssl_peer *peer);
 
 /* Report properties of a successful handshake */
-void Curl_ossl_report_handshake(struct Curl_easy *data,
-                                struct ossl_ctx *octx);
+void Curl_ossl_report_handshake(struct Curl_easy *data, struct ossl_ctx *octx);
 
 #endif /* USE_OPENSSL */
 #endif /* HEADER_CURL_SSLUSE_H */

@@ -21,20 +21,15 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
 #include "curl_setup.h"
-
-#include <curl/curl.h>
 
 #include "curl_trc.h"
 #include "urldata.h"
-#include "easyif.h"
 #include "cfilters.h"
 #include "multiif.h"
 
 #include "cf-socket.h"
 #include "connect.h"
-#include "doh.h"
 #include "http2.h"
 #include "http_proxy.h"
 #include "cf-h1-proxy.h"
@@ -42,15 +37,12 @@
 #include "cf-haproxy.h"
 #include "cf-https-connect.h"
 #include "cf-ip-happy.h"
+#include "progress.h"
 #include "socks.h"
 #include "curlx/strparse.h"
 #include "vtls/vtls.h"
 #include "vquic/vquic.h"
-
-/* The last 3 #include files should be in this order */
-#include "curl_printf.h"
-#include "curl_memory.h"
-#include "memdebug.h"
+#include "curlx/strcopy.h"
 
 static void trc_write(struct Curl_easy *data, curl_infotype type,
                       const char *ptr, size_t size)
@@ -93,8 +85,8 @@ static struct curl_trc_feat Curl_trc_feat_ids = {
   CURL_LOG_LVL_NONE,
 };
 #define CURL_TRC_IDS(data) \
-             (Curl_trc_is_verbose(data) && \
-             Curl_trc_feat_ids.log_level >= CURL_LOG_LVL_INFO)
+  (Curl_trc_is_verbose(data) && \
+  Curl_trc_feat_ids.log_level >= CURL_LOG_LVL_INFO)
 
 static size_t trc_print_ids(struct Curl_easy *data, char *buf, size_t maxlen)
 {
@@ -102,14 +94,14 @@ static size_t trc_print_ids(struct Curl_easy *data, char *buf, size_t maxlen)
                    data->conn->connection_id : data->state.recent_conn_id;
   if(data->id >= 0) {
     if(cid >= 0)
-      return msnprintf(buf, maxlen, CURL_TRC_FMT_IDSDC, data->id, cid);
+      return curl_msnprintf(buf, maxlen, CURL_TRC_FMT_IDSDC, data->id, cid);
     else
-      return msnprintf(buf, maxlen, CURL_TRC_FMT_IDSD, data->id);
+      return curl_msnprintf(buf, maxlen, CURL_TRC_FMT_IDSD, data->id);
   }
   else if(cid >= 0)
-    return msnprintf(buf, maxlen, CURL_TRC_FMT_IDSC, cid);
+    return curl_msnprintf(buf, maxlen, CURL_TRC_FMT_IDSC, cid);
   else {
-    return msnprintf(buf, maxlen, "[x-x] ");
+    return curl_msnprintf(buf, maxlen, "[x-x] ");
   }
 }
 
@@ -143,8 +135,8 @@ void Curl_debug(struct Curl_easy *data, curl_infotype type,
 
       if(CURL_TRC_IDS(data) && (size < TRC_LINE_MAX)) {
         len = trc_print_ids(data, buf, TRC_LINE_MAX);
-        len += msnprintf(buf + len, TRC_LINE_MAX - len, "%.*s",
-                         (int)size, ptr);
+        len += curl_msnprintf(buf + len, TRC_LINE_MAX - len, "%.*s",
+                              (int)size, ptr);
         len = trc_end_buf(buf, len, TRC_LINE_MAX, FALSE);
         Curl_set_in_callback(data, TRUE);
         (void)(*data->set.fdebug)(data, type, buf, len, data->set.debugdata);
@@ -189,10 +181,10 @@ void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
     size_t len;
     char error[CURL_ERROR_SIZE + 2];
     va_start(ap, fmt);
-    len = mvsnprintf(error, CURL_ERROR_SIZE, fmt, ap);
+    len = curl_mvsnprintf(error, CURL_ERROR_SIZE, fmt, ap);
 
     if(data->set.errorbuffer && !data->state.errorbuf) {
-      strcpy(data->set.errorbuffer, error);
+      curlx_strcopy(data->set.errorbuffer, CURL_ERROR_SIZE, error, len);
       data->state.errorbuf = TRUE; /* wrote error string */
     }
     error[len++] = '\n';
@@ -201,6 +193,36 @@ void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
     va_end(ap);
   }
 }
+
+void Curl_reset_fail(struct Curl_easy *data)
+{
+  if(data->set.errorbuffer)
+    data->set.errorbuffer[0] = 0;
+  data->state.errorbuf = FALSE;
+}
+
+#ifdef CURLVERBOSE
+struct curl_trc_feat Curl_trc_feat_multi = {
+  "MULTI",
+  CURL_LOG_LVL_NONE,
+};
+struct curl_trc_feat Curl_trc_feat_read = {
+  "READ",
+  CURL_LOG_LVL_NONE,
+};
+struct curl_trc_feat Curl_trc_feat_write = {
+  "WRITE",
+  CURL_LOG_LVL_NONE,
+};
+struct curl_trc_feat Curl_trc_feat_dns = {
+  "DNS",
+  CURL_LOG_LVL_NONE,
+};
+struct curl_trc_feat Curl_trc_feat_timer = {
+  "TIMER",
+  CURL_LOG_LVL_NONE,
+};
+#endif
 
 #ifndef CURL_DISABLE_VERBOSE_STRINGS
 
@@ -220,15 +242,15 @@ static void trc_infof(struct Curl_easy *data,
   if(CURL_TRC_IDS(data))
     len += trc_print_ids(data, buf + len, TRC_LINE_MAX - len);
   if(feat)
-    len += msnprintf(buf + len, TRC_LINE_MAX - len, "[%s] ", feat->name);
+    len += curl_msnprintf(buf + len, TRC_LINE_MAX - len, "[%s] ", feat->name);
   if(opt_id) {
     if(opt_id_idx > 0)
-      len += msnprintf(buf + len, TRC_LINE_MAX - len, "[%s-%d] ",
-                       opt_id, opt_id_idx);
+      len += curl_msnprintf(buf + len, TRC_LINE_MAX - len, "[%s-%d] ",
+                            opt_id, opt_id_idx);
     else
-      len += msnprintf(buf + len, TRC_LINE_MAX - len, "[%s] ", opt_id);
+      len += curl_msnprintf(buf + len, TRC_LINE_MAX - len, "[%s] ", opt_id);
   }
-  len += mvsnprintf(buf + len, TRC_LINE_MAX - len, fmt, ap);
+  len += curl_mvsnprintf(buf + len, TRC_LINE_MAX - len, fmt, ap);
   len = trc_end_buf(buf, len, TRC_LINE_MAX, TRUE);
   trc_write(data, CURLINFO_TEXT, buf, len);
 }
@@ -256,24 +278,7 @@ void Curl_trc_cf_infof(struct Curl_easy *data, const struct Curl_cfilter *cf,
   }
 }
 
-struct curl_trc_feat Curl_trc_feat_multi = {
-  "MULTI",
-  CURL_LOG_LVL_NONE,
-};
-struct curl_trc_feat Curl_trc_feat_read = {
-  "READ",
-  CURL_LOG_LVL_NONE,
-};
-struct curl_trc_feat Curl_trc_feat_write = {
-  "WRITE",
-  CURL_LOG_LVL_NONE,
-};
-struct curl_trc_feat Curl_trc_feat_dns = {
-  "DNS",
-  CURL_LOG_LVL_NONE,
-};
-
-static const char * const Curl_trc_timer_names[]={
+static const char * const Curl_trc_timer_names[] = {
   "100_TIMEOUT",
   "ASYNC_NAME",
   "CONNECTTIMEOUT",
@@ -291,36 +296,48 @@ static const char * const Curl_trc_timer_names[]={
   "SHUTDOWN",
 };
 
-const char *Curl_trc_timer_name(int tid)
+static const char *trc_timer_name(int tid)
 {
   if((tid >= 0) && ((size_t)tid < CURL_ARRAYSIZE(Curl_trc_timer_names)))
     return Curl_trc_timer_names[(size_t)tid];
   return "UNKNOWN?";
 }
 
-void Curl_trc_multi_timeouts(struct Curl_easy *data)
+void Curl_trc_timer(struct Curl_easy *data, int tid, const char *fmt, ...)
 {
-  struct Curl_llist_node *e = Curl_llist_head(&data->state.timeoutlist);
-  if(e) {
-    struct curltime now = curlx_now();
-    while(e) {
-      struct time_node *n = Curl_node_elem(e);
-      e = Curl_node_next(e);
-      CURL_TRC_M(data, "[TIMEOUT] %s expires in %" FMT_TIMEDIFF_T "ns",
-                 CURL_TIMER_NAME(n->eid),
-                 curlx_timediff_us(n->time, now));
+  DEBUGASSERT(!strchr(fmt, '\n'));
+  if(Curl_trc_ft_is_verbose(data, &Curl_trc_feat_timer)) {
+    const char *tname = trc_timer_name(tid);
+    va_list ap;
+    va_start(ap, fmt);
+    trc_infof(data, &Curl_trc_feat_timer, tname, 0, fmt, ap);
+    va_end(ap);
+  }
+}
+
+void Curl_trc_easy_timers(struct Curl_easy *data)
+{
+  if(CURL_TRC_TIMER_is_verbose(data)) {
+    struct Curl_llist_node *e = Curl_llist_head(&data->state.timeoutlist);
+    if(e) {
+      const struct curltime *pnow = Curl_pgrs_now(data);
+      while(e) {
+        struct time_node *n = Curl_node_elem(e);
+        e = Curl_node_next(e);
+        CURL_TRC_TIMER(data, n->eid, "expires in %" FMT_TIMEDIFF_T "ns",
+                       curlx_ptimediff_us(&n->time, pnow));
+      }
     }
   }
 }
 
-static const char * const Curl_trc_mstate_names[]={
+static const char * const Curl_trc_mstate_names[] = {
   "INIT",
   "PENDING",
   "SETUP",
   "CONNECT",
   "RESOLVING",
   "CONNECTING",
-  "TUNNELING",
   "PROTOCONNECT",
   "PROTOCONNECTING",
   "DO",
@@ -441,6 +458,24 @@ void Curl_trc_ssls(struct Curl_easy *data, const char *fmt, ...)
 }
 #endif /* USE_SSL */
 
+#ifdef USE_SSH
+struct curl_trc_feat Curl_trc_feat_ssh = {
+  "SSH",
+  CURL_LOG_LVL_NONE,
+};
+
+void Curl_trc_ssh(struct Curl_easy *data, const char *fmt, ...)
+{
+  DEBUGASSERT(!strchr(fmt, '\n'));
+  if(Curl_trc_ft_is_verbose(data, &Curl_trc_feat_ssh)) {
+    va_list ap;
+    va_start(ap, fmt);
+    trc_infof(data, &Curl_trc_feat_ssh, NULL, 0, fmt, ap);
+    va_end(ap);
+  }
+}
+#endif /* USE_SSH */
+
 #if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
 struct curl_trc_feat Curl_trc_feat_ws = {
   "WS",
@@ -459,11 +494,11 @@ void Curl_trc_ws(struct Curl_easy *data, const char *fmt, ...)
 }
 #endif /* !CURL_DISABLE_WEBSOCKETS && !CURL_DISABLE_HTTP */
 
-#define TRC_CT_NONE        (0)
-#define TRC_CT_PROTOCOL    (1<<(0))
-#define TRC_CT_NETWORK     (1<<(1))
-#define TRC_CT_PROXY       (1<<(2))
-#define TRC_CT_INTERNALS   (1<<(3))
+#define TRC_CT_NONE        0
+#define TRC_CT_PROTOCOL    (1 << 0)
+#define TRC_CT_NETWORK     (1 << 1)
+#define TRC_CT_PROXY       (1 << 2)
+#define TRC_CT_INTERNALS   (1 << 3)
 
 struct trc_feat_def {
   struct curl_trc_feat *feat;
@@ -476,16 +511,18 @@ static struct trc_feat_def trc_feats[] = {
   { &Curl_trc_feat_read,      TRC_CT_NONE },
   { &Curl_trc_feat_write,     TRC_CT_NONE },
   { &Curl_trc_feat_dns,       TRC_CT_NETWORK },
+  { &Curl_trc_feat_timer,     TRC_CT_NETWORK },
 #ifndef CURL_DISABLE_FTP
   { &Curl_trc_feat_ftp,       TRC_CT_PROTOCOL },
-#endif
-#ifndef CURL_DISABLE_DOH
 #endif
 #ifndef CURL_DISABLE_SMTP
   { &Curl_trc_feat_smtp,      TRC_CT_PROTOCOL },
 #endif
 #ifdef USE_SSL
   { &Curl_trc_feat_ssls,      TRC_CT_NETWORK },
+#endif
+#ifdef USE_SSH
+  { &Curl_trc_feat_ssh,      TRC_CT_PROTOCOL },
 #endif
 #if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
   { &Curl_trc_feat_ws,        TRC_CT_PROTOCOL },
@@ -550,7 +587,7 @@ static void trc_apply_level_by_name(struct Curl_str *token, int lvl)
   }
 }
 
-static void trc_apply_level_by_category(int category, int lvl)
+static void trc_apply_level_by_category(unsigned int category, int lvl)
 {
   size_t i;
 
@@ -631,53 +668,75 @@ CURLcode Curl_trc_init(void)
 
 void Curl_infof(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 
 void Curl_trc_cf_infof(struct Curl_easy *data, const struct Curl_cfilter *cf,
                        const char *fmt, ...)
 {
-  (void)data; (void)cf; (void)fmt;
+  (void)data;
+  (void)cf;
+  (void)fmt;
 }
-
-struct curl_trc_feat;
 
 void Curl_trc_multi(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 
 void Curl_trc_write(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 
 void Curl_trc_dns(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
+}
+
+void Curl_trc_timer(struct Curl_easy *data, int tid, const char *fmt, ...)
+{
+  (void)data;
+  (void)tid;
+  (void)fmt;
 }
 
 void Curl_trc_read(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 
 #ifndef CURL_DISABLE_FTP
 void Curl_trc_ftp(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 #endif
 #ifndef CURL_DISABLE_SMTP
 void Curl_trc_smtp(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
 }
 #endif
 #if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)
 void Curl_trc_ws(struct Curl_easy *data, const char *fmt, ...)
 {
-  (void)data; (void)fmt;
+  (void)data;
+  (void)fmt;
+}
+#endif
+#ifdef USE_SSH
+void Curl_trc_ssh(struct Curl_easy *data, const char *fmt, ...)
+{
+  (void)data;
+  (void)fmt;
 }
 #endif
 #ifdef USE_SSL

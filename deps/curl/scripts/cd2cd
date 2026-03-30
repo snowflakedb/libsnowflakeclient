@@ -54,7 +54,6 @@ while(1) {
     }
 }
 
-
 use POSIX qw(strftime);
 my @ts;
 if(defined($ENV{SOURCE_DATE_EPOCH})) {
@@ -70,7 +69,7 @@ sub outseealso {
     my @o;
     push @o, ".SH SEE ALSO\n";
     for my $s (sort @sa) {
-        push @o, sprintf "%s.BR $s", $comma ? ",\n": "";
+        push @o, sprintf "%s.BR $s", $comma ? ",\n" : "";
         $comma = 1;
     }
     push @o, "\n";
@@ -156,7 +155,9 @@ sub single {
                 return 2;
             }
             if(!$spdx) {
+                # REUSE-IgnoreStart
                 print STDERR "$f:$line:1:ERROR: no 'SPDX-License-Identifier:' field present\n";
+                # REUSE-IgnoreEnd
                 return 2;
             }
             last;

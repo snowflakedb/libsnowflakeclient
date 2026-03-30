@@ -27,8 +27,6 @@
 #include <locale.h> /* for setlocale() */
 #endif
 
-#include "memdebug.h"
-
 int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
                    struct timeval *tv)
 {
@@ -85,7 +83,7 @@ int cgetopt(int argc, const char * const argv[], const char *optstring)
   }
   else {
     const char *opt = strchr(optstring, arg[optpos]);
-    coptopt = arg[optpos];
+    coptopt = (unsigned char)arg[optpos];
     if(!opt) {
       if(!arg[++optpos]) {
         coptind++;
@@ -124,33 +122,32 @@ int cgetopt(int argc, const char * const argv[], const char *optstring)
   }
 }
 
-#ifdef CURLDEBUG
+#ifdef CURL_MEMDEBUG
 static void memory_tracking_init(void)
 {
-  char *env;
+  const char *env;
   /* if CURL_MEMDEBUG is set, this starts memory tracking message logging */
   env = getenv("CURL_MEMDEBUG");
   if(env) {
-    /* use the value as file name */
+    /* use the value as filename */
     curl_dbg_memdebug(env);
   }
   /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
   env = getenv("CURL_MEMLIMIT");
   if(env) {
-    char *endptr;
-    long num = strtol(env, &endptr, 10);
-    if((endptr != env) && (endptr == env + strlen(env)) && (num > 0))
-      curl_dbg_memlimit(num);
+    curl_off_t num;
+    if(!curlx_str_number(&env, &num, LONG_MAX) && num > 0)
+      curl_dbg_memlimit((long)num);
   }
 }
 #else
-#  define memory_tracking_init() Curl_nop_stmt
+#define memory_tracking_init() Curl_nop_stmt
 #endif
 
 /* returns a hexdump in a static memory area */
 char *hexdump(const unsigned char *buf, size_t len)
 {
-  static char dump[200 * 3 + 1];
+  static char dump[(200 * 3) + 1];
   char *p = dump;
   size_t i;
   if(len > 200)
@@ -193,7 +190,7 @@ CURLcode ws_recv_pong(CURL *curl, const char *expected_payload)
   if(rlen == strlen(expected_payload) &&
      !memcmp(expected_payload, buffer, rlen)) {
     curl_mfprintf(stderr, "ws: got the same payload back\n");
-    return CURLE_OK;  /* lib2304 returned 'result' here. Intentional? */
+    return CURLE_OK;
   }
   curl_mfprintf(stderr, "ws: did NOT get the same payload back\n");
   return CURLE_RECV_ERROR;
@@ -209,17 +206,16 @@ void ws_close(CURL *curl)
 }
 #endif /* CURL_DISABLE_WEBSOCKETS */
 
-
 int main(int argc, const char **argv)
 {
   const char *URL = "";
   CURLcode result;
   entry_func_t entry_func;
   const char *entry_name;
-  char *env;
+  const char *env;
   size_t tmp;
 
-  CURLX_SET_BINMODE(stdout);
+  CURL_BINMODE(stdout);
 
   memory_tracking_init();
 #ifdef _WIN32
@@ -272,11 +268,13 @@ int main(int argc, const char **argv)
   if(argc > 5)
     libtest_arg4 = argv[5];
 
+  testnum = 0;
   env = getenv("CURL_TESTNUM");
-  if(env)
-    testnum = atoi(env);
-  else
-    testnum = 0;
+  if(env) {
+    curl_off_t num;
+    if(!curlx_str_number(&env, &num, INT_MAX) && num > 0)
+      testnum = (int)num;
+  }
 
   result = entry_func(URL);
   curl_mfprintf(stderr, "Test ended with result %d\n", result);

@@ -21,33 +21,24 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
 #include "curl_setup.h"
 
 #ifndef CURL_DISABLE_HTTP
 
 #include "urldata.h" /* it includes http_chunks.h */
-#include "curl_printf.h"
 #include "curl_trc.h"
 #include "sendf.h"   /* for the client write stuff */
 #include "curlx/dynbuf.h"
-#include "content_encoding.h"
-#include "http.h"
 #include "multiif.h"
 #include "curlx/strparse.h"
-#include "curlx/warnless.h"
-
-/* The last #include files should be: */
-#include "curl_memory.h"
-#include "memdebug.h"
 
 /*
- * Chunk format (simplified):
- *
- * <HEX SIZE>[ chunk extension ] CRLF
- * <DATA> CRLF
- *
- * Highlights from RFC2616 section 3.6 say:
+   Chunk format (simplified):
+
+   <HEX SIZE>[ chunk extension ] CRLF
+   <DATA> CRLF
+
+   Highlights from RFC2616 section 3.6 say:
 
    The chunked encoding modifies the body of a message in order to
    transfer it as a series of chunks, each with its own size indicator,
@@ -237,7 +228,7 @@ static CURLcode httpchunk_readwrite(struct Curl_easy *data,
     case CHUNK_POSTLF:
       if(*buf == 0x0a) {
         /* The last one before we go back to hex state and start all over. */
-        Curl_httpchunk_reset(data, ch, ch->ignore_body);
+        Curl_httpchunk_reset(data, ch, (bool)ch->ignore_body);
       }
       else if(*buf != 0x0d) {
         ch->state = CHUNK_FAILED;
@@ -251,7 +242,7 @@ static CURLcode httpchunk_readwrite(struct Curl_easy *data,
 
     case CHUNK_TRAILER:
       if((*buf == 0x0d) || (*buf == 0x0a)) {
-        char *tr = curlx_dyn_ptr(&ch->trailer);
+        const char *tr = curlx_dyn_ptr(&ch->trailer);
         /* this is the end of a trailer, but if the trailer was zero bytes
            there was no trailer and we move on */
 
@@ -362,7 +353,6 @@ static CURLcode httpchunk_readwrite(struct Curl_easy *data,
     case CHUNK_FAILED:
       return CURLE_RECV_ERROR;
     }
-
   }
   return CURLE_OK;
 }
@@ -470,7 +460,7 @@ const struct Curl_cwtype Curl_httpchunk_unencoder = {
 };
 
 /* max length of an HTTP chunk that we want to generate */
-#define CURL_CHUNKED_MINLEN   (1024)
+#define CURL_CHUNKED_MINLEN   1024
 #define CURL_CHUNKED_MAXLEN   (64 * 1024)
 
 struct chunked_reader {
@@ -527,14 +517,13 @@ static CURLcode add_last_chunk(struct Curl_easy *data,
 
   for(tr = trailers; tr; tr = tr->next) {
     /* only add correctly formatted trailers */
-    char *ptr = strchr(tr->data, ':');
+    const char *ptr = strchr(tr->data, ':');
     if(!ptr || *(ptr + 1) != ' ') {
       infof(data, "Malformatted trailing header, skipping trailer");
       continue;
     }
 
-    result = Curl_bufq_cwrite(&ctx->chunkbuf, tr->data,
-                              strlen(tr->data), &n);
+    result = Curl_bufq_cwrite(&ctx->chunkbuf, tr->data, strlen(tr->data), &n);
     if(!result)
       result = Curl_bufq_cwrite(&ctx->chunkbuf, STRCONST("\r\n"), &n);
     if(result)
@@ -584,7 +573,7 @@ static CURLcode add_chunk(struct Curl_easy *data,
     int hdlen;
     size_t n;
 
-    hdlen = msnprintf(hd, sizeof(hd), "%zx\r\n", nread);
+    hdlen = curl_msnprintf(hd, sizeof(hd), "%zx\r\n", nread);
     if(hdlen <= 0)
       return CURLE_READ_ERROR;
     /* On a soft-limited bufq, we do not need to check that all was written */
@@ -594,7 +583,7 @@ static CURLcode add_chunk(struct Curl_easy *data,
     if(!result)
       result = Curl_bufq_cwrite(&ctx->chunkbuf, "\r\n", 2, &n);
     CURL_TRC_READ(data, "http_chunk, made chunk of %zu bytes -> %d",
-                 nread, result);
+                  nread, result);
     if(result)
       return result;
   }
@@ -613,7 +602,7 @@ static CURLcode cr_chunked_read(struct Curl_easy *data,
   CURLcode result = CURLE_READ_ERROR;
 
   *pnread = 0;
-  *peos = ctx->eos;
+  *peos = (bool)ctx->eos;
 
   if(!ctx->eos) {
     if(!ctx->read_eos && Curl_bufq_is_empty(&ctx->chunkbuf)) {

@@ -139,6 +139,7 @@ typedef enum {
   C_KEEPALIVE_TIME,
   C_KEY,
   C_KEY_TYPE,
+  C_KNOWNHOSTS,
   C_KRB,
   C_KRB4,
   C_LIBCURL,
@@ -318,12 +319,12 @@ typedef enum {
 #define ARG_FILE 3 /* requires an argument, usually a filename */
 
 #define ARG_TYPEMASK 0x03
-#define ARGTYPE(x) ((x) & ARG_TYPEMASK)
+#define ARGTYPE(x)   ((x) & ARG_TYPEMASK)
 
-#define ARG_DEPR 0x10 /* deprecated option */
+#define ARG_DEPR  0x10 /* deprecated option */
 #define ARG_CLEAR 0x20 /* clear cmdline argument */
-#define ARG_TLS 0x40 /* requires TLS support */
-#define ARG_NO 0x80 /* set if the option is documented as --no-* */
+#define ARG_TLS   0x40 /* requires TLS support */
+#define ARG_NO    0x80 /* set if the option is documented as --no-* */
 
 struct LongShort {
   const char *lname;  /* long name option */
@@ -334,8 +335,8 @@ struct LongShort {
 
 typedef enum {
   PARAM_OK = 0,
-  PARAM_OPTION_AMBIGUOUS,
   PARAM_OPTION_UNKNOWN,
+  PARAM_CONFIG_OPTION_UNKNOWN,
   PARAM_REQUIRES_PARAMETER,
   PARAM_BAD_USE,
   PARAM_HELP_REQUESTED,
@@ -357,6 +358,7 @@ typedef enum {
   PARAM_EXPAND_ERROR, /* --expand problem */
   PARAM_BLANK_STRING,
   PARAM_VAR_SYNTAX, /* --variable syntax error */
+  PARAM_RECURSION,
   PARAM_LAST
 } ParameterError;
 
@@ -367,27 +369,29 @@ const struct LongShort *findshortopt(char letter);
 
 ParameterError getparameter(const char *flag, const char *nextarg,
                             bool *usedarg,
-                            struct OperationConfig *config);
+                            struct OperationConfig *config,
+                            int max_recursive);
 
 #ifdef UNITTESTS
-void parse_cert_parameter(const char *cert_parameter,
-                          char **certname,
-                          char **passphrase);
+UNITTEST ParameterError parse_cert_parameter(const char *cert_parameter,
+                                             char **certname,
+                                             char **passphrase);
+UNITTEST ParameterError GetSizeParameter(const char *arg, curl_off_t *out);
 #endif
 
 ParameterError parse_args(int argc, argv_item_t argv[]);
 
-#if defined(UNICODE) && defined(_WIN32) && !defined(UNDER_CE)
+#if defined(UNICODE) && defined(_WIN32)
 
-#define convert_UTF8_to_tchar(ptr) curlx_convert_UTF8_to_wchar((ptr))
-#define convert_tchar_to_UTF8(ptr) curlx_convert_wchar_to_UTF8((ptr))
-#define unicodefree(ptr) curlx_unicodefree(ptr)
+#define convert_UTF8_to_tchar(ptr) curlx_convert_UTF8_to_wchar(ptr)
+#define convert_tchar_to_UTF8(ptr) curlx_convert_wchar_to_UTF8(ptr)
+#define unicodefree(ptr)           curlx_free(ptr)
 
 #else
 
 #define convert_UTF8_to_tchar(ptr) (const char *)(ptr)
 #define convert_tchar_to_UTF8(ptr) (const char *)(ptr)
-#define unicodefree(ptr) do {} while(0)
+#define unicodefree(ptr)           do {} while(0)
 
 #endif
 

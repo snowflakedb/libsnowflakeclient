@@ -25,62 +25,50 @@
 
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
-#include "tool_cb_prg.h"
 #include "terminal.h"
 
-#include "memdebug.h" /* keep this as LAST include */
-
-#define WARN_PREFIX "Warning: "
-#define NOTE_PREFIX "Note: "
+#define WARN_PREFIX  "Warning: "
+#define NOTE_PREFIX  "Note: "
 #define ERROR_PREFIX "curl: "
 
-static void voutf(const char *prefix,
-                  const char *fmt,
-                  va_list ap) CURL_PRINTF(2, 0);
+static void voutf(const char *prefix, const char *fmt, va_list ap)
+  CURL_PRINTF(2, 0);
 
-static void voutf(const char *prefix,
-                  const char *fmt,
-                  va_list ap)
+static void voutf(const char *prefix, const char *fmt, va_list ap)
 {
-  size_t width = (get_terminal_columns() - strlen(prefix));
+  size_t len;
+  char *ptr;
+  char buffer[1024];
+  size_t termw = get_terminal_columns();
+  size_t prefw = strlen(prefix);
+  size_t width = termw > prefw ? termw - prefw : SIZE_MAX;
   DEBUGASSERT(!strchr(fmt, '\n'));
-  if(!global->silent) {
-    size_t len;
-    char *ptr;
-    char *print_buffer;
+  len = curl_mvsnprintf(buffer, sizeof(buffer), fmt, ap);
+  ptr = buffer;
+  while(len > 0) {
+    fputs(prefix, tool_stderr);
 
-    print_buffer = vaprintf(fmt, ap);
-    if(!print_buffer)
-      return;
-    len = strlen(print_buffer);
+    if(len > width) {
+      size_t cut = width - 1;
 
-    ptr = print_buffer;
-    while(len > 0) {
-      fputs(prefix, tool_stderr);
-
-      if(len > width) {
-        size_t cut = width-1;
-
-        while(!ISBLANK(ptr[cut]) && cut) {
-          cut--;
-        }
-        if(cut == 0)
-          /* not a single cutting position was found, just cut it at the
-             max text width then! */
-          cut = width-1;
-
-        (void)fwrite(ptr, cut + 1, 1, tool_stderr);
-        fputs("\n", tool_stderr);
-        ptr += cut + 1; /* skip the space too */
-        len -= cut + 1;
+      while(!ISBLANK(ptr[cut]) && cut) {
+        cut--;
       }
-      else {
-        fputs(ptr, tool_stderr);
-        fputs("\n", tool_stderr);
-        len = 0;
-      }
+      if(cut == 0)
+        /* not a single cutting position was found, cut it at the max text
+           width then! */
+        cut = width - 1;
+
+      (void)fwrite(ptr, cut + 1, 1, tool_stderr);
+      fputs("\n", tool_stderr);
+      ptr += cut + 1; /* skip the space too */
+      len -= cut + 1;
     }
-    curl_free(print_buffer);
+    else {
+      fputs(ptr, tool_stderr);
+      fputs("\n", tool_stderr);
+      len = 0;
+    }
   }
 }
 
@@ -90,11 +78,12 @@ static void voutf(const char *prefix,
  */
 void notef(const char *fmt, ...)
 {
-  va_list ap;
-  va_start(ap, fmt);
-  if(global->tracetype)
+  if(global->tracetype) {
+    va_list ap;
+    va_start(ap, fmt);
     voutf(NOTE_PREFIX, fmt, ap);
-  va_end(ap);
+    va_end(ap);
+  }
 }
 
 /*
@@ -103,10 +92,12 @@ void notef(const char *fmt, ...)
  */
 void warnf(const char *fmt, ...)
 {
-  va_list ap;
-  va_start(ap, fmt);
-  voutf(WARN_PREFIX, fmt, ap);
-  va_end(ap);
+  if(!global->silent) {
+    va_list ap;
+    va_start(ap, fmt);
+    voutf(WARN_PREFIX, fmt, ap);
+    va_end(ap);
+  }
 }
 
 /*
@@ -120,15 +111,15 @@ void helpf(const char *fmt, ...)
     va_start(ap, fmt);
     DEBUGASSERT(!strchr(fmt, '\n'));
     fputs("curl: ", tool_stderr); /* prefix it */
-    vfprintf(tool_stderr, fmt, ap);
+    curl_mvfprintf(tool_stderr, fmt, ap);
     va_end(ap);
     fputs("\n", tool_stderr); /* newline it */
   }
-  fprintf(tool_stderr, "curl: try 'curl --help' "
+  curl_mfprintf(tool_stderr, "curl: try 'curl --help' "
 #ifdef USE_MANUAL
-          "or 'curl --manual' "
+                             "or 'curl --manual' "
 #endif
-          "for more information\n");
+                             "for more information\n");
 }
 
 /*

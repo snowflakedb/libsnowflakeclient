@@ -135,21 +135,12 @@
 #  endif
 
 #elif defined(UNDER_CE)
-#  ifdef __MINGW32CE__
-#    define CURL_TYPEOF_CURL_OFF_T     long long
-#    define CURL_FORMAT_CURL_OFF_T     "lld"
-#    define CURL_FORMAT_CURL_OFF_TU    "llu"
-#    define CURL_SUFFIX_CURL_OFF_T     LL
-#    define CURL_SUFFIX_CURL_OFF_TU    ULL
-#    define CURL_TYPEOF_CURL_SOCKLEN_T int
-#  else
-#    define CURL_TYPEOF_CURL_OFF_T     __int64
-#    define CURL_FORMAT_CURL_OFF_T     "I64d"
-#    define CURL_FORMAT_CURL_OFF_TU    "I64u"
-#    define CURL_SUFFIX_CURL_OFF_T     i64
-#    define CURL_SUFFIX_CURL_OFF_TU    ui64
-#    define CURL_TYPEOF_CURL_SOCKLEN_T int
-#  endif
+#  define CURL_TYPEOF_CURL_OFF_T     __int64
+#  define CURL_FORMAT_CURL_OFF_T     "I64d"
+#  define CURL_FORMAT_CURL_OFF_TU    "I64u"
+#  define CURL_SUFFIX_CURL_OFF_T     i64
+#  define CURL_SUFFIX_CURL_OFF_TU    ui64
+#  define CURL_TYPEOF_CURL_SOCKLEN_T int
 
 #elif defined(__MINGW32__)
 #  include <inttypes.h>
@@ -376,20 +367,20 @@
 #define CURL_PULL_SYS_POLL_H
 #endif
 
-/* CURL_PULL_SYS_TYPES_H is defined above when inclusion of header file  */
-/* sys/types.h is required here to properly make type definitions below. */
+/* CURL_PULL_SYS_TYPES_H is defined above when inclusion of header file
+   sys/types.h is required here to properly make type definitions below. */
 #ifdef CURL_PULL_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
 
-/* CURL_PULL_SYS_SOCKET_H is defined above when inclusion of header file  */
-/* sys/socket.h is required here to properly make type definitions below. */
+/* CURL_PULL_SYS_SOCKET_H is defined above when inclusion of header file
+   sys/socket.h is required here to properly make type definitions below. */
 #ifdef CURL_PULL_SYS_SOCKET_H
 #  include <sys/socket.h>
 #endif
 
-/* CURL_PULL_SYS_POLL_H is defined above when inclusion of header file    */
-/* sys/poll.h is required here to properly make type definitions below.   */
+/* CURL_PULL_SYS_POLL_H is defined above when inclusion of header file
+   sys/poll.h is required here to properly make type definitions below. */
 #ifdef CURL_PULL_SYS_POLL_H
 #  include <sys/poll.h>
 #endif

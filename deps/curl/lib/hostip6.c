@@ -21,7 +21,6 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
 #include "curl_setup.h"
 
 /***********************************************************************
@@ -45,35 +44,14 @@
 
 #include "urldata.h"
 #include "cfilters.h"
-#include "sendf.h"
+#include "curl_addrinfo.h"
+#include "curl_trc.h"
 #include "hostip.h"
-#include "hash.h"
-#include "share.h"
 #include "url.h"
 #include "curlx/inet_pton.h"
 #include "connect.h"
-/* The last 3 #include files should be in this order */
-#include "curl_printf.h"
-#include "curl_memory.h"
-#include "memdebug.h"
 
 #ifdef CURLRES_SYNCH
-
-#ifdef DEBUG_ADDRINFO
-static void dump_addrinfo(const struct Curl_addrinfo *ai)
-{
-  printf("dump_addrinfo:\n");
-  for(; ai; ai = ai->ai_next) {
-    char buf[INET6_ADDRSTRLEN];
-    printf("    fam %2d, CNAME %s, ",
-           ai->ai_family, ai->ai_canonname ? ai->ai_canonname : "<none>");
-    Curl_printable_address(ai, buf, sizeof(buf));
-    printf("%s\n", buf);
-  }
-}
-#else
-#define dump_addrinfo(x) Curl_nop_stmt
-#endif
 
 /*
  * Curl_sync_getaddrinfo() when built IPv6-enabled (non-threading and
@@ -122,7 +100,7 @@ struct Curl_addrinfo *Curl_sync_getaddrinfo(struct Curl_easy *data,
 #endif
 
   if(port) {
-    msnprintf(sbuf, sizeof(sbuf), "%d", port);
+    curl_msnprintf(sbuf, sizeof(sbuf), "%d", port);
     sbufptr = sbuf;
   }
 
@@ -135,8 +113,6 @@ struct Curl_addrinfo *Curl_sync_getaddrinfo(struct Curl_easy *data,
   if(port) {
     Curl_addrinfo_set_port(res, port);
   }
-
-  dump_addrinfo(res);
 
   return res;
 }
