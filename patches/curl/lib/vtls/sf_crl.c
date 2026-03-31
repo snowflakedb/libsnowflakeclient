@@ -1,4 +1,5 @@
 #include "curl_setup.h"
+#include "curl_trc.h"
 #include "urldata.h"
 #include "sendf.h"
 #include "sf_ocsp.h"

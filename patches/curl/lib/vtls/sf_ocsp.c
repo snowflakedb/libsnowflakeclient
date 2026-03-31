@@ -42,6 +42,7 @@
 #include <Shellapi.h>
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define access _access
 
 typedef HANDLE SF_THREAD_HANDLE;
 typedef CONDITION_VARIABLE SF_CONDITION_HANDLE;
@@ -65,9 +66,8 @@ typedef pthread_mutex_t SF_MUTEX_HANDLE;
 #define PATH_SEP "/"
 #endif
 
+#include "curl_trc.h"
 #include "curlx/base64.h"
-#include "curl_memory.h"
-#include "memdebug.h"
 #include "sf_ocsp_telemetry_data.h"
 
 #ifdef _WIN32
@@ -345,7 +345,7 @@ CURLcode encodeUrlData(const char *url_data, size_t data_size, char** outptr, si
   size_t enc_len = 0;
   size_t pos = 0;
 
-  encode_buf = (char*)malloc(buf_cap);
+  encode_buf = (char*)curlx_malloc(buf_cap);
   if(!encode_buf)
   {
     return CURLE_OUT_OF_MEMORY;

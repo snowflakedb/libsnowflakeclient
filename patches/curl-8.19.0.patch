@@ -297,7 +297,7 @@ index 8e8b5070cc..05c3d71944 100644
 -	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) $(CSOURCES) $(HHEADERS))
 +	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) \
 +	-Wvtls/sf_cJSON.c -Wvtls/sf_cJSON.h -Wvtls/sf_ocsp.c -Wvtls/sf_ocsp.h \
-+	-Wvtls/sf_crl.c -Wvtls/sf_crl.h $(CSOURCES) $(HHEADERS))
++	-Wvtls/sf_crl.c -Wvtls/sf_crl.h -Wcurl_addrinfo.c $(CSOURCES) $(HHEADERS))
  
  all-local: $(CHECKSOURCES)
  
@@ -658,7 +658,7 @@ index 50bf1e0476..e9c870209d 100644
  static void infof_certstack(struct Curl_easy *data, const SSL *ssl)
  {
    STACK_OF(X509) *certstack;
-@@ -4802,6 +4867,54 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
+@@ -4802,6 +4867,53 @@ CURLcode Curl_ossl_check_peer_cert(struct Curl_cfilter *cf,
    infof_certstack(data, octx->ssl);
  #endif
  
@@ -670,7 +670,7 @@ index 50bf1e0476..e9c870209d 100644
 +    /* Prefer the verified chain if available to ensure correct issuer pairing
 +       for cross-signed chains; fall back to peer-provided chain otherwise. */
 +    infof(data, "OCSP: preferring verified chain for issuer determination");
-+#if defined(CURL_HAS_VERIFIED_CHAIN)
++#ifdef CURL_HAS_VERIFIED_CHAIN
 +    {
 +      STACK_OF(X509) *verified = SSL_get0_verified_chain(octx->ssl);
 +      bool used_verified = false;
@@ -703,7 +703,6 @@ index 50bf1e0476..e9c870209d 100644
 +                             conn_config->sf_ocsp_failopen,
 +                             conn_config->sf_oob_enable);
 +      if(result) {
-+        BIO_free(mem);
 +        return result;
 +      }
 +    }
