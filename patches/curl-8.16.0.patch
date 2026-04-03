@@ -3352,6 +3352,12 @@ index 0000000000..6514b57aad
 +  STACK_OF(OPENSSL_STRING) *ocsp_list = NULL;
 +  const EVP_MD *cert_id_md = EVP_sha1();
 +
++  if (!cert || !issuer)
++  {
++    failf(data, "OCSP: cannot create cert ID — cert or issuer is NULL");
++    return NULL;
++  }
++
 +  /* get certid first */
 +  certid = OCSP_cert_to_id(cert_id_md, cert, issuer);
 +  resp = findOCSPRespInMem(certid, data, ocsp_log_data);
@@ -4214,6 +4220,14 @@ index 0000000000..6514b57aad
 +  {
 +    X509* cert = sk_X509_value(ch, i);
 +    X509* issuer = sk_X509_value(ch, i+1);
++
++    if (!cert || !issuer)
++    {
++      failf(data, "OCSP: certificate at index %d or its issuer is NULL "
++            "(chain length=%d)", i, numcerts);
++      rs = CURLE_PEER_FAILED_VERIFICATION;
++      goto end;
++    }
 +
 +    rs = checkOneCert(cert, issuer, ch, st, ocsp_fail_open, conn, data, &ocsp_log_data, oob_enable, last_timeout_host);
 +    if (rs != CURLE_OK)
