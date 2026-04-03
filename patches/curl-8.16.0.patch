@@ -1568,7 +1568,7 @@ new file mode 100644
 index 0000000000..6514b57aad
 --- /dev/null
 +++ b/deps/curl/lib/vtls/sf_ocsp.c
-@@ -0,0 +1,2657 @@
+@@ -0,0 +1,2671 @@
 +#include "curl_setup.h"
 +
 +#include "urldata.h"
