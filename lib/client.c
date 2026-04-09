@@ -3736,6 +3736,12 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             } else {
                 log_debug("No code element.");
             }
+
+            //setup queryContext on the failure query.
+            _mutex_lock(&sfstmt->connection->mutex_parameters);
+             qcc_deserialize(sfstmt->connection, snowflake_cJSON_GetObjectItem(resp, SF_QCC_RSP_KEY));
+            _mutex_unlock(&sfstmt->connection->mutex_parameters);
+
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                      message ? message
                                              : "Query was not successful",

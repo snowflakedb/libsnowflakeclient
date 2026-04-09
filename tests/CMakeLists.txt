@@ -87,6 +87,7 @@ SET(TESTS_CXX
         test_manual_wif
         test_create_wif_attestation
         test_crl
+        test_query_context_cache
 )
 
 if (LINUX)
