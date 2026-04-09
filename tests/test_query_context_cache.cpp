@@ -24,7 +24,7 @@ void test_handle_qcc_on_failure_query(void** unused)
 
     /* execute a DML */
     sfstmt = snowflake_stmt(sf);
-    /*
+    
     status = snowflake_query(
         sfstmt,
         "CREATE OR REPLACE HYBRID TABLE tkv (k NUMBER PRIMARY KEY, v VARCHAR);",
@@ -33,7 +33,7 @@ void test_handle_qcc_on_failure_query(void** unused)
     if (status != SF_STATUS_SUCCESS) {
         dump_error(&(sfstmt->error));
     }
-    assert_int_equal(qcc->getSize(), 1);*/
+    assert_int_equal(qcc->getSize(), 1);
 
     status = snowflake_query(
         sfstmt,
@@ -78,6 +78,16 @@ void test_handle_qcc_on_failure_query(void** unused)
     }
     assert_int_equal(status, SF_STATUS_SUCCESS);
     assert_int_equal(qcc->getSize(), 2);
+
+    status = snowflake_query(
+        sfstmt,
+        "drop table if exists t",
+        0
+    );
+    if (status != SF_STATUS_SUCCESS) {
+        dump_error(&(sfstmt->error));
+    }
+    assert_int_equal(status, SF_STATUS_SUCCESS);
 
     snowflake_stmt_term(sfstmt);
     snowflake_term(sf); // purge snowflake context
