@@ -281,19 +281,20 @@ checkDefaultURLDomain(char *host, char *port, char *cacert)
 
 int main(int argc, char **argv)
 {
-    char cacert[4096];
-    char host[4096];
-    char port[100] = "443";
-    int c;
-
-    char cache_file[4096];
-
+    // TODO: Reenable after SNOW-3355426 is completed
     char *cloud_provider = getenv("CLOUD_PROVIDER");
     if (cloud_provider && strcmp(cloud_provider, "AWS") == 0)
     {
         printf("Skipping test_ocsp on AWS CI\n");
         return 0;
     }
+
+    char cacert[4096];
+    char host[4096];
+    char port[100] = "443";
+    int c;
+
+    char cache_file[4096];
 
     host[0] = (char) 0;
     if (getenv("SNOWFLAKE_TEST_HOST"))
