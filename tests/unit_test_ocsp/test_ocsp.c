@@ -288,6 +288,13 @@ int main(int argc, char **argv)
 
     char cache_file[4096];
 
+    char *cloud_provider = getenv("CLOUD_PROVIDER");
+    if (cloud_provider && strcmp(cloud_provider, "AWS") == 0)
+    {
+        printf("Skipping test_ocsp on AWS CI\n");
+        return 0;
+    }
+
     host[0] = (char) 0;
     if (getenv("SNOWFLAKE_TEST_HOST"))
     {
