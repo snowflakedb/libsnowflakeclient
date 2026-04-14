@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_BUILD_VERSION=3
+set CURL_BUILD_VERSION=4
 call %*
 goto :EOF
 
