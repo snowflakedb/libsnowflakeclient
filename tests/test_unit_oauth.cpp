@@ -2,12 +2,14 @@
 #include "snowflake/SFURL.hpp"
 #include "../lib/connection.h"
 #include "../lib/authenticator.h"
-#include "../cpp/lib/AuthenticatorOAuth.hpp"
+#include "../cpp/lib/Authenticator.hpp"
+#include "snowflake/IAuth.hpp"
 #include "utils/test_setup.h"
 #include "utils/TestSetup.hpp"
 #include "memory.h"
 
 using namespace Snowflake::Client;
+using namespace Snowflake::Client::IAuth;
 
 
 /*
@@ -70,7 +72,6 @@ class OAuthTokenListenerWebServerMock : public OAuthTokenListenerWebServer {
 public:
     OAuthTokenListenerWebServerMock() : OAuthTokenListenerWebServer() {}
     std::string getToken() override { return std::string("authorisationCode123"); }
-    void startAccept() override {}
     void startAccept(std::string state) override {
         SF_UNUSED(state);
     }
