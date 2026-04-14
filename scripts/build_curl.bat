@@ -3,7 +3,7 @@
 :: GitHub repo: https://github.com/curl/curl.git
 
 @echo off
-set CURL_BUILD_VERSION=4
+set CURL_BUILD_VERSION=2
 call %*
 goto :EOF
 
@@ -80,10 +80,10 @@ set CURL_SOURCE_DIR=%DEPS_DIR%\%CURL_DIR%
 set CURL_SRC_VERSION_GIT=%CURL_SRC_VERSION:.=_%
 
 rd /S /Q %CURL_SOURCE_DIR%
-curl https://curl.se/download/curl-8.16.0.zip -o %DEPS_DIR%\curl-8.16.0.zip
+curl https://curl.se/download/curl-%CURL_SRC_VERSION%.zip -o %DEPS_DIR%\curl-%CURL_SRC_VERSION%.zip
 pushd %DEPS_DIR%
-  powershell -Command "Expand-Archive -Path .\curl-8.16.0.zip -DestinationPath ."
-  move curl-8.16.0 curl
+  powershell -Command "Expand-Archive -Path .\curl-%CURL_SRC_VERSION%.zip -DestinationPath ."
+  move curl-%CURL_SRC_VERSION% curl
 popd
 pushd %DEPS_DIR%\..\
   FOR /F "tokens=*" %%i IN ('git config user.name') do (set GIT_USERNAME="%%i")
@@ -99,6 +99,8 @@ pushd %DEPS_DIR%\..\
   git reset HEAD~1
   git config user.name %GIT_USERNAME%
   git config user.email %GIT_USER_EMAIL%
+:: copy the custom source files we added
+  xcopy patches\curl deps\curl /Y /s /i
 popd
 
 echo === staging openssl and zlib for curl
