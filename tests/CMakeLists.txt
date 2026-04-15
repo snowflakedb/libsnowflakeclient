@@ -87,7 +87,7 @@ SET(TESTS_CXX
         test_manual_wif
         test_create_wif_attestation
         test_crl
-        test_query_context_cache
+        #test_query_context_cache_with_bad_query
 )
 
 if (LINUX)
@@ -413,5 +413,6 @@ if (LINUX AND NOT MOCK)
     add_subdirectory(test_platform_detection)
     add_subdirectory(test_usr_pwd_mfa)
     add_subdirectory(test_default_auth)
+    add_subdirectory(test_qcc)
 endif()
 add_subdirectory(test_bind_datastructures)
