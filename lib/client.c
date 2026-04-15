@@ -3721,6 +3721,7 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             cJSON *messageJson = NULL;
             char *message = NULL;
             cJSON *codeJson = NULL;
+            cJSON *qcc_json = NULL;
             int64 code = -1;
             if (json_copy_string_no_alloc(sfstmt->error.sqlstate, data,
                                           "sqlState", SF_SQLSTATE_LEN)) {
@@ -3736,6 +3737,15 @@ static SF_STATUS _snowflake_execute_with_binds_ex(SF_STMT* sfstmt,
             } else {
                 log_debug("No code element.");
             }
+
+            /* Omitting queryContext must not clear QCC (deserialize treats NULL as clear). */
+            qcc_json = snowflake_cJSON_GetObjectItem(data, SF_QCC_RSP_KEY);
+            if (qcc_json && snowflake_cJSON_IsObject(qcc_json)) {
+                _mutex_lock(&sfstmt->connection->mutex_parameters);
+                qcc_deserialize(sfstmt->connection, qcc_json);
+                _mutex_unlock(&sfstmt->connection->mutex_parameters);
+            }
+
             SET_SNOWFLAKE_STMT_ERROR(&sfstmt->error, code,
                                      message ? message
                                              : "Query was not successful",
