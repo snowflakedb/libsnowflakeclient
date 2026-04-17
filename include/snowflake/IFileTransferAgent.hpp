@@ -33,6 +33,9 @@ struct TransferConfig
 
 class IFileTransferAgent
 {
+private:
+    bool m_logQueryText = false;
+
 public:
 
   virtual ~IFileTransferAgent() {};
@@ -113,10 +116,6 @@ public:
   {
       return m_logQueryText ? (!command->empty() ? command->c_str() : "") : "****";
   }
-
-private:
-    bool m_logQueryText = false;
-
 
 };
 
