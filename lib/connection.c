@@ -77,6 +77,9 @@ cJSON *STDCALL create_auth_json_body(SF_CONNECT *sf,
     if (sf->user && *(sf->user)) {
         snowflake_cJSON_AddStringToObject(data, "LOGIN_NAME", sf->user);
     }
+
+    appendSPCSToken(data);
+
     // Add password if one exists
     if (sf->password && *(sf->password)) {
         snowflake_cJSON_AddStringToObject(data, "PASSWORD", sf->password);

@@ -2,11 +2,14 @@
 #include <string.h>
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <iterator>
 #include <curl/curl.h>
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
 #include <boost/algorithm/string.hpp>
-#include "snowflake/basic_types.h"
+#include "snowflake/client.h"
+#include "../lib/connection.h"
 #include "snowflake/platform.h"
 #include "snowflake/Proxy.hpp"
 #include "../logger/SFLogger.hpp"
@@ -170,7 +173,46 @@ cJSON * get_detected_platforms(long timeoutms)
   return NULL;
 }
 
+
+void appendSPCSToken(cJSON* data)
+{
+    char envBuf[MAX_PATH + 1];
+    char* spcsEnv = sf_getenv_s(SF_SPCS_ENV_VAR, envBuf, sizeof(envBuf));
+
+    if (!spcsEnv)
+    {
+        return;
+    }
+
+    try
+    {
+        std::ifstream spcsTokenFile(SF_DEFAULT_SPCS_TOKEN_PATH);
+        if (!spcsTokenFile)
+        {
+            CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token : unable to open file at %s", SF_DEFAULT_SPCS_TOKEN_PATH);
+            return;
+        }
+
+        std::string spcsToken((std::istreambuf_iterator(spcsTokenFile)),
+            std::istreambuf_iterator<char>());
+        if (!spcsToken.empty())
+        {
+            snowflake_cJSON_AddStringToObject(data, "SPCS_TOKEN", spcsToken.c_str());
+        }
+    }
+    catch (const std::exception& e)
+    {
+        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: %s", SF_DEFAULT_SPCS_TOKEN_PATH, e.what());
+
+    }
+    catch (...)
+    {
+        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: unknown error", SF_DEFAULT_SPCS_TOKEN_PATH);
+
+    }
 }
+
+} // extern "C"
 
 void Snowflake::Client::Util::replaceStrAll(std::string& stringToReplace,
   std::string const& oldValue,

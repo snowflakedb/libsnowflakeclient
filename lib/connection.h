@@ -704,6 +704,8 @@ size_t non_json_resp_write_callback(char* ptr, size_t size, size_t nmemb, void* 
 sf_bool is_password_required(AuthenticatorType auth);
 
 sf_bool is_secure_storage_auth(AuthenticatorType auth);
+
+void appendSPCSToken(cJSON* data);
 #ifdef __cplusplus
 }
 #endif
