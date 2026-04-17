@@ -888,7 +888,7 @@ std::string Snowflake::Client::FileTransferAgent::getLocalFilePathFromCommand(
 {
   if (std::string::npos == command.find(FILE_PROTOCOL))
   {
-    CXX_LOG_ERROR("file:// prefix not found in command %s", m_logQueryText ? command.c_str() : "****");
+    CXX_LOG_ERROR("file:// prefix not found in command %s", logCommand(command));
     throw SnowflakeTransferException(TransferError::INTERNAL_ERROR,
       "file:// prefix not found in command.");
   }

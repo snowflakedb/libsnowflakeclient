@@ -112,9 +112,15 @@ public:
   {
       return m_logQueryText;
   };
+
   virtual const char* logCommand(std::string* command)
   {
       return m_logQueryText ? (!command->empty() ? command->c_str() : "") : "****";
+  }
+
+  virtual const char* logCommand(const std::string& command)
+  {
+      return m_logQueryText ? (!command.empty() ? command.c_str() : "") : "****";
   }
 
 };
