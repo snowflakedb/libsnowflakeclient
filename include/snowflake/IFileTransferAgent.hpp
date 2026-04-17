@@ -107,7 +107,7 @@ public:
 
   virtual bool getLogQueryText()
   {
-      return m_logQueryText
+      return m_logQueryText;
   };
   virtual const char* logCommand(std::string* command)
   {
