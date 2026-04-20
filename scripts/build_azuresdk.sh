@@ -34,6 +34,7 @@ else
     azure_configure_opts+=("-DCMAKE_BUILD_TYPE=Release")
 fi
 azure_configure_opts+=(
+    "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_C_COMPILER=$CC"
     "-DCMAKE_CXX_COMPILER=$CXX"
