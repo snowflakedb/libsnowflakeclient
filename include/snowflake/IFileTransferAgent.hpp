@@ -33,9 +33,10 @@ struct TransferConfig
 
 class IFileTransferAgent
 {
-public:
+private:
+    bool m_logQueryText = false;
 
-  bool m_logQueryText = false;
+public:
 
   virtual ~IFileTransferAgent() {};
   /**
@@ -107,9 +108,19 @@ public:
       m_logQueryText = logQueryText;
   };
 
+  virtual bool getLogQueryText()
+  {
+      return m_logQueryText;
+  };
+
   virtual const char* logCommand(std::string* command)
   {
-      return m_logQueryText ? command->c_str() : "****";
+      return m_logQueryText ? (!command->empty() ? command->c_str() : "") : "****";
+  }
+
+  virtual const char* logCommand(const std::string& command)
+  {
+      return m_logQueryText ? (!command.empty() ? command.c_str() : "") : "****";
   }
 
 };
