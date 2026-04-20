@@ -174,7 +174,7 @@ cJSON * get_detected_platforms(long timeoutms)
 }
 
 
-void appendSPCSToken(cJSON* data)
+void appendSPCSToken(cJSON* data, const char* spcs_token_path)
 {
     char envBuf[MAX_PATH + 1];
     char* spcsEnv = sf_getenv_s(SF_SPCS_ENV_VAR, envBuf, sizeof(envBuf));
@@ -186,15 +186,17 @@ void appendSPCSToken(cJSON* data)
 
     try
     {
-        std::ifstream spcsTokenFile(SF_DEFAULT_SPCS_TOKEN_PATH);
+        std::ifstream spcsTokenFile(spcs_token_path);
         if (!spcsTokenFile)
         {
-            CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token : unable to open file at %s", SF_DEFAULT_SPCS_TOKEN_PATH);
+            CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token : unable to open file at %s", spcs_token_path);
             return;
         }
 
         std::string spcsToken((std::istreambuf_iterator(spcsTokenFile)),
             std::istreambuf_iterator<char>());
+        boost::algorithm::trim(spcsToken);
+
         if (!spcsToken.empty())
         {
             snowflake_cJSON_AddStringToObject(data, "SPCS_TOKEN", spcsToken.c_str());
@@ -202,12 +204,12 @@ void appendSPCSToken(cJSON* data)
     }
     catch (const std::exception& e)
     {
-        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: %s", SF_DEFAULT_SPCS_TOKEN_PATH, e.what());
+        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: %s", spcs_token_path, e.what());
 
     }
     catch (...)
     {
-        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: unknown error", SF_DEFAULT_SPCS_TOKEN_PATH);
+        CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: unknown error", spcs_token_path);
 
     }
 }

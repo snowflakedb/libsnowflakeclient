@@ -705,7 +705,7 @@ sf_bool is_password_required(AuthenticatorType auth);
 
 sf_bool is_secure_storage_auth(AuthenticatorType auth);
 
-void appendSPCSToken(cJSON* data);
+void appendSPCSToken(cJSON* data, const char* spcs_token_path);
 #ifdef __cplusplus
 }
 #endif
