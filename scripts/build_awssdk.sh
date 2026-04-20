@@ -53,6 +53,7 @@ aws_configure_opts+=(
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
     "-DENABLE_TESTING=OFF"
     "-DENABLE_CURL_LOGGING=OFF"
+    "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE"
 #disable CPU extentsions to fix build error on Linux
 #CPU extentsions might not be always available on all customer environments
     "-DUSE_CPU_EXTENSIONS=OFF"
@@ -100,14 +101,11 @@ mkdir $AWS_CMAKE_BUILD_DIR
 
 # Keep GIT_DIR for the issue https://github.com/aws/aws-sdk-cpp/issues/383
 export GIT_DIR=/tmp
-# Prevent pyenv shims from hanging when resolving Python versions not installed via pyenv
-export PYENV_VERSION=system
 
 cd $AWS_CMAKE_BUILD_DIR
 $CMAKE -E env CXXFLAGS=$ADDITIONAL_CXXFLAGS $CMAKE ${aws_configure_opts[@]} ../
 
 unset GIT_DIR
-unset PYENV_VERSION
 
 make
 make install
