@@ -10,10 +10,6 @@
 #include <boost/filesystem.hpp>
 #include <sys/stat.h>
 
-/**
- * Test json body is properly updated.
- */
-
 char* spcs_env;
 
 int setup(void **)
@@ -113,29 +109,13 @@ void test_json_data_not_in_spcs(void** unused)
     sf_unsetenv(SF_SPCS_ENV_VAR);
     SpcsToken spcsToken(expectedToken, spcsTokenPath);
 
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->authenticator = SF_AUTHENTICATOR_DEFAULT;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-
-    cJSON* body = create_auth_json_body(
-        sf,
-        sf->application,
-        sf->application_name,
-        sf->application_version,
-        sf->timezone,
-        sf->autocommit);
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    cJSON* data = snowflake_cJSON_CreateObject();
     appendSPCSToken(data, spcsTokenPath.c_str());
 
     assert_null(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN")));
-    SF_FREE(sf);
 
     sf_setenv(SF_SPCS_ENV_VAR, "true");
+    snowflake_cJSON_Delete(data);
 }
 
 void test_json_data_with_spcs_token_absent(void **unused)
@@ -148,27 +128,13 @@ void test_json_data_with_spcs_token_absent(void **unused)
 #endif
 
     SF_UNUSED(unused);
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->authenticator = SF_AUTHENTICATOR_DEFAULT;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
 
-    cJSON *body =  create_auth_json_body(
-        sf,
-        sf->application,
-        sf->application_name,
-        sf->application_version,
-        sf->timezone,
-        sf->autocommit);
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    cJSON* data = snowflake_cJSON_CreateObject();
     appendSPCSToken(data, spcsTokenPath.c_str());
 
     assert_null(snowflake_cJSON_GetStringValue(snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN")));
-    SF_FREE(sf);
+
+    snowflake_cJSON_Delete(data);
 }
 
 void test_json_data_with_spcs_token_present(void **unused)
@@ -184,33 +150,14 @@ void test_json_data_with_spcs_token_present(void **unused)
 
     SpcsToken spcsToken(expectedToken, spcsTokenPath);
 
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->authenticator = SF_AUTHENTICATOR_DEFAULT;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-
-    // Test 1: Without override, APPLICATION_PATH should be auto-detected
-    // (In mock mode it will be "/app/path")
-    cJSON *body = create_auth_json_body(
-        sf,
-        sf->application,
-        sf->application_name,
-        sf->application_version,
-        sf->timezone,
-        sf->autocommit);
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    cJSON* data = snowflake_cJSON_CreateObject();
     appendSPCSToken(data, spcsTokenPath.c_str());
 
     cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_non_null(spcsTokenJson);
-
     assert_string_equal(spcsTokenJson->valuestring, expectedToken.c_str());
 
-    SF_FREE(sf);
+    snowflake_cJSON_Delete(data);
 }
 
 void test_json_data_with_spcs_token_with_white_space(void** unused)
@@ -226,32 +173,13 @@ void test_json_data_with_spcs_token_with_white_space(void** unused)
     const std::string expectedToken = "spcs-token-value";
     SpcsToken spcsToken(rawToken, spcsTokenPath);
 
-
-    SF_CONNECT* sf = (SF_CONNECT*)SF_CALLOC(1, sizeof(SF_CONNECT));
-    sf->account = "testaccount";
-    sf->host = "testaccount.snowflakecomputing.com";
-    sf->user = "testuser";
-    sf->password = "testpassword";
-    sf->authenticator = SF_AUTHENTICATOR_DEFAULT;
-    sf->application_name = SF_API_NAME;
-    sf->application_version = SF_API_VERSION;
-
-    cJSON* body = create_auth_json_body(
-        sf,
-        sf->application,
-        sf->application_name,
-        sf->application_version,
-        sf->timezone,
-        sf->autocommit);
-    cJSON* data = snowflake_cJSON_GetObjectItem(body, "data");
+    cJSON* data = snowflake_cJSON_CreateObject();
     appendSPCSToken(data, spcsTokenPath.c_str());
 
     cJSON* spcsTokenJson = snowflake_cJSON_GetObjectItem(data, "SPCS_TOKEN");
     assert_non_null(spcsTokenJson);
-
     assert_string_equal(spcsTokenJson->valuestring, expectedToken.c_str());
-
-    SF_FREE(sf);
+    snowflake_cJSON_Delete(data);
 }
 
 int main(void)

@@ -193,8 +193,7 @@ void appendSPCSToken(cJSON* data, const char* spcs_token_path)
             return;
         }
 
-        std::string spcsToken((std::istreambuf_iterator(spcsTokenFile)),
-            std::istreambuf_iterator<char>());
+        std::string spcsToken((std::istreambuf_iterator(spcsTokenFile)), std::istreambuf_iterator<char>());
         boost::algorithm::trim(spcsToken);
 
         if (!spcsToken.empty())
@@ -205,12 +204,10 @@ void appendSPCSToken(cJSON* data, const char* spcs_token_path)
     catch (const std::exception& e)
     {
         CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: %s", spcs_token_path, e.what());
-
     }
     catch (...)
     {
         CXX_LOG_DEBUG("sf::SnowflakeUtil::appendSPCSToken::Failed to read SPCS token at %s: unknown error", spcs_token_path);
-
     }
 }
 

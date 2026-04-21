@@ -1,12 +1,5 @@
 #include "../../lib/snowflake_cpp_util.h"
 #include "../include/snowflake/SFURL.hpp"
-#include "../cpp/logger/SFLogger.hpp"
-#include "snowflake/client.h"
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>\
-#include <iterator>
-#include <fstream>
-
 
 namespace Snowflake
 {
@@ -54,6 +47,6 @@ namespace Client
 				parsed_url1.host() == parsed_url2.host() &&
 				parsed_url1.port() == parsed_url2.port();
 		}
-	} // extern C
+	}
 } // namespace Client
 } // namespace Snowflake
