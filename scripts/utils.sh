@@ -214,7 +214,7 @@ function set_parameters()
 }
 
 # Decrypts the cloud-specific RSA private key used for keypair (JWT)
-# authentication. The key passphrase is taken from CAPI_PRIVATE_KEY_SECRET, with
+# authentication. The key passphrase is taken from PRIVATEKEY_CSP_KEY, with
 # PARAMETERS_SECRET as a fallback for environments that share a single secret.
 # A missing source file is not fatal so the password-based flow keeps working
 # until the encrypted keys are added.
@@ -228,15 +228,25 @@ function decrypt_rsa_key()
         return 0
     fi
 
-    local rsa_secret=${CAPI_PRIVATE_KEY_SECRET:-$PARAMETERS_SECRET}
+    local rsa_secret=${PRIVATEKEY_CSP_KEY:-$PARAMETERS_SECRET}
     if [[ -z "$rsa_secret" ]]; then
-        echo "[WARN] Neither CAPI_PRIVATE_KEY_SECRET nor PARAMETERS_SECRET is set, skipping keypair setup."
+        echo "[WARN] Neither PRIVATEKEY_CSP_KEY nor PARAMETERS_SECRET is set, skipping keypair setup."
         return 0
     fi
 
+    local secret_source="PRIVATEKEY_CSP_KEY"
+    if [[ -z "$PRIVATEKEY_CSP_KEY" ]]; then
+        secret_source="PARAMETERS_SECRET (fallback; PRIVATEKEY_CSP_KEY not set)"
+    fi
+
     mkdir -p "$(dirname "$target_rsa_key")"
-    gpg --quiet --batch --yes --decrypt --passphrase="$rsa_secret" --output "$target_rsa_key" "$source_rsa_key"
+    if ! gpg --quiet --batch --yes --decrypt --passphrase="$rsa_secret" --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
+        echo "[ERROR] gpg failed to decrypt $source_rsa_key using $secret_source."
+        echo "[ERROR] Verify that the GitHub Actions secret matches the passphrase used to encrypt the file."
+        rm -f "$target_rsa_key"
+        return 1
+    fi
     chmod 600 "$target_rsa_key" 2>/dev/null || true
-    echo "[INFO] Decrypted RSA key to $target_rsa_key"
+    echo "[INFO] Decrypted RSA key to $target_rsa_key (passphrase from $secret_source)"
 }
 
