@@ -207,8 +207,9 @@ goto :EOF
     setlocal EnableDelayedExpansion
     @echo off
     set scriptdir=%~dp0
-    set rsakeydir=%scriptdir%..\.github\workflows\rsa_keys
-    set encrypted_rsa_key=
+    set source_rsa_dir=%scriptdir%..\.github\workflows\rsa_keys
+    set target_rsa_dir=%scriptdir%..\rsa_keys
+    set rsa_key_basename=
 
     if /I "%CLOUD_PROVIDER%"=="AWS" (
         echo == AWS
@@ -216,10 +217,10 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_aws.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_aws
         endlocal
         set CLOUD_PROVIDER=AWS
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_aws.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_aws
     )
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
@@ -227,10 +228,10 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_azure.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_azure
         endlocal
         set CLOUD_PROVIDER=AZURE
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_azure.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_azure
     )
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
@@ -238,10 +239,10 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_gcp.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_gcp
         endlocal
         set CLOUD_PROVIDER=GCP
-        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_gcp.p8.gpg
+        set rsa_key_basename=rsa_key_libsfclient_gcp
     )
     if defined CLOUD_PROVIDER (
         echo === Cloud Provider: %CLOUD_PROVIDER%
@@ -249,24 +250,29 @@ goto :EOF
         echo === No CLOUD_PROVIDER is set.
     )
 
-    if defined encrypted_rsa_key (
-        if exist "%encrypted_rsa_key%" (
+    set source_rsa_dir=%scriptdir%..\.github\workflows\rsa_keys
+    set target_rsa_dir=%scriptdir%..\rsa_keys
+    if defined rsa_key_basename (
+        set encrypted_rsa_key=%source_rsa_dir%\%rsa_key_basename%.json.gpg
+        set decrypted_rsa_key=%target_rsa_dir%\%rsa_key_basename%.p8
+        if exist "!encrypted_rsa_key!" (
             set rsa_secret=%CAPI_PRIVATE_KEY_SECRET%
             if not defined rsa_secret set rsa_secret=%PARAMETERS_SECRET%
             if defined rsa_secret (
-                gpg --quiet --batch --yes --decrypt --passphrase="%rsa_secret%" ^
-                  --output %scriptdir%..\rsa_key.p8 ^
-                  "%encrypted_rsa_key%"
+                if not exist "%target_rsa_dir%" mkdir "%target_rsa_dir%"
+                gpg --quiet --batch --yes --decrypt --passphrase="!rsa_secret!" ^
+                  --output "!decrypted_rsa_key!" ^
+                  "!encrypted_rsa_key!"
                 if %ERRORLEVEL% NEQ 0 (
-                    echo [WARN] Failed to decrypt %encrypted_rsa_key%, skipping keypair setup.
+                    echo [WARN] Failed to decrypt !encrypted_rsa_key!, skipping keypair setup.
                 ) else (
-                    echo [INFO] Decrypted RSA key to %scriptdir%..\rsa_key.p8
+                    echo [INFO] Decrypted RSA key to !decrypted_rsa_key!
                 )
             ) else (
                 echo [WARN] Neither CAPI_PRIVATE_KEY_SECRET nor PARAMETERS_SECRET is set, skipping keypair setup.
             )
         ) else (
-            echo [WARN] No RSA key file found at %encrypted_rsa_key%, skipping keypair setup.
+            echo [WARN] No RSA key file found at !encrypted_rsa_key!, skipping keypair setup.
         )
     )
     goto :EOF

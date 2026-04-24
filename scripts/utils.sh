@@ -180,22 +180,23 @@ function set_parameters()
 
     local repo_root="$UTILS_DIR/.."
     local params_dir="$repo_root/.github/workflows"
-    local rsa_key_dir="$params_dir/rsa_keys"
+    local source_rsa_dir="$params_dir/rsa_keys"
+    local target_rsa_dir="$repo_root/rsa_keys"
     local source_params=""
-    local source_rsa_key=""
+    local rsa_key_basename=""
 
     if [[ "$CLOUD_PROVIDER" == "AWS" ]]; then
         echo "== AWS"
         source_params="$params_dir/parameters_aws_capi.json.gpg"
-        source_rsa_key="$rsa_key_dir/rsa_key_capi_aws.p8.gpg"
+        rsa_key_basename="rsa_key_libsfclient_aws"
     elif [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         echo "== AZURE"
         source_params="$params_dir/parameters_azure_capi.json.gpg"
-        source_rsa_key="$rsa_key_dir/rsa_key_capi_azure.p8.gpg"
+        rsa_key_basename="rsa_key_libsfclient_azure"
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         echo "== GCP"
         source_params="$params_dir/parameters_gcp_capi.json.gpg"
-        source_rsa_key="$rsa_key_dir/rsa_key_capi_gcp.p8.gpg"
+        rsa_key_basename="rsa_key_libsfclient_gcp"
     else
         echo "Set CLOUD_PROVIDER environment variable: [AWS, AZURE, GCP]"
         exit 1
@@ -203,7 +204,13 @@ function set_parameters()
 
     gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$repo_root/parameters.json" "$source_params"
 
-    decrypt_rsa_key "$source_rsa_key" "$repo_root/rsa_key.p8"
+    # The encrypted key is named *.json.gpg (historical convention) but contains
+    # a PEM private key; we decrypt it to a *.p8 file under <repo>/rsa_keys so
+    # that the relative path in parameters.json (rsa_keys/<basename>.p8)
+    # resolves correctly regardless of the working directory.
+    decrypt_rsa_key \
+        "$source_rsa_dir/${rsa_key_basename}.json.gpg" \
+        "$target_rsa_dir/${rsa_key_basename}.p8"
 }
 
 # Decrypts the cloud-specific RSA private key used for keypair (JWT)
@@ -227,6 +234,7 @@ function decrypt_rsa_key()
         return 0
     fi
 
+    mkdir -p "$(dirname "$target_rsa_key")"
     gpg --quiet --batch --yes --decrypt --passphrase="$rsa_secret" --output "$target_rsa_key" "$source_rsa_key"
     chmod 600 "$target_rsa_key" 2>/dev/null || true
     echo "[INFO] Decrypted RSA key to $target_rsa_key"

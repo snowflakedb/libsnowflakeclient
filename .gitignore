@@ -40,6 +40,7 @@ parameters.json
 .github/workflows/parameters_*_auth_tests.json
 # Decrypted RSA private keys (only the .gpg encrypted versions are committed).
 rsa_key.p8
+/rsa_keys/
 .github/workflows/rsa_keys/*.p8
 .github/workflows/rsa_keys/*.pem
 .github/workflows/rsa_keys/*.key
