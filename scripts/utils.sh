@@ -178,18 +178,57 @@ function set_parameters()
 
     [[ -z "$PARAMETERS_SECRET" ]] && echo "Set PARAMETERS_SECRET" && exit 1
 
+    local repo_root="$UTILS_DIR/.."
+    local params_dir="$repo_root/.github/workflows"
+    local rsa_key_dir="$params_dir/rsa_keys"
+    local source_params=""
+    local source_rsa_key=""
+
     if [[ "$CLOUD_PROVIDER" == "AWS" ]]; then
         echo "== AWS"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_aws_capi.json.gpg
+        source_params="$params_dir/parameters_aws_capi.json.gpg"
+        source_rsa_key="$rsa_key_dir/rsa_key_capi_aws.p8.gpg"
     elif [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         echo "== AZURE"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_azure_capi.json.gpg
+        source_params="$params_dir/parameters_azure_capi.json.gpg"
+        source_rsa_key="$rsa_key_dir/rsa_key_capi_azure.p8.gpg"
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         echo "== GCP"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_gcp_capi.json.gpg
+        source_params="$params_dir/parameters_gcp_capi.json.gpg"
+        source_rsa_key="$rsa_key_dir/rsa_key_capi_gcp.p8.gpg"
     else
         echo "Set CLOUD_PROVIDER environment variable: [AWS, AZURE, GCP]"
         exit 1
     fi
+
+    gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$repo_root/parameters.json" "$source_params"
+
+    decrypt_rsa_key "$source_rsa_key" "$repo_root/rsa_key.p8"
+}
+
+# Decrypts the cloud-specific RSA private key used for keypair (JWT)
+# authentication. The key passphrase is taken from CAPI_PRIVATE_KEY_SECRET, with
+# PARAMETERS_SECRET as a fallback for environments that share a single secret.
+# A missing source file is not fatal so the password-based flow keeps working
+# until the encrypted keys are added.
+function decrypt_rsa_key()
+{
+    local source_rsa_key=$1
+    local target_rsa_key=$2
+
+    if [[ ! -f "$source_rsa_key" ]]; then
+        echo "[WARN] No RSA key file found at $source_rsa_key, skipping keypair setup."
+        return 0
+    fi
+
+    local rsa_secret=${CAPI_PRIVATE_KEY_SECRET:-$PARAMETERS_SECRET}
+    if [[ -z "$rsa_secret" ]]; then
+        echo "[WARN] Neither CAPI_PRIVATE_KEY_SECRET nor PARAMETERS_SECRET is set, skipping keypair setup."
+        return 0
+    fi
+
+    gpg --quiet --batch --yes --decrypt --passphrase="$rsa_secret" --output "$target_rsa_key" "$source_rsa_key"
+    chmod 600 "$target_rsa_key" 2>/dev/null || true
+    echo "[INFO] Decrypted RSA key to $target_rsa_key"
 }
 

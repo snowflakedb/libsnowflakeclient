@@ -14,15 +14,32 @@ SF_CONNECT *setup_snowflake_connection() {
       "UTC", SF_BOOLEAN_TRUE);
 }
 
+void set_authentication_attributes(SF_CONNECT *sf) {
+    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
+
+    const char *priv_key_file = getenv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE");
+    if (priv_key_file && priv_key_file[0] != '\0') {
+        snowflake_set_attribute(sf, SF_CON_AUTHENTICATOR,
+                                SF_AUTHENTICATOR_JWT);
+        snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE, priv_key_file);
+        const char *priv_key_pwd = getenv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD");
+        if (priv_key_pwd && priv_key_pwd[0] != '\0') {
+            snowflake_set_attribute(sf, SF_CON_PRIV_KEY_FILE_PWD,
+                                    priv_key_pwd);
+        }
+    } else {
+        snowflake_set_attribute(sf, SF_CON_PASSWORD,
+                                getenv("SNOWFLAKE_TEST_PASSWORD"));
+    }
+}
+
 SF_CONNECT *setup_snowflake_connection_with_autocommit(
   const char* timezone, sf_bool autocommit) {
     SF_CONNECT *sf = snowflake_init();
 
     snowflake_set_attribute(sf, SF_CON_ACCOUNT,
                             getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-                            getenv("SNOWFLAKE_TEST_PASSWORD"));
+    set_authentication_attributes(sf);
     snowflake_set_attribute(sf, SF_CON_DATABASE,
                             getenv("SNOWFLAKE_TEST_DATABASE"));
     snowflake_set_attribute(sf, SF_CON_SCHEMA, getenv("SNOWFLAKE_TEST_SCHEMA"));

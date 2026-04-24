@@ -207,6 +207,8 @@ goto :EOF
     setlocal EnableDelayedExpansion
     @echo off
     set scriptdir=%~dp0
+    set rsakeydir=%scriptdir%..\.github\workflows\rsa_keys
+    set encrypted_rsa_key=
 
     if /I "%CLOUD_PROVIDER%"=="AWS" (
         echo == AWS
@@ -214,8 +216,10 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_aws.p8.gpg
         endlocal
         set CLOUD_PROVIDER=AWS
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_aws.p8.gpg
     )
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
@@ -223,8 +227,10 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_azure.p8.gpg
         endlocal
         set CLOUD_PROVIDER=AZURE
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_azure.p8.gpg
     )
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
@@ -232,13 +238,36 @@ goto :EOF
           --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_gcp.p8.gpg
         endlocal
         set CLOUD_PROVIDER=GCP
+        set encrypted_rsa_key=%rsakeydir%\rsa_key_capi_gcp.p8.gpg
     )
     if defined CLOUD_PROVIDER (
         echo === Cloud Provider: %CLOUD_PROVIDER%
     ) else (
         echo === No CLOUD_PROVIDER is set.
+    )
+
+    if defined encrypted_rsa_key (
+        if exist "%encrypted_rsa_key%" (
+            set rsa_secret=%CAPI_PRIVATE_KEY_SECRET%
+            if not defined rsa_secret set rsa_secret=%PARAMETERS_SECRET%
+            if defined rsa_secret (
+                gpg --quiet --batch --yes --decrypt --passphrase="%rsa_secret%" ^
+                  --output %scriptdir%..\rsa_key.p8 ^
+                  "%encrypted_rsa_key%"
+                if %ERRORLEVEL% NEQ 0 (
+                    echo [WARN] Failed to decrypt %encrypted_rsa_key%, skipping keypair setup.
+                ) else (
+                    echo [INFO] Decrypted RSA key to %scriptdir%..\rsa_key.p8
+                )
+            ) else (
+                echo [WARN] Neither CAPI_PRIVATE_KEY_SECRET nor PARAMETERS_SECRET is set, skipping keypair setup.
+            )
+        ) else (
+            echo [WARN] No RSA key file found at %encrypted_rsa_key%, skipping keypair setup.
+        )
     )
     goto :EOF
 

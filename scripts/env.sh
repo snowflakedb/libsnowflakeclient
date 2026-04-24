@@ -14,7 +14,20 @@ export SNOWFLAKE_TEST_CA_BUNDLE_FILE=$SCRIPTS_DIR/../cacert.pem
 
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 
+# Resolve a relative SNOWFLAKE_TEST_PRIVATE_KEY_FILE against the repo root so
+# the JWT authenticator can find it regardless of the current working directory.
+if [[ -n "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ]]; then
+    REPO_ROOT=$( cd "$SCRIPTS_DIR/.." && pwd)
+    case "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" in
+        /*) ;; # already absolute
+        *) export SNOWFLAKE_TEST_PRIVATE_KEY_FILE="$REPO_ROOT/$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ;;
+    esac
+    if [[ ! -f "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ]]; then
+        echo "[WARN] SNOWFLAKE_TEST_PRIVATE_KEY_FILE does not exist: $SNOWFLAKE_TEST_PRIVATE_KEY_FILE"
+    fi
+fi
+
 echo "==> Test Connection Parameters"
-env | grep SNOWFLAKE | grep -v PASSWORD
+env | grep SNOWFLAKE | grep -v -E "(PASSWORD|PWD|SECRET|TOKEN)"
 
 echo "CLOUD_PROVIDER is set to $CLOUD_PROVIDER"

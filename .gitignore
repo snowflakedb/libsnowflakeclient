@@ -25,6 +25,9 @@ deps/curl/**
 deps/downloaded_src_url
 deps/openssl/**
 deps/src/**
+deps/zlib-*/configure.log
+deps/zlib-*/libz.a
+deps/zlib-*/zlib.pc
 gmon.out
 latest_commit
 lib/cJSON.*
@@ -32,6 +35,14 @@ logs/
 parameters.appveyor.json
 parameters.bat
 parameters.json
+# Decrypted test parameter files (the .gpg encrypted versions are committed).
+.github/workflows/parameters_*_capi.json
+.github/workflows/parameters_*_auth_tests.json
+# Decrypted RSA private keys (only the .gpg encrypted versions are committed).
+rsa_key.p8
+.github/workflows/rsa_keys/*.p8
+.github/workflows/rsa_keys/*.pem
+.github/workflows/rsa_keys/*.key
 testenv.ini
 venv/
 whitesource/
