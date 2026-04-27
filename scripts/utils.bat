@@ -274,11 +274,13 @@ goto :EOF
                   --decrypt --output "!decrypted_rsa_key!" ^
                   "!encrypted_rsa_key!"
                 if !ERRORLEVEL! NEQ 0 (
-                    echo [ERROR] gpg failed to decrypt !encrypted_rsa_key! using !rsa_secret_source!.
-                    echo [ERROR] Verify that the GitHub Actions secret matches the passphrase used to encrypt the file.
+                    rem Decrypt failed (e.g. wrong/missing passphrase on Jenkins).
+                    rem Don't abort: env.bat will fall back to password auth if
+                    rem SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will
+                    rem fail later with a clear message about missing credentials.
+                    echo [WARN] gpg failed to decrypt !encrypted_rsa_key! using !rsa_secret_source!.
+                    echo [WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner^).
                     del /Q "!decrypted_rsa_key!" 2>nul
-                    endlocal
-                    goto :error
                 ) else (
                     echo [INFO] Decrypted RSA key to !decrypted_rsa_key! ^(passphrase from !rsa_secret_source!^)
                 )

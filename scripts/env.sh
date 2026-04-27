@@ -22,8 +22,20 @@ if [[ -n "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ]]; then
         /*) ;; # already absolute
         *) export SNOWFLAKE_TEST_PRIVATE_KEY_FILE="$REPO_ROOT/$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ;;
     esac
-    if [[ ! -f "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ]]; then
-        echo "[WARN] SNOWFLAKE_TEST_PRIVATE_KEY_FILE does not exist: $SNOWFLAKE_TEST_PRIVATE_KEY_FILE"
+fi
+
+# Auth selection (mirrors snowflake-odbc):
+#   - If a usable private key file is present, use keypair (JWT) auth.
+#   - Else if SNOWFLAKE_TEST_PASSWORD is set (e.g. injected by Jenkins via
+#     withCredentials), unset SNOWFLAKE_TEST_PRIVATE_KEY_FILE so that
+#     sf_test_utils.init_connection_params() falls back to password auth.
+#   - Else leave both unset and let the test fail with a clear message.
+if [[ -n "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" && ! -f "$SNOWFLAKE_TEST_PRIVATE_KEY_FILE" ]]; then
+    if [[ -n "$SNOWFLAKE_TEST_PASSWORD" ]]; then
+        echo "[INFO] No private key file at $SNOWFLAKE_TEST_PRIVATE_KEY_FILE; falling back to password auth."
+        unset SNOWFLAKE_TEST_PRIVATE_KEY_FILE
+    else
+        echo "[ERROR] No authentication credentials found! Provide either a decryptable private key (PRIVATEKEY_CSP_KEY) or SNOWFLAKE_TEST_PASSWORD."
     fi
 fi
 

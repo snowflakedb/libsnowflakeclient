@@ -34,7 +34,19 @@ set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%cd%\%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%"
 :pkey_resolved
 set "_pkey_first="
 set "_pkey_second="
-if not exist "%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%" echo [WARN] SNOWFLAKE_TEST_PRIVATE_KEY_FILE does not exist: %SNOWFLAKE_TEST_PRIVATE_KEY_FILE%
+rem Auth selection (mirrors snowflake-odbc):
+rem   - If the resolved private key file exists, use keypair (JWT) auth.
+rem   - Else if SNOWFLAKE_TEST_PASSWORD is set (e.g. injected by Jenkins via
+rem     withCredentials), unset SNOWFLAKE_TEST_PRIVATE_KEY_FILE so that
+rem     sf_test_utils.init_connection_params() falls back to password auth.
+rem   - Else emit an error; the test will fail later with a clear message.
+if exist "%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%" goto :after_pkey_resolve
+if defined SNOWFLAKE_TEST_PASSWORD (
+    echo [INFO] No private key file at %SNOWFLAKE_TEST_PRIVATE_KEY_FILE%; falling back to password auth.
+    set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE="
+) else (
+    echo [ERROR] No authentication credentials found! Provide either a decryptable private key ^(PRIVATEKEY_CSP_KEY^) or SNOWFLAKE_TEST_PASSWORD.
+)
 :after_pkey_resolve
 
 echo SNOWFLAKE_TEST_ACCOUNT:           %SNOWFLAKE_TEST_ACCOUNT%

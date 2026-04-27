@@ -5,7 +5,10 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export WORKSPACE=${WORKSPACE:-/tmp}
 export GIT_COMMIT=${client_git_commit:-$(git rev-parse HEAD)}
 
-gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json "$THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json.gpg"
+printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
+    --pinentry-mode loopback --passphrase-fd 0 \
+    --decrypt --output $THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json \
+    "$THIS_DIR/../.github/workflows/parameters_aws_auth_tests.json.gpg"
 
 docker run \
   -v $(cd $THIS_DIR/.. && pwd):/mnt/host \

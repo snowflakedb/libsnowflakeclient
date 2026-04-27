@@ -245,10 +245,14 @@ function decrypt_rsa_key()
     if ! printf '%s' "$rsa_secret" | gpg --quiet --batch --yes \
             --pinentry-mode loopback --passphrase-fd 0 \
             --decrypt --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
-        echo "[ERROR] gpg failed to decrypt $source_rsa_key using $secret_source."
-        echo "[ERROR] Verify that the GitHub Actions secret matches the passphrase used to encrypt the file."
+        # Decrypt failed (e.g. wrong/missing PRIVATEKEY_CSP_KEY on Jenkins).
+        # Don't abort: env.sh will fall back to password auth if
+        # SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will fail
+        # later with a clear message about missing credentials.
+        echo "[WARN] gpg failed to decrypt $source_rsa_key using $secret_source."
+        echo "[WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner)."
         rm -f "$target_rsa_key"
-        return 1
+        return 0
     fi
     chmod 600 "$target_rsa_key" 2>/dev/null || true
     echo "[INFO] Decrypted RSA key to $target_rsa_key (passphrase from $secret_source)"
