@@ -206,6 +206,15 @@ void test_connect_with_proxy() {
   sf_unsetenv("no_proxy");
   SF_CONNECT *sf = setup_snowflake_connection();
 
+  // Cap the login attempt so the must-fail path doesn't stall the suite when
+  // the proxy hostname (a.b.c) hangs the resolver. Without this, default
+  // SF_LOGIN_TIMEOUT (300s) + SF_RETRY_TIMEOUT (300s) + the new-strategy
+  // unbounded backoff caused this test to run for hours on macOS runners
+  // where libcurl's getaddrinfo path doesn't honor CURLOPT_CONNECTTIMEOUT
+  // for unresolvable proxy hosts. 10s matches test_connect_login_timeout.
+  int64 fail_login_timeout = 10;
+  snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &fail_login_timeout);
+
   // ensure the connection fails with invalid proxy
   SF_STATUS status = snowflake_connect(sf);
   assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
