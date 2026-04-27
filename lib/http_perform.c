@@ -535,8 +535,26 @@ sf_bool STDCALL http_perform(CURL *curl,
           } else if ((res == CURLE_OPERATION_TIMEDOUT) &&
                      ((renew_timeout > 0) && (curl_timeout == renew_timeout)))
           // retry directly without backoff when timeout is triggered by renew
+          // (JWT credential lifetime expired mid-request - re-sign and retry).
+          // Still bound by retry_timeout / retry_max_count so we cannot loop
+          // indefinitely if the request keeps timing out for an unrelated reason.
           {
-            retry = SF_BOOLEAN_TRUE;
+            if (((uint64)(time(NULL) - elapsedRetryTime) < curl_retry_ctx.retry_timeout) &&
+                ((retry_max_count <= 0) || (curl_retry_ctx.retry_count < (unsigned)retry_max_count)))
+            {
+              curl_retry_ctx.retry_count++;
+              retry = SF_BOOLEAN_TRUE;
+            }
+            else
+            {
+              char msg[1024];
+              sf_sprintf(msg, sizeof(msg),
+                         "Exceeded the retry_timeout on JWT renew, curl code: [%d]",
+                         res);
+              SET_SNOWFLAKE_ERROR(error, SF_STATUS_ERROR_RETRY,
+                                  msg,
+                                  SF_SQLSTATE_UNABLE_TO_CONNECT);
+            }
           }
           // retry with backoff on any other curl error except particular non-retryable ones
           else {
