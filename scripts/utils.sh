@@ -202,7 +202,9 @@ function set_parameters()
         exit 1
     fi
 
-    gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output "$repo_root/parameters.json" "$source_params"
+    printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
+        --pinentry-mode loopback --passphrase-fd 0 \
+        --decrypt --output "$repo_root/parameters.json" "$source_params"
 
     # The encrypted key is named *.json.gpg (historical convention) but contains
     # a PEM private key; we decrypt it to a *.p8 file under <repo>/rsa_keys so
@@ -240,7 +242,9 @@ function decrypt_rsa_key()
     fi
 
     mkdir -p "$(dirname "$target_rsa_key")"
-    if ! gpg --quiet --batch --yes --decrypt --passphrase="$rsa_secret" --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
+    if ! printf '%s' "$rsa_secret" | gpg --quiet --batch --yes \
+            --pinentry-mode loopback --passphrase-fd 0 \
+            --decrypt --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
         echo "[ERROR] gpg failed to decrypt $source_rsa_key using $secret_source."
         echo "[ERROR] Verify that the GitHub Actions secret matches the passphrase used to encrypt the file."
         rm -f "$target_rsa_key"
