@@ -22,15 +22,20 @@ if not defined SNOWFLAKE_TEST_ACCOUNT (
     exit /b 1
 )
 
-if defined SNOWFLAKE_TEST_PRIVATE_KEY_FILE (
-    echo %SNOWFLAKE_TEST_PRIVATE_KEY_FILE% | findstr /R "^[A-Za-z]:\\" >nul
-    if errorlevel 1 (
-        set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%cd%\%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%"
-    )
-    if not exist "%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%" (
-        echo [WARN] SNOWFLAKE_TEST_PRIVATE_KEY_FILE does not exist: %SNOWFLAKE_TEST_PRIVATE_KEY_FILE%
-    )
-)
+if not defined SNOWFLAKE_TEST_PRIVATE_KEY_FILE goto :after_pkey_resolve
+rem Resolve relative SNOWFLAKE_TEST_PRIVATE_KEY_FILE to absolute against cwd.
+rem Treat as absolute if it starts with a drive letter (X:), backslash, or slash.
+set "_pkey_first=%SNOWFLAKE_TEST_PRIVATE_KEY_FILE:~0,1%"
+set "_pkey_second=%SNOWFLAKE_TEST_PRIVATE_KEY_FILE:~1,1%"
+if "%_pkey_second%"==":" goto :pkey_resolved
+if "%_pkey_first%"=="\" goto :pkey_resolved
+if "%_pkey_first%"=="/" goto :pkey_resolved
+set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE=%cd%\%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%"
+:pkey_resolved
+set "_pkey_first="
+set "_pkey_second="
+if not exist "%SNOWFLAKE_TEST_PRIVATE_KEY_FILE%" echo [WARN] SNOWFLAKE_TEST_PRIVATE_KEY_FILE does not exist: %SNOWFLAKE_TEST_PRIVATE_KEY_FILE%
+:after_pkey_resolve
 
 echo SNOWFLAKE_TEST_ACCOUNT:           %SNOWFLAKE_TEST_ACCOUNT%
 echo SNOWFLAKE_TEST_USER:              %SNOWFLAKE_TEST_USER%
