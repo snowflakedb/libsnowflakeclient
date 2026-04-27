@@ -200,41 +200,54 @@ void test_connect_with_ocsp_cache_server_on() {
 void test_connect_with_proxy() {
   SKIP_IF_PROXY_ENV_IS_SET;
 
+  // Make stderr unbuffered so the per-phase markers below appear in CI logs
+  // even if a later phase hangs - critical for diagnosing which phase stalls.
+  setvbuf(stderr, NULL, _IONBF, 0);
+
   // set invalid proxy in environment variables
   sf_setenv("https_proxy", "a.b.c");
   sf_setenv("http_proxy", "a.b.c");
   sf_unsetenv("no_proxy");
-  SF_CONNECT *sf = setup_snowflake_connection();
 
-  // Cap the login attempt so the must-fail path doesn't stall the suite when
-  // the proxy hostname (a.b.c) hangs the resolver. Without this, default
-  // SF_LOGIN_TIMEOUT (300s) + SF_RETRY_TIMEOUT (300s) + the new-strategy
-  // unbounded backoff caused this test to run for hours on macOS runners
-  // where libcurl's getaddrinfo path doesn't honor CURLOPT_CONNECTTIMEOUT
-  // for unresolvable proxy hosts. 10s matches test_connect_login_timeout.
+  // ---- Phase 1: env-vars proxy, expected to FAIL ----
+  // Bound the must-fail path. Without this, default SF_LOGIN_TIMEOUT (300s),
+  // SF_RETRY_TIMEOUT (300s), and the new-strategy unbounded backoff
+  // (SF_NEW_STRATEGY_BACKOFF_CAP = 0xFFFFFFFF) made the test hang for hours
+  // on macOS runners when getaddrinfo("a.b.c") behaved unpredictably.
+  fprintf(stderr, "[test_connect_with_proxy] phase 1: invalid env proxy (expect fail)\n");
+  SF_CONNECT *sf = setup_snowflake_connection();
   int64 fail_login_timeout = 10;
   snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &fail_login_timeout);
-
-  // ensure the connection fails with invalid proxy
   SF_STATUS status = snowflake_connect(sf);
+  fprintf(stderr, "[test_connect_with_proxy] phase 1: status=%d (expect != 0)\n", status);
   assert_int_not_equal(status, SF_STATUS_SUCCESS); // must fail
   snowflake_term(sf);
 
-  // test proxy setting
+  // ---- Phase 2: SF_CON_PROXY="" override of env proxy, expected to SUCCEED ----
+  // Bound this too: if the empty-string override doesn't actually disable
+  // the env proxy (libcurl edge case), we want to fail fast rather than
+  // wedge the runner.
+  fprintf(stderr, "[test_connect_with_proxy] phase 2: SF_CON_PROXY=\"\" override (expect ok)\n");
   sf = setup_snowflake_connection();
+  int64 ok_login_timeout = 60;
+  snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &ok_login_timeout);
   snowflake_set_attribute(sf, SF_CON_PROXY, "");
   status = snowflake_connect(sf);
+  fprintf(stderr, "[test_connect_with_proxy] phase 2: status=%d\n", status);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
   assert_int_equal(status, SF_STATUS_SUCCESS);
   snowflake_term(sf);
 
-  // test no proxy setting
+  // ---- Phase 3: SF_CON_PROXY=invalid + SF_CON_NO_PROXY="*", expected to SUCCEED ----
+  fprintf(stderr, "[test_connect_with_proxy] phase 3: NO_PROXY=* (expect ok)\n");
   sf = setup_snowflake_connection();
+  snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &ok_login_timeout);
   snowflake_set_attribute(sf, SF_CON_PROXY, "a.b.c");
   snowflake_set_attribute(sf, SF_CON_NO_PROXY, "*");
   status = snowflake_connect(sf);
+  fprintf(stderr, "[test_connect_with_proxy] phase 3: status=%d\n", status);
   if (status != SF_STATUS_SUCCESS) {
     dump_error(&(sf->error));
   }
