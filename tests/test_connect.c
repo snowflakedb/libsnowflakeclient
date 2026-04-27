@@ -204,16 +204,21 @@ void test_connect_with_proxy() {
   // even if a later phase hangs - critical for diagnosing which phase stalls.
   setvbuf(stderr, NULL, _IONBF, 0);
 
-  // set invalid proxy in environment variables
-  sf_setenv("https_proxy", "a.b.c");
-  sf_setenv("http_proxy", "a.b.c");
+  // Use 127.0.0.1:1 (port 1 on localhost, nothing listens, TCP connect
+  // returns ECONNREFUSED immediately) instead of a hostname. A hostname
+  // like "a.b.c" forces a DNS lookup which on Windows/macOS sits in the
+  // OS resolver for an arbitrary time that libcurl's CURLOPT_TIMEOUT
+  // cannot reliably interrupt - that previously caused this test to hang
+  // for hours on the GHA Windows and macOS runners. An IP literal skips
+  // DNS entirely and the TCP refusal is instantaneous on every platform.
+  // (Same trick test_connect_login_timeout uses with 172.23.19.112.)
+  const char *invalid_proxy = "http://127.0.0.1:1";
+
+  sf_setenv("https_proxy", invalid_proxy);
+  sf_setenv("http_proxy", invalid_proxy);
   sf_unsetenv("no_proxy");
 
   // ---- Phase 1: env-vars proxy, expected to FAIL ----
-  // Bound the must-fail path. Without this, default SF_LOGIN_TIMEOUT (300s),
-  // SF_RETRY_TIMEOUT (300s), and the new-strategy unbounded backoff
-  // (SF_NEW_STRATEGY_BACKOFF_CAP = 0xFFFFFFFF) made the test hang for hours
-  // on macOS runners when getaddrinfo("a.b.c") behaved unpredictably.
   fprintf(stderr, "[test_connect_with_proxy] phase 1: invalid env proxy (expect fail)\n");
   SF_CONNECT *sf = setup_snowflake_connection();
   int64 fail_login_timeout = 10;
@@ -224,9 +229,6 @@ void test_connect_with_proxy() {
   snowflake_term(sf);
 
   // ---- Phase 2: SF_CON_PROXY="" override of env proxy, expected to SUCCEED ----
-  // Bound this too: if the empty-string override doesn't actually disable
-  // the env proxy (libcurl edge case), we want to fail fast rather than
-  // wedge the runner.
   fprintf(stderr, "[test_connect_with_proxy] phase 2: SF_CON_PROXY=\"\" override (expect ok)\n");
   sf = setup_snowflake_connection();
   int64 ok_login_timeout = 60;
@@ -244,7 +246,7 @@ void test_connect_with_proxy() {
   fprintf(stderr, "[test_connect_with_proxy] phase 3: NO_PROXY=* (expect ok)\n");
   sf = setup_snowflake_connection();
   snowflake_set_attribute(sf, SF_CON_LOGIN_TIMEOUT, &ok_login_timeout);
-  snowflake_set_attribute(sf, SF_CON_PROXY, "a.b.c");
+  snowflake_set_attribute(sf, SF_CON_PROXY, invalid_proxy);
   snowflake_set_attribute(sf, SF_CON_NO_PROXY, "*");
   status = snowflake_connect(sf);
   fprintf(stderr, "[test_connect_with_proxy] phase 3: status=%d\n", status);
