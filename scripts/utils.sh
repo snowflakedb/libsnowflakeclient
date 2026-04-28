@@ -206,20 +206,18 @@ function set_parameters()
         --pinentry-mode loopback --passphrase-fd 0 \
         --decrypt --output "$repo_root/parameters.json" "$source_params"
 
-    # The encrypted key is named *.json.gpg (historical convention) but contains
-    # a PEM private key; we decrypt it to a *.p8 file under <repo>/rsa_keys so
-    # that the relative path in parameters.json (rsa_keys/<basename>.p8)
-    # resolves correctly regardless of the working directory.
+    # Encrypted RSA private key (.p8.gpg) is decrypted using PARAMETERS_SECRET
+    # to <repo>/rsa_keys/<basename>.p8 so the relative path in parameters.json
+    # (rsa_keys/<basename>.p8) resolves regardless of the current working dir.
     decrypt_rsa_key \
-        "$source_rsa_dir/${rsa_key_basename}.json.gpg" \
+        "$source_rsa_dir/${rsa_key_basename}.p8.gpg" \
         "$target_rsa_dir/${rsa_key_basename}.p8"
 }
 
 # Decrypts the cloud-specific RSA private key used for keypair (JWT)
-# authentication. The key passphrase is taken from PRIVATEKEY_CSP_KEY, with
-# PARAMETERS_SECRET as a fallback for environments that share a single secret.
-# A missing source file is not fatal so the password-based flow keeps working
-# until the encrypted keys are added.
+# authentication. The same PARAMETERS_SECRET is used for both the parameter
+# blob and the RSA key. A missing source or a decrypt failure is not fatal:
+# env.sh falls back to password auth when SNOWFLAKE_TEST_PASSWORD is set.
 function decrypt_rsa_key()
 {
     local source_rsa_key=$1
@@ -230,31 +228,24 @@ function decrypt_rsa_key()
         return 0
     fi
 
-    local rsa_secret=${PRIVATEKEY_CSP_KEY:-$PARAMETERS_SECRET}
-    if [[ -z "$rsa_secret" ]]; then
-        echo "[WARN] Neither PRIVATEKEY_CSP_KEY nor PARAMETERS_SECRET is set, skipping keypair setup."
+    if [[ -z "$PARAMETERS_SECRET" ]]; then
+        echo "[WARN] PARAMETERS_SECRET is not set, skipping keypair setup."
         return 0
     fi
 
-    local secret_source="PRIVATEKEY_CSP_KEY"
-    if [[ -z "$PRIVATEKEY_CSP_KEY" ]]; then
-        secret_source="PARAMETERS_SECRET (fallback; PRIVATEKEY_CSP_KEY not set)"
-    fi
-
     mkdir -p "$(dirname "$target_rsa_key")"
-    if ! printf '%s' "$rsa_secret" | gpg --quiet --batch --yes \
+    if ! printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
             --pinentry-mode loopback --passphrase-fd 0 \
             --decrypt --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
-        # Decrypt failed (e.g. wrong/missing PRIVATEKEY_CSP_KEY on Jenkins).
-        # Don't abort: env.sh will fall back to password auth if
-        # SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will fail
+        # Decrypt failed: don't abort. env.sh will fall back to password auth
+        # if SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will fail
         # later with a clear message about missing credentials.
-        echo "[WARN] gpg failed to decrypt $source_rsa_key using $secret_source."
+        echo "[WARN] gpg failed to decrypt $source_rsa_key using PARAMETERS_SECRET."
         echo "[WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner)."
         rm -f "$target_rsa_key"
         return 0
     fi
     chmod 600 "$target_rsa_key" 2>/dev/null || true
-    echo "[INFO] Decrypted RSA key to $target_rsa_key (passphrase from $secret_source)"
+    echo "[INFO] Decrypted RSA key to $target_rsa_key"
 }
 

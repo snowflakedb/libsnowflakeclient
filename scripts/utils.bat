@@ -257,35 +257,26 @@ goto :EOF
         setlocal EnableDelayedExpansion
         set "source_rsa_dir=%scriptdir%..\.github\workflows\rsa_keys"
         set "target_rsa_dir=%scriptdir%..\rsa_keys"
-        set "encrypted_rsa_key=!source_rsa_dir!\%rsa_key_basename%.json.gpg"
+        set "encrypted_rsa_key=!source_rsa_dir!\%rsa_key_basename%.p8.gpg"
         set "decrypted_rsa_key=!target_rsa_dir!\%rsa_key_basename%.p8"
         if exist "!encrypted_rsa_key!" (
-            set "rsa_secret=%PRIVATEKEY_CSP_KEY%"
-            if not defined rsa_secret set "rsa_secret=%PARAMETERS_SECRET%"
-            if defined rsa_secret (
-                if defined PRIVATEKEY_CSP_KEY (
-                    set "rsa_secret_source=PRIVATEKEY_CSP_KEY"
-                ) else (
-                    set "rsa_secret_source=PARAMETERS_SECRET (fallback; PRIVATEKEY_CSP_KEY not set)"
-                )
+            if defined PARAMETERS_SECRET (
                 if not exist "!target_rsa_dir!" mkdir "!target_rsa_dir!"
-                <nul set /p "=!rsa_secret!"| gpg --quiet --batch --yes ^
+                <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
                   --pinentry-mode loopback --passphrase-fd 0 ^
                   --decrypt --output "!decrypted_rsa_key!" ^
                   "!encrypted_rsa_key!"
                 if !ERRORLEVEL! NEQ 0 (
-                    rem Decrypt failed (e.g. wrong/missing passphrase on Jenkins).
-                    rem Don't abort: env.bat will fall back to password auth if
-                    rem SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will
-                    rem fail later with a clear message about missing credentials.
-                    echo [WARN] gpg failed to decrypt !encrypted_rsa_key! using !rsa_secret_source!.
+                    rem Decrypt failed - don't abort: env.bat falls back to
+                    rem password auth if SNOWFLAKE_TEST_PASSWORD is set.
+                    echo [WARN] gpg failed to decrypt !encrypted_rsa_key! using PARAMETERS_SECRET.
                     echo [WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner^).
                     del /Q "!decrypted_rsa_key!" 2>nul
                 ) else (
-                    echo [INFO] Decrypted RSA key to !decrypted_rsa_key! ^(passphrase from !rsa_secret_source!^)
+                    echo [INFO] Decrypted RSA key to !decrypted_rsa_key!
                 )
             ) else (
-                echo [WARN] Neither PRIVATEKEY_CSP_KEY nor PARAMETERS_SECRET is set, skipping keypair setup.
+                echo [WARN] PARAMETERS_SECRET is not set, skipping keypair setup.
             )
         ) else (
             echo [WARN] No RSA key file found at !encrypted_rsa_key!, skipping keypair setup.

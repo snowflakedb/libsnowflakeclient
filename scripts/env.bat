@@ -45,7 +45,7 @@ if defined SNOWFLAKE_TEST_PASSWORD (
     echo [INFO] No private key file at %SNOWFLAKE_TEST_PRIVATE_KEY_FILE%; falling back to password auth.
     set "SNOWFLAKE_TEST_PRIVATE_KEY_FILE="
 ) else (
-    echo [ERROR] No authentication credentials found! Provide either a decryptable private key ^(PRIVATEKEY_CSP_KEY^) or SNOWFLAKE_TEST_PASSWORD.
+    echo [ERROR] No authentication credentials found! Provide a decryptable private key ^(.p8.gpg in rsa_keys with PARAMETERS_SECRET^) or SNOWFLAKE_TEST_PASSWORD.
 )
 :after_pkey_resolve
 

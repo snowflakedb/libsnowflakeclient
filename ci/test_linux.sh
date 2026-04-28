@@ -51,7 +51,6 @@ docker run \
         -e JOB_NAME \
         -e BUILD_NUMBER \
         -e PARAMETERS_SECRET \
-        -e PRIVATEKEY_CSP_KEY \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
         -e GITHUB_ACTIONS \
