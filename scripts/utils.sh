@@ -203,7 +203,7 @@ function set_parameters()
     fi
 
     printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
-        --pinentry-mode loopback --passphrase-fd 0 \
+        --passphrase-fd 0 \
         --decrypt --output "$repo_root/parameters.json" "$source_params"
 
     # Encrypted RSA private key (.p8.gpg) is decrypted using PARAMETERS_SECRET
@@ -235,7 +235,7 @@ function decrypt_rsa_key()
 
     mkdir -p "$(dirname "$target_rsa_key")"
     if ! printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
-            --pinentry-mode loopback --passphrase-fd 0 \
+            --passphrase-fd 0 \
             --decrypt --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
         # Decrypt failed: don't abort. env.sh will fall back to password auth
         # if SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will fail

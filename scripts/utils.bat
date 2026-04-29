@@ -214,7 +214,7 @@ goto :EOF
     if /I "%CLOUD_PROVIDER%"=="AWS" (
         echo == AWS
         <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
-          --pinentry-mode loopback --passphrase-fd 0 ^
+          --passphrase-fd 0 ^
           --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
@@ -226,7 +226,7 @@ goto :EOF
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
         <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
-          --pinentry-mode loopback --passphrase-fd 0 ^
+          --passphrase-fd 0 ^
           --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
@@ -238,7 +238,7 @@ goto :EOF
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
         <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
-          --pinentry-mode loopback --passphrase-fd 0 ^
+          --passphrase-fd 0 ^
           --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
@@ -263,7 +263,7 @@ goto :EOF
             if defined PARAMETERS_SECRET (
                 if not exist "!target_rsa_dir!" mkdir "!target_rsa_dir!"
                 <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
-                  --pinentry-mode loopback --passphrase-fd 0 ^
+                  --passphrase-fd 0 ^
                   --decrypt --output "!decrypted_rsa_key!" ^
                   "!encrypted_rsa_key!"
                 if !ERRORLEVEL! NEQ 0 (

@@ -50,7 +50,6 @@ jobs:
               BUILD_TYPE: ${{ matrix.build_type }}
               CLOUD_PROVIDER: 'AWS'
               PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-              PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
             run: ci/test_linux.sh
 
     build-test-linux:
@@ -92,7 +91,6 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci/test_linux.sh
 
     build-test-win-vs2022:
@@ -147,7 +145,6 @@ jobs:
                   VS_VERSION: ${{ matrix.vs_version }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci\test_win.bat
     build-test-mac:
         name: Build-Test-Mac
@@ -194,7 +191,6 @@ jobs:
                   BUILD_TYPE: ${{ matrix.build_type }}
                   CLOUD_PROVIDER: ${{ matrix.cloud_provider }}
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci/test_mac.sh
     build-test-codecov-aws:
         name: Build-Test-CodeCov-Linux-AWS
@@ -229,7 +225,6 @@ jobs:
                   CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: AWS
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
@@ -270,7 +265,6 @@ jobs:
                   CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: AZURE
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
@@ -311,7 +305,6 @@ jobs:
                   CLIENT_CODE_COVERAGE: 1
                   CLOUD_PROVIDER: GCP
                   PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                  PRIVATEKEY_CSP_KEY: ${{ secrets.PRIVATEKEY_CSP_KEY }}
               run: ci/test_linux.sh
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
