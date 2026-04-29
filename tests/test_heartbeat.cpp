@@ -15,25 +15,7 @@
 void test_connect_with_client_session_keep_alive_disable(void** unused)
 {
     SF_UNUSED(unused);
-    SF_CONNECT* sf = snowflake_init();
-    snowflake_set_attribute(sf, SF_CON_ACCOUNT,
-        getenv("SNOWFLAKE_TEST_ACCOUNT"));
-    snowflake_set_attribute(sf, SF_CON_USER, getenv("SNOWFLAKE_TEST_USER"));
-    snowflake_set_attribute(sf, SF_CON_PASSWORD,
-        getenv("SNOWFLAKE_TEST_PASSWORD"));
-    char* host, * port, * protocol;
-    host = getenv("SNOWFLAKE_TEST_HOST");
-    if (host) {
-        snowflake_set_attribute(sf, SF_CON_HOST, host);
-    }
-    port = getenv("SNOWFLAKE_TEST_PORT");
-    if (port) {
-        snowflake_set_attribute(sf, SF_CON_PORT, port);
-    }
-    protocol = getenv("SNOWFLAKE_TEST_PROTOCOL");
-    if (protocol) {
-        snowflake_set_attribute(sf, SF_CON_PROTOCOL, protocol);
-    }
+    SF_CONNECT* sf = setup_snowflake_connection();
     sf_bool client_session_keep_alive = SF_BOOLEAN_FALSE;
     snowflake_set_attribute(sf, SF_CON_CLIENT_SESSION_KEEP_ALIVE, &client_session_keep_alive);
 
