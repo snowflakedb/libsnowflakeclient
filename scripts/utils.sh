@@ -178,18 +178,74 @@ function set_parameters()
 
     [[ -z "$PARAMETERS_SECRET" ]] && echo "Set PARAMETERS_SECRET" && exit 1
 
+    local repo_root="$UTILS_DIR/.."
+    local params_dir="$repo_root/.github/workflows"
+    local source_rsa_dir="$params_dir/rsa_keys"
+    local target_rsa_dir="$repo_root/rsa_keys"
+    local source_params=""
+    local rsa_key_basename=""
+
     if [[ "$CLOUD_PROVIDER" == "AWS" ]]; then
         echo "== AWS"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_aws_capi.json.gpg
+        source_params="$params_dir/parameters_aws_capi.json.gpg"
+        rsa_key_basename="rsa_key_libsfclient_aws"
     elif [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         echo "== AZURE"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_azure_capi.json.gpg
+        source_params="$params_dir/parameters_azure_capi.json.gpg"
+        rsa_key_basename="rsa_key_libsfclient_azure"
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         echo "== GCP"
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $UTILS_DIR/../parameters.json $UTILS_DIR/../.github/workflows/parameters_gcp_capi.json.gpg
+        source_params="$params_dir/parameters_gcp_capi.json.gpg"
+        rsa_key_basename="rsa_key_libsfclient_gcp"
     else
         echo "Set CLOUD_PROVIDER environment variable: [AWS, AZURE, GCP]"
         exit 1
     fi
+
+    printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
+        --passphrase-fd 0 \
+        --decrypt --output "$repo_root/parameters.json" "$source_params"
+
+    # Encrypted RSA private key (.p8.gpg) is decrypted using PARAMETERS_SECRET
+    # to <repo>/rsa_keys/<basename>.p8 so the relative path in parameters.json
+    # (rsa_keys/<basename>.p8) resolves regardless of the current working dir.
+    decrypt_rsa_key \
+        "$source_rsa_dir/${rsa_key_basename}.p8.gpg" \
+        "$target_rsa_dir/${rsa_key_basename}.p8"
+}
+
+# Decrypts the cloud-specific RSA private key used for keypair (JWT)
+# authentication. The same PARAMETERS_SECRET is used for both the parameter
+# blob and the RSA key. A missing source or a decrypt failure is not fatal:
+# env.sh falls back to password auth when SNOWFLAKE_TEST_PASSWORD is set.
+function decrypt_rsa_key()
+{
+    local source_rsa_key=$1
+    local target_rsa_key=$2
+
+    if [[ ! -f "$source_rsa_key" ]]; then
+        echo "[WARN] No RSA key file found at $source_rsa_key, skipping keypair setup."
+        return 0
+    fi
+
+    if [[ -z "$PARAMETERS_SECRET" ]]; then
+        echo "[WARN] PARAMETERS_SECRET is not set, skipping keypair setup."
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$target_rsa_key")"
+    if ! printf '%s' "$PARAMETERS_SECRET" | gpg --quiet --batch --yes \
+            --passphrase-fd 0 \
+            --decrypt --output "$target_rsa_key" "$source_rsa_key" 2>/dev/null; then
+        # Decrypt failed: don't abort. env.sh will fall back to password auth
+        # if SNOWFLAKE_TEST_PASSWORD is set, otherwise the test will fail
+        # later with a clear message about missing credentials.
+        echo "[WARN] gpg failed to decrypt $source_rsa_key using PARAMETERS_SECRET."
+        echo "[WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner)."
+        rm -f "$target_rsa_key"
+        return 0
+    fi
+    chmod 600 "$target_rsa_key" 2>/dev/null || true
+    echo "[INFO] Decrypted RSA key to $target_rsa_key"
 }
 

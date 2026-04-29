@@ -13,7 +13,7 @@ function usage() {
 set -o pipefail
 
 AWS_SRC_VERSION=1.11.500
-AWS_BUILD_VERSION=1
+AWS_BUILD_VERSION=4
 AWS_DIR=aws-sdk-cpp-$AWS_SRC_VERSION
 AWS_VERSION=$AWS_SRC_VERSION.$AWS_BUILD_VERSION
 
@@ -23,8 +23,8 @@ source $DIR/utils.sh
 
 [[ -n "$GET_VERSION" ]] && echo $AWS_VERSION && exit 0
 
-OPENSSL_BUILD_DIR=$DEPENDNCY_DIR/openssl
-LIBCURL_BUILD_DIR=$DEPENDNCY_DIR/curl
+OPENSSL_BUILD_DIR=$DEPENDENCY_DIR/openssl
+LIBCURL_BUILD_DIR=$DEPENDENCY_DIR/curl
 AWS_SOURCE_DIR=$DEPS_DIR/${AWS_DIR}
 AWS_CMAKE_BUILD_DIR=$AWS_SOURCE_DIR/cmake-build-$target
 AWS_BUILD_DIR=$DEPENDENCY_DIR/aws
@@ -53,6 +53,7 @@ aws_configure_opts+=(
     "-DCMAKE_PREFIX_PATH=\"$LIBCURL_BUILD_DIR/;$OPENSSL_BUILD_DIR/\""
     "-DENABLE_TESTING=OFF"
     "-DENABLE_CURL_LOGGING=OFF"
+    "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE"
 #disable CPU extentsions to fix build error on Linux
 #CPU extentsions might not be always available on all customer environments
     "-DUSE_CPU_EXTENSIONS=OFF"

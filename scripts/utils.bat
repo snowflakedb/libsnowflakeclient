@@ -207,38 +207,81 @@ goto :EOF
     setlocal EnableDelayedExpansion
     @echo off
     set scriptdir=%~dp0
+    set source_rsa_dir=%scriptdir%..\.github\workflows\rsa_keys
+    set target_rsa_dir=%scriptdir%..\rsa_keys
+    set rsa_key_basename=
 
     if /I "%CLOUD_PROVIDER%"=="AWS" (
         echo == AWS
-        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-          --output %scriptdir%..\parameters.json ^
+        <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
+          --passphrase-fd 0 ^
+          --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_aws_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set rsa_key_basename=rsa_key_libsfclient_aws
         endlocal
         set CLOUD_PROVIDER=AWS
+        set rsa_key_basename=rsa_key_libsfclient_aws
     )
     if /I "%CLOUD_PROVIDER%"=="AZURE" (
         echo == AZURE
-        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-          --output %scriptdir%..\parameters.json ^
+        <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
+          --passphrase-fd 0 ^
+          --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_azure_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set rsa_key_basename=rsa_key_libsfclient_azure
         endlocal
         set CLOUD_PROVIDER=AZURE
+        set rsa_key_basename=rsa_key_libsfclient_azure
     )
     if /I "%CLOUD_PROVIDER%"=="GCP" (
         echo === GCP
-        gpg --quiet --batch --yes --decrypt --passphrase="%PARAMETERS_SECRET%" ^
-          --output %scriptdir%..\parameters.json ^
+        <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
+          --passphrase-fd 0 ^
+          --decrypt --output %scriptdir%..\parameters.json ^
           %scriptdir%..\.github\workflows\parameters_gcp_capi.json.gpg
         if !ERRORLEVEL! NEQ 0 goto :error
+        set rsa_key_basename=rsa_key_libsfclient_gcp
         endlocal
         set CLOUD_PROVIDER=GCP
+        set rsa_key_basename=rsa_key_libsfclient_gcp
     )
     if defined CLOUD_PROVIDER (
         echo === Cloud Provider: %CLOUD_PROVIDER%
     ) else (
         echo === No CLOUD_PROVIDER is set.
+    )
+
+    if defined rsa_key_basename (
+        setlocal EnableDelayedExpansion
+        set "source_rsa_dir=%scriptdir%..\.github\workflows\rsa_keys"
+        set "target_rsa_dir=%scriptdir%..\rsa_keys"
+        set "encrypted_rsa_key=!source_rsa_dir!\%rsa_key_basename%.p8.gpg"
+        set "decrypted_rsa_key=!target_rsa_dir!\%rsa_key_basename%.p8"
+        if exist "!encrypted_rsa_key!" (
+            if defined PARAMETERS_SECRET (
+                if not exist "!target_rsa_dir!" mkdir "!target_rsa_dir!"
+                <nul set /p "=!PARAMETERS_SECRET!"| gpg --quiet --batch --yes ^
+                  --passphrase-fd 0 ^
+                  --decrypt --output "!decrypted_rsa_key!" ^
+                  "!encrypted_rsa_key!"
+                if !ERRORLEVEL! NEQ 0 (
+                    rem Decrypt failed - don't abort: env.bat falls back to
+                    rem password auth if SNOWFLAKE_TEST_PASSWORD is set.
+                    echo [WARN] gpg failed to decrypt !encrypted_rsa_key! using PARAMETERS_SECRET.
+                    echo [WARN] Will attempt password fallback (set SNOWFLAKE_TEST_PASSWORD on this CI runner^).
+                    del /Q "!decrypted_rsa_key!" 2>nul
+                ) else (
+                    echo [INFO] Decrypted RSA key to !decrypted_rsa_key!
+                )
+            ) else (
+                echo [WARN] PARAMETERS_SECRET is not set, skipping keypair setup.
+            )
+        ) else (
+            echo [WARN] No RSA key file found at !encrypted_rsa_key!, skipping keypair setup.
+        )
+        endlocal
     )
     goto :EOF
 

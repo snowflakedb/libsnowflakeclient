@@ -148,7 +148,7 @@ void test_external_browser_wrong_credentials(void **unused) {
 
     const SF_ERROR_STRUCT *error = &(result->error);
     // Accept either browser timeout or Snowflake SAML error
-    const sf_bool is_timeout_error = (sf_bool)(strstr(error->msg, "SFAuthWebBrowserFailed") != NULL);
+    const sf_bool is_timeout_error = (sf_bool)(strstr(error->msg, "Auth browser timed out") != NULL);
     const sf_bool is_saml_error = (sf_bool)(strstr(error->msg, "SAML response is invalid") != NULL);
     assert_true(is_timeout_error || is_saml_error);
 

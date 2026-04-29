@@ -34,6 +34,19 @@ SF_CONNECT *setup_snowflake_connection();
 SF_CONNECT *setup_snowflake_connection_with_autocommit(
         const char *timezone, sf_bool autocommit);
 
+/**
+ * Configure user credentials on an SF_CONNECT based on environment variables.
+ *
+ * If SNOWFLAKE_TEST_PRIVATE_KEY_FILE is defined the connection is configured
+ * for keypair (JWT) authentication using SF_AUTHENTICATOR_JWT, with the
+ * optional passphrase taken from SNOWFLAKE_TEST_PRIVATE_KEY_PWD.
+ * Otherwise it falls back to password authentication using
+ * SNOWFLAKE_TEST_PASSWORD.
+ *
+ * SF_CON_USER is always set from SNOWFLAKE_TEST_USER.
+ */
+void set_authentication_attributes(SF_CONNECT *sf);
+
 void setup_and_run_query(SF_CONNECT **sfp, SF_STMT **sfstmtp, const char *query);
 
 void process_results(struct timespec begin, struct timespec end, int num_iterations, const char *label);
