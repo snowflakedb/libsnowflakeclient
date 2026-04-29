@@ -382,6 +382,8 @@ typedef enum SF_ATTRIBUTE {
     SF_CON_APPLICATION_PATH,
     SF_CON_LOG_QUERY_TEXT,
     SF_CON_LOG_QUERY_PARAMETERS,
+    SF_CON_CLIENT_SESSION_KEEP_ALIVE,
+    SF_CON_CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY,
 } SF_ATTRIBUTE;
 
 /**
@@ -597,6 +599,16 @@ typedef struct SF_CONNECT {
     sf_bool binding_threshold_overridden;
     sf_bool stage_binding_disabled;
     sf_bool disable_console_login;
+
+    // Heartbeat
+    void* mutex_tokens;
+    int64 master_token_validation_time;
+    char* session_id;
+    sf_bool client_session_keep_alive;
+    sf_bool is_heart_beat_on;
+    sf_bool is_closed;
+    uint64 client_session_keep_alive_heartbeat_frequency;
+
     sf_bool client_store_temporary_credential;
 
     //the option to enable capturing the query info in the logs
