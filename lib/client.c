@@ -1424,6 +1424,23 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
         sf->password && (strcmp(sf->password, "renew injection") == 0)) {
         renew_injection = SF_BOOLEAN_TRUE;
     }
+    // Bound the JWT-renewal continue path below: when http_perform reports
+    // is_renew=TRUE because renew_timeout elapsed (e.g. login wedged behind a
+    // bad proxy or slow network), this outer loop regenerates the JWT and
+    // retries. Without a bound it loops forever - SF_CON_LOGIN_TIMEOUT is only
+    // checked inside http_perform's per-attempt retry_timeout, not across
+    // these renew rounds. Cap it by the same overall login_timeout budget the
+    // user already provides.
+    time_t connect_start_time = time(NULL);
+    int8 renew_round = 0;
+    int8 max_renew_rounds = get_login_retry_count(sf);
+    if (max_renew_rounds <= 0) {
+        max_renew_rounds = SF_MAX_RETRY;
+    }
+    int64 connect_overall_timeout = get_login_timeout(sf);
+    if (connect_overall_timeout <= 0) {
+        connect_overall_timeout = SF_LOGIN_TIMEOUT;
+    }
     while (!success) {
         if (request(sf, &resp, SESSION_URL, url_params,
                     sizeof(url_params) / sizeof(URL_KEY_VALUE), s_body, NULL,
@@ -1508,6 +1525,30 @@ SF_STATUS STDCALL snowflake_connect(SF_CONNECT* sf) {
             }
         } else {
             if (is_renew && (renew_timeout > 0)) {
+                // Bound the JWT-renewal retry loop. http_perform sets
+                // is_renew=TRUE every time renew_timeout elapses without a
+                // successful login (e.g. when an unreachable proxy keeps
+                // CURLE_OPERATION_TIMEDOUT firing). Without these guards we
+                // would regenerate the JWT and retry forever.
+                if (renew_round >= max_renew_rounds) {
+                    char msg[256];
+                    sf_sprintf(msg, sizeof(msg),
+                               "Exceeded JWT renewal attempts (%d) during login",
+                               (int)max_renew_rounds);
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_RETRY,
+                                        msg, SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    goto cleanup;
+                }
+                if ((time(NULL) - connect_start_time) >= connect_overall_timeout) {
+                    char msg[256];
+                    sf_sprintf(msg, sizeof(msg),
+                               "Exceeded login timeout (%llds) during JWT renewal",
+                               (long long)connect_overall_timeout);
+                    SET_SNOWFLAKE_ERROR(&sf->error, SF_STATUS_ERROR_RETRY,
+                                        msg, SF_SQLSTATE_UNABLE_TO_CONNECT);
+                    goto cleanup;
+                }
+                renew_round++;
                 // renew authentication information in body
                 auth_renew_json_body(sf, body);
                 s_body = snowflake_cJSON_Print(body);
