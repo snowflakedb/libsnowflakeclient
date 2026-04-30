@@ -83,6 +83,7 @@ SET(TESTS_CXX
         test_unit_azure_client
         test_unit_query_context_cache
         test_unit_sfurl
+        test_unit_spcs_token
         test_toml_config
         test_manual_wif
         test_create_wif_attestation
