@@ -529,18 +529,18 @@ index f35bfee053..f578259fc0 100644
    char *CAfile;          /* certificate to verify peer against */
    char *issuercert;      /* optional issuer certificate filename */
 diff --git a/deps/curl/lib/vtls/openssl.c b/deps/curl/lib/vtls/openssl.c
-index 4629ca4444..0ae0255882 100644
+index 4629ca4444..86a42ede6c 100644
 --- a/deps/curl/lib/vtls/openssl.c
 +++ b/deps/curl/lib/vtls/openssl.c
-@@ -52,6 +52,8 @@
- #include "curlx/strcopy.h"
- #include "curlx/strdup.h"
- #include "vtls/apple.h"
-+#include "sf_ocsp.h"
-+#include "sf_crl.h"
+@@ -55,6 +55,8 @@
  #ifdef USE_ECH
  #include "curlx/base64.h"
  #endif
++#include "sf_ocsp.h"
++#include "sf_crl.h"
+ 
+ #include <openssl/rand.h>
+ #include <openssl/x509v3.h>
 @@ -113,6 +115,39 @@
  #include <openssl/ui.h>
  #endif
